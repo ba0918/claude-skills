@@ -38,4 +38,4 @@
 
 ---
 
-**Note:** このファイルは `timestamped-plan` skill によって自動管理されています。
+**Note:** このファイルは `plan` skill によって自動管理されています。

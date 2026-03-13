@@ -2,7 +2,7 @@
 description: "直近の実装計画を6観点で徹底レビューする"
 ---
 
-`plan-reviewer` スキルを使用して、直近の `timestamped-plan` で作成された実装計画をレビューする。
+`plan-reviewer` スキルを使用して、直近の実装計画をレビューする。
 
 ## 手順
 
