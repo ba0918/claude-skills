@@ -17,7 +17,7 @@ done
 echo "Installing skills..."
 for d in "$SCRIPT_DIR"/skills/*/; do
   name="$(basename "$d")"
-  ln -sf "$d" "$CLAUDE_DIR/skills/$name"
+  ln -sfn "$d" "$CLAUDE_DIR/skills/$name"
   echo "  $name/"
 done
 
