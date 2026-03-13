@@ -43,7 +43,7 @@ codebase-review Progress:
 3. 主要設定ファイルを確認（`package.json`, `deno.json`, `tsconfig.json`, `Cargo.toml`等）
 4. **作業ディレクトリを作成**:
    ```bash
-   mkdir -p /tmp/codebase-review-{YYYYMMDD-HHMM}/
+   mkdir -p .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/
    ```
 5. **context.jsonを書き出す**（Writeツールで作成）:
    ```json
@@ -53,7 +53,7 @@ codebase-review Progress:
      "target_files": ["対象ファイルパス一覧"],
      "file_count": ファイル数,
      "claude_md_rules": "CLAUDE.mdの内容（あれば）",
-     "work_dir": "/tmp/codebase-review-{YYYYMMDD-HHMM}",
+     "work_dir": ".claude/tmp/codebase-review-{YYYYMMDD-HHMM}",
      "datetime": "YYYY-MM-DD HH:MM"
    }
    ```
