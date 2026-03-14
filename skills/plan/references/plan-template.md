@@ -56,4 +56,4 @@ src/
 
 ---
 
-**Next:** Write tests → Implement → Commit with `smart-commit` 🚀
+**Next:** Write tests → Implement → Commit with `commit` 🚀

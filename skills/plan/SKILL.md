@@ -89,7 +89,7 @@ Display to user:
 1. Review the plan
 2. Write tests - "テスト書いて" or "write tests"
 3. Implement - "実装して" or "implement this"
-4. Commit - "コミットして" (smart-commit will handle it)
+4. Commit - "コミットして" (commit will handle it)
 
 Keep it simple. No heavy reviews. Fast tempo! 🚀
 ```
@@ -178,7 +178,7 @@ After creating the plan, follow this simple workflow:
 1. **Write tests** - Create failing tests for the feature
 2. **Implement** - Write minimal code to pass tests
 3. **Refactor** - Clean up code while keeping tests green
-4. **Commit** - Use `smart-commit` to commit changes
+4. **Commit** - Use `commit` to commit changes
 
 No heavy review processes. Keep the tempo fast and development flow smooth.
 
