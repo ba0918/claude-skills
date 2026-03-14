@@ -26,6 +26,7 @@ commands/plan-implement.md → skills/plan/SKILL.md
 commands/cycle.md        →  plan-refine + plan-implement を Agent で連鎖実行
 commands/commit.md       →  skills/commit/SKILL.md
 commands/iterate.md      →  skills/iterate/SKILL.md
+commands/doc-check.md    →  skills/doc-check/SKILL.md
 ```
 
 ### 主要スキル
@@ -38,6 +39,7 @@ commands/iterate.md      →  skills/iterate/SKILL.md
 | `generate-review-rules` | プロジェクト固有の `.claude/review-rules.md` を自動生成 |
 | `commit` | 変更を分析し論理単位で自動コミット（確認なし即実行） |
 | `iterate` | cycle 後の追加指示をサイズ適応型の軽量改善ループで実行 |
+| `doc-check` | ドキュメントとコードベースの整合性を検証・自動修正 |
 
 ### ワークフロー設計パターン
 
