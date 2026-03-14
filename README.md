@@ -27,6 +27,10 @@ cd ~/develop/claude-skills
 | `/commit` | 変更内容を分析し、論理単位で自動コミット |
 | `/iterate` | cycle 後の追加指示を軽量改善ループで実行 |
 | `/doc-check` | ドキュメントとコードの整合性を検証・自動修正 |
+| `/issue-create` | スコープ外の問題を issue として記録 |
+| `/issue-list` | 未解決 issue の一覧を表示 |
+| `/issue-cycle` | issue を選択して plan → cycle で解決 |
+| `/issue-close` | issue をクローズしてアーカイブ |
 
 ## スキル一覧
 
@@ -39,6 +43,7 @@ cd ~/develop/claude-skills
 | `commit` | 変更を分析し論理単位で自動コミット（確認なし即実行） |
 | `iterate` | サイズ適応型の軽量改善ループ（cycle より軽く、直接作業より安全） |
 | `doc-check` | ドキュメントとコードベースの整合性検証・自動修正 |
+| `issue` | スコープ外の問題を記録・管理し plan → cycle に繋げる |
 
 ## 基本ワークフロー
 
@@ -72,6 +77,22 @@ Agent に委譲して全自動で回す。ヘッドレス実行対応。
 タスクサイズを自動判定し、小さければ軽量ループ（実装→簡易レビュー）、
 大きければ plan 切り出しを提案する。変更は直近の計画ファイルに追記される。
 
+### Issue 管理
+
+```
+/issue-create ○○の処理でエラーハンドリングが不足している
+  ↓ docs/issues/{date}_{slug}.md と issue-status.md が生成される
+/issue-list
+  ↓ 未解決 issue の一覧を確認
+/issue-cycle
+  ↓ issue を選択して plan → cycle で自動解決
+/issue-close {slug}
+  ↓ archives/ に移動して issue-status.md から削除
+```
+
+plan 実行中にスコープ外の問題を発見したら `/issue-create` で記録し、
+後から `/issue-cycle` で plan → cycle に繋げて解決する。
+
 ### ドキュメント整合性チェック
 
 ```
@@ -102,6 +123,7 @@ skills/
 ├── codebase-review/ # 4エージェント並行レビュー
 ├── generate-review-rules/
 ├── iterate/        # サイズ適応型軽量改善ループ
-└── doc-check/      # ドキュメント整合性検証・自動修正
+├── doc-check/      # ドキュメント整合性検証・自動修正
+└── issue/          # issue 管理（記録・一覧・cycle連携・クローズ）
 install.sh          # ~/.claude/ に symlink を張る
 ```
