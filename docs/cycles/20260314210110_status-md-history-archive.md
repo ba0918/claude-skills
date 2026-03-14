@@ -105,7 +105,7 @@ CLAUDE.md                     - session-history.md の役割を追記
 | 2 | SKILL.md 更新 | 🟢 |
 | 3 | status-template.md 更新 | 🟢 |
 | 4 | session-history.md 初期作成 | 🟢 |
-| 5 | status.md の既存データ移行 | ⚪ |
+| 5 | status.md の既存データ移行 | 🟢 |
 | 6 | CLAUDE.md 更新 | ⚪ |
 
 **Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done
