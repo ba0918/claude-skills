@@ -21,11 +21,10 @@
 
 ## 📜 Session History
 
-### {timestamp} - {feature-name}
-- **Started:** {YYYY-MM-DD HH:MM:SS}
-- **Status:** 🟡 Planning
-- **Plan:** [Link](./cycles/{timestamp}_{feature-slug}.md)
-- **Summary:** {簡単な概要}
+_アーカイブ済みセッションは [session-history.md](./session-history.md) を参照。_
+
+<!-- Note: Completed セッションは自動的に docs/session-history.md にアーカイブされます。
+     このセクションには進行中のセッション以外は残りません。 -->
 
 ---
 
