@@ -60,7 +60,7 @@ Commits: {N}
 ## Phase 3: サマリー生成
 
 1. `git log` で Phase 2 のコミット一覧を取得する
-2. サマリーファイルを生成: 計画ファイルと同じディレクトリに `{plan_basename}_result.md` として出力
+2. サマリーファイルを生成: `docs/cycles/results/{plan_basename}_result.md` に出力（ディレクトリがなければ `mkdir -p` で作成）
 
 サマリーファイルの内容:
 ```markdown
