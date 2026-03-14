@@ -1,42 +1,42 @@
-# Scope Criteria - タスクサイズ判定基準
+# Scope Criteria - Task Size Judgment
 
-追加指示のスコープを判定し、適切な実行パスへ振り分けるための基準。
+Criteria for determining the scope of additional instructions and routing them to the appropriate execution path.
 
-## 判定マトリクス
+## Judgment Matrix
 
-| 観点 | Small（軽量ループ） | Large（plan 切り出し推奨） |
-|------|---------------------|---------------------------|
-| 変更ファイル数 | 1〜3 | 4+ |
-| 新規ファイル作成 | なし | あり |
-| 影響範囲 | 局所的（1モジュール内） | 複数モジュールにまたがる |
-| 設計判断 | 不要（方針が明確） | 必要（トレードオフあり） |
-| テスト影響 | 既存テストの軽微な修正 | 新規テストケース群の追加が必要 |
-| インターフェース変更 | なし | あり（API・型定義の変更） |
+| Aspect | Small (lightweight loop) | Large (plan creation recommended) |
+|--------|--------------------------|-----------------------------------|
+| Changed files | 1-3 | 4+ |
+| New file creation | None | Required |
+| Impact scope | Local (within 1 module) | Spans multiple modules |
+| Design decisions | Not needed (clear direction) | Needed (tradeoffs involved) |
+| Test impact | Minor modifications to existing tests | New test case groups required |
+| Interface changes | None | Yes (API/type definition changes) |
 
-## 判定ロジック
+## Judgment Logic
 
-### Small と判定する条件
+### Conditions for Small
 
-以下の**すべて**を満たす場合:
+All of the following must be true:
 
-1. 影響ファイル数が 3 以下
-2. 新規ファイル作成が不要
-3. 影響範囲が 1 モジュール内に収まる
-4. 設計上のトレードオフ判断が不要
-5. 既存のインターフェース（API・型定義）を変更しない
+1. 3 or fewer affected files
+2. No new file creation required
+3. Impact is contained within 1 module
+4. No design tradeoff decisions required
+5. No changes to public interfaces (APIs/type definitions)
 
-### Large と判定する条件
+### Conditions for Large
 
-以下の**いずれか**に該当する場合:
+Any of the following is true:
 
-1. 影響ファイル数が 4 以上
-2. 新規ファイルの作成が必要
-3. 複数モジュールにまたがる変更
-4. 設計判断（アーキテクチャ・データ構造の選択等）が必要
-5. 公開インターフェースの変更を伴う
+1. 4 or more affected files
+2. New file creation is required
+3. Changes span multiple modules
+4. Design decisions (architecture/data structure choices, etc.) are needed
+5. Changes involve public interface modifications
 
-## 判定時の注意
+## Notes on Judgment
 
-- **迷ったら Large 寄りに判定する** — 過小評価より過大評価のほうが安全
-- 判定は推定であり、実装中に想定外の影響が判明した場合は中断して報告する
-- ユーザーの「ちょっと」「軽く」等の表現に引きずられず、実際のコードへの影響で判定する
+- **When in doubt, lean toward Large** — Overestimation is safer than underestimation
+- Judgment is an estimate; if unexpected impact is discovered during implementation, halt and report
+- Judge by actual code impact, not by user expressions like "just a small thing" or "quick fix"

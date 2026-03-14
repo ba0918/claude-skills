@@ -1,55 +1,55 @@
-# Light Review - 軽量レビュー観点
+# Light Review - Lightweight Review Perspectives
 
-iterate の実装後レビューで使用する、簡易版レビュー基準。
-plan-reviewer の6観点フルレビューの代わりに、最重要の2観点に絞る。
+Simplified review criteria used for post-implementation review in iterate.
+Focuses on the 2 most important perspectives instead of the full 6-dimension review from plan-reviewer.
 
-## 観点 1: Security - セキュリティ
+## Perspective 1: Security
 
-変更がセキュリティリスクを導入していないか。
+Whether the changes introduce security risks.
 
-### チェック項目
+### Checklist
 
-- [ ] 外部入力の検証・サニタイズが適切か
-- [ ] 機密データ（認証情報、トークン、鍵等）が露出していないか
-- [ ] インジェクション攻撃（SQL、コマンド、パス等）の防御があるか
-- [ ] エラーメッセージにシステム内部情報が漏洩しないか
+- [ ] External input validation and sanitization is appropriate
+- [ ] No exposure of sensitive data (credentials, tokens, keys, etc.)
+- [ ] Defense against injection attacks (SQL, command, path, etc.) is present
+- [ ] Error messages do not leak internal system information
 
-### 判定
+### Verdict
 
-- **BLOCK**: 未検証の外部入力、機密データの露出、インジェクション脆弱性
-- **WARN**: 検証はあるが不完全、エラーメッセージの情報量が多い
-- **PASS**: セキュリティ上の問題なし
+- **BLOCK**: Unvalidated external input, sensitive data exposure, injection vulnerability
+- **WARN**: Validation exists but is incomplete, error messages contain too much information
+- **PASS**: No security issues
 
-## 観点 2: Implementation Quality - 実装品質
+## Perspective 2: Implementation Quality
 
-変更が既存コードの品質基準を維持しているか。
+Whether the changes maintain the existing code quality standards.
 
-### チェック項目
+### Checklist
 
-- [ ] 既存テストが壊れていないか
-- [ ] 追加・変更したコードに明らかなバグがないか
-- [ ] DRY 原則: 既存コードとの重複がないか
-- [ ] エラーハンドリング: 失敗パスが適切に処理されているか
-- [ ] CLAUDE.md / `.claude/review-rules.md` のルール違反がないか
+- [ ] Existing tests are not broken
+- [ ] No obvious bugs in added/modified code
+- [ ] DRY principle: No duplication with existing code
+- [ ] Error handling: Failure paths are properly handled
+- [ ] No violations of CLAUDE.md / `.claude/review-rules.md` rules
 
-### 判定
+### Verdict
 
-- **BLOCK**: テスト失敗、明らかなバグ、プロジェクトルール違反
-- **WARN**: DRY 違反、エラーハンドリング不足
-- **PASS**: 品質基準を満たしている
+- **BLOCK**: Test failures, obvious bugs, project rule violations
+- **WARN**: DRY violations, insufficient error handling
+- **PASS**: Meets quality standards
 
-## Large タスク時の追加観点
+## Additional Perspectives for Large Tasks
 
-ユーザーが Large 判定後も続行を選択した場合、上記に加えて以下もチェックする:
+When the user chooses to continue after a Large judgment, check these in addition to the above:
 
-### 観点 3: Architecture - アーキテクチャ整合性
+### Perspective 3: Architecture
 
-- [ ] レイヤー構造・依存方向の違反がないか
-- [ ] 責務の混在がないか
-- [ ] 型安全性が保たれているか
+- [ ] No violations of layer structure or dependency direction
+- [ ] No mixing of responsibilities
+- [ ] Type safety is maintained
 
-### 観点 4: Completeness - 網羅性
+### Perspective 4: Completeness
 
-- [ ] エッジケース（空入力、巨大入力、不正入力）が考慮されているか
-- [ ] 後方互換性が保たれているか
-- [ ] 必要なテストが追加されているか
+- [ ] Edge cases (empty input, large input, invalid input) are considered
+- [ ] Backward compatibility is maintained
+- [ ] Necessary tests have been added
