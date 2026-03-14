@@ -12,8 +12,8 @@ source: {{SOURCE}}
 
 ## 備考
 
-（補足情報があればここに記載）
+(Add supplementary information here if available)
 
 ---
 
-> **注意:** センシティブな情報（パスワード、トークン、個人情報等）をこのファイルに記載しないでください。
+> **Note:** Do not include sensitive information (passwords, tokens, personal data, etc.) in this file.
