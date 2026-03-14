@@ -146,7 +146,7 @@ skills/generate-review-rules/
 | 2 | plan-reviewer スキル英語化（3ファイル） | 🟢 |
 | 3 | commit スキル英語化（1ファイル） | 🟢 |
 | 4 | iterate スキル英語化（3ファイル） | 🟢 |
-| 5 | doc-check スキル英語化（3ファイル） | ⚪ |
+| 5 | doc-check スキル英語化（3ファイル） | 🟢 |
 | 6 | issue スキル英語化（2ファイル） | ⚪ |
 | 7 | codebase-review スキル英語化（3ファイル） | ⚪ |
 | 8 | generate-review-rules スキル英語化（2ファイル） | ⚪ |

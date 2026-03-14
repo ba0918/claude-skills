@@ -5,115 +5,115 @@ description: プロジェクトのドキュメント（README.md、CLAUDE.md、A
 
 # Doc Check
 
-ドキュメントとコードベースの整合性を検証し、不整合を自動修正するスキル。
+Skill that verifies consistency between documentation and the codebase, and auto-fixes discrepancies.
 
-## 引数
+## Arguments
 
-- なし: 直近 5 コミットの変更を対象
-- 数値（例: `10`）: 直近 N コミットの変更を対象
-- `all`: プロジェクト全体を対象
+- None: Target changes from the last 5 commits
+- Number (e.g., `10`): Target changes from the last N commits
+- `all`: Target the entire project
 
-## Phase 1: Discovery（対象特定）
+## Phase 1: Discovery
 
-### 1.1 ドキュメント検出
+### 1.1 Document Detection
 
-プロジェクト内のドキュメントファイルを検出する:
+Detect documentation files in the project:
 
 ```bash
-# ルート直下の .md ファイル
+# .md files at root
 ls *.md 2>/dev/null
 
-# docs/ ディレクトリ
+# docs/ directory
 find docs/ -name '*.md' 2>/dev/null
 
-# CLAUDE.md（プロジェクトルートおよび .claude/）
+# CLAUDE.md (project root and .claude/)
 ls CLAUDE.md .claude/CLAUDE.md 2>/dev/null
 ```
 
-除外対象: `node_modules/`, `vendor/`, `.git/`, `CHANGELOG.md`, `LICENSE.md`, `docs/cycles/`（計画ファイルは対象外）
+Exclude: `node_modules/`, `vendor/`, `.git/`, `CHANGELOG.md`, `LICENSE.md`, `docs/cycles/` (plan files are not targets)
 
-### 1.2 スコープ決定
+### 1.2 Scope Determination
 
-引数に応じて変更コンテキストを取得する:
+Obtain change context based on arguments:
 
 ```bash
-# デフォルト（5コミット）または数値指定
+# Default (5 commits) or specified number
 git log -N --oneline
 git diff HEAD~N..HEAD --name-only
 git diff HEAD~N..HEAD
 
-# all モード
-# diff は取得しない。プロジェクト全体の構造を対象とする
+# all mode
+# No diff is obtained. Target the entire project structure
 ```
 
-## Phase 2: Structural Check（構造チェック）
+## Phase 2: Structural Check
 
-ファイルシステムの実態とドキュメント内の構造的記述を突き合わせる。
-詳細な検出方法は [references/structural-checks.md](references/structural-checks.md) を参照。
+Cross-reference the file system state against structural descriptions in documentation.
+See [references/structural-checks.md](references/structural-checks.md) for detailed detection methods.
 
-### 実行手順
+### Execution Steps
 
-1. 各ドキュメントを読み込む
-2. 以下のパターンを検出:
-   - Markdown テーブル内のファイル/コマンド/モジュール列挙
-   - ディレクトリツリー図（`├──` `└──` パターン）
-   - コードブロック内のファイルパス参照
-   - バージョン番号の記載
-3. 対応するファイルシステムの実態と比較
-4. 不一致を検出し、修正可能なものは即座に修正する
+1. Read each document
+2. Detect the following patterns:
+   - File/command/module listings in Markdown tables
+   - Directory tree diagrams (`├──` `└──` patterns)
+   - File path references in code blocks
+   - Version number mentions
+3. Compare against the actual file system state
+4. Detect discrepancies and immediately fix those that are fixable
 
-### 自動修正の原則
+### Auto-Fix Principles
 
-- **不足エントリの追加**: 既存エントリのフォーマットを踏襲して追加
-- **余剰エントリ**: 削除せず WARN として報告（意図的な場合があるため）
-- **修正時は Edit ツールを使用する**（Write でファイル全体を上書きしない）
+- **Missing entries**: Add following the format of existing entries
+- **Extra entries**: Do not delete; report as WARN (may be intentional)
+- **Use the Edit tool for fixes** (do not overwrite entire files with Write)
 
-## Phase 3: Content Check（内容チェック）
+## Phase 3: Content Check
 
-LLM による意味的な整合性チェック。
-詳細なチェック観点とエージェント指示は [references/content-checks.md](references/content-checks.md) を参照。
+Semantic consistency check leveraging LLM capabilities.
+See [references/content-checks.md](references/content-checks.md) for detailed perspectives and agent instructions.
 
-### 実行手順
+### Execution Steps
 
-ドキュメントごとに Agent ツール（general-purpose）を**並列起動**する:
+Launch Agent tools (general-purpose) **in parallel** for each document:
 
-- 各エージェントに対象ドキュメントの内容と変更コンテキスト（diff）を渡す
-- アーキテクチャ記述、ワークフロー記述、設定記述、API ドキュメントの4観点で検証させる
-- 結果を severity（AUTO_FIX / NEEDS_JUDGMENT / OK）で分類して返させる
+- Provide each agent with the target document content and change context (diff)
+- Have them verify from 4 perspectives: architecture descriptions, workflow descriptions, configuration descriptions, and API documentation
+- Have them classify results by severity (AUTO_FIX / NEEDS_JUDGMENT / OK)
 
-`all` モードでは diff がないため、エージェントにはプロジェクト構造の探索から行わせる。
+In `all` mode, since there is no diff, have agents explore the project structure from scratch.
 
-### 結果の処理
+### Processing Results
 
-1. AUTO_FIX: 修正案に基づいて Edit ツールで修正を適用する
-2. NEEDS_JUDGMENT: AskUserQuestion でユーザーに確認し、回答に基づいて修正する
-3. OK: そのまま記録する
+1. AUTO_FIX: Apply fixes using the Edit tool based on the fix suggestion
+2. NEEDS_JUDGMENT: Confirm with user via AskUserQuestion, then fix based on their response
+3. OK: Record as-is
 
-## Phase 4: Report（レポート出力）
+## Phase 4: Report
 
-全チェック完了後、結果を集約して表示する:
+After all checks are complete, aggregate and display results:
 
 ```
 ══════════════════════════════════════
 DOC-CHECK ({scope}: {N} commits / all)
 ══════════════════════════════════════
 
-✅ 自動修正 ({N}件)
-  - {file}: {修正内容の要約}
+✅ Auto-fixed ({N} items)
+  - {file}: {fix summary}
 
-⚠️ 要確認 ({N}件)
-  - {file}: {不整合の説明}
+⚠️ Needs review ({N} items)
+  - {file}: {discrepancy description}
 
-✅ 整合 ({N}件)
-  - {file}: {セクション} → OK
+✅ Consistent ({N} items)
+  - {file}: {section} → OK
 
 ══════════════════════════════════════
 ```
 
-## 重要なルール
+## Important Rules
 
-- **変更をコミットしない** — 修正の適用のみ行い、コミットはユーザーに委ねる
-- **汎用性を保つ** — 特定プロジェクトの構造をハードコードしない。実態から動的に検出する
-- **余剰エントリは削除しない** — 意図的に残している場合があるため、報告のみにとどめる
-- **構造チェックを先に実行する** — 高速で確実な構造チェックを先に行い、コストの高い内容チェックは後に回す
-- **並列実行を活用する** — 内容チェックはドキュメントごとに並列エージェントで実行し、処理時間を短縮する
+- **Do not commit changes** — Only apply fixes; leave committing to the user
+- **Maintain generality** — Do not hardcode specific project structures. Detect dynamically from actual state
+- **Do not delete extra entries** — They may be intentionally kept; only report them
+- **Run structural checks first** — Perform fast, reliable structural checks first; defer costly content checks
+- **Leverage parallel execution** — Run content checks in parallel agents per document to reduce processing time

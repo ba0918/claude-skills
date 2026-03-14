@@ -1,86 +1,86 @@
-# Content Checks - 内容的整合性チェック
+# Content Checks
 
-LLM の読解力を活用して、ドキュメントの意味的な整合性を検証するチェック項目。
-構造チェックでは検出できない、より深い不整合を対象とする。
+Semantic consistency verification leveraging LLM reading comprehension.
+Targets deeper discrepancies that structural checks cannot detect.
 
-## チェック観点
+## Check Perspectives
 
-### 1. アーキテクチャ記述
+### 1. Architecture Descriptions
 
-ドキュメントが記述するアーキテクチャ（レイヤー構成、依存方向、データフロー等）が
-実際のコード構造と一致しているか。
+Whether the architecture described in documentation (layer composition, dependency direction, data flow, etc.)
+matches the actual code structure.
 
-**検証方法:**
-- ドキュメントのアーキテクチャセクションを抽出
-- 記述されたモジュール間の関係を実際の import/依存から検証
-- 「〜は〜を呼び出す」「〜は〜に依存する」等の記述を実コードと照合
+**Verification method:**
+- Extract architecture sections from the document
+- Verify described inter-module relationships against actual imports/dependencies
+- Cross-reference descriptions like "X calls Y" or "X depends on Y" against actual code
 
-### 2. ワークフロー記述
+### 2. Workflow Descriptions
 
-ドキュメントが記述する手順・フローが実際の挙動と一致しているか。
+Whether the procedures/flows described in documentation match actual behavior.
 
-**検証方法:**
-- ステップバイステップの手順を抽出
-- 各ステップで参照されるコマンド・関数・ファイルが実在するか
-- フローの順序が実装と矛盾しないか
+**Verification method:**
+- Extract step-by-step procedures
+- Verify that commands, functions, and files referenced in each step actually exist
+- Check that flow ordering does not contradict the implementation
 
-### 3. 設定・オプション記述
+### 3. Configuration/Option Descriptions
 
-ドキュメントが記述する設定項目・コマンドラインオプション・環境変数が
-実際に使用可能か。
+Whether configuration items, command-line options, and environment variables described in documentation
+are actually usable.
 
-**検証方法:**
-- ドキュメント内の設定例・オプション一覧を抽出
-- 実装コード内で対応するパーサー・ハンドラーが存在するか確認
+**Verification method:**
+- Extract configuration examples and option listings from documentation
+- Verify that corresponding parsers/handlers exist in the implementation code
 
-### 4. API ドキュメント
+### 4. API Documentation
 
-関数シグネチャ、引数、戻り値、エラーコード等の記述が実装と一致しているか。
+Whether function signatures, arguments, return values, error codes, etc. match the implementation.
 
-**検証方法:**
-- ドキュメント内の API 定義を抽出
-- 対応する実装コードのシグネチャと比較
+**Verification method:**
+- Extract API definitions from documentation
+- Compare against corresponding implementation code signatures
 
-## エージェントへの指示テンプレート
+## Agent Instruction Template
 
-各ドキュメントのチェックを Agent に委譲する際のプロンプト構成:
+Prompt structure when delegating each document check to an Agent:
 
 ```
-以下のドキュメントの内容が、現在のコードベースの実態と整合しているか検証してください。
+Verify whether the contents of the following document are consistent with the current codebase state.
 
-## 対象ドキュメント
-{ドキュメントの内容}
+## Target Document
+{Document contents}
 
-## 変更コンテキスト（diff モードの場合）
-{git diff の内容}
+## Change Context (diff mode only)
+{git diff contents}
 
-## チェック観点
-1. アーキテクチャ記述が実態と一致しているか
-2. ワークフロー/手順の記述が実際の挙動と一致しているか
-3. 設定・オプションの記述が実装と一致しているか
-4. API ドキュメントが実装と一致しているか
+## Check Perspectives
+1. Whether architecture descriptions match the actual state
+2. Whether workflow/procedure descriptions match actual behavior
+3. Whether configuration/option descriptions match the implementation
+4. Whether API documentation matches the implementation
 
-## 出力形式
-各指摘について以下を報告:
+## Output Format
+For each finding, report:
 - severity: AUTO_FIX | NEEDS_JUDGMENT | OK
-- file: 対象ファイルパス
-- section: 該当セクション名
-- description: 不整合の内容
-- suggestion: 修正案（AUTO_FIX/NEEDS_JUDGMENT の場合）
-- reason: 判断理由
+- file: Target file path
+- section: Relevant section name
+- description: Description of the discrepancy
+- suggestion: Fix suggestion (for AUTO_FIX/NEEDS_JUDGMENT)
+- reason: Rationale for the judgment
 ```
 
-## 判定基準
+## Judgment Criteria
 
-### AUTO_FIX（自動修正可）
-- 事実関係の単純な誤り（存在しないファイルへの参照等）
-- 明らかに古い情報（削除された機能への言及等）
-- フォーマット上の不整合（テーブル列の不一致等）
+### AUTO_FIX (auto-fixable)
+- Simple factual errors (references to non-existent files, etc.)
+- Obviously outdated information (mentions of deleted features, etc.)
+- Formatting discrepancies (table column mismatches, etc.)
 
-### NEEDS_JUDGMENT（要確認）
-- 設計方針や思想に関する記述の変更
-- 複数の解釈が可能な不整合
-- 意図的に現状と異なる記述をしている可能性があるもの（将来の計画等）
+### NEEDS_JUDGMENT (requires review)
+- Changes to descriptions about design philosophy or principles
+- Discrepancies with multiple possible interpretations
+- Descriptions that may intentionally differ from current state (future plans, etc.)
 
-### OK（整合）
-- ドキュメントの記述が実態と一致している
+### OK (consistent)
+- Documentation descriptions match the actual state

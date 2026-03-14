@@ -1,66 +1,66 @@
-# Structural Checks - 構造的整合性チェック
+# Structural Checks
 
-ファイルシステムの実態とドキュメント内の記述を機械的に突き合わせるチェック項目。
-偽陽性が少なく、自動修正しやすい。
+Mechanically cross-referencing the actual file system state against descriptions in documentation.
+Low false positive rate and easy to auto-fix.
 
-## チェック対象パターン
+## Check Target Patterns
 
-### 1. テーブル・リスト内のファイル/ディレクトリ参照
+### 1. File/Directory References in Tables and Lists
 
-ドキュメント内の Markdown テーブルやリストが、ファイルやディレクトリを列挙している場合:
+When Markdown tables or lists in documentation enumerate files or directories:
 
-- 列挙されたパスが実際に存在するか
-- 実在するファイル/ディレクトリがテーブルから漏れていないか
+- Whether listed paths actually exist
+- Whether existing files/directories are missing from the table
 
-**検出方法:**
-1. ドキュメント内のテーブル行（`|` 区切り）やリスト項目（`- ` / `* `）を抽出
-2. 行内のファイルパス・ディレクトリパス・コマンド名を正規表現で検出
-3. 対応するファイルシステムの実態と比較
+**Detection method:**
+1. Extract table rows (`|` delimited) and list items (`- ` / `* `) from the document
+2. Detect file paths, directory paths, and command names within lines using regex
+3. Compare against the actual file system state
 
-**典型例:**
-- コマンド一覧テーブル vs `commands/` ディレクトリ
-- スキル一覧テーブル vs `skills/` ディレクトリ
-- API エンドポイント一覧 vs ルーティング定義
+**Typical examples:**
+- Command listing table vs `commands/` directory
+- Skill listing table vs `skills/` directory
+- API endpoint listing vs routing definitions
 
-### 2. ディレクトリツリー図
+### 2. Directory Tree Diagrams
 
-ドキュメント内のツリー図（`├──` / `└──` / `│` を含むコードブロック）:
+Tree diagrams in documentation (code blocks containing `├──` / `└──` / `│`):
 
-- ツリーに含まれるエントリが実在するか
-- 実在するエントリがツリーから漏れていないか（同階層の兄弟を基準に判定）
+- Whether entries in the tree actually exist
+- Whether existing entries are missing from the tree (judged based on siblings at the same level)
 
-**検出方法:**
-1. コードブロック内の `├──` `└──` パターンを検出
-2. ツリーのルートディレクトリを特定（ツリーの直前の文脈から推定）
-3. 各エントリの実在を確認
+**Detection method:**
+1. Detect `├──` `└──` patterns in code blocks
+2. Identify the root directory of the tree (infer from context preceding the tree)
+3. Verify existence of each entry
 
-### 3. コードブロック内のファイルパス参照
+### 3. File Path References in Code Blocks
 
-コマンド例やコードサンプル内のファイルパス:
+File paths in command examples and code samples:
 
-- 参照先ファイルが実在するか
-- パスの形式が正しいか
+- Whether referenced files actually exist
+- Whether path format is correct
 
-**検出方法:**
-1. コードブロック内の文字列からパスパターンを抽出（`src/`, `./`, `/` を含む文字列）
-2. サンプル値（`example`, `foo`, `bar` 等の明らかなプレースホルダー）を除外
-3. 残りのパスの実在を確認
+**Detection method:**
+1. Extract path patterns from strings in code blocks (strings containing `src/`, `./`, `/`)
+2. Exclude obviously placeholder values (`example`, `foo`, `bar`, etc.)
+3. Verify existence of remaining paths
 
-### 4. バージョン番号
+### 4. Version Numbers
 
-ドキュメント内のバージョン記載:
+Version mentions in documentation:
 
-- `package.json` / `Cargo.toml` / `pyproject.toml` 等のバージョンと一致するか
-- 依存ライブラリのバージョン記載が実態と一致するか
+- Whether they match versions in `package.json` / `Cargo.toml` / `pyproject.toml` etc.
+- Whether dependency library version mentions match actual state
 
-**検出方法:**
-1. ドキュメント内のバージョンパターン（`v1.2.3`, `^1.2.3`, `>=1.0` 等）を検出
-2. 対応するマニフェストファイルのバージョンと比較
+**Detection method:**
+1. Detect version patterns in documentation (`v1.2.3`, `^1.2.3`, `>=1.0`, etc.)
+2. Compare against versions in corresponding manifest files
 
-## 自動修正の方針
+## Auto-Fix Policy
 
-- **テーブルにエントリが不足**: 既存エントリのフォーマットに合わせて行を追加。description は対応ファイルの frontmatter や先頭コメントから推定
-- **テーブルに余剰エントリ**: 削除せず WARN として報告（意図的に残している可能性）
-- **ツリー図の不足**: 兄弟エントリのフォーマットに合わせて追加
-- **ツリー図の余剰**: 削除せず WARN として報告
-- **バージョン不一致**: マニフェストファイルの値で更新
+- **Table missing entries**: Add rows following existing entry format. Infer description from frontmatter or leading comments of the corresponding file
+- **Table extra entries**: Do not delete; report as WARN (may be intentionally kept)
+- **Tree diagram missing entries**: Add following sibling entry format
+- **Tree diagram extra entries**: Do not delete; report as WARN
+- **Version mismatch**: Update with the value from the manifest file
