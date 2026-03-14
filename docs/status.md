@@ -11,7 +11,7 @@
 | **Cycle ID** | `20260314211540` |
 | **Feature** | スキル英語化 |
 | **Started** | 2026-03-14 21:15:40 |
-| **Phase** | 🟡 In Progress |
+| **Phase** | 🟢 Completed |
 | **Plan** | [docs/cycles/20260314211540_skill-english-localization.md](./cycles/20260314211540_skill-english-localization.md) |
 
 **Current Focus:**
