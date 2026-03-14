@@ -41,7 +41,7 @@ commands/plan-status.md  →  skills/plan/SKILL.md (ステータス更新)
 
 | スキル | 役割 |
 |--------|------|
-| `plan` | 計画ファイル（`docs/cycles/{timestamp}_{slug}.md`）と `docs/status.md` の生成・管理 |
+| `plan` | 計画ファイル（`docs/cycles/{timestamp}_{slug}.md`）、`docs/status.md`、`docs/session-history.md` の生成・管理 |
 | `plan-reviewer` | 6観点並行レビュー（Feasibility / Security / Performance / Architecture / Completeness / Alternatives） |
 | `codebase-review` | 4エージェント並行によるコードベース全体レビュー。結果はJSON→統合エージェントが集約 |
 | `generate-review-rules` | プロジェクト固有の `.claude/review-rules.md` を自動生成 |
@@ -55,6 +55,7 @@ commands/plan-status.md  →  skills/plan/SKILL.md (ステータス更新)
 - **Agent 委譲**: `cycle` コマンドのように重い処理は Agent ツールに委譲し、メインコンテキストにはサマリーのみ保持する
 - **ファイル経由の受け渡し**: `codebase-review` ではエージェント間のデータ受け渡しに `.claude/tmp/` 配下のJSONファイルを使い、コンテキストウィンドウを節約する
 - **ヘッドレス対応**: `cycle` コマンドはユーザー確認プロンプトを出さずに全自動で動作する
+- **セッション履歴アーカイブ**: Completed セッションは `docs/session-history.md` に自動アーカイブされ、`docs/status.md` の肥大化を防ぐ
 
 ## インストール・開発
 
