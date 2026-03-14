@@ -71,22 +71,38 @@ Update:
 
 #### Case 2: In Progress → Completed
 
-Move Current Session to Session History and clear Current Session.
+Move Current Session to Session History archive and clear Current Session.
 
-**New Session History entry:**
+**Step 2a: Archive to session-history.md**
+
+Completed セッションを `docs/session-history.md` にアーカイブする。
+
+1. `docs/session-history.md` が存在しない場合、以下のヘッダーで新規作成する:
+
+```markdown
+# Session History
+
+| Cycle ID | Feature | Started | Completed | Plan |
+|----------|---------|---------|-----------|------|
+```
+
+2. テーブルの先頭行（ヘッダー直後）に新しいエントリを追加する:
+
+```markdown
+| `20260208010855` | Phase 3: Options UI & Hot Reload | 2026-02-08 | 2026-02-08 | [Link](./cycles/20260208010855_phase-3-options-ui-hot-reload.md) |
+```
+
+**Step 2b: Clear status.md Session History**
+
+status.md の Session History セクションから Completed エントリを削除する（アーカイブ済みのため）。
 
 ```markdown
 ## 📜 Session History
 
-### 20260208010855 - Phase 3: Options UI & Hot Reload
-- **Started:** 2026-02-08 01:08:55
-- **Completed:** 2026-02-08 02:15:30  <!-- Add completion time -->
-- **Status:** 🟢 Completed
-- **Plan:** [Link](./cycles/20260208010855_phase-3-options-ui-hot-reload.md)
-- **Summary:** Extended theme system with 4 new themes (GitHub, Minimal, Solarized Light/Dark). All tests passing.
+_アーカイブ済みセッションは [session-history.md](./session-history.md) を参照。_
 ```
 
-**Clear Current Session:**
+**Step 2c: Clear Current Session:**
 
 ```markdown
 ## 🎯 Current Session
@@ -145,4 +161,4 @@ Ready for next cycle!
 - **Auto-infer phase**: If user commits code, likely "In Progress"
 - **Ask if unclear**: "Planning終わった？実装中？完了した？"
 - **Keep summaries concise**: 1-2 sentences in Session History
-- **Preserve history**: Never delete Session History entries
+- **Preserve history**: Completed セッションは session-history.md にアーカイブされる。status.md からは削除してよいが、session-history.md のエントリは削除しない
