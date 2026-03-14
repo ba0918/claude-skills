@@ -5,47 +5,47 @@ description: プロジェクトの CLAUDE.md、ドキュメント、コード構
 
 # Generate Review Rules
 
-プロジェクトのドキュメントとコード構造を分析し、plan-reviewer およびコードレビューで使用するプロジェクト固有レビュールールを `.claude/review-rules.md` に生成する。
+Analyze the project's documentation and code structure to generate project-specific review rules in `.claude/review-rules.md` for use with plan-reviewer and code reviews.
 
 ## Workflow
 
-### Step 1: 情報収集
+### Step 1: Gather Information
 
-以下のソースを順に読み込む（存在するもののみ）:
+Read the following sources in order (only those that exist):
 
-1. `CLAUDE.md`（プロジェクトルート）— Design Principles、Tech Stack、Architecture セクションを重点的に
+1. `CLAUDE.md` (project root) — Focus on Design Principles, Tech Stack, and Architecture sections
 2. `docs/ARCHITECTURE.md` or `docs/architecture.md`
 3. `docs/SECURITY.md` or `docs/security.md`
-4. `docs/status.md` — プロジェクトの現在の状態把握
+4. `docs/status.md` — Understand the current project state
 
-### Step 2: プロジェクト特性の検出
+### Step 2: Detect Project Characteristics
 
-ビルドファイルからプロジェクトの言語・FW を特定:
+Identify the project's language/framework from build files:
 
-| ファイル | 言語/FW |
-|---------|---------|
+| File | Language/Framework |
+|------|-------------------|
 | `Cargo.toml` | Rust |
 | `package.json` | Node.js / TypeScript |
 | `go.mod` | Go |
 | `pyproject.toml` / `requirements.txt` | Python |
 | `build.gradle` / `pom.xml` | Java/Kotlin |
 
-Glob で上記ファイルを探す。複数ヒットした場合はモノレポの可能性あり。
+Use Glob to search for the above files. If multiple matches are found, it may be a monorepo.
 
-### Step 3: ルール生成
+### Step 3: Generate Rules
 
-収集した情報から `.claude/review-rules.md` を生成する。
+Generate `.claude/review-rules.md` from the collected information.
 
-出力テンプレート: [references/output-template.md](references/output-template.md)
+Output template: [references/output-template.md](references/output-template.md)
 
-**生成ルール:**
-- CLAUDE.md に明記された設計原則は **そのまま引用**（解釈で変質させない）
-- 言語/FW 固有の典型的な落とし穴を Language/Framework Specific セクションに追加
-- プロジェクトに存在しない観点のセクションは省略（無理に埋めない）
-- 各ルールは具体的・検証可能に書く（「良い設計にする」のような曖昧表現は禁止）
+**Generation rules:**
+- Design principles explicitly stated in CLAUDE.md should be **quoted verbatim** (do not alter through interpretation)
+- Add typical pitfalls specific to the language/framework in the Language/Framework Specific section
+- Omit sections for perspectives that don't exist in the project (don't force-fill)
+- Each rule should be specific and verifiable (vague expressions like "use good design" are prohibited)
 
-### Step 4: 確認と出力
+### Step 4: Confirm and Output
 
-1. `.claude/review-rules.md` が既に存在する場合はユーザーに上書き確認
-2. 生成内容をユーザーに提示し、調整の機会を与える
-3. 承認後にファイルを書き出す
+1. If `.claude/review-rules.md` already exists, confirm overwrite with the user
+2. Present the generated content to the user and provide an opportunity for adjustments
+3. Write the file after approval

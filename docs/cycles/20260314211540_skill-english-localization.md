@@ -149,7 +149,7 @@ skills/generate-review-rules/
 | 5 | doc-check スキル英語化（3ファイル） | 🟢 |
 | 6 | issue スキル英語化（2ファイル） | 🟢 |
 | 7 | codebase-review スキル英語化（3ファイル） | 🟢 |
-| 8 | generate-review-rules スキル英語化（2ファイル） | ⚪ |
+| 8 | generate-review-rules スキル英語化（2ファイル） | 🟢 |
 
 **Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done
 
