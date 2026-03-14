@@ -149,7 +149,11 @@ Use when user wants to update implementation progress:
 
 3. **Update docs/status.md**
    - Update Current Session phase
-   - If completed, move to Session History with completion timestamp
+   - If completed:
+     1. Archive the session to `docs/session-history.md`（テーブル形式で先頭行に追加）
+     2. `docs/session-history.md` が未作成の場合はヘッダー付きで新規作成
+     3. status.md の Session History から Completed エントリを削除
+     4. Current Session をクリア
    - Update "Last Updated" timestamp
 
 4. **Confirm update**
@@ -183,11 +187,17 @@ No heavy review processes. Keep the tempo fast and development flow smooth.
 ```
 docs/
 ├── status.md                           # Auto-managed status tracker
+├── session-history.md                  # Completed sessions archive (auto-managed)
 └── cycles/                             # All implementation plans
     ├── 20260208143000_feature-a.md    # Timestamped plans
     ├── 20260208150000_feature-b.md
     └── 20260208163000_feature-c.md
 ```
+
+### session-history.md
+
+Completed になったセッションのアーカイブ先。テーブル形式で管理し、新しいエントリは先頭に追加される。
+status.md の肥大化を防ぐため、完了済みセッションは自動的にこちらに移動される。
 
 ## Templates and Guides
 
