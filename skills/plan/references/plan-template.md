@@ -8,13 +8,13 @@
 
 ## 📝 What & Why
 
-{1-2文で何を作るか、なぜ作るか}
+{1-2 sentences describing what to build and why}
 
 ## 🎯 Goals
 
-- {達成したいこと1}
-- {達成したいこと2}
-- {達成したいこと3}
+- {Goal 1}
+- {Goal 2}
+- {Goal 3}
 
 ## 📐 Design
 
@@ -22,27 +22,27 @@
 
 ```
 src/
-  {影響を受けるファイルとその変更内容を簡潔に}
-  example.ts - {何をするか}
-  example.test.ts - {テスト内容}
+  {Affected files with brief change descriptions}
+  example.ts - {What to do}
+  example.test.ts - {Test description}
 ```
 
 ### Key Points
 
-- **{変更ポイント1}**: {簡単な説明}
-- **{変更ポイント2}**: {簡単な説明}
+- **{Change point 1}**: {Brief explanation}
+- **{Change point 2}**: {Brief explanation}
 
 ## ✅ Tests
 
-- [ ] {テスト1}
-- [ ] {テスト2}
-- [ ] {テスト3}
+- [ ] {Test 1}
+- [ ] {Test 2}
+- [ ] {Test 3}
 
 ## 🔒 Security (if applicable)
 
 - [ ] Input validation
 - [ ] XSS protection
-- [ ] {その他セキュリティ考慮事項}
+- [ ] {Other security considerations}
 
 ## 📊 Progress
 

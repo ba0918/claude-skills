@@ -15,16 +15,16 @@
 | **Plan** | [docs/cycles/{timestamp}_{feature-slug}.md](./cycles/{timestamp}_{feature-slug}.md) |
 
 **Current Focus:**
-{現在取り組んでいることの1-2行説明}
+{1-2 sentence description of what is currently being worked on}
 
 ---
 
 ## 📜 Session History
 
-_アーカイブ済みセッションは [session-history.md](./session-history.md) を参照。_
+_Archived sessions can be found in [session-history.md](./session-history.md)._
 
-<!-- Note: Completed セッションは自動的に docs/session-history.md にアーカイブされます。
-     このセクションには進行中のセッション以外は残りません。 -->
+<!-- Note: Completed sessions are automatically archived to docs/session-history.md.
+     Only active sessions remain in this section. -->
 
 ---
 
@@ -37,4 +37,4 @@ _アーカイブ済みセッションは [session-history.md](./session-history.
 
 ---
 
-**Note:** このファイルは `plan` skill によって自動管理されています。
+**Note:** This file is auto-managed by the `plan` skill.

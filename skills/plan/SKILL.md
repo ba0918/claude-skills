@@ -99,7 +99,8 @@ Keep it simple. No heavy reviews. Fast tempo! 🚀
 Use when user wants to resume from previous session:
 - "前回の続き" / "continue from last time"
 - "前回の続きから" / "resume from last time"
-- "resume" / "continue"
+- "続きから" / "resume"
+- "再開" / "continue"
 
 ### Resume Process
 
@@ -131,10 +132,9 @@ Use when user wants to resume from previous session:
 ## Status Update Workflow
 
 Use when user wants to update implementation progress:
-- "状態更新して" / "update status"
-- "planning終わった" / "planning done"
-- "実装完了" / "implementation done"
-- "このサイクル完了" / "cycle complete"
+- "update status" / "planning done"
+- "start implementation" / "implementation done"
+- "cycle complete" / "done"
 
 ### Update Process
 
@@ -150,10 +150,10 @@ Use when user wants to update implementation progress:
 3. **Update docs/status.md**
    - Update Current Session phase
    - If completed:
-     1. Archive the session to `docs/session-history.md`（テーブル形式で先頭行に追加）
-     2. `docs/session-history.md` が未作成の場合はヘッダー付きで新規作成
-     3. status.md の Session History から Completed エントリを削除
-     4. Current Session をクリア
+     1. Archive the session to `docs/session-history.md` (add as first row in table format)
+     2. If `docs/session-history.md` does not exist, create it with headers
+     3. Remove Completed entries from Session History in status.md
+     4. Clear Current Session
    - Update "Last Updated" timestamp
 
 4. **Confirm update**
@@ -196,8 +196,7 @@ docs/
 
 ### session-history.md
 
-Completed になったセッションのアーカイブ先。テーブル形式で管理し、新しいエントリは先頭に追加される。
-status.md の肥大化を防ぐため、完了済みセッションは自動的にこちらに移動される。
+Archive destination for completed sessions. Managed in table format with new entries prepended to the top. Completed sessions are automatically moved here to prevent status.md from growing too large.
 
 ## Templates and Guides
 
@@ -213,4 +212,4 @@ Load these templates/guides when creating documents or updating status.
 - Feature slugs are URL-safe (lowercase, hyphens only)
 - Status.md automatically archives previous sessions
 - Plan documents follow project's architecture principles (layer separation, TDD, etc.)
-- 調査中にスコープ外の問題を発見した場合、`/issue-create` で issue として記録して plan を続行する
+- If you discover out-of-scope issues during investigation, record them with `/issue-create` and continue with the plan

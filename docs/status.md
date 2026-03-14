@@ -1,12 +1,21 @@
 # Project Status
 
-**Last Updated:** 2026-03-14 21:10:00
+**Last Updated:** 2026-03-14 21:15:40
 
 ---
 
 ## 🎯 Current Session
 
-_No active session. Create a new plan to start._
+| Field | Value |
+|-------|-------|
+| **Cycle ID** | `20260314211540` |
+| **Feature** | スキル英語化 |
+| **Started** | 2026-03-14 21:15:40 |
+| **Phase** | 🟡 In Progress |
+| **Plan** | [docs/cycles/20260314211540_skill-english-localization.md](./cycles/20260314211540_skill-english-localization.md) |
+
+**Current Focus:**
+全スキルの SKILL.md と references/ を英語化。LLM への指示書としてのトークン効率・解釈精度を向上。
 
 ---
 
