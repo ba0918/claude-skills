@@ -5,148 +5,148 @@ description: 実装計画を6観点（実現可能性・セキュリティ・パ
 
 # Plan Reviewer
 
-実装計画を6つの専門観点で深掘りレビューし、実装前に問題を発見・修正する品質ゲート。
+Quality gate that deeply reviews implementation plans from 6 expert perspectives before implementation begins.
 
 ## Progress Checklist
 
 ```
 plan-review Progress:
-- [ ] 直近の計画ファイル特定・読み込み
-- [ ] プロジェクトコンテキスト収集
-- [ ] 6観点の並行レビュー実行
-- [ ] 結果統合・スコア判定
-- [ ] レビューレポート出力
-- [ ] 分岐判定（PASS/WARN/BLOCK）
+- [ ] Identify and load latest plan file
+- [ ] Gather project context
+- [ ] Execute 6-dimension parallel review
+- [ ] Integrate results and score
+- [ ] Output review report
+- [ ] Branch decision (PASS/WARN/BLOCK)
 ```
 
 ## Workflow
 
-### Step 1: 直近の計画ファイル特定
+### Step 1: Identify Latest Plan File
 
-`docs/cycles/` から最新の計画ファイルを特定する。引数で特定のファイルが指定されていればそちらを使用。
+Find the most recent plan file from `docs/cycles/`. If a specific file is provided as an argument, use that instead.
 
 ```bash
 ls -t docs/cycles/*.md 2>/dev/null | head -1
 ```
 
-計画ファイルの全内容を読み込む。StatusがPlanning以外の場合は警告を出す（実装中/完了済みの計画をレビューする意味は薄い）。
+Read the full contents of the plan file. If the status is anything other than Planning, display a warning (reviewing an in-progress or completed plan is of limited value).
 
-### Step 2: プロジェクトコンテキスト収集
+### Step 2: Gather Project Context
 
-計画内で言及されている影響ファイルを**実際に読み込み**、計画の記述と実コードの整合性を検証する準備をする。
+**Read the actual files** mentioned in the plan to verify consistency between the plan's descriptions and the real codebase.
 
-収集対象:
-- 計画で変更予定のファイル群（実在確認 + 現在の内容把握）
-- `CLAUDE.md`（プロジェクトルート。プロジェクトルール）
-- `.claude/review-rules.md`（プロジェクト固有レビュールール。存在する場合のみ）
-- `docs/ARCHITECTURE.md`（アーキテクチャ原則。存在する場合のみ）
-- `docs/SECURITY.md`（セキュリティ要件。存在する場合のみ）
+Sources to collect:
+- Files planned for modification (verify existence + understand current contents)
+- `CLAUDE.md` (project root — project rules)
+- `.claude/review-rules.md` (project-specific review rules, if present)
+- `docs/ARCHITECTURE.md` (architecture principles, if present)
+- `docs/SECURITY.md` (security requirements, if present)
 
-**重要**: 計画に書かれた行番号・コードスニペットが実コードと一致するか必ず確認する。ズレがあればFeasibilityの指摘事項とする。
+**Important**: Always verify that line numbers and code snippets in the plan match the actual code. Any discrepancies should be flagged as Feasibility issues.
 
-### Step 3: 6観点の並行レビュー実行
+### Step 3: Execute 6-Dimension Parallel Review
 
-Taskツールで**6つのレビューを並行起動**する。各レビューはExploreエージェントまたはgeneral-purposeエージェントで実行。
+Launch **6 reviews in parallel** using the Task tool. Each review runs as an Explore agent or general-purpose agent.
 
-各レビューでは以下の優先順で観点を適用する:
-1. `.claude/review-rules.md` のプロジェクト固有ルール（最優先）
-2. `CLAUDE.md` の Design Principles
-3. [review-dimensions.md](references/review-dimensions.md) の汎用チェックリスト
+Each review applies perspectives in the following priority order:
+1. Project-specific rules from `.claude/review-rules.md` (highest priority)
+2. Design Principles from `CLAUDE.md`
+3. Generic checklists from [review-dimensions.md](references/review-dimensions.md)
 
-#### レビュー1: Feasibility（実現可能性）
+#### Review 1: Feasibility
 
-- 影響ファイルの実在確認、行番号の正確性
-- 使用API/ライブラリの実在確認（Context7で最新ドキュメント確認推奨）
-- 実装環境の制約（ランタイム制限、プラットフォーム互換性等）
-- 推定工数の妥当性
-- 実装順序の依存関係
+- Verify affected files exist, check line number accuracy
+- Verify APIs/libraries used actually exist (recommend checking latest docs via Context7)
+- Implementation environment constraints (runtime limitations, platform compatibility, etc.)
+- Estimate validity
+- Implementation order dependencies
 
-#### レビュー2: Security（セキュリティ）
+#### Review 2: Security
 
-- 外部入力の検証・サニタイズ
-- 機密データの安全な取り扱い（ログ出力、平文保存の禁止）
-- インジェクション攻撃（コマンド、SQL、パス等）への防御
-- SSRF、情報漏洩リスク
-- `.claude/review-rules.md` の Security セクション（あれば）
+- External input validation and sanitization
+- Safe handling of sensitive data (no logging, no plaintext storage)
+- Defense against injection attacks (command, SQL, path, etc.)
+- SSRF, information leakage risks
+- Security section from `.claude/review-rules.md` (if present)
 
-#### レビュー3: Performance & Memory（パフォーマンス・メモリ効率）
+#### Review 3: Performance & Memory
 
-- O(n^2)以上のアルゴリズム、不要なコピー/アロケーション
-- リソースリーク（ファイルハンドル、リスナー、タイマー等の未解放）
-- メモリ保持期間の最小化
-- 並列化可能な処理の直列化
-- ランタイム固有のリソース制約
+- O(n^2)+ algorithms, unnecessary copies/allocations
+- Resource leaks (file handles, listeners, timers not being released)
+- Minimize memory retention duration
+- Serialization of parallelizable operations
+- Runtime-specific resource constraints
 
-#### レビュー4: Architecture & Design（アーキテクチャ・設計妥当性）
+#### Review 4: Architecture & Design
 
-- CLAUDE.md に定義されたレイヤー構造への違反
-- CLAUDE.md に定義された依存方向ルールへの違反
-- `.claude/review-rules.md` に定義されたプロジェクト固有の設計ルール
-- DRY原則、単一責任、型安全性
-- エラーハンドリングの一貫性
+- Violations of layer structure defined in CLAUDE.md
+- Violations of dependency direction rules defined in CLAUDE.md
+- Project-specific design rules defined in `.claude/review-rules.md`
+- DRY principle, single responsibility, type safety
+- Error handling consistency
 
-#### レビュー5: Completeness（考慮漏れ・網羅性）
+#### Review 5: Completeness
 
-- エラーハンドリングの全失敗パス
-- エッジケース（空入力、巨大入力、Unicode、マルチバイト）
-- 後方互換性、ロールバック可能性
-- テスト計画の存在と網羅性
-- リソースクリーンアップ、ドキュメント更新
+- Error handling for all failure paths
+- Edge cases (empty input, large input, Unicode, multibyte)
+- Backward compatibility, rollback capability
+- Test plan existence and coverage
+- Resource cleanup, documentation updates
 
-#### レビュー6: Alternatives（代替手法の検討）
+#### Review 6: Alternatives
 
-- よりシンプルな実現方法の存在
-- 標準ライブラリでの代替可能性
-- 既存ライブラリ/ユーティリティの活用
-- 将来の拡張性
-- パフォーマンスとコード量のトレードオフ
+- Existence of simpler approaches to achieve the same goal
+- Possibility of using standard library alternatives
+- Leveraging existing libraries/utilities
+- Future extensibility
+- Performance vs. code complexity tradeoffs
 
-### Step 4: 結果統合・スコア判定
+### Step 4: Integrate Results and Score
 
-各レビューの信頼スコア（0-100）を集計し、総合判定を行う。
+Aggregate confidence scores (0-100) from each review and determine the overall verdict.
 
-出力フォーマット: [output-format.md](references/output-format.md)
+Output format: [output-format.md](references/output-format.md)
 
-| 最大スコア | 判定 | アクション |
-|-----------|------|-----------|
-| 80-100 | BLOCK | 計画を修正してから実装開始 |
-| 50-79 | WARN | 警告を確認し、必要なら計画修正 |
-| 0-49 | PASS | 実装開始OK |
+| Max Score | Verdict | Action |
+|-----------|---------|--------|
+| 80-100 | BLOCK | Modify plan before starting implementation |
+| 50-79 | WARN | Review warnings, modify plan if necessary |
+| 0-49 | PASS | OK to start implementation |
 
-### Step 5: レビューレポート出力
+### Step 5: Output Review Report
 
-最終サマリーを出力する。内容:
+Output the final summary containing:
 
-1. 各観点のスコアと判定をテーブル表示
-2. BLOCK/WARN項目の詳細（タスク番号、問題、修正提案）
-3. 良い点（Positives）のリスト
-4. 推奨アクション
+1. Table showing each dimension's score and verdict
+2. Details of BLOCK/WARN items (task number, issue, fix suggestion)
+3. List of positives (good points)
+4. Recommended actions
 
-### Step 6: 分岐判定
+### Step 6: Branch Decision
 
-#### PASS（最大スコア49以下）
-→ 「計画に大きな問題は見つからなかった。実装開始OK」と表示
+#### PASS (max score 49 or below)
+→ Display "No major issues found in the plan. OK to start implementation"
 
-#### WARN（最大スコア50-79）
-→ 警告一覧を表示し、ユーザーに確認:
-  1. 警告を確認して実装開始
-  2. 計画を修正
+#### WARN (max score 50-79)
+→ Display warning list and confirm with user:
+  1. Acknowledge warnings and start implementation
+  2. Modify the plan
 
-#### BLOCK（最大スコア80以上）
-→ BLOCK項目の詳細と修正提案を表示:
-  「重大な問題が検出された。計画を修正してから実装を開始すべき」
+#### BLOCK (max score 80 or above)
+→ Display BLOCK item details and fix suggestions:
+  "Critical issues detected. The plan should be modified before starting implementation"
 
-## 禁止事項
+## Prohibited Actions
 
-- コードの実装（レビュー観点の提示のみ）
-- 実在しないファイルやAPIを前提とした指摘（必ず実コードを確認）
+- Implementing code (only provide review perspectives)
+- Making findings based on non-existent files or APIs (always verify against actual code)
 
-## 注意事項
+## Important Notes
 
-- 単体で呼ばれた場合、計画ファイルの直接編集は行わない（レビュー結果の提示のみ）
-- `plan-refine` から呼ばれた場合は、refine 側が編集の責務を持つ
+- When called standalone, do not directly edit the plan file (only present review results)
+- When called from `plan-refine`, the refine side is responsible for edits
 
 ## References
 
-- チェックリスト詳細: [review-dimensions.md](references/review-dimensions.md)
-- 出力フォーマット: [output-format.md](references/output-format.md)
+- Checklist details: [review-dimensions.md](references/review-dimensions.md)
+- Output format: [output-format.md](references/output-format.md)

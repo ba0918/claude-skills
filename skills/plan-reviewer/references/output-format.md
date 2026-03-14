@@ -1,12 +1,12 @@
 # Output Format - Plan Reviewer
 
-レビュー結果の出力フォーマット定義。
+Output format definition for review results.
 
 ---
 
-## Individual Dimension Report (各観点レポート)
+## Individual Dimension Report
 
-各レビュー観点は以下のJSON構造で出力する:
+Each review dimension outputs results in the following JSON structure:
 
 ```json
 {
@@ -17,51 +17,51 @@
     {
       "severity": "critical",
       "task": "1-1",
-      "title": "escapeHtml()のカバレッジ不足",
-      "description": "エラー表示以外にもユーザー入力がDOMに挿入される箇所がある可能性",
+      "title": "Insufficient escapeHtml() coverage",
+      "description": "There may be additional locations where user input is inserted into the DOM beyond error display",
       "location": "src/content/index.ts",
-      "suggestion": "全てのinnerHTML代入箇所を洗い出し、escapeHtml()適用の網羅性を確認"
+      "suggestion": "Enumerate all innerHTML assignment locations and verify comprehensive escapeHtml() coverage"
     }
   ],
   "positives": [
-    "sanitizeHTML()のXSS防御が一貫している",
-    "CSP設定が適切"
+    "Consistent XSS defense via sanitizeHTML()",
+    "Appropriate CSP configuration"
   ]
 }
 ```
 
-### フィールド定義
+### Field Definitions
 
-| フィールド | 型 | 説明 |
-|-----------|------|------|
-| dimension | string | レビュー観点名 |
-| confidence | 0-100 | 問題の深刻度（高い=より深刻） |
-| verdict | PASS/WARN/BLOCK | 判定結果 |
-| issues[] | array | 検出された問題 |
-| issues[].severity | critical/important/minor | 問題の重要度 |
-| issues[].task | string | 計画内のタスク番号 |
-| issues[].title | string | 問題の簡潔な説明 |
-| issues[].description | string | 問題の詳細 |
-| issues[].location | string | 影響ファイル/箇所 |
-| issues[].suggestion | string | 修正提案 |
-| positives[] | array | 良い点・適切な判断 |
+| Field | Type | Description |
+|-------|------|-------------|
+| dimension | string | Review dimension name |
+| confidence | 0-100 | Issue severity (higher = more severe) |
+| verdict | PASS/WARN/BLOCK | Verdict result |
+| issues[] | array | Detected issues |
+| issues[].severity | critical/important/minor | Issue importance |
+| issues[].task | string | Task number in the plan |
+| issues[].title | string | Concise issue description |
+| issues[].description | string | Detailed issue description |
+| issues[].location | string | Affected file/location |
+| issues[].suggestion | string | Fix suggestion |
+| positives[] | array | Good points and sound decisions |
 
 ---
 
-## Final Summary Report (最終サマリー)
+## Final Summary Report
 
-全観点の結果を統合した最終レポート:
+Final report integrating results from all dimensions:
 
 ```
 ================================================================================
-PLAN REVIEW 完了
+PLAN REVIEW COMPLETE
 ================================================================================
 
-📋 対象: {計画ファイル名}
-📅 日時: {YYYY-MM-DD HH:MM}
+📋 Target: {plan filename}
+📅 Date: {YYYY-MM-DD HH:MM}
 
 ┌─────────────────────┬────────┬────────┐
-│ 観点                │ スコア │  判定  │
+│ Dimension           │ Score  │ Verdict│
 ├─────────────────────┼────────┼────────┤
 │ Feasibility         │   25   │ ✅ PASS │
 │ Security            │   75   │ ⚠️ WARN │
@@ -71,46 +71,46 @@ PLAN REVIEW 完了
 │ Alternatives        │   85   │ 🛑 BLOCK│
 └─────────────────────┴────────┴────────┘
 
-総合判定: ⚠️ WARN (最大スコア: 85 → BLOCK)
+Overall Verdict: ⚠️ WARN (Max score: 85 → BLOCK)
 
 ────────────────────────────────────────
 
-🛑 BLOCK Issues (修正必須):
-  [Alternatives] タスク2-1: SHA-256ハッシュ比較よりもETag/Last-Modifiedヘッダを使う方が効率的
-    → fetch HEAD リクエストでETagを比較する方式を検討
+🛑 BLOCK Issues (must fix):
+  [Alternatives] Task 2-1: Using ETag/Last-Modified headers is more efficient than SHA-256 hash comparison
+    → Consider an approach that compares ETags via fetch HEAD request
 
-⚠️ WARN Issues (推奨修正):
-  [Security] タスク1-1: escapeHtml()の適用範囲が不十分な可能性
-    → 全innerHTML代入箇所の洗い出しを推奨
-  [Completeness] タスク2-2: MutationObserverのdisconnect漏れリスク
-    → コンポーネントアンマウント時のクリーンアップを明記
+⚠️ WARN Issues (recommended fix):
+  [Security] Task 1-1: Possibly insufficient escapeHtml() coverage
+    → Recommend enumerating all innerHTML assignment locations
+  [Completeness] Task 2-2: Risk of MutationObserver disconnect leak
+    → Specify cleanup on component unmount
 
 ✅ Positives:
-  - セキュリティ修正を最優先にしている判断が適切
-  - レイヤーアーキテクチャに準拠した設計
-  - テスト計画が各タスクに含まれている
+  - Sound decision to prioritize security fixes
+  - Design conforms to layer architecture
+  - Test plan included for each task
 
 ────────────────────────────────────────
 
-📝 推奨アクション:
-  1. BLOCK項目を修正してから実装開始
-  2. WARN項目は実装時に追加考慮
+📝 Recommended Actions:
+  1. Fix BLOCK items before starting implementation
+  2. Consider WARN items during implementation
 ================================================================================
 ```
 
 ---
 
-## Verdict Thresholds (判定閾値)
+## Verdict Thresholds
 
-| 最大スコア | 判定 | 意味 | アクション |
-|-----------|------|------|-----------|
-| 80-100 | 🛑 BLOCK | 重大な問題あり | 計画を修正してから実装開始 |
-| 50-79 | ⚠️ WARN | 改善の余地あり | 警告を確認し、必要なら計画修正 |
-| 0-49 | ✅ PASS | 問題なし | 実装開始OK |
+| Max Score | Verdict | Meaning | Action |
+|-----------|---------|---------|--------|
+| 80-100 | 🛑 BLOCK | Critical issues found | Modify plan before starting implementation |
+| 50-79 | ⚠️ WARN | Room for improvement | Review warnings, modify plan if necessary |
+| 0-49 | ✅ PASS | No issues | OK to start implementation |
 
-### 総合判定ルール
+### Overall Verdict Rules
 
-- 総合判定 = 全観点の最大スコアに基づく判定
-- 1つでもBLOCKがあれば総合はBLOCK
-- BLOCKなし、1つ以上WARNあれば総合はWARN
-- 全てPASSなら総合はPASS
+- Overall verdict = verdict based on the maximum score across all dimensions
+- If any dimension is BLOCK, overall is BLOCK
+- If no BLOCK but one or more WARN, overall is WARN
+- If all PASS, overall is PASS

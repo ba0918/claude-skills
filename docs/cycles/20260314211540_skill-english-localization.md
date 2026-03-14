@@ -143,7 +143,7 @@ skills/generate-review-rules/
 | Step | Description | Status |
 |------|-------------|--------|
 | 1 | plan スキル英語化（4ファイル） | 🟢 |
-| 2 | plan-reviewer スキル英語化（3ファイル） | ⚪ |
+| 2 | plan-reviewer スキル英語化（3ファイル） | 🟢 |
 | 3 | commit スキル英語化（1ファイル） | ⚪ |
 | 4 | iterate スキル英語化（3ファイル） | ⚪ |
 | 5 | doc-check スキル英語化（3ファイル） | ⚪ |
