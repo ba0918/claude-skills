@@ -203,3 +203,4 @@ Load these templates/guides when creating documents or updating status.
 - Feature slugs are URL-safe (lowercase, hyphens only)
 - Status.md automatically archives previous sessions
 - Plan documents follow project's architecture principles (layer separation, TDD, etc.)
+- 調査中にスコープ外の問題を発見した場合、`/issue-create` で issue として記録して plan を続行する
