@@ -1,7 +1,7 @@
 # Report Template
 
-統合エージェントがレポート生成時に使用するMarkdownテンプレート。
-`{変数名}` は統合エージェントが各エージェントのJSONから値を取得して置換する。
+Markdown template used by the integration agent for report generation.
+`{variable_name}` placeholders are replaced by the integration agent with values obtained from each agent's JSON output.
 
 ---
 
@@ -10,146 +10,146 @@
 
 ## Executive Summary
 
-| 項目 | 値 |
-|------|-----|
-| プロジェクト | {project_name} |
-| レビュー日時 | {datetime} |
-| 対象範囲 | {scope} |
-| 分析ファイル数 | {file_count} |
-| 総合スコア | **{total_score}/100** |
-| 総合ランク | **{rank}** |
+| Item | Value |
+|------|-------|
+| Project | {project_name} |
+| Review Date | {datetime} |
+| Target Scope | {scope} |
+| Files Analyzed | {file_count} |
+| Overall Score | **{total_score}/100** |
+| Overall Rank | **{rank}** |
 
-### スコアボード
+### Scoreboard
 
-| カテゴリ | サブカテゴリ | 重み | スコア | ステータス | Critical | Major | Minor |
-|---------|------------|------|--------|-----------|----------|-------|-------|
-| セキュリティ/機密情報 | | 35% | {security_agent_avg}/100 | {status} | {n} | {n} | {n} |
-| | セキュリティ | 20% | {security_score}/100 | {status} | {n} | {n} | {n} |
-| | 機密情報 | 15% | {secrets_score}/100 | {status} | {n} | {n} | {n} |
-| パフォーマンス/メモリ | | 20% | {perf_agent_avg}/100 | {status} | {n} | {n} | {n} |
-| | パフォーマンス | 12% | {perf_score}/100 | {status} | {n} | {n} | {n} |
-| | メモリ効率 | 8% | {memory_score}/100 | {status} | {n} | {n} | {n} |
-| 実装品質/論理整合性 | | 30% | {quality_agent_avg}/100 | {status} | {n} | {n} | {n} |
-| | 実装品質 | 15% | {quality_score}/100 | {status} | {n} | {n} | {n} |
-| | 論理的整合性 | 15% | {logic_score}/100 | {status} | {n} | {n} | {n} |
-| コード衛生/改善点 | | 15% | {hygiene_agent_avg}/100 | {status} | {n} | {n} | {n} |
-| | コード重複 | 8% | {dup_score}/100 | {status} | {n} | {n} | {n} |
-| | その他改善点 | 7% | {improve_score}/100 | {status} | {n} | {n} | {n} |
+| Category | Subcategory | Weight | Score | Status | Critical | Major | Minor |
+|----------|-------------|--------|-------|--------|----------|-------|-------|
+| Security/Secrets | | 35% | {security_agent_avg}/100 | {status} | {n} | {n} | {n} |
+| | Security | 20% | {security_score}/100 | {status} | {n} | {n} | {n} |
+| | Secrets | 15% | {secrets_score}/100 | {status} | {n} | {n} | {n} |
+| Performance/Memory | | 20% | {perf_agent_avg}/100 | {status} | {n} | {n} | {n} |
+| | Performance | 12% | {perf_score}/100 | {status} | {n} | {n} | {n} |
+| | Memory Efficiency | 8% | {memory_score}/100 | {status} | {n} | {n} | {n} |
+| Quality/Logic | | 30% | {quality_agent_avg}/100 | {status} | {n} | {n} | {n} |
+| | Implementation Quality | 15% | {quality_score}/100 | {status} | {n} | {n} | {n} |
+| | Logical Consistency | 15% | {logic_score}/100 | {status} | {n} | {n} | {n} |
+| Hygiene/Improvements | | 15% | {hygiene_agent_avg}/100 | {status} | {n} | {n} | {n} |
+| | Code Duplication | 8% | {dup_score}/100 | {status} | {n} | {n} | {n} |
+| | Other Improvements | 7% | {improve_score}/100 | {status} | {n} | {n} | {n} |
 
-### 概要
+### Overview
 
-{executive_summary - 3~5文で全体の品質を総括}
+{executive_summary - 3-5 sentences summarizing overall quality}
 
 ---
 
-## Critical/Major Issues（要対応）
+## Critical/Major Issues (Action Required)
 
 ### Critical Issues
 
-{critical_issuesをリスト表示。なければ「検出なし」}
+{List critical_issues. If none, display "None detected"}
 
 #### {issue_index}. [{subcategory}] {message}
 
-- **ファイル**: `{file}:{line}`
-- **詳細**: {detailed_message}
-- **修正提案**: {suggestion}
-- **推定工数**: {effort}
+- **File**: `{file}:{line}`
+- **Details**: {detailed_message}
+- **Fix Suggestion**: {suggestion}
+- **Estimated Effort**: {effort}
 
 ### Major Issues
 
-{major_issuesをリスト表示}
+{List major_issues}
 
 ---
 
-## カテゴリ別詳細
+## Category Details
 
-### 1. セキュリティ/機密情報
+### 1. Security/Secrets
 
-#### 1-A. セキュリティ ({security_score}/100)
+#### 1-A. Security ({security_score}/100)
 
-##### 良い点
-{good_practices をリスト表示}
+##### Good Points
+{List good_practices}
 
-##### 検出された問題
-{issuesをseverity順にリスト表示}
+##### Detected Issues
+{List issues sorted by severity}
 
-#### 1-B. 機密情報 ({secrets_score}/100)
+#### 1-B. Secrets ({secrets_score}/100)
 
-##### 良い点
-{good_practices をリスト表示}
+##### Good Points
+{List good_practices}
 
-##### 検出された問題
-{issuesをseverity順にリスト表示}
+##### Detected Issues
+{List issues sorted by severity}
 
-### 2. パフォーマンス/メモリ効率
+### 2. Performance/Memory Efficiency
 
-#### 2-A. パフォーマンス ({perf_score}/100)
+#### 2-A. Performance ({perf_score}/100)
 
-{同上の形式}
+{Same format as above}
 
-#### 2-B. メモリ効率 ({memory_score}/100)
+#### 2-B. Memory Efficiency ({memory_score}/100)
 
-{同上の形式}
+{Same format as above}
 
-### 3. 実装品質/論理的整合性
+### 3. Implementation Quality/Logical Consistency
 
-#### 3-A. 実装品質 ({quality_score}/100)
+#### 3-A. Implementation Quality ({quality_score}/100)
 
-{同上の形式}
+{Same format as above}
 
-#### 3-B. 論理的整合性 ({logic_score}/100)
+#### 3-B. Logical Consistency ({logic_score}/100)
 
-{同上の形式}
+{Same format as above}
 
-### 4. コード衛生/改善点
+### 4. Code Hygiene/Improvements
 
-#### 4-A. コード重複/デッドコード ({dup_score}/100)
+#### 4-A. Code Duplication/Dead Code ({dup_score}/100)
 
-{同上の形式}
+{Same format as above}
 
-#### 4-B. その他改善点 ({improve_score}/100)
+#### 4-B. Other Improvements ({improve_score}/100)
 
-{同上の形式}
-
----
-
-## 改善ロードマップ
-
-優先度順に対処すべき改善事項:
-
-### 即時対応（Critical）
-{critical issuesの対応計画}
-
-### 短期（1-2週間）
-{major issuesの対応計画}
-
-### 中期（1-2ヶ月）
-{minor issuesのうち重要なもの}
-
-### 長期（検討事項）
-{info レベルの改善提案}
+{Same format as above}
 
 ---
 
-## 付録
+## Improvement Roadmap
 
-### スコア算出式
+Improvement items to address in priority order:
 
-総合スコア = Σ (サブカテゴリスコア × 重み)
+### Immediate (Critical)
+{Action plan for critical issues}
 
-重み配分:
-- セキュリティ: 20%
-- 機密情報: 15%
-- パフォーマンス: 12%
-- メモリ効率: 8%
-- 実装品質: 15%
-- 論理的整合性: 15%
-- コード重複: 8%
-- その他改善点: 7%
+### Short-term (1-2 weeks)
+{Action plan for major issues}
 
-### 分析対象ファイル一覧
+### Medium-term (1-2 months)
+{Important items from minor issues}
 
-{ファイルパスのリスト}
+### Long-term (Considerations)
+{Info-level improvement suggestions}
+
+---
+
+## Appendix
+
+### Score Formula
+
+Overall score = Σ (subcategory score × weight)
+
+Weight distribution:
+- Security: 20%
+- Secrets: 15%
+- Performance: 12%
+- Memory Efficiency: 8%
+- Implementation Quality: 15%
+- Logical Consistency: 15%
+- Code Duplication: 8%
+- Other Improvements: 7%
+
+### Analyzed File List
+
+{List of file paths}
 
 ---
 

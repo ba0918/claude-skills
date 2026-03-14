@@ -1,192 +1,192 @@
-# Review Criteria - 4エージェント統合版
+# Review Criteria - 4 Agent Integrated Version
 
-SKILL.mdの詳細情報。各エージェントのプロンプト構築時に該当セクションを参照。
-チェック項目は統合前と同一。組織構造のみ4エージェント体制に再編成。
+Detailed information for SKILL.md. Reference the relevant section when constructing each agent's prompt.
+Check items are identical to the pre-integration version. Only the organizational structure has been reorganized for the 4-agent system.
 
-## 1. セキュリティ + 機密情報 (security-auditor)
+## 1. Security + Secrets (security-auditor)
 
-### 1-A. セキュリティ (重み: 20%)
+### 1-A. Security (Weight: 20%)
 
-#### チェック項目
+#### Checklist
 
-- **入力検証**: ユーザー入力のサニタイズ、バリデーション、型チェック
-- **認証・認可**: アクセス制御、権限チェック、セッション管理、JWT検証
-- **インジェクション**: SQLi、XSS、コマンドインジェクション、パステラバーサル
-- **暗号化**: 適切なアルゴリズム使用、ハードコードされた鍵の有無
-- **CORS/CSP**: クロスオリジン設定、Content Security Policy
-- **依存関係**: 既知の脆弱性を持つライブラリの使用
-- **エラー情報漏洩**: スタックトレースやDB情報のクライアント露出
+- **Input validation**: User input sanitization, validation, type checking
+- **Authentication/Authorization**: Access control, permission checks, session management, JWT verification
+- **Injection**: SQLi, XSS, command injection, path traversal
+- **Encryption**: Appropriate algorithm usage, presence of hardcoded keys
+- **CORS/CSP**: Cross-origin settings, Content Security Policy
+- **Dependencies**: Usage of libraries with known vulnerabilities
+- **Error information leakage**: Stack trace or DB info exposure to client
 
-#### 重大度判定基準
+#### Severity Criteria
 
-| Severity | 例 |
-|----------|----|
-| critical | 未サニタイズ入力のDOM挿入、SQLインジェクション可能箇所 |
-| major | 不適切なCORS設定、セッション固定化 |
-| minor | CSPヘッダ未設定、HttpOnly未設定Cookie |
-| info | セキュリティベストプラクティスの推奨 |
+| Severity | Example |
+|----------|---------|
+| critical | Unsanitized input inserted into DOM, SQL injection possible |
+| major | Improper CORS settings, session fixation |
+| minor | CSP header not set, Cookie without HttpOnly |
+| info | Security best practice recommendations |
 
-### 1-B. 機密情報 (重み: 15%)
+### 1-B. Secrets (Weight: 15%)
 
-#### チェック項目
+#### Checklist
 
-- **ハードコード秘密情報**: APIキー、パスワード、トークン、秘密鍵
-- **環境変数漏洩**: `.env`ファイルのコミット、環境変数のログ出力
-- **個人情報(PII)**: メールアドレス、電話番号、住所のハードコード
-- **認証情報**: DB接続文字列、OAuth秘密鍵、サービスアカウント
-- **gitignore漏れ**: `.env`, `credentials.json`, `*.pem`の除外忘れ
-- **ログ出力**: 機密データのコンソール/ファイル出力
+- **Hardcoded secrets**: API keys, passwords, tokens, private keys
+- **Environment variable leakage**: `.env` file committed, environment variables logged
+- **PII (Personal Identifiable Information)**: Hardcoded email addresses, phone numbers, addresses
+- **Credentials**: DB connection strings, OAuth secrets, service accounts
+- **gitignore omissions**: `.env`, `credentials.json`, `*.pem` not excluded
+- **Log output**: Sensitive data written to console/file
 
-#### パターンマッチング
+#### Pattern Matching
 
 ```
-APIキー: /[A-Za-z0-9_-]{20,}/ がコード内にリテラルとして存在
-パスワード: password|secret|token|key = "..." のパターン
+API keys: /[A-Za-z0-9_-]{20,}/ exists as literal in code
+Passwords: password|secret|token|key = "..." pattern
 AWS: AKIA[0-9A-Z]{16}
 JWT: eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+
-秘密鍵: -----BEGIN (RSA |EC )?PRIVATE KEY-----
+Private keys: -----BEGIN (RSA |EC )?PRIVATE KEY-----
 ```
 
-#### 重大度判定基準
+#### Severity Criteria
 
-| Severity | 例 |
-|----------|----|
-| critical | 本番APIキーのハードコード、秘密鍵のコミット |
-| major | テスト用トークンの残存、.envのgitignore漏れ |
-| minor | ダミーデータが本物のメールアドレス形式 |
-| info | 環境変数の命名改善提案 |
-
----
-
-## 2. パフォーマンス + メモリ効率 (performance-analyzer)
-
-### 2-A. パフォーマンス (重み: 12%)
-
-#### チェック項目
-
-- **アルゴリズム効率**: O(n²)以上のネストループ、不要な再計算
-- **N+1問題**: ループ内のDB/APIクエリ、非バッチ処理
-- **バンドルサイズ**: 不要な大規模ライブラリ、tree-shaking阻害
-- **レンダリング**: 不要な再レンダリング、仮想化未使用の大量リスト
-- **非同期処理**: 直列実行可能な並列化、await地獄
-- **キャッシュ**: キャッシュ未使用の繰り返し計算、メモ化の欠如
-- **I/O効率**: 同期的ファイル操作、ストリーム未使用の大量データ
-
-#### 重大度判定基準
-
-| Severity | 例 |
-|----------|----|
-| critical | O(n³)ループでn>1000想定、ループ内DB N+1 |
-| major | 不要な全量読込、非効率な正規表現 |
-| minor | メモ化可能な純粋関数、不要な再レンダリング |
-| info | パフォーマンス最適化の余地 |
-
-### 2-B. メモリ効率 (重み: 8%)
-
-#### チェック項目
-
-- **メモリリーク**: イベントリスナー未解除、タイマー未クリア、クロージャによる参照保持
-- **大量データ**: 全量メモリ展開、ストリーム/ジェネレータ未使用
-- **循環参照**: オブジェクト間の循環参照、GC阻害
-- **グローバル状態**: グローバル変数の蓄積、シングルトンの肥大化
-- **バッファ管理**: 不要なコピー、適切なバッファサイズ
-- **DOM操作**: 切り離されたDOMノード、イベントデリゲーション未使用
-
-#### 重大度判定基準
-
-| Severity | 例 |
-|----------|----|
-| critical | イベントリスナーのremoveなし（長時間実行アプリ） |
-| major | 大量データの全量配列化、clearInterval/clearTimeout漏れ |
-| minor | 不要なオブジェクトコピー、一時変数の不要保持 |
-| info | メモリ使用の最適化提案 |
+| Severity | Example |
+|----------|---------|
+| critical | Production API key hardcoded, private key committed |
+| major | Leftover test tokens, .env not in gitignore |
+| minor | Dummy data using real email format |
+| info | Environment variable naming improvement suggestions |
 
 ---
 
-## 3. 実装品質 + 論理的整合性 (quality-inspector)
+## 2. Performance + Memory Efficiency (performance-analyzer)
 
-### 3-A. 実装品質 (重み: 15%)
+### 2-A. Performance (Weight: 12%)
 
-#### チェック項目
+#### Checklist
 
-- **命名規則**: 一貫した命名、意味のある変数名、略語の適切な使用
-- **関数設計**: 単一責任、適切な引数数(≤4)、副作用の管理
-- **型安全性**: any/unknown の乱用、型ガード、null安全性
-- **エラーハンドリング**: 適切なtry-catch、エラー伝播、ユーザー向けメッセージ
-- **コメント**: 自己説明的なコード、WHYコメント、JSDoc/docstring
-- **テスタビリティ**: 依存性注入、モック容易性、純粋関数の活用
-- **コーディング規約**: プロジェクト固有ルール（CLAUDE.md）への準拠
+- **Algorithm efficiency**: O(n^2)+ nested loops, unnecessary recomputation
+- **N+1 problem**: DB/API queries inside loops, non-batch processing
+- **Bundle size**: Unnecessary large libraries, tree-shaking impediment
+- **Rendering**: Unnecessary re-renders, large lists without virtualization
+- **Async processing**: Parallelizable tasks run serially, await hell
+- **Caching**: Repeated computation without caching, missing memoization
+- **I/O efficiency**: Synchronous file operations, large data without streaming
 
-#### 重大度判定基準
+#### Severity Criteria
 
-| Severity | 例 |
-|----------|----|
-| critical | 型安全性の完全欠如、エラーハンドリングなし |
-| major | 巨大関数(200行超)、深いネスト(4段超)、不明瞭な命名 |
-| minor | マジックナンバー、コメント不足、不要なany |
-| info | リファクタリングによる改善余地 |
+| Severity | Example |
+|----------|---------|
+| critical | O(n^3) loop with n>1000 expected, N+1 DB queries in loop |
+| major | Unnecessary full data loading, inefficient regex |
+| minor | Memoizable pure functions, unnecessary re-renders |
+| info | Performance optimization opportunities |
 
-### 3-B. 論理的整合性/不具合 (重み: 15%)
+### 2-B. Memory Efficiency (Weight: 8%)
 
-#### チェック項目
+#### Checklist
 
-- **論理エラー**: 条件分岐の誤り、off-by-oneエラー、比較演算子の誤用
-- **エッジケース**: null/undefined/空配列、境界値、ゼロ除算
-- **状態管理**: 競合状態、不整合な状態遷移、デッドロック
-- **データフロー**: 未初期化変数、到達不能コード、無限ループ
-- **API整合性**: 引数と戻り値の型不一致、インターフェース違反
-- **ビジネスロジック**: 仕様との乖離（CLAUDE.md/ドキュメント参照）
+- **Memory leaks**: Unremoved event listeners, uncleared timers, reference retention via closures
+- **Large data**: Full in-memory expansion, unused streaming/generators
+- **Circular references**: Inter-object circular references, GC impediment
+- **Global state**: Global variable accumulation, singleton bloat
+- **Buffer management**: Unnecessary copies, appropriate buffer sizing
+- **DOM operations**: Detached DOM nodes, unused event delegation
 
-#### 重大度判定基準
+#### Severity Criteria
 
-| Severity | 例 |
-|----------|----|
-| critical | データ破壊の可能性、無限ループ、デッドロック |
-| major | エッジケース未処理、状態不整合の可能性 |
-| minor | 到達しにくいが潜在的なバグ、不要な型変換 |
-| info | ロジック改善の提案 |
+| Severity | Example |
+|----------|---------|
+| critical | Event listeners without remove (long-running app) |
+| major | Large data fully loaded into array, missing clearInterval/clearTimeout |
+| minor | Unnecessary object copies, unnecessary temporary variable retention |
+| info | Memory usage optimization suggestions |
 
 ---
 
-## 4. コード衛生 + 改善点 (codebase-hygiene)
+## 3. Implementation Quality + Logical Consistency (quality-inspector)
 
-### 4-A. コード重複/デッドコード (重み: 8%)
+### 3-A. Implementation Quality (Weight: 15%)
 
-#### チェック項目
+#### Checklist
 
-- **コード重複**: 同一/類似ロジックの重複（DRY原則違反）
-- **デッドコード**: 未使用のexport、到達不能コード、コメントアウトされたコード
-- **未使用依存**: package.json/deno.jsonの未使用パッケージ
-- **未使用ファイル**: どこからもimportされていないモジュール
-- **共通化候補**: shared/utilsへの抽出候補
-- **過剰抽象化**: 1箇所からしか呼ばれない不要な抽象化
+- **Naming conventions**: Consistent naming, meaningful variable names, appropriate abbreviation usage
+- **Function design**: Single responsibility, appropriate argument count (<=4), side effect management
+- **Type safety**: Overuse of any/unknown, type guards, null safety
+- **Error handling**: Appropriate try-catch, error propagation, user-facing messages
+- **Comments**: Self-documenting code, WHY comments, JSDoc/docstring
+- **Testability**: Dependency injection, mock-friendliness, pure function utilization
+- **Coding standards**: Compliance with project-specific rules (CLAUDE.md)
 
-#### 重大度判定基準
+#### Severity Criteria
 
-| Severity | 例 |
-|----------|----|
-| critical | 同一ロジックが5箇所以上に重複 |
-| major | 類似ロジック3箇所以上、大量のデッドコード |
-| minor | 小規模な重複、未使用import |
-| info | 共通化によるメンテナンス性向上の提案 |
+| Severity | Example |
+|----------|---------|
+| critical | Complete lack of type safety, no error handling |
+| major | Giant functions (200+ lines), deep nesting (4+ levels), unclear naming |
+| minor | Magic numbers, insufficient comments, unnecessary any |
+| info | Improvement opportunities through refactoring |
 
-### 4-B. その他改善点 (重み: 7%)
+### 3-B. Logical Consistency / Bugs (Weight: 15%)
 
-#### チェック項目
+#### Checklist
 
-- **アーキテクチャ**: レイヤー違反、依存方向、モジュール分割
-- **テスト**: カバレッジの穴、テストの質、エッジケーステスト不足
-- **ドキュメント**: README、APIドキュメント、アーキテクチャドキュメント
-- **CI/CD**: ビルド設定、リント設定、自動テスト設定
-- **開発者体験(DX)**: スクリプト整備、環境構築手順、デバッグ支援
-- **アクセシビリティ**: a11y対応（Web系の場合）
-- **国際化/ローカライズ**: i18n対応状況
+- **Logic errors**: Incorrect branching, off-by-one errors, comparison operator misuse
+- **Edge cases**: null/undefined/empty arrays, boundary values, division by zero
+- **State management**: Race conditions, inconsistent state transitions, deadlocks
+- **Data flow**: Uninitialized variables, unreachable code, infinite loops
+- **API consistency**: Type mismatch between arguments and return values, interface violations
+- **Business logic**: Deviation from specifications (reference CLAUDE.md/documentation)
 
-#### 重大度判定基準
+#### Severity Criteria
 
-| Severity | 例 |
-|----------|----|
-| critical | レイヤー違反（アーキテクチャ崩壊） |
-| major | テストカバレッジの重大な穴、ドキュメント不足 |
-| minor | DX改善、CI/CD最適化 |
-| info | ベストプラクティスの推奨 |
+| Severity | Example |
+|----------|---------|
+| critical | Potential data corruption, infinite loops, deadlocks |
+| major | Unhandled edge cases, potential state inconsistency |
+| minor | Hard-to-reach but potential bugs, unnecessary type conversions |
+| info | Logic improvement suggestions |
+
+---
+
+## 4. Code Hygiene + Improvements (codebase-hygiene)
+
+### 4-A. Code Duplication / Dead Code (Weight: 8%)
+
+#### Checklist
+
+- **Code duplication**: Duplicate identical/similar logic (DRY principle violation)
+- **Dead code**: Unused exports, unreachable code, commented-out code
+- **Unused dependencies**: Unused packages in package.json/deno.json
+- **Unused files**: Modules not imported from anywhere
+- **Extraction candidates**: Candidates for extraction to shared/utils
+- **Over-abstraction**: Unnecessary abstractions called from only 1 location
+
+#### Severity Criteria
+
+| Severity | Example |
+|----------|---------|
+| critical | Same logic duplicated in 5+ locations |
+| major | Similar logic in 3+ locations, large amounts of dead code |
+| minor | Small-scale duplication, unused imports |
+| info | Maintainability improvement suggestions through consolidation |
+
+### 4-B. Other Improvements (Weight: 7%)
+
+#### Checklist
+
+- **Architecture**: Layer violations, dependency direction, module splitting
+- **Testing**: Coverage gaps, test quality, insufficient edge case tests
+- **Documentation**: README, API docs, architecture docs
+- **CI/CD**: Build config, lint config, automated test config
+- **Developer experience (DX)**: Script setup, environment setup procedures, debug support
+- **Accessibility**: a11y compliance (for web projects)
+- **Internationalization/Localization**: i18n status
+
+#### Severity Criteria
+
+| Severity | Example |
+|----------|---------|
+| critical | Layer violations (architecture breakdown) |
+| major | Significant test coverage gaps, documentation deficiencies |
+| minor | DX improvements, CI/CD optimization |
+| info | Best practice recommendations |

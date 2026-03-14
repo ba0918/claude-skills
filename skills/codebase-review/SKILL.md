@@ -5,186 +5,186 @@ description: コードベース全体を4つの専門エージェント（セキ
 
 # Codebase Review
 
-コードベース全体を4つの専門エージェントで並行レビューし、統合スコアレポートを生成する。
+Review the entire codebase with 4 specialized agents in parallel and generate an integrated score report.
 
-**コンテキスト節約設計**: 全エージェントの分析結果はファイル経由で受け渡し、メインコンテキストにはサマリーのみ流入させる。
+**Context-saving design**: All agent analysis results are passed via files; only summaries flow into the main context.
 
 ## Progress Checklist
 
 ```
 codebase-review Progress:
-- [ ] 対象範囲決定
-- [ ] プロジェクト構造分析・作業ディレクトリ準備
-- [ ] 4レビューエージェント並行起動
-- [ ] 全エージェント完了待ち合わせ
-- [ ] 統合エージェント起動
-- [ ] サマリー表示・レポート配置
+- [ ] Determine target scope
+- [ ] Analyze project structure & prepare work directory
+- [ ] Launch 4 review agents in parallel
+- [ ] Wait for all agents to complete
+- [ ] Launch integration agent
+- [ ] Display summary & place report
 ```
 
 ## Workflow
 
-### Step 1: 対象範囲決定
+### Step 1: Determine Target Scope
 
-引数に応じて対象範囲を決定:
+Determine target scope based on arguments:
 
-| 引数 | 対象 |
-|------|------|
-| なし | コードベース全体（src/配下） |
-| `差分のみ` `--diff` | `git diff HEAD`の変更ファイルのみ |
-| ディレクトリ名 | 特定ディレクトリ |
+| Argument | Target |
+|----------|--------|
+| None | Entire codebase (under src/) |
+| `--diff` | Only files changed in `git diff HEAD` |
+| Directory name | Specific directory |
 
-対象ファイル: `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.py`, `*.go`, `*.rs`, `*.java`, `*.php` 等のソースコード。
-除外: `node_modules/`, `dist/`, `build/`, `.git/`, `*.test.*`, `*.spec.*`, `*.d.ts`, lockファイル。
+Target files: `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.py`, `*.go`, `*.rs`, `*.java`, `*.php` and other source code.
+Exclude: `node_modules/`, `dist/`, `build/`, `.git/`, `*.test.*`, `*.spec.*`, `*.d.ts`, lock files.
 
-### Step 2: プロジェクト構造分析・作業ディレクトリ準備
+### Step 2: Analyze Project Structure & Prepare Work Directory
 
-1. CLAUDE.md（プロジェクトルート＋`.claude/`配下）を読み、プロジェクト固有ルールを把握
-2. ディレクトリ構造を把握（`ls` or `find`）
-3. 主要設定ファイルを確認（`package.json`, `deno.json`, `tsconfig.json`, `Cargo.toml`等）
-4. **作業ディレクトリを作成**:
+1. Read CLAUDE.md (project root + under `.claude/`) to understand project-specific rules
+2. Understand directory structure (`ls` or `find`)
+3. Check main config files (`package.json`, `deno.json`, `tsconfig.json`, `Cargo.toml`, etc.)
+4. **Create work directory**:
    ```bash
    mkdir -p .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/
    ```
-5. **context.jsonを書き出す**（Writeツールで作成）:
+5. **Write context.json** (create with Write tool):
    ```json
    {
-     "project_name": "プロジェクト名",
-     "scope": "対象範囲の説明",
-     "target_files": ["対象ファイルパス一覧"],
-     "file_count": ファイル数,
-     "claude_md_rules": "CLAUDE.mdの内容（あれば）",
+     "project_name": "Project name",
+     "scope": "Target scope description",
+     "target_files": ["List of target file paths"],
+     "file_count": file_count,
+     "claude_md_rules": "CLAUDE.md contents (if present)",
      "work_dir": ".claude/tmp/codebase-review-{YYYYMMDD-HHMM}",
      "datetime": "YYYY-MM-DD HH:MM"
    }
    ```
 
-### Step 3: 4レビューエージェント並行起動
+### Step 3: Launch 4 Review Agents in Parallel
 
-Taskツールで4つのエージェントを**並行**起動する（全て `run_in_background: true`）。
+Launch 4 agents **in parallel** using the Task tool (all with `run_in_background: true`).
 
-各エージェントに渡すコンテキスト:
-- context.jsonのファイルパス
-- レビュー観点の詳細（[references/review-criteria.md](references/review-criteria.md) の該当セクション）
-- **出力先JSONファイルパス**
-
-```
-エージェント1: security-auditor       # セキュリティ + 機密情報 (合算35%)
-エージェント2: performance-analyzer   # パフォーマンス + メモリ効率 (合算20%)
-エージェント3: quality-inspector      # 実装品質 + 論理的整合性 (合算30%)
-エージェント4: codebase-hygiene       # コード重複 + その他改善点 (合算15%)
-```
-
-各エージェントのsubagent_type: `general-purpose`
-
-#### レビューエージェント プロンプトテンプレート
+Context to provide each agent:
+- File path of context.json
+- Detailed review criteria ([references/review-criteria.md](references/review-criteria.md) relevant section)
+- **Output JSON file path**
 
 ```
-あなたは「{観点名}」の専門レビューアーです。
-以下のコードベースを徹底的に分析してください。
+Agent 1: security-auditor       # Security + Secrets (combined 35%)
+Agent 2: performance-analyzer   # Performance + Memory efficiency (combined 20%)
+Agent 3: quality-inspector      # Implementation quality + Logical consistency (combined 30%)
+Agent 4: codebase-hygiene       # Code duplication + Other improvements (combined 15%)
+```
 
-## コンテキスト読み込み
-まず {work_dir}/context.json を読み込み、プロジェクト情報と対象ファイル一覧を取得してください。
+Each agent's subagent_type: `general-purpose`
 
-## プロジェクト固有ルール
-context.json内の claude_md_rules を参照し、プロジェクト固有のルールに従ってレビューしてください。
+#### Review Agent Prompt Template
 
-## レビュー観点
-{references/review-criteria.md から該当セクションの内容}
+```
+You are a specialist reviewer for "{dimension name}".
+Thoroughly analyze the following codebase.
 
-## 分析手順
-1. context.jsonからtarget_filesを取得
-2. 各ファイルを読み込み、上記チェック項目に基づいて分析
-3. サブカテゴリごとに個別スコアとissuesを記録
+## Load Context
+First, read {work_dir}/context.json to obtain project information and target file list.
 
-## 結果出力（厳守）
-分析結果を以下のJSON形式で **{work_dir}/agent-{N}-{category}.json** にWriteツールで書き出してください:
+## Project-Specific Rules
+Refer to claude_md_rules in context.json and follow project-specific rules during review.
+
+## Review Criteria
+{Content of the relevant section from references/review-criteria.md}
+
+## Analysis Steps
+1. Get target_files from context.json
+2. Read each file and analyze based on the checklist above
+3. Record individual scores and issues for each subcategory
+
+## Result Output (strict)
+Write the analysis results in the following JSON format to **{work_dir}/agent-{N}-{category}.json** using the Write tool:
 
 ```json
 {
-  "agent": "{エージェント名}",
+  "agent": "{agent name}",
   "subcategories": [
     {
-      "name": "{サブカテゴリ名}",
-      "key": "{サブカテゴリキー}",
-      "weight": 重み(数値),
+      "name": "{subcategory name}",
+      "key": "{subcategory key}",
+      "weight": weight(number),
       "score": 0-100,
       "issues": [
         {
           "severity": "critical|major|minor|info",
-          "message": "問題の詳細説明",
-          "file": "ファイルパス",
-          "line": 行番号（不明なら0）,
-          "suggestion": "具体的な修正提案",
+          "message": "Detailed description of the issue",
+          "file": "file path",
+          "line": line_number (0 if unknown),
+          "suggestion": "Specific fix suggestion",
           "effort": "low|medium|high"
         }
       ],
-      "good_practices": ["良い点1", "良い点2"]
+      "good_practices": ["Good point 1", "Good point 2"]
     }
   ],
-  "summary": "総評（2-3文）"
+  "summary": "Overall assessment (2-3 sentences)"
 }
 ```
 
-スコア基準:
-- 90-100: 優秀。重大な問題なし
-- 70-89: 良好。軽微な改善余地あり
-- 50-69: 要改善。対処すべき問題あり
-- 30-49: 問題多数。早急な対応推奨
-- 0-29: 危険。即座の対応が必要
+Score criteria:
+- 90-100: Excellent. No critical issues
+- 70-89: Good. Minor improvements possible
+- 50-69: Needs improvement. Issues to address
+- 30-49: Many issues. Prompt action recommended
+- 0-29: Critical. Immediate action required
 
-## 出力制約（最重要）
-あなたの分析結果は全て上記JSONファイルに書き出してください。
-あなたの最終応答（Taskのresultとして返される部分）は、以下の1行のみとしてください:
+## Output Constraint (most important)
+Write all your analysis results to the JSON file above.
+Your final response (the part returned as the Task result) must be only the following single line:
 
 DONE: {category}
 
-これ以外のテキストを最終応答に含めないでください。長い分析結果や説明は全てJSONファイルに書き出し済みのはずです。
+Do not include any other text in your final response. All lengthy analysis and explanations should already be written to the JSON file.
 ```
 
-### Step 4: 統合エージェント起動
+### Step 4: Launch Integration Agent
 
-**4つ全てのレビューエージェントの完了を確認してから**、統合エージェントをTaskツールで起動する（`run_in_background: true`）。
+**After confirming all 4 review agents have completed**, launch the integration agent via the Task tool (`run_in_background: true`).
 
-統合エージェントのsubagent_type: `general-purpose`
+Integration agent's subagent_type: `general-purpose`
 
-#### 統合エージェント プロンプトテンプレート
+#### Integration Agent Prompt Template
 
 ```
-あなたはコードベースレビューの統合レポートアナリストです。
-4つのレビューエージェントの分析結果を統合し、最終レポートを生成してください。
+You are the integration report analyst for the codebase review.
+Integrate the analysis results from 4 review agents and generate the final report.
 
-## 入力ファイル
-作業ディレクトリ: {work_dir}
+## Input Files
+Work directory: {work_dir}
 
-以下のファイルを全て読み込んでください:
-- {work_dir}/context.json（プロジェクト情報）
+Read all of the following files:
+- {work_dir}/context.json (project information)
 - {work_dir}/agent-1-security.json
 - {work_dir}/agent-2-performance.json
 - {work_dir}/agent-3-quality.json
 - {work_dir}/agent-4-hygiene.json
 
-## 処理手順
+## Processing Steps
 
-### 1. 各サブカテゴリのスコア収集
-各JSONのsubcategories配列から、8つのサブカテゴリ個別スコアを取得。
+### 1. Collect Subcategory Scores
+Get 8 individual subcategory scores from the subcategories array in each JSON.
 
-### 2. 重み付け総合スコア算出
-総合スコア = Σ(サブカテゴリスコア × 重み / 100)
+### 2. Calculate Weighted Overall Score
+Overall score = Σ(subcategory score × weight / 100)
 
-重み: security=20, secrets=15, performance=12, memory=8,
-      quality=15, logic=15, duplication=8, improvements=7
+Weights: security=20, secrets=15, performance=12, memory=8,
+         quality=15, logic=15, duplication=8, improvements=7
 
-### 3. 全issueの統合・ソート
-全エージェントのissuesを集約し、severity順にソート（critical→major→minor→info）。
+### 3. Integrate and Sort All Issues
+Aggregate issues from all agents and sort by severity (critical→major→minor→info).
 
-### 4. 総合ランク決定
+### 4. Determine Overall Rank
 90-100=S, 80-89=A, 70-79=B, 60-69=C, 50-59=D, 0-49=F
 
-### 5. 出力ファイル生成
+### 5. Generate Output Files
 
-**出力1: {work_dir}/summary.txt**
+**Output 1: {work_dir}/summary.txt**
 
-以下のフォーマットで正確に出力:
+Output in the following format exactly:
 
 ```
 ════════════════════════════════════════════════════════════════════════
@@ -209,9 +209,9 @@ DONE: {category}
   │ Improvements            │  XX   │ XXXXXXXXXX │
   └─────────────────────────┴───────┴────────────┘
 
-  Critical Issues: {N}件
-  Major Issues: {N}件
-  Minor Issues: {N}件
+  Critical Issues: {N}
+  Major Issues: {N}
+  Minor Issues: {N}
 
   Top 5 Critical/Major Issues:
   1. [{severity}] {message} ({file}:{line})
@@ -223,36 +223,36 @@ DONE: {category}
 
 Status: 90+→EXCELLENT, 70+→GOOD, 50+→NEEDS WORK, <50→CRITICAL
 
-**出力2: {work_dir}/report.md**
+**Output 2: {work_dir}/report.md**
 
-レポートテンプレート（references/report-template.mdの構造）に従い詳細レポートを生成。
-内容:
-- エグゼクティブサマリー（総合スコア、ランク、概要）
-- Critical/Major Issues一覧
-- カテゴリ別詳細（8サブカテゴリ × スコア・issues・良い点）
-- 改善ロードマップ（優先度順、推定工数付き）
-- 付録（スコア算出式、対象ファイル一覧）
+Generate a detailed report following the report template structure (references/report-template.md).
+Contents:
+- Executive summary (overall score, rank, overview)
+- Critical/Major Issues list
+- Category details (8 subcategories × score, issues, good points)
+- Improvement roadmap (priority order, estimated effort)
+- Appendix (score formula, target file list)
 
-## 出力制約（最重要）
-分析結果は全て上記2ファイル（summary.txt, report.md）に書き出してください。
-あなたの最終応答は以下の1行のみとしてください:
+## Output Constraint (most important)
+Write all analysis results to the 2 files above (summary.txt, report.md).
+Your final response must be only the following single line:
 
 DONE: integration
 
-これ以外のテキストを最終応答に含めないでください。
+Do not include any other text in your final response.
 ```
 
-### Step 5: サマリー表示・レポート配置
+### Step 5: Display Summary & Place Report
 
-統合エージェントの完了を確認後:
+After confirming the integration agent has completed:
 
-1. **Readツール**で `{work_dir}/summary.txt` を読み込み、そのままコンソールに表示
-2. **Bashツール**で `cp {work_dir}/report.md docs/reviews/review-{YYYYMMDD-HHMM}.md`
-3. 完了メッセージ（レポートファイルパスを含む）を表示
+1. **Read** `{work_dir}/summary.txt` with the Read tool and display it to the console as-is
+2. **Copy** with Bash tool: `cp {work_dir}/report.md docs/reviews/review-{YYYYMMDD-HHMM}.md`
+3. Display completion message (including report file path)
 
-**注意**: summary.txt以外のファイル（agent-*.json, report.md）をメインコンテキストに読み込まないこと。
+**Note**: Do not read files other than summary.txt (agent-*.json, report.md) into the main context.
 
 ## Reference
 
-- レビュー基準詳細: [references/review-criteria.md](references/review-criteria.md)
-- レポートテンプレート: [references/report-template.md](references/report-template.md)
+- Review criteria details: [references/review-criteria.md](references/review-criteria.md)
+- Report template: [references/report-template.md](references/report-template.md)
