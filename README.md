@@ -20,10 +20,11 @@ cd ~/develop/claude-skills
 | `/plan-create` | 実装計画を新規作成（`docs/cycles/` に配置） |
 | `/plan-review` | 計画を6観点でレビュー |
 | `/plan-refine` | レビュー → 修正ループ（PASS まで繰り返す） |
-| `/plan-implement` | TDD (Red→Green→Refactor) で自動実装 |
+| `/plan-implement` | 実装計画を自動実装（implement → review ループ） |
 | `/plan-resume` | 前回のセッションを引き継ぐ |
 | `/plan-status` | 計画のステータスを更新 |
 | `/cycle` | refine → implement → サマリー生成を全自動で回す |
+| `/commit` | 変更内容を分析し、論理単位で自動コミット |
 | `/iterate` | cycle 後の追加指示を軽量改善ループで実行 |
 | `/doc-check` | ドキュメントとコードの整合性を検証・自動修正 |
 
@@ -35,6 +36,7 @@ cd ~/develop/claude-skills
 | `plan-reviewer` | 6観点（実現可能性・セキュリティ・性能・設計・網羅性・代替案）の並行レビュー |
 | `codebase-review` | 4エージェント並行によるコードベース全体レビュー（100点満点） |
 | `generate-review-rules` | プロジェクト固有のレビュールール自動生成 |
+| `commit` | 変更を分析し論理単位で自動コミット（確認なし即実行） |
 | `iterate` | サイズ適応型の軽量改善ループ（cycle より軽く、直接作業より安全） |
 | `doc-check` | ドキュメントとコードベースの整合性検証・自動修正 |
 
@@ -96,6 +98,7 @@ commands/           # スラッシュコマンド
 skills/
 ├── plan/           # 計画管理スキル + テンプレート
 ├── plan-reviewer/  # 6観点レビュー + チェックリスト
+├── commit/         # 自動コミットスキル
 ├── codebase-review/ # 4エージェント並行レビュー
 ├── generate-review-rules/
 ├── iterate/        # サイズ適応型軽量改善ループ
