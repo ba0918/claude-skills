@@ -44,6 +44,8 @@ Keep questions concise. Avoid overwhelming the user with too many questions at o
 
 **File path:** `docs/cycles/{timestamp}_{feature-slug}.md`
 
+**CRITICAL**: Plan files MUST be created under `docs/cycles/` directory. Do NOT use `docs/plans/` or any other directory. This constraint applies regardless of how this skill is invoked (directly, via issue-cycle, or any other caller).
+
 **Feature slug rules:**
 - Convert spaces to hyphens
 - Lowercase
