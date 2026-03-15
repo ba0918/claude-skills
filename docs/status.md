@@ -1,6 +1,6 @@
 # Project Status
 
-**Last Updated:** 2026-03-14 21:15:40
+**Last Updated:** 2026-03-15 19:08:08
 
 ---
 
@@ -8,14 +8,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Cycle ID** | `20260314211540` |
-| **Feature** | スキル英語化 |
-| **Started** | 2026-03-14 21:15:40 |
-| **Phase** | 🟢 Completed |
-| **Plan** | [docs/cycles/20260314211540_skill-english-localization.md](./cycles/20260314211540_skill-english-localization.md) |
+| **Cycle ID** | `20260315190808` |
+| **Feature** | Parallel Cycle (並行サイクル実行) |
+| **Started** | 2026-03-15 19:08:08 |
+| **Phase** | 🟡 Planning |
+| **Plan** | [docs/cycles/20260315190808_parallel-cycle.md](./cycles/20260315190808_parallel-cycle.md) |
 
 **Current Focus:**
-全スキルの SKILL.md と references/ を英語化。LLM への指示書としてのトークン効率・解釈精度を向上。
+複数の独立した cycle を worktree 上の別ブランチで並行実行し、完了後に自動マージするオーケストレータの設計・実装。
 
 ---
 

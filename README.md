@@ -31,6 +31,7 @@ cd ~/develop/claude-skills
 | `/issue-list` | 未解決 issue の一覧を表示 |
 | `/issue-cycle` | issue を選択して plan → cycle で解決 |
 | `/issue-close` | issue をクローズしてアーカイブ |
+| `/parallel-cycle` | 指示を分解→並行 cycle 実行→自動マージ |
 
 ## スキル一覧
 
@@ -44,6 +45,7 @@ cd ~/develop/claude-skills
 | `iterate` | サイズ適応型の軽量改善ループ（cycle より軽く、直接作業より安全） |
 | `doc-check` | ドキュメントとコードベースの整合性検証・自動修正 |
 | `issue` | スコープ外の問題を記録・管理し plan → cycle に繋げる |
+| `parallel-cycle` | 自然言語の指示を分解し、worktree で並行 cycle 実行・自動マージ |
 
 ## 基本ワークフロー
 
@@ -124,6 +126,7 @@ skills/
 ├── generate-review-rules/
 ├── iterate/        # サイズ適応型軽量改善ループ
 ├── doc-check/      # ドキュメント整合性検証・自動修正
-└── issue/          # issue 管理（記録・一覧・cycle連携・クローズ）
+├── issue/          # issue 管理（記録・一覧・cycle連携・クローズ）
+└── parallel-cycle/ # 指示分解 + 並行 cycle 実行オーケストレータ
 install.sh          # ~/.claude/ に symlink を張る
 ```
