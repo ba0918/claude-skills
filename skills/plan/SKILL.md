@@ -64,9 +64,13 @@ Keep questions concise. Avoid overwhelming the user with too many questions at o
 
 Read existing `docs/status.md` if it exists.
 
+**Legacy format auto-migration:**
+
+If `docs/status.md` exists, check for legacy format (inline session history without `session-history.md` link). If detected, run the migration steps defined in [references/status-update-guide.md](references/status-update-guide.md) § "Legacy Format Auto-Migration" **before** writing new session data. This transparently converts old-style status files to the new separated format.
+
 **Update logic:**
 
-- **If status.md exists:** Move current session to history, add new session to current
+- **If status.md exists:** (After migration if needed) Move current session to history, add new session to current
 - **If status.md doesn't exist:** Create new file using [references/status-template.md](references/status-template.md)
 
 **Status structure:**

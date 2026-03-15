@@ -72,8 +72,8 @@ skills/plan/
 | Step | Status |
 |------|--------|
 | status-update-guide.md にマイグレーションロジック追加 | 🟢 |
-| SKILL.md Phase 4 にガイダンス追加 | 🟡 |
-| Commit | ⚪ |
+| SKILL.md Phase 4 にガイダンス追加 | 🟢 |
+| Commit | 🟡 |
 
 **Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done
 
