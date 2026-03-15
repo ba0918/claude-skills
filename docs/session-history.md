@@ -2,6 +2,7 @@
 
 | Cycle ID | Feature | Started | Completed | Plan |
 |----------|---------|---------|-----------|------|
+| `20260316021653` | plan ファイルパス逸脱防止（二重防御） | 2026-03-16 | 2026-03-16 | [Link](./cycles/20260316021653_plan-path-guard.md) |
 | `20260315200312` | investigate スキル | 2026-03-15 | 2026-03-15 | [Link](./cycles/20260315200312_investigate-skill.md) |
 | `20260315194952` | cycle 完了時に status.md を自動で Completed にする | 2026-03-15 | 2026-03-15 | [Link](./cycles/20260315194952_cycle-status-auto-complete.md) |
 | `20260315193813` | Status.md 旧形式の自動マイグレーション | 2026-03-15 | 2026-03-15 | [Link](./cycles/20260315193813_status-auto-migration.md) |
