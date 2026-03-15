@@ -1,12 +1,21 @@
 # Project Status
 
-**Last Updated:** 2026-03-15 20:00:00
+**Last Updated:** 2026-03-15 20:03:12
 
 ---
 
 ## 🎯 Current Session
 
-_No active session. Create a new plan to start._
+| Field | Value |
+|-------|-------|
+| **Cycle ID** | `20260315200312` |
+| **Feature** | investigate スキル |
+| **Started** | 2026-03-15 20:03:12 |
+| **Phase** | 🟡 Planning |
+| **Plan** | [docs/cycles/20260315200312_investigate-skill.md](./cycles/20260315200312_investigate-skill.md) |
+
+**Current Focus:**
+LLMの調査暴走を防ぐ「調査専用・編集禁止」スキルの新規作成
 
 ---
 
