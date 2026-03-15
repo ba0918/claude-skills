@@ -2,6 +2,83 @@
 
 Detailed instructions for updating docs/status.md during implementation cycles.
 
+## Legacy Format Auto-Migration
+
+When reading an existing `docs/status.md`, check whether it uses the legacy format (inline session history) and automatically migrate it to the new format (session-history.md separated).
+
+### Detection Criteria
+
+The file is in **legacy format** if ALL of the following are true:
+
+1. A `## 📜 Session History` or `## Session History` section exists
+2. That section does NOT contain a link to `[session-history.md]`
+3. That section contains table data rows (`|` で始まる行で、ヘッダー行 `| Cycle ID |` や区切り行 `|---` を除く行)
+
+If the section already contains a link to `session-history.md`, the file is already in the new format — skip migration.
+
+### Migration Steps
+
+When legacy format is detected, perform the following **before** writing the new session:
+
+#### Step 1: Extract history data rows
+
+From the `## 📜 Session History` or `## Session History` section, collect all table rows that:
+- Start with `|`
+- Are NOT header rows (contain `Cycle ID`)
+- Are NOT separator rows (contain `|---`)
+
+#### Step 2: Write to session-history.md
+
+- **If `docs/session-history.md` exists:** Insert the extracted rows immediately after the header separator row (`|---|`), before any existing data rows
+- **If `docs/session-history.md` does not exist:** Create it with:
+
+```markdown
+# Session History
+
+| Cycle ID | Feature | Started | Completed | Plan |
+|----------|---------|---------|-----------|------|
+{extracted rows}
+```
+
+#### Step 3: Replace Session History section in status.md
+
+Replace the entire Session History section content with the archive link:
+
+```markdown
+## 📜 Session History
+
+_Archived sessions can be found in [session-history.md](./session-history.md)._
+```
+
+#### Step 4: Ensure Quick Links section exists
+
+If `## 🔗 Quick Links` section is missing, add it (using the template from status-template.md):
+
+```markdown
+## 🔗 Quick Links
+
+- [Architecture](./ARCHITECTURE.md)
+- [Coding Principles](./CODING_PRINCIPLES.md)
+- [All Cycles](./cycles/)
+- [Project Root](../)
+```
+
+#### Step 5: Ensure footer note exists
+
+If the footer note (`**Note:** This file is auto-managed by the \`plan\` skill.`) is missing, append it at the end of the file.
+
+### Idempotency
+
+- If the file is already in new format (contains `session-history.md` link in Session History section), skip all migration steps
+- If `docs/status.md` does not exist, skip migration (a new file will be created from the template)
+- Running migration multiple times produces the same result
+
+### Timing
+
+Migration runs at Phase 4 ("Read existing status.md"), **before** any new session data is written. This ensures the file is in the correct format before updates are applied.
+
+---
+
 ## When to Update Status
 
 ### Trigger Phrases
