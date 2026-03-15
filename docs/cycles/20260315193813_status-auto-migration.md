@@ -2,7 +2,7 @@
 
 **Cycle ID:** `20260315193813`
 **Started:** 2026-03-15 19:38:13
-**Status:** 🟡 In Progress
+**Status:** 🟢 Completed
 
 ---
 
@@ -60,12 +60,12 @@ skills/plan/
 
 ## ✅ Tests
 
-- [ ] 旧形式 status.md（履歴テーブル行あり）→ 履歴が session-history.md に移動される
-- [ ] 旧形式 status.md + 既存 session-history.md → 既存エントリーの前に追加される
-- [ ] 旧形式 status.md に Current Session がある場合 → Current Session の内容が保持される
-- [ ] 新形式 status.md → 何も変更されない（べき等性）
-- [ ] status.md が存在しない → 通常通りテンプレートから新規作成
-- [ ] セクションヘッダーが `## Session History`（絵文字なし）の旧形式でも正しく検出される
+- [x] 旧形式 status.md（履歴テーブル行あり）→ 履歴が session-history.md に移動される
+- [x] 旧形式 status.md + 既存 session-history.md → 既存エントリーの前に追加される
+- [x] 旧形式 status.md に Current Session がある場合 → Current Session の内容が保持される
+- [x] 新形式 status.md → 何も変更されない（べき等性）
+- [x] status.md が存在しない → 通常通りテンプレートから新規作成
+- [x] セクションヘッダーが `## Session History`（絵文字なし）の旧形式でも正しく検出される
 
 ## 📊 Progress
 
@@ -73,10 +73,10 @@ skills/plan/
 |------|--------|
 | status-update-guide.md にマイグレーションロジック追加 | 🟢 |
 | SKILL.md Phase 4 にガイダンス追加 | 🟢 |
-| Commit | 🟡 |
+| Commit | 🟢 |
 
 **Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done
 
 ---
 
-**Next:** Write implementation → Commit with `commit` 🚀
+**Completed:** 2026-03-15
