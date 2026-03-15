@@ -87,7 +87,14 @@ Commits: {N}
 {特記事項があれば}
 ```
 
-3. 最終表示:
+3. status.md を完了状態に更新する:
+   - **ガード条件**: `docs/status.md` の Current Session が既に空（`_No active session`）または Completed の場合はこのステップをスキップする
+   - `skills/plan/references/status-update-guide.md` の **Case 2（In Progress → Completed）** の手順に従う:
+     - Step 2a: session-history.md にアーカイブ
+     - Step 2b: Session History セクションをクリア
+     - Step 2c: Current Session をクリア
+
+4. 最終表示:
 ```
 ══════════════════════════════════════
 CYCLE COMPLETE
