@@ -33,6 +33,7 @@ commands/issue-cycle.md  →  skills/issue/SKILL.md (cycle ワークフロー)
 commands/issue-close.md  →  skills/issue/SKILL.md (close ワークフロー)
 commands/plan-resume.md  →  skills/plan/SKILL.md (セッション復帰)
 commands/plan-status.md  →  skills/plan/SKILL.md (ステータス更新)
+commands/parallel-cycle.md → skills/parallel-cycle/SKILL.md
 ```
 
 > `codebase-review` と `generate-review-rules` はコマンドなし（Skill ツール直接呼び出し）。
@@ -49,6 +50,7 @@ commands/plan-status.md  →  skills/plan/SKILL.md (ステータス更新)
 | `iterate` | cycle 後の追加指示をサイズ適応型の軽量改善ループで実行 |
 | `doc-check` | ドキュメントとコードベースの整合性を検証・自動修正 |
 | `issue` | plan 中に発見したスコープ外の問題を記録・管理し、plan → cycle に繋げる |
+| `parallel-cycle` | 自然言語の指示を複数 plan に分解し、worktree で並行 cycle 実行・自動マージ |
 
 ### ワークフロー設計パターン
 
