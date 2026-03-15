@@ -5,14 +5,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## プロジェクト概要
 
 Claude Code 用の自作スキル・コマンド集。実装計画の作成→レビュー→自動実装までのワークフローを提供する。
-`install.sh` で `~/.claude/commands/` と `~/.claude/skills/` にシンボリックリンクを張ってインストールする。
+`install.sh` で `~/.claude/commands/`、`~/.claude/skills/`、`~/.claude/rules/` にシンボリックリンクを張ってインストールする。
 
 ## アーキテクチャ
 
 ### 2つのレイヤー
 
 - **commands/** — スラッシュコマンド（`/plan-create` 等）。ユーザーが直接呼び出すエントリーポイント。各 `.md` ファイルが1つのコマンドに対応。
-- **skills/** — スキル定義。各ディレクトリが `SKILL.md`（メインロジック）+ `references/`（テンプレート・チェックリスト等の参照資料）で構成される。
+- **skills/** — スキル定義。各ディレクトリが `SKILL.md`（メインロジック）を持ち、必要に応じて `references/`（テンプレート・チェックリスト等の参照資料）を含む。
 
 ### コマンド→スキルの関係
 
