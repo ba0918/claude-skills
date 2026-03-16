@@ -123,9 +123,10 @@ Connect an issue to plan → cycle for resolution.
 4. Execute `plan-create` via the Skill tool based on the issue content (title and summary)
    - Arguments: Pass the issue's title and summary
    - **CRITICAL**: The plan file MUST be created at `docs/cycles/{timestamp}_{slug}.md`. Do NOT use `docs/plans/` or any other directory. Verify the file was created in `docs/cycles/` before proceeding.
+   - **IMPORTANT**: Include `**Issue:** {slug}` in the plan header so that cycle can auto-close the issue upon completion
 5. Execute `cycle` via the Skill tool with the created plan
 6. If `plan-create` or `cycle` fails, display the error and exit while keeping the issue open
-7. After cycle completion, execute `issue` via the Skill tool with `close {slug}` as the argument
+   - Note: Issue auto-close is handled by cycle's Phase 3 via the `**Issue:**` field in the plan. No explicit close call is needed here.
 
 ---
 
