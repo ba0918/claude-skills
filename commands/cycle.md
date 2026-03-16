@@ -107,7 +107,12 @@ Commits: {N}
      - Step 2b: Session History セクションをクリア
      - Step 2c: Current Session をクリア
 
-4. 最終表示:
+4. **Issue 自動 close**: 計画ファイルを読み、`**Issue:**` 行が存在するか確認する
+   - `**Issue:**` 行がある場合: issue slug を抽出し、Skill ツールで `issue` を `close {slug}` 引数で実行する
+     - close が失敗した場合は警告メッセージを表示するのみで、cycle 自体は成功扱いとする（close 失敗で実装結果を巻き戻さない）
+   - `**Issue:**` 行がない場合: このステップをスキップする
+
+5. 最終表示:
 ```
 ══════════════════════════════════════
 CYCLE COMPLETE
