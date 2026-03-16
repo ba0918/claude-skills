@@ -1,6 +1,6 @@
 ---
 name: issue
-description: Issue management for tracking out-of-scope problems discovered during plan execution. Supports create, list, cycle, and close workflows. Use when user wants to record issues, view issue list, convert issues to plan/cycle, or close resolved issues.
+description: Issue management for tracking out-of-scope problems discovered during plan execution. Supports create, list, plan, cycle, and close workflows. Use when user wants to record issues, view issue list, create a plan from an issue, convert issues to plan/cycle, or close resolved issues.
 ---
 
 # Issue Management
@@ -13,6 +13,7 @@ The first keyword in the argument determines the workflow:
 
 - `create` → **Create Workflow**
 - `list` → **List Workflow**
+- `plan` → **Plan Workflow**
 - `cycle` → **Cycle Workflow**
 - `close` → **Close Workflow**
 
@@ -76,6 +77,35 @@ Display a list of open issues.
 3. Count the table rows and display a summary:
    ```
    📊 Open issues: {N}
+   ```
+
+---
+
+## Plan Workflow
+
+Create a plan from an issue without running cycle. Use when you want to review/discuss the plan before executing.
+
+### Steps
+
+1. Read `docs/issues/issue-status.md`
+   - If it doesn't exist: Display "No issues have been registered yet" and exit
+2. Use AskUserQuestion to have the user select the target issue (present table contents and ask for slug input)
+3. Read the selected issue file (`docs/issues/{slug}.md`)
+   - If not found: Display the file list in `docs/issues/` and exit with an error message
+4. Execute `plan-create` via the Skill tool based on the issue content (title and summary)
+   - Arguments: Pass the issue's title and summary
+   - **CRITICAL**: The plan file MUST be created at `docs/cycles/{timestamp}_{slug}.md`. Do NOT use `docs/plans/` or any other directory. Verify the file was created in `docs/cycles/` before proceeding.
+   - **IMPORTANT**: Include `**Issue:** {slug}` in the plan header so that cycle can auto-close the issue upon completion
+5. Display completion message:
+   ```
+   ✅ Plan created from issue!
+   📄 Plan: docs/cycles/{timestamp}_{slug}.md
+   📋 Issue: docs/issues/{slug}.md
+
+   ## Next Steps
+   1. Review and discuss the plan
+   2. Run `/cycle` to implement
+   3. Issue will be auto-closed when cycle completes 🚀
    ```
 
 ---
