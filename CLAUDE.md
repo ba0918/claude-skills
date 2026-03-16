@@ -29,6 +29,7 @@ commands/iterate.md      →  skills/iterate/SKILL.md
 commands/doc-check.md    →  skills/doc-check/SKILL.md
 commands/issue-create.md →  skills/issue/SKILL.md (create ワークフロー)
 commands/issue-list.md   →  skills/issue/SKILL.md (list ワークフロー)
+commands/issue-plan.md   →  skills/issue/SKILL.md (plan ワークフロー)
 commands/issue-cycle.md  →  skills/issue/SKILL.md (cycle ワークフロー)
 commands/issue-close.md  →  skills/issue/SKILL.md (close ワークフロー)
 commands/plan-resume.md  →  skills/plan/SKILL.md (セッション復帰)

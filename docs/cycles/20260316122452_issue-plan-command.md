@@ -83,7 +83,7 @@ issue-plan:  issue選択 → plan-create(issue_id付き) → 止まる
 | 3. commands/issue-plan.md 新規作成 | 🟢 |
 | 4. cycle.md に issue 自動 close 追加 | 🟢 |
 | 5. issue-cycle から直接 close を削除 | 🟢 |
-| 6. CLAUDE.md のコマンドマッピング更新 | ⚪ |
+| 6. CLAUDE.md のコマンドマッピング更新 | 🟢 |
 
 **Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done
 
