@@ -3,6 +3,7 @@
 **Cycle ID:** `{timestamp}`
 **Started:** {YYYY-MM-DD HH:MM:SS}
 **Status:** 🟡 Planning
+**Issue:** _{issue_slug or remove this line if not from an issue}_
 
 ---
 

@@ -62,6 +62,9 @@ Keep questions concise. Avoid overwhelming the user with too many questions at o
 - Security checklist
 - Progress tracking table
 
+**Optional `Issue` field:**
+When creating a plan from an issue (via `issue-plan` or `issue-cycle`), add `**Issue:** {issue_slug}` to the plan header. This field is used by `cycle` to auto-close the issue upon completion. If the plan is not issue-originated, omit this line.
+
 ### Phase 4: Update Status Tracker
 
 Read existing `docs/status.md` if it exists.
