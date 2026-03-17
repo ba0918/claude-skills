@@ -214,10 +214,10 @@ $ARGUMENTS の先頭キーワード:
 |------|--------|
 | SKILL.md 作成 | 🟢 |
 | idea-template.md 作成 | 🟢 |
-| brainstorm.md コマンド作成 | ⚪ |
-| brainstorm-wrap.md コマンド作成 | ⚪ |
-| brainstorm-list.md コマンド作成 | ⚪ |
-| brainstorm-plan.md コマンド作成 | ⚪ |
+| brainstorm.md コマンド作成 | 🟢 |
+| brainstorm-wrap.md コマンド作成 | 🟢 |
+| brainstorm-list.md コマンド作成 | 🟢 |
+| brainstorm-plan.md コマンド作成 | 🟢 |
 | install.sh 更新 | ⚪ |
 | CLAUDE.md 更新 | ⚪ |
 | Commit | ⚪ |
