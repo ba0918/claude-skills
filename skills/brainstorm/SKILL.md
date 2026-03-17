@@ -15,6 +15,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 - `wrap` → **Wrap Workflow**（整理・サマリー生成）
 - `list` → **List Workflow**（一覧表示）
 - `plan` → **Plan Workflow**（plan に変換）
+- `resume` → **Resume Workflow**（既存メモを元に壁打ち再開）
 - (なし or テーマ文字列) → **Session Workflow**（壁打ちセッション）
 
 ---
@@ -144,6 +145,54 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
    1. `/plan-review` で計画をレビュー
    2. `/cycle` でサイクル実行
    ```
+
+---
+
+## Resume Workflow（既存メモを元に壁打ち再開）
+
+既存のアイデアメモを読み込み、その内容をコンテキストとして壁打ちセッションを再開する。
+
+### 絶対的な制約
+
+Session Workflow と同一の制約が適用される:
+- **Edit / Write / NotebookEdit** ツール使用禁止
+- コード生成・実装提案禁止
+
+### Steps
+
+1. `resume` キーワード以降の $ARGUMENTS から slug を取得
+   - slug がなければ `docs/ideas/idea-status.md` を読んでテーブルを表示し、AskUserQuestion で対象アイデアを選択
+   - `idea-status.md` が存在しなければ「まだアイデアがありません」と表示して終了
+2. `docs/ideas/{slug}.md` を読み込む
+   - ファイルが存在しなければ `docs/ideas/` のファイル一覧を表示してエラー終了
+3. メモの内容を要約して表示し、壁打ち対話ループに入る:
+   ```
+   📄 アイデア "{title}" を読み込みました。
+
+   ## 前回のまとめ
+   {Summary セクションの内容}
+
+   ## 未解決の疑問
+   {Open Questions セクションの内容}
+
+   ここから壁打ちを再開します！
+   ```
+4. Session Workflow と同じ対話ループを実行（質問・深掘り・反論・別視点の提供）
+   - 前回の Open Questions を優先的に議論の起点とする
+5. ユーザーが「wrap」「まとめて」「終わり」等と言ったらループ終了
+6. ループ終了時に Wrap Workflow（上書き更新モード）への誘導メッセージを表示:
+   ```
+   壁打ちを終了します。
+   `/brainstorm-wrap` でアイデアメモを更新できます。
+   ```
+
+### Wrap での上書き更新
+
+Resume 後に Wrap Workflow が実行された場合:
+- 既存の `docs/ideas/{slug}.md` を**上書き更新**する（新規作成ではない）
+- slug は元のメモのものをそのまま使用する
+- idea-status.md のテーブル行は更新不要（slug が変わらないため）
+- **Last Updated** のみ今日の日付に更新する
 
 ---
 

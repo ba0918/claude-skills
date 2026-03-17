@@ -40,6 +40,7 @@ commands/brainstorm.md   →  skills/brainstorm/SKILL.md (session ワークフ�
 commands/brainstorm-wrap.md → skills/brainstorm/SKILL.md (wrap ワークフロー)
 commands/brainstorm-list.md → skills/brainstorm/SKILL.md (list ワークフロー)
 commands/brainstorm-plan.md → skills/brainstorm/SKILL.md (plan ワークフロー)
+commands/brainstorm-resume.md → skills/brainstorm/SKILL.md (resume ワークフロー)
 ```
 
 > `codebase-review` と `generate-review-rules` はコマンドなし（Skill ツール直接呼び出し）。
