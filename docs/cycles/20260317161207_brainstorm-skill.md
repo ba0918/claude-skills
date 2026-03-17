@@ -2,7 +2,7 @@
 
 **Cycle ID:** `20260317161207`
 **Started:** 2026-03-17 16:12:07
-**Status:** 🟡 Planning
+**Status:** 🟢 Done
 
 ---
 
@@ -220,7 +220,7 @@ $ARGUMENTS の先頭キーワード:
 | brainstorm-plan.md コマンド作成 | 🟢 |
 | install.sh 更新 | 🟢 (変更不要 - ワイルドカードで自動検出) |
 | CLAUDE.md 更新 | 🟢 |
-| Commit | ⚪ |
+| Commit | 🟢 |
 
 **Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done
 
