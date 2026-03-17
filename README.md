@@ -30,9 +30,14 @@ cd ~/develop/claude-skills
 | `/issue-create` | スコープ外の問題を issue として記録 |
 | `/issue-list` | 未解決 issue の一覧を表示 |
 | `/issue-cycle` | issue を選択して plan → cycle で解決 |
+| `/issue-plan` | issue を選択して plan を作成（cycle は実行しない） |
 | `/issue-close` | issue をクローズしてアーカイブ |
 | `/parallel-cycle` | 指示を分解→並行 cycle 実行→自動マージ |
 | `/investigate` | 問題を読み取り専用で調査し、構造化レポートを出力 |
+| `/brainstorm` | アイデアの壁打ちセッションを開始（議論のみ、実装禁止） |
+| `/brainstorm-wrap` | 壁打ちの内容を整理してメモファイル化 |
+| `/brainstorm-list` | 過去のアイデア一覧を表示 |
+| `/brainstorm-plan` | アイデアを plan に変換 |
 
 ## スキル一覧
 
@@ -48,6 +53,7 @@ cd ~/develop/claude-skills
 | `issue` | スコープ外の問題を記録・管理し plan → cycle に繋げる |
 | `parallel-cycle` | 自然言語の指示を分解し、worktree で並行 cycle 実行・自動マージ |
 | `investigate` | 問題を読み取り専用で調査し、構造化レポートを出力。ファイル編集は一切行わない |
+| `brainstorm` | アイデアの壁打ちに特化。発散→収束→plan化の導線を提供。壁打ち中はファイル編集禁止 |
 
 ## 基本ワークフロー
 
@@ -88,6 +94,8 @@ Agent に委譲して全自動で回す。ヘッドレス実行対応。
   ↓ docs/issues/{date}_{slug}.md と issue-status.md が生成される
 /issue-list
   ↓ 未解決 issue の一覧を確認
+/issue-plan
+  ↓ issue を選択して plan を作成（cycle は実行しない。レビュー・議論用）
 /issue-cycle
   ↓ issue を選択して plan → cycle で自動解決
 /issue-close {slug}
@@ -96,6 +104,21 @@ Agent に委譲して全自動で回す。ヘッドレス実行対応。
 
 plan 実行中にスコープ外の問題を発見したら `/issue-create` で記録し、
 後から `/issue-cycle` で plan → cycle に繋げて解決する。
+
+### アイデアの壁打ち
+
+```
+/brainstorm ○○について壁打ちしたい
+  ↓ 議論のみ（ファイル編集禁止）の壁打ちセッション
+/brainstorm-wrap
+  ↓ docs/ideas/{slug}.md にアイデアをメモ化
+/brainstorm-list
+  ↓ 過去のアイデア一覧を確認
+/brainstorm-plan
+  ↓ アイデアを plan に変換して cycle 実行へ
+```
+
+「何を作るか」を決める前の発散フェーズ。壁打ち中は LLM が勝手に実装に走らない。
 
 ### ドキュメント整合性チェック
 
@@ -130,6 +153,7 @@ skills/
 ├── doc-check/      # ドキュメント整合性検証・自動修正
 ├── issue/          # issue 管理（記録・一覧・cycle連携・クローズ）
 ├── parallel-cycle/ # 指示分解 + 並行 cycle 実行オーケストレータ
-└── investigate/    # 読み取り専用の問題調査・構造化レポート
+├── investigate/    # 読み取り専用の問題調査・構造化レポート
+└── brainstorm/     # アイデアの壁打ち・発散→収束→plan化
 install.sh          # ~/.claude/ に symlink を張る
 ```
