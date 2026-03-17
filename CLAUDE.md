@@ -36,6 +36,10 @@ commands/plan-resume.md  →  skills/plan/SKILL.md (セッション復帰)
 commands/plan-status.md  →  skills/plan/SKILL.md (ステータス更新)
 commands/parallel-cycle.md → skills/parallel-cycle/SKILL.md
 commands/investigate.md  →  skills/investigate/SKILL.md
+commands/brainstorm.md   →  skills/brainstorm/SKILL.md (session ワークフロー)
+commands/brainstorm-wrap.md → skills/brainstorm/SKILL.md (wrap ワークフロー)
+commands/brainstorm-list.md → skills/brainstorm/SKILL.md (list ワークフロー)
+commands/brainstorm-plan.md → skills/brainstorm/SKILL.md (plan ワークフロー)
 ```
 
 > `codebase-review` と `generate-review-rules` はコマンドなし（Skill ツール直接呼び出し）。
@@ -54,6 +58,7 @@ commands/investigate.md  →  skills/investigate/SKILL.md
 | `issue` | plan 中に発見したスコープ外の問題を記録・管理し、plan → cycle に繋げる |
 | `parallel-cycle` | 自然言語の指示を複数 plan に分解し、worktree で並行 cycle 実行・自動マージ |
 | `investigate` | 問題を読み取り専用で調査し、構造化レポートを出力。ファイル編集は一切行わない |
+| `brainstorm` | アイデアの壁打ちに特化。発散→収束→plan化の導線を提供。壁打ち中はファイル編集禁止 |
 
 ### ワークフロー設計パターン
 

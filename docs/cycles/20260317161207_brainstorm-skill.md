@@ -218,8 +218,8 @@ $ARGUMENTS の先頭キーワード:
 | brainstorm-wrap.md コマンド作成 | 🟢 |
 | brainstorm-list.md コマンド作成 | 🟢 |
 | brainstorm-plan.md コマンド作成 | 🟢 |
-| install.sh 更新 | ⚪ |
-| CLAUDE.md 更新 | ⚪ |
+| install.sh 更新 | 🟢 (変更不要 - ワイルドカードで自動検出) |
+| CLAUDE.md 更新 | 🟢 |
 | Commit | ⚪ |
 
 **Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done
