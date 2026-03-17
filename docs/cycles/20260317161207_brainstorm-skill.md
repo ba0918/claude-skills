@@ -213,7 +213,7 @@ $ARGUMENTS の先頭キーワード:
 | Step | Status |
 |------|--------|
 | SKILL.md 作成 | 🟢 |
-| idea-template.md 作成 | ⚪ |
+| idea-template.md 作成 | 🟢 |
 | brainstorm.md コマンド作成 | ⚪ |
 | brainstorm-wrap.md コマンド作成 | ⚪ |
 | brainstorm-list.md コマンド作成 | ⚪ |
