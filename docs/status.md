@@ -1,12 +1,17 @@
 # Project Status
 
-**Last Updated:** 2026-03-17
+**Last Updated:** 2026-03-19
 
 ---
 
 ## 🎯 Current Session
 
-_No active session._
+| Key | Value |
+|-----|-------|
+| **Cycle** | [20260319190335_doc-write-skill](./cycles/20260319190335_doc-write-skill.md) |
+| **Status** | In Progress |
+| **Started** | 2026-03-19T19:03:35 |
+| **Summary** | doc-write スキル作成 — LLMとのやり取りをリーダブルなドキュメントに昇華 |
 
 ---
 
