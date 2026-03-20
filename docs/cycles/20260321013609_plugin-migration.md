@@ -2,7 +2,7 @@
 
 **Cycle ID:** `20260321013609`
 **Started:** 2026-03-21 01:36:09
-**Status:** 🟡 Planning
+**Status:** 🟢 Done
 
 ---
 
@@ -182,8 +182,8 @@ Plugin 化に失敗した場合のロールバック手順：
 | スキル間参照の修正（必要なら） | 🟢 |
 | install.sh の処理 | 🟢 |
 | ドキュメント更新 | 🟢 |
-| 動作テスト | ⚪ |
-| Commit | ⚪ |
+| 動作テスト | 🟢 |
+| Commit | 🟢 |
 
 **Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done
 

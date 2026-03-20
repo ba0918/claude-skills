@@ -2,6 +2,7 @@
 
 | Cycle ID | Feature | Started | Completed | Plan |
 |----------|---------|---------|-----------|------|
+| `20260321013609` | Plugin Migration | 2026-03-21 | 2026-03-21 | [Link](./cycles/20260321013609_plugin-migration.md) |
 | `20260319190335` | doc-write スキル作成 | 2026-03-19 | 2026-03-19 | [Link](./cycles/20260319190335_doc-write-skill.md) |
 | `20260317161207` | Brainstorm Skill | 2026-03-17 | 2026-03-17 | [Link](./cycles/20260317161207_brainstorm-skill.md) |
 | `20260316122452` | issue-plan コマンド追加と cycle の issue 自動 close 対応 | 2026-03-16 | 2026-03-16 | [Link](./cycles/20260316122452_issue-plan-command.md) |
