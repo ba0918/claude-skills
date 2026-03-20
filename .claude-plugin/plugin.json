@@ -1,0 +1,17 @@
+{
+  "name": "claude-skills",
+  "version": "1.0.0",
+  "description": "Implementation planning, review, and automation workflow skills for Claude Code",
+  "author": {
+    "name": "mizumi"
+  },
+  "repository": "https://github.com/mizumi/claude-skills",
+  "license": "MIT",
+  "keywords": [
+    "planning",
+    "review",
+    "automation",
+    "workflow",
+    "tdd"
+  ]
+}
