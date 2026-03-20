@@ -57,4 +57,4 @@ src/
 
 ---
 
-**Next:** Write tests → Implement → Commit with `commit` 🚀
+**Next:** Write tests → Implement → Commit with `claude-skills:commit` 🚀

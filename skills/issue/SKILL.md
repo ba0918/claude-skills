@@ -92,7 +92,7 @@ Create a plan from an issue without running cycle. Use when you want to review/d
 2. Use AskUserQuestion to have the user select the target issue (present table contents and ask for slug input)
 3. Read the selected issue file (`docs/issues/{slug}.md`)
    - If not found: Display the file list in `docs/issues/` and exit with an error message
-4. Execute `plan-create` via the Skill tool based on the issue content (title and summary)
+4. Execute `claude-skills:plan-create` via the Skill tool based on the issue content (title and summary)
    - Arguments: Pass the issue's title and summary
    - **CRITICAL**: The plan file MUST be created at `docs/cycles/{timestamp}_{slug}.md`. Do NOT use `docs/plans/` or any other directory. Verify the file was created in `docs/cycles/` before proceeding.
    - **IMPORTANT**: Include `**Issue:** {slug}` in the plan header so that cycle can auto-close the issue upon completion
@@ -104,7 +104,7 @@ Create a plan from an issue without running cycle. Use when you want to review/d
 
    ## Next Steps
    1. Review and discuss the plan
-   2. Run `/cycle` to implement
+   2. Run `/claude-skills:cycle` to implement
    3. Issue will be auto-closed when cycle completes 🚀
    ```
 
@@ -120,12 +120,12 @@ Connect an issue to plan → cycle for resolution.
    - If it doesn't exist: Display "No issues have been registered yet" and exit
 2. Use AskUserQuestion to have the user select the target issue (present table contents and ask for slug input)
 3. Read the selected issue file (`docs/issues/{slug}.md`)
-4. Execute `plan-create` via the Skill tool based on the issue content (title and summary)
+4. Execute `claude-skills:plan-create` via the Skill tool based on the issue content (title and summary)
    - Arguments: Pass the issue's title and summary
    - **CRITICAL**: The plan file MUST be created at `docs/cycles/{timestamp}_{slug}.md`. Do NOT use `docs/plans/` or any other directory. Verify the file was created in `docs/cycles/` before proceeding.
    - **IMPORTANT**: Include `**Issue:** {slug}` in the plan header so that cycle can auto-close the issue upon completion
-5. Execute `cycle` via the Skill tool with the created plan
-6. If `plan-create` or `cycle` fails, display the error and exit while keeping the issue open
+5. Execute `claude-skills:cycle` via the Skill tool with the created plan
+6. If `claude-skills:plan-create` or `claude-skills:cycle` fails, display the error and exit while keeping the issue open
    - Note: Issue auto-close is handled by cycle's Phase 3 via the `**Issue:**` field in the plan. No explicit close call is needed here.
 
 ---

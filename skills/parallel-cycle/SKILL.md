@@ -102,22 +102,22 @@ For each approved plan, use the Agent tool to generate a plan file:
 
 **Agent prompt:**
 ```
-Use the Skill tool to invoke `plan` to create a plan for the following feature.
+Use the Skill tool to invoke `claude-skills:plan` to create a plan for the following feature.
 Feature: {plan_title}
 Description: {plan_description}
 Affected files: {file_list}
 ```
 
-Each plan is saved to `docs/cycles/{timestamp}_{slug}.md`.
+Each plan is saved to `docs/claude-skills:cycles/{timestamp}_{slug}.md`.
 
 ### Edge Cases
 
 - **0 plans**: Display error message and exit
-- **1 plan**: Display message and fall back to normal `/cycle`:
+- **1 plan**: Display message and fall back to normal `/claude-skills:cycle`:
   ```
-  Single plan detected. Falling back to /cycle.
+  Single plan detected. Falling back to /claude-skills:cycle.
   ```
-  Invoke the `cycle` skill via Skill tool and exit.
+  Invoke the `claude-skills:cycle` skill via Skill tool and exit.
 
 ## Phase 1: Orthogonality Check & Grouping
 
@@ -171,7 +171,7 @@ For each cycle in the group, **in parallel**:
    You are working in a worktree at: {worktree_path}
    Branch: {branch_name}
 
-   Execute the Skill tool to invoke `plan-implement` for the plan file: {plan_file_path}
+   Execute the Skill tool to invoke `claude-skills:plan-implement` for the plan file: {plan_file_path}
    Implement all steps. Commit after each step. Update the progress table.
    When done, report: files changed, tests added, commits made.
    ```
@@ -256,7 +256,7 @@ Files changed: {total_files}
 
 ### Step 4.3: Generate Result File
 
-Save the summary to `docs/cycles/results/{base_plan_name}_result.md`:
+Save the summary to `docs/claude-skills:cycles/results/{base_plan_name}_result.md`:
 
 ```markdown
 # Parallel Cycle Result

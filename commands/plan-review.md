@@ -2,11 +2,11 @@
 description: "直近の実装計画を6観点で徹底レビューする"
 ---
 
-`plan-reviewer` スキルを使用して、直近の実装計画をレビューする。
+`claude-skills:plan-reviewer` スキルを使用して、直近の実装計画をレビューする。
 
 ## 手順
 
-1. Skillツールで `plan-reviewer` を起動する
+1. Skillツールで `claude-skills:plan-reviewer` を起動する
 2. ユーザーの引数 `$ARGUMENTS` にファイルパスがあればそれを対象にする
 3. 引数が空の場合は `docs/cycles/` 内の最新の計画ファイルを自動選択する
 4. 6観点（実現可能性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・代替手法）でレビューを実行する

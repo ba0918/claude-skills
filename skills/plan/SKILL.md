@@ -187,7 +187,7 @@ After creating the plan, follow this simple workflow:
 1. **Write tests** - Create failing tests for the feature
 2. **Implement** - Write minimal code to pass tests
 3. **Refactor** - Clean up code while keeping tests green
-4. **Commit** - Use `commit` to commit changes
+4. **Commit** - Use `claude-skills:commit` to commit changes
 
 No heavy review processes. Keep the tempo fast and development flow smooth.
 
@@ -221,4 +221,4 @@ Load these templates/guides when creating documents or updating status.
 - Feature slugs are URL-safe (lowercase, hyphens only)
 - Status.md automatically archives previous sessions
 - Plan documents follow project's architecture principles (layer separation, TDD, etc.)
-- If you discover out-of-scope issues during investigation, record them with `/issue-create` and continue with the plan
+- If you discover out-of-scope issues during investigation, record them with `/claude-skills:issue-create` and continue with the plan

@@ -117,9 +117,9 @@ INVESTIGATION REPORT
 
 | 状況 | 推奨アクション | コマンド例 |
 |------|---------------|-----------|
-| 軽微な修正（1-2ファイル、明確な修正） | そのまま修正 or iterate | `/iterate` |
-| スコープ外・後で対応 | issue として記録 | `/issue-create` |
-| 中〜大規模な修正 | 計画を立ててサイクル | `/plan-create` → `/cycle` |
+| 軽微な修正（1-2ファイル、明確な修正） | そのまま修正 or iterate | `/claude-skills:iterate` |
+| スコープ外・後で対応 | issue として記録 | `/claude-skills:issue-create` |
+| 中〜大規模な修正 | 計画を立ててサイクル | `/claude-skills:plan-create` → `/claude-skills:cycle` |
 | 判断材料不足・要議論 | 追加調査や議論を継続 | （会話を続ける） |
 
 ## 重要なルール

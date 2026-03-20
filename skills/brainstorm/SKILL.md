@@ -54,7 +54,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 3. ループ終了時に Wrap Workflow への誘導メッセージを表示:
    ```
    壁打ちを終了します。
-   `/brainstorm-wrap` でアイデアをメモに整理できます。
+   `/claude-skills:brainstorm-wrap` でアイデアをメモに整理できます。
    ```
 
 ### 壁打ち中の振る舞い
@@ -71,7 +71,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 
 ### 前提チェック
 
-- 現在の会話に壁打ちセッションの内容がない場合（単独で `/brainstorm-wrap` が呼ばれた場合）、「壁打ちセッションが見つかりません。先に `/brainstorm テーマ` で壁打ちを行ってください」と表示して終了
+- 現在の会話に壁打ちセッションの内容がない場合（単独で `/claude-skills:brainstorm-wrap` が呼ばれた場合）、「壁打ちセッションが見つかりません。先に `/claude-skills:brainstorm テーマ` で壁打ちを行ってください」と表示して終了
 
 ### Steps
 
@@ -129,7 +129,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
    - なければ「まだアイデアがありません」と表示して終了
 2. AskUserQuestion で対象アイデアを選択
 3. アイデアファイルを読み込む
-4. Skill ツールで `plan-create` を実行（引数フォーマット: `{Title}: {Summary from idea file}` — plan-create は $ARGUMENTS をそのまま What & Why の種として使う）
+4. Skill ツールで `claude-skills:plan-create` を実行（引数フォーマット: `{Title}: {Summary from idea file}` — plan-create は $ARGUMENTS をそのまま What & Why の種として使う）
 5. アイデアの Status を `💡 Idea` → `📋 Planned` に更新
 6. アーカイブ処理を実行:
    - `docs/ideas/archives/` ディレクトリを作成（なければ `mkdir -p`）
@@ -143,7 +143,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 
    ## Next Steps
    1. `/plan-review` で計画をレビュー
-   2. `/cycle` でサイクル実行
+   2. `/claude-skills:cycle` でサイクル実行
    ```
 
 ---
@@ -183,7 +183,7 @@ Session Workflow と同一の制約が適用される:
 6. ループ終了時に Wrap Workflow（上書き更新モード）への誘導メッセージを表示:
    ```
    壁打ちを終了します。
-   `/brainstorm-wrap` でアイデアメモを更新できます。
+   `/claude-skills:brainstorm-wrap` でアイデアメモを更新できます。
    ```
 
 ### Wrap での上書き更新

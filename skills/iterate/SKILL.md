@@ -12,7 +12,7 @@ Skill that auto-determines task size for additional instructions after a cycle, 
 ```
 Additional instruction → Scope analysis → Size judgment ─→ Small → Implement → Light review → Done
                                                          └→ Large → Propose to user ─→ Continue → Implement → Thorough review → Done
-                                                                                       └→ Plan → Suggest /plan-create
+                                                                                       └→ Plan → Suggest /claude-skills:plan-create
 ```
 
 ## Phase 0: Acquire Context
@@ -61,11 +61,11 @@ Reason for Large judgment: {reasons}
 
 Options:
 1. Execute via iterate (with thorough review)
-2. Create a plan via /plan-create (recommended)
+2. Create a plan via /claude-skills:plan-create (recommended)
 ```
 
 - User selects "1" → Proceed to Phase 3 (Large mode)
-- User selects "2" → Suggest running `/plan-create` and exit
+- User selects "2" → Suggest running `/claude-skills:plan-create` and exit
 
 ## Phase 3: Implementation
 
@@ -122,7 +122,7 @@ Launch a review agent via the Agent tool (general-purpose):
 - Implementation Quality: {PASS|WARN}
 ```
 
-2. Execute `commit` via the Skill tool to commit changes
+2. Execute `claude-skills:commit` via the Skill tool to commit changes
 
 ## Phase 6: Completion Report
 

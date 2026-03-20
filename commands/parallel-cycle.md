@@ -11,6 +11,6 @@ description: "自然言語の指示を複数 plan に分解し、独立した cy
 
 ## 手順
 
-1. Skill ツールで `parallel-cycle` を起動する
+1. Skill ツールで `claude-skills:parallel-cycle` を起動する
 2. ユーザーの引数 `$ARGUMENTS` をそのまま渡す
 3. 引数が空の場合は、何を実装したいかユーザーに質問する

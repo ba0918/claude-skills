@@ -144,7 +144,7 @@ Output the final summary containing:
 ## Important Notes
 
 - When called standalone, do not directly edit the plan file (only present review results)
-- When called from `plan-refine`, the refine side is responsible for edits
+- When called from `claude-skills:plan-refine`, the refine side is responsible for edits
 
 ## References
 

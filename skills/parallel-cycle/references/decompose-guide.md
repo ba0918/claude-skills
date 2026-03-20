@@ -67,7 +67,7 @@ Execution groups:
 |----------|--------|
 | Instruction is too vague to decompose | Return error, request clarification |
 | Decomposes into 0 plans | Return error, request clarification |
-| Decomposes into 1 plan | Fall back to normal `/cycle` (skip parallel overhead) |
+| Decomposes into 1 plan | Fall back to normal `/claude-skills:cycle` (skip parallel overhead) |
 | A plan has empty affected files | Treat as orthogonal to all other plans, place in any group |
 | Circular dependency detected | Report error, suggest restructuring |
 
@@ -102,6 +102,6 @@ Proceed? (y/n/edit)
 
 ## Plan Generation
 
-After approval, generate each plan using the same format as `/plan-create`. Each plan file is saved to `docs/cycles/{timestamp}_{slug}.md` with its own timestamp (or a shared timestamp with different slugs).
+After approval, generate each plan using the same format as `/claude-skills:plan-create`. Each plan file is saved to `docs/claude-skills:cycles/{timestamp}_{slug}.md` with its own timestamp (or a shared timestamp with different slugs).
 
 The "Files to Change" section in each plan is critical — it is the input for the orthogonality check in Phase 1.
