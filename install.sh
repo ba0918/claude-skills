@@ -1,6 +1,40 @@
 #!/bin/bash
-# Install claude-skills: create symlinks in ~/.claude/
+# install.sh - DEPRECATED
+#
+# This script is deprecated. Use Claude Code plugin install instead:
+#
+#   claude plugin install claude-skills@<marketplace>
+#
+# Or for local development:
+#
+#   claude --plugin-dir /path/to/claude-skills
+#
+# This script is kept as a fallback for environments that do not support
+# the plugin format.
+
 set -euo pipefail
+
+echo "══════════════════════════════════════════════════════════════"
+echo "  ⚠️  DEPRECATED: install.sh is no longer the recommended"
+echo "     installation method."
+echo ""
+echo "  Recommended: Use Claude Code plugin format instead:"
+echo ""
+echo "    claude plugin install claude-skills@<marketplace>"
+echo ""
+echo "  For local development:"
+echo ""
+echo "    claude --plugin-dir /path/to/claude-skills"
+echo ""
+echo "══════════════════════════════════════════════════════════════"
+echo ""
+
+read -p "Continue with legacy symlink installation? (y/N) " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+  echo "Aborted."
+  exit 0
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
@@ -37,4 +71,4 @@ for f in "$SCRIPT_DIR"/skills/*.skill; do
   echo "  $name"
 done
 
-echo "Done!"
+echo "Done! (Legacy installation)"
