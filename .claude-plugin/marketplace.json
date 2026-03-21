@@ -1,0 +1,14 @@
+{
+  "name": "claude-skills",
+  "owner": {
+    "name": "mizumi"
+  },
+  "plugins": [
+    {
+      "name": "claude-skills",
+      "source": "./",
+      "description": "Implementation planning, review, and automation workflow skills for Claude Code",
+      "version": "1.0.0"
+    }
+  ]
+}
