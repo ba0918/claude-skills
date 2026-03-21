@@ -102,6 +102,6 @@ Proceed? (y/n/edit)
 
 ## Plan Generation
 
-After approval, generate each plan using the same format as `/claude-skills:plan-create`. Each plan file is saved to `docs/claude-skills:cycles/{timestamp}_{slug}.md` with its own timestamp (or a shared timestamp with different slugs).
+After approval, generate each plan using the same format as `/claude-skills:plan-create`. Each plan file is saved to `docs/cycles/{timestamp}_{slug}.md` with its own timestamp (or a shared timestamp with different slugs).
 
 The "Files to Change" section in each plan is critical — it is the input for the orthogonality check in Phase 1.
