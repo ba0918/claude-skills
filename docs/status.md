@@ -11,7 +11,7 @@
 | **Cycle ID** | `20260323011417` |
 | **Feature** | Team Plan スキル |
 | **Started** | 2026-03-23 01:14:17 |
-| **Phase** | 🔵 In Progress |
+| **Phase** | 🟢 Done |
 | **Plan** | [docs/cycles/20260323011417_team-plan.md](./cycles/20260323011417_team-plan.md) |
 
 **Current Focus:**
