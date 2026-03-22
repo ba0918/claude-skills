@@ -1,0 +1,394 @@
+---
+name: team-cycle
+description: AgenticTeam によるチーム議論型レビュー → 自動実装の全サイクルを実行する。複数の専門レビュワー（Security / Performance / Architect / Pragmatist）がチームとして議論しながら計画をレビューし、合意形成後に自動実装へ進む。「team cycle」「チームサイクル」「チームレビュー付きcycle」で起動。
+---
+
+# Team Cycle
+
+AgenticTeam を使った複数レビュワーによるチーム議論型レビュー + 自動実装サイクル。
+
+## Flow Overview
+
+```
+team-cycle コマンド
+  │
+  ├─ Phase 0: 準備（計画ファイル特定・検証・環境チェック）
+  │
+  ├─ Phase 1: チームレビュー（AgenticTeam）
+  │    ├─ TeamCreate → Agent spawn × 4 → 議論 → 合意形成 → 計画修正
+  │    └─ TeamDelete（必ず実行）
+  │
+  ├─ Phase 2: 実装（既存の plan-implement を Agent 委譲）
+  │
+  └─ Phase 3: 完了処理
+       ├─ 結果ファイル生成
+       ├─ status.md / session-history.md 更新
+       ├─ commit
+       └─ issue close（該当時）
+```
+
+## パラメータ
+
+- `$ARGUMENTS` の最初の引数: 計画ファイルパス（省略時は `docs/cycles/` 内の最新を自動選択）
+
+## Phase 0: 準備
+
+### Step 0.1: 環境変数チェック
+
+**重要**: Phase 1 の TeamCreate を使用するには、実験的機能フラグが必要。
+
+以下のコマンドで環境変数を確認する:
+
+```bash
+echo "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-not_set}"
+```
+
+未設定（`not_set`）の場合:
+
+```
+⛔ TEAM-CYCLE ABORTED: AgenticTeam feature not enabled
+
+Set the environment variable before running:
+  export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+
+Then retry: /claude-skills:team-cycle
+```
+
+cycle を中断する。
+
+### Step 0.2: 計画ファイル特定
+
+1. 引数にパスがあればそれを使用
+2. なければ: `ls -t docs/cycles/*.md 2>/dev/null | head -1`
+
+### Step 0.3: パス検証
+
+計画ファイルのパスが `docs/cycles/` 配下であることを確認する。
+
+パスが `docs/cycles/*.md` に一致しない場合:
+
+```
+⛔ TEAM-CYCLE ABORTED: Plan file is not in docs/cycles/
+Found: {actual_path}
+Expected: docs/cycles/*.md
+
+Plan files must be located in docs/cycles/.
+```
+
+cycle を中断する。
+
+### Step 0.4: 計画読み込み
+
+1. 計画ファイルを読み込み、概要を把握する（Feature名、ステップ数、現在の進捗）
+2. サイクル開始を表示:
+
+```
+══════════════════════════════════════
+TEAM-CYCLE START
+Plan: {plan_file_path}
+Feature: {feature_name}
+Steps: {step_count}
+Mode: AgenticTeam Review
+══════════════════════════════════════
+```
+
+## Phase 1: チームレビュー（AgenticTeam）
+
+**重要**: Phase 1 の全処理は **TeamDelete を保証する try-finally パターン** で実装する。TeamCreate 成功後、以降のどの段階でエラーが発生しても TeamDelete を必ず実行する。
+
+### Step 1.1: コンテキスト収集
+
+レビュワーに渡すコンテキストを収集する:
+
+```bash
+# CLAUDE.md
+cat CLAUDE.md 2>/dev/null || echo ""
+
+# review-rules.md（存在する場合のみ）
+cat .claude/review-rules.md 2>/dev/null || echo ""
+```
+
+計画ファイルの全文は既に Step 0.4 で読み込み済み。
+
+### Step 1.2: チーム作成
+
+TeamCreate ツールでレビューチームを作成する:
+
+- **team_name**: `plan-review-team`
+
+### Step 1.3: レビュワー spawn（並行）
+
+[references/team-config.md](references/team-config.md) に定義された4つのロールを **並行で** Agent spawn する。
+
+各 Agent のプロンプトは以下の構成:
+
+1. ロール説明とレビュー指示（team-config.md のロール固有プロンプト）
+2. チーム情報（`team_name: plan-review-team`、`SendMessage` で Lead に報告する指示）
+3. コンテキスト（計画ファイル全文、CLAUDE.md、review-rules.md）
+
+**並行 spawn の実行:**
+
+4つの Agent ツール呼び出しを同時に実行する。各 Agent のプロンプト:
+
+```
+あなたは {role_name} としてチームレビューに参加しています。
+チーム名: plan-review-team
+
+{role_specific_prompt_from_team_config}
+
+## コンテキスト
+
+### 計画ファイル
+{plan_content}
+
+### プロジェクトルール (CLAUDE.md)
+{claude_md_content}
+
+### レビュールール (.claude/review-rules.md)
+{review_rules_content}
+
+レビューが完了したら、SendMessage ツールを使って以下のように Lead に報告してください:
+- team_name: "plan-review-team"
+- recipient: "lead"
+- メッセージ: レビュー結果の全文
+```
+
+**spawn 失敗時の処理:**
+
+- 成功した Agent が 2 名以上 → 続行
+- 成功した Agent が 1 名以下 → TeamDelete して cycle 中断:
+
+```
+⛔ TEAM-CYCLE ABORTED: Insufficient reviewers (need >= 2, got {count})
+Team disbanded.
+```
+
+### Step 1.4: 論点整理（Lead）
+
+[references/review-flow.md](references/review-flow.md) の Step 2 に従い、各レビュワーの報告を整理する。
+
+1. 全レビュワーからの SendMessage を受け取る
+2. 報告を3カテゴリに分類:
+   - **共通問題**: 複数レビュワーが指摘した同一の問題
+   - **トレードオフ論点**: レビュワー間で意見が対立する論点
+   - **軽微な問題**: 単独の指摘で影響が小さい
+3. トレードオフ論点がなければ Step 1.6 にスキップ
+
+### Step 1.5: チーム議論
+
+[references/review-flow.md](references/review-flow.md) の Step 3 に従い、トレードオフ論点について議論する。
+
+1. SendMessage で全メンバーにトレードオフ論点を共有:
+
+```
+team_name: "plan-review-team"
+recipient: 各メンバー名
+```
+
+2. 各メンバーの意見を SendMessage で受け取る
+3. 最大 2 ラウンドで収束させる
+4. 合意に至らない場合は Lead が判断（理由を明記）
+
+### Step 1.6: 合意形成と判定
+
+[references/review-flow.md](references/review-flow.md) の Step 4 に従い、合意を形成する。
+
+**判定ロジック:**
+
+| 判定 | 条件 | 次のアクション |
+|------|------|---------------|
+| APPROVED | BLOCK 指摘なし。全問題が解消済み | Phase 2 へ |
+| APPROVED WITH CONCERNS | BLOCK なし。WARN レベルの残存リスクあり | 残存リスクを記録して Phase 2 へ |
+| REJECTED | BLOCK が解消不可。根本的な設計変更が必要 | cycle 中断 |
+
+### Step 1.7: 計画修正
+
+APPROVED / APPROVED WITH CONCERNS の場合:
+
+1. 計画ファイルに `## 🔍 Team Review Results` セクションを追加する
+2. 問題のあったステップを修正する
+3. 注意事項・エッジケースを追記する
+
+追加セクションのフォーマット:
+
+```markdown
+## 🔍 Team Review Results
+
+**Reviewed:** {datetime}
+**Verdict:** {APPROVED / APPROVED WITH CONCERNS}
+
+### 修正事項
+- {修正内容}（指摘者: {role}）
+
+### 残存リスク
+- {リスク}（許容理由: {reason}）
+
+### 議論ハイライト
+- {論点}: {合意内容の要約}
+```
+
+### Step 1.8: TeamDelete
+
+**必ず実行する。** 正常完了・エラー・REJECTED のいずれの場合も。
+
+TeamDelete ツールでチームを解散:
+
+- **team_name**: `plan-review-team`
+
+### Step 1.9: REJECTED 時の処理
+
+REJECTED 判定の場合:
+
+1. 計画ファイルの Status を `🔴 Rejected` に更新
+2. REJECTED 理由のサマリーを表示:
+
+```
+══════════════════════════════════════
+TEAM-CYCLE REJECTED
+Feature: {feature_name}
+Reason: {rejection_summary}
+
+The plan requires fundamental design changes.
+Please revise the plan and retry.
+══════════════════════════════════════
+```
+
+3. Phase 2 には進まず cycle 中断
+
+### Phase 1 表示
+
+```
+── Phase 1: Team Review ── {APPROVED|APPROVED WITH CONCERNS|REJECTED}
+Reviewers: {active_count}/4
+Discussion rounds: {round_count}
+Issues resolved: {resolved_count}
+Remaining concerns: {concern_count}
+```
+
+## Phase 2: 実装（自動実装）
+
+**既存の `claude-skills:plan-implement` をそのまま Agent 委譲で使用する。**
+
+1. Agent ツール（general-purpose）で実装エージェントを起動する:
+
+   プロンプト:
+   ```
+   Skill ツールで `claude-skills:plan-implement` を実行してください。計画ファイル {plan_file_path} の全ステップを実装してください。各ステップ完了ごとにコミットし、ステータスを更新してください。完了したら実装サマリー（変更ファイル数、テスト数、コミット数）を報告してください。
+   ```
+
+2. 結果を受け取る
+
+表示:
+
+```
+── Phase 2: Implement ── DONE
+Files changed: {N}
+Tests added: {N}
+Commits: {N}
+```
+
+## Phase 3: 完了処理
+
+### Step 3.1: 結果ファイル生成
+
+`docs/cycles/results/{plan_basename}_result.md` に出力（ディレクトリがなければ `mkdir -p` で作成）。
+
+```markdown
+# Cycle Result: {feature_name}
+
+**Plan:** {plan_file_path}
+**Executed:** {datetime}
+**Mode:** AgenticTeam Review
+
+## Team Review
+- Verdict: {APPROVED / APPROVED WITH CONCERNS}
+- Reviewers: {active_count}/4 ({role_names})
+- Discussion rounds: {round_count}
+- Issues resolved: {resolved_count}
+- Remaining concerns: {concern_count}
+
+### Review Highlights
+{議論のハイライト要約}
+
+## Implementation
+- Steps completed: {N}/{total}
+- Files changed: {N}
+- Tests added: {N}
+- Commits: {N}
+
+## Commits
+{git log --oneline のコミット一覧}
+
+## Notes
+{特記事項があれば}
+```
+
+### Step 3.2: status.md 更新
+
+**ガード条件**: `docs/status.md` の Current Session が既に空（`_No active session`）または Completed の場合はこのステップをスキップする。
+
+`skills/plan/references/status-update-guide.md` の **Case 2（In Progress → Completed）** の手順に従う:
+
+1. **Step 2a**: session-history.md にアーカイブ
+2. **Step 2b**: Session History セクションをクリア
+3. **Step 2c**: Current Session をクリア
+
+### Step 3.3: コミット
+
+Skill ツールで `claude-skills:commit` を実行する。
+
+コミット対象がなければスキップする。
+
+### Step 3.4: Issue 自動 close
+
+計画ファイルを読み、`**Issue:**` 行が存在するか確認する。
+
+- `**Issue:**` 行がある場合: issue slug を抽出し、Skill ツールで `claude-skills:issue` を `close {slug}` 引数で実行する
+  - close が失敗した場合は警告メッセージを表示するのみで、cycle 自体は成功扱いとする
+- `**Issue:**` 行がない場合: このステップをスキップする
+
+### Step 3.5: 最終表示
+
+```
+══════════════════════════════════════
+TEAM-CYCLE COMPLETE
+Feature: {feature_name}
+Review: {verdict} ({round_count} rounds, {active_count}/4 reviewers)
+Implement: {steps_done}/{steps_total} steps
+Commits: {N}
+Result: {result_file_path}
+══════════════════════════════════════
+```
+
+## エラーハンドリング
+
+### Phase 0 のエラー
+
+- **環境変数未設定**: エラーメッセージを表示して中断
+- **計画ファイルが見つからない**: エラーメッセージを表示して中断
+- **パス検証失敗**: エラーメッセージを表示して中断
+
+### Phase 1 のエラー
+
+- **TeamCreate 失敗**: エラーメッセージを表示して中断（TeamDelete 不要）
+- **Agent spawn 失敗（2名以上成功）**: 成功したメンバーで続行
+- **Agent spawn 失敗（1名以下）**: TeamDelete → 中断
+- **REJECTED 判定**: TeamDelete → Status 更新 → 中断
+- **予期しないエラー**: TeamDelete → エラーメッセージ表示 → 中断
+
+### Phase 2 のエラー
+
+- **実装エージェントエラー**: エラー内容を表示し、どのステップまで完了したかを記録して中断
+
+## 重要なルール
+
+- **TeamDelete は必ず実行する**: TeamCreate 以降のどの段階でエラーが発生しても、TeamDelete を必ず実行する
+- **ヘッドレス実行**: ユーザーへの確認プロンプトは出さない
+- **既存との互換性**: 結果ファイル、status.md、session-history.md は既存 cycle と同じフォーマット
+- **Phase 2 は既存スキルを再利用**: `claude-skills:plan-implement` をそのまま使う
+- **REJECTED は絶対に無視しない**: BLOCK が解消不可なら実装に進まない
+
+## References
+
+- チーム構成: [references/team-config.md](references/team-config.md)
+- レビュー議論フロー: [references/review-flow.md](references/review-flow.md)
