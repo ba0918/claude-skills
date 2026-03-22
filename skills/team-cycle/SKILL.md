@@ -118,7 +118,7 @@ TeamCreate ツールでレビューチームを作成する:
 
 ### Step 1.3: レビュワー spawn（並行）
 
-[references/team-config.md](references/team-config.md) に定義された4つのロールを **並行で** Agent spawn する。
+[skills/shared/references/team-config.md](../shared/references/team-config.md) に定義された4つのロールを **並行で** Agent spawn する。
 
 各 Agent のプロンプトは以下の構成:
 
@@ -390,5 +390,5 @@ Result: {result_file_path}
 
 ## References
 
-- チーム構成: [references/team-config.md](references/team-config.md)
+- チーム構成: [skills/shared/references/team-config.md](../shared/references/team-config.md)
 - レビュー議論フロー: [references/review-flow.md](references/review-flow.md)
