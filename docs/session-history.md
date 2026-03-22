@@ -2,6 +2,7 @@
 
 | Cycle ID | Feature | Started | Completed | Plan |
 |----------|---------|---------|-----------|------|
+| `20260323005318` | Team Cycle スキル | 2026-03-23 | 2026-03-23 | [Link](./cycles/20260323005318_team-cycle.md) |
 | `20260321013609` | Plugin Migration | 2026-03-21 | 2026-03-21 | [Link](./cycles/20260321013609_plugin-migration.md) |
 | `20260319190335` | doc-write スキル作成 | 2026-03-19 | 2026-03-19 | [Link](./cycles/20260319190335_doc-write-skill.md) |
 | `20260317161207` | Brainstorm Skill | 2026-03-17 | 2026-03-17 | [Link](./cycles/20260317161207_brainstorm-skill.md) |
