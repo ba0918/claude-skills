@@ -1,6 +1,6 @@
 # Project Status
 
-**Last Updated:** 2026-03-21 01:50:00
+**Last Updated:** 2026-03-23 00:53:18
 
 ---
 
@@ -8,14 +8,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Cycle ID** | `20260321013609` |
-| **Feature** | Plugin Migration |
-| **Started** | 2026-03-21 01:36:09 |
-| **Phase** | 🟢 Complete |
-| **Plan** | [docs/cycles/20260321013609_plugin-migration.md](./cycles/20260321013609_plugin-migration.md) |
+| **Cycle ID** | `20260323005318` |
+| **Feature** | Team Cycle スキル |
+| **Started** | 2026-03-23 00:53:18 |
+| **Phase** | 🔵 Implementing |
+| **Plan** | [docs/cycles/20260323005318_team-cycle.md](./cycles/20260323005318_team-cycle.md) |
 
 **Current Focus:**
-install.sh によるシンボリックリンク管理を Claude Code plugin フォーマットに移行する。
+既存の cycle ワークフローのレビューフェーズを AgenticTeam 機能で強化する新スキル team-cycle を作成する。
 
 ---
 
