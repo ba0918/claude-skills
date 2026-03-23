@@ -238,7 +238,7 @@ Total ideas explored: {total_count}
 1. 現在の会話から壁打ちの内容を整理する（論争メモリを含む）
 2. AskUserQuestion でタイトルとサマリーを確認
 3. `docs/ideas/` ディレクトリを作成（なければ `mkdir -p`）
-4. slug を生成: `YYYY-MM-DD_{kebab-title}`
+4. slug を生成: `yyyymmddhhmmss_{kebab-title}` (date +%Y%m%d%H%M%S)
 5. [references/session-template.md](references/session-template.md) をもとにメモファイルを生成: `docs/ideas/{slug}.md`
    - 論争メモリ（Accepted / Controversial / Frontier）のセクションを含める
    - Round History を含める
@@ -246,14 +246,14 @@ Total ideas explored: {total_count}
    ```markdown
    # Idea Status
 
-   **Last Updated:** YYYY-MM-DD
+   **Last Updated:** YYYY-MM-DD HH:MM:SS
 
    | Idea | Tags | Created | Status | Summary |
    |------|------|---------|--------|---------|
    ```
 7. テーブルの末尾に行を追加:
    ```
-   | [{kebab-title}]({slug}.md) | `{tags}` | {YYYY-MM-DD} | 💡 Idea | {summary} |
+   | [{kebab-title}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | 💡 Idea | {summary} |
    ```
 8. **Last Updated** を今日の日付に更新
 9. 完了メッセージ表示:
@@ -369,7 +369,7 @@ Resume 後に Wrap Workflow が実行された場合:
 ```
 docs/ideas/
   idea-status.md             - インデックスファイル（既存 brainstorm と共有）
-  YYYY-MM-DD_{slug}.md       - 個別アイデアメモ（論争メモリ含む）
+  yyyymmddhhmmss_{slug}.md   - 個別アイデアメモ（論争メモリ含む）
   archives/                  - 完了・破棄したアイデアの保管先
 ```
 
