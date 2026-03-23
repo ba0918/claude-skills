@@ -59,6 +59,8 @@ cd ~/develop/claude-skills
 | `/claude-skills:brainstorm-resume` | 既存のアイデアメモを元に壁打ちを再開 |
 | `/claude-skills:team-cycle` | AgenticTeam によるチーム議論型レビュー → 自動実装の全サイクルを実行 |
 | `/claude-skills:team-plan` | AgenticTeam によるチーム議論型の計画作成を実行 |
+| `/claude-skills:team-brainstorm` | チーム議論型のブレインストーミングを開始（4思考スタイルで多角的に発散） |
+| `/claude-skills:team-brainstorm-wrap` | チーム壁打ちの成果を整理してアイデアメモに保存 |
 
 ## スキル一覧
 
@@ -78,6 +80,7 @@ cd ~/develop/claude-skills
 | `brainstorm` | アイデアの壁打ちに特化。発散→収束→plan化の導線を提供。壁打ち中はファイル編集禁止 |
 | `team-cycle` | AgenticTeam によるチーム議論型レビュー + 自動実装サイクル。4専門レビュワーが議論して計画品質を向上 |
 | `team-plan` | AgenticTeam によるチーム議論型の計画作成。4専門家が議論しながら多角的な実装計画を作成 |
+| `team-brainstorm` | AgenticTeam によるチーム議論型ブレインストーミング。4思考スタイル（Challenger/Explorer/Connector/Grounded）で多角的にアイデアを発散 |
 
 ## 基本ワークフロー
 
@@ -191,6 +194,7 @@ skills/
 ├── brainstorm/       # アイデアの壁打ち・発散→収束→plan化
 ├── team-cycle/       # AgenticTeam チーム議論型レビュー + 自動実装
 ├── team-plan/        # AgenticTeam チーム議論型の計画作成
+├── team-brainstorm/  # AgenticTeam チーム議論型ブレインストーミング
 └── shared/           # 複数スキルが共有するリソース（ロール定義等）
 rules/                # グローバルルール（手動コピーが必要）
 install.sh            # レガシーインストーラ（非推奨）
