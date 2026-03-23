@@ -2,8 +2,8 @@
 title: "{{TITLE}}"
 audience: "{{AUDIENCE}}"
 template: discussion-summary
-created: "{{DATE}}"
-updated: "{{DATE}}"
+created: "{{YYYY-MM-DD HH:MM:SS}}"
+updated: "{{YYYY-MM-DD HH:MM:SS}}"
 ---
 
 # {{TITLE}}

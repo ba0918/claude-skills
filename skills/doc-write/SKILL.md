@@ -66,7 +66,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
    - 適切な箇所に Mermaid 図を挿入（[references/mermaid-guidelines.md](references/mermaid-guidelines.md) に従う）
    - Mermaid 図は必須ではない — 図が有効な場合のみ挿入する
    - frontmatter にメタデータを埋め込む（title, audience, template, created, updated）
-4. slug を生成: `YYYY-MM-DD_{kebab-title}`
+4. slug を生成: `yyyymmddhhmmss_{kebab-title}` (date +%Y%m%d%H%M%S)
 5. 出力先: `docs/writings/{slug}.md`
    - `docs/writings/` ディレクトリがなければ `mkdir -p` で作成
 
@@ -134,7 +134,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 
 ```
 docs/writings/
-  YYYY-MM-DD_{slug}.md    - 個別ドキュメント
+  yyyymmddhhmmss_{slug}.md  - 個別ドキュメント
 ```
 
 ## Templates
