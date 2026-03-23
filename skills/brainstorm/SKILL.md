@@ -78,20 +78,20 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 1. 現在の会話から壁打ちの内容を整理する
 2. AskUserQuestion でタイトルとサマリーを確認
 3. `docs/ideas/` ディレクトリを作成（なければ `mkdir -p`）
-4. slug を生成: `YYYY-MM-DD_{kebab-title}`
+4. slug を生成: `yyyymmddhhmmss_{kebab-title}` (date +%Y%m%d%H%M%S)
 5. [references/idea-template.md](references/idea-template.md) をもとにメモファイルを生成: `docs/ideas/{slug}.md`
 6. `docs/ideas/idea-status.md` を更新（なければ以下のテンプレートで作成）:
    ```markdown
    # Idea Status
 
-   **Last Updated:** YYYY-MM-DD
+   **Last Updated:** YYYY-MM-DD HH:MM:SS
 
    | Idea | Tags | Created | Status | Summary |
    |------|------|---------|--------|---------|
    ```
 7. テーブルの末尾に行を追加:
    ```
-   | [{kebab-title}]({slug}.md) | `{tags}` | {YYYY-MM-DD} | 💡 Idea | {summary} |
+   | [{kebab-title}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | 💡 Idea | {summary} |
    ```
 8. **Last Updated** を今日の日付に更新
 9. 完了メッセージ表示:
@@ -201,7 +201,7 @@ Resume 後に Wrap Workflow が実行された場合:
 ```
 docs/ideas/
   idea-status.md             - インデックスファイル
-  YYYY-MM-DD_{slug}.md       - 個別アイデアメモ
+  yyyymmddhhmmss_{slug}.md   - 個別アイデアメモ
   archives/                  - 完了・破棄したアイデアの保管先
 ```
 

@@ -1,6 +1,6 @@
 # {{TITLE}}
 
-**Created:** {{DATE}}
+**Created:** {{YYYY-MM-DD HH:MM:SS}}
 **Status:** 💡 Idea
 **Tags:** {{TAGS}}
 
