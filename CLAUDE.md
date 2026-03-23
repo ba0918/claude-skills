@@ -54,6 +54,7 @@ commands/team-plan.md    →  skills/team-plan/SKILL.md
 commands/team-brainstorm.md → skills/team-brainstorm/SKILL.md (session ワークフロー)
 commands/team-brainstorm-wrap.md → skills/team-brainstorm/SKILL.md (wrap ワークフロー)
 commands/skill-improve.md    →  skills/skill-improve/SKILL.md
+commands/doc-audit.md    →  skills/doc-audit/SKILL.md
 ```
 
 > `codebase-review` と `generate-review-rules` はコマンドなし（Skill ツール直接呼び出し）。
@@ -78,6 +79,7 @@ commands/skill-improve.md    →  skills/skill-improve/SKILL.md
 | `team-plan` | AgenticTeam によるチーム議論型の計画作成。4専門家が議論しながら多角的な実装計画を作成 |
 | `team-brainstorm` | AgenticTeam によるチーム議論型ブレインストーミング。4思考スタイル（Challenger/Explorer/Connector/Grounded）で多角的にアイデアを発散 |
 | `skill-improve` | セッションデータからスキル使用時の摩擦を検出・分析し、データ駆動でスキル改善を実行するメタスキル |
+| `doc-audit` | docs 内の全アーティファクトを横断スキャンし、不整合を検出・自動修復する |
 
 ### ワークフロー設計パターン
 
