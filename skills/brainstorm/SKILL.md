@@ -130,6 +130,11 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 2. AskUserQuestion で対象アイデアを選択
 3. アイデアファイルを読み込む
 4. Skill ツールで `claude-skills:plan-create` を実行（引数フォーマット: `{Title}: {Summary from idea file}` — plan-create は $ARGUMENTS をそのまま What & Why の種として使う）
+4.5. Optional cycle execution:
+   - If `--team-cycle` is present in the original `$ARGUMENTS`: Remove the flag, then execute `claude-skills:team-cycle` via the Skill tool with the created plan. Skip Step 7 (Next Steps display).
+   - Else if `--cycle` is present in the original `$ARGUMENTS`: Remove the flag, then execute `claude-skills:cycle` via the Skill tool with the created plan. Skip Step 7 (Next Steps display).
+   - Otherwise: Continue to Step 5 (no cycle execution, show Next Steps as usual).
+   - Note: If both `--team-cycle` and `--cycle` are specified, `--team-cycle` takes priority.
 5. アイデアの Status を `💡 Idea` → `📋 Planned` に更新
 6. アーカイブ処理を実行:
    - `docs/ideas/archives/` ディレクトリを作成（なければ `mkdir -p`）
@@ -144,6 +149,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
    ## Next Steps
    1. `/plan-review` で計画をレビュー
    2. `/claude-skills:cycle` でサイクル実行
+   3. `/claude-skills:team-cycle` でチームレビュー付きサイクル実行
    ```
 
 ---

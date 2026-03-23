@@ -138,7 +138,8 @@ Create a plan from an issue without running cycle. Use when you want to review/d
    ## Next Steps
    1. Review and discuss the plan
    2. Run `/claude-skills:cycle` to implement
-   3. Issue will be auto-closed when cycle completes 🚀
+   3. Run `/claude-skills:team-cycle` for team-reviewed implementation
+   4. Issue will be auto-closed when cycle completes 🚀
    ```
 
 ---
@@ -150,7 +151,9 @@ Connect an issue to plan → cycle for resolution.
 ### Steps
 
 1. Execute the **Issue → Plan Conversion** procedure above
-2. Execute `claude-skills:cycle` via the Skill tool with the created plan
+2. Execute cycle:
+   - If `--team` is present in the arguments: Remove `--team` from arguments, then execute `claude-skills:team-cycle` via the Skill tool with the created plan
+   - Otherwise: Execute `claude-skills:cycle` via the Skill tool with the created plan
 3. Error handling:
    - If plan creation fails: Display the error and exit. The issue remains open.
    - If cycle fails or is interrupted: Display the error and the path to the created plan file. The issue remains open. Inform the user they can retry with `/claude-skills:cycle` using the existing plan — no need to re-run issue-cycle.
