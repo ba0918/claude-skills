@@ -2,6 +2,7 @@
 
 | Cycle ID | Feature | Started | Completed | Plan |
 |----------|---------|---------|-----------|------|
+| `20260323185519` | Team Skill Improvement | 2026-03-23 | 2026-03-23 | [Link](./cycles/20260323185519_team-skill-improvement.md) |
 | `20260323011417` | Team Plan スキル | 2026-03-23 | 2026-03-23 | [Link](./cycles/20260323011417_team-plan.md) |
 | `20260323005318` | Team Cycle スキル | 2026-03-23 | 2026-03-23 | [Link](./cycles/20260323005318_team-cycle.md) |
 | `20260321013609` | Plugin Migration | 2026-03-21 | 2026-03-21 | [Link](./cycles/20260321013609_plugin-migration.md) |

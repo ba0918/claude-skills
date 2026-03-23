@@ -1,22 +1,22 @@
 # Project Status
 
-**Last Updated:** 2026-03-23 02:19:16
+**Last Updated:** 2026-03-23 19:30:00
 
 ---
 
-## 🎯 Current Session
+## Current Session
 
 _No active session. Create a new plan to start._
 
 ---
 
-## 📜 Session History
+## Session History
 
 _アーカイブ済みセッションは [session-history.md](./session-history.md) を参照。_
 
 ---
 
-## 🔗 Quick Links
+## Quick Links
 
 - [All Cycles](./cycles/)
 - [Project Root](../)
