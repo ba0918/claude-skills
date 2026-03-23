@@ -7,6 +7,18 @@ description: Issue management for tracking out-of-scope problems discovered duri
 
 Provides a flow to record out-of-scope problems discovered during plan execution as local files in `docs/issues/`, and later connect them to plan → cycle.
 
+## Slug Definition
+
+The **slug** is the canonical identifier for an issue. It always includes the date prefix:
+
+```
+{YYYY-MM-DD}_{kebab-title}
+```
+
+Example: `2026-03-23_fix-login-timeout`
+
+All workflows use this full slug (with date prefix) when referencing issues. Partial matches (without date prefix) are not supported — always use the complete slug.
+
 ## Workflow Selection
 
 The first keyword in the argument determines the workflow:
@@ -25,12 +37,18 @@ Text after the keyword becomes the argument for each workflow.
 
 Record a new issue.
 
-### Arguments
+### Argument Format
 
-- Title (required)
-- Summary (optional — defaults to the same as title)
-- Tags (optional — comma-separated)
-- Source (optional — source plan file path, etc.)
+```
+create "Title" [--summary "Description"] [--tags "tag1,tag2"] [--source "path"]
+```
+
+- **Title** (required): The first argument. Quotes are optional for single-word titles.
+- **--summary** (optional): Detailed description. Defaults to the same as title if omitted.
+- **--tags** (optional): Comma-separated tags.
+- **--source** (optional): Source plan file path, etc.
+
+If arguments are given as free-form text without flags, extract title from the first phrase, and infer summary, tags, and source from context.
 
 ### Steps
 
@@ -53,7 +71,7 @@ Record a new issue.
 5. Read [references/issue-template.md](references/issue-template.md), replace placeholders, and write to `docs/issues/{slug}.md`
 6. Add a row to the end of the table in `docs/issues/issue-status.md`:
    ```
-   | [{kebab-title}]({slug}.md) | `{tags}` | {YYYY-MM-DD} | {summary} |
+   | [{slug}]({slug}.md) | `{tags}` | {YYYY-MM-DD} | {summary} |
    ```
 7. Update **Last Updated** to today's date
 8. Display the creation result:
@@ -81,22 +99,35 @@ Display a list of open issues.
 
 ---
 
+## Issue → Plan Conversion (shared procedure)
+
+This procedure is used by both Plan Workflow and Cycle Workflow. Do NOT duplicate this logic — always refer here.
+
+### Steps
+
+1. Read `docs/issues/issue-status.md`
+   - If it doesn't exist: Display "No issues have been registered yet" and exit
+2. **Issue selection** — behavior depends on the number of open issues:
+   - **0 issues**: Display "No open issues found" and exit
+   - **1 issue**: Use AskUserQuestion to confirm with the user. Present the issue details and offer two options: the issue slug (to proceed) and "Cancel" (to abort).
+   - **2+ issues**: Use AskUserQuestion to present all issue slugs as options plus "Cancel". Ask the user to select the target issue.
+3. Read the selected issue file (`docs/issues/{slug}.md`)
+   - If not found: Display the file list in `docs/issues/` and exit with an error message
+4. Execute `claude-skills:plan-create` via the Skill tool based on the issue content (title and summary)
+   - Arguments: Pass the issue's title and summary
+   - **CRITICAL**: The plan file MUST be created at `docs/cycles/{timestamp}_{slug}.md`. Do NOT use `docs/plans/` or any other directory. Verify the file was created in `docs/cycles/` before proceeding.
+   - **IMPORTANT**: Include `**Issue:** {slug}` in the plan header (no underscores, no markdown emphasis — just the raw slug). This field is used by `cycle` to auto-close the issue upon completion. See `plan/SKILL.md` "Optional `Issue` field" for the authoritative format.
+
+---
+
 ## Plan Workflow
 
 Create a plan from an issue without running cycle. Use when you want to review/discuss the plan before executing.
 
 ### Steps
 
-1. Read `docs/issues/issue-status.md`
-   - If it doesn't exist: Display "No issues have been registered yet" and exit
-2. Use AskUserQuestion to have the user select the target issue (present table contents and ask for slug input)
-3. Read the selected issue file (`docs/issues/{slug}.md`)
-   - If not found: Display the file list in `docs/issues/` and exit with an error message
-4. Execute `claude-skills:plan-create` via the Skill tool based on the issue content (title and summary)
-   - Arguments: Pass the issue's title and summary
-   - **CRITICAL**: The plan file MUST be created at `docs/cycles/{timestamp}_{slug}.md`. Do NOT use `docs/plans/` or any other directory. Verify the file was created in `docs/cycles/` before proceeding.
-   - **IMPORTANT**: Include `**Issue:** {slug}` in the plan header so that cycle can auto-close the issue upon completion
-5. Display completion message:
+1. Execute the **Issue → Plan Conversion** procedure above
+2. Display completion message:
    ```
    ✅ Plan created from issue!
    📄 Plan: docs/cycles/{timestamp}_{slug}.md
@@ -116,16 +147,11 @@ Connect an issue to plan → cycle for resolution.
 
 ### Steps
 
-1. Read `docs/issues/issue-status.md`
-   - If it doesn't exist: Display "No issues have been registered yet" and exit
-2. Use AskUserQuestion to have the user select the target issue (present table contents and ask for slug input)
-3. Read the selected issue file (`docs/issues/{slug}.md`)
-4. Execute `claude-skills:plan-create` via the Skill tool based on the issue content (title and summary)
-   - Arguments: Pass the issue's title and summary
-   - **CRITICAL**: The plan file MUST be created at `docs/cycles/{timestamp}_{slug}.md`. Do NOT use `docs/plans/` or any other directory. Verify the file was created in `docs/cycles/` before proceeding.
-   - **IMPORTANT**: Include `**Issue:** {slug}` in the plan header so that cycle can auto-close the issue upon completion
-5. Execute `claude-skills:cycle` via the Skill tool with the created plan
-6. If `claude-skills:plan-create` or `claude-skills:cycle` fails, display the error and exit while keeping the issue open
+1. Execute the **Issue → Plan Conversion** procedure above
+2. Execute `claude-skills:cycle` via the Skill tool with the created plan
+3. Error handling:
+   - If plan creation fails: Display the error and exit. The issue remains open.
+   - If cycle fails or is interrupted: Display the error and the path to the created plan file. The issue remains open. Inform the user they can retry with `/claude-skills:cycle` using the existing plan — no need to re-run issue-cycle.
    - Note: Issue auto-close is handled by cycle's Phase 3 via the `**Issue:**` field in the plan. No explicit close call is needed here.
 
 ---
@@ -136,13 +162,14 @@ Close (archive) an issue.
 
 ### Arguments
 
-- Issue slug (required — if omitted, confirm via AskUserQuestion)
+- Issue slug (required — the full slug including date prefix, e.g. `2026-03-23_fix-login-timeout`)
+- If omitted: Use AskUserQuestion to confirm. Follow the same selection logic as the **Issue → Plan Conversion** procedure Step 2.
 
 ### Steps
 
-1. Get the issue slug from arguments (if omitted, confirm via AskUserQuestion)
+1. Get the issue slug from arguments. If omitted, use AskUserQuestion following the selection logic in **Issue → Plan Conversion** Step 2.
 2. Verify the issue file `docs/issues/{slug}.md` exists
-   - If not found: Display the file list in `docs/issues/` and exit with an error message
+   - If not found: List files in `docs/issues/` and display an error message showing available slugs. Exit.
 3. Create the `docs/issues/archives/` directory (if it doesn't exist, use `mkdir -p`)
 4. Move the issue file to `docs/issues/archives/` (using `mv` command)
 5. Remove the row containing the slug from `docs/issues/issue-status.md` using the Edit tool
@@ -161,7 +188,7 @@ Close (archive) an issue.
 ```
 docs/issues/
   issue-status.md             - Index file (LLM reads this first)
-  YYYY-MM-DD_<slug>.md        - Individual issue files
+  YYYY-MM-DD_<kebab-title>.md - Individual issue files
   archives/                   - Storage for closed issues
 ```
 
@@ -174,7 +201,7 @@ docs/issues/
 
 | Issue | Tags | Created | Summary |
 |-------|------|---------|---------|
-| [slug](YYYY-MM-DD_slug.md) | `tag` | YYYY-MM-DD | Summary |
+| [2026-03-23_fix-login](2026-03-23_fix-login.md) | `auth` | 2026-03-23 | Login timeout issue |
 ```
 
 ## Template
@@ -186,3 +213,4 @@ docs/issues/
 - issue-status.md serves as the index. LLMs can understand the situation by reading just this file without opening all issues
 - close = archive. On close, immediately move to `archives/` + remove row from `issue-status.md`
 - Do not include sensitive information in issues
+- The slug always includes the date prefix (`YYYY-MM-DD_{kebab-title}`). Use the full slug in all operations.

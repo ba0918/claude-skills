@@ -114,6 +114,7 @@ Commits: {N}
 5. **Issue 自動 close**: 計画ファイルを読み、`**Issue:**` 行が存在するか確認する
    - `**Issue:**` 行がある場合: issue slug を抽出し、Skill ツールで `claude-skills:issue` を `close {slug}` 引数で実行する
      - close が失敗した場合は警告メッセージを表示するのみで、cycle 自体は成功扱いとする（close 失敗で実装結果を巻き戻さない）
+     - **close の成否を記録しておき、Step 6 の最終表示に含める**
    - `**Issue:**` 行がない場合: このステップをスキップする
 
 6. 最終表示:
@@ -125,6 +126,7 @@ Refine: {verdict} ({iterations} rounds)
 Implement: {steps_done}/{steps_total} steps
 Commits: {N}
 Result: {result_file_path}
+Issue: {closed ✅ / ⚠️ close failed: {slug} — manual close required / (none)}
 ══════════════════════════════════════
 ```
 

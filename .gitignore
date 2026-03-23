@@ -1,5 +1,6 @@
 # cladue
 .claude/settings.local.json
+.claude/tmp
 
 # OS
 .DS_Store
