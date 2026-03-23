@@ -5,6 +5,7 @@
 | `20260324045803` | Doc Audit Skill | 2026-03-24 | 2026-03-24 | [Link](./cycles/20260324045803_doc-audit-skill.md) |
 | `20260324034348` | Unify Date Format Rules Across Skills | 2026-03-24 | 2026-03-24 | [Link](./cycles/20260324034348_unify-date-format-rules.md) |
 | `20260323214503` | skill-improve: スキル自己改善メタスキル | 2026-03-23 | 2026-03-23 | [Link](./cycles/20260323214503_skill-improve.md) |
+| `20260323200151` | Team Brainstorm Skill | 2026-03-23 | 2026-03-23 | [Link](./cycles/20260323200151_team-brainstorm.md) |
 | `20260323185519` | Team Skill Improvement | 2026-03-23 | 2026-03-23 | [Link](./cycles/20260323185519_team-skill-improvement.md) |
 | `20260323011417` | Team Plan スキル | 2026-03-23 | 2026-03-23 | [Link](./cycles/20260323011417_team-plan.md) |
 | `20260323005318` | Team Cycle スキル | 2026-03-23 | 2026-03-23 | [Link](./cycles/20260323005318_team-cycle.md) |
