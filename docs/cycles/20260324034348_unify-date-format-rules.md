@@ -153,10 +153,10 @@ skills/
 | Step | Status |
 |------|--------|
 | Step 1: issue スキル | 🟢 |
-| Step 2: brainstorm スキル | ⚪ |
-| Step 3: doc-write スキル | ⚪ |
-| Step 4: team-brainstorm スキル | ⚪ |
-| Step 5: CLAUDE.md 確認 | ⚪ |
+| Step 2: brainstorm スキル | 🟢 |
+| Step 3: doc-write スキル | 🟢 |
+| Step 4: team-brainstorm スキル | 🟢 |
+| Step 5: CLAUDE.md 確認 | 🟢 (変更不要) |
 | Tests | ⚪ |
 | Commit | ⚪ |
 
