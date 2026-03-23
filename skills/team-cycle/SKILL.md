@@ -20,6 +20,11 @@ team-cycle コマンド
   │
   ├─ Phase 2: 実装（既存の plan-implement を Agent 委譲）
   │
+  ├─ Phase 2.5: コードレビュー（Agent spawn × 2: Security + Architect）
+  │    ├─ git diff で変更差分を取得
+  │    ├─ 並行レビュー → 判定（PASS / PASS WITH NOTES / NEEDS FIX）
+  │    └─ NEEDS FIX 時は修正 → 再レビュー（最大1回リトライ）
+  │
   └─ Phase 3: 完了処理
        ├─ 結果ファイル生成
        ├─ status.md / session-history.md 更新
@@ -271,6 +276,18 @@ Remaining concerns: {concern_count}
 
 **既存の `claude-skills:plan-implement` をそのまま Agent 委譲で使用する。**
 
+### Step 2.0: base commit キャプチャ
+
+実装開始直前に現在のコミットを記録する:
+
+```bash
+base_commit=$(git rev-parse HEAD)
+```
+
+この `base_commit` は Phase 2.5 のコードレビューで使用する。
+
+### Step 2.1: 実装実行
+
 1. Agent ツール（general-purpose）で実装エージェントを起動する:
 
    プロンプト:
@@ -287,6 +304,79 @@ Remaining concerns: {concern_count}
 Files changed: {N}
 Tests added: {N}
 Commits: {N}
+```
+
+## Phase 2.5: コードレビュー
+
+**実装後のコードを Security と Architect が並行レビューする。**
+
+[references/code-review-flow.md](references/code-review-flow.md) に従い、実装コードのレビューを行う。
+
+### Step 2.5.1: diff 取得
+
+```bash
+git diff {base_commit}..HEAD
+```
+
+diff が 500 行を超える場合はファイル単位で分割して各 Agent に配分する。
+
+### Step 2.5.2: レビュワー spawn（並行）
+
+2名の Agent を **並行で** spawn する:
+
+- **Security Verifier**: [team-config.md](../shared/references/team-config.md) の「スポーンプロンプト（コードレビュー時）」を使用
+- **Architecture Verifier**: 同上
+
+**注意**: TeamCreate は使わない。Agent 2本の並行 spawn のみ。
+
+各 Agent のプロンプト:
+
+```
+あなたは {role_name} としてコードレビューに参加しています。
+チーム名: {team_name}
+
+{code_review_prompt_from_team_config}
+
+## レビュー対象（git diff）
+{diff_content}
+
+## プロジェクトルール (CLAUDE.md)
+{claude_md_content}
+
+レビューが完了したら、SendMessage ツールを使って Lead（team_name: {team_name}、recipient: "lead"）に結果を報告してください。
+```
+
+### Step 2.5.3: 判定
+
+[severity-and-verdicts.md](../shared/references/severity-and-verdicts.md) の「コードレビュー判定」に従う。
+
+| 判定 | 条件 | アクション |
+|------|------|-----------|
+| PASS | 問題なし、または INFO のみ | Phase 3 へ |
+| PASS WITH NOTES | WARN レベルの指摘あり | 指摘を記録して Phase 3 へ |
+| NEEDS FIX | BLOCK レベルの問題あり | 修正 → 再レビュー |
+
+### Step 2.5.4: NEEDS FIX 時の処理
+
+- **通常モード**: 修正指示を Agent に渡して再実装 → 再レビュー（最大1回リトライ）
+- **headless モード**: ユーザーにレビュー結果を出力し処理を中断:
+
+```
+⚠️ CODE REVIEW: NEEDS FIX
+Feature: {feature_name}
+
+{review_findings}
+
+コードレビューで BLOCK レベルの問題が検出されました。
+修正後に再度 team-cycle を実行してください。
+```
+
+### Phase 2.5 表示
+
+```
+── Phase 2.5: Code Review ── {PASS|PASS WITH NOTES|NEEDS FIX}
+Reviewers: Security, Architect
+Findings: {block_count} BLOCK, {warn_count} WARN, {info_count} INFO
 ```
 
 ## Phase 3: 完了処理
@@ -317,6 +407,11 @@ Commits: {N}
 - Files changed: {N}
 - Tests added: {N}
 - Commits: {N}
+
+## Code Review
+- Verdict: {PASS / PASS WITH NOTES / NEEDS FIX}
+- Reviewers: Security, Architect
+- Findings: {block_count} BLOCK, {warn_count} WARN, {info_count} INFO
 
 ## Commits
 {git log --oneline のコミット一覧}
@@ -394,3 +489,5 @@ Result: {result_file_path}
 
 - チーム構成: [skills/shared/references/team-config.md](../shared/references/team-config.md)
 - レビュー議論フロー: [references/review-flow.md](references/review-flow.md)
+- コードレビューフロー: [references/code-review-flow.md](references/code-review-flow.md)
+- 重大度・判定基準: [skills/shared/references/severity-and-verdicts.md](../shared/references/severity-and-verdicts.md)
