@@ -173,7 +173,7 @@ commands/team-cycle.md - --interactive オプションの説明を追加
 | Step | Status | 依存 |
 |------|--------|------|
 | Step 2: 判定基準・重大度定義の共通化 | Done | なし（最初に実装） |
-| Step 1: 途中経過の可視化 + ラウンド数増加 | Pending | Step 2 |
+| Step 1: 途中経過の可視化 + ラウンド数増加 | Done | Step 2 |
 | Step 3: 実装後コードレビュー | Pending | Step 2 |
 | Step 4: メタレビュー | Pending | Step 2 |
 | Step 5: ユーザーコメント → チーム再議論 | Pending | なし |
