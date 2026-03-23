@@ -9,15 +9,17 @@ Provides a flow to record out-of-scope problems discovered during plan execution
 
 ## Slug Definition
 
-The **slug** is the canonical identifier for an issue. It always includes the date prefix:
+The **slug** is the canonical identifier for an issue. It always includes the timestamp prefix:
 
 ```
-{YYYY-MM-DD}_{kebab-title}
+{yyyymmddhhmmss}_{kebab-title}
 ```
 
-Example: `2026-03-23_fix-login-timeout`
+Generate the timestamp with: `date +%Y%m%d%H%M%S`
 
-All workflows use this full slug (with date prefix) when referencing issues. Partial matches (without date prefix) are not supported — always use the complete slug.
+Example: `20260323143000_fix-login-timeout`
+
+All workflows use this full slug (with timestamp prefix) when referencing issues. Partial matches (without timestamp prefix) are not supported — always use the complete slug.
 
 ## Workflow Selection
 
@@ -58,20 +60,20 @@ If arguments are given as free-form text without flags, extract title from the f
    ```markdown
    # Issue Status
 
-   **Last Updated:** {YYYY-MM-DD}
+   **Last Updated:** {YYYY-MM-DD HH:MM:SS}
 
    | Issue | Tags | Created | Summary |
    |-------|------|---------|---------|
    ```
 4. Generate the slug:
-   - Date: `YYYY-MM-DD` format
+   - Timestamp: `yyyymmddhhmmss` format (`date +%Y%m%d%H%M%S`)
    - Remove path separator characters and special characters from the title: slashes (`/`), double dots (`..`), backslashes (`\`), etc.
    - Convert the remaining characters to kebab-case (spaces → hyphens, lowercase, keep only alphanumeric characters and hyphens)
-   - Final slug: `{YYYY-MM-DD}_{kebab-title}`
+   - Final slug: `{yyyymmddhhmmss}_{kebab-title}`
 5. Read [references/issue-template.md](references/issue-template.md), replace placeholders, and write to `docs/issues/{slug}.md`
 6. Add a row to the end of the table in `docs/issues/issue-status.md`:
    ```
-   | [{slug}]({slug}.md) | `{tags}` | {YYYY-MM-DD} | {summary} |
+   | [{slug}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | {summary} |
    ```
 7. Update **Last Updated** to today's date
 8. Display the creation result:
@@ -162,7 +164,7 @@ Close (archive) an issue.
 
 ### Arguments
 
-- Issue slug (required — the full slug including date prefix, e.g. `2026-03-23_fix-login-timeout`)
+- Issue slug (required — the full slug including timestamp prefix, e.g. `20260323143000_fix-login-timeout`)
 - If omitted: Use AskUserQuestion to confirm. Follow the same selection logic as the **Issue → Plan Conversion** procedure Step 2.
 
 ### Steps
@@ -188,7 +190,7 @@ Close (archive) an issue.
 ```
 docs/issues/
   issue-status.md             - Index file (LLM reads this first)
-  YYYY-MM-DD_<kebab-title>.md - Individual issue files
+  yyyymmddhhmmss_<kebab-title>.md - Individual issue files
   archives/                   - Storage for closed issues
 ```
 
@@ -197,11 +199,11 @@ docs/issues/
 ```markdown
 # Issue Status
 
-**Last Updated:** YYYY-MM-DD
+**Last Updated:** YYYY-MM-DD HH:MM:SS
 
 | Issue | Tags | Created | Summary |
 |-------|------|---------|---------|
-| [2026-03-23_fix-login](2026-03-23_fix-login.md) | `auth` | 2026-03-23 | Login timeout issue |
+| [20260323143000_fix-login](20260323143000_fix-login.md) | `auth` | 2026-03-23 14:30:00 | Login timeout issue |
 ```
 
 ## Template
@@ -213,4 +215,4 @@ docs/issues/
 - issue-status.md serves as the index. LLMs can understand the situation by reading just this file without opening all issues
 - close = archive. On close, immediately move to `archives/` + remove row from `issue-status.md`
 - Do not include sensitive information in issues
-- The slug always includes the date prefix (`YYYY-MM-DD_{kebab-title}`). Use the full slug in all operations.
+- The slug always includes the timestamp prefix (`yyyymmddhhmmss_{kebab-title}`). Use the full slug in all operations.

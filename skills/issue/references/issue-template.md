@@ -1,7 +1,7 @@
 ---
 title: {{TITLE}}
 status: open
-created: {{DATE}}
+created: {{YYYY-MM-DD HH:MM:SS}}
 tags: {{TAGS}}
 source: {{SOURCE}}
 ---
