@@ -67,7 +67,7 @@ commands/doc-audit.md    →  skills/doc-audit/SKILL.md
 | スキル | 役割 |
 |--------|------|
 | `plan` | 計画ファイル（`docs/cycles/{timestamp}_{slug}.md`）、`docs/status.md`、`docs/session-history.md` の生成・管理 |
-| `plan-reviewer` | 6観点並行レビュー（Feasibility / Security / Performance / Architecture / Completeness / Alternatives） |
+| `plan-reviewer` | 7観点並行レビュー（Feasibility / Security / Performance / Architecture / Completeness / Alternatives / UI/UX 条件付き） |
 | `codebase-review` | 4エージェント並行によるコードベース全体レビュー。結果はJSON→統合エージェントが集約 |
 | `generate-review-rules` | プロジェクト固有の `.claude/review-rules.md` を自動生成 |
 | `commit` | 変更を分析し論理単位で自動コミット（確認なし即実行） |

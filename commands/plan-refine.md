@@ -15,7 +15,7 @@ description: "実装計画を review → fix ループで改善する"
 
 ### Iteration 1（フルレビュー）
 
-1. Skillツールで `claude-skills:plan-reviewer` を起動（6観点フルレビュー）
+1. Skillツールで `claude-skills:plan-reviewer` を起動（7観点フルレビュー、UI/UX は条件付き）
    - 対象ファイルは引数で指定。省略時は `docs/cycles/` 内の最新を自動選択
    - 対象ファイルのパスを記憶しておく（以降のイテレーションで再利用）
 2. 結果が全て PASS → 終了（完了報告へ）
