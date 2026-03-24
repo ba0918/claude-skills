@@ -2,6 +2,7 @@
 
 | Cycle ID | Feature | Started | Completed | Plan |
 |----------|---------|---------|-----------|------|
+| `20260324212004` | UI/UXデザイナーレビューの導入 | 2026-03-24 | 2026-03-24 | [Link](./cycles/20260324212004_ui-ux-review-integration.md) |
 | `20260324062342` | Seamless Pipeline Transition | 2026-03-24 | 2026-03-24 | [Link](./cycles/20260324062342_seamless-pipeline-transition.md) |
 | `20260324045803` | Doc Audit Skill | 2026-03-24 | 2026-03-24 | [Link](./cycles/20260324045803_doc-audit-skill.md) |
 | `20260324034348` | Unify Date Format Rules Across Skills | 2026-03-24 | 2026-03-24 | [Link](./cycles/20260324034348_unify-date-format-rules.md) |
