@@ -122,9 +122,36 @@ TeamCreate ツールでレビューチームを作成する:
 
 - **team_name**: `plan-review-team`
 
+### Step 1.2.5: Optional Specialist Detection
+
+Step 1.2（チーム作成）完了後、Step 1.3（レビュワー spawn）の前に実行する。
+
+計画内容を plan-reviewer Step 2.5 と同じキーワード検出ロジックでスキャンする。
+
+**Strong signals (any one triggers):**
+- Keywords: "UI", "UX", "component", "screen", "page", "button", "form", "modal", "frontend", "AskUserQuestion", "accessibility", "a11y"
+- File extensions in affected files: `.tsx`, `.jsx`, `.vue`, `.svelte`, `.css`, `.scss`, `.html`
+
+**Weak signals (2+ required to trigger):**
+- Keywords: "display", "layout", "style", "output", "format", "message", "error message", "progress"
+
+**Override:** If `.claude/review-rules.md` contains `ui_ux_review: always`, always include. If `ui_ux_review: never`, always skip. Invalid values fall back to default `auto`.
+
+If UI/UX signals detected:
+- Step 1.3 で UX Advisor を5人目として追加 spawn する
+- Phase 1 の全議論ラウンドに UX Advisor を含める
+- Phase 1 表示を `Reviewers: {active_count}/{total}` に動的化
+
+If not detected:
+- 標準4人構成で続行
+
+**spawn 失敗時の扱い:**
+- UX Advisor（optional specialist）の spawn 失敗は WARNING のみ。コア4ロール（Security/Performance/Architect/Pragmatist）のうち2名以上成功すれば続行可能。
+- Phase 2.5（コードレビュー）には UX Advisor は参加しない。
+
 ### Step 1.3: レビュワー spawn（並行）
 
-[skills/shared/references/team-config.md](../shared/references/team-config.md) に定義された4つのロールを **並行で** Agent spawn する。
+[skills/shared/references/team-config.md](../shared/references/team-config.md) に定義された4つのロール（+ Step 1.2.5 で検出された場合は UX Advisor）を **並行で** Agent spawn する。
 
 各 Agent のプロンプトは以下の構成:
 
@@ -307,7 +334,7 @@ Please revise the plan and retry.
 
 ```
 ── Phase 1: Team Review ── {APPROVED|APPROVED WITH CONCERNS|REJECTED}
-Reviewers: {active_count}/4
+Reviewers: {active_count}/{total} (total = 4 or 5 depending on UX Advisor)
 Discussion rounds: {round_count}
 Issues resolved: {resolved_count}
 Remaining concerns: {concern_count}
@@ -435,7 +462,7 @@ Findings: {block_count} BLOCK, {warn_count} WARN, {info_count} INFO
 
 ## Team Review
 - Verdict: {APPROVED / APPROVED WITH CONCERNS}
-- Reviewers: {active_count}/4 ({role_names})
+- Reviewers: {active_count}/{total} ({role_names})
 - Discussion rounds: {round_count}
 - Issues resolved: {resolved_count}
 - Remaining concerns: {concern_count}
@@ -491,7 +518,7 @@ Skill ツールで `claude-skills:commit` を実行する。
 ══════════════════════════════════════
 TEAM-CYCLE COMPLETE
 Feature: {feature_name}
-Review: {verdict} ({round_count} rounds, {active_count}/4 reviewers)
+Review: {verdict} ({round_count} rounds, {active_count}/{total} reviewers)
 Implement: {steps_done}/{steps_total} steps
 Commits: {N}
 Result: {result_file_path}

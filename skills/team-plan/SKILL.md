@@ -88,9 +88,34 @@ TeamCreate ツールでチームを作成する:
 
 > team-cycle の `plan-review-team` とは異なるチーム名を使い、同時実行時の衝突を防ぐ。
 
+### Step 1.2.5: Optional Specialist Detection
+
+Step 1.2（チーム作成）完了後、Step 1.3（メンバー spawn）の前に実行する。
+
+ユーザーの要件とコードベース調査結果を plan-reviewer Step 2.5 と同じキーワード検出ロジックでスキャンする。
+
+**Strong signals (any one triggers):**
+- Keywords: "UI", "UX", "component", "screen", "page", "button", "form", "modal", "frontend", "AskUserQuestion", "accessibility", "a11y"
+- File extensions in affected files: `.tsx`, `.jsx`, `.vue`, `.svelte`, `.css`, `.scss`, `.html`
+
+**Weak signals (2+ required to trigger):**
+- Keywords: "display", "layout", "style", "output", "format", "message", "error message", "progress"
+
+**Override:** If `.claude/review-rules.md` contains `ui_ux_review: always`, always include. If `ui_ux_review: never`, always skip. Invalid values fall back to default `auto`.
+
+If UI/UX signals detected:
+- Step 1.3 で UX Advisor を5人目として追加 spawn する
+- Phase 1 の全議論ラウンドに UX Advisor を含める
+
+If not detected:
+- 標準4人構成で続行
+
+**spawn 失敗時の扱い:**
+- UX Advisor（optional specialist）の spawn 失敗は WARNING のみ。コア4ロール（Security/Performance/Architect/Pragmatist）のうち2名以上成功すれば続行可能。
+
 ### Step 1.3: メンバー spawn（並行）
 
-[skills/shared/references/team-config.md](../shared/references/team-config.md) に定義された4つのロールを **並行で** Agent spawn する。
+[skills/shared/references/team-config.md](../shared/references/team-config.md) に定義された4つのロール（+ Step 1.2.5 で検出された場合は UX Advisor）を **並行で** Agent spawn する。
 
 各 Agent のプロンプトは以下の構成:
 
@@ -226,7 +251,7 @@ Skill ツールで `claude-skills:plan-status` を実行し、ステータスを
 ══════════════════════════════════════
 TEAM-PLAN COMPLETE
 Feature: {feature_name}
-Team: {active_count}/4 members participated
+Team: {active_count}/{total} members participated (total = 4 or 5 depending on UX Advisor)
 Discussion rounds: {round_count}
 Plan: {plan_file_path}
 ══════════════════════════════════════

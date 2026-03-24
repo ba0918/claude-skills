@@ -1,11 +1,11 @@
 ---
 name: plan-reviewer
-description: 実装計画を6観点（実現可能性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・代替手法）で徹底レビューし、信頼スコアで判定する。「計画をレビュー」「plan review」「計画を確認」「実装計画をチェック」「プランレビュー」で起動。計画作成後の品質ゲートとして使用。
+description: 実装計画を7観点（実現可能性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・代替手法・UI/UX）で徹底レビューし、信頼スコアで判定する。「計画をレビュー」「plan review」「計画を確認」「実装計画をチェック」「プランレビュー」で起動。計画作成後の品質ゲートとして使用。
 ---
 
 # Plan Reviewer
 
-Quality gate that deeply reviews implementation plans from 6 expert perspectives before implementation begins.
+Quality gate that deeply reviews implementation plans from 7 expert perspectives before implementation begins.
 
 ## Progress Checklist
 
@@ -13,7 +13,7 @@ Quality gate that deeply reviews implementation plans from 6 expert perspectives
 plan-review Progress:
 - [ ] Identify and load latest plan file
 - [ ] Gather project context
-- [ ] Execute 6-dimension parallel review
+- [ ] Execute 7-dimension parallel review (UI/UX conditionally)
 - [ ] Integrate results and score
 - [ ] Output review report
 - [ ] Branch decision (PASS/WARN/BLOCK)
@@ -44,9 +44,24 @@ Sources to collect:
 
 **Important**: Always verify that line numbers and code snippets in the plan match the actual code. Any discrepancies should be flagged as Feasibility issues.
 
-### Step 3: Execute 6-Dimension Parallel Review
+### Step 2.5: UI/UX Review Trigger Detection
 
-Launch **6 reviews in parallel** using the Task tool. Each review runs as an Explore agent or general-purpose agent.
+Scan the plan content for UI/UX signals. If ANY of the following are detected, include Review 7 (UI/UX) in the parallel review:
+
+**Strong signals (any one triggers):**
+- Keywords: "UI", "UX", "component", "screen", "page", "button", "form", "modal", "frontend", "AskUserQuestion", "accessibility", "a11y"
+- File extensions in affected files: `.tsx`, `.jsx`, `.vue`, `.svelte`, `.css`, `.scss`, `.html`
+
+**Weak signals (2+ required to trigger):**
+- Keywords: "display", "layout", "style", "output", "format", "message", "error message", "progress"
+
+**Override:** If `.claude/review-rules.md` contains `ui_ux_review: always`, always include. If `ui_ux_review: never`, always skip. Invalid values fall back to default `auto`.
+
+If no signals detected and no override, skip Review 7.
+
+### Step 3: Execute 7-Dimension Parallel Review
+
+Launch up to **7 reviews in parallel** (Review 7: UI/UX is conditional — see Step 2.5). Each review runs as an Explore agent or general-purpose agent.
 
 Each review applies perspectives in the following priority order:
 1. Project-specific rules from `.claude/review-rules.md` (highest priority)
@@ -100,6 +115,17 @@ Each review applies perspectives in the following priority order:
 - Leveraging existing libraries/utilities
 - Future extensibility
 - Performance vs. code complexity tradeoffs
+
+#### Review 7: UI/UX (conditional — only if Step 2.5 detected UI/UX signals)
+
+- Error messages are actionable (what happened, why, how to fix)
+- Progress feedback for long operations
+- AskUserQuestion option design (Hick's Law, clear labels, defaults)
+- Output format consistency with existing skills
+- Cancel/abort path design
+- Information hierarchy (summary first, details on demand)
+- Visual grouping for scannability
+- No jargon leak in user-facing text
 
 ### Step 4: Integrate Results and Score
 

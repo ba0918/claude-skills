@@ -1,6 +1,6 @@
 # Review Dimensions - Plan Reviewer
 
-Detailed checklists and scoring criteria for 6 review dimensions.
+Detailed checklists and scoring criteria for 7 review dimensions.
 Language and framework agnostic. Add project-specific perspectives via `.claude/review-rules.md`.
 
 ## Table of Contents
@@ -11,6 +11,7 @@ Language and framework agnostic. Add project-specific perspectives via `.claude/
 4. [Architecture & Design](#4-architecture--design)
 5. [Completeness](#5-completeness)
 6. [Alternatives](#6-alternatives)
+7. [UI/UX](#7-uiux)
 
 ---
 
@@ -154,3 +155,29 @@ Whether better alternative approaches exist compared to the proposed implementat
 | 80-100 | Planning a complex implementation when standard library can solve it concisely |
 | 50-79 | A better approach exists, but the planned approach would also work |
 | 0-49 | Optimal approach |
+
+---
+
+## 7. UI/UX
+
+User-facing output quality, interaction flow design, and information architecture.
+This dimension is triggered conditionally — only when the plan involves changes to user-facing output or interaction patterns.
+
+### Checklist
+
+- [ ] Error messages are actionable: include what happened, why, and how to fix it
+- [ ] Progress feedback is provided for operations taking > 5 seconds
+- [ ] AskUserQuestion options follow Hick's Law: ≤ 4 options, clear labels, sensible defaults
+- [ ] Output format is consistent with existing skills (terminology, indentation, section headers)
+- [ ] Cancel/abort paths are designed and tested (not just happy path)
+- [ ] Information hierarchy follows "summary first, details on demand" pattern
+- [ ] Long output uses visual grouping (headers, separators, blank lines) for scannability
+- [ ] No jargon leak: user-facing text avoids internal implementation terms
+
+### Confidence Score Criteria
+
+| Score | Condition |
+|-------|-----------|
+| 80-100 | No error recovery guidance, missing progress feedback for long operations, cancel path undesigned |
+| 50-79 | Inconsistent output format, excessive cognitive load, suboptimal option design |
+| 0-49 | Good user experience design |
