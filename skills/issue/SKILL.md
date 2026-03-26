@@ -55,8 +55,14 @@ If arguments are given as free-form text without flags, extract title from the f
 ### Steps
 
 1. Parse title, summary, tags, and source from the arguments
-2. Create the `docs/issues/` directory (if it doesn't exist, use `mkdir -p`)
-3. If `docs/issues/issue-status.md` does not exist, create it with the following template:
+2. **Preview & confirmation** — Use AskUserQuestion to present the following and obtain user approval before proceeding:
+   - Parsed fields: title, summary, tags, source
+   - `docs/issues/` directory existence check result
+   - If `docs/issues/issue-status.md` exists, check for existing issues with similar titles and list them (if any)
+   - Options: "Create" (proceed) / "Cancel" (abort)
+   - If the user selects "Cancel", display "Issue creation cancelled." and exit
+3. Create the `docs/issues/` directory (if it doesn't exist, use `mkdir -p`)
+4. If `docs/issues/issue-status.md` does not exist, create it with the following template:
    ```markdown
    # Issue Status
 
@@ -65,22 +71,23 @@ If arguments are given as free-form text without flags, extract title from the f
    | Issue | Tags | Created | Summary |
    |-------|------|---------|---------|
    ```
-4. Generate the slug:
+5. Generate the slug:
    - Timestamp: `yyyymmddhhmmss` format (`date +%Y%m%d%H%M%S`)
    - Remove path separator characters and special characters from the title: slashes (`/`), double dots (`..`), backslashes (`\`), etc.
    - Convert the remaining characters to kebab-case (spaces → hyphens, lowercase, keep only alphanumeric characters and hyphens)
    - Final slug: `{yyyymmddhhmmss}_{kebab-title}`
-5. Read [references/issue-template.md](references/issue-template.md), replace placeholders, and write to `docs/issues/{slug}.md`
-6. Add a row to the end of the table in `docs/issues/issue-status.md`:
+6. Read [references/issue-template.md](references/issue-template.md), replace placeholders, and write to `docs/issues/{slug}.md`
+7. Add a row to the end of the table in `docs/issues/issue-status.md`:
    ```
    | [{slug}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | {summary} |
    ```
-7. Update **Last Updated** to today's date
-8. Display the creation result:
+8. Update **Last Updated** to today's date
+9. Display the creation result:
    ```
    ✅ Issue created!
    📄 File: docs/issues/{slug}.md
    📋 Index: docs/issues/issue-status.md
+   💡 Tip: `/claude-skills:issue-list` で現在の issue 一覧を確認できます
    ```
 
 ---
@@ -97,6 +104,10 @@ Display a list of open issues.
 3. Count the table rows and display a summary:
    ```
    📊 Open issues: {N}
+   ```
+4. If open issue count exceeds 10, display a warning:
+   ```
+   ⚠️ Open issues: {N} — 未使用の issue がないか確認してください。`/claude-skills:issue-close` で不要な issue をアーカイブできます。
    ```
 
 ---
@@ -137,8 +148,8 @@ Create a plan from an issue without running cycle. Use when you want to review/d
 
    ## Next Steps
    1. Review and discuss the plan
-   2. Run `/claude-skills:cycle` to implement
-   3. Run `/claude-skills:team-cycle` for team-reviewed implementation
+   2. Run `/claude-skills:issue-team-cycle` for team-reviewed implementation (recommended)
+   3. Run `/claude-skills:issue-cycle` for lightweight implementation
    4. Issue will be auto-closed when cycle completes 🚀
    ```
 
@@ -148,13 +159,24 @@ Create a plan from an issue without running cycle. Use when you want to review/d
 
 Connect an issue to plan → cycle for resolution.
 
+> **Tip:** チームレビュー付きの `/claude-skills:issue-team-cycle` が推奨経路です。軽量な実装のみ必要な場合に issue-cycle を使用してください。
+
 ### Steps
 
 1. Execute the **Issue → Plan Conversion** procedure above
-2. Execute cycle:
-   - If `--team` is present in the arguments: Remove `--team` from arguments, then execute `claude-skills:team-cycle` via the Skill tool with the created plan
+2. **Preflight check** — Read the selected issue file and verify the「備考」(Notes) section has meaningful content (not just the placeholder text):
+   - If the section is empty or contains only the default placeholder: Use AskUserQuestion to prompt the user for acceptance criteria or additional context. Update the issue file with the provided information before proceeding.
+   - Options: provide text input, or "Skip" to proceed without additional context
+3. Execute cycle:
+   - If `--team` is present in the arguments:
+     1. **Intake** — Use AskUserQuestion to collect discussion focus before starting team-cycle:
+        - 期待する議論の焦点（スコープ）
+        - 優先的に検討すべき観点（e.g., セキュリティ、パフォーマンス、アーキテクチャ）
+        - 禁止事項や制約（任意）
+        - Options: provide text input, or "Skip" to use defaults
+     2. Remove `--team` from arguments, then execute `claude-skills:team-cycle` via the Skill tool with the created plan. Include the intake information in the arguments if provided.
    - Otherwise: Execute `claude-skills:cycle` via the Skill tool with the created plan
-3. Error handling:
+4. Error handling:
    - If plan creation fails: Display the error and exit. The issue remains open.
    - If cycle fails or is interrupted: Display the error and the path to the created plan file. The issue remains open. Inform the user they can retry with `/claude-skills:cycle` using the existing plan — no need to re-run issue-cycle.
    - Note: Issue auto-close is handled by cycle's Phase 3 via the `**Issue:**` field in the plan. No explicit close call is needed here.
@@ -164,6 +186,8 @@ Connect an issue to plan → cycle for resolution.
 ## Close Workflow
 
 Close (archive) an issue.
+
+> **Note:** 通常、cycle/team-cycle 完了時に `**Issue:**` フィールド経由で自動クローズされるため手動クローズは不要です。手動クローズが必要なケース: cycle を経由しない解決、誤登録の取り消し、重複 issue の整理など。
 
 ### Arguments
 
