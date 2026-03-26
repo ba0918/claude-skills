@@ -19,7 +19,7 @@ Additional instruction → Scope analysis → Size judgment ─→ Small → Imp
 
 1. Identify the latest plan file
    ```bash
-   ls -t docs/cycles/*.md 2>/dev/null | grep -v _result | head -1
+   ls -t docs/plans/*.md 2>/dev/null | grep -v _result | head -1
    ```
 2. If a plan file exists, read it to understand what has already been implemented
 3. Get the user's additional instructions from `$ARGUMENTS`

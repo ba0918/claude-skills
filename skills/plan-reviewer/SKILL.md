@@ -23,10 +23,10 @@ plan-review Progress:
 
 ### Step 1: Identify Latest Plan File
 
-Find the most recent plan file from `docs/cycles/`. If a specific file is provided as an argument, use that instead.
+Find the most recent plan file from `docs/plans/`. If a specific file is provided as an argument, use that instead.
 
 ```bash
-ls -t docs/cycles/*.md 2>/dev/null | head -1
+ls -t docs/plans/*.md 2>/dev/null | head -1
 ```
 
 Read the full contents of the plan file. If the status is anything other than Planning, display a warning (reviewing an in-progress or completed plan is of limited value).

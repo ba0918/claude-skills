@@ -12,7 +12,7 @@ description: "実装計画を自動実装する（implement → review ループ
 ## Phase 0: 計画の読み込みとステータス更新
 
 1. `docs/status.md` を読み、現在 🟡 Planning のセッションを特定する
-2. 該当する計画ファイル (`docs/cycles/` 内) を読み込む
+2. 該当する計画ファイル (`docs/plans/` 内) を読み込む
 3. 計画の全体像・ステップ一覧・現在の進捗を把握する
 4. `$ARGUMENTS` に特定ステップの指定があればそこから開始する
 5. **ステータスを 🔵 Implementing に更新する**（Skill ツールで `claude-skills:plan` を起動し status 更新）

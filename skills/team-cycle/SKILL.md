@@ -34,7 +34,7 @@ team-cycle コマンド
 
 ## パラメータ
 
-- `$ARGUMENTS` の最初の引数: 計画ファイルパス（省略時は `docs/cycles/` 内の最新を自動選択）
+- `$ARGUMENTS` の最初の引数: 計画ファイルパス（省略時は `docs/plans/` 内の最新を自動選択）
 - `--interactive`: ユーザーコメント受付を有効にする（デフォルト: headless）
 
 ## Phase 0: 準備
@@ -65,20 +65,20 @@ cycle を中断する。
 ### Step 0.2: 計画ファイル特定
 
 1. 引数にパスがあればそれを使用
-2. なければ: `ls -t docs/cycles/*.md 2>/dev/null | head -1`
+2. なければ: `ls -t docs/plans/*.md 2>/dev/null | head -1`
 
 ### Step 0.3: パス検証
 
-計画ファイルのパスが `docs/cycles/` 配下であることを確認する。
+計画ファイルのパスが `docs/plans/` 配下であることを確認する。
 
-パスが `docs/cycles/*.md` に一致しない場合:
+パスが `docs/plans/*.md` に一致しない場合:
 
 ```
-⛔ TEAM-CYCLE ABORTED: Plan file is not in docs/cycles/
+⛔ TEAM-CYCLE ABORTED: Plan file is not in docs/plans/
 Found: {actual_path}
-Expected: docs/cycles/*.md
+Expected: docs/plans/*.md
 
-Plan files must be located in docs/cycles/.
+Plan files must be located in docs/plans/.
 ```
 
 cycle を中断する。
@@ -451,7 +451,7 @@ Findings: {block_count} BLOCK, {warn_count} WARN, {info_count} INFO
 
 ### Step 3.1: 結果ファイル生成
 
-`docs/cycles/results/{plan_basename}_result.md` に出力（ディレクトリがなければ `mkdir -p` で作成）。
+`docs/plans/results/{plan_basename}_result.md` に出力（ディレクトリがなければ `mkdir -p` で作成）。
 
 ```markdown
 # Cycle Result: {feature_name}

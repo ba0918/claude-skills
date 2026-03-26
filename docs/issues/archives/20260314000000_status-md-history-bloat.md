@@ -3,7 +3,7 @@ title: status.md の Session History が肥大化する問題
 status: open
 created: 2026-03-14
 tags: improvement
-source: docs/cycles/20260314204522_issue-management.md
+source: docs/plans/20260314204522_issue-management.md
 ---
 
 ## 概要

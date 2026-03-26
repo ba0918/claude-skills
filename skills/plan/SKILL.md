@@ -12,7 +12,7 @@ Create implementation plans with timestamp-based filenames and automatic project
 When the user requests a plan:
 
 1. Generate timestamp: `yyyymmddhhmmss` format
-2. Create plan document: `docs/cycles/{timestamp}_{feature-slug}.md`
+2. Create plan document: `docs/plans/{timestamp}_{feature-slug}.md`
 3. Update status tracker: `docs/status.md`
 4. Guide user to next steps (typically `tdd-red`)
 
@@ -27,7 +27,7 @@ Create necessary directories and generate timestamp.
 date +%Y%m%d%H%M%S
 
 # Ensure directories exist
-mkdir -p docs/cycles
+mkdir -p docs/plans
 ```
 
 ### Phase 2: Gather Requirements
@@ -42,9 +42,9 @@ Keep questions concise. Avoid overwhelming the user with too many questions at o
 
 ### Phase 3: Create Plan Document
 
-**File path:** `docs/cycles/{timestamp}_{feature-slug}.md`
+**File path:** `docs/plans/{timestamp}_{feature-slug}.md`
 
-**CRITICAL**: Plan files MUST be created under `docs/cycles/` directory. Do NOT use `docs/plans/` or any other directory. This constraint applies regardless of how this skill is invoked (directly, via issue-cycle, or any other caller).
+**CRITICAL**: Plan files MUST be created under `docs/plans/` directory. Do NOT use `docs/cycles/` or any other directory. This constraint applies regardless of how this skill is invoked (directly, via issue-cycle, or any other caller).
 
 **Feature slug rules:**
 - Convert spaces to hyphens
@@ -90,7 +90,7 @@ Display to user:
 ```
 ✅ Implementation plan created!
 
-📄 Plan: docs/cycles/{timestamp}_{feature-slug}.md
+📄 Plan: docs/plans/{timestamp}_{feature-slug}.md
 📊 Status: docs/status.md
 
 ## Next Steps
@@ -130,7 +130,7 @@ Use when user wants to resume from previous session:
    Cycle: {cycle-id}
    Feature: {feature-name}
    Phase: {phase}
-   Plan: docs/cycles/{cycle-id}_{feature-slug}.md
+   Plan: docs/plans/{cycle-id}_{feature-slug}.md
 
    Current Focus:
    {current-focus-description}

@@ -19,7 +19,7 @@ team-plan コマンド
   │    └─ TeamDelete（必ず実行）
   │
   ├─ Phase 2: 計画ファイル出力
-  │    ├─ docs/cycles/{timestamp}_{slug}.md に生成（plan テンプレート準拠）
+  │    ├─ docs/plans/{timestamp}_{slug}.md に生成（plan テンプレート準拠）
   │    └─ docs/status.md を更新（Skill `claude-skills:plan` 経由）
   │
   └─ 完了（計画ファイルパスを返す）
@@ -216,7 +216,7 @@ TeamDelete ツールでチームを解散:
 
 1. タイムスタンプを生成: `date +%Y%m%d%H%M%S`
 2. slug をユーザーの要件から生成（英数字とハイフンのみ、30文字以内）
-3. `docs/cycles/{timestamp}_{slug}.md` に出力
+3. `docs/plans/{timestamp}_{slug}.md` に出力
 
 計画ファイルは `skills/plan/references/plan-template.md` のフォーマットに**完全準拠**する。
 

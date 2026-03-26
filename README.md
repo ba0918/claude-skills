@@ -33,7 +33,7 @@ cd ~/develop/claude-skills
 
 | コマンド | 説明 |
 |----------|------|
-| `/claude-skills:plan-create` | 実装計画を新規作成（`docs/cycles/` に配置） |
+| `/claude-skills:plan-create` | 実装計画を新規作成（`docs/plans/` に配置） |
 | `/claude-skills:plan-review` | 計画を6観点でレビュー |
 | `/claude-skills:plan-refine` | レビュー → 修正ループ（PASS まで繰り返す） |
 | `/claude-skills:plan-implement` | 実装計画を自動実装（implement → review ループ） |
@@ -88,7 +88,7 @@ cd ~/develop/claude-skills
 
 ```
 /claude-skills:plan-create ○○機能を追加したい
-  ↓ docs/cycles/{timestamp}_{slug}.md が生成される
+  ↓ docs/plans/{timestamp}_{slug}.md が生成される
 /claude-skills:plan-refine
   ↓ レビュー → 修正を PASS まで繰り返す
 /claude-skills:plan-implement
@@ -99,7 +99,7 @@ cd ~/develop/claude-skills
 ### 全自動サイクル
 
 ```
-/claude-skills:cycle docs/cycles/20260313_feature-x.md
+/claude-skills:cycle docs/plans/20260313_feature-x.md
 ```
 
 refine（最大4ラウンド）→ implement（ステップごとコミット）→ サマリー生成を

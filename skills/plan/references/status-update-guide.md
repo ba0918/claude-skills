@@ -133,7 +133,7 @@ Ask user or infer from context:
 | **Feature** | Phase 3: Options UI & Hot Reload |
 | **Started** | 2026-02-08 01:08:55 |
 | **Phase** | 🟡 In Progress |  <!-- Changed from Planning -->
-| **Plan** | [docs/cycles/20260208010855_phase-3-options-ui-hot-reload.md](./cycles/20260208010855_phase-3-options-ui-hot-reload.md) |
+| **Plan** | [docs/plans/20260208010855_phase-3-options-ui-hot-reload.md](./cycles/20260208010855_phase-3-options-ui-hot-reload.md) |
 
 **Current Focus:**
 Phase 3-1 implementation in progress. Theme system extended with 4 new themes.

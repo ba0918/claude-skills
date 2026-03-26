@@ -51,7 +51,7 @@ Target: docs/ideas/
 2. List all `.md` files in `docs/ideas/` (excluding `idea-status.md`)
 3. List all files in `docs/ideas/archives/` (create list; directory may not exist)
 4. For each idea entry:
-   - Check if a corresponding cycle exists in `docs/cycles/` by matching slug/title
+   - Check if a corresponding cycle exists in `docs/plans/` by matching slug/title
    - Check if a corresponding skill directory exists in `skills/` by matching name
 5. Record: `{ideas: [{name, file, status, has_cycle, cycle_status, has_skill, is_archived}]}`
 
@@ -73,10 +73,10 @@ Target: docs/issues/
 ### 1.3 Cycles Scan (skip if category filter excludes)
 
 ```
-Target: docs/cycles/
+Target: docs/plans/
 ```
 
-1. List all `.md` files in `docs/cycles/` (excluding `results/` subdirectory)
+1. List all `.md` files in `docs/plans/` (excluding `results/` subdirectory)
 2. For each cycle file:
    - Parse filename: extract timestamp and slug
    - Read the file and parse: Status line, Cycle ID, Feature name, Started date
@@ -85,7 +85,7 @@ Target: docs/cycles/
    - Parse the table: extract all recorded cycle IDs
 4. Read `docs/status.md`
    - Parse Current Session table: extract listed cycle IDs and their phases
-5. Count files in `docs/cycles/results/` if directory exists
+5. Count files in `docs/plans/results/` if directory exists
 6. Record: `{cycles: [{id, slug, status, is_completed, in_session_history, in_status_current}], results_count}`
 
 ### 1.4 Cross-Reference Data Assembly

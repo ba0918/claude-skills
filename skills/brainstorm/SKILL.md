@@ -143,7 +143,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 7. 完了メッセージ表示:
    ```
    ✅ アイデアから plan を作成しました!
-   📄 Plan: docs/cycles/{timestamp}_{slug}.md
+   📄 Plan: docs/plans/{timestamp}_{slug}.md
    📦 Archived: docs/ideas/archives/{slug}.md
 
    ## Next Steps

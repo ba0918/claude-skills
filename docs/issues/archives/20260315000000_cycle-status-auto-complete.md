@@ -3,7 +3,7 @@ title: cycle 完了時に status.md を自動で Completed にする
 status: open
 created: 2026-03-15
 tags: cycle, status, automation
-source: docs/cycles/20260315193813_status-auto-migration.md
+source: docs/plans/20260315193813_status-auto-migration.md
 ---
 
 ## 概要

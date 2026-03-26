@@ -108,7 +108,7 @@ Description: {plan_description}
 Affected files: {file_list}
 ```
 
-Each plan is saved to `docs/cycles/{timestamp}_{slug}.md`.
+Each plan is saved to `docs/plans/{timestamp}_{slug}.md`.
 
 ### Edge Cases
 
@@ -256,7 +256,7 @@ Files changed: {total_files}
 
 ### Step 4.3: Generate Result File
 
-Save the summary to `docs/cycles/results/{base_plan_name}_result.md`:
+Save the summary to `docs/plans/results/{base_plan_name}_result.md`:
 
 ```markdown
 # Parallel Cycle Result

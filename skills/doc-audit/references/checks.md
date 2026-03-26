@@ -29,7 +29,7 @@ Conditions: informational only. No action is taken in v1.
 **Logic:**
 1. Parse each row of the ideas table in `idea-status.md`
 2. For each idea:
-   - If a matching cycle exists in `docs/cycles/` (by title/slug) AND cycle status is Complete → idea status should be `Implemented` or archived
+   - If a matching cycle exists in `docs/plans/` (by title/slug) AND cycle status is Complete → idea status should be `Implemented` or archived
    - If a matching skill directory exists in `skills/` → idea status should be `Implemented` or archived
    - If idea status says `Planned` but no cycle file exists → flag as stale
 3. Compare expected status with actual status in the table
@@ -78,7 +78,7 @@ Conditions: informational only. No action is taken in v1.
 **Detects:** Completed cycles not recorded in `docs/session-history.md`.
 
 **Logic:**
-1. Scan all files in `docs/cycles/` (excluding `results/`)
+1. Scan all files in `docs/plans/` (excluding `results/`)
 2. For each cycle file:
    - Parse the Status line
    - If status is `Complete`:
@@ -97,7 +97,7 @@ Conditions: informational only. No action is taken in v1.
 **Detects:** Plans stuck in `Planning` or `In Progress` status while newer plans have been started.
 
 **Logic:**
-1. Scan all files in `docs/cycles/`
+1. Scan all files in `docs/plans/`
 2. For each file:
    - Parse Status and timestamp from filename
    - If status is `Planning` or `In Progress`:
@@ -136,7 +136,7 @@ Conditions: informational only. No action is taken in v1.
 **Logic:**
 1. Read `docs/issues/issue-status.md`
 2. For each open issue:
-   - Search `docs/cycles/` for plans that reference this issue (by title or issue ID)
+   - Search `docs/plans/` for plans that reference this issue (by title or issue ID)
    - If a referencing cycle has status `Complete` → issue may be resolved
 3. Present findings with cycle reference
 
@@ -168,10 +168,10 @@ Conditions: informational only. No action is taken in v1.
 
 **Category:** REPORT_ONLY
 
-**Detects:** Growing number of files in `docs/cycles/results/` as an informational warning.
+**Detects:** Growing number of files in `docs/plans/results/` as an informational warning.
 
 **Logic:**
-1. Count files in `docs/cycles/results/`
+1. Count files in `docs/plans/results/`
 2. If count exceeds threshold (default: 20) → include in report
 3. Report file count and oldest/newest file dates
 
@@ -186,7 +186,7 @@ Conditions: informational only. No action is taken in v1.
 **Detects:** Files using legacy date format (`YYYY-MM-DD`) in filenames instead of the unified `yyyymmddhhmmss` format.
 
 **Logic:**
-1. Scan filenames in `docs/ideas/`, `docs/issues/`, and `docs/cycles/`
+1. Scan filenames in `docs/ideas/`, `docs/issues/`, and `docs/plans/`
 2. Detect filenames matching pattern `\d{4}-\d{2}-\d{2}` (legacy format)
 3. Compare against expected format `\d{14}` (unified format)
 4. Flag files using legacy format

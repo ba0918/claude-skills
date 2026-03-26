@@ -12,7 +12,7 @@
 | **Feature** | {feature-name} |
 | **Started** | {YYYY-MM-DD HH:MM:SS} |
 | **Phase** | 🟡 Planning |
-| **Plan** | [docs/cycles/{timestamp}_{feature-slug}.md](./cycles/{timestamp}_{feature-slug}.md) |
+| **Plan** | [docs/plans/{timestamp}_{feature-slug}.md](./cycles/{timestamp}_{feature-slug}.md) |
 
 **Current Focus:**
 {1-2 sentence description of what is currently being worked on}

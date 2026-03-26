@@ -117,7 +117,7 @@ This procedure is used by both Plan Workflow and Cycle Workflow. Do NOT duplicat
    - If not found: Display the file list in `docs/issues/` and exit with an error message
 4. Execute `claude-skills:plan-create` via the Skill tool based on the issue content (title and summary)
    - Arguments: Pass the issue's title and summary
-   - **CRITICAL**: The plan file MUST be created at `docs/cycles/{timestamp}_{slug}.md`. Do NOT use `docs/plans/` or any other directory. Verify the file was created in `docs/cycles/` before proceeding.
+   - **CRITICAL**: The plan file MUST be created at `docs/plans/{timestamp}_{slug}.md`. Do NOT use `docs/cycles/` or any other directory. Verify the file was created in `docs/plans/` before proceeding.
    - **IMPORTANT**: Include `**Issue:** {slug}` in the plan header (no underscores, no markdown emphasis — just the raw slug). This field is used by `cycle` to auto-close the issue upon completion. See `plan/SKILL.md` "Optional `Issue` field" for the authoritative format.
 
 ---
@@ -132,7 +132,7 @@ Create a plan from an issue without running cycle. Use when you want to review/d
 2. Display completion message:
    ```
    ✅ Plan created from issue!
-   📄 Plan: docs/cycles/{timestamp}_{slug}.md
+   📄 Plan: docs/plans/{timestamp}_{slug}.md
    📋 Issue: docs/issues/{slug}.md
 
    ## Next Steps
