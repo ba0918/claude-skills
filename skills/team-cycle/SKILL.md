@@ -552,6 +552,7 @@ Result: {result_file_path}
 - **既存との互換性**: 結果ファイル、status.md、session-history.md は既存 cycle と同じフォーマット
 - **Phase 2 は既存スキルを再利用**: `claude-skills:plan-implement` をそのまま使う
 - **REJECTED は絶対に無視しない**: BLOCK が解消不可なら実装に進まない
+- 問題の根本原因が不明な場合は、team-cycle 実行前に `/claude-skills:investigate` で読み取り専用の事前調査を推奨する
 
 ## References
 

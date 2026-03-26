@@ -197,7 +197,7 @@ No heavy review processes. Keep the tempo fast and development flow smooth.
 docs/
 ├── status.md                           # Auto-managed status tracker
 ├── session-history.md                  # Completed sessions archive (auto-managed)
-└── cycles/                             # All implementation plans
+└── plans/                              # All implementation plans
     ├── 20260208143000_feature-a.md    # Timestamped plans
     ├── 20260208150000_feature-b.md
     └── 20260208163000_feature-c.md
@@ -222,3 +222,4 @@ Load these templates/guides when creating documents or updating status.
 - Status.md automatically archives previous sessions
 - Plan documents follow project's architecture principles (layer separation, TDD, etc.)
 - If you discover out-of-scope issues during investigation, record them with `/claude-skills:issue-create` and continue with the plan
+- If the problem's root cause is unclear before planning, suggest running `/claude-skills:investigate` first for a read-only, lightweight investigation

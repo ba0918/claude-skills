@@ -140,3 +140,4 @@ Issue: {closed ✅ / ⚠️ close failed: {slug} — manual close required / (no
 - **各フェーズは Agent に委譲する**。メインコンテキストにはサマリーのみ保持する。
 - **Phase 1 の BLOCK は絶対に無視しない**。BLOCK が残っていたら実装に進まない。
 - **ユーザーへの確認プロンプトは出さない**（ヘッドレス実行対応）。
+- 問題の根本原因が不明な場合は、cycle 実行前に `/claude-skills:investigate` で読み取り専用の事前調査を推奨する。
