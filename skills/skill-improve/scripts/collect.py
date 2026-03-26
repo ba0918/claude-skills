@@ -133,7 +133,13 @@ def parse_timestamp(ts: Any) -> datetime | None:
 
 
 def extract_skill_name(text: str) -> str | None:
-    """Extract skill name from slash command invocation."""
+    """Extract skill name from slash command invocation.
+
+    Handles formats like:
+    - /claude-skills:plan-create
+    - <command-name>/claude-skills:team-cycle</command-name>
+    - `/claude-skills:cycle`
+    """
     if not isinstance(text, str):
         return None
     idx = text.find(SKILL_PREFIX)
@@ -141,15 +147,43 @@ def extract_skill_name(text: str) -> str | None:
         rest = text[idx + len(SKILL_PREFIX):]
         # Take until whitespace or end
         name = rest.split()[0] if rest.split() else rest
-        return name.strip()
+        # Strip trailing XML tags, backticks, and other non-name chars
+        name = re.sub(r"<.*", "", name)  # Remove XML tags like </command-name>
+        name = name.strip("`'\"\n\r\t ")  # Remove surrounding quotes/backticks
+        # Validate: skill names are lowercase alphanumeric with hyphens only
+        if name and re.fullmatch(r"[a-z][a-z0-9-]*", name):
+            return name
     return None
 
 
 def is_skill_tool_call(msg: dict[str, Any]) -> tuple[bool, str | None]:
-    """Check if message is a Skill tool invocation and extract skill name."""
+    """Check if message is a Skill tool invocation and extract skill name.
+
+    JSONL structure: assistant messages have tool_use blocks inside
+    msg["message"]["content"] as {type: "tool_use", name: "Skill", input: {skill: ...}}.
+    """
+    # Check nested message.content for tool_use blocks (actual JSONL structure)
+    inner = msg.get("message", {})
+    if isinstance(inner, dict):
+        content = inner.get("content", [])
+        if isinstance(content, list):
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") != "tool_use":
+                    continue
+                name = block.get("name", "")
+                if name in ("Skill", "skill"):
+                    tool_input = block.get("input", {})
+                    if isinstance(tool_input, dict):
+                        skill = tool_input.get("skill", "")
+                        if isinstance(skill, str) and SKILL_TOOL_NAME in skill:
+                            return True, skill.replace(f"{SKILL_TOOL_NAME}:", "")
+                    return True, None
+
+    # Fallback: legacy flat structure (tool_name at top level)
     tool_name = msg.get("tool_name", "")
-    if tool_name == "Skill" or tool_name == "skill":
-        # Try to get skill name from tool input
+    if tool_name in ("Skill", "skill"):
         tool_input = msg.get("tool_input", {})
         if isinstance(tool_input, dict):
             skill = tool_input.get("skill", "")
@@ -160,11 +194,30 @@ def is_skill_tool_call(msg: dict[str, Any]) -> tuple[bool, str | None]:
 
 
 def is_tool_error(msg: dict[str, Any]) -> bool:
-    """Check if message represents a tool error (structural signal, no body needed)."""
-    # Check for error field in tool results
+    """Check if message represents a tool error (structural signal, no body needed).
+
+    JSONL structure: tool results appear as blocks inside msg["message"]["content"]
+    as {type: "tool_result", ...} and optionally at msg["toolUseResult"].
+    """
+    # Check nested message.content for tool_result blocks with errors
+    inner = msg.get("message", {})
+    if isinstance(inner, dict):
+        content = inner.get("content", [])
+        if isinstance(content, list):
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") == "tool_result" and block.get("is_error", False) is True:
+                    return True
+
+    # Check top-level toolUseResult for errors
+    tool_result = msg.get("toolUseResult", {})
+    if isinstance(tool_result, dict) and tool_result.get("is_error", False) is True:
+        return True
+
+    # Fallback: legacy flat structure
     if msg.get("type") == "tool_result":
         return msg.get("is_error", False) is True
-    # Check for error status
     if msg.get("error") is not None:
         return True
     return False
@@ -236,8 +289,14 @@ def process_session_file(
 
                 # --- Skill invocation detection ---
                 # Check slash command in user messages
-                role = msg.get("role", "")
-                content = msg.get("content", "")
+                # JSONL messages nest role/content under "message" key
+                inner = msg.get("message", {})
+                if isinstance(inner, dict):
+                    role = inner.get("role", msg.get("role", ""))
+                    content = inner.get("content", msg.get("content", ""))
+                else:
+                    role = msg.get("role", "")
+                    content = msg.get("content", "")
                 skill_name = None
 
                 if role == "human" or role == "user":

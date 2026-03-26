@@ -1,6 +1,6 @@
 ---
 name: doc-check
-description: プロジェクトのドキュメント（README.md、CLAUDE.md、API ドキュメント等）とコードベースの実態の整合性を検証し、不整合を自動修正する。「doc-check」「ドキュメントチェック」「ドキュメント整合性」「docs 確認」で起動。引数なしで直近5コミット、数値で指定コミット数、`all` で全体チェック。汎用スキル — あらゆるプロジェクトで使用可能。
+description: プロジェクトのドキュメント（README.md、CLAUDE.md、API ドキュメント等）とコードベースの実態の整合性を検証し、不整合を自動修正する。「doc-check」「ドキュメントチェック」「ドキュメント整合性」「docs 確認」で起動。引数なしで直近5コミット、数値で指定コミット数、`all` で全体チェック、ファイルパスで特定ドキュメントのみチェック。汎用スキル — あらゆるプロジェクトで使用可能。
 ---
 
 # Doc Check
@@ -12,12 +12,19 @@ Skill that verifies consistency between documentation and the codebase, and auto
 - None: Target changes from the last 5 commits
 - Number (e.g., `10`): Target changes from the last N commits
 - `all`: Target the entire project
+- File path (e.g., `CLAUDE.md`, `docs/api.md`): Target only the specified document(s). Multiple files can be separated by spaces
 
 ## Phase 1: Discovery
 
 ### 1.1 Document Detection
 
-Detect documentation files in the project:
+**File path mode** — When arguments contain file path(s) (not a number, not `all`):
+
+1. Verify each specified file exists and is a `.md` file
+2. Use only those files as targets — skip the full document detection below
+3. If a file does not exist, report it as an error and continue with remaining files
+
+**Default mode** — Detect documentation files in the project:
 
 ```bash
 # .md files at root
@@ -41,6 +48,9 @@ Obtain change context based on arguments:
 git log -N --oneline
 git diff HEAD~N..HEAD --name-only
 git diff HEAD~N..HEAD
+
+# File path mode
+# No diff is obtained. Check the specified file(s) against the entire project structure (same as all mode)
 
 # all mode
 # No diff is obtained. Target the entire project structure
