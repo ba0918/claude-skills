@@ -35,10 +35,22 @@ skill-improve コマンド
   - `improve`: Phase 1-4 を実行し、改善まで自動実行（Dry-run 必須）
 - `--days N`: 分析対象期間（デフォルト: 30日）
 - `--project NAME`: プロジェクトフィルタ（デフォルト: cwd から推定）
+- `--all-projects`: 全プロジェクトを横断スキャンする。ユーザスコープのスキル分析や、スキル全体の利用傾向を把握したい場合に使う
 
 ## Phase 1: データ収集
 
 ### Step 1.1: collect.py 実行
+
+`--all-projects` が指定されている場合:
+
+```bash
+python3 skills/skill-improve/scripts/collect.py \
+  --days {days} \
+  --all-projects \
+  --output .claude/tmp/skill-improve-{datetime}/context.json
+```
+
+デフォルト（プロジェクト指定）の場合:
 
 ```bash
 python3 skills/skill-improve/scripts/collect.py \
@@ -53,7 +65,8 @@ context.json を読み込み、サマリーを表示:
 
 ```
 ── Phase 1: Data Collection ──
-Project: {project_filter}
+Project: {project_filter} (all-projects: {true/false})
+Projects scanned: {projects_scanned_count}
 Period: {days} days
 Sessions: {sessions_found}
 Skill invocations: {total_skill_invocations}

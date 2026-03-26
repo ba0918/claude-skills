@@ -419,13 +419,20 @@ def main() -> None:
         help="Project name filter (default: inferred from cwd)"
     )
     parser.add_argument(
+        "--all-projects", action="store_true", default=False,
+        help="Scan all projects (ignore --project filter)"
+    )
+    parser.add_argument(
         "--output", type=str, default=None,
         help="Output file path (default: stdout)"
     )
     args = parser.parse_args()
 
     # Determine project filter
-    project_filter = args.project if args.project else infer_project_name()
+    if args.all_projects:
+        project_filter = None
+    else:
+        project_filter = args.project if args.project else infer_project_name()
 
     # Calculate cutoff date
     now = datetime.now(timezone.utc)
@@ -433,10 +440,13 @@ def main() -> None:
 
     # Discover session directories
     session_dirs = discover_session_dirs(project_filter)
+    projects_scanned = [d.name for d in session_dirs]
     if not session_dirs:
         result = {
             "summary": {
                 "project_filter": project_filter,
+                "all_projects": args.all_projects,
+                "projects_scanned": [],
                 "days": args.days,
                 "sessions_found": 0,
                 "total_skill_invocations": 0,
@@ -495,6 +505,8 @@ def main() -> None:
     result = {
         "summary": {
             "project_filter": project_filter,
+            "all_projects": args.all_projects,
+            "projects_scanned": projects_scanned,
             "days": args.days,
             "sessions_found": len(sessions),
             "total_skill_invocations": len(all_invocations),
