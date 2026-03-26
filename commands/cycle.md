@@ -127,6 +127,8 @@ Implement: {steps_done}/{steps_total} steps
 Commits: {N}
 Result: {result_file_path}
 Issue: {closed ✅ / ⚠️ close failed: {slug} — manual close required / (none)}
+──────────────────────────────────────
+💡 Need tweaks? Use /iterate for quick fixes and polish.
 ══════════════════════════════════════
 ```
 

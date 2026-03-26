@@ -21,8 +21,16 @@ Additional instruction → Scope analysis → Size judgment ─→ Small → Imp
    ```bash
    ls -t docs/plans/*.md 2>/dev/null | grep -v _result | head -1
    ```
-2. If a plan file exists, read it to understand what has already been implemented
-3. Get the user's additional instructions from `$ARGUMENTS`
+2. Load context using the following fallback chain:
+   - **Plan file exists** → Read it to understand what has already been implemented
+   - **Plan file not found, `docs/status.md` exists** → Read `docs/status.md` to infer current project state
+   - **Neither exists** → Run `git log --oneline -10` and `git diff HEAD~3 --stat` to derive context from recent commits
+   - If all fallbacks fail, proceed with the user's instructions only (no prior context). Display:
+     ```
+     ⚠️ No plan file or status found. Proceeding with instructions only.
+     ```
+3. **Detect previous iterate runs**: Check the plan file (if loaded) for existing `## Additional Changes` sections. If found, use the latest one as cumulative context so that consecutive iterate calls build on prior changes rather than starting from scratch.
+4. Get the user's additional instructions from `$ARGUMENTS`
 
 ## Phase 1: Scope Analysis
 
@@ -36,6 +44,30 @@ Use the Agent tool (subagent_type: Explore) to investigate:
 See [references/scope-criteria.md](references/scope-criteria.md) for detailed criteria.
 
 ## Phase 2: Size Judgment and Branching
+
+### Pre-check: Consecutive Call Detection
+
+Before size judgment, check if this is a consecutive iterate call within the same session by looking for `## Additional Changes` sections in the plan file (loaded in Phase 0, Step 3).
+
+**If no plan file was loaded in Phase 0** (fallback path was used), skip this pre-check entirely and treat as 1st call.
+
+Count `N = (number of ## Additional Changes sections found) + 1` (current call included).
+
+- **N = 2 (2nd call)** → Display a notice but proceed normally:
+  ```
+  ℹ️ This is the 2nd iterate call in this session.
+  ```
+- **N >= 3 (3rd+ call)** → Trigger cumulative Large warning via AskUserQuestion:
+  ```
+  ⚠️ Cumulative iterate detected ({N}th call this session)
+  Multiple consecutive iterate calls may indicate the task exceeds iterate's scope.
+
+  Options:
+  1. Continue with iterate (cumulative changes will be tracked)
+  2. Create a plan via /claude-skills:plan-create (recommended for complex changes)
+  ```
+  - User selects "1" → Proceed to normal size judgment below
+  - User selects "2" → Suggest running `/claude-skills:plan-create` and exit
 
 ### If Small
 
@@ -105,7 +137,11 @@ Launch a review agent via the Agent tool (general-purpose):
 
 ## Phase 5: Traceability
 
-1. Append an "Additional Changes" section to the latest plan file:
+1. Append an "Additional Changes" section to the latest plan file.
+   - **If no plan file was loaded in Phase 0** (fallback path was used), skip this step and display:
+     ```
+     ⚠️ Traceability skipped: no plan file found. Changes are recorded in git commits only.
+     ```
 
 ```markdown
 
