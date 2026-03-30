@@ -155,12 +155,14 @@ codebase-review の並行分析パターンと同型。
 }
 ```
 
-## モデル指定
+## モデル・権限指定
 
-| ロール | モデル | 理由 |
-|--------|--------|------|
-| friction-detector | sonnet | 定量分析、コスト抑制 |
-| pattern-analyzer | sonnet | パターン検出、コスト抑制 |
-| expectation-auditor | sonnet | 比較分析、コスト抑制 |
-| drift-detector | sonnet | ドリフト検出、コスト抑制 |
-| 統合エージェント | sonnet | レポート生成、コスト抑制 |
+| ロール | モデル | mode | 理由 |
+|--------|--------|------|------|
+| friction-detector | sonnet | bypassPermissions | 定量分析、コスト抑制。結果JSONをtmpに書き出すため権限必須 |
+| pattern-analyzer | sonnet | bypassPermissions | パターン検出、コスト抑制。同上 |
+| expectation-auditor | sonnet | bypassPermissions | 比較分析、コスト抑制。同上 |
+| drift-detector | sonnet | bypassPermissions | ドリフト検出、コスト抑制。同上 |
+| 統合エージェント | sonnet | bypassPermissions | レポート生成、コスト抑制。同上 |
+
+**Important**: `mode: bypassPermissions` は全エージェントで必須。バックグラウンドエージェントは権限プロンプトでブロックされるとファイル書き込みが完全に失敗する。

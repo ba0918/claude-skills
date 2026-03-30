@@ -9,14 +9,17 @@ Review the entire codebase with 4 specialized agents in parallel and generate an
 
 **Context-saving design**: All agent analysis results are passed via files; only summaries flow into the main context.
 
+**Headless execution**: Do not prompt the user for confirmation. All agents run autonomously. If a review agent fails, continue with the remaining agents (graceful degradation).
+
 ## Progress Checklist
 
 ```
 codebase-review Progress:
 - [ ] Determine target scope
 - [ ] Analyze project structure & prepare work directory
+- [ ] Preflight check (work directory write permission)
 - [ ] Launch 4 review agents in parallel
-- [ ] Wait for all agents to complete
+- [ ] Wait for all agents & handle failures
 - [ ] Launch integration agent
 - [ ] Display summary & place report
 ```
@@ -45,7 +48,17 @@ Exclude: `node_modules/`, `dist/`, `build/`, `.git/`, `*.test.*`, `*.spec.*`, `*
    ```bash
    mkdir -p .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/
    ```
-5. **Write context.json** (create with Write tool):
+5. **Preflight check** — Verify write permission to the work directory:
+   ```bash
+   touch .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/.preflight && rm .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/.preflight
+   ```
+   If this fails, abort immediately:
+   ```
+   ⛔ CODEBASE REVIEW ABORTED: Cannot write to work directory.
+   Path: .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/
+   Ensure the directory exists and is writable.
+   ```
+6. **Write context.json** (create with Write tool):
    ```json
    {
      "project_name": "Project name",
@@ -60,7 +73,7 @@ Exclude: `node_modules/`, `dist/`, `build/`, `.git/`, `*.test.*`, `*.spec.*`, `*
 
 ### Step 3: Launch 4 Review Agents in Parallel
 
-Launch 4 agents **in parallel** using the Task tool (all with `run_in_background: true`).
+Launch 4 agents **in parallel** using the Agent tool (all with `run_in_background: true`, `mode: bypassPermissions`).
 
 Context to provide each agent:
 - File path of context.json
@@ -74,7 +87,9 @@ Agent 3: quality-inspector      # Implementation quality + Logical consistency (
 Agent 4: codebase-hygiene       # Code duplication + Other improvements (combined 15%)
 ```
 
-Each agent's subagent_type: `general-purpose`
+Each agent: `subagent_type: general-purpose`, `mode: bypassPermissions`
+
+**Important**: The `mode: bypassPermissions` is essential. Without it, each background agent will be blocked by permission prompts when reading source files and writing result JSON files, causing cascading tool errors.
 
 #### Review Agent Prompt Template
 
@@ -141,11 +156,47 @@ DONE: {category}
 Do not include any other text in your final response. All lengthy analysis and explanations should already be written to the JSON file.
 ```
 
+### Step 3.5: Wait for Agents & Handle Failures
+
+After launching all 4 agents, wait for their completion. Then verify results:
+
+1. Check that each expected JSON file exists:
+   - `{work_dir}/agent-1-security.json`
+   - `{work_dir}/agent-2-performance.json`
+   - `{work_dir}/agent-3-quality.json`
+   - `{work_dir}/agent-4-hygiene.json`
+
+2. **Graceful degradation**: Count how many agent result files exist.
+
+   | Successful agents | Action |
+   |-------------------|--------|
+   | 4/4 | Proceed to Step 4 normally |
+   | 2-3/4 | Warn about missing agents, proceed with available results |
+   | 0-1/4 | Abort with error message listing which agents failed |
+
+   Warning format (2-3 agents succeeded):
+   ```
+   ⚠️ {N}/4 review agents completed. Missing: {list of failed agent names}
+   Proceeding with partial results...
+   ```
+
+   Abort format (0-1 agents succeeded):
+   ```
+   ⛔ CODEBASE REVIEW ABORTED: Only {N}/4 review agents completed.
+   Missing: {list of failed agent names}
+   Check .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/ for any partial results.
+   ```
+
 ### Step 4: Launch Integration Agent
 
-**After confirming all 4 review agents have completed**, launch the integration agent via the Task tool (`run_in_background: true`).
+**After confirming at least 2 review agents have completed**, launch the integration agent via the Agent tool (`run_in_background: true`, `mode: bypassPermissions`).
 
-Integration agent's subagent_type: `general-purpose`
+Integration agent: `subagent_type: general-purpose`, `mode: bypassPermissions`
+
+If some agents are missing, add to the integration agent prompt:
+```
+Note: The following agent results are missing: {list}. Generate the report using only the available agent results. Mark missing categories as "N/A — agent did not complete" in the report.
+```
 
 #### Integration Agent Prompt Template
 
@@ -251,6 +302,26 @@ After confirming the integration agent has completed:
 3. Display completion message (including report file path)
 
 **Note**: Do not read files other than summary.txt (agent-*.json, report.md) into the main context.
+
+## Error Handling
+
+### Preflight failures (Step 2)
+- **Work directory write failure**: Abort immediately with error message. Do not launch any agents.
+
+### Agent failures (Step 3)
+- **2+ agents succeed**: Warn and proceed with partial results (graceful degradation)
+- **0-1 agents succeed**: Abort with error message
+- **Agent timeout**: If an agent does not complete within a reasonable time, treat it as failed
+
+### Integration agent failure (Step 4)
+- **Integration agent fails**: Read available agent JSON files directly and generate a minimal summary in the main context (fallback to inline reporting)
+
+## Important Rules
+
+- **Headless execution**: Do not prompt the user for confirmation at any step.
+- **All agents must use `mode: bypassPermissions`**: This is critical. Without it, background agents will be blocked by permission prompts when reading source files and writing result JSON, causing cascading tool errors.
+- **Graceful degradation**: Partial results are better than no results. If some agents fail, generate a report from the successful agents.
+- **Do not read agent-*.json or report.md into the main context** (except summary.txt). This preserves context window space.
 
 ## Reference
 

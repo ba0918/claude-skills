@@ -59,9 +59,10 @@ commands/team-brainstorm-wrap.md → skills/team-brainstorm/SKILL.md (wrap ワ�
 commands/skill-improve.md    →  skills/skill-improve/SKILL.md
 commands/doc-audit.md    →  skills/doc-audit/SKILL.md
 commands/migrate-cycles-to-plans.md → skills/migrate-cycles-to-plans/SKILL.md
+commands/codebase-review.md → skills/codebase-review/SKILL.md
 ```
 
-> `codebase-review` と `generate-review-rules` はコマンドなし（Skill ツール直接呼び出し）。
+> `generate-review-rules` はコマンドなし（Skill ツール直接呼び出し）。
 
 ### 主要スキル
 
