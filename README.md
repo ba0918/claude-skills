@@ -183,13 +183,47 @@ plan 実行中にスコープ外の問題を発見したら `/claude-skills:issu
 
 `docs/status.md` から現在のセッションを読み込んで続きから開始する。
 
+## Codex CLI 対応
+
+本リポジトリはデュアルプラグイン構造を採用し、Claude Code と Codex CLI の両方で同じワークフローを利用できる。
+
+### Codex CLI 用スキル
+
+`codex-skills/` ディレクトリに Codex CLI ネイティブのスキルを配置。
+ツール参照を Codex CLI のネイティブ API（`spawn_agent`, `send_message`, `apply_patch`, `shell` 等）に変換済み。
+
+| スキル | 説明 |
+|--------|------|
+| `commit` | 変更を分析し論理単位で自動コミット |
+| `investigate` | 読み取り専用の問題調査・構造化レポート |
+| `plan` | 計画ファイルと status.md の管理 |
+| `plan-reviewer` | 6-7観点並行レビュー |
+| `issue` | スコープ外の問題を記録・管理 |
+| `iterate` | サイズ適応型の軽量改善ループ |
+| `cycle` | refine→implement 全自動サイクル |
+| `team-cycle` | チーム議論型レビュー + 自動実装 |
+
+### Codex CLI での呼び出し
+
+```
+$plan ○○機能を追加したい
+$cycle
+$commit
+$iterate ○○を修正して
+$investigate ○○が動かない原因を調べて
+```
+
+### 共有リソース
+
+ツール非依存の references（テンプレート、チェックリスト等）は `codex-skills/` から `skills/` へのシンボリックリンクで共有し、メンテナンスコストを最小化している。
+
 ## ファイル構成
 
 ```
 .claude-plugin/
-  plugin.json         # Plugin マニフェスト
-commands/             # スラッシュコマンド
-skills/
+  plugin.json         # Claude Code Plugin マニフェスト
+commands/             # Claude Code 用スラッシュコマンド
+skills/               # Claude Code 用スキル
 ├── plan/             # 計画管理スキル + テンプレート
 ├── plan-reviewer/    # 7観点レビュー + Codex セカンドオピニオン
 ├── commit/           # 自動コミットスキル
@@ -209,6 +243,18 @@ skills/
 ├── doc-audit/        # docs 内アーティファクトの横断スキャン・不整合修復
 ├── migrate-cycles-to-plans/ # cycles → plans マイグレーション
 └── shared/           # 複数スキルが共有するリソース（ロール定義等）
+codex-skills/         # Codex CLI 用スキル
+├── commit/           # 自動コミット（Codex 版）
+├── investigate/      # 読み取り専用調査（Codex 版）
+├── plan/             # 計画管理（Codex 版）
+├── plan-reviewer/    # 6-7観点レビュー（Codex 版）
+├── issue/            # issue 管理（Codex 版）
+├── iterate/          # 軽量改善ループ（Codex 版）
+├── cycle/            # 全自動サイクル（Codex 版）
+├── team-cycle/       # チーム議論型（Codex 版）
+└── shared/           # Codex 固有の共有リソース
 rules/                # グローバルルール（手動コピーが必要）
+AGENTS.md             # Codex CLI 用プロジェクト説明
+CLAUDE.md             # Claude Code 用プロジェクト説明
 install.sh            # レガシーインストーラ（非推奨）
 ```

@@ -241,7 +241,7 @@ claude-skills/
 | Phase 2: plan + plan-reviewer + issue | 🟢 |
 | Phase 3: iterate + cycle | 🟢 |
 | Phase 4: team-cycle | 🟢 |
-| Phase 5: 仕上げ | ⚪ |
+| Phase 5: 仕上げ | 🟢 |
 
 **Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done
 

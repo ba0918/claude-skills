@@ -4,15 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-Claude Code 用の自作スキル・コマンド集（Plugin フォーマット）。実装計画の作成→レビュー→自動実装までのワークフローを提供する。
+Claude Code / Codex CLI 共用の自作スキル集（デュアルプラグイン構造）。実装計画の作成→レビュー→自動実装までのワークフローを提供する。
 Claude Code の Plugin として `claude plugin install` でインストールするか、`claude --plugin-dir` でローカルテストできる。
+Codex CLI では `codex-skills/` 配下のスキルを `$skill-name` 形式で呼び出す。
 
 ## アーキテクチャ
 
-### 2つのレイヤー
+### デュアルプラグイン構造
 
-- **commands/** — スラッシュコマンド（`/claude-skills:plan-create` 等）。ユーザーが直接呼び出すエントリーポイント。各 `.md` ファイルが1つのコマンドに対応。
-- **skills/** — スキル定義。各ディレクトリが `SKILL.md`（メインロジック）を持ち、必要に応じて `references/`（テンプレート・チェックリスト等の参照資料）を含む。
+- **commands/** — Claude Code 用スラッシュコマンド（`/claude-skills:plan-create` 等）。ユーザーが直接呼び出すエントリーポイント。各 `.md` ファイルが1つのコマンドに対応。
+- **skills/** — Claude Code 用スキル定義。各ディレクトリが `SKILL.md`（メインロジック）を持ち、必要に応じて `references/`（テンプレート・チェックリスト等の参照資料）を含む。
+- **codex-skills/** — Codex CLI 用スキル定義。Claude Code 版と同じワークフローを Codex CLI ネイティブのツール（`spawn_agent`, `send_message`, `apply_patch`, `shell` 等）で再実装。ツール非依存の references は `skills/` へのシンボリックリンクで共有。
 
 ### 共有リソース
 
