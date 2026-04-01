@@ -90,11 +90,17 @@ Overall Verdict: ⚠️ WARN (Max score: 85 → BLOCK)
   - Design conforms to layer architecture
   - Test plan included for each task
 
+🤖 Codex Second Opinion:
+  [Codex] Task 2-1: Consider using streaming instead of buffered approach
+    → Streaming would reduce memory footprint for large payloads
+  (If Codex unavailable: "⚠️ Codex second opinion unavailable")
+
 ────────────────────────────────────────
 
 📝 Recommended Actions:
   1. Fix BLOCK items before starting implementation
   2. Consider WARN items during implementation
+  3. Review Codex second opinion for additional perspectives
 ================================================================================
 ```
 

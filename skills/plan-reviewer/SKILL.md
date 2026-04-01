@@ -13,8 +13,8 @@ Quality gate that deeply reviews implementation plans from 7 expert perspectives
 plan-review Progress:
 - [ ] Identify and load latest plan file
 - [ ] Gather project context
-- [ ] Execute 7-dimension parallel review (UI/UX conditionally)
-- [ ] Integrate results and score
+- [ ] Execute 7-dimension parallel review + Codex second opinion (UI/UX conditionally)
+- [ ] Integrate results and score (including Codex findings)
 - [ ] Output review report
 - [ ] Branch decision (PASS/WARN/BLOCK)
 ```
@@ -59,9 +59,9 @@ Scan the plan content for UI/UX signals. If ANY of the following are detected, i
 
 If no signals detected and no override, skip Review 7.
 
-### Step 3: Execute 7-Dimension Parallel Review
+### Step 3: Execute 7-Dimension Parallel Review + Codex Second Opinion
 
-Launch up to **7 reviews in parallel** (Review 7: UI/UX is conditional — see Step 2.5). Each review runs as an Explore agent or general-purpose agent.
+Launch up to **7 reviews + 1 Codex agent in parallel** (Review 7: UI/UX is conditional — see Step 2.5). Each review runs as an Explore agent or general-purpose agent. The Codex agent runs as `subagent_type: "codex:rescue"`.
 
 Each review applies perspectives in the following priority order:
 1. Project-specific rules from `.claude/review-rules.md` (highest priority)
@@ -127,9 +127,50 @@ Each review applies perspectives in the following priority order:
 - Visual grouping for scannability
 - No jargon leak in user-facing text
 
+#### Review 8: Codex Second Opinion (always runs)
+
+Launch a Codex agent (`subagent_type: "codex:rescue"`) **in parallel** with Reviews 1-7.
+
+**Prompt to Codex agent:**
+```
+以下の実装計画を包括的にレビューしてください。
+
+計画ファイル内容:
+{plan file contents}
+
+以下の観点で問題点・見落とし・代替案を指摘してください:
+1. 設計上の問題点（アーキテクチャ、依存関係、拡張性）
+2. 実装の見落とし（エッジケース、エラーハンドリング、セキュリティ）
+3. より良い代替アプローチ
+
+出力フォーマット:
+各指摘を以下の形式で列挙してください:
+- severity: critical / important / minor
+- task: 関連するタスク番号（不明なら "general"）
+- title: 指摘の要約
+- description: 詳細説明
+- suggestion: 改善提案
+```
+
+**Codex セキュリティ制約**: 計画ファイルの内容のみを渡す。ソースコードは渡さない。
+
+**フォールバック**: Codex エージェントがエラーまたはタイムアウトの場合:
+```
+⚠️ Codex second opinion unavailable — proceeding with existing review only.
+```
+既存 7 次元の結果のみで続行する。
+
+共通パターンの詳細: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
+
 ### Step 4: Integrate Results and Score
 
 Aggregate confidence scores (0-100) from each review and determine the overall verdict.
+
+**Codex 結果の統合:**
+- Codex エージェントが成功した場合、Codex の指摘を既存 7 次元の結果に追加する
+- 重複排除: 既存レビューと同じタスク・同じ問題を指摘している場合はスキップ
+- Codex 固有の指摘には `[Codex]` プレフィックスを付与し、severity に応じて WARN/BLOCK 判定に含める
+- Codex の指摘は既存 7 次元のスコア計算には影響しない（独立セクションとして表示）
 
 Output format: [output-format.md](references/output-format.md)
 
