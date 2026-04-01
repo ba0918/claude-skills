@@ -18,9 +18,9 @@ codebase-review Progress:
 - [ ] Determine target scope
 - [ ] Analyze project structure & prepare work directory
 - [ ] Preflight check (work directory write permission)
-- [ ] Launch 4 review agents in parallel
-- [ ] Wait for all agents & handle failures
-- [ ] Launch integration agent
+- [ ] Launch 4 review agents + Codex agent in parallel
+- [ ] Wait for all agents & handle failures (Codex failure is non-blocking)
+- [ ] Launch integration agent (with Codex perspective if available)
 - [ ] Display summary & place report
 ```
 
@@ -71,9 +71,9 @@ Exclude: `node_modules/`, `dist/`, `build/`, `.git/`, `*.test.*`, `*.spec.*`, `*
    }
    ```
 
-### Step 3: Launch 4 Review Agents in Parallel
+### Step 3: Launch 4 Review Agents + Codex Agent in Parallel
 
-Launch 4 agents **in parallel** using the Agent tool (all with `run_in_background: true`, `mode: bypassPermissions`).
+Launch 5 agents **in parallel** using the Agent tool (all with `run_in_background: true`, `mode: bypassPermissions`).
 
 Context to provide each agent:
 - File path of context.json
@@ -85,9 +85,11 @@ Agent 1: security-auditor       # Security + Secrets (combined 35%)
 Agent 2: performance-analyzer   # Performance + Memory efficiency (combined 20%)
 Agent 3: quality-inspector      # Implementation quality + Logical consistency (combined 30%)
 Agent 4: codebase-hygiene       # Code duplication + Other improvements (combined 15%)
+Agent 5: codex-perspective      # Codex second opinion (independent section, no score impact)
 ```
 
-Each agent: `subagent_type: general-purpose`, `mode: bypassPermissions`
+Agents 1-4: `subagent_type: general-purpose`, `mode: bypassPermissions`
+Agent 5: `subagent_type: "codex:rescue"`, `mode: bypassPermissions`
 
 **Important**: The `mode: bypassPermissions` is essential. Without it, each background agent will be blocked by permission prompts when reading source files and writing result JSON files, causing cascading tool errors.
 
@@ -156,36 +158,100 @@ DONE: {category}
 Do not include any other text in your final response. All lengthy analysis and explanations should already be written to the JSON file.
 ```
 
+#### Codex Agent (Agent 5) Prompt Template
+
+```
+You are a Codex-powered second opinion reviewer for the codebase.
+Analyze the codebase from a holistic perspective that complements the 4 specialist agents.
+
+## Load Context
+First, read {work_dir}/context.json to obtain project information and target file list.
+
+## Security Constraint
+Skip the following files from target_files (do NOT read them):
+- Files matching .gitignore patterns
+- .env, credentials.*, *.key, *.pem, and other secret files
+
+## Review Focus
+Focus on cross-cutting concerns that individual specialist agents may miss:
+1. Overall design patterns and architectural coherence
+2. Cross-module dependency issues
+3. Consistency of error handling strategies across the codebase
+4. Convention violations that span multiple files
+5. Alternative architectural approaches
+
+## Analysis Steps
+1. Get target_files from context.json (excluding secrets/sensitive files)
+2. Read a representative sample of files to understand overall patterns
+3. Identify cross-cutting concerns and holistic issues
+
+## Result Output (strict)
+Write the analysis results in the following JSON format to **{work_dir}/agent-5-codex.json** using the Write tool:
+
+```json
+{
+  "agent": "codex-perspective",
+  "findings": [
+    {
+      "severity": "critical|major|minor|info",
+      "message": "Detailed description of the cross-cutting concern",
+      "files": ["affected file paths"],
+      "suggestion": "Specific improvement suggestion"
+    }
+  ],
+  "architectural_observations": "Overall architectural assessment (2-3 sentences)",
+  "summary": "Overall assessment (2-3 sentences)"
+}
+```
+
+## Output Constraint (most important)
+Write all your analysis results to the JSON file above.
+Your final response must be only the following single line:
+
+DONE: codex-perspective
+
+Do not include any other text in your final response.
+```
+
+Codex セキュリティ制約・フォールバックの共通パターン: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
+
 ### Step 3.5: Wait for Agents & Handle Failures
 
-After launching all 4 agents, wait for their completion. Then verify results:
+After launching all 5 agents, wait for their completion. Then verify results:
 
 1. Check that each expected JSON file exists:
    - `{work_dir}/agent-1-security.json`
    - `{work_dir}/agent-2-performance.json`
    - `{work_dir}/agent-3-quality.json`
    - `{work_dir}/agent-4-hygiene.json`
+   - `{work_dir}/agent-5-codex.json` (optional — Codex agent)
 
-2. **Graceful degradation**: Count how many agent result files exist.
+2. **Graceful degradation for core agents (1-4)**: Count how many core agent result files exist.
 
-   | Successful agents | Action |
-   |-------------------|--------|
+   | Successful core agents | Action |
+   |------------------------|--------|
    | 4/4 | Proceed to Step 4 normally |
    | 2-3/4 | Warn about missing agents, proceed with available results |
    | 0-1/4 | Abort with error message listing which agents failed |
 
-   Warning format (2-3 agents succeeded):
+   Warning format (2-3 core agents succeeded):
    ```
    ⚠️ {N}/4 review agents completed. Missing: {list of failed agent names}
    Proceeding with partial results...
    ```
 
-   Abort format (0-1 agents succeeded):
+   Abort format (0-1 core agents succeeded):
    ```
    ⛔ CODEBASE REVIEW ABORTED: Only {N}/4 review agents completed.
    Missing: {list of failed agent names}
    Check .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/ for any partial results.
    ```
+
+3. **Codex agent (Agent 5) is independent**: If `agent-5-codex.json` is missing, display a warning and proceed without Codex perspective:
+   ```
+   ⚠️ Codex second opinion unavailable — proceeding with existing review only.
+   ```
+   Codex failure does NOT affect the core agent success/failure count.
 
 ### Step 4: Launch Integration Agent
 
@@ -213,6 +279,7 @@ Read all of the following files:
 - {work_dir}/agent-2-performance.json
 - {work_dir}/agent-3-quality.json
 - {work_dir}/agent-4-hygiene.json
+- {work_dir}/agent-5-codex.json (Codex second opinion — may not exist)
 
 ## Processing Steps
 
@@ -230,6 +297,16 @@ Aggregate issues from all agents and sort by severity (critical→major→minor�
 
 ### 4. Determine Overall Rank
 90-100=S, 80-89=A, 70-79=B, 60-69=C, 50-59=D, 0-49=F
+
+### 4.5. Integrate Codex Perspective (if available)
+If agent-5-codex.json exists and was read successfully:
+- Extract findings and architectural observations
+- Merge any critical-severity Codex findings into the Critical Issues section
+- Create a dedicated "Codex Perspective" section in the report
+- Codex findings do NOT affect the 8-subcategory weighted scores
+
+If agent-5-codex.json does not exist:
+- Add a note: "⚠️ Codex second opinion was not available for this review"
 
 ### 5. Generate Output Files
 
@@ -267,6 +344,10 @@ Output in the following format exactly:
   Top 5 Critical/Major Issues:
   1. [{severity}] {message} ({file}:{line})
   2. ...
+
+  Codex Perspective:
+  {If available: top 3 Codex findings summary}
+  {If unavailable: "⚠️ Codex second opinion was not available"}
 
   Full report: docs/reviews/review-{YYYYMMDD-HHMM}.md
 ════════════════════════════════════════════════════════════════════════

@@ -190,3 +190,23 @@ Private keys: -----BEGIN (RSA |EC )?PRIVATE KEY-----
 | major | Significant test coverage gaps, documentation deficiencies |
 | minor | DX improvements, CI/CD optimization |
 | info | Best practice recommendations |
+
+---
+
+## 5. Codex Second Opinion (codex-perspective)
+
+Independent perspective from Codex (`subagent_type: "codex:rescue"`). This agent provides a holistic cross-cutting review that complements the 4 specialist agents.
+
+### Focus Areas
+
+- **Cross-cutting concerns**: Issues that span multiple modules or categories
+- **Architectural coherence**: Overall design pattern consistency
+- **Convention consistency**: Naming, error handling, and coding style consistency across the codebase
+- **Alternative approaches**: Higher-level design alternatives that specialist agents may not consider
+
+### Important Notes
+
+- Codex findings do **not** affect the 8-subcategory weighted scores
+- Critical findings from Codex are merged into the Critical Issues section of the report
+- If Codex is unavailable, the review proceeds with the 4 core agents only (graceful degradation)
+- Security constraint: `.env`, `credentials.*`, `*.key`, `*.pem`, and `.gitignore` targets are excluded from Codex analysis

@@ -113,6 +113,29 @@ Markdown template used by the integration agent for report generation.
 
 ---
 
+## Codex Perspective
+
+{If agent-5-codex.json was available:}
+
+### Architectural Observations
+
+{architectural_observations from Codex agent}
+
+### Cross-cutting Findings
+
+{List each finding with severity, message, affected files, and suggestion}
+
+#### {finding_index}. [{severity}] {message}
+
+- **Files**: {affected file list}
+- **Suggestion**: {suggestion}
+
+{If agent-5-codex.json was NOT available:}
+
+> ⚠️ Codex second opinion was not available for this review. The report is based on the 4 core review agents only.
+
+---
+
 ## Improvement Roadmap
 
 Improvement items to address in priority order:
