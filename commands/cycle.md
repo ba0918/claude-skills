@@ -174,6 +174,12 @@ Issue: {closed ✅ / ⚠️ close failed: {slug} — manual close required / (no
 - **Phase 1/Phase 2 で Agent がエラー**: 1回自動リトライする。リトライも失敗した場合はサイクルを中断する。
 - **Phase 3 の各ステップでエラー**: 失敗ステップを `phase3_failures` リストに記録し、残りのステップを続行する。Phase 3 のエラーで cycle 全体を失敗にしない。
 
+## Codex セカンドオピニオン
+
+Phase 1（Refine）で使用される plan-reviewer には Codex セカンドオピニオンが自動的に含まれます。
+Claude の 7 次元レビューに加え、Codex による包括的な第三者視点が並行で取得されます。
+Codex が利用不可能な場合は既存の 7 次元レビューのみで続行します（graceful degradation）。
+
 ## 重要なルール
 
 - **各フェーズは Agent に委譲する**。メインコンテキストにはサマリーのみ保持する。
