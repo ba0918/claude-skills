@@ -106,8 +106,8 @@ Launch an implementation agent via `spawn_agent`.
 Instructions to the agent:
 - Implement the additional instructions
 - Follow existing code style and conventions
-- Comply with CLAUDE.md / AGENTS.md rules
-- Reference `.claude/review-rules.md` if it exists
+- Comply with AGENTS.md rules
+- Reference review-rules.md if it exists (`.codex/review-rules.md` → `.claude/review-rules.md` → `review-rules.md`)
 - Add tests for changes that require testing
 - Run existing tests after implementation and confirm all pass
 
@@ -119,14 +119,14 @@ See [references/light-review.md](references/light-review.md) for detailed review
 
 Launch **1 review agent** via `spawn_agent`:
 - Review from 2 perspectives: Security + Implementation Quality
-- Use `.claude/review-rules.md` as additional criteria if it exists
+- Use review-rules.md as additional criteria if it exists
 - Classify findings as BLOCK / WARN / PASS
 
 ### If Large (user chose to continue)
 
 Launch **1 review agent** via `spawn_agent`:
 - Review from 4 perspectives: Security + Implementation Quality + Architecture + Completeness
-- Use `.claude/review-rules.md` as additional criteria if it exists
+- Use review-rules.md as additional criteria if it exists
 - Classify findings as BLOCK / WARN / PASS
 
 ### Processing Review Results

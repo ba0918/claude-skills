@@ -37,8 +37,8 @@ Read the full contents of the plan file. If the status is anything other than Pl
 
 Sources to collect:
 - Files planned for modification (verify existence + understand current contents)
-- `CLAUDE.md` / `AGENTS.md` (project root — project rules)
-- `.claude/review-rules.md` (project-specific review rules, if present)
+- `AGENTS.md` (project root — project rules)
+- review-rules.md (project-specific review rules — search `.codex/review-rules.md` → `.claude/review-rules.md` → `review-rules.md`)
 - `docs/ARCHITECTURE.md` (architecture principles, if present)
 - `docs/SECURITY.md` (security requirements, if present)
 
@@ -55,7 +55,7 @@ Scan the plan content for UI/UX signals. If ANY of the following are detected, i
 **Weak signals (2+ required to trigger):**
 - Keywords: "display", "layout", "style", "output", "format", "message", "error message", "progress"
 
-**Override:** If `.claude/review-rules.md` contains `ui_ux_review: always`, always include. If `ui_ux_review: never`, always skip. Invalid values fall back to default `auto`.
+**Override:** If review-rules.md contains `ui_ux_review: always`, always include. If `ui_ux_review: never`, always skip. Invalid values fall back to default `auto`.
 
 If no signals detected and no override, skip Review 7.
 
@@ -64,8 +64,8 @@ If no signals detected and no override, skip Review 7.
 Launch up to **7 reviews in parallel** (Review 7: UI/UX is conditional — see Step 2.5). Each review runs as a `spawn_agent`.
 
 Each review applies perspectives in the following priority order:
-1. Project-specific rules from `.claude/review-rules.md` (highest priority)
-2. Design Principles from `CLAUDE.md` / `AGENTS.md`
+1. Project-specific rules from review-rules.md (highest priority)
+2. Design Principles from `AGENTS.md`
 3. Generic checklists from [review-dimensions.md](references/review-dimensions.md)
 
 #### Review 1: Feasibility
@@ -82,7 +82,7 @@ Each review applies perspectives in the following priority order:
 - Safe handling of sensitive data (no logging, no plaintext storage)
 - Defense against injection attacks (command, SQL, path, etc.)
 - SSRF, information leakage risks
-- Security section from `.claude/review-rules.md` (if present)
+- Security section from review-rules.md (if present)
 
 #### Review 3: Performance & Memory
 
@@ -94,9 +94,9 @@ Each review applies perspectives in the following priority order:
 
 #### Review 4: Architecture & Design
 
-- Violations of layer structure defined in CLAUDE.md / AGENTS.md
-- Violations of dependency direction rules defined in CLAUDE.md / AGENTS.md
-- Project-specific design rules defined in `.claude/review-rules.md`
+- Violations of layer structure defined in AGENTS.md
+- Violations of dependency direction rules defined in AGENTS.md
+- Project-specific design rules defined in review-rules.md
 - DRY principle, single responsibility, type safety
 - Error handling consistency
 
