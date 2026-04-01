@@ -41,21 +41,40 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 - **Grep** — パターン検索（コードベース調査用）
 - **Glob** — ファイル検索（コードベース調査用）
 - **Bash** — **読み取り専用コマンドのみ**（`git log`, `git diff`, `ls`, `cat` 等）
+- **Agent** — **Codex セカンドオピニオン取得のみ**（`subagent_type: "codex:rescue"` 限定）
 - **AskUserQuestion** — ユーザーとの対話
 
 ### フロー
 
 1. テーマを $ARGUMENTS から取得（なければ AskUserQuestion で聞く）
-2. 壁打ち対話ループに入る:
-   - ユーザーのアイデアに対して質問・深掘り・反論・別視点を提供
-   - 必要に応じて既存のコードベースを Read/Grep で調査（読み取り専用）
-   - AskUserQuestion で次の入力を求める
-   - ユーザーが「wrap」「まとめて」「終わり」等と言ったらループ終了
-3. ループ終了時に Wrap Workflow への誘導メッセージを表示:
+2. **Codex 接続状態を初期化**: `codex_available = true`
+3. 壁打ち対話ループに入る:
+   a. ユーザーの発言を受け取る
+   b. **Codex セカンドオピニオン取得**（`codex_available == true` の場合のみ）:
+      - Agent ツール（`subagent_type: "codex:rescue"`）でユーザーの発言 + 壁打ちテーマ + これまでの議論の要約を送信
+      - プロンプト: 「以下の壁打ちテーマとユーザーの発言に対して、異なる視点・反論・見落とし・関連するアイデアを提供してください。テーマ: {theme}。ユーザーの発言: {user_message}。これまでの議論: {summary}」
+      - セキュリティ制約: 会話テキストのみを渡す（ファイル読み取り結果は渡さない）
+      - **成功時**: Codex の意見を保持して次のステップへ
+      - **失敗時**: 初回のみ `⚠️ Codex unavailable — proceeding with Claude only` を表示し、`codex_available = false` に設定。以降のターンでは Codex 呼び出しをスキップ
+   c. Claude が応答を生成する（Codex の意見があればそれを統合）:
+      - ユーザーのアイデアに対して質問・深掘り・反論・別視点を提供
+      - Codex の意見がある場合、応答末尾に以下のセクションを追記:
+        ```
+        💡 Codex の視点:
+        {Codex の意見の要約}
+        ```
+   d. 必要に応じて既存のコードベースを Read/Grep で調査（読み取り専用）
+   e. AskUserQuestion で次の入力を求める
+   f. ユーザーが「wrap」「まとめて」「終わり」等と言ったらループ終了
+4. ループ終了時に Wrap Workflow への誘導メッセージを表示:
    ```
    壁打ちを終了します。
    `/claude-skills:brainstorm-wrap` でアイデアをメモに整理できます。
    ```
+
+**Note**: Claude の応答生成と Agent 呼び出しは並行実行できないため、Codex 呼び出し → Claude 応答生成の順で逐次実行する。
+
+共通パターンの詳細: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
 
 ### 壁打ち中の振る舞い
 
@@ -183,8 +202,10 @@ Session Workflow と同一の制約が適用される:
 
    ここから壁打ちを再開します！
    ```
-4. Session Workflow と同じ対話ループを実行（質問・深掘り・反論・別視点の提供）
+4. Session Workflow と同じ対話ループを実行（Codex セカンドオピニオン付き — Session Workflow のステップ 2-3f と同一）
    - 前回の Open Questions を優先的に議論の起点とする
+   - 各ターンで Codex のセカンドオピニオンを取得し、`💡 Codex の視点:` として追記
+   - Codex 接続失敗時は `⚠️ Codex unavailable — proceeding with Claude only` を表示し以降スキップ
 5. ユーザーが「wrap」「まとめて」「終わり」等と言ったらループ終了
 6. ループ終了時に Wrap Workflow（上書き更新モード）への誘導メッセージを表示:
    ```
