@@ -195,7 +195,7 @@ Private keys: -----BEGIN (RSA |EC )?PRIVATE KEY-----
 
 ## 5. Codex Second Opinion (codex-perspective)
 
-Independent perspective from Codex (`subagent_type: "codex:rescue"`). This agent provides a holistic cross-cutting review that complements the 4 specialist agents.
+Independent perspective from Codex (`subagent_type: "codex:codex-rescue"`). This agent provides a holistic cross-cutting review that complements the 4 specialist agents.
 
 ### Focus Areas
 

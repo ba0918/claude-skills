@@ -56,7 +56,7 @@ When the user chooses to continue after a Large judgment, check these in additio
 
 ## Codex Second Opinion (always runs in parallel)
 
-A Codex agent (`subagent_type: "codex:rescue"`) runs in parallel with the review agent (both Small and Large tasks). The Codex agent receives the change diff and user instructions, and provides an independent perspective on design issues, edge cases, and alternatives.
+A Codex agent (`subagent_type: "codex:codex-rescue"`) runs in parallel with the review agent (both Small and Large tasks). The Codex agent receives the change diff and user instructions, and provides an independent perspective on design issues, edge cases, and alternatives.
 
 - Codex findings are merged with `[Codex]` prefix and contribute to WARN/BLOCK judgment
 - If Codex is unavailable, the review proceeds with the standard perspectives only (graceful degradation)

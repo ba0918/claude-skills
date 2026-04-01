@@ -41,7 +41,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 - **Grep** — パターン検索（コードベース調査用）
 - **Glob** — ファイル検索（コードベース調査用）
 - **Bash** — **読み取り専用コマンドのみ**（`git log`, `git diff`, `ls`, `cat` 等）
-- **Agent** — **Codex セカンドオピニオン取得のみ**（`subagent_type: "codex:rescue"` 限定）
+- **Agent** — **Codex セカンドオピニオン取得のみ**（`subagent_type: "codex:codex-rescue"` 限定）
 - **AskUserQuestion** — ユーザーとの対話
 
 ### フロー
@@ -51,7 +51,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 3. 壁打ち対話ループに入る:
    a. ユーザーの発言を受け取る
    b. **Codex セカンドオピニオン取得**（`codex_available == true` の場合のみ）:
-      - Agent ツール（`subagent_type: "codex:rescue"`）でユーザーの発言 + 壁打ちテーマ + これまでの議論の要約を送信
+      - Agent ツール（`subagent_type: "codex:codex-rescue"`）でユーザーの発言 + 壁打ちテーマ + これまでの議論の要約を送信
       - プロンプト: 「以下の壁打ちテーマとユーザーの発言に対して、異なる視点・反論・見落とし・関連するアイデアを提供してください。テーマ: {theme}。ユーザーの発言: {user_message}。これまでの議論: {summary}」
       - セキュリティ制約: 会話テキストのみを渡す（ファイル読み取り結果は渡さない）
       - **成功時**: Codex の意見を保持して次のステップへ

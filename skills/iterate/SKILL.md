@@ -122,7 +122,7 @@ Launch **2 agents in parallel** (issue both Agent tool calls in a single message
    - Review from 2 perspectives: Security + Implementation Quality
    - Use `.claude/review-rules.md` as additional criteria if it exists
    - Classify findings as BLOCK / WARN / PASS
-2. **Codex agent** (`subagent_type: "codex:rescue"`, Bash tool only):
+2. **Codex agent** (`subagent_type: "codex:codex-rescue"`, Bash tool only):
    - Provide the change diff (`git diff`) and the user's instructions directly in the prompt
    - Ask for design issues, edge cases, and alternative approaches
    - Security constraint: pass diff only, not raw source files
@@ -134,7 +134,7 @@ Launch **2 agents in parallel** (issue both Agent tool calls in a single message
    - Review from 4 perspectives: Security + Implementation Quality + Architecture + Completeness
    - Use `.claude/review-rules.md` as additional criteria if it exists
    - Classify findings as BLOCK / WARN / PASS
-2. **Codex agent** (`subagent_type: "codex:rescue"`, Bash tool only):
+2. **Codex agent** (`subagent_type: "codex:codex-rescue"`, Bash tool only):
    - Provide the change diff (`git diff`) and the user's instructions directly in the prompt
    - Ask for design issues, edge cases, and alternative approaches
    - Security constraint: pass diff only, not raw source files

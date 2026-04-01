@@ -71,29 +71,31 @@ Exclude: `node_modules/`, `dist/`, `build/`, `.git/`, `*.test.*`, `*.spec.*`, `*
    }
    ```
 
-### Step 3: Launch 4 Review Agents + Codex Agent in Parallel
+### Step 3: Launch 5 Agents in Parallel
 
-Launch 5 agents **in parallel** by issuing all Agent tool calls in a single message (all with `mode: bypassPermissions`).
+**CRITICAL: You MUST launch exactly 5 agents in a single message. Not 4, but 5.** Issue all 5 Agent tool calls in one message to run them in parallel.
 
-Context to provide each agent:
+All agents use `mode: bypassPermissions` (essential — without it, agents are blocked by permission prompts).
+
+**Launch the following 5 agents simultaneously:**
+
+1. **Agent 1: security-auditor** — `subagent_type: general-purpose` — Security + Secrets (35%)
+2. **Agent 2: performance-analyzer** — `subagent_type: general-purpose` — Performance + Memory (20%)
+3. **Agent 3: quality-inspector** — `subagent_type: general-purpose` — Quality + Logic (30%)
+4. **Agent 4: codebase-hygiene** — `subagent_type: general-purpose` — Duplication + Improvements (15%)
+5. **Agent 5: codex-perspective** — `subagent_type: "codex:codex-rescue"` — Codex second opinion (independent section)
+
+Agent 5 (Codex) is NOT optional. Always launch it alongside Agents 1-4. If Codex fails, Step 3.5 handles graceful degradation.
+
+Context to provide Agents 1-4:
 - File path of context.json
 - Detailed review criteria ([references/review-criteria.md](references/review-criteria.md) relevant section)
-- **Output JSON file path**
+- Output JSON file path
 
-```
-Agent 1: security-auditor       # Security + Secrets (combined 35%)
-Agent 2: performance-analyzer   # Performance + Memory efficiency (combined 20%)
-Agent 3: quality-inspector      # Implementation quality + Logical consistency (combined 30%)
-Agent 4: codebase-hygiene       # Code duplication + Other improvements (combined 15%)
-Agent 5: codex-perspective      # Codex second opinion (independent section, no score impact)
-```
-
-Agents 1-4: `subagent_type: general-purpose`, `mode: bypassPermissions`
-Agent 5: `subagent_type: "codex:rescue"`, `mode: bypassPermissions`
-
-**Important**: The `mode: bypassPermissions` is essential. Without it, each agent will be blocked by permission prompts when reading source files and writing result JSON files, causing cascading tool errors.
-
-**Parallel execution**: Issue all 5 Agent tool calls in a single message to run them in parallel. Do NOT use `run_in_background` (that is a Bash tool parameter, not an Agent tool parameter).
+Context to provide Agent 5 (Codex):
+- File path of context.json (Codex reads it with `cat`)
+- Output JSON file path (Codex writes it with `cat > file << 'EOF'`)
+- **Codex can only use the Bash tool** — no Read/Write/Edit/Glob
 
 #### Review Agent Prompt Template
 
@@ -162,7 +164,7 @@ Do not include any other text in your final response. All lengthy analysis and e
 
 #### Codex Agent (Agent 5) Prompt Template
 
-**Important**: Codex (`subagent_type: "codex:rescue"`) can only use the Bash tool. It cannot use Write, Read, Edit, or Glob. All file operations must use shell commands (`cat`, `tee`, `jq`, etc.).
+**Important**: Codex (`subagent_type: "codex:codex-rescue"`) can only use the Bash tool. It cannot use Write, Read, Edit, or Glob. All file operations must use shell commands (`cat`, `tee`, `jq`, etc.).
 
 ```
 You are a Codex-powered second opinion reviewer for the codebase.
@@ -411,7 +413,7 @@ After confirming the integration agent has completed:
 - **Headless execution**: Do not prompt the user for confirmation at any step.
 - **All agents must use `mode: bypassPermissions`**: This is critical. Without it, agents will be blocked by permission prompts when reading source files and writing result JSON, causing cascading tool errors.
 - **Parallel execution via single message**: Issue all Agent tool calls in a single message to run them in parallel. Do NOT use `run_in_background` (that is a Bash tool parameter, not an Agent tool parameter).
-- **Codex agent uses Bash only**: The Codex agent (`subagent_type: "codex:rescue"`) can only use the Bash tool. All file reads/writes must use shell commands (`cat`, `tee`, etc.), not Read/Write/Edit tools.
+- **Codex agent uses Bash only**: The Codex agent (`subagent_type: "codex:codex-rescue"`) can only use the Bash tool. All file reads/writes must use shell commands (`cat`, `tee`, etc.), not Read/Write/Edit tools.
 - **Graceful degradation**: Partial results are better than no results. If some agents fail, generate a report from the successful agents.
 - **Do not read agent-*.json or report.md into the main context** (except summary.txt). This preserves context window space.
 

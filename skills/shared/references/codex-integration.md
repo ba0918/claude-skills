@@ -7,7 +7,7 @@
 ### Agent Tool Parameters
 
 ```
-subagent_type: "codex:rescue"
+subagent_type: "codex:codex-rescue"
 mode: bypassPermissions (or default)
 ```
 

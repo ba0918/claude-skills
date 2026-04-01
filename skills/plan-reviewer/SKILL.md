@@ -61,7 +61,7 @@ If no signals detected and no override, skip Review 7.
 
 ### Step 3: Execute 7-Dimension Parallel Review + Codex Second Opinion
 
-Launch up to **7 reviews + 1 Codex agent in parallel** (Review 7: UI/UX is conditional — see Step 2.5). Each review runs as an Explore agent or general-purpose agent. The Codex agent runs as `subagent_type: "codex:rescue"`.
+Launch up to **7 reviews + 1 Codex agent in parallel** (Review 7: UI/UX is conditional — see Step 2.5). Each review runs as an Explore agent or general-purpose agent. The Codex agent runs as `subagent_type: "codex:codex-rescue"`.
 
 Each review applies perspectives in the following priority order:
 1. Project-specific rules from `.claude/review-rules.md` (highest priority)
@@ -129,7 +129,7 @@ Each review applies perspectives in the following priority order:
 
 #### Review 8: Codex Second Opinion (always runs)
 
-Launch a Codex agent (`subagent_type: "codex:rescue"`) **in parallel** with Reviews 1-7.
+Launch a Codex agent (`subagent_type: "codex:codex-rescue"`) **in parallel** with Reviews 1-7.
 
 **Prompt to Codex agent:**
 ```
