@@ -1,11 +1,11 @@
 ---
 name: codebase-review
-description: コードベース全体を4つの専門エージェント（セキュリティ/機密情報、パフォーマンス/メモリ、実装品質/論理整合性、コード衛生/改善点）で並行レビューし、100点満点でスコアリングする。「コードベースレビュー」「全体レビュー」「codebase review」「コード品質チェック」「プロジェクト全体を分析」で起動。CLAUDE.mdがあればプロジェクト固有ルールも自動で考慮する。
+description: コードベース全体を4つの専門エージェント（セキュリティ/機密情報、パフォーマンス/メモリ、実装品質/論理整合性、コード衛生/改善点）+ Codex セカンドオピニオンで並行レビューし、100点満点でスコアリングする。「コードベースレビュー」「全体レビュー」「codebase review」「コード品質チェック」「プロジェクト全体を分析」で起動。CLAUDE.mdがあればプロジェクト固有ルールも自動で考慮する。
 ---
 
 # Codebase Review
 
-Review the entire codebase with 4 specialized agents in parallel and generate an integrated score report.
+Review the entire codebase with 4 specialized agents + Codex second opinion in parallel and generate an integrated score report.
 
 **Context-saving design**: All agent analysis results are passed via files; only summaries flow into the main context.
 
@@ -73,7 +73,7 @@ Exclude: `node_modules/`, `dist/`, `build/`, `.git/`, `*.test.*`, `*.spec.*`, `*
 
 ### Step 3: Launch 4 Review Agents + Codex Agent in Parallel
 
-Launch 5 agents **in parallel** using the Agent tool (all with `run_in_background: true`, `mode: bypassPermissions`).
+Launch 5 agents **in parallel** by issuing all Agent tool calls in a single message (all with `mode: bypassPermissions`).
 
 Context to provide each agent:
 - File path of context.json
@@ -91,7 +91,9 @@ Agent 5: codex-perspective      # Codex second opinion (independent section, no 
 Agents 1-4: `subagent_type: general-purpose`, `mode: bypassPermissions`
 Agent 5: `subagent_type: "codex:rescue"`, `mode: bypassPermissions`
 
-**Important**: The `mode: bypassPermissions` is essential. Without it, each background agent will be blocked by permission prompts when reading source files and writing result JSON files, causing cascading tool errors.
+**Important**: The `mode: bypassPermissions` is essential. Without it, each agent will be blocked by permission prompts when reading source files and writing result JSON files, causing cascading tool errors.
+
+**Parallel execution**: Issue all 5 Agent tool calls in a single message to run them in parallel. Do NOT use `run_in_background` (that is a Bash tool parameter, not an Agent tool parameter).
 
 #### Review Agent Prompt Template
 
@@ -160,12 +162,17 @@ Do not include any other text in your final response. All lengthy analysis and e
 
 #### Codex Agent (Agent 5) Prompt Template
 
+**Important**: Codex (`subagent_type: "codex:rescue"`) can only use the Bash tool. It cannot use Write, Read, Edit, or Glob. All file operations must use shell commands (`cat`, `tee`, `jq`, etc.).
+
 ```
 You are a Codex-powered second opinion reviewer for the codebase.
 Analyze the codebase from a holistic perspective that complements the 4 specialist agents.
 
 ## Load Context
-First, read {work_dir}/context.json to obtain project information and target file list.
+First, read {work_dir}/context.json using `cat`:
+```bash
+cat {work_dir}/context.json
+```
 
 ## Security Constraint
 Skip the following files from target_files (do NOT read them):
@@ -181,14 +188,15 @@ Focus on cross-cutting concerns that individual specialist agents may miss:
 5. Alternative architectural approaches
 
 ## Analysis Steps
-1. Get target_files from context.json (excluding secrets/sensitive files)
-2. Read a representative sample of files to understand overall patterns
+1. Read context.json with `cat` to get target_files (excluding secrets/sensitive files)
+2. Read a representative sample of files using `cat` to understand overall patterns
 3. Identify cross-cutting concerns and holistic issues
 
 ## Result Output (strict)
-Write the analysis results in the following JSON format to **{work_dir}/agent-5-codex.json** using the Write tool:
+Write the analysis results in the following JSON format to **{work_dir}/agent-5-codex.json** using `tee` or `cat` with heredoc:
 
-```json
+```bash
+cat > {work_dir}/agent-5-codex.json << 'CODEX_EOF'
 {
   "agent": "codex-perspective",
   "findings": [
@@ -202,11 +210,12 @@ Write the analysis results in the following JSON format to **{work_dir}/agent-5-
   "architectural_observations": "Overall architectural assessment (2-3 sentences)",
   "summary": "Overall assessment (2-3 sentences)"
 }
+CODEX_EOF
 ```
 
 ## Output Constraint (most important)
-Write all your analysis results to the JSON file above.
-Your final response must be only the following single line:
+Write all your analysis results to the JSON file above using Bash commands.
+Your final response (the part returned as the Task result) must be only the following single line:
 
 DONE: codex-perspective
 
@@ -217,7 +226,7 @@ Codex セキュリティ制約・フォールバックの共通パターン: [..
 
 ### Step 3.5: Wait for Agents & Handle Failures
 
-After launching all 5 agents, wait for their completion. Then verify results:
+After all 5 agents complete, verify results:
 
 1. Check that each expected JSON file exists:
    - `{work_dir}/agent-1-security.json`
@@ -255,7 +264,7 @@ After launching all 5 agents, wait for their completion. Then verify results:
 
 ### Step 4: Launch Integration Agent
 
-**After confirming at least 2 review agents have completed**, launch the integration agent via the Agent tool (`run_in_background: true`, `mode: bypassPermissions`).
+**After confirming at least 2 review agents have completed**, launch the integration agent via the Agent tool (`mode: bypassPermissions`).
 
 Integration agent: `subagent_type: general-purpose`, `mode: bypassPermissions`
 
@@ -400,7 +409,9 @@ After confirming the integration agent has completed:
 ## Important Rules
 
 - **Headless execution**: Do not prompt the user for confirmation at any step.
-- **All agents must use `mode: bypassPermissions`**: This is critical. Without it, background agents will be blocked by permission prompts when reading source files and writing result JSON, causing cascading tool errors.
+- **All agents must use `mode: bypassPermissions`**: This is critical. Without it, agents will be blocked by permission prompts when reading source files and writing result JSON, causing cascading tool errors.
+- **Parallel execution via single message**: Issue all Agent tool calls in a single message to run them in parallel. Do NOT use `run_in_background` (that is a Bash tool parameter, not an Agent tool parameter).
+- **Codex agent uses Bash only**: The Codex agent (`subagent_type: "codex:rescue"`) can only use the Bash tool. All file reads/writes must use shell commands (`cat`, `tee`, etc.), not Read/Write/Edit tools.
 - **Graceful degradation**: Partial results are better than no results. If some agents fail, generate a report from the successful agents.
 - **Do not read agent-*.json or report.md into the main context** (except summary.txt). This preserves context window space.
 

@@ -117,25 +117,25 @@ See [references/light-review.md](references/light-review.md) for detailed review
 
 ### If Small
 
-Launch **2 agents in parallel**:
+Launch **2 agents in parallel** (issue both Agent tool calls in a single message):
 1. **Review agent** (general-purpose):
    - Review from 2 perspectives: Security + Implementation Quality
    - Use `.claude/review-rules.md` as additional criteria if it exists
    - Classify findings as BLOCK / WARN / PASS
-2. **Codex agent** (`subagent_type: "codex:rescue"`):
-   - Provide the change diff (`git diff`) and the user's instructions
+2. **Codex agent** (`subagent_type: "codex:rescue"`, Bash tool only):
+   - Provide the change diff (`git diff`) and the user's instructions directly in the prompt
    - Ask for design issues, edge cases, and alternative approaches
    - Security constraint: pass diff only, not raw source files
 
 ### If Large (user chose to continue)
 
-Launch **2 agents in parallel**:
+Launch **2 agents in parallel** (issue both Agent tool calls in a single message):
 1. **Review agent** (general-purpose):
    - Review from 4 perspectives: Security + Implementation Quality + Architecture + Completeness
    - Use `.claude/review-rules.md` as additional criteria if it exists
    - Classify findings as BLOCK / WARN / PASS
-2. **Codex agent** (`subagent_type: "codex:rescue"`):
-   - Provide the change diff (`git diff`) and the user's instructions
+2. **Codex agent** (`subagent_type: "codex:rescue"`, Bash tool only):
+   - Provide the change diff (`git diff`) and the user's instructions directly in the prompt
    - Ask for design issues, edge cases, and alternative approaches
    - Security constraint: pass diff only, not raw source files
 
