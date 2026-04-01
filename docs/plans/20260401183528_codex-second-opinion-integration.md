@@ -179,7 +179,7 @@ Agent tool parameters:
 |------|--------|
 | Task 1: plan-reviewer Codex 統合 | 🟢 |
 | Task 2: codebase-review Codex 統合 | 🟢 |
-| Task 3: iterate Codex 統合 | ⚪ |
+| Task 3: iterate Codex 統合 | 🟢 |
 | Task 4: brainstorm Codex セカンドオピニオン統合 | ⚪ |
 | Task 5: cycle ドキュメント更新 | ⚪ |
 | Task 6: 共有リファレンス作成 (codex-integration.md) | 🟢 |

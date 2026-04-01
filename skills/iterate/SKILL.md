@@ -111,23 +111,41 @@ Instructions to the agent:
 - Add tests for changes that require testing
 - Run existing tests after implementation and confirm all pass
 
-## Phase 4: Review
+## Phase 4: Review + Codex Second Opinion
 
 See [references/light-review.md](references/light-review.md) for detailed review perspectives.
 
 ### If Small
 
-Launch a review agent via the Agent tool (general-purpose):
-- Review from 2 perspectives: Security + Implementation Quality
-- Use `.claude/review-rules.md` as additional criteria if it exists
-- Classify findings as BLOCK / WARN / PASS
+Launch **2 agents in parallel**:
+1. **Review agent** (general-purpose):
+   - Review from 2 perspectives: Security + Implementation Quality
+   - Use `.claude/review-rules.md` as additional criteria if it exists
+   - Classify findings as BLOCK / WARN / PASS
+2. **Codex agent** (`subagent_type: "codex:rescue"`):
+   - Provide the change diff (`git diff`) and the user's instructions
+   - Ask for design issues, edge cases, and alternative approaches
+   - Security constraint: pass diff only, not raw source files
 
 ### If Large (user chose to continue)
 
-Launch a review agent via the Agent tool (general-purpose):
-- Review from 4 perspectives: Security + Implementation Quality + Architecture + Completeness
-- Use `.claude/review-rules.md` as additional criteria if it exists
-- Classify findings as BLOCK / WARN / PASS
+Launch **2 agents in parallel**:
+1. **Review agent** (general-purpose):
+   - Review from 4 perspectives: Security + Implementation Quality + Architecture + Completeness
+   - Use `.claude/review-rules.md` as additional criteria if it exists
+   - Classify findings as BLOCK / WARN / PASS
+2. **Codex agent** (`subagent_type: "codex:rescue"`):
+   - Provide the change diff (`git diff`) and the user's instructions
+   - Ask for design issues, edge cases, and alternative approaches
+   - Security constraint: pass diff only, not raw source files
+
+### Codex Result Integration
+
+- If Codex agent succeeds: merge Codex findings with `[Codex]` prefix into the review results (deduplicate against existing findings)
+- If Codex agent fails: display `⚠️ Codex second opinion unavailable — proceeding with existing review only.` and continue with review agent results only
+- Codex findings contribute to WARN/BLOCK judgment (e.g., a critical Codex finding triggers BLOCK)
+
+Common patterns: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
 
 ### Processing Review Results
 
@@ -156,6 +174,7 @@ Launch a review agent via the Agent tool (general-purpose):
 ### Review Results
 - Security: {PASS|WARN}
 - Implementation Quality: {PASS|WARN}
+- Codex Second Opinion: {PASS|WARN|unavailable}
 ```
 
 2. Execute `claude-skills:commit` via the Skill tool to commit changes
