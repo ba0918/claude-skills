@@ -1,0 +1,1 @@
+../../skills/shared/references/severity-and-verdicts.md

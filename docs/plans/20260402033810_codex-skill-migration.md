@@ -238,7 +238,7 @@ claude-skills/
 | Step | Status |
 |------|--------|
 | Phase 1: 基盤 + commit + investigate | 🟢 |
-| Phase 2: plan + plan-reviewer + issue | ⚪ |
+| Phase 2: plan + plan-reviewer + issue | 🟢 |
 | Phase 3: iterate + cycle | ⚪ |
 | Phase 4: team-cycle | ⚪ |
 | Phase 5: 仕上げ | ⚪ |

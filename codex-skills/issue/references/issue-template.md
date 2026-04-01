@@ -1,0 +1,1 @@
+../../skills/issue/references/issue-template.md
