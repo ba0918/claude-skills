@@ -34,7 +34,7 @@ cd ~/develop/claude-skills
 | コマンド | 説明 |
 |----------|------|
 | `/claude-skills:plan-create` | 実装計画を新規作成（`docs/plans/` に配置） |
-| `/claude-skills:plan-review` | 計画を6観点でレビュー |
+| `/claude-skills:plan-review` | 計画を7観点で徹底レビュー |
 | `/claude-skills:plan-refine` | レビュー → 修正ループ（PASS まで繰り返す） |
 | `/claude-skills:plan-implement` | 実装計画を自動実装（implement → review ループ） |
 | `/claude-skills:plan-resume` | 前回のセッションを引き継ぐ |
@@ -61,14 +61,21 @@ cd ~/develop/claude-skills
 | `/claude-skills:team-plan` | AgenticTeam によるチーム議論型の計画作成を実行 |
 | `/claude-skills:team-brainstorm` | チーム議論型のブレインストーミングを開始（4思考スタイルで多角的に発散） |
 | `/claude-skills:team-brainstorm-wrap` | チーム壁打ちの成果を整理してアイデアメモに保存 |
+| `/claude-skills:skill-improve` | セッションデータからスキルの摩擦を検出・分析し、データ駆動でスキル改善を実行 |
+| `/claude-skills:doc-audit` | docs 内のアーティファクトを横断スキャンし不整合を検出・修復 |
+| `/claude-skills:issue-team-cycle` | issue を選択して team-cycle（チームレビュー付き）で解決 |
+| `/claude-skills:brainstorm-cycle` | アイデアを plan に変換し cycle を即実行 |
+| `/claude-skills:brainstorm-team-cycle` | アイデアを plan に変換し team-cycle（チームレビュー付き）で即実行 |
+| `/claude-skills:migrate-cycles-to-plans` | `docs/cycles/` → `docs/plans/` のマイグレーションを実行 |
+| `/claude-skills:codebase-review` | コードベース全体を4つの専門エージェントで並行レビューし、100点満点でスコアリング |
 
 ## スキル一覧
 
 | スキル | 説明 |
 |--------|------|
 | `plan` | 計画ファイルと `docs/status.md` の管理 |
-| `plan-reviewer` | 6観点（実現可能性・セキュリティ・性能・設計・網羅性・代替案）の並行レビュー |
-| `codebase-review` | 4エージェント並行によるコードベース全体レビュー（100点満点） |
+| `plan-reviewer` | 7観点（実現可能性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・代替手法・UI/UX条件付き）+ Codex セカンドオピニオンの並行レビュー |
+| `codebase-review` | 4エージェント + Codex 並行によるコードベース全体レビュー（100点満点） |
 | `generate-review-rules` | プロジェクト固有のレビュールール自動生成 |
 | `commit` | 変更を分析し論理単位で自動コミット（確認なし即実行） |
 | `iterate` | サイズ適応型の軽量改善ループ（cycle より軽く、直接作業より安全） |
@@ -81,6 +88,9 @@ cd ~/develop/claude-skills
 | `team-cycle` | AgenticTeam によるチーム議論型レビュー + 自動実装サイクル。4専門レビュワーが議論して計画品質を向上 |
 | `team-plan` | AgenticTeam によるチーム議論型の計画作成。4専門家が議論しながら多角的な実装計画を作成 |
 | `team-brainstorm` | AgenticTeam によるチーム議論型ブレインストーミング。4思考スタイル（Challenger/Explorer/Connector/Grounded）で多角的にアイデアを発散 |
+| `skill-improve` | セッションデータからスキル使用時の摩擦を検出・分析し、データ駆動でスキル改善を実行するメタスキル |
+| `doc-audit` | docs 内の全アーティファクトを横断スキャンし、不整合を検出・自動修復 |
+| `migrate-cycles-to-plans` | `docs/cycles/` → `docs/plans/` のマイグレーション。ディレクトリ移動 + 全参照の一括置換 |
 
 ## 基本ワークフロー
 
@@ -181,7 +191,7 @@ plan 実行中にスコープ外の問題を発見したら `/claude-skills:issu
 commands/             # スラッシュコマンド
 skills/
 ├── plan/             # 計画管理スキル + テンプレート
-├── plan-reviewer/    # 6観点レビュー + チェックリスト
+├── plan-reviewer/    # 7観点レビュー + Codex セカンドオピニオン
 ├── commit/           # 自動コミットスキル
 ├── codebase-review/  # 4エージェント並行レビュー
 ├── generate-review-rules/
@@ -195,6 +205,9 @@ skills/
 ├── team-cycle/       # AgenticTeam チーム議論型レビュー + 自動実装
 ├── team-plan/        # AgenticTeam チーム議論型の計画作成
 ├── team-brainstorm/  # AgenticTeam チーム議論型ブレインストーミング
+├── skill-improve/    # セッションデータ分析によるスキル改善メタスキル
+├── doc-audit/        # docs 内アーティファクトの横断スキャン・不整合修復
+├── migrate-cycles-to-plans/ # cycles → plans マイグレーション
 └── shared/           # 複数スキルが共有するリソース（ロール定義等）
 rules/                # グローバルルール（手動コピーが必要）
 install.sh            # レガシーインストーラ（非推奨）
