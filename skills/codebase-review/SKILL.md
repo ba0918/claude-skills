@@ -73,155 +73,58 @@ Exclude: `node_modules/`, `dist/`, `build/`, `.git/`, `*.test.*`, `*.spec.*`, `*
 
 ### Step 3: Launch 5 Agents in Parallel
 
-**CRITICAL: You MUST launch exactly 5 agents in a single message. Not 4, but 5.** Issue all 5 Agent tool calls in one message to run them in parallel.
+Issue exactly 5 Agent tool calls in a single message. Prompt templates for Agents 1-4 and Agent 5 are in [references/agent-prompts.md](references/agent-prompts.md).
 
-All agents use `mode: bypassPermissions` (essential — without it, agents are blocked by permission prompts).
-
-**Launch the following 5 agents simultaneously:**
-
-1. **Agent 1: security-auditor** — `subagent_type: general-purpose` — Security + Secrets (35%)
-2. **Agent 2: performance-analyzer** — `subagent_type: general-purpose` — Performance + Memory (20%)
-3. **Agent 3: quality-inspector** — `subagent_type: general-purpose` — Quality + Logic (30%)
-4. **Agent 4: codebase-hygiene** — `subagent_type: general-purpose` — Duplication + Improvements (15%)
-5. **Agent 5: codex-perspective** — `subagent_type: "codex:codex-rescue"` — Codex second opinion (independent section)
-
-Agent 5 (Codex) is NOT optional. Always launch it alongside Agents 1-4. If Codex fails, Step 3.5 handles graceful degradation.
-
-Context to provide Agents 1-4:
-- File path of context.json
-- Detailed review criteria ([references/review-criteria.md](references/review-criteria.md) relevant section)
-- Output JSON file path
-
-Context to provide Agent 5 (Codex):
-- File path of context.json (Codex reads it with `cat`)
-- Output JSON file path (Codex writes it with `cat > file << 'EOF'`)
-- **Codex can only use the Bash tool** — no Read/Write/Edit/Glob
-
-#### Review Agent Prompt Template
-
-```
-You are a specialist reviewer for "{dimension name}".
-Thoroughly analyze the following codebase.
-
-## Load Context
-First, read {work_dir}/context.json to obtain project information and target file list.
-
-## Project-Specific Rules
-Refer to claude_md_rules in context.json and follow project-specific rules during review.
-
-## Review Criteria
-{Content of the relevant section from references/review-criteria.md}
-
-## Analysis Steps
-1. Get target_files from context.json
-2. Read each file and analyze based on the checklist above
-3. Record individual scores and issues for each subcategory
-
-## Result Output (strict)
-Write the analysis results in the following JSON format to **{work_dir}/agent-{N}-{category}.json** using the Write tool:
-
-```json
-{
-  "agent": "{agent name}",
-  "subcategories": [
-    {
-      "name": "{subcategory name}",
-      "key": "{subcategory key}",
-      "weight": weight(number),
-      "score": 0-100,
-      "issues": [
-        {
-          "severity": "critical|major|minor|info",
-          "message": "Detailed description of the issue",
-          "file": "file path",
-          "line": line_number (0 if unknown),
-          "suggestion": "Specific fix suggestion",
-          "effort": "low|medium|high"
-        }
-      ],
-      "good_practices": ["Good point 1", "Good point 2"]
-    }
-  ],
-  "summary": "Overall assessment (2-3 sentences)"
-}
-```
-
-Score criteria:
-- 90-100: Excellent. No critical issues
-- 70-89: Good. Minor improvements possible
-- 50-69: Needs improvement. Issues to address
-- 30-49: Many issues. Prompt action recommended
-- 0-29: Critical. Immediate action required
-
-## Output Constraint (most important)
-Write all your analysis results to the JSON file above.
-Your final response (the part returned as the Task result) must be only the following single line:
-
-DONE: {category}
-
-Do not include any other text in your final response. All lengthy analysis and explanations should already be written to the JSON file.
-```
-
-#### Codex Agent (Agent 5) Prompt Template
-
-**Important**: Codex (`subagent_type: "codex:codex-rescue"`) can only use the Bash tool. It cannot use Write, Read, Edit, or Glob. All file operations must use shell commands (`cat`, `tee`, `jq`, etc.).
-
-```
-You are a Codex-powered second opinion reviewer for the codebase.
-Analyze the codebase from a holistic perspective that complements the 4 specialist agents.
-
-## Load Context
-First, read {work_dir}/context.json using `cat`:
-```bash
-cat {work_dir}/context.json
-```
-
-## Security Constraint
-Skip the following files from target_files (do NOT read them):
-- Files matching .gitignore patterns
-- .env, credentials.*, *.key, *.pem, and other secret files
-
-## Review Focus
-Focus on cross-cutting concerns that individual specialist agents may miss:
-1. Overall design patterns and architectural coherence
-2. Cross-module dependency issues
-3. Consistency of error handling strategies across the codebase
-4. Convention violations that span multiple files
-5. Alternative architectural approaches
-
-## Analysis Steps
-1. Read context.json with `cat` to get target_files (excluding secrets/sensitive files)
-2. Read a representative sample of files using `cat` to understand overall patterns
-3. Identify cross-cutting concerns and holistic issues
-
-## Result Output (strict)
-Write the analysis results in the following JSON format to **{work_dir}/agent-5-codex.json** using `tee` or `cat` with heredoc:
-
-```bash
-cat > {work_dir}/agent-5-codex.json << 'CODEX_EOF'
-{
-  "agent": "codex-perspective",
-  "findings": [
-    {
-      "severity": "critical|major|minor|info",
-      "message": "Detailed description of the cross-cutting concern",
-      "files": ["affected file paths"],
-      "suggestion": "Specific improvement suggestion"
-    }
-  ],
-  "architectural_observations": "Overall architectural assessment (2-3 sentences)",
-  "summary": "Overall assessment (2-3 sentences)"
-}
-CODEX_EOF
-```
-
-## Output Constraint (most important)
-Write all your analysis results to the JSON file above using Bash commands.
-Your final response (the part returned as the Task result) must be only the following single line:
-
-DONE: codex-perspective
-
-Do not include any other text in your final response.
+```pseudocode
+// All 5 calls in ONE message — do not split across multiple messages
+Agent(
+  name: "security-review",
+  description: "Security & Secrets Review",
+  subagent_type: "general-purpose",
+  mode: "bypassPermissions",
+  prompt: <Agent 1-4 template from references/agent-prompts.md>
+          dimension = "Security + Secrets"
+          criteria  = Section 1 of references/review-criteria.md
+          output    = "{work_dir}/agent-1-security.json"
+)
+Agent(
+  name: "performance-review",
+  description: "Performance & Memory Review",
+  subagent_type: "general-purpose",
+  mode: "bypassPermissions",
+  prompt: <Agent 1-4 template>
+          dimension = "Performance + Memory Efficiency"
+          criteria  = Section 2 of references/review-criteria.md
+          output    = "{work_dir}/agent-2-performance.json"
+)
+Agent(
+  name: "quality-review",
+  description: "Implementation Quality Review",
+  subagent_type: "general-purpose",
+  mode: "bypassPermissions",
+  prompt: <Agent 1-4 template>
+          dimension = "Implementation Quality + Logical Consistency"
+          criteria  = Section 3 of references/review-criteria.md
+          output    = "{work_dir}/agent-3-quality.json"
+)
+Agent(
+  name: "hygiene-review",
+  description: "Code Hygiene Review",
+  subagent_type: "general-purpose",
+  mode: "bypassPermissions",
+  prompt: <Agent 1-4 template>
+          dimension = "Code Duplication + Other Improvements"
+          criteria  = Section 4 of references/review-criteria.md
+          output    = "{work_dir}/agent-4-hygiene.json"
+)
+Agent(
+  name: "codex-review",
+  description: "Codex Second Opinion Review",
+  subagent_type: "codex:codex-rescue",
+  mode: "bypassPermissions",
+  prompt: <Agent 5 template from references/agent-prompts.md>
+          output    = "{work_dir}/agent-5-codex.json"
+)
 ```
 
 Codex セキュリティ制約・フォールバックの共通パターン: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
