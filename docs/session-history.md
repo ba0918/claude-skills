@@ -2,6 +2,7 @@
 
 | Cycle ID | Feature | Started | Completed | Plan |
 |----------|---------|---------|-----------|------|
+| `20260402033810` | Codex CLI スキル移植 | 2026-04-02 | 2026-04-02 | [Link](./plans/20260402033810_codex-skill-migration.md) |
 | `20260401183528` | Codex Second Opinion Integration | 2026-04-01 | 2026-04-01 | [Link](./plans/20260401183528_codex-second-opinion-integration.md) |
 | `20260324212004` | UI/UXデザイナーレビューの導入 | 2026-03-24 | 2026-03-24 | [Link](./cycles/20260324212004_ui-ux-review-integration.md) |
 | `20260324062342` | Seamless Pipeline Transition | 2026-03-24 | 2026-03-24 | [Link](./cycles/20260324062342_seamless-pipeline-transition.md) |
