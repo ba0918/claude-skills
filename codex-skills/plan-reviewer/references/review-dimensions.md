@@ -1,1 +1,1 @@
-../../skills/plan-reviewer/references/review-dimensions.md
+../../../skills/plan-reviewer/references/review-dimensions.md

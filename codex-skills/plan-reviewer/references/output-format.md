@@ -1,1 +1,1 @@
-../../skills/plan-reviewer/references/output-format.md
+../../../skills/plan-reviewer/references/output-format.md

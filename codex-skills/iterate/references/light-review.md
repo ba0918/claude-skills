@@ -1,1 +1,1 @@
-../../skills/iterate/references/light-review.md
+../../../skills/iterate/references/light-review.md

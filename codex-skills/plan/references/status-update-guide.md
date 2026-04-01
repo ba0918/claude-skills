@@ -1,1 +1,1 @@
-../../skills/plan/references/status-update-guide.md
+../../../skills/plan/references/status-update-guide.md

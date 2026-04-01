@@ -1,1 +1,1 @@
-../../skills/plan/references/status-template.md
+../../../skills/plan/references/status-template.md

@@ -1,1 +1,1 @@
-../../skills/iterate/references/scope-criteria.md
+../../../skills/iterate/references/scope-criteria.md
