@@ -1,11 +1,18 @@
 ---
 name: plan-reviewer
-description: 実装計画を7観点（実現可能性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・代替手法・UI/UX）で徹底レビューし、信頼スコアで判定する。「計画をレビュー」「plan review」「計画を確認」「実装計画をチェック」「プランレビュー」で起動。計画作成後の品質ゲートとして使用。
+description: 実装計画を7観点で徹底レビューし信頼スコアで判定する。「plan review」「計画をレビュー」「計画を確認」で起動。引数に「refine」を含むと review → fix ループで計画を自動改善する。「plan refine」「計画を改善」で起動。
 ---
 
 # Plan Reviewer
 
 Quality gate that deeply reviews implementation plans from 7 expert perspectives before implementation begins.
+
+## Workflow Selection
+
+The first keyword in the argument determines the workflow:
+
+- `refine` → **Refine Workflow** (review → fix loop)
+- Other / None → **Review Workflow** (single review, default)
 
 ## Progress Checklist
 
@@ -162,6 +169,50 @@ Output the final summary containing:
 → Display BLOCK item details and fix suggestions:
   "Critical issues detected. The plan should be modified before starting implementation"
 
+---
+
+## Refine Workflow
+
+Review → fix loop that iteratively improves the plan until all dimensions PASS or the max iteration count is reached.
+
+### Parameters
+
+- First number in `$ARGUMENTS` (after `refine`): Max iterations (default: 3)
+- File path in `$ARGUMENTS`: Target plan file (omit to auto-select latest from `docs/plans/`)
+
+### Iteration 1 (Full Review)
+
+1. Execute the **Review Workflow** above (Steps 1-6, full 6-7 dimension review)
+   - Record the target file path for reuse in subsequent iterations
+2. Result is all PASS → Done (go to Completion Report)
+3. WARN/BLOCK found:
+   a. Examine each finding and directly edit the plan file with `apply_patch` to fix
+   b. Show diff of changes made
+   c. Proceed to next iteration
+
+### Iteration 2+ (Delta Review)
+
+1. Re-review **only dimensions that were WARN/BLOCK** in the previous iteration
+   - Pass the same target file path explicitly (do not rely on auto-selection)
+   - Skip dimensions that already PASS (save context)
+2. Result is all PASS → Done
+3. Still WARN/BLOCK → Fix and continue
+
+### Termination Conditions
+
+- All dimensions PASS
+- Max iteration count reached → Display remaining WARN/BLOCK list and exit
+
+### Completion Report
+
+Display to user:
+- Number of iterations executed
+- Summary of improvements made per iteration
+- Final score and verdict for each dimension
+- Remaining WARN/BLOCK list (if any)
+
+---
+
 ## Prohibited Actions
 
 - Implementing code (only provide review perspectives)
@@ -169,8 +220,8 @@ Output the final summary containing:
 
 ## Important Notes
 
-- When called standalone, do not directly edit the plan file (only present review results)
-- When called from plan-refine, the refine side is responsible for edits
+- In **Review Workflow**: do not directly edit the plan file (only present review results)
+- In **Refine Workflow**: directly edit the plan file to fix WARN/BLOCK findings
 
 ## References
 
