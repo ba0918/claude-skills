@@ -63,6 +63,8 @@ commands/skill-improve.md    →  skills/skill-improve/SKILL.md
 commands/doc-audit.md    →  skills/doc-audit/SKILL.md
 commands/migrate-cycles-to-plans.md → skills/migrate-cycles-to-plans/SKILL.md
 commands/codebase-review.md → skills/codebase-review/SKILL.md
+commands/handoff-save.md →  skills/handoff/SKILL.md (save ワークフロー)
+commands/handoff-restore.md → skills/handoff/SKILL.md (restore ワークフロー)
 ```
 
 > `generate-review-rules` はコマンドなし（Skill ツール直接呼び出し）。
@@ -88,6 +90,7 @@ commands/codebase-review.md → skills/codebase-review/SKILL.md
 | `team-brainstorm` | AgenticTeam によるチーム議論型ブレインストーミング。4思考スタイル（Challenger/Explorer/Connector/Grounded）で多角的にアイデアを発散 |
 | `skill-improve` | セッションデータからスキル使用時の摩擦を検出・分析し、データ駆動でスキル改善を実行するメタスキル |
 | `doc-audit` | docs 内の全アーティファクトを横断スキャンし、不整合を検出・自動修復する |
+| `handoff` | セッション間のコンテキスト引き継ぎ。save で現在のコンテキストを `docs/handoff/` に構造化保存、restore で次セッションが読込→自動削除 |
 | `migrate-cycles-to-plans` | `docs/cycles/` → `docs/plans/` のマイグレーション。ディレクトリ移動 + 全参照の一括置換 |
 
 ### ワークフロー設計パターン
