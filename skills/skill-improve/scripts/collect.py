@@ -33,8 +33,12 @@ SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("generic_long_key", re.compile(r"""["'][A-Za-z0-9_\-/+]{40,}["']""")),
 ]
 
-SKILL_PREFIX = "/claude-skills:"
-SKILL_TOOL_NAME = "claude-skills"
+# Generic slash command pattern: /<plugin>:<skill-name>
+# Matches any plugin prefix without requiring a hardcoded whitelist.
+SLASH_SKILL_RE = re.compile(r"/([a-z][a-z0-9-]*):([a-z][a-z0-9-]*)")
+
+# Generic Skill tool input pattern: "<plugin>:<skill-name>" or bare "<skill-name>"
+SKILL_INPUT_RE = re.compile(r"^(?:([a-z][a-z0-9-]*):)?([a-z][a-z0-9-]*)$")
 
 
 # ---------------------------------------------------------------------------
@@ -133,26 +137,20 @@ def parse_timestamp(ts: Any) -> datetime | None:
 
 
 def extract_skill_name(text: str) -> str | None:
-    """Extract skill name from slash command invocation.
+    """Extract skill name from any slash command invocation.
 
+    Matches the generic pattern /<plugin>:<skill-name> regardless of plugin prefix.
     Handles formats like:
     - /claude-skills:plan-create
-    - <command-name>/claude-skills:team-cycle</command-name>
-    - `/claude-skills:cycle`
+    - /wiki:wiki-ingest
+    - <command-name>/any-plugin:team-cycle</command-name>
+    - `/foo:cycle`
     """
     if not isinstance(text, str):
         return None
-    idx = text.find(SKILL_PREFIX)
-    if idx >= 0:
-        rest = text[idx + len(SKILL_PREFIX):]
-        # Take until whitespace or end
-        name = rest.split()[0] if rest.split() else rest
-        # Strip trailing XML tags, backticks, and other non-name chars
-        name = re.sub(r"<.*", "", name)  # Remove XML tags like </command-name>
-        name = name.strip("`'\"\n\r\t ")  # Remove surrounding quotes/backticks
-        # Validate: skill names are lowercase alphanumeric with hyphens only
-        if name and re.fullmatch(r"[a-z][a-z0-9-]*", name):
-            return name
+    m = SLASH_SKILL_RE.search(text)
+    if m:
+        return m.group(2)
     return None
 
 
@@ -161,7 +159,19 @@ def is_skill_tool_call(msg: dict[str, Any]) -> tuple[bool, str | None]:
 
     JSONL structure: assistant messages have tool_use blocks inside
     msg["message"]["content"] as {type: "tool_use", name: "Skill", input: {skill: ...}}.
+
+    Accepts any "<plugin>:<skill-name>" or bare "<skill-name>" value without
+    requiring a plugin whitelist.
     """
+    def _resolve_skill(skill_value: Any) -> str | None:
+        """Strip any plugin prefix from skill_value and return the skill name."""
+        if not isinstance(skill_value, str) or not skill_value:
+            return None
+        m = SKILL_INPUT_RE.match(skill_value)
+        if m:
+            return m.group(2)
+        return None
+
     # Check nested message.content for tool_use blocks (actual JSONL structure)
     inner = msg.get("message", {})
     if isinstance(inner, dict):
@@ -177,8 +187,9 @@ def is_skill_tool_call(msg: dict[str, Any]) -> tuple[bool, str | None]:
                     tool_input = block.get("input", {})
                     if isinstance(tool_input, dict):
                         skill = tool_input.get("skill", "")
-                        if isinstance(skill, str) and SKILL_TOOL_NAME in skill:
-                            return True, skill.replace(f"{SKILL_TOOL_NAME}:", "")
+                        resolved = _resolve_skill(skill)
+                        if resolved is not None:
+                            return True, resolved
                     return True, None
 
     # Fallback: legacy flat structure (tool_name at top level)
@@ -187,8 +198,9 @@ def is_skill_tool_call(msg: dict[str, Any]) -> tuple[bool, str | None]:
         tool_input = msg.get("tool_input", {})
         if isinstance(tool_input, dict):
             skill = tool_input.get("skill", "")
-            if isinstance(skill, str) and SKILL_TOOL_NAME in skill:
-                return True, skill.replace(f"{SKILL_TOOL_NAME}:", "")
+            resolved = _resolve_skill(skill)
+            if resolved is not None:
+                return True, resolved
         return True, None
     return False, None
 
