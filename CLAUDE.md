@@ -65,6 +65,10 @@ commands/migrate-cycles-to-plans.md → skills/migrate-cycles-to-plans/SKILL.md
 commands/codebase-review.md → skills/codebase-review/SKILL.md
 commands/handoff-save.md →  skills/handoff/SKILL.md (save ワークフロー)
 commands/handoff-restore.md → skills/handoff/SKILL.md (restore ワークフロー)
+commands/github-issue-create.md → skills/github-issue/SKILL.md (create ワークフロー)
+commands/github-issue-list.md → skills/github-issue/SKILL.md (list ワークフロー)
+commands/github-issue-polling.md → skills/github-issue/SKILL.md (polling ワークフロー)
+commands/github-issue-cycle.md → skills/github-issue/SKILL.md (cycle ワークフロー)
 ```
 
 > `generate-review-rules` はコマンドなし（Skill ツール直接呼び出し）。
@@ -92,6 +96,7 @@ commands/handoff-restore.md → skills/handoff/SKILL.md (restore ワークフロ
 | `doc-audit` | docs 内の全アーティファクトを横断スキャンし、不整合を検出・自動修復する |
 | `handoff` | セッション間のコンテキスト引き継ぎ。save で現在のコンテキストを `docs/handoff/` に構造化保存、restore で次セッションが読込→自動削除 |
 | `migrate-cycles-to-plans` | `docs/cycles/` → `docs/plans/` のマイグレーション。ディレクトリ移動 + 全参照の一括置換 |
+| `github-issue` | GitHub issue を起点に polling → draft PR → Codex レビュー → auto merge まで自走するスキル。ラベルベース状態機械 + 多重防御 atomic claim + fail-closed Codex ゲート |
 
 ### ワークフロー設計パターン
 

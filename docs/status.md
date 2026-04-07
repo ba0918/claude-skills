@@ -1,12 +1,16 @@
 # Project Status
 
-**Last Updated:** 2026-04-02
+**Last Updated:** 2026-04-08
 
 ---
 
 ## Current Session
 
-_No active session_
+| Cycle ID | Feature | Started | Phase | Plan |
+|----------|---------|---------|-------|------|
+| 20260408040726 | github-issue skill | 2026-04-08 04:07:26 | 🟡 Planning | [plan](./plans/20260408040726_github-issue-skill.md) |
+
+**Current Focus:** GitHub issue を起点にした自走スキルの新規実装。polling → parallel-cycle → Codex PR レビュー → 修正ループ → auto merge までを全自動化。
 
 ---
 
