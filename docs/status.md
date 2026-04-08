@@ -1,12 +1,16 @@
 # Project Status
 
-**Last Updated:** 2026-04-08 15:35:00
+**Last Updated:** 2026-04-08 16:40:19
 
 ---
 
 ## Current Session
 
-_No active session_
+| Cycle ID | Feature | Started | Phase | Plan |
+|---|---|---|---|---|
+| 20260408164019 | github-issue Polling Contract Unification (Phase B) | 2026-04-08 16:40:19 | 🟢 Complete | [plan](./plans/20260408164019_github-issue-polling-unification.md) |
+
+**Current Focus:** Phase A 共通契約に `skills/github-issue/` を準拠させるリファクタ。label 二分割 + dual-write 互換 + Interface Table 準拠。
 
 ---
 
@@ -18,7 +22,8 @@ _アーカイブ済みセッションは [session-history.md](./session-history.
 
 ## Quick Links
 
-- [All Cycles](./cycles/)
+- [All Plans](./plans/)
+- [All Issues](./issues/)
 - [Project Root](../)
 
 ---
