@@ -107,11 +107,16 @@ claim 3 段防御 / state_root 解決 / error_kind 分類 / rollback 5 段階な
 5. **Archive**: `adapter.archive_month_boundary()`（GitHub では no-op、キャッシュ更新のみ）
 6. **Rate limit pre-check**: `gh api rate_limit --jq '.rate.remaining'` ≥ `min_rate_limit_remaining`。未満なら quiet skip
 7. **List ready**: `effective_parallel = min(max_parallel, parallel_worktree_limit)` で `adapter.list_ready(effective_parallel)` を呼び出し（precedence rule は [`references/config-defaults.md`](references/config-defaults.md) 参照）。単一 API 呼び出し、client-side filter 後 limit 未満でも再 fetch しない
-8. **Atomic claim**: 各 slug について `adapter.claim(slug)` を呼ぶ。失敗は quiet skip（claim 3 段防御の詳細は adapter 内部）。`authorAssociation` が `require_author_association` 外の issue は claim 前にフィルタ
+8. **Atomic claim**: 各 slug について `adapter.claim(slug)` を呼ぶ。失敗は quiet skip（claim 3 段防御の詳細は adapter 内部）。`authorAssociation` フィルタは `adapter.list_ready()` 側で既に適用済み（[`references/polling-adapter.md §list_ready(limit)`](references/polling-adapter.md#list_readylimit) 参照）、orchestrator 側では再実行しない
 9. **Dry run 判定**: `config.dry_run` または `<state_root>/.polling-initialized` が存在しない場合は claim 済みを `release()` して `halt_reason="dry_run"` を返す
 10. **Parallel-cycle 委譲**: claim 済み issue から plan を作成して `claude-skills:parallel-cycle` に委譲。**parallel-cycle 内では再 claim を行わない**（claim 責任は Polling 側に一元化）
-11. **Classify & persist**: 各 outcome について `classify_failure(normalize_github_error(exc))` を呼び、`adapter.mark_done(slug)` または `adapter.mark_failed(slug, kind)` で確定。`mark_failed` は単一 `gh issue edit` の atomic dual-write + verification（詳細は [`references/polling-adapter.md §mark_failed(slug, kind)`](references/polling-adapter.md#mark_failedslug-kind)）
-12. **TickResult emit**: 構造化カウンタ `{claimed, done, failed_transient, failed_permanent, halt_reason?}` を返す（共通契約 §7 準拠）
+11. **Classify & persist**: 各 outcome について `classify_failure(normalize_github_error(exc))` を呼ぶ。
+    - **Success**: `adapter.mark_done(slug)`
+    - **Transient failure**: `n = adapter.increment_retry(slug)` → `kind = should_promote_to_permanent(n, config.transient_retry_limit) ? Permanent : Transient` → `adapter.mark_failed(slug, kind)` （共通契約 §5 Classify & persist ブロック準拠）
+    - **Permanent failure**: `adapter.mark_failed(slug, Permanent)` （`increment_retry` はスキップ、共通契約 §4 `classify_failure` 純関数を直接適用）
+    - `mark_failed` は単一 `gh issue edit` の atomic dual-write + verification（詳細は [`references/polling-adapter.md §mark_failed(slug, kind)`](references/polling-adapter.md#mark_failedslug-kind)）
+    - `error_kind = "lock"` は `failed_streak` にカウントしない（silent skip、[`references/polling-adapter.md §error_kind Handling Rules`](references/polling-adapter.md#error_kind-handling-rules) 参照）
+12. **TickResult emit**: 共通契約 §7 Tick Schema に準拠した構造化カウンタ `{run_id, tick_started_at, claimed, done, failed_transient, failed_permanent, halt_reason?}` を返す。`run_id` / `tick_started_at` を含む全 7 フィールドは不変（共通契約 §7 参照）
 13. **初回 tick 成功時**: `<state_root>/.polling-initialized` を `write_atomic` で作成（次 tick から dry-run 強制解除）
 
 ### スナップショット境界

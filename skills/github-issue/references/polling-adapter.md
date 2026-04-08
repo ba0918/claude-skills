@@ -40,6 +40,8 @@
 
 ### list_ready(limit)
 
+共通契約 §3 の `list_ready(limit)` 要件は **early termination 必須**（全件スキャン禁止、`limit` 件見つかり次第返す）。Label adapter では `gh issue list --limit {limit}` による server-side limit + 単一呼び出し + client-side filter（no re-fetch）の組み合わせで early termination 契約を充足する。
+
 `gh issue list --label claude-auto --state open --json number,title,labels,author,authorAssociation --limit {limit}` を **単一呼び出し** で取得。
 
 1. client-side filter:
@@ -135,7 +137,9 @@ mark_failed(slug, kind) -> Result:
 - ファイル無し → `0` (初回扱い)
 - JSON parse 失敗 → warn log + ファイルを `<issue_number>.json.corrupt.{ts}` にリネームして隔離 + `0` (再作成)
 - **2 回連続で parse 失敗** (隔離後も新 write が再度 parse 失敗) した場合は `fail_closed("retry state corruption")` で polling abort
-- `run_id` フィールドは UUID v4 形式、read 時に `^[0-9a-f-]{36}$` 正規表現で検証し不一致なら warn + 無視
+- `run_id` フィールドは UUID v4 形式、read 時に正規表現 `^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$` で厳密検証し不一致なら warn + 無視（他フィールドの読み込みは継続）
+- **`retry_count` 型/範囲検証**: `int >= 0` かつ `< 10000` であること。非整数・負値・10000 以上は warn log + `0` (再作成、悪意ある大値書き込みによる `should_promote_to_permanent` 誤発動を防止)
+- **`last_failed_at` 形式検証**: ISO8601 形式 (`YYYY-MM-DDTHH:MM:SSZ` 等)。parse 失敗時は warn + `null` 扱い（retry_count は保持）
 
 ### increment_retry(slug)
 

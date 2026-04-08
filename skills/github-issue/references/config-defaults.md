@@ -10,7 +10,7 @@
 |-----|---------|------|------|
 | `max_review_iterations` | `3` | 回 | Codex レビュー → iterate 修正 のループ上限 |
 | `parallel_worktree_limit` | `1` | 個 | parallel-cycle に渡す worktree 物理並列上限。明示オプトインで増やす。共通契約 `max_parallel` とは別責務（下記 Precedence 参照） |
-| `polling_interval` | `10m` | 時間 | `/loop` の tick 間隔（参考値） |
+| `polling_interval` | `10m` | 時間 | `/loop` コマンドの外部呼び出し間隔（参考値）。共通契約 §10 の `tick_interval_loop_mode`（tick 内部の `--loop` リトライ間隔、default 30s）とは **別概念**。`/loop` は tick 単位で polling を起動し、その内部で `--loop` モードが `tick_interval_loop_mode` 毎に再 tick する |
 | `min_rate_limit_remaining` | `500` | requests | GitHub API 残量がこれ未満なら polling skip |
 | `max_diff_lines` | `2000` | 行 | これを超える PR は Codex に渡さず claude-failed |
 | `codex_review_timeout` | `5min` | 時間 | Codex 1 回呼び出しのタイムアウト |
