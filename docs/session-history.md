@@ -2,6 +2,7 @@
 
 | Cycle ID | Feature | Started | Completed | Plan |
 |----------|---------|---------|-----------|------|
+| `20260408164019` | github-issue Polling Contract Unification (Phase B) | 2026-04-08 | 2026-04-08 | [Link](./plans/20260408164019_github-issue-polling-unification.md) |
 | `20260408150529` | Polling Pattern Unification (Phase A) | 2026-04-08 | 2026-04-08 | [Link](./plans/20260408150529_polling-pattern-unification.md) |
 | `20260408040726` | github-issue skill | 2026-04-08 | 2026-04-08 | [Link](./plans/20260408040726_github-issue-skill.md) |
 | `20260402033810` | Codex CLI スキル移植 | 2026-04-02 | 2026-04-02 | [Link](./plans/20260402033810_codex-skill-migration.md) |
