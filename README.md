@@ -1,7 +1,12 @@
 # claude-skills
 
-Claude Code 用の自作スキル・コマンド集（Plugin フォーマット）。
-実装計画の作成からレビュー・自動実装までのワークフローを提供する。
+Claude Code / Codex CLI 両対応の自作スキル・コマンド集（デュアルプラグイン構造）。
+**実装計画の作成 → レビュー → 自動実装 → セッション引き継ぎ** までのワークフローと、
+**GitHub issue を起点とした self-driving ラルフループ**を提供する。
+
+> **Features:** plan 中心ワークフロー / AgenticTeam チーム議論型レビュー /
+> Codex CLI セカンドオピニオン並行 / GitHub issue 自走 polling /
+> worktree 並行 cycle / 揮発型セッション引き継ぎ
 
 ## インストール
 
@@ -50,6 +55,13 @@ cd ~/develop/claude-skills
 | `/claude-skills:issue-cycle` | issue を選択して plan → cycle で解決 |
 | `/claude-skills:issue-plan` | issue を選択して plan を作成（cycle は実行しない） |
 | `/claude-skills:issue-close` | issue をクローズしてアーカイブ |
+| `/claude-skills:issue-polling` | `ready/` キューを self-driving 消化するラルフループ（FS adapter） |
+| `/claude-skills:github-issue-create` | `claude-auto` ラベル付きの GitHub issue を作成 |
+| `/claude-skills:github-issue-list` | `claude-auto` ラベル付きの issue 一覧を表示 |
+| `/claude-skills:github-issue-cycle` | GitHub issue を plan → cycle → draft PR → Codex レビュー → auto merge で自走 |
+| `/claude-skills:github-issue-polling` | GitHub 側の `claude-auto` issue を self-driving 消化するラルフループ（Label adapter） |
+| `/claude-skills:handoff-save` | 現在のセッション状態を `docs/handoff/` に構造化保存 |
+| `/claude-skills:handoff-restore` | 保存されたハンドオフを読み込み → 自動削除（揮発型） |
 | `/claude-skills:parallel-cycle` | 指示を分解→並行 cycle 実行→自動マージ |
 | `/claude-skills:investigate` | 問題を読み取り専用で調査し、構造化レポートを出力 |
 | `/claude-skills:brainstorm` | アイデアの壁打ちセッションを開始（議論のみ、実装禁止） |
@@ -81,7 +93,9 @@ cd ~/develop/claude-skills
 | `iterate` | サイズ適応型の軽量改善ループ（cycle より軽く、直接作業より安全） |
 | `doc-check` | ドキュメントとコードベースの整合性検証・自動修正 |
 | `doc-write` | LLMとのやり取り・調査結果をリーダブルなドキュメントに昇華。Mermaid図付き |
-| `issue` | スコープ外の問題を記録・管理し plan → cycle に繋げる |
+| `issue` | スコープ外の問題を記録・管理し plan → cycle に繋げる。polling ワークフローで `ready/` キューを self-driving 消化するラルフループも提供 |
+| `github-issue` | GitHub issue を起点に polling → draft PR → Codex レビュー → auto merge まで自走。ラベルベース状態機械 + 多重防御 atomic claim + fail-closed Codex ゲート |
+| `handoff` | セッション間のコンテキスト引き継ぎ。save で現在のコンテキストを `docs/handoff/` に構造化保存、restore で次セッションが読込→自動削除（揮発型） |
 | `parallel-cycle` | 自然言語の指示を分解し、worktree で並行 cycle 実行・自動マージ |
 | `investigate` | 問題を読み取り専用で調査し、構造化レポートを出力。ファイル編集は一切行わない |
 | `brainstorm` | アイデアの壁打ちに特化。発散→収束→plan化の導線を提供。壁打ち中はファイル編集禁止 |
@@ -124,7 +138,7 @@ Agent に委譲して全自動で回す。ヘッドレス実行対応。
 タスクサイズを自動判定し、小さければ軽量ループ（実装→簡易レビュー）、
 大きければ plan 切り出しを提案する。変更は直近の計画ファイルに追記される。
 
-### Issue 管理
+### Issue 管理（local file ベース）
 
 ```
 /claude-skills:issue-create ○○の処理でエラーハンドリングが不足している
@@ -141,6 +155,44 @@ Agent に委譲して全自動で回す。ヘッドレス実行対応。
 
 plan 実行中にスコープ外の問題を発見したら `/claude-skills:issue-create` で記録し、
 後から `/claude-skills:issue-cycle` で plan → cycle に繋げて解決する。
+
+### Self-Driving Polling Loop（ラルフループ）
+
+`issue` と `github-issue` スキルはどちらも「claim → cycle → mark_done/mark_failed」の
+状態機械ループ（ラルフループ）を提供する。`/loop` コマンドと組み合わせて常駐運用可能。
+
+```
+# ローカル issue を消化（FS adapter）
+/claude-skills:issue-polling --loop --max-parallel 2
+
+# GitHub issue を消化（Label adapter）
+/claude-skills:github-issue-polling --loop --max-parallel 4
+```
+
+共通契約 `skills/shared/references/polling-pattern.md` に state machine / interface /
+純関数 / 安全ブレーキを集約し、**state adapter（FS / GitHub Label）を DI で差し替える**
+構造。以下の多重防御で bypass-permissions 環境でも安全に稼働する:
+
+- **Kill file 2 系統**: `<state_root>/.STOP`（graceful）/ `.STOP.hard`（即時）
+- **3 重ガード**: `max_iter` / `max_wallclock` / `failed_streak`
+- **Initial dry-run**: 初回起動時は強制 dry-run で claim 計画のみ出力
+- **Atomic claim 3 段防御**: flock → label/assignee → re-verify（race condition 排除）
+- **Fail-closed**: Codex 不在・unsupported FS・state_root 衝突等で polling abort
+
+### GitHub Issue 自走ワークフロー
+
+```
+/claude-skills:github-issue-create "○○を修正したい" --label claude-auto
+  ↓ GitHub 上に claude-auto ラベル付きの issue を作成
+/claude-skills:github-issue-polling --loop
+  ↓ polling が issue を claim → cycle → draft PR → Codex レビュー → auto merge
+  ↓ 成功: issue close + PR merge
+  ↓ 失敗: claude-failed-transient/permanent ラベル付与で人間判断待ち
+```
+
+オフラインの local issue と異なり、GitHub 上の issue を正本として扱う。
+**Codex レビューは merge 必須ゲート**（`codex_required_for_merge=true` ロック）で、
+Codex 不在時は fail-closed で merge しない安全設計。
 
 ### アイデアの壁打ち
 
@@ -183,6 +235,105 @@ plan 実行中にスコープ外の問題を発見したら `/claude-skills:issu
 
 `docs/status.md` から現在のセッションを読み込んで続きから開始する。
 
+### セッション間の引き継ぎ（Handoff）
+
+コンテキストウィンドウが肥大化してきた時や、明示的に次セッションへ引き継ぎたい時に使う揮発型のコンテキスト保存。
+
+```
+/claude-skills:handoff-save
+  ↓ 現在の作業コンテキストを docs/handoff/ に構造化保存
+  ↓ 次に検討すべきこと・未解決事項・直近の意思決定を明示的に書き出す
+
+# セッション終了 → /clear → 新セッション
+
+/claude-skills:handoff-restore
+  ↓ docs/handoff/ の内容を読み込んで作業再開
+  ↓ 読み込み後は自動削除（揮発型 — 一度限りの引き継ぎ）
+```
+
+`plan-resume` が「計画の進捗」を追跡するのに対し、`handoff` は **計画外の文脈**（設計判断の背景、懸念事項、検討中の選択肢等）を保存する。一度 restore したら消えるので、**長期ドキュメントではない**。
+
+## 使い方のコツ・ハマりどころ
+
+このスキル集は構造化されたワークフローを前提に設計されているので、いくつか癖がある。
+初めて使う時にハマりやすいポイントを整理した。
+
+### 1. plan は必ず `docs/plans/` 配下に置く
+
+`docs/cycles/` ではない（旧パス — `migrate-cycles-to-plans` で移行済み）。
+`plan-create` は自動的に `docs/plans/{timestamp}_{slug}.md` に配置する。
+**手で別の場所に作ると cycle / plan-implement が見つけられない**。
+
+### 2. `docs/status.md` は手動編集しない
+
+`plan` スキルが自動管理する。Current Session と Session History の 2 セクション構成で、
+cycle 完了時に自動アーカイブされる。手動編集するとパーサーが壊れることがある。
+
+### 3. `issue` と `github-issue` は別物
+
+- **`issue`**: ローカルファイル (`docs/issues/`) ベース。オフライン・個人作業向け
+- **`github-issue`**: GitHub 上の issue を正本として扱う。チーム作業・自走運用向け
+
+polling でも FS adapter / Label adapter と実装が分かれている。両者とも共通契約
+`skills/shared/references/polling-pattern.md` に準拠している。
+
+### 4. `cycle` vs `team-cycle` の使い分け
+
+- **`cycle`**: 単独の review → implement ループ。軽量で速い
+- **`team-cycle`**: 4 ロール（Security / Performance / Architect / Pragmatist）が
+  議論しながらレビュー → 合意形成 → 実装。**重要な変更・複雑な設計向け**
+
+`team-cycle` は実験的機能フラグが必要:
+
+```bash
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+```
+
+未設定だと起動時に中断する。
+
+### 5. `brainstorm` はファイル編集禁止
+
+発散フェーズでは LLM が勝手に実装に走らないよう、**brainstorm セッション中はファイル
+編集が禁止されている**。議論に集中して、結論が出たら `brainstorm-wrap` でメモ化 →
+`brainstorm-plan` で plan 化 → `cycle` で実装という段階的な流れを守る。
+
+### 6. `handoff` は揮発型（一度限り）
+
+`handoff-restore` すると保存ファイルは自動削除される。長期保存したいなら `docs/` 配下
+に別途ドキュメント化すること。`plan-resume` とは別物で、計画外の文脈（検討中の選択肢・
+設計判断の背景）を次セッションに渡す用途。
+
+### 7. polling ループは必ず kill file 2 系統を用意
+
+bypass-permissions 環境でラルフループを回す場合、暴走防止のため以下を覚えておく:
+
+```bash
+touch <state_root>/.STOP        # graceful stop（現 tick 完了後に停止）
+touch <state_root>/.STOP.hard   # hard stop（即時停止）
+```
+
+初回起動時は `<state_root>/.polling-initialized` が存在しないため、**強制 dry-run**
+で claim 計画のみ出力される。本番実行は 2 回目以降。
+
+### 8. 並列実行は worktree ベース
+
+`parallel-cycle` は `EnterWorktree`/`ExitWorktree` で各 cycle を物理的に分離する。
+**ファイル直交性チェック**が走り、影響ファイルが重なる plan は並列化されない。
+部分成功も許容（成功分のみマージ、失敗ブランチは保持）。
+
+### 9. plugin.json の version bump 忘れ注意
+
+新スキルを追加してマーケットプレイスに公開する時、`.claude-plugin/plugin.json` の
+version を上げないと**インストーラがスキルを認識しない**。PATCH/MINOR/MAJOR を
+変更内容に応じて適切に bump すること。
+
+### 10. Codex セカンドオピニオンは fail-closed
+
+`plan-reviewer` / `codebase-review` / `iterate` / `brainstorm` / `github-issue` は
+Codex CLI をセカンドオピニオンとして並行呼び出しする。**Codex 不在でも処理は継続**
+するが、`github-issue` の merge ゲートでは `codex_required_for_merge=true` がロック
+されており、Codex 不在時は auto merge しない（人間判断待ち）。
+
 ## Codex CLI 対応
 
 本リポジトリはデュアルプラグイン構造を採用し、Claude Code と Codex CLI の両方で同じワークフローを利用できる。
@@ -198,6 +349,7 @@ plan 実行中にスコープ外の問題を発見したら `/claude-skills:issu
 | `investigate` | 読み取り専用の問題調査・構造化レポート |
 | `plan` | 計画ファイルと status.md の管理 |
 | `plan-reviewer` | 6-7観点並行レビュー |
+| `codebase-review` | 4エージェント並行によるコードベース全体レビュー |
 | `issue` | スコープ外の問題を記録・管理 |
 | `iterate` | サイズ適応型の軽量改善ループ |
 | `cycle` | refine→implement 全自動サイクル |
@@ -222,38 +374,46 @@ $investigate ○○が動かない原因を調べて
 ```
 .claude-plugin/
   plugin.json         # Claude Code Plugin マニフェスト
-commands/             # Claude Code 用スラッシュコマンド
-skills/               # Claude Code 用スキル
-├── plan/             # 計画管理スキル + テンプレート
+commands/             # Claude Code 用スラッシュコマンド（薄いラッパー）
+skills/               # Claude Code 用スキル（ロジック本体）
+├── plan/             # 計画管理スキル + テンプレート + docs/status.md 管理
 ├── plan-reviewer/    # 7観点レビュー + Codex セカンドオピニオン
 ├── commit/           # 自動コミットスキル
-├── codebase-review/  # 4エージェント並行レビュー
-├── generate-review-rules/
+├── codebase-review/  # 4エージェント + Codex 並行によるコードベース全体レビュー
+├── generate-review-rules/ # プロジェクト固有レビュールール生成
 ├── iterate/          # サイズ適応型軽量改善ループ
 ├── doc-check/        # ドキュメント整合性検証・自動修正
 ├── doc-write/        # LLMとのやり取り・調査結果のドキュメント化
-├── issue/            # issue 管理（記録・一覧・cycle連携・クローズ）
-├── parallel-cycle/   # 指示分解 + 並行 cycle 実行オーケストレータ
+├── issue/            # local issue 管理（記録・一覧・cycle連携・close・polling）
+├── github-issue/     # GitHub issue 自走（Label adapter + polling + Codex gate）
+├── handoff/          # セッション間コンテキスト引き継ぎ（save/restore、揮発型）
+├── parallel-cycle/   # 指示分解 + worktree 並行 cycle 実行オーケストレータ
 ├── investigate/      # 読み取り専用の問題調査・構造化レポート
-├── brainstorm/       # アイデアの壁打ち・発散→収束→plan化
+├── brainstorm/       # アイデアの壁打ち・発散→収束→plan化（ファイル編集禁止）
 ├── team-cycle/       # AgenticTeam チーム議論型レビュー + 自動実装
 ├── team-plan/        # AgenticTeam チーム議論型の計画作成
 ├── team-brainstorm/  # AgenticTeam チーム議論型ブレインストーミング
 ├── skill-improve/    # セッションデータ分析によるスキル改善メタスキル
 ├── doc-audit/        # docs 内アーティファクトの横断スキャン・不整合修復
 ├── migrate-cycles-to-plans/ # cycles → plans マイグレーション
-└── shared/           # 複数スキルが共有するリソース（ロール定義等）
-codex-skills/         # Codex CLI 用スキル
+└── shared/references/     # 複数スキルが共有するリソース
+    ├── team-config.md            # AgenticTeam ロール定義（team-plan/cycle/brainstorm 共有）
+    ├── severity-and-verdicts.md  # 重大度・判定基準（team-plan/cycle 共有）
+    ├── codex-integration.md      # Codex セカンドオピニオン呼び出しパターン
+    └── polling-pattern.md        # polling 共通契約（state machine / interface / 純関数 / 安全ブレーキ）
+codex-skills/         # Codex CLI 用スキル（Codex ネイティブ API に変換）
 ├── commit/           # 自動コミット（Codex 版）
 ├── investigate/      # 読み取り専用調査（Codex 版）
 ├── plan/             # 計画管理（Codex 版）
 ├── plan-reviewer/    # 6-7観点レビュー（Codex 版）
+├── codebase-review/  # コードベース全体レビュー（Codex 版）
 ├── issue/            # issue 管理（Codex 版）
 ├── iterate/          # 軽量改善ループ（Codex 版）
 ├── cycle/            # 全自動サイクル（Codex 版）
 ├── team-cycle/       # チーム議論型（Codex 版）
 └── shared/           # Codex 固有の共有リソース
-rules/                # グローバルルール（手動コピーが必要）
+rules/                # グローバルルール（Plugin では手動コピーが必要）
+└── design-principles.md    # testability を supreme principle とする設計原則
 AGENTS.md             # Codex CLI 用プロジェクト説明
 CLAUDE.md             # Claude Code 用プロジェクト説明
 install.sh            # レガシーインストーラ（非推奨）
