@@ -12,8 +12,9 @@
 | `codex_review_timeout` | `5min` | 時間 | Codex 1 回呼び出しのタイムアウト |
 | `codex_consecutive_failure_threshold` | `3` | 回 | 一時障害がこの回数連続したら恒久 failed 扱い |
 | `auto_merge_strategy` | `squash` | 種別 | `gh pr merge` のマージ方式（`squash` / `merge` / `rebase`）|
-| `codex_required_for_merge` | `true` | bool | false にすると Codex なしでもマージ可（非推奨）|
+| `codex_required_for_merge` | `true` | bool | **Locked (not user-overridable)**: GitHub merge は不可逆操作のため fail-closed を強制する。`--config codex_required_for_merge=false` で上書きしようとしても警告を出して `true` にリセットする。|
 | `require_author_association` | `OWNER,MEMBER,COLLABORATOR` | csv | issue 作者がこれら以外なら polling skip |
+| `enable_base64_scan` | `false` | bool | secret-scanner の汎用 Base64 パターンを有効化するか。誤検知が多いため既定 off。詳細は [`secret-scanner.md`](secret-scanner.md) |
 
 ## Schedule Path Alternative
 

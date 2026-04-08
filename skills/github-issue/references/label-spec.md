@@ -25,6 +25,54 @@ github-issue スキルが管理するラベルと状態遷移の網羅定義。
 | `claude-auto +failed`      | SKIP（拾わない）          | ERROR              | ERROR                   | ERROR                | ERROR               | （冪等）             | all `claude-*` 削除 + close   |
 | `claude-auto +running +review` | SKIP                 | ERROR              | ERROR                   | merge + 全削除         | 同状態              | `-running -review +failed` | all 削除 + close           |
 
+### transition() — Pure Function
+
+上記表を switch/match 形式の純関数として表現する。テスト容易性のため副作用なし、未定義遷移は `InvalidTransition` エラーを返す。
+
+```
+# State enum: AUTO | RUNNING | REVIEW | FAILED | RUNNING_REVIEW | CLOSED_CLEAN
+# Event enum: POLLING_PICKUP | CLAIM_SUCCESS | CYCLE_SUCCESS
+#           | CODEX_LGTM_GATES_OK | CODEX_NEEDS_CHANGES | FAILURE | MANUAL_CLOSE
+
+def transition(state, event) -> NextState | InvalidTransition:
+  match (state, event):
+    # AUTO
+    case (AUTO, POLLING_PICKUP):       return AUTO            # no-op: 状態は変えず次フェーズで CLAIM_SUCCESS により RUNNING に遷移
+    case (AUTO, CLAIM_SUCCESS):        return RUNNING
+    case (AUTO, FAILURE):              return FAILED
+    case (AUTO, MANUAL_CLOSE):         return CLOSED_CLEAN
+
+    # RUNNING
+    case (RUNNING, POLLING_PICKUP):    return RUNNING         # SKIP（フィルタ除外）
+    case (RUNNING, CYCLE_SUCCESS):     return REVIEW
+    case (RUNNING, FAILURE):           return FAILED
+    case (RUNNING, MANUAL_CLOSE):      return CLOSED_CLEAN
+
+    # REVIEW
+    case (REVIEW, POLLING_PICKUP):     return REVIEW          # SKIP
+    case (REVIEW, CODEX_LGTM_GATES_OK):return CLOSED_CLEAN    # merge + close + 全削除
+    case (REVIEW, CODEX_NEEDS_CHANGES):return REVIEW          # 次イテレーション
+    case (REVIEW, FAILURE):            return FAILED
+    case (REVIEW, MANUAL_CLOSE):       return CLOSED_CLEAN
+
+    # FAILED
+    case (FAILED, POLLING_PICKUP):     return FAILED          # SKIP
+    case (FAILED, FAILURE):            return FAILED          # 冪等
+    case (FAILED, MANUAL_CLOSE):       return CLOSED_CLEAN
+
+    # RUNNING_REVIEW (中間状態)
+    case (RUNNING_REVIEW, POLLING_PICKUP):     return RUNNING_REVIEW
+    case (RUNNING_REVIEW, CODEX_LGTM_GATES_OK):return CLOSED_CLEAN
+    case (RUNNING_REVIEW, CODEX_NEEDS_CHANGES):return RUNNING_REVIEW
+    case (RUNNING_REVIEW, FAILURE):            return FAILED
+    case (RUNNING_REVIEW, MANUAL_CLOSE):       return CLOSED_CLEAN
+
+    case _:
+      return InvalidTransition(state, event)
+```
+
+呼び出し側は `InvalidTransition` を受け取ったら `ERROR: undefined transition <state> + <event>` を出力して abort する。新規状態/イベントを追加する際は本関数のケースを必ず追記すること（網羅性は型システム/テストで担保）。
+
 ### Notes
 
 - **SKIP** = polling で取得しても client-side フィルタで除外される（`claude-running` / `claude-review` / `claude-failed` のいずれかを持つため）

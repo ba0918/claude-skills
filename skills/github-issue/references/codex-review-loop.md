@@ -6,6 +6,20 @@ PR レビューを Codex に委譲するフローと結果 JSON 契約。
 
 > **既存 `skills/shared/references/codex-integration.md` の例外**: 通常パターンでは「Codex 失敗時は既存処理で続行」だが、本スキルは **fail-closed**。Codex unavailable / 一時障害が `codex_consecutive_failure_threshold` 回連続発生した場合は **auto merge を禁止し `claude-failed` に遷移する**。これは GitHub 上で merge という不可逆操作を行うため。
 
+### Pre-flight check: `codex_required_for_merge` is locked
+
+ループ開始前に `codex_required_for_merge` の実効値を検査する。ユーザー設定や `--config` で `false` に上書きされていた場合は、警告ログを出して `true` に強制リセットする:
+
+```
+[github-issue] WARN: codex_required_for_merge override ignored — locked to true (fail-closed). See references/config-defaults.md.
+```
+
+これによりヒューマンエラーや誤設定で Codex バイパスマージが発生することを構造的に防ぐ。
+
+## Codex 呼び出し方法
+
+Codex への委譲は [`../../shared/references/codex-integration.md`](../../shared/references/codex-integration.md) で定義された subagent パターンに従う。本スキル内で具体的な subagent 名を直書きするのは下記 Iteration Loop 内 1 箇所のみとし、他のドキュメントからは本セクションを参照すること。スキル外向けのエントリポイントは [`SKILL.md § Codex Review`](../SKILL.md#codex-review) に集約されている。
+
 ## Result JSON Contract
 
 Codex は必ず以下の構造で返却する。それ以外の形式は parse error として扱い、再試行 1 回のみ実行後に一時障害カウンタをインクリメントする。

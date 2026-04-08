@@ -2,6 +2,28 @@
 
 worktree とブランチの孤児検出 / クリーンアップ規則。
 
+## sanitize_repo_slug()
+
+lockfile / worktree パスに `nameWithOwner`（例 `owner/repo`）を埋め込む際は、必ずホワイトリスト方式でサニタイズする。SKILL.md からも本関数を参照する。
+
+```
+sanitize_repo_slug(name_with_owner: str) -> str:
+  # ホワイトリスト: [a-zA-Z0-9._-] のみ通す。それ以外は '_' に置換。
+  # これにより '/', null byte, パストラバーサル文字, シェルメタ文字を構造的に排除。
+  value = regex_replace(name_with_owner, r"[^a-zA-Z0-9._-]", "_")
+  # Defense in depth: '.' はホワイトリストで通すため、'..' が残り得る。
+  # 監査ツール / レビュアーが path traversal の痕跡を読み違えないよう '__' に潰す。
+  value = value.replace("..", "__")
+  return value
+
+# 例:
+# sanitize_repo_slug("owner/repo")        -> "owner_repo"
+# sanitize_repo_slug("ev/il;rm -rf /")    -> "ev_il_rm_-rf__"
+# sanitize_repo_slug("a/../b")            -> "a___b" (双方向で '..' が消える)
+```
+
+> 旧実装の `tr / -` は `/` 以外の危険文字（空白、`;`, `$`, null byte 等）を素通しするため使用しない。
+
 ## Worktree 命名規約
 
 ```
@@ -53,6 +75,18 @@ for wt in candidates:
 
 - **Polling Workflow Step 4** で実行（毎 tick 冒頭でクリーンアップ）
 - 手動 `cycle` 実行時は実行しない（並走中の他 worker に影響しないため）
+
+## Partial Claim Rollback
+
+Cycle Workflow Step 2 の atomic claim 3 段防御は順序実行のため、途中段階で失敗した際に副作用が残る可能性がある。lockfile 取得には成功したが assignee / label 設定に失敗したケースは、以下の手順で明示的にロールバックする:
+
+1. `gh issue edit ${N} --remove-label claude-running` を best-effort で実行（既に付与されていた場合）
+2. `gh issue edit ${N} --remove-assignee @me` を best-effort で実行（自分が assignee になっていた場合）
+3. `flock` の解除はプロセス終了で自動。`exec 8>&-` で明示クローズしてもよい
+4. ロールバック自体が失敗してもプロセスは abort 続行（次 tick の冪等性で復旧）
+5. `[claim-rollback] issue=#${N} reason=<…>` を stderr にログ
+
+これにより部分 claim による「assignee は付いているが lock は解放済み」のような中途半端な状態を最小化する。
 
 ## ログ
 
