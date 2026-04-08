@@ -60,7 +60,7 @@
 | `claim(slug)` | `(Slug) -> ClaimResult` | atomic。失敗は `ClaimFailed{reason}` |
 | `release(slug)` | `(Slug) -> None` | running → ready rollback |
 | `mark_done(slug)` | `(Slug) -> None` | running → done |
-| `mark_failed(slug, kind)` | `(Slug, FailureKind) -> None` | kind ∈ {transient, permanent} |
+| `mark_failed(slug, kind)` | `(Slug, FailureKind) -> None` | kind ∈ {transient, permanent}。失敗状態に保存するのは `error_kind` enum、`retry_count` (int)、`run_id` (tick/loop セッションの UUID)、`failed_at` (ISO8601) のみ（構造化形式）。自由文エラーメッセージ / stack trace / 標準出力は **保存禁止**（context 膨張・PII 防止）。`run_id` + `failed_at` により後付けで cycle ログ（別ストレージ）との相関取得を可能にする |
 | `retry_count(slug)` | `(Slug) -> int` | transient retry カウンタ取得 |
 | `increment_retry(slug)` | `(Slug) -> int` | 新しいカウント値を返す |
 | `kill_file_path()` | `() -> (AbsPath, AbsPath)` | `(.STOP, .STOP.hard)` の絶対パス |
@@ -90,6 +90,10 @@
 ---
 
 ## 5. Tick Orchestration Pseudocode (型宣言レベル)
+
+> **Note:** 本擬似コードは型フローの図示であり、実装差異は adapter 側の自由とする。`for` ループや counter 加算等の制御構造は概念図として読むこと（言語固有の慣用表現に置換可）。
+>
+> **不変条件:** `TickResult` のフィールド集合は不変（§7 Schema 準拠）。制御フロー（`for` / `while` / counter 加算等）のみ adapter が言語固有表現に置換可能であり、フィールドの追加・削除・改名は契約違反とする。
 
 ```
 tick(adapter: StateAdapter, config: Config, now: Timestamp) -> TickResult:
@@ -169,6 +173,7 @@ tick(adapter: StateAdapter, config: Config, now: Timestamp) -> TickResult:
 ### 6.4 Orphan Recovery
 
 - adapter は `running/{slug}/.claim`（FS）または claim metadata（Label 等）に **pid + started_at** を記録
+- FS adapter の `.claim` ファイルはマルチユーザー環境を想定し **permission mode `0600`** で作成する **SHOULD**（pid 漏洩防止）。WSL / macOS / Linux で mode が完全反映されないケース（例: noexec/DrvFs マウント、ACL 付き FS）では adapter は best-effort で続行し、warn ログを出して処理を止めない
 - `rollback_orphans(now)` は死亡 pid を検出し該当 slug を ready に戻す
 
 ---
@@ -179,6 +184,8 @@ tick(adapter: StateAdapter, config: Config, now: Timestamp) -> TickResult:
 
 ```
 TickResult {
+  run_id:             UUID  # tick または loop セッションの一意 ID（失敗 issue の frontmatter に記録される値と一致）
+  tick_started_at:    ISO8601
   claimed:            int   # 今 tick で claim 成功した数
   done:               int   # 成功した数
   failed_transient:   int   # transient に分類された数
@@ -186,6 +193,8 @@ TickResult {
   halt_reason?:       "stop.graceful" | "stop.hard" | "max_iter" | "max_wallclock" | "failed_streak" | "dry_run"
 }
 ```
+
+`run_id` は `mark_failed` が失敗 issue frontmatter に保存する値と同一であり、postmortem で両者を相関取得する唯一のキーとなる。
 
 Loop controller はこのカウンタのみを集計し、人間向けサマリは最終出力時に組み立てる。
 

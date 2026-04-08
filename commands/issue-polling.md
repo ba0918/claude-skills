@@ -25,6 +25,7 @@ Skill ツールで `claude-skills:issue` を実行する。引数: `polling $ARG
 - Kill file 2 系統: `docs/issues/.STOP` (graceful) / `docs/issues/.STOP.hard` (hard)
 - 3 重ガード: `max_iter` / `max_wallclock` / `failed_streak`
 - SIGINT trap と orphan recovery による claim rollback 保証
+- `bypass-permissions` 実行時でも上記 3 重ガード（kill file / bounded execution / orphan recovery）が暴走を止める安全網として機能する
 
 ## References
 

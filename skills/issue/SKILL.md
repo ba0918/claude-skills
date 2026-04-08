@@ -218,6 +218,9 @@ Close (archive) an issue.
 Self-driving loop: kill されるまで `ready/` を消化し続けるラルフループ型 workflow。FS を state adapter とし、共通契約に準拠する。
 
 **共通契約（必読・直リンク）:** [../shared/references/polling-pattern.md](../shared/references/polling-pattern.md)
+- [§3 Interface Table](../shared/references/polling-pattern.md#3-interface-table-state-adapter-契約)
+- [§6 Safety Brakes](../shared/references/polling-pattern.md#6-safety-brakes)
+- [§7 Tick Result Schema](../shared/references/polling-pattern.md#7-tick-result-schema)
 **FS adapter 仕様:** [references/polling-state.md](references/polling-state.md)
 **純関数仕様:** [references/polling-state-machine.md](references/polling-state-machine.md)
 
@@ -257,6 +260,8 @@ issue 本文を LLM コンテキストへ渡す際は **必ず** 以下のデリ
 7. **List ready** — `adapter.list_ready(max_parallel)`（早期打ち切り必須、契約 §3）
 8. **Atomic claim** — `adapter.claim(slug)` を各 slug に実行、成功分のみ先に進む（契約 §3 / FS adapter §4）
 9. **Delegate** — claim 済み slug 群を `parallel-cycle` に委譲（worktree 並行実行）
+   - 委譲前に各 issue 本文を **必ず** sanitize し、下記 `<untrusted_user_content>` デリミタで wrap 済みの状態で渡す（生本文の引き渡し禁止）
+   - **sanitize / wrap 失敗時の処理**: `release` してスキップすると同一の不正入力 issue が毎 tick で claim → release → claim と無限ループする。代わりに `failed/permanent/` へ直接昇格させる。`classify_failure` はスキップし、`error_kind = "sanitize_failed"` または `"wrap_failed"` で `mark_failed(slug, Permanent)` を呼ぶ
 10. **Classify result** — `classify_failure` → `should_promote_to_permanent` の順で純関数評価（契約 §4）
 11. **Persist** — `mark_done` / `mark_failed(kind)` で状態永続化
 12. **Emit TickResult** — 構造化カウンタのみ出力（契約 §7、自由文禁止）

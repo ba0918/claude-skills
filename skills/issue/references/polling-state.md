@@ -56,6 +56,7 @@ docs/issues/
 
 共通契約 §4 の純関数 `sanitize_slug` の FS 実装ルール:
 
+0. **Precheck (Step 1 より前に必ず実行)**: 生入力に制御文字 (`\x00-\x1f`) または null byte (`\x00`) を含む場合は即 `InvalidSlug` で reject。Step 1 のホワイトリスト置換で正常化される前に拒否することで、攻撃的入力を検出可能にする
 1. ホワイトリスト `[a-zA-Z0-9._-]` 以外の全文字を `_` に置換
 2. `..` を `__` に置換（path traversal 防止）
 3. 先頭 `.` / `/` / 空文字を拒否（`InvalidSlug`）
@@ -77,6 +78,18 @@ docs/issues/
 | `.claim` 書き込み失敗 | `running/{slug}/issue.md` を `ready/{slug}.md` へ戻す → `rmdir` → `ClaimFailed` |
 
 いずれの分岐でも **`running/` に孤児ディレクトリを残さない**ことを保証する。
+
+`.claim` permission は共通契約 [§6.4](../../shared/references/polling-pattern.md#64-orphan-recovery) SHOULD に従う。
+
+### 4.1 `mark_failed` Retain Policy
+
+`failed/{kind}/{slug}.md` 昇格時の cycle 出力 retain ポリシー:
+
+- 標準出力 / stderr / test ログ / stack trace は **保存しない**（破棄する）
+- frontmatter に保存するのは **構造化エラーのみ**: `error_kind` (enum)、`retry_count` (int)、`run_id` (tick/loop セッションの UUID)、`failed_at` (ISO8601)
+- 自由文エラーメッセージや任意長ログは frontmatter / 本文に含めない（context 膨張・PII 混入防止）
+- 原因究明性は `error_kind` enum の粒度で担保する（粒度不足の場合は enum を拡張、自由文に逃げない）
+- postmortem では `run_id` + `failed_at` をキーに、別ストレージ（例: cycle の stdout を保持する一時ファイルや外部ログ）との相関を取ることを想定する
 
 ---
 
@@ -130,7 +143,15 @@ kill_file_path():
 
 ---
 
-## 8. 参照
+## 8. Untrusted Content Delimiter
+
+規約は [SKILL.md `Prompt Injection Safeguard`](../SKILL.md#prompt-injection-safeguard) を **SSOT** とする。
+本ファイルは変更禁止（複製を置かない）。
+drift 発生時は SKILL.md 側を正とし、本節は参照リンクのみ維持する。
+
+---
+
+## 9. 参照
 
 - 共通契約（状態機械・interface・純関数・Tick・Safety Brakes）: [../../shared/references/polling-pattern.md](../../shared/references/polling-pattern.md)
 - 純関数仕様（transition / classify_failure / ...）: [./polling-state-machine.md](./polling-state-machine.md)

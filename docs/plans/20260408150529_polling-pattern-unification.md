@@ -191,4 +191,27 @@ dry_run: false
 
 ---
 
+## Additional Changes (2026-04-08 15:53:01)
+
+### Instructions
+Phase A 完走後の iterate で team-cycle WARN 8件 + INFO 2件 + レビュー/Codex second opinion 追加 WARN 7件を順次反映。
+
+### Changes Made
+- **初回 iterate (10 項目)**: Step 9 sanitize wrap 規約、sanitize_slug 制御文字拒否、mark_failed retain policy、Untrusted Content Delimiter §8 追加、§5 注記、SKILL.md anchor link 化、Phase B alias 維持、bypass-permission 注記、`.claim` 0600 推奨
+- **drift 防止 iterate (7 項目)**:
+  - A. `.claim 0600` を SHOULD 明示 + best-effort 続行を共通契約に統一、FS adapter は参照のみ
+  - B. Untrusted Content Delimiter を SKILL.md `#prompt-injection-safeguard` を SSOT 化、polling-state.md §8 は参照のみ
+  - C. §5 Tick Pseudocode 注記に「TickResult フィールド集合は不変、制御フローのみ自由」を追記
+  - D. sanitize_slug に Step 0 precheck (制御文字/null byte 即 reject) を先頭追加し順序矛盾を解消
+  - E. mark_failed に `run_id` (UUID) + `failed_at` (ISO8601) 相関ハンドルを追加、TickResult schema にも `run_id` / `tick_started_at` 追加
+  - F. Phase B issue AC に dual-write 戦略（migration window 中は新旧両ラベル併記）を追加
+  - G. SKILL.md Step 9 で sanitize/wrap 失敗時は `failed/permanent/` 直接昇格 (`error_kind = sanitize_failed/wrap_failed`) とし無限 claim ループを防止
+
+### Review Results
+- Security: PASS / WARN → 反映済み
+- Implementation Quality: WARN → 反映済み / PASS
+- Codex Second Opinion: 6 WARN → すべて反映済み (drift / 順序矛盾 / 相関ハンドル / one-way 互換 / 無限ループ)
+
+---
+
 **Next:** Implement Phase A → Commit with `claude-skills:commit` 🚀
