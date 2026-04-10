@@ -108,7 +108,8 @@ Instructions to the agent:
 - Follow existing code style and conventions
 - Comply with CLAUDE.md rules
 - Reference `.claude/review-rules.md` if it exists
-- Add tests for changes that require testing
+- Follow `skills/shared/references/tdd-contract.md`: write tests FIRST (RED), then minimal implementation (GREEN), then refactor (REFACTOR)
+- Avoid testing anti-patterns defined in `rules/testing-anti-patterns.md`
 - Run existing tests after implementation and confirm all pass
 
 ## Phase 4: Review + Codex Second Opinion
@@ -121,6 +122,7 @@ Launch **2 agents in parallel** (issue both Agent tool calls in a single message
 1. **Review agent** (general-purpose):
    - Review from 2 perspectives: Security + Implementation Quality
    - Use `.claude/review-rules.md` as additional criteria if it exists
+   - Apply `skills/shared/references/verification-gate.md` Gate Function: do NOT issue PASS without test execution evidence
    - Classify findings as BLOCK / WARN / PASS
 2. **Codex agent** (`subagent_type: "codex:codex-rescue"`, Bash tool only):
    - Provide the change diff (`git diff`) and the user's instructions directly in the prompt
@@ -133,6 +135,7 @@ Launch **2 agents in parallel** (issue both Agent tool calls in a single message
 1. **Review agent** (general-purpose):
    - Review from 4 perspectives: Security + Implementation Quality + Architecture + Completeness
    - Use `.claude/review-rules.md` as additional criteria if it exists
+   - Apply `skills/shared/references/verification-gate.md` Gate Function: do NOT issue PASS without test execution evidence
    - Classify findings as BLOCK / WARN / PASS
 2. **Codex agent** (`subagent_type: "codex:codex-rescue"`, Bash tool only):
    - Provide the change diff (`git diff`) and the user's instructions directly in the prompt

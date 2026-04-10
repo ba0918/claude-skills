@@ -100,6 +100,10 @@ Phase 2 には進まず終了。
 1. context.json の内容
 2. 対象スキルの SKILL.md（Glob で取得）
 3. ロール固有の分析指示
+4. **プレッシャーテスト観点**: 「このスキルの制約はプレッシャー下で合理化されうるか？」を分析項目に含める
+   - プレッシャータイプ: 時間圧 / サンクコスト / 権威 / 経済性 / 疲労 / 社会的 / プラグマティック
+   - 各制約について「{プレッシャータイプ} 下でユーザーまたは LLM がこの制約をバイパスする合理化を行う可能性」を評価
+   - 高リスクの制約にはガードレール強化を推奨する
 
 各エージェントは分析結果を JSON で `.claude/tmp/skill-improve-{datetime}/{role}.json` に書き出す。
 
@@ -160,13 +164,25 @@ Report: .claude/tmp/skill-improve-{datetime}/friction-report.md
 | 3-5 | Small | iterate で SKILL.md を直接修正 |
 | 6+ | Large | team-cycle に委譲 |
 
+### Step 3.3: 改善仮説のカテゴリ分類
+
+改善仮説は以下のカテゴリに分類する:
+
+| カテゴリ | 説明 | ��� |
+|---------|------|-----|
+| UX 改善 | ユーザー体験の摩擦を低減 | エラーメッセージの改善、フロー簡素化 |
+| ロジック修正 | バグや論理的不整合の修正 | 条件分岐の誤り、エッジケース未処理 |
+| **ガードレール強化** | プレッシャー下での制約バイパスを防止 | 合理化防止テーブルの追加、Iron Law の強化、Gate Function の導入 |
+| パフォーマンス | 実行効率の改善 | 不要な Agent 呼び出しの削減 |
+| ドキュメント | 説明・参照の改善 | 不明瞭な指示の明確化 |
+
 `analyze` モードの場合はここで終了。friction-report.md の内容と改善仮説を表示。
 
 表示:
 
 ```
 ── Phase 3: Improvement Hypotheses ──
-Hypotheses: {N}
+Hypotheses: {N} (UX: {n}, Logic: {n}, Guardrail: {n}, Perf: {n}, Docs: {n})
 Recommended action: {Report only / iterate / team-cycle}
 Top hypothesis: {title} (target: {skill}, size: {size})
 ```

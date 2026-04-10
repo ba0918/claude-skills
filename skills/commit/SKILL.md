@@ -27,6 +27,23 @@ git log -1 --format='%H %an %ae'
 git branch -vv
 ```
 
+## Phase 1.5: Best-Effort Test Verification
+
+**Verification Gate** (best-effort): `skills/shared/references/verification-gate.md` をベストエフォートで適用する。commit の Core Principle「No confirmation」を遵守し、テスト失敗でブロックしない。
+
+1. テストフレームワークを自動検出する:
+   - `package.json` (scripts.test) → `npm test`
+   - `Cargo.toml` → `cargo test`
+   - `go.mod` → `go test ./...`
+   - `pyproject.toml` / `pytest.ini` → `pytest`
+   - `Makefile` (test ターゲット) → `make test`
+2. テストフレームワークが検出できた場合、テストスイートを実行する（タイムアウト: 120秒）
+3. 結果に応じた処理:
+   - **全パス**: 通常通りコミットに進む
+   - **テスト失敗**: コミットメッセージ body に `⚠️ Tests failing: {failure_summary}` を追記してコミット続行
+   - **テストフレームワーク不明**: スキップ（従来通り即コミット）
+   - **タイムアウト**: スキップしてコミット続行
+
 ## Phase 2: Sanity Check
 
 **Abort the commit** and report the reason if any of the following conditions are met:

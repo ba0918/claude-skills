@@ -48,8 +48,23 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 
 1. テーマを $ARGUMENTS から取得（なければ AskUserQuestion で聞く）
 2. **Codex 接続状態を初期化**: `codex_available = true`
-3. 壁打ち対話ループに入る:
+3. **行き詰まり提案済みフラグを初期化**: `stuck_hint_shown = false`
+4. 壁打ち対話ループに入る:
    a. ユーザーの発言を受け取る
+   a2. **行き詰まり検出**（`stuck_hint_shown == false` の場合のみ）:
+      - ユーザー発言に以下のトリガーキーワード（部分一致、大文字小文字無視）が含まれるか判定:
+        - 日本語: 「行き詰ま」「わからない」「どうすれば」「手詰まり」「煮詰ま」「堂々巡り」「進まない」
+        - 英語: "stuck", "no idea", "don't know", "dead end", "going in circles"
+      - キーワード検出時、以下を表示し `stuck_hint_shown = true` に設定:
+        ```
+        💡 行き詰まった時は `/claude-skills:problem-solving` で思考ツールを試せます:
+        - `simplify` — 「全ては〇〇の特殊ケース」を見つける
+        - `invert` — 前提を反転させてみ��
+        - `collide` — 無関係な概念を衝突させる
+        - `scale` — 極端なスケールでテストする
+        - `pattern` — 他ドメインのパターンから学ぶ
+        ```
+      - 2回目以降のキーワード検出では表示を抑制する（`stuck_hint_shown == true` なのでスキップ）
    b. **Codex セカンドオピニオン取得**（`codex_available == true` の場合のみ）:
       - Agent ツール（`subagent_type: "codex:codex-rescue"`）でユーザーの発言 + 壁打ちテーマ + これまでの議論の要約を送信
       - プロンプト: 「以下の壁打ちテーマとユーザーの発言に対して、異なる視点・反論・見落とし・関連するアイデアを提供してください。テーマ: {theme}。ユーザーの発言: {user_message}。これまでの議論: {summary}」
