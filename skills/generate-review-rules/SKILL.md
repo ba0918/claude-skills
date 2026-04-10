@@ -20,17 +20,11 @@ Read the following sources in order (only those that exist):
 
 ### Step 2: Detect Project Characteristics
 
-Identify the project's language/framework from build files:
+Follow the language detection contract in [../shared/references/lang-detect.md](../shared/references/lang-detect.md) to identify the project's language/framework composition.
 
-| File | Language/Framework |
-|------|-------------------|
-| `Cargo.toml` | Rust |
-| `package.json` | Node.js / TypeScript |
-| `go.mod` | Go |
-| `pyproject.toml` / `requirements.txt` | Python |
-| `build.gradle` / `pom.xml` | Java/Kotlin |
+The contract covers: Rust, TypeScript/JavaScript, Go, Python, Dart, PHP (including legacy 5.x), Java/Kotlin, Ruby, C#, HTML/CSS.
 
-Use Glob to search for the above files. If multiple matches are found, it may be a monorepo.
+Use Glob to search for marker files. If multiple matches are found across subdirectories, it may be a monorepo.
 
 ### Step 3: Generate Rules
 
