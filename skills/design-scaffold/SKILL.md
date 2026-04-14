@@ -596,4 +596,5 @@ options:
 - **Catalog Schema:** [references/catalog-schema.json](references/catalog-schema.json)
 - **Page Schema:** [references/page-schema.json](references/page-schema.json)
 - **Layout Schema:** [references/layout-schema.json](references/layout-schema.json)
+- **Rubric Schema:** [references/rubric-schema.json](references/rubric-schema.json)
 - **共有契約:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md)

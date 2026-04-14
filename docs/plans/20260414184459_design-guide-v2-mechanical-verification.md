@@ -986,11 +986,11 @@ MODIFY:
 | Phase 1: Design Tokens Schema + Lint | 🟢 |
 | Phase 2: Component Catalog Schema + 生成 | 🟢 |
 | Phase 3: Page Definition + Layout Rules | 🟢 |
-| Phase 3.5: Base Design Approval（人間の承認ゲート） | ⚪ |
-| Phase 4: Visual Testing (Storybook + Playwright) | ⚪ |
-| Phase 5: Rubric Judge | ⚪ |
-| CLAUDE.md 更新 | ⚪ |
-| plugin.json バージョンバンプ | ⚪ |
+| Phase 3.5: Base Design Approval（人間の承認ゲート） | 🟢 |
+| Phase 4: Visual Testing (Storybook + Playwright) | 🟢 |
+| Phase 5: Rubric Judge | 🟢 |
+| CLAUDE.md 更新 | 🟢 |
+| plugin.json バージョンバンプ | 🟢 |
 
 **Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done
 

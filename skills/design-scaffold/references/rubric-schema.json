@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rubric.schema.json",
+  "title": "Design Rubric",
+  "description": "デザインシステム準拠の評価基準。機械検証可能な項目 (lint/visual) と LLM judge 項目を構造化し、weighted average で合否判定する。",
+  "type": "object",
+  "required": ["version", "passingScore", "criteria"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "passingScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "合格最低スコア (0-100)"
+    },
+    "criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/criterionDef" }
+    }
+  },
+  "$defs": {
+    "criterionDef": {
+      "type": "object",
+      "required": ["id", "name", "weight", "scoring", "verification", "rubric"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^R\\d{3}$",
+          "description": "評価項目 ID (例: R001)"
+        },
+        "name": {
+          "type": "string",
+          "description": "評価項目名"
+        },
+        "description": {
+          "type": "string",
+          "description": "評価項目の詳細説明"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "重み (0-1, 全項目の合計が 1.0)"
+        },
+        "scoring": {
+          "enum": ["binary", "scale-5", "scale-10"],
+          "description": "スコアリング方式"
+        },
+        "verification": {
+          "enum": ["mechanical", "visual", "llm-judge"],
+          "description": "検証方法"
+        },
+        "rubric": {
+          "type": "object",
+          "required": ["pass", "fail"],
+          "additionalProperties": false,
+          "properties": {
+            "pass": {
+              "type": "string",
+              "description": "合格基準（具体的な条件）"
+            },
+            "partial": {
+              "type": "string",
+              "description": "部分合格基準（scale-5/10 の場合）"
+            },
+            "fail": {
+              "type": "string",
+              "description": "不合格基準"
+            }
+          }
+        },
+        "lintRules": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "verification=mechanical の場合、対応する lint ルール ID"
+        },
+        "visualConfig": {
+          "type": "object",
+          "description": "verification=visual の場合の設定",
+          "properties": {
+            "maxDiffPixelRatio": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "許容される最大ピクセル差分比率"
+            },
+            "screenshotTargets": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "スクリーンショット対象（コンポーネント名 or ページ名）"
+            }
+          }
+        },
+        "judgePrompt": {
+          "type": "string",
+          "description": "verification=llm-judge の場合、judge に渡すプロンプトテンプレート"
+        }
+      }
+    }
+  }
+}
