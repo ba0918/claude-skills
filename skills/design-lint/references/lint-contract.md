@@ -250,3 +250,63 @@ Result: FAIL (5 errors)
    - `textAlign`, `verticalAlign`
 
 **severity:** `warn`（完全に禁止すると柔軟性がなくなるため、警告レベル）
+
+## Phase 3: Page/Layout Compliance ルール (DL201-DL204)
+
+`.design/pages/` と `.design/layout-rules.json` が存在する場合にのみ有効。
+
+### DL201: page-def 未定義ページ
+
+**検出対象:** `.design/pages/` に定義がないページの作成。
+
+**検出方法:**
+1. ソースコード内のルーティング定義（React Router の `<Route>`, Next.js の `pages/` ディレクトリ等）からページ一覧を抽出
+2. `.design/pages/` 内の JSON ファイル名と照合
+3. page-def が存在しないページ → 違反
+
+**注意:** フレームワーク固有のルーティングパターンを検出するため、正規表現ベースでの近似検出になる。
+
+**severity:** `warn`（新規ページ追加時に page-def を先に作ることを促す）
+
+### DL202: allowedComponents 違反
+
+**検出対象:** ページ定義の `allowedComponents` に含まれていないコンポーネントの使用。
+
+**検出方法:**
+1. 各ページファイル（ルーティングから特定 or ファイル名マッチ）内で使用されているコンポーネントを抽出
+2. 対応する page-def の `allowedComponents` と照合
+3. `allowedComponents` が定義されているのに、リスト外のコンポーネントが使用されている → 違反
+
+**severity:** `error`
+
+### DL203: セクション順序違反
+
+**検出対象:** page-def の `sections[].order` と異なる順序でセクションが配置されている。
+
+**検出方法:**
+1. ページファイル内の セクション ID（`className` や `id` 属性から抽出）の出現順を取得
+2. page-def の sections を `order` でソートした順序と比較
+3. 順序が異なる → 違反
+
+**severity:** `warn`
+
+### DL204: レイアウトルール違反
+
+**検出対象:** `layout-rules.json` の `constraints` に定義された `enforcement: "lint"` のルールに違反。
+
+**検出方法:**
+1. layout-rules.json の constraints から `enforcement: "lint"` のルールを抽出
+2. 各ルールの `checkPattern`（正規表現）をソースコードに適用
+3. パターンに一致する違反を検出
+
+**例:**
+```json
+{
+  "id": "LC003",
+  "rule": "grid-template-columns の列数 ≤ 3",
+  "enforcement": "lint",
+  "checkPattern": "grid-template-columns\\s*:.*\\b(repeat\\(([4-9]|\\d{2,})|.*\\s+.*\\s+.*\\s+)"
+}
+```
+
+**severity:** constraints の `severity` フィールドに従う（デフォルト: `warn`）

@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "layout-rules.schema.json",
+  "title": "Layout Rules",
+  "description": "プロジェクト全体のレイアウト制約を定義する。自然言語の Do's/Don'ts を機械検証可能なルールに変換する。",
+  "type": "object",
+  "required": ["version", "grid", "spacing", "constraints"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "grid": {
+      "type": "object",
+      "required": ["columns", "gap", "maxWidth"],
+      "additionalProperties": false,
+      "properties": {
+        "columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 24,
+          "description": "グリッドカラム数"
+        },
+        "gap": {
+          "$ref": "#/$defs/tokenRef",
+          "description": "グリッド gap"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/tokenRef",
+          "description": "最大コンテンツ幅"
+        },
+        "containerPadding": {
+          "$ref": "#/$defs/tokenRef",
+          "description": "コンテナの左右パディング"
+        }
+      }
+    },
+    "spacing": {
+      "type": "object",
+      "required": ["sectionGap", "componentGap"],
+      "additionalProperties": false,
+      "properties": {
+        "sectionGap": {
+          "$ref": "#/$defs/tokenRef",
+          "description": "セクション間の spacing"
+        },
+        "componentGap": {
+          "$ref": "#/$defs/tokenRef",
+          "description": "コンポーネント間のデフォルト spacing"
+        },
+        "internalPadding": {
+          "$ref": "#/$defs/tokenRef",
+          "description": "コンポーネント内部のデフォルトパディング"
+        },
+        "pageMargin": {
+          "$ref": "#/$defs/tokenRef",
+          "description": "ページの外側マージン"
+        }
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/constraintDef" },
+      "description": "DESIGN.md の Do's/Don'ts を機械検証可能なルールに変換したもの"
+    },
+    "patterns": {
+      "type": "object",
+      "description": "推奨レイアウトパターン",
+      "properties": {
+        "listPage": {
+          "$ref": "#/$defs/layoutPattern",
+          "description": "一覧ページのパターン"
+        },
+        "detailPage": {
+          "$ref": "#/$defs/layoutPattern",
+          "description": "詳細ページのパターン"
+        },
+        "formPage": {
+          "$ref": "#/$defs/layoutPattern",
+          "description": "フォームページのパターン"
+        },
+        "dashboardPage": {
+          "$ref": "#/$defs/layoutPattern",
+          "description": "ダッシュボードページのパターン"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "constraintDef": {
+      "type": "object",
+      "required": ["id", "rule", "enforcement", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^LC\\d{3}$",
+          "description": "レイアウト制約 ID (例: LC001)"
+        },
+        "rule": {
+          "type": "string",
+          "description": "制約の具体的な条件（機械検証可能な記述）"
+        },
+        "enforcement": {
+          "enum": ["lint", "visual", "rubric"],
+          "description": "検証方法"
+        },
+        "severity": {
+          "enum": ["error", "warn"],
+          "default": "warn"
+        },
+        "description": {
+          "type": "string",
+          "description": "人間可読な制約の説明"
+        },
+        "source": {
+          "type": "string",
+          "description": "DESIGN.md の Do/Don't からの出典"
+        },
+        "checkPattern": {
+          "type": "string",
+          "description": "lint enforcement の場合の検出正規表現パターン"
+        }
+      }
+    },
+    "layoutPattern": {
+      "type": "object",
+      "properties": {
+        "layoutType": {
+          "enum": ["single-column", "sidebar-left", "sidebar-right", "dashboard-grid", "split", "hero-stack"]
+        },
+        "requiredSections": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "必須セクション ID"
+        },
+        "suggestedComponents": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "推奨コンポーネント名"
+        },
+        "maxSections": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "最大セクション数"
+        }
+      }
+    },
+    "tokenRef": {
+      "type": "string",
+      "pattern": "^\\$tokens\\..+$",
+      "description": "tokens.json への参照パス"
+    }
+  }
+}

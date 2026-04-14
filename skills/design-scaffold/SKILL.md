@@ -507,6 +507,72 @@ Step 6 の完了レポートに catalog 情報を追加:
   components/{framework}/index.ts
 ```
 
+### Step 10: Layout Rules 生成
+
+DESIGN.md の Layout Principles + Do's/Don'ts セクションから、[references/layout-schema.json](references/layout-schema.json) に準拠する `layout-rules.json` を生成する。
+
+#### 10-1. Layout Principles → grid / spacing
+
+| DESIGN.md フィールド | layout-rules.json パス |
+|---------------------|----------------------|
+| Grid: {columns} columns, {gap}px gap | `grid.columns`, `grid.gap` |
+| Max content width: {width}px | `grid.maxWidth` |
+| Base unit: {unit}px | (spacing.baseUnit は tokens.json 側) |
+| Section spacing: {spacing}px | `spacing.sectionGap` |
+| White space philosophy: {description} | constraints に変換 |
+
+#### 10-2. Do's/Don'ts → constraints 変換
+
+DESIGN.md の Do / Don't リストを [references/layout-schema.json](references/layout-schema.json) の `constraintDef` 形式に変換する。
+
+**変換ルール:**
+1. 各 Do / Don't を読み取り
+2. 機械検証可能な条件に翻訳（自然言語 → 正規表現 or 数値範囲）
+3. enforcement を判定:
+   - CSS プロパティの値に関するルール → `lint`
+   - 視覚的な配置・バランスに関するルール → `visual`
+   - 全体的な印象・統一感に関するルール → `rubric`
+4. ID を `LC001` から連番で付与
+
+#### 10-3. `.design/layout-rules.json` に Write
+
+### Step 11: ページ定義のテンプレート生成
+
+AskUserQuestion でプロジェクトの主要ページを質問:
+
+```
+header: "主要ページ"
+question: "このプロジェクトの主要なページは何ですか？"
+multiSelect: true
+options:
+  - "ランディングページ"
+  - "ダッシュボード"
+  - "一覧ページ"
+  - "フォームページ"
+```
+
+選択されたページに対して:
+1. layout-rules.json の `patterns` から推奨レイアウトパターンを取得
+2. catalog.json のコンポーネントから各セクションの推奨配置を構築
+3. [references/page-schema.json](references/page-schema.json) に準拠するページ定義を生成
+4. `.design/pages/{page-name}.json` に Write
+
+### Step 12: 最終完了レポート
+
+```
+📊 レイアウト:
+  Layout Rules: {n} constraints defined
+  Page Definitions: {n} pages
+
+📁 追加生成ファイル:
+  .design/layout-rules.json — レイアウト制約
+  .design/pages/{page-name}.json × {n}
+
+次のステップ:
+  1. `/claude-skills:design-generate` でページを生成
+  2. Base Design の承認フローへ進む
+```
+
 ## 既存 .design/ の上書き確認
 
 `.design/tokens.json` が既に存在する場合:
@@ -528,4 +594,6 @@ Step 6 の完了レポートに catalog 情報を追加:
 
 - **Token Schema:** [references/tokens-schema.json](references/tokens-schema.json)
 - **Catalog Schema:** [references/catalog-schema.json](references/catalog-schema.json)
+- **Page Schema:** [references/page-schema.json](references/page-schema.json)
+- **Layout Schema:** [references/layout-schema.json](references/layout-schema.json)
 - **共有契約:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md)

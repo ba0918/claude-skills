@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "page-definition.schema.json",
+  "title": "Page Definition",
+  "description": "ページの構成・レイアウト・使用可能コンポーネントを定義する。LLM がページを生成する際の制約として機能し、自由度をセクション内コンテンツに限定する。",
+  "type": "object",
+  "required": ["name", "route", "layout", "sections"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "ページ名（人間可読）"
+    },
+    "route": {
+      "type": "string",
+      "description": "ルートパス (例: '/', '/dashboard', '/settings')"
+    },
+    "title": {
+      "type": "string",
+      "description": "ページタイトル（<title> タグ用）"
+    },
+    "description": {
+      "type": "string",
+      "description": "ページの目的・概要"
+    },
+    "layout": {
+      "$ref": "#/$defs/layoutDef"
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/sectionDef" }
+    },
+    "allowedComponents": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "このページで使用可能なコンポーネント名リスト（省略時は catalog 全体を許可）"
+    },
+    "responsive": {
+      "type": "object",
+      "description": "ページ固有のレスポンシブ挙動（省略時は layout-rules のデフォルトに従う）",
+      "properties": {
+        "sm": { "$ref": "#/$defs/responsiveOverride" },
+        "md": { "$ref": "#/$defs/responsiveOverride" },
+        "lg": { "$ref": "#/$defs/responsiveOverride" },
+        "xl": { "$ref": "#/$defs/responsiveOverride" }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "description": "SEO / OGP メタ情報",
+      "properties": {
+        "ogTitle":       { "type": "string" },
+        "ogDescription": { "type": "string" },
+        "ogImage":       { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "layoutDef": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": ["single-column", "sidebar-left", "sidebar-right", "dashboard-grid", "split", "hero-stack"],
+          "description": "レイアウトタイプ"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/tokenRef",
+          "description": "最大幅（tokens.spacing.maxContentWidth への参照）"
+        },
+        "padding": {
+          "$ref": "#/$defs/tokenRef",
+          "description": "ページ全体のパディング"
+        },
+        "gap": {
+          "$ref": "#/$defs/tokenRef",
+          "description": "セクション間の gap"
+        },
+        "sidebarWidth": {
+          "type": "string",
+          "description": "サイドバー幅（sidebar-left/right の場合のみ）"
+        },
+        "gridTemplate": {
+          "type": "string",
+          "description": "CSS grid-template（dashboard-grid の場合のみ）"
+        }
+      }
+    },
+    "sectionDef": {
+      "type": "object",
+      "required": ["id", "components"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "セクション ID (kebab-case)"
+        },
+        "name": {
+          "type": "string",
+          "description": "セクション名（人間可読）"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "表示順序（昇順）"
+        },
+        "components": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/componentPlacement" },
+          "description": "このセクションに配置するコンポーネント"
+        },
+        "layout": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "direction": { "enum": ["row", "column"], "default": "column" },
+            "gap":       { "$ref": "#/$defs/tokenRef" },
+            "wrap":      { "type": "boolean", "default": false },
+            "align":     { "enum": ["start", "center", "end", "stretch"] },
+            "justify":   { "enum": ["start", "center", "end", "between", "around", "evenly"] },
+            "columns":   { "type": "integer", "minimum": 1, "description": "グリッドカラム数（direction=row 時）" }
+          }
+        },
+        "background": {
+          "$ref": "#/$defs/tokenRef",
+          "description": "セクション背景色"
+        },
+        "padding": {
+          "$ref": "#/$defs/tokenRef",
+          "description": "セクション内パディング"
+        },
+        "conditional": {
+          "type": "object",
+          "description": "条件付き表示（認証状態・ブレークポイント等）",
+          "properties": {
+            "auth":       { "enum": ["authenticated", "anonymous", "any"], "default": "any" },
+            "breakpoint": { "enum": ["sm-only", "md-up", "lg-up", "xl-only"] }
+          }
+        }
+      }
+    },
+    "componentPlacement": {
+      "type": "object",
+      "required": ["component"],
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "type": "string",
+          "description": "catalog のコンポーネント名 (PascalCase)"
+        },
+        "variant": {
+          "type": "string",
+          "description": "使用するバリアント名"
+        },
+        "props": {
+          "type": "object",
+          "description": "コンポーネントに渡す props のデフォルト値"
+        },
+        "repeat": {
+          "type": "boolean",
+          "default": false,
+          "description": "リスト表示するか（true の場合、データバインディングを想定）"
+        },
+        "repeatCount": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "mockup での表示繰り返し回数（repeat=true 時のプレビュー用）"
+        },
+        "span": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "グリッドでのカラムスパン"
+        },
+        "order": {
+          "type": "integer",
+          "description": "セクション内の表示順序"
+        }
+      }
+    },
+    "responsiveOverride": {
+      "type": "object",
+      "properties": {
+        "layoutType":    { "enum": ["single-column", "sidebar-left", "sidebar-right", "dashboard-grid", "split", "hero-stack"] },
+        "hideSections":  { "type": "array", "items": { "type": "string" }, "description": "非表示にするセクション ID" },
+        "stackSections": { "type": "boolean", "description": "セクションを縦積みにするか" },
+        "columns":       { "type": "integer", "minimum": 1 }
+      }
+    },
+    "tokenRef": {
+      "type": "string",
+      "pattern": "^\\$tokens\\..+$",
+      "description": "tokens.json への参照パス"
+    }
+  }
+}
