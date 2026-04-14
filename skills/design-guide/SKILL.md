@@ -270,16 +270,40 @@ Phase 6: DESIGN.md 生成
 
 ---
 
-## Mockup Workflow（DESIGN.md に基づくモックアップ生成）
+## Mockup Workflow（Schema ベースモックアップ生成 + Base Design 承認）
 
-DESIGN.md のトークンを **厳密に適用** してモックアップを生成する。
-frontend-design スキルの美学原則を活用しつつ、カラー・フォント・スペーシングは DESIGN.md の定義に従う。
+**v2 設計:** `.design/` の schema（tokens + catalog + page-schema）に基づいてモックアップを生成し、
+自動 lint 検証の後、人間の承認を得て **baseline を確定** する。
+このフローが「人間の主観判断を1回に集約する」ゲートウェイとなる。
+
+```
+┌─────────────────────────────────────────────┐
+│ フィードバックループ（納得いくまで繰り返し）    │
+│                                             │
+│  Step 1: 前提チェック + scaffold 有無確認      │
+│  Step 2: ページ定義の対話作成 or 確認          │
+│  Step 3: モックアップ生成（schema 制約付き）    │
+│  Step 4: 自動 lint 検証（DL001-204）          │
+│  Step 5: 人間に提示 + フィードバック           │
+│    └── 修正要望あり → Step 2 or 3 に戻る      │
+│  Step 6: 承認 → baseline 確定 ★              │
+└─────────────────────────────────────────────┘
+```
 
 ### 前提チェック
 
 1. プロジェクトルートに `DESIGN.md` が存在するか確認
-   - なければ「DESIGN.md が見つかりません。`/claude-skills:design-guide` で新規作成してください」と表示して終了
-2. `DESIGN.md` を Read で読み込み、全トークンを把握
+   - なければ「`/claude-skills:design-guide` で DESIGN.md を作成してください」と表示して終了
+2. `.design/tokens.json` が存在するか確認
+   - なければ「`/claude-skills:design-scaffold` で tokens を生成してください」と表示して終了
+3. `.design/component-catalog.json` が存在するか確認
+   - なければ「`/claude-skills:design-scaffold` で catalog を生成してください」と表示して終了
+4. 全ファイルを Read で読み込み:
+   - `.design/tokens.json`
+   - `.design/tokens.css`
+   - `.design/component-catalog.json`
+   - `.design/layout-rules.json`（存在する場合）
+   - `.design/pages/*.json`（存在する場合）
 
 ### Step 1: モックアップ対象の決定
 
@@ -289,13 +313,42 @@ header: "対象"
 
 | Option | Description |
 |--------|-------------|
-| ページレイアウト | ランディングページ、ダッシュボード、設定画面等の全体レイアウト |
-| コンポーネント集 | ボタン・カード・フォーム・ナビ等の主要コンポーネント一覧 |
-| 特定の画面 | ユーザー指定の具体的な画面（ログイン、プロフィール等） |
+| コンポーネントカタログ | catalog.json の全コンポーネント × 全 variant を一覧表示 |
+| ページモックアップ | ページ定義に基づく完全なページ（なければ対話で定義作成） |
+| フルセット（推奨） | コンポーネント一覧 + 全ページ。Base Design 承認に最適 |
 
 `mockup` 以降の $ARGUMENTS に具体的な指示があればそれを優先する。
 
-### Step 2: 出力形式の決定
+### Step 2: ページ定義の作成 or 確認
+
+#### `.design/pages/` にページ定義がない場合
+
+AskUserQuestion でページ構成を対話的に決定し、page-schema.json に準拠するページ定義を生成する。
+
+1. AskUserQuestion でプロジェクトの主要ページを質問:
+   ```
+   header: "主要ページ"
+   question: "モックアップを作るページを選んでください"
+   multiSelect: true
+   options:
+     - "ランディングページ"
+     - "ダッシュボード"
+     - "一覧ページ"
+     - "フォームページ"
+   ```
+2. 各ページに対して:
+   - レイアウトタイプを質問（single-column / sidebar / dashboard-grid / split）
+   - セクション構成を提案し確認
+   - 使用コンポーネントを catalog.json から選択
+3. `.design/pages/{page-name}.json` に Write
+
+#### `.design/pages/` にページ定義がある場合
+
+既存のページ定義を表示し、このまま使うか修正するか確認。
+
+### Step 3: モックアップ生成
+
+#### 出力形式
 
 AskUserQuestion で出力形式を質問:
 
@@ -303,77 +356,150 @@ header: "出力形式"
 
 | Option | Description |
 |--------|-------------|
-| HTML + CSS（スタンドアロン） | ブラウザで即開けるシングルファイル HTML。CDN フォント読み込み付き |
-| React コンポーネント | JSX + CSS-in-JS or CSS Modules。プロジェクトに組み込み可能 |
+| HTML + CSS（スタンドアロン）（推奨） | ブラウザで即開けるシングルファイル HTML。Base Design 確認に最適 |
+| React コンポーネント | JSX + CSS Modules。プロジェクトに組み込み可能 |
 | HTML + Tailwind | Tailwind CSS クラスを使用。CDN 読み込みでスタンドアロン動作 |
 
-### Step 3: モックアップ生成
+#### 絶対的な制約（Schema 制約）
 
-#### 絶対的な制約（トークン厳守ルール）
+以下の値は **tokens.json / catalog.json / page-schema に定義されたもののみ** を使用する:
 
-以下の値は **DESIGN.md に定義されたもののみ** を使用する。独自の値を発明してはならない:
-
-- **色**: Color Palette セクションの値のみ。`rgba()` 変換や `opacity` 調整は許可するが、新しい色の導入は禁止
-- **フォント**: Typography セクションのフォントファミリーのみ。サイズ・ウェイトも定義に従う
-- **スペーシング**: Layout Principles の spacing scale の値のみ
-- **角丸**: Component Stylings の border-radius 値のみ
-- **シャドウ**: Depth & Elevation の shadow 定義のみ
-- **ブレークポイント**: Responsive Behavior の値のみ
+- **色**: tokens.json の `colors.*` のみ。CSS 変数 `var(--color-*)` 経由で使用
+- **フォント**: tokens.json の `typography.*` のみ。CSS 変数 `var(--font-*)` 経由
+- **スペーシング**: tokens.json の `spacing.scale` のみ。CSS 変数 `var(--spacing-*)` 経由
+- **角丸**: tokens.json の `components.*.borderRadius` のみ。CSS 変数 `var(--radius-*)` 経由
+- **シャドウ**: tokens.json の `depth.*.shadow` のみ。CSS 変数 `var(--shadow-*)` 経由
+- **コンポーネント**: catalog.json に定義されたもののみ
+- **ページ構成**: pages/*.json のセクション定義に準拠
+- **ブレークポイント**: tokens.json の `responsive.breakpoints` のみ
 
 #### 創造的自由の範囲
 
-トークンを厳守した上で、以下は自由に工夫する:
+schema を厳守した上で、以下は自由に工夫する:
 
-- レイアウト構成（グリッドの使い方、セクション配置）
-- アニメーション・トランジション（DESIGN.md で未定義の領域）
-- コンテンツ配置（テキスト・画像のバランス）
-- インタラクションパターン（hover 演出の具体的な実装）
-- [references/anti-patterns.md](references/anti-patterns.md) のポジティブパターンを積極的に活用
+- セクション内のコンテンツ（テキスト・ダミーデータ・画像 placeholder）
+- アニメーション・トランジション（schema 未定義の領域）
+- [references/anti-patterns.md](references/anti-patterns.md) のポジティブパターンの活用
 
 #### 生成プロセス
 
-1. DESIGN.md からトークンを CSS 変数として抽出:
-   ```css
-   :root {
-     --color-primary: #XXXXXX;
-     --color-secondary: #XXXXXX;
-     --font-heading: 'Font Name', fallback;
-     --spacing-base: Npx;
-     /* ... DESIGN.md の全トークン ... */
+1. `.design/tokens.css` を `<link>` or `<style>` で読み込み
+2. Google Fonts の `<link>` タグでフォント読み込み
+3. catalog.json に基づくコンポーネントの HTML/JSX を構築
+4. pages/*.json のセクション定義に従いページ構成
+5. レスポンシブ対応: tokens.json の responsive.breakpoints に従う
+6. **コンポーネントカタログ HTML** を生成:
+   - catalog.json の全コンポーネント × 全 variant × 全 state を一覧表示
+   - 各コンポーネントのスタイルを視覚的に確認可能な形式
+
+出力先:
+```
+mockups/base/
+├── components.html       # コンポーネントカタログ
+├── {page-name}.html      # 各ページのモックアップ
+└── ...
+```
+
+### Step 4: 自動 lint 検証
+
+生成されたモックアップに対して、design-lint のロジックを即座に適用:
+
+1. 全モックアップファイルに DL001-006（Token Compliance）を適用
+2. DL101-103（Component Compliance）を適用
+3. DL201-204（Page/Layout Compliance）を適用
+4. 結果をサマリー表示:
+
+```
+🔍 Mockup Lint Results
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Files: mockups/base/*.html
+Token Compliance (DL001-006): ✅ 0 violations
+Component Compliance (DL101-103): ✅ 0 violations
+Page Compliance (DL201-204): ✅ 0 violations
+
+Result: ALL PASS ✅
+```
+
+**lint FAIL の場合:** 自動修正を試み、修正不能な違反はエラーとしてレポート。修正後に再検証。
+lint が全 PASS するまで Step 5 に進まない。
+
+### Step 5: 人間に提示 + フィードバック
+
+lint PASS 後、モックアップを人間に提示:
+
+```
+✅ モックアップを生成しました！（lint: ALL PASS）
+
+📁 生成ファイル:
+  mockups/base/components.html — コンポーネントカタログ
+  mockups/base/{page-name}.html — {ページ名}
+
+ブラウザで開いて確認してね。
+```
+
+AskUserQuestion で承認 or フィードバック:
+
+```
+header: "Base Design 確認"
+options:
+  - "承認する — このデザインを baseline として確定"
+  - "トークンを調整したい — 色・フォント・spacing 等を変えたい"
+  - "コンポーネントを調整したい — variant やスタイルを変えたい"
+  - "ページ構成を変えたい — セクションの追加・削除・並び替え"
+```
+
+#### フィードバックループ
+
+| フィードバック種別 | ループ先 | 操作 |
+|------------------|---------|------|
+| トークン調整 | `/design-guide-update` → `/design-scaffold` → Step 3 | DESIGN.md 修正 → tokens 再生成 → モック再生成 |
+| コンポーネント調整 | `/design-scaffold` → Step 3 | catalog 修正 → モック再生成 |
+| ページ構成変更 | Step 2 → Step 3 | page-schema 修正 → モック再生成 |
+| 微調整（テキスト・配置） | Step 3 | Edit でモック直接修正 → 再 lint |
+
+### Step 6: 承認 → Baseline 確定
+
+承認が得られた場合:
+
+1. **スクリーンショット取得**（Playwright が利用可能な場合）:
+   ```bash
+   # 各モックアップのスクリーンショットを撮影
+   npx playwright screenshot mockups/base/components.html .design/baseline/screenshots/components.png
+   ```
+   Playwright 未導入の場合は「手動でスクリーンショットを `.design/baseline/screenshots/` に保存してください」と案内
+
+2. **approval.json 生成**:
+   ```json
+   {
+     "version": "1.0.0",
+     "approvedAt": "{ISO 8601 timestamp}",
+     "approvedBy": "human",
+     "tokensHash": "{SHA-256 of tokens.json}",
+     "catalogHash": "{SHA-256 of component-catalog.json}",
+     "screenshotCount": {N},
+     "mockupFiles": ["components.html", "{page-name}.html", ...],
+     "notes": ""
    }
    ```
-2. CSS 変数を使ってコンポーネントとレイアウトを実装
-3. Google Fonts の `<link>` タグでフォントを読み込む（HTML 出力の場合）
-4. レスポンシブ対応: DESIGN.md の Responsive Behavior に従う
+   `.design/baseline/approval.json` に Write
 
-### Step 4: 出力と確認
-
-1. モックアップファイルを Write ツールで生成:
-   - HTML: `mockups/{name}.html`
-   - React: `mockups/{name}.tsx` + `mockups/{name}.css`
-   - 出力先ディレクトリは必要に応じて `mkdir -p`
-2. 完了メッセージ:
+3. **完了メッセージ**:
    ```
-   ✅ モックアップを生成しました！
-   📄 File: mockups/{name}.html
+   ✅ Base Design を承認し、baseline を確定しました！
    
-   ブラウザで開いて確認してね。
-   修正したい場合はフィードバックを教えてください。
+   📁 Baseline:
+     .design/baseline/approval.json — 承認メタデータ
+     .design/baseline/screenshots/  — Visual test の baseline
+   
+   これ以降の UI 生成は、この baseline に対して機械的に検証されます。
+   
+   次のステップ:
+     `/claude-skills:design-generate` で実際のコードを生成
+     `/claude-skills:design-validate` で検証ゲートを実行
+   
+   ⚠️ tokens.json や catalog.json を変更した場合、
+   baseline の再承認が必要です（hash 不一致で自動検出）。
    ```
-3. AskUserQuestion で追加の調整要望を確認:
-   - 「OK！」→ 終了
-   - 修正フィードバック → Edit で調整して再度確認（ループ）
-
-### トークン違反チェック
-
-モックアップ生成後、以下を自己検証する:
-
-1. CSS で使われている色が全て DESIGN.md の Color Palette に存在するか
-2. font-family が DESIGN.md の Typography に定義されたものか
-3. padding / margin / gap が DESIGN.md の spacing scale の値か
-4. border-radius が Component Stylings の定義値か
-
-違反がある場合は修正してから出力する。
 
 ---
 

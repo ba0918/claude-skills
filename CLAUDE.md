@@ -117,7 +117,7 @@ commands/problem-solving.md  →  skills/problem-solving/SKILL.md
 | `migrate-cycles-to-plans` | `docs/cycles/` → `docs/plans/` のマイグレーション。ディレクトリ移動 + 全参照の一括置換 |
 | `attack-review` | 6エージェント + Codex 並行によるコードベース攻撃者視点レビュー。リスクマトリクス（Likelihood×Impact）で脅威を分類。server/client/full モード切替対応。言語検出共通契約に基づく言語別攻撃プロファイル注入 |
 | `github-issue` | GitHub issue を起点に polling → draft PR → Codex レビュー → auto merge まで自走するスキル。共通契約 `polling-pattern.md` に準拠した Label state adapter 実装。多重防御 atomic claim + fail-closed Codex ゲート + atomic dual-write ラベル + FS retry state + 7 日 hard cap rollback + 単一ホスト前提 |
-| `design-guide` | 対話型ディスカバリーでプロジェクト用 DESIGN.md（Google Stitch フォーマット準拠）を生成し、それに基づくモックアップも生成。二択の選択肢でぼんやりしたデザインイメージを構造化し、AIっぽくない一貫したUI生成の基盤を作る。Session（新規作成）/ Update（部分修正）/ Mockup（モックアップ生成）の3ワークフロー |
+| `design-guide` | 対話型ディスカバリーでプロジェクト用 DESIGN.md（Google Stitch フォーマット準拠）を生成。Session（新規作成）/ Update（部分修正）/ Mockup（schema ベース生成 + 自動 lint + Base Design 承認 → baseline 確定。フィードバックループで納得いくまでリテイク可能、承認後は全て機械的検証）の3ワークフロー |
 | `design-scaffold` | DESIGN.md から machine-readable なデザインシステム（`.design/tokens.json` + `tokens.css` + `lint-config.json` + React theme）を scaffold 生成。DESIGN.md の「値の辞書」を機械的検証可能な schema ベースのシステムに変換する |
 | `design-generate` | ページ定義（`.design/pages/*.json`）+ コンポーネントカタログに基づいて制約付きページ生成。LLM の自由度をコンテンツのみに限定し再現性を保証。生成後に自動 lint 実行 |
 | `design-validate` | Static Lint → Visual Regression (Playwright) → Rubric Judge (LLM) の多段階検証ゲート。weighted average (mechanical 60% / visual 22% / llm-judge 18%) で合否判定。verification-gate 契約準拠の evidence 出力。lint/visual/full/report モード切替 |
