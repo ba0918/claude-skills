@@ -192,3 +192,61 @@ Result: FAIL (5 errors)
   ]
 }
 ```
+
+## Phase 2: Component Compliance ルール (DL101-DL103)
+
+`.design/component-catalog.json` が存在する場合にのみ有効。存在しない場合はこのカテゴリ全体をスキップする。
+
+### DL101: 未登録コンポーネント
+
+**検出対象:** catalog.json に定義されていないカスタムコンポーネントの使用。
+
+**検出方法:**
+1. JSX ファイルから PascalCase の要素名を正規表現で抽出: `/<([A-Z][a-zA-Z0-9]+)/g`
+2. catalog.json の `components[].name` 一覧を許可リストとして構築
+3. 以下は除外（違反としない）:
+   - HTML ネイティブ要素: `div`, `span`, `p`, `a`, `button`, `input`, `form`, `img`, `h1`-`h6`, `ul`, `ol`, `li`, `table`, `tr`, `td`, `th`, `thead`, `tbody`, `section`, `article`, `header`, `footer`, `nav`, `main`, `aside`, `label`, `select`, `textarea`, `option`, `svg`, `path`, `circle`, `rect`, `line`
+   - React 標準: `Fragment`, `Suspense`, `StrictMode`, `Profiler`, `Provider`, `Consumer`
+   - Preact 標準: `Fragment`
+   - テストユーティリティ: テストファイル内のコンポーネントは対象外（lint-config の exclude で制御）
+
+**severity:** `error`
+
+### DL102: 未登録バリアント
+
+**検出対象:** catalog コンポーネントに対して、catalog.json に定義されていない variant 値を prop として渡している。
+
+**検出方法:**
+1. catalog の各コンポーネント名 `{Name}` に対して:
+   - `<{Name}\s+[^>]*variant\s*=\s*["']([^"']+)["']` で variant 値を抽出
+   - `<{Name}\s+[^>]*variant\s*=\s*\{["']([^"']+)["']\}` でも抽出（JSX expression）
+2. catalog.json の `components[name={Name}].variants[].name` を許可リストとして構築
+3. 許可リストにない variant 値 → 違反
+
+**severity:** `error`
+
+### DL103: 直接スタイル上書き
+
+**検出対象:** catalog コンポーネントへの inline style による tokens 対象プロパティの上書き。
+
+**検出方法:**
+1. catalog の各コンポーネント名 `{Name}` に対して:
+   - `<{Name}\s+[^>]*style\s*=\s*\{\{([^}]+)\}\}` で inline style を抽出
+   - `<{Name}\s+[^>]*style\s*=\s*\{([^}]+)\}` でも抽出
+2. inline style 内の CSS プロパティを解析
+3. 以下のトークン対象プロパティが含まれている場合 → 違反:
+   - `color`, `backgroundColor`, `background`
+   - `fontFamily`, `fontSize`, `fontWeight`
+   - `padding`, `margin`, `gap` (spacing)
+   - `borderRadius`
+   - `boxShadow`
+   - `border`, `borderColor`
+4. 以下のレイアウトプロパティは許可（違反としない）:
+   - `display`, `position`, `top`, `left`, `right`, `bottom`
+   - `width`, `height`, `maxWidth`, `minWidth`, `maxHeight`, `minHeight`
+   - `flex`, `flexDirection`, `flexGrow`, `flexShrink`, `flexBasis`
+   - `gridColumn`, `gridRow`, `gridArea`
+   - `overflow`, `zIndex`, `visibility`, `transform`
+   - `textAlign`, `verticalAlign`
+
+**severity:** `warn`（完全に禁止すると柔軟性がなくなるため、警告レベル）

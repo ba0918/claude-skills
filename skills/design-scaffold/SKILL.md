@@ -239,7 +239,272 @@ export type Theme = typeof theme;
 
 次のステップ:
   1. `/claude-skills:design-lint` でコードベースの準拠状況を確認
-  2. Phase 2 で component-catalog を追加
+```
+
+### Step 7: Component Catalog 生成
+
+DESIGN.md の Component Stylings セクションから、[references/catalog-schema.json](references/catalog-schema.json) に準拠する `component-catalog.json` を生成する。
+
+#### 7-1. DESIGN.md からのコンポーネント抽出
+
+Component Stylings セクションの各サブセクションをコンポーネント定義にマッピング:
+
+| DESIGN.md サブセクション | コンポーネント名 | カテゴリ |
+|------------------------|---------------|---------|
+| Buttons | `Button` | `action` |
+| Cards | `Card` | `container` |
+| Inputs | `Input` | `input` |
+| Navigation | `Nav` | `navigation` |
+
+#### 7-2. Button コンポーネント生成例
+
+DESIGN.md の Buttons テーブル:
+```
+| Variant | Background | Text | Border | Border Radius | Padding |
+```
+
+→ catalog.json:
+```json
+{
+  "name": "Button",
+  "category": "action",
+  "description": "インタラクティブなアクションボタン",
+  "variants": [
+    {
+      "name": "primary",
+      "styles": {
+        "background": "$tokens.colors.primary",
+        "color": "$tokens.components.buttons.variants.primary.color",
+        "border": "none",
+        "borderRadius": "$tokens.components.buttons.borderRadius",
+        "paddingY": "$tokens.components.buttons.paddingY",
+        "paddingX": "$tokens.components.buttons.paddingX",
+        "cursor": "pointer",
+        "transition": "all 0.2s ease"
+      }
+    },
+    {
+      "name": "secondary",
+      "styles": {
+        "background": "transparent",
+        "color": "$tokens.colors.primary",
+        "border": "$tokens.components.buttons.variants.secondary.border",
+        "borderRadius": "$tokens.components.buttons.borderRadius",
+        "paddingY": "$tokens.components.buttons.paddingY",
+        "paddingX": "$tokens.components.buttons.paddingX",
+        "cursor": "pointer",
+        "transition": "all 0.2s ease"
+      }
+    },
+    {
+      "name": "ghost",
+      "styles": {
+        "background": "transparent",
+        "color": "$tokens.colors.textPrimary",
+        "border": "none",
+        "borderRadius": "$tokens.components.buttons.borderRadius",
+        "paddingY": "$tokens.components.buttons.paddingY",
+        "paddingX": "$tokens.components.buttons.paddingX",
+        "cursor": "pointer",
+        "transition": "all 0.2s ease"
+      }
+    },
+    {
+      "name": "destructive",
+      "styles": {
+        "background": "$tokens.colors.error",
+        "color": "#FFFFFF",
+        "border": "none",
+        "borderRadius": "$tokens.components.buttons.borderRadius",
+        "paddingY": "$tokens.components.buttons.paddingY",
+        "paddingX": "$tokens.components.buttons.paddingX",
+        "cursor": "pointer",
+        "transition": "all 0.2s ease"
+      }
+    }
+  ],
+  "states": [
+    {
+      "name": "hover",
+      "trigger": ":hover",
+      "styles": { "background": "$tokens.colors.primaryHover" }
+    },
+    {
+      "name": "focus",
+      "trigger": ":focus-visible",
+      "styles": { "shadow": "0 0 0 2px $tokens.colors.focusRing" }
+    },
+    {
+      "name": "active",
+      "trigger": ":active",
+      "styles": { "opacity": 0.9 }
+    },
+    {
+      "name": "disabled",
+      "trigger": ":disabled",
+      "styles": { "opacity": 0.5, "cursor": "not-allowed" }
+    }
+  ],
+  "props": [
+    { "name": "variant", "type": "\"primary\" | \"secondary\" | \"ghost\" | \"destructive\"", "required": false, "default": "primary" },
+    { "name": "size", "type": "\"sm\" | \"md\" | \"lg\"", "required": false, "default": "md" },
+    { "name": "disabled", "type": "boolean", "required": false, "default": false },
+    { "name": "onClick", "type": "() => void", "required": false },
+    { "name": "children", "type": "ReactNode", "required": true }
+  ],
+  "tokens": [
+    "$tokens.colors.primary",
+    "$tokens.colors.primaryHover",
+    "$tokens.colors.error",
+    "$tokens.colors.textPrimary",
+    "$tokens.colors.focusRing",
+    "$tokens.components.buttons.borderRadius",
+    "$tokens.components.buttons.paddingY",
+    "$tokens.components.buttons.paddingX"
+  ],
+  "a11y": {
+    "role": "button",
+    "ariaAttributes": [
+      { "name": "aria-disabled", "boundToProp": "disabled" }
+    ],
+    "keyboardNav": [
+      { "key": "Enter", "action": "activate" },
+      { "key": "Space", "action": "activate" }
+    ],
+    "minContrastRatio": 4.5
+  }
+}
+```
+
+#### 7-3. 同様に Card, Input, Nav も生成
+
+各コンポーネントの DESIGN.md 定義から同じ手順で catalog エントリを生成。
+全スタイル値は `$tokens.*` 参照で表現し、直書き値は CSS キーワード（`none`, `transparent`, `inherit`）のみ許可。
+
+#### 7-4. catalog.json の自己検証
+
+生成後:
+1. 全 `$tokens.*` 参照が tokens.json に存在することを確認
+2. 各コンポーネントの variants が DESIGN.md の定義と 1:1 対応することを確認
+3. props の型が TypeScript として妥当であることを確認
+
+#### 7-5. `.design/component-catalog.json` に Write
+
+### Step 8: React/Preact コンポーネント生成
+
+フレームワークが React/Preact の場合、catalog.json からコンポーネント実装を自動生成する。
+
+#### 生成ルール
+
+1. **CSS は tokens.css の custom properties 経由でのみスタイリング**
+   - `$tokens.colors.primary` → `var(--color-primary)`
+   - `$tokens.components.buttons.borderRadius` → `var(--radius-button)`
+2. **Props は catalog.json の props 定義に完全準拠**
+   - TypeScript 型を自動生成
+   - default 値を設定
+3. **Variants は catalog.json の variants のみ**
+   - variant prop で切り替え、CSS クラスで実装
+4. **States は catalog.json の states のみ**
+   - CSS pseudo-class + JS event handler
+5. **a11y 要件を HTML 属性として自動付与**
+   - role, aria-*, keyboard navigation
+
+#### 生成テンプレート（Button の例）
+
+```typescript
+// components/react/Button.tsx — Auto-generated from .design/component-catalog.json
+// DO NOT EDIT MANUALLY. Run design-scaffold to regenerate.
+
+import React from 'react';
+import './Button.css';
+
+export interface ButtonProps {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'destructive';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  onClick?: () => void;
+  children: React.ReactNode;
+}
+
+export const Button: React.FC<ButtonProps> = ({
+  variant = 'primary',
+  size = 'md',
+  disabled = false,
+  onClick,
+  children,
+}) => {
+  return (
+    <button
+      className={`btn btn--${variant} btn--${size}`}
+      disabled={disabled}
+      onClick={onClick}
+      aria-disabled={disabled}
+    >
+      {children}
+    </button>
+  );
+};
+```
+
+```css
+/* components/react/Button.css — Auto-generated from .design/component-catalog.json */
+
+.btn {
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  border-radius: var(--radius-button);
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  color: /* tokens.components.buttons.variants.primary.color */;
+  padding: var(--spacing-/* paddingY */) var(--spacing-/* paddingX */);
+}
+
+/* ... 各 variant, state, size のスタイル ... */
+
+.btn:hover:not(:disabled) { /* hover styles */ }
+.btn:focus-visible { box-shadow: 0 0 0 2px var(--color-focus-ring); outline: none; }
+.btn:active:not(:disabled) { opacity: 0.9; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+```
+
+#### index.ts 生成
+
+```typescript
+// components/react/index.ts — Auto-generated
+export { Button } from './Button';
+export type { ButtonProps } from './Button';
+export { Card } from './Card';
+export type { CardProps } from './Card';
+export { Input } from './Input';
+export type { InputProps } from './Input';
+export { Nav } from './Nav';
+export type { NavProps } from './Nav';
+```
+
+### Step 9: 完了レポート（拡張）
+
+Step 6 の完了レポートに catalog 情報を追加:
+
+```
+📊 コンポーネント:
+  Components: {n} defined (Button, Card, Input, Nav)
+  Variants: {n} total
+  Props: {n} total
+  Framework: {framework}
+
+📁 追加生成ファイル:
+  .design/component-catalog.json — コンポーネント仕様定義
+  components/{framework}/Button.tsx + Button.css
+  components/{framework}/Card.tsx + Card.css
+  components/{framework}/Input.tsx + Input.css
+  components/{framework}/Nav.tsx + Nav.css
+  components/{framework}/index.ts
 ```
 
 ## 既存 .design/ の上書き確認
@@ -262,4 +527,5 @@ export type Theme = typeof theme;
 ## References
 
 - **Token Schema:** [references/tokens-schema.json](references/tokens-schema.json)
+- **Catalog Schema:** [references/catalog-schema.json](references/catalog-schema.json)
 - **共有契約:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md)

@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "component-catalog.schema.json",
+  "title": "Component Catalog",
+  "description": "承認済みUIコンポーネントの仕様定義。tokens.json のトークンを $tokens.* 参照で結びつけ、各コンポーネントの variants / states / props / a11y を構造化する。",
+  "type": "object",
+  "required": ["version", "framework", "components"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "framework": {
+      "enum": ["react", "preact", "flutter", "vanilla", "postcss"],
+      "description": "ターゲットフレームワーク"
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/componentDef" }
+    }
+  },
+  "$defs": {
+    "componentDef": {
+      "type": "object",
+      "required": ["name", "category", "variants", "props", "tokens"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Z][a-zA-Z0-9]*$",
+          "description": "コンポーネント名 (PascalCase)"
+        },
+        "category": {
+          "enum": ["action", "container", "input", "navigation", "feedback", "layout"],
+          "description": "コンポーネントカテゴリ"
+        },
+        "description": {
+          "type": "string",
+          "description": "コンポーネントの用途説明"
+        },
+        "variants": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/variantDef" }
+        },
+        "states": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stateDef" },
+          "description": "インタラクション状態の定義"
+        },
+        "props": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/propDef" },
+          "description": "コンポーネントが受け取る props"
+        },
+        "tokens": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/tokenRef" },
+          "description": "このコンポーネントが参照する token パス一覧"
+        },
+        "a11y": {
+          "$ref": "#/$defs/a11yDef",
+          "description": "アクセシビリティ要件"
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name":        { "type": "string" },
+              "description": { "type": "string" },
+              "required":    { "type": "boolean", "default": false }
+            }
+          },
+          "description": "子コンテンツのスロット定義（children, header, footer 等）"
+        }
+      }
+    },
+    "variantDef": {
+      "type": "object",
+      "required": ["name", "styles"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-zA-Z0-9]*$",
+          "description": "バリアント名 (camelCase)"
+        },
+        "description": {
+          "type": "string"
+        },
+        "styles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "background":     { "$ref": "#/$defs/styleValue" },
+            "color":          { "$ref": "#/$defs/styleValue" },
+            "border":         { "$ref": "#/$defs/styleValue" },
+            "borderRadius":   { "$ref": "#/$defs/styleValue" },
+            "padding":        { "$ref": "#/$defs/styleValue" },
+            "paddingY":       { "$ref": "#/$defs/styleValue" },
+            "paddingX":       { "$ref": "#/$defs/styleValue" },
+            "shadow":         { "$ref": "#/$defs/styleValue" },
+            "fontSize":       { "$ref": "#/$defs/styleValue" },
+            "fontWeight":     { "$ref": "#/$defs/styleValue" },
+            "fontFamily":     { "$ref": "#/$defs/styleValue" },
+            "lineHeight":     { "$ref": "#/$defs/styleValue" },
+            "gap":            { "$ref": "#/$defs/styleValue" },
+            "width":          { "$ref": "#/$defs/styleValue" },
+            "height":         { "$ref": "#/$defs/styleValue" },
+            "minHeight":      { "$ref": "#/$defs/styleValue" },
+            "maxWidth":       { "$ref": "#/$defs/styleValue" },
+            "display":        { "$ref": "#/$defs/styleValue" },
+            "flexDirection":  { "$ref": "#/$defs/styleValue" },
+            "alignItems":     { "$ref": "#/$defs/styleValue" },
+            "justifyContent": { "$ref": "#/$defs/styleValue" },
+            "cursor":         { "$ref": "#/$defs/styleValue" },
+            "opacity":        { "$ref": "#/$defs/styleValue" },
+            "transition":     { "$ref": "#/$defs/styleValue" }
+          }
+        },
+        "cssClass": {
+          "type": "string",
+          "description": "生成される CSS クラス名"
+        }
+      }
+    },
+    "stateDef": {
+      "type": "object",
+      "required": ["name", "styles"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": ["hover", "focus", "active", "disabled", "loading", "error", "selected"],
+          "description": "状態名"
+        },
+        "trigger": {
+          "type": "string",
+          "description": "状態のトリガー（CSS pseudo-class or JS event）"
+        },
+        "styles": {
+          "type": "object",
+          "description": "状態時のスタイルオーバーライド（variantDef.styles と同じ構造）",
+          "additionalProperties": { "$ref": "#/$defs/styleValue" }
+        }
+      }
+    },
+    "propDef": {
+      "type": "object",
+      "required": ["name", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "prop 名"
+        },
+        "type": {
+          "type": "string",
+          "description": "TypeScript 型 (例: 'string', 'boolean', '\"sm\" | \"md\" | \"lg\"')"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "default": {
+          "description": "デフォルト値"
+        },
+        "description": {
+          "type": "string"
+        },
+        "enumValues": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "type が enum の場合の候補値一覧"
+        }
+      }
+    },
+    "a11yDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "type": "string",
+          "description": "WAI-ARIA role (例: 'button', 'navigation', 'textbox')"
+        },
+        "ariaAttributes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name":        { "type": "string", "description": "aria-* 属性名" },
+              "value":       { "type": "string", "description": "固定値（省略時は prop から動的設定）" },
+              "boundToProp": { "type": "string", "description": "値を取得する prop 名" }
+            }
+          }
+        },
+        "keyboardNav": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["key", "action"],
+            "properties": {
+              "key":    { "type": "string", "description": "キー名 (例: 'Enter', 'Space', 'Escape')" },
+              "action": { "type": "string", "description": "キー押下時のアクション" }
+            }
+          }
+        },
+        "focusManagement": {
+          "type": "string",
+          "description": "フォーカス管理戦略（例: 'trap', 'roving', 'none'）"
+        },
+        "minContrastRatio": {
+          "type": "number",
+          "minimum": 1,
+          "description": "最小コントラスト比 (WCAG AA: 4.5, AAA: 7.0)"
+        }
+      }
+    },
+    "tokenRef": {
+      "type": "string",
+      "pattern": "^\\$tokens\\..+$",
+      "description": "tokens.json への参照パス (例: $tokens.colors.primary)"
+    },
+    "styleValue": {
+      "oneOf": [
+        { "$ref": "#/$defs/tokenRef" },
+        { "type": "string", "description": "CSS 値（トークン参照でない場合: 'none', 'transparent', 'inherit' 等の CSS キーワードのみ許可）" },
+        { "type": "number", "description": "数値（px 値等）" }
+      ]
+    }
+  }
+}

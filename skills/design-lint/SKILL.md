@@ -139,6 +139,59 @@ CSS/JSX 内:
 2. その値が `var(--*)` 経由ではなく使用されている → 違反
 3. DL001-005 で既に検出された違反には追加しない（重複回避）
 
+#### DL101-103: Component Compliance（catalog 存在時のみ）
+
+`.design/component-catalog.json` が存在する場合、以下のルールも適用する。
+
+#### DL101: 未登録コンポーネント
+
+**検出対象:** catalog.json に定義されていないカスタムコンポーネントの使用。
+
+**検出方法（React/Preact）:**
+1. JSX ファイルから PascalCase の要素名を抽出: `/<([A-Z][a-zA-Z0-9]+)/`
+2. catalog.json の `components[].name` 一覧を許可リストとして構築
+3. HTML ネイティブ要素（`div`, `span`, `button`, `input` 等）は除外
+4. React 標準コンポーネント（`Fragment`, `Suspense`, `StrictMode` 等）は除外
+5. 許可リストにないカスタムコンポーネント → 違反
+
+**レポート例:**
+```json
+{
+  "rule": "DL101",
+  "severity": "error",
+  "file": "src/pages/Dashboard.tsx",
+  "line": 15,
+  "value": "CustomAlert",
+  "message": "未登録コンポーネント 'CustomAlert' を検出。component-catalog.json に定義されたコンポーネントのみ使用してください。",
+  "suggestion": "catalog に登録するか、既存コンポーネント (Button, Card, Input, Nav) で代替してください。"
+}
+```
+
+#### DL102: 未登録バリアント
+
+**検出対象:** catalog.json に定義されていない variant prop の使用。
+
+**検出方法:**
+1. catalog の各コンポーネント名に対して、JSX での `variant=` prop を抽出:
+   `/<{ComponentName}\s[^>]*variant\s*=\s*["']([^"']+)["']/`
+2. catalog.json の該当コンポーネントの `variants[].name` を許可リストとして構築
+3. 許可リストにない variant → 違反
+
+#### DL103: 直接スタイル上書き
+
+**検出対象:** catalog コンポーネントへの inline style 注入。
+
+**検出方法:**
+1. catalog の各コンポーネント名に対して、`style=` prop の使用を検出:
+   `/<{ComponentName}\s[^>]*style\s*=/`
+2. catalog コンポーネントへの `className` 追加で tokens 外の値を使用:
+   コンポーネントに付与された className の CSS 定義を追跡し、tokens 外の値を検出
+3. `sx`, `css`, `styled()` 等の CSS-in-JS パターンでの上書きも検出
+
+**例外:**
+- `className` での追加は layout 目的（position, display 等）のみ許可
+- color, background, font 等のトークン対象プロパティの上書きは違反
+
 ### Step 5: レポート生成
 
 全ファイルのスキャン完了後、結果を集約してレポート出力。

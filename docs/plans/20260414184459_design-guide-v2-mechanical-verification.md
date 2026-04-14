@@ -984,7 +984,7 @@ MODIFY:
 | Step | Status |
 |------|--------|
 | Phase 1: Design Tokens Schema + Lint | 🟢 |
-| Phase 2: Component Catalog Schema + 生成 | ⚪ |
+| Phase 2: Component Catalog Schema + 生成 | 🟢 |
 | Phase 3: Page Definition + Layout Rules | ⚪ |
 | Phase 3.5: Base Design Approval（人間の承認ゲート） | ⚪ |
 | Phase 4: Visual Testing (Storybook + Playwright) | ⚪ |
