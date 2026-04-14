@@ -1,0 +1,194 @@
+# Design Lint Contract
+
+design-lint スキルの lint ルール仕様。全ルールは `.design/tokens.json` を正解データとして参照する。
+
+## 前提条件
+
+lint 実行前に以下のファイルが存在すること:
+
+- `.design/tokens.json` — 検証の正解データ
+- `.design/lint-config.json` — lint 設定（省略時はデフォルト値を使用）
+
+## lint-config.json
+
+```json
+{
+  "include": ["src/**/*.tsx", "src/**/*.css", "src/**/*.jsx", "src/**/*.ts"],
+  "exclude": ["node_modules/**", ".design/**", "*.test.*", "*.spec.*"],
+  "rules": {
+    "DL001": "error",
+    "DL002": "error",
+    "DL003": "warn",
+    "DL004": "warn",
+    "DL005": "warn",
+    "DL006": "error"
+  },
+  "allowRawValues": {
+    "colors": ["transparent", "inherit", "currentColor", "white", "black"],
+    "spacing": [0, "auto"],
+    "borderRadius": [0, "50%", "9999px"]
+  }
+}
+```
+
+## Phase 1: Token Compliance ルール (DL001-DL006)
+
+### DL001: 直書きカラーコード
+
+**検出対象:** CSS/JSX で `#XXXXXX`、`#XXX`、`rgb()`、`rgba()`、`hsl()`、`hsla()` が tokens に定義されていないカラーを使用している。
+
+**検出方法:**
+1. ファイルから以下のパターンを正規表現で抽出:
+   - `#[0-9a-fA-F]{3,8}` — hex カラー
+   - `rgba?\([^)]+\)` — rgb/rgba
+   - `hsla?\([^)]+\)` — hsl/hsla
+2. tokens.json の `colors` オブジェクトの全値を許可リストとして構築
+3. `allowRawValues.colors` の値も許可リストに追加
+4. 抽出した値が許可リストにない場合 → 違反
+
+**除外:**
+- CSS custom property 経由の使用（`var(--color-*)`)` は OK
+- コメント内の値は無視
+- `allowRawValues.colors` に明示された値（`transparent` 等）は OK
+
+**レポート例:**
+```json
+{
+  "rule": "DL001",
+  "severity": "error",
+  "file": "src/components/Header.tsx",
+  "line": 42,
+  "column": 15,
+  "value": "#FF6B6B",
+  "message": "直書きカラーコード '#FF6B6B' を検出。tokens.json に定義された色または CSS 変数 var(--color-*) を使用してください。",
+  "suggestion": "最も近いトークン: colors.error (#DC2626)"
+}
+```
+
+### DL002: 直書きフォント
+
+**検出対象:** `font-family` に tokens.json の `typography.headingFont`、`typography.bodyFont`、`typography.codeFont` に定義されていないフォントを使用。
+
+**検出方法:**
+1. `font-family:` 宣言を正規表現で抽出
+2. tokens.json の typography フォント名を許可リストとして構築
+3. system font stack（`-apple-system`, `BlinkMacSystemFont`, `system-ui` 等）は許可
+4. フォールバック（`sans-serif`, `serif`, `monospace`）は許可
+5. 上記以外のフォント名が含まれている場合 → 違反
+
+### DL003: 直書き spacing
+
+**検出対象:** `padding`、`margin`、`gap`、`top`、`right`、`bottom`、`left` に tokens.json の `spacing.scale` に定義されていない px 値を使用。
+
+**検出方法:**
+1. spacing 関連 CSS プロパティの値を正規表現で抽出
+2. px 値を数値に変換
+3. tokens.json の `spacing.scale` 配列と照合
+4. `allowRawValues.spacing` の値（`0`, `auto`）は許可
+5. scale にない値 → 違反
+
+**除外:**
+- `%`, `vw`, `vh`, `em`, `rem` 単位は spacing scale の範囲外として許可
+- ショートハンド（`padding: 12px 24px`）は各値を個別に検証
+
+### DL004: 直書き border-radius
+
+**検出対象:** `border-radius` に tokens.json の `components.{type}.borderRadius` に定義されていない値を使用。
+
+**検出方法:**
+1. `border-radius` 宣言の値を抽出
+2. tokens.json の全 borderRadius 値を許可リストとして構築
+3. `allowRawValues.borderRadius` の値（`0`, `50%`, `9999px`）は許可
+4. リストにない値 → 違反
+
+### DL005: 直書き shadow
+
+**検出対象:** `box-shadow` に tokens.json の `depth.*.shadow` に定義されていない shadow 値を使用。
+
+**検出方法:**
+1. `box-shadow` 宣言の値を抽出
+2. tokens.json の depth 全レベルの shadow 値を許可リストとして構築
+3. `none` は許可
+4. リストにない値 → 違反
+
+### DL006: CSS 変数未使用
+
+**検出対象:** tokens.json に対応する CSS 変数が存在するのに、直書き値を使用している。
+DL001-005 の上位ルール。直書き値が tokens に定義された値と **一致する** 場合でも、CSS 変数経由でないなら違反。
+
+**検出方法:**
+1. tokens.json の全値を CSS 変数名にマッピング（design-system-contract の命名規則に従う）
+2. ソースコード内で tokens の値が直書きで使用されている箇所を検出
+3. 同じ値が `var(--*)` 経由でなく使用されている → 違反
+
+**レポート例:**
+```json
+{
+  "rule": "DL006",
+  "severity": "error",
+  "file": "src/components/Button.tsx",
+  "line": 15,
+  "value": "#2563EB",
+  "message": "トークン値 '#2563EB' が直書きされています。var(--color-primary) を使用してください。"
+}
+```
+
+## lint 実行フロー
+
+```
+1. .design/tokens.json を Read
+2. .design/lint-config.json を Read（なければデフォルト）
+3. include パターンに一致するファイル一覧を Glob で取得
+4. exclude パターンを除外
+5. 各ファイルを Read し、有効な全ルールを適用
+6. 違反を収集
+7. レポート出力:
+   - サマリー: {total} violations ({errors} errors, {warnings} warnings)
+   - 詳細: ファイル別・ルール別の違反一覧
+8. 終了コード判定:
+   - error が 1つ以上 → FAIL
+   - warn のみ → PASS (with warnings)
+   - 違反なし → PASS
+```
+
+## レポート形式
+
+### サマリー
+
+```
+🔍 Design Lint Results
+━━━━━━━━━━━━━━━━━━━━━━━
+Files scanned: 24
+Violations: 7 (5 errors, 2 warnings)
+
+❌ DL001 (color): 3 violations
+❌ DL006 (css-var): 2 violations
+⚠️  DL003 (spacing): 2 violations
+
+Result: FAIL (5 errors)
+```
+
+### 詳細（JSON）
+
+```json
+{
+  "summary": {
+    "filesScanned": 24,
+    "totalViolations": 7,
+    "errors": 5,
+    "warnings": 2,
+    "result": "FAIL"
+  },
+  "violations": [
+    {
+      "rule": "DL001",
+      "severity": "error",
+      "file": "src/components/Header.tsx",
+      "line": 42,
+      "value": "#FF6B6B",
+      "message": "...",
+      "suggestion": "..."
+    }
+  ]
+}
+```

@@ -1,6 +1,6 @@
 {
   "name": "claude-skills",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "description": "Implementation planning, review, and automation workflow skills for Claude Code",
   "author": {
     "name": "mizumi"
@@ -15,6 +15,7 @@
     "tdd"
   ],
   "releaseNotes": {
+    "1.18.0": "Phase 1 of design-guide v2: mechanical verification for design systems. New design-scaffold skill (DESIGN.md → tokens.json + tokens.css + React theme + lint config). New design-lint skill (6 rules: DL001-DL006 for color/font/spacing/radius/shadow/css-var compliance). Shared design-system-contract.md for cross-skill token reference, CSS naming, validation hierarchy, and baseline approval protocol.",
     "1.17.0": "New TDD, systematic-debugging, and problem-solving skills. TDD contract and verification gate shared references injected into cycle/iterate/commit. Testing anti-patterns rule for project-wide enforcement. Brainstorm now detects stuck keywords and suggests problem-solving tools. Skill-improve gains pressure-test analysis and guardrail-strengthening category.",
     "1.16.0": "New design-guide skill: interactive discovery-driven DESIGN.md generator. Binary-choice questions to structure vague design vision into concrete design tokens (Google Stitch format). Anti-pattern guardrails to avoid generic AI aesthetics. Session (create), Update (modify), and Mockup (token-strict HTML/React mockup generation) workflows.",
     "1.15.0": "New attack-review skill: attacker-perspective security review with 6 specialist agents + Codex. Risk-matrix-based threat classification (not scores). Server/client/full mode with auto-detection. Language-adaptive attack profiles (TS/JS, Python, Go, Rust, Dart, PHP, HTML/CSS). Shared language detection contract (lang-detect.md) for cross-skill reuse.",

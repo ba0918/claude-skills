@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "design-tokens.schema.json",
+  "title": "Design Tokens",
+  "description": "DESIGN.md から抽出された machine-readable なデザイントークン定義。全ての色・フォント・spacing 等の値はこの schema に準拠する tokens.json で管理される。",
+  "type": "object",
+  "required": ["version", "colors", "typography", "spacing", "components", "depth", "responsive"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "セマンティックバージョニング"
+    },
+    "colors": {
+      "type": "object",
+      "required": [
+        "primary", "primaryHover", "secondary", "accent",
+        "background", "surface", "surfaceAlt",
+        "error", "warning", "success",
+        "textPrimary", "textSecondary", "textDisabled",
+        "border", "focusRing"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "primary":       { "$ref": "#/$defs/hexColor" },
+        "primaryHover":  { "$ref": "#/$defs/hexColor" },
+        "secondary":     { "$ref": "#/$defs/hexColor" },
+        "accent":        { "$ref": "#/$defs/hexColor" },
+        "background":    { "$ref": "#/$defs/hexColor" },
+        "surface":       { "$ref": "#/$defs/hexColor" },
+        "surfaceAlt":    { "$ref": "#/$defs/hexColor" },
+        "error":         { "$ref": "#/$defs/hexColor" },
+        "warning":       { "$ref": "#/$defs/hexColor" },
+        "success":       { "$ref": "#/$defs/hexColor" },
+        "textPrimary":   { "$ref": "#/$defs/hexColor" },
+        "textSecondary": { "$ref": "#/$defs/hexColor" },
+        "textDisabled":  { "$ref": "#/$defs/hexColor" },
+        "border":        { "$ref": "#/$defs/hexColor" },
+        "focusRing":     { "$ref": "#/$defs/hexColor" }
+      }
+    },
+    "colorsDark": {
+      "type": "object",
+      "description": "ダークモード用カラーオーバーライド（省略可）",
+      "properties": {
+        "background":    { "$ref": "#/$defs/hexColor" },
+        "surface":       { "$ref": "#/$defs/hexColor" },
+        "textPrimary":   { "$ref": "#/$defs/hexColor" },
+        "textSecondary": { "$ref": "#/$defs/hexColor" },
+        "border":        { "$ref": "#/$defs/hexColor" }
+      },
+      "additionalProperties": { "$ref": "#/$defs/hexColor" }
+    },
+    "typography": {
+      "type": "object",
+      "required": ["headingFont", "bodyFont", "codeFont", "scale"],
+      "additionalProperties": false,
+      "properties": {
+        "headingFont": { "$ref": "#/$defs/fontStack" },
+        "bodyFont":    { "$ref": "#/$defs/fontStack" },
+        "codeFont":    { "$ref": "#/$defs/fontStack" },
+        "scale": {
+          "type": "object",
+          "required": ["display", "h1", "h2", "h3", "h4", "body", "bodySmall", "caption", "code"],
+          "additionalProperties": false,
+          "properties": {
+            "display":   { "$ref": "#/$defs/typographyLevel" },
+            "h1":        { "$ref": "#/$defs/typographyLevel" },
+            "h2":        { "$ref": "#/$defs/typographyLevel" },
+            "h3":        { "$ref": "#/$defs/typographyLevel" },
+            "h4":        { "$ref": "#/$defs/typographyLevel" },
+            "body":      { "$ref": "#/$defs/typographyLevel" },
+            "bodySmall": { "$ref": "#/$defs/typographyLevel" },
+            "caption":   { "$ref": "#/$defs/typographyLevel" },
+            "code":      { "$ref": "#/$defs/typographyLevel" }
+          }
+        }
+      }
+    },
+    "spacing": {
+      "type": "object",
+      "required": ["baseUnit", "scale", "maxContentWidth", "gridColumns", "gridGap", "sectionSpacing"],
+      "additionalProperties": false,
+      "properties": {
+        "baseUnit":        { "type": "number", "minimum": 1, "description": "基本単位 (px)" },
+        "scale":           {
+          "type": "array",
+          "items": { "type": "number", "minimum": 0 },
+          "minItems": 3,
+          "description": "使用可能な spacing 値の配列 (px)"
+        },
+        "maxContentWidth": { "type": "number", "minimum": 320, "description": "最大コンテンツ幅 (px)" },
+        "gridColumns":     { "type": "integer", "minimum": 1, "maximum": 24 },
+        "gridGap":         { "type": "number", "minimum": 0, "description": "グリッド gap (px)" },
+        "sectionSpacing":  { "type": "number", "minimum": 0, "description": "セクション間 spacing (px)" }
+      }
+    },
+    "components": {
+      "type": "object",
+      "required": ["buttons", "cards", "inputs"],
+      "additionalProperties": false,
+      "properties": {
+        "buttons": {
+          "type": "object",
+          "required": ["borderRadius", "paddingY", "paddingX", "variants", "states"],
+          "additionalProperties": false,
+          "properties": {
+            "borderRadius": { "type": "number", "minimum": 0 },
+            "paddingY":     { "type": "number", "minimum": 0 },
+            "paddingX":     { "type": "number", "minimum": 0 },
+            "variants": {
+              "type": "object",
+              "required": ["primary", "secondary", "ghost", "destructive"],
+              "additionalProperties": false,
+              "properties": {
+                "primary":     { "$ref": "#/$defs/buttonVariant" },
+                "secondary":   { "$ref": "#/$defs/buttonVariant" },
+                "ghost":       { "$ref": "#/$defs/buttonVariant" },
+                "destructive": { "$ref": "#/$defs/buttonVariant" }
+              }
+            },
+            "states": {
+              "type": "object",
+              "required": ["hover", "focus", "active", "disabled"],
+              "properties": {
+                "hover":    { "type": "string", "description": "hover 効果の説明" },
+                "focus":    { "type": "string", "description": "focus リング仕様" },
+                "active":   { "type": "string", "description": "active 効果の説明" },
+                "disabled": { "type": "string", "description": "disabled 状態の説明" }
+              }
+            }
+          }
+        },
+        "cards": {
+          "type": "object",
+          "required": ["borderRadius", "background", "border", "shadow", "padding"],
+          "additionalProperties": false,
+          "properties": {
+            "borderRadius": { "type": "number", "minimum": 0 },
+            "background":   { "$ref": "#/$defs/tokenRef" },
+            "border":       { "type": "string" },
+            "shadow":       { "$ref": "#/$defs/tokenRef" },
+            "padding":      { "type": "number", "minimum": 0 }
+          }
+        },
+        "inputs": {
+          "type": "object",
+          "required": ["borderRadius", "border", "paddingY", "paddingX"],
+          "additionalProperties": false,
+          "properties": {
+            "borderRadius": { "type": "number", "minimum": 0 },
+            "border":       { "type": "string" },
+            "paddingY":     { "type": "number", "minimum": 0 },
+            "paddingX":     { "type": "number", "minimum": 0 },
+            "focusBorder":  { "$ref": "#/$defs/tokenRef" },
+            "focusShadow":  { "type": "string" },
+            "errorBorder":  { "$ref": "#/$defs/tokenRef" },
+            "placeholder":  { "$ref": "#/$defs/tokenRef" }
+          }
+        },
+        "navigation": {
+          "type": "object",
+          "properties": {
+            "style":        { "type": "string" },
+            "background":   { "$ref": "#/$defs/tokenRef" },
+            "activeStyle":  { "type": "string" },
+            "itemPadding":  { "type": "string" }
+          }
+        }
+      }
+    },
+    "depth": {
+      "type": "object",
+      "required": ["flat", "raised", "overlay", "modal", "toast"],
+      "additionalProperties": false,
+      "properties": {
+        "flat":    { "$ref": "#/$defs/elevationLevel" },
+        "raised":  { "$ref": "#/$defs/elevationLevel" },
+        "overlay": { "$ref": "#/$defs/elevationLevel" },
+        "modal":   { "$ref": "#/$defs/elevationLevel" },
+        "toast":   { "$ref": "#/$defs/elevationLevel" }
+      }
+    },
+    "responsive": {
+      "type": "object",
+      "required": ["breakpoints", "touchTarget", "approach"],
+      "additionalProperties": false,
+      "properties": {
+        "breakpoints": {
+          "type": "object",
+          "required": ["sm", "md", "lg", "xl"],
+          "additionalProperties": false,
+          "properties": {
+            "sm": { "$ref": "#/$defs/breakpoint" },
+            "md": { "$ref": "#/$defs/breakpoint" },
+            "lg": { "$ref": "#/$defs/breakpoint" },
+            "xl": { "$ref": "#/$defs/breakpoint" }
+          }
+        },
+        "touchTarget":     { "type": "number", "minimum": 24, "description": "最小タッチターゲット (px)" },
+        "approach":        { "enum": ["mobile-first", "desktop-first"] },
+        "collapseStrategy": { "type": "string", "description": "折りたたみ戦略" }
+      }
+    }
+  },
+  "$defs": {
+    "hexColor": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "description": "6桁の16進カラーコード"
+    },
+    "fontStack": {
+      "type": "string",
+      "minLength": 1,
+      "description": "フォントファミリー + フォールバック (例: 'Outfit', sans-serif)"
+    },
+    "typographyLevel": {
+      "type": "object",
+      "required": ["fontKey", "size", "weight", "lineHeight"],
+      "additionalProperties": false,
+      "properties": {
+        "fontKey":       { "enum": ["headingFont", "bodyFont", "codeFont"], "description": "typography.{fontKey} への参照" },
+        "size":          { "type": "number", "minimum": 1, "description": "フォントサイズ (px)" },
+        "weight":        { "type": "integer", "minimum": 100, "maximum": 900, "multipleOf": 100 },
+        "lineHeight":    { "type": "number", "minimum": 0.5, "description": "行間 (倍率 or px)" },
+        "letterSpacing": { "type": "string", "description": "文字間隔 (例: '-0.02em', '0.05em')" }
+      }
+    },
+    "tokenRef": {
+      "type": "string",
+      "description": "tokens 内の他の値への参照パス (例: 'colors.primary', 'depth.raised')"
+    },
+    "buttonVariant": {
+      "type": "object",
+      "required": ["background", "color"],
+      "additionalProperties": false,
+      "properties": {
+        "background": { "type": "string", "description": "背景色 (hex or 'transparent')" },
+        "color":      { "type": "string", "description": "テキスト色 (hex)" },
+        "border":     { "type": "string", "description": "ボーダー (例: '1px solid #2563EB' or 'none')" }
+      }
+    },
+    "elevationLevel": {
+      "type": "object",
+      "required": ["shadow", "usage"],
+      "additionalProperties": false,
+      "properties": {
+        "shadow": { "type": "string", "description": "CSS box-shadow 値 (例: '0 1px 3px rgba(0,0,0,0.12)' or 'none')" },
+        "usage":  { "type": "string", "description": "使用場面の説明" }
+      }
+    },
+    "breakpoint": {
+      "type": "object",
+      "required": ["minWidth", "behavior"],
+      "additionalProperties": false,
+      "properties": {
+        "name":     { "type": "string" },
+        "minWidth": { "type": "number", "minimum": 0, "description": "最小幅 (px)" },
+        "behavior": { "type": "string", "description": "このブレークポイントでの振る舞い" }
+      }
+    }
+  }
+}

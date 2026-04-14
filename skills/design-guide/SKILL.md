@@ -216,6 +216,12 @@ Phase 6: DESIGN.md 生成
    これで AI がUIを生成する時、このファイルを参照して一貫したデザインを保てます。
    修正したい場合は `/claude-skills:design-guide-update` を使ってね。
    ```
+6. **scaffold への導線:**
+   ```
+   🔧 機械的検証を有効にするには:
+   `/claude-skills:design-scaffold` で tokens.json + lint 設定を生成できます。
+   これにより、デザイントークン違反の自動検出が可能になります。
+   ```
 
 ---
 
