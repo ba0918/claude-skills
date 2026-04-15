@@ -1,6 +1,6 @@
 # Project Status
 
-**Last Updated:** 2026-04-14
+**Last Updated:** 2026-04-15
 
 ---
 
@@ -8,14 +8,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Cycle ID** | `20260414184459` |
-| **Feature** | design-guide v2: 機械的検証可能なデザインシステム基盤 |
-| **Started** | 2026-04-14 18:44:59 |
-| **Phase** | 🟡 Planning |
-| **Plan** | [docs/plans/20260414184459_design-guide-v2-mechanical-verification.md](./plans/20260414184459_design-guide-v2-mechanical-verification.md) |
+| **Cycle ID** | `20260415164852` |
+| **Feature** | mockup-diff スキルの汎用化リファクタ |
+| **Started** | 2026-04-15 16:48:52 |
+| **Phase** | 🟢 Completed |
+| **Plan** | [docs/plans/20260415164852_mockup-diff-generalization.md](./plans/20260415164852_mockup-diff-generalization.md) |
 
 **Current Focus:**
-5フェーズ構成の実装計画を作成。Design Tokens Schema + Lint → Component Catalog → Page Definition → Visual Testing → Rubric Judge の順で機械的検証可能なUIデザインシステム基盤を構築する。
+mockup-diff スキルを特定プロジェクト（screen-knowledge Tauri GUI）へのハードコードから脱却させ、Phase 0: SETUP でプロジェクト調査→テーラーメイド比較スクリプト自動生成する汎用スキルにリファクタする。
 
 ---
 

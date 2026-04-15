@@ -1,6 +1,6 @@
 # Design System Contract
 
-複数のデザインシステムスキル（design-scaffold, design-generate, design-validate, design-lint）が共有する契約。
+複数のデザインシステムスキル（design-scaffold, design-generate, design-validate, design-lint, mockup-diff）が共有する契約。
 
 ## 核心原則: Human-in-the-Loop Once
 
@@ -22,9 +22,14 @@ target-project/
 │   │   └── {page-name}.json
 │   ├── rubric.json                    # 評価基準
 │   ├── lint-config.json               # lint 設定
-│   └── baseline/                      # 承認済み baseline
-│       ├── approval.json              # 承認メタデータ
-│       └── screenshots/              # 承認時スクリーンショット
+│   ├── baseline/                      # 承認済み baseline
+│   │   ├── approval.json              # 承認メタデータ
+│   │   └── screenshots/              # 承認時スクリーンショット
+│   └── mockup-diff/                   # mockup-diff スキル生成物
+│       ├── config.json                # プロジェクト固有の比較設定
+│       ├── compare.mjs                # 自動生成された比較スクリプト
+│       ├── mock-responses.json        # API モックレスポンス（該当時）
+│       └── screenshots/              # スクリーンショット出力
 ├── components/{framework}/            # 生成済みコンポーネント
 └── mockups/base/                      # 承認用 base mockup
 ```
@@ -121,3 +126,37 @@ Level 4: Rubric Judge (LLM)
 | Storybook | `.stories.tsx` | — | `.stories.js` | — |
 
 **共通:** tokens.css（CSS custom properties）は全 Web フレームワークで共有。
+
+## mockup-diff の位置づけ
+
+### パイプライン上の位置
+
+```
+design-guide → design-scaffold → design-generate
+         ↓                              ↓
+    [HUMAN APPROVAL]               mockups/base/*.html
+         ↓                              ↓
+    baseline 確定              アプリに実装
+         ↓                              ↓
+    design-validate            mockup-diff
+    (トークン準拠の             (モック vs 実アプリの
+     機械的検証)                 実装品質検証)
+```
+
+### design-validate との棲み分け
+
+| | design-validate | mockup-diff |
+|--|----------------|-------------|
+| **比較対象** | baseline スクショ vs 実装コード | モックアップ HTML vs 実行中アプリ |
+| **検出するもの** | トークン直書き、未定義トークン、pixel diff | spacing ズレ、フォント崩れ、動的状態のレイアウトバグ |
+| **検証レベル** | 機械的ルール準拠（自動判定） | 実装品質のラストワンマイル（LLM 目視 + 手動修正） |
+| **実行タイミング** | CI / コード変更時 | アプリへの落とし込み後 |
+
+### mockup-diff 固有のファイル
+
+mockup-diff は Phase 0: SETUP でプロジェクトを調査し、テーラーメイドの比較スクリプトを `.design/mockup-diff/` に生成する。生成されるファイル:
+
+- `config.json`: フレームワーク種別、dev server 設定、ナビゲーション方法、API モック方式等
+- `compare.mjs`: Playwright ベースのスクリーンショット取得・比較スクリプト
+- `mock-responses.json`: API モックレスポンス（`apiMock.type` が `none` 以外の場合）
+- `screenshots/`: スクリーンショット出力ディレクトリ
