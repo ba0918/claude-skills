@@ -114,7 +114,7 @@ commands/problem-solving.md  →  skills/problem-solving/SKILL.md
 | `team-brainstorm` | AgenticTeam によるチーム議論型ブレインストーミング。4思考スタイル（Challenger/Explorer/Connector/Grounded）で多角的にアイデアを発散 |
 | `skill-improve` | セッションデータからスキル使用時の摩擦を検出・分析し、データ駆動でスキル改善を実行するメタスキル |
 | `doc-audit` | docs 内の全アーティファクトを横断スキャンし、不整合を検出・自動修復する |
-| `handoff` | セッション間のコンテキスト引き継ぎ。save で現在のコンテキストを `docs/handoff/` に構造化保存、restore で次セッションが読込→自動削除 |
+| `handoff` | セッション間のコンテキスト引き継ぎ。save で現在のコンテキストを `docs/handoff/` に構造化保存、restore で次セッションが読込→自動削除。Codex CLI 版は `codex-skills/handoff/`（`apply_patch` ベース、`shell` リダイレクト禁止、ツール名のみ置換で同一ワークフロー） |
 | `migrate-cycles-to-plans` | `docs/cycles/` → `docs/plans/` のマイグレーション。ディレクトリ移動 + 全参照の一括置換 |
 | `attack-review` | 6エージェント + Codex 並行によるコードベース攻撃者視点レビュー。リスクマトリクス（Likelihood×Impact）で脅威を分類。server/client/full モード切替対応。言語検出共通契約に基づく言語別攻撃プロファイル注入。Codex CLI 版は `codex-skills/attack-review/`（6 エージェントのみ、Codex セカンドオピニオンは冗長なため除外。`spawn_agent` / `shell` heredoc ベース、`AGENTS.md` / `.codex/tmp/` を参照） |
 | `github-issue` | GitHub issue を起点に polling → draft PR → Codex レビュー → auto merge まで自走するスキル。共通契約 `polling-pattern.md` に準拠した Label state adapter 実装。多重防御 atomic claim + fail-closed Codex ゲート + atomic dual-write ラベル + FS retry state + 7 日 hard cap rollback + 単一ホスト前提 |
