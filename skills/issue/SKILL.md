@@ -253,20 +253,26 @@ issue 本文を LLM コンテキストへ渡す際は **必ず** 以下のデリ
 
 ### Steps (1 tick)
 
+> **純関数 vs adapter の責務分離**: ステップ内で `transition` / `classify_failure` / `should_promote_to_permanent` / `month_boundary_crossed` を呼ぶ箇所は「次の状態ラベルを計算する」純粋な判定にとどめ、実際のファイル移動・書き込みは直後に `adapter.mark_*` / `adapter.rollback_*` / `adapter.archive_*` が行う。**純関数は I/O をしない、adapter だけが I/O をする**（共通契約 §1 / §4）。Step 10 の結果を Step 11 の adapter 呼び出しに渡すのが典型的な結線パターン。
+>
+> **`--once` mode の扱い**: Step 4 の Safety brake check のうち `max_iter` / `max_wallclock` は Loop Controller 用（契約 §1 で責務境界）。`--once` では trivially pass（評価すらしない）でよい。`failed_streak` も同様（単発 tick では累積しない）。
+
 1. **State root 解決** — `docs/issues/` を絶対パス化（契約 §6.1 / FS adapter §7）
 2. **Initial policy** — `state_root/.polling-initialized` が無ければ `--dry-run` を強制（契約 §10）
-3. **Kill file check** — `.STOP.hard` → `.STOP` の順で確認。検出時は即 halt（契約 §6.1）
-4. **Safety brake check** — `max_iter` / `max_wallclock` / `failed_streak` の 3 重ガードを評価（契約 §6.2）
-5. **Orphan recovery** — `adapter.rollback_orphans(now)`（契約 §6.4 / FS adapter §6）
-6. **Archive** — `adapter.archive_month_boundary()`（契約 §9、O(1) キャッシュ）
-7. **List ready** — `adapter.list_ready(max_parallel)`（早期打ち切り必須、契約 §3）
-8. **Atomic claim** — `adapter.claim(slug)` を各 slug に実行、成功分のみ先に進む（契約 §3 / FS adapter §4）
-9. **Delegate** — claim 済み slug 群を `parallel-cycle` に委譲（worktree 並行実行）
-   - 委譲前に各 issue 本文を **必ず** sanitize し、下記 `<untrusted_user_content>` デリミタで wrap 済みの状態で渡す（生本文の引き渡し禁止）
-   - **sanitize / wrap 失敗時の処理**: `release` してスキップすると同一の不正入力 issue が毎 tick で claim → release → claim と無限ループする。代わりに `failed/permanent/` へ直接昇格させる。`classify_failure` はスキップし、`error_kind = "sanitize_failed"` または `"wrap_failed"` で `mark_failed(slug, Permanent)` を呼ぶ
-10. **Classify result** — `classify_failure` → `should_promote_to_permanent` の順で純関数評価（契約 §4）
-11. **Persist** — `mark_done` / `mark_failed(kind)` で状態永続化
-12. **Emit TickResult** — 構造化カウンタのみ出力（契約 §7、自由文禁止）
+3. **Kill file check** — `adapter.kill_file_path()` が返すタプル `(hard, graceful)` の順（= `.STOP.hard` → `.STOP`）で存在確認。どちらか存在した時点で即 halt（契約 §6.1 / FS adapter §7）。**戻り順 = チェック順**
+4. **Safety brake check** — `max_iter` / `max_wallclock` / `failed_streak` の 3 重ガードを評価（契約 §6.2）。`--once` mode では本 Step は trivially pass（Loop Controller の責務、契約 §1）
+5. **Run ID 生成** — tick/loop セッション単位で UUID を 1 つ生成。Step 11 で `mark_failed` 呼び出し時に frontmatter に書き込む（契約 §6.4、`--loop` では loop セッション全体で 1 個でも tick ごとに振り直してもよい。実装 consistent であればよし）
+6. **Orphan recovery** — `adapter.rollback_orphans(now)`（契約 §6.4 / FS adapter §6）。`is_alive(pid)` の PermissionError は **alive 扱い** で fail-safe
+7. **Archive** — `adapter.archive_month_boundary()`（契約 §9、O(1) キャッシュ）
+8. **List ready** — `adapter.list_ready(max_parallel)`（早期打ち切り必須、契約 §3）
+9. **Atomic claim** — `adapter.claim(slug)` を各 slug に実行、成功分のみ先に進む（契約 §3 / FS adapter §4）
+10. **Delegate** — claim 済み slug 群を `parallel-cycle` に委譲（worktree 並行実行）
+    - 委譲前に各 issue 本文を **必ず** sanitize し、下記 `<untrusted_user_content>` デリミタで wrap 済みの状態で渡す（生本文の引き渡し禁止）
+    - **sanitize / wrap 失敗時の処理**: `release` してスキップすると同一の不正入力 issue が毎 tick で claim → release → claim と無限ループする。代わりに `failed/permanent/` へ直接昇格させる。`classify_failure` はスキップし、`error_kind = "sanitize_failed"` または `"wrap_failed"` で `mark_failed(slug, Permanent)` を呼ぶ
+    - `--dry-run` mode の場合は委譲を skip し、各 claim を `adapter.release(slug)` で rollback する（TickResult は `halt_reason: "dry_run"` で終わる）
+11. **Classify result** — `classify_failure(error_kind)` → `should_promote_to_permanent(retry_count, limit)` の順で **純関数評価のみ**（副作用なし、契約 §4）。結果として `done` / `Transient` / `Permanent` のラベルが決まる
+12. **Persist** — Step 11 の結果を受けて adapter で I/O 実行: `adapter.mark_done(slug)` / `adapter.mark_failed(slug, kind)` で状態遷移を永続化（契約 §3）
+13. **Emit TickResult** — 構造化カウンタのみ出力（契約 §7、自由文禁止）。`run_id` + `tick_started_at` をキーに、外部ログと後で相関可能
 
 ### Loop Mode
 

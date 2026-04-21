@@ -136,10 +136,13 @@ rollback_orphans(now):
 ```
 kill_file_path():
   root = realpath(state_root)                     # cwd 非依存
-  return (f"{root}/.STOP", f"{root}/.STOP.hard")
+  # 戻り順 = チェック順 (.STOP.hard 優先、graceful .STOP は後)
+  return (f"{root}/.STOP.hard", f"{root}/.STOP")
 ```
 
 **必ず絶対パスで解決**。相対パスは禁止（cwd 変動で検出漏れの原因となる）。
+
+**戻り順の契約**: タプルの `[0]` が `.STOP.hard`（hard kill、最優先）、`[1]` が `.STOP`（graceful、次点）。呼び出し側は `[0]` → `[1]` の順に existence チェックし、どちらかが存在した時点で halt する。**戻り順とチェック順は一致させる**（以前は戻り順 `(.STOP, .STOP.hard)` / チェック順 `.STOP.hard → .STOP` で逆転していたため、誤読による hard kill 検出漏れリスクがあった）。
 
 ---
 
