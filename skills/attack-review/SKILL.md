@@ -1,6 +1,6 @@
 ---
 name: attack-review
-description: コードベースを攻撃者視点で6つの専門エージェント（Injection/AuthN・AuthZ/Client Attack/Data・Secrets/Infra・Supply Chain/Business Logic）+ Codex セカンドオピニオンで並行レビューし、リスクマトリクスで脅威を分類する。「attack review」「ペネトレーションレビュー」「攻撃レビュー」「attack-review」「脆弱性レビュー」「セキュリティ攻撃」「pentest review」で起動。server/client 引数でモードを切り替え、引数なしはテックスタック自動検出。言語固有の攻撃ベクターにも対応。
+description: コードベースを攻撃者視点で6つの専門エージェント（Injection/AuthN・AuthZ/Client Attack/Data・Secrets/Infra・Supply Chain/Business Logic）+ Codex セカンドオピニオンで並行レビューし、リスクマトリクスで脅威を分類する。「attack review」「ペネトレーションレビュー」「攻撃レビュー」「attack-review」「脆弱性レビュー」「セキュリティ攻撃」「pentest review」で起動。モードは `full` / `server` / `client` の 3 種（引数 `server`/`client` で明示、`full` または任意キーワードで 6 エージェント全起動、引数なしはテックスタックから自動検出）。言語固有の攻撃ベクターにも対応。
 ---
 
 # Attack Review
@@ -48,8 +48,14 @@ Remaining arguments after the mode keyword are treated as scope hints:
 | `--diff` | Only files changed in `git diff HEAD` |
 | Directory name | Specific directory |
 
-Target files: `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.py`, `*.go`, `*.rs`, `*.java`, `*.php`, `*.dart`, `*.rb`, `*.cs`, `*.html`, `*.css` and other source code.
-Exclude: `node_modules/`, `dist/`, `build/`, `.git/`, `vendor/`, `*.test.*`, `*.spec.*`, `*.d.ts`, lock files, generated files.
+**Target files** (two categories, both included in `target_files`):
+
+1. **Source code**: `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.py`, `*.go`, `*.rs`, `*.java`, `*.php`, `*.dart`, `*.rb`, `*.cs`, `*.html`, `*.css` and other source code.
+2. **Manifest / dependency files** (required for Agent 5 Supply Chain): `package.json`, `composer.json`, `go.mod`, `Cargo.toml`, `requirements.txt`, `Pipfile`, `pubspec.yaml`, `Gemfile`, `pom.xml`, `build.gradle`, `*.csproj`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/*.yml`, `.gitlab-ci.yml`, `Jenkinsfile`.
+
+**Exclude**: `node_modules/`, `dist/`, `build/`, `.git/`, `vendor/`, `*.test.*`, `*.spec.*`, `*.d.ts`, lock files (`package-lock.json`, `yarn.lock`, `Pipfile.lock`, `go.sum`, `Cargo.lock`, `composer.lock`, `Gemfile.lock`), generated files, minified bundles (`*.min.js`, `*.min.css`).
+
+> **Note**: Lock files are excluded from `target_files` for noise reduction, but Agent 5 may consult them directly via Read if needed to confirm a specific CVE. Manifest files are the primary supply-chain surface.
 
 ### Step 2: Language Detection & Project Analysis
 
@@ -66,11 +72,17 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
    - Only client-role languages → `client`
    - Cannot determine → `full` (safe default)
 4. Understand directory structure
-5. **Create work directory**:
+5. **Obtain datetime via Bash** (use these exact commands — do not guess from context):
+   ```bash
+   date +'%Y%m%d-%H%M'   # → e.g. 20260421-1840, used for {YYYYMMDD-HHMM} in work_dir
+   date +'%Y-%m-%d %H:%M' # → e.g. 2026-04-21 18:40, used for the datetime field
+   ```
+   Store both values and reuse them throughout Steps 5-7.
+6. **Create work directory** (using the datetime captured above):
    ```bash
    mkdir -p .claude/tmp/attack-review-{YYYYMMDD-HHMM}/
    ```
-6. **Preflight check** — Verify write permission:
+7. **Preflight check** — Verify write permission:
    ```bash
    touch .claude/tmp/attack-review-{YYYYMMDD-HHMM}/.preflight && rm .claude/tmp/attack-review-{YYYYMMDD-HHMM}/.preflight
    ```
@@ -80,18 +92,42 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
    Path: .claude/tmp/attack-review-{YYYYMMDD-HHMM}/
    Ensure the directory exists and is writable.
    ```
-7. **Write context.json** (create with Write tool):
+8. **Write context.json** (create with Write tool).
+
+   **Schema** — every field is required unless marked optional. Use the exact types/values shown:
+
+   | Field | Type | Example / Values | Notes |
+   |-------|------|------------------|-------|
+   | `project_name` | string | `"fullstack-monorepo"` | Derived from (in this priority order): repo root manifest `name` field (`package.json` / `Cargo.toml` / `composer.json` / `pyproject.toml` `[project].name` / `pubspec.yaml` `name`), CLAUDE.md top-level heading, or the directory basename. |
+   | `scope` | string | `"Entire codebase"` / `"git diff HEAD"` / `"src/auth/"` | Exact values: `"Entire codebase"` when no scope argument, `"git diff HEAD"` when `--diff`, or the directory path string when a directory is specified. |
+   | `mode` | string enum | `"full"` / `"server"` / `"client"` | Must be one of these 3 exact values. |
+   | `detected_languages` | array<object> | (see below) | Never empty. |
+   | `detected_languages[].language` | string | `"typescript"`, `"javascript"`, `"python"`, `"go"`, `"rust"`, `"php"`, `"dart"`, `"ruby"`, `"java"`, `"csharp"` | Lowercase. |
+   | `detected_languages[].role` | string enum | `"server"` / `"client"` / `"both"` | Per lang-detect.md role determination. |
+   | `detected_languages[].framework` | string \| null | `"Express"`, `"React"`, `"none"` | Use `"none"` (literal string) when no framework detected. Never `null`. |
+   | `detected_languages[].marker_file` | string \| null | `"package.json"` / `null` | `null` is legal (e.g., legacy PHP without composer.json — detection by `.php` file globbing). |
+   | `detected_languages[].variant` | string \| null (optional) | `"legacy"`, `"modern"`, `"python2"`, `null` | **Optional field.** Include for PHP (`"legacy"` when no composer.json + `.php` files detected, else `"modern"`) or Python 2.x. Omit for languages without variant distinction. Downstream agents use this to select Legacy vs Modern language profile sections. |
+   | `is_monorepo` | boolean | `true` / `false` | `true` when marker files exist in 2+ sibling subdirectories under the repo root (per lang-detect.md). A root-level marker alone does not count. |
+   | `primary_language` | string | `"go"` | Server-role language wins over client-role. If multiple server-role languages exist, use the first one detected (file-glob order). |
+   | `target_files` | array<string> | `["client/package.json", "client/src/App.tsx", "package.json", "server/package.json", "server/src/app.js"]` | See **Target files** definition in Step 1. Include manifest files (`package.json`, `composer.json`, `go.mod`, `Cargo.toml`, `requirements.txt`, `Pipfile`, `pubspec.yaml`, `Gemfile`, `pom.xml`) **in addition to** the source-code extensions — they are required for Agent 5 (Supply Chain) analysis. **Sort order: alphabetical by path string** (stable across runs, deterministic). |
+   | `file_count` | number | `42` | Must equal `target_files.length`. |
+   | `claude_md_rules` | string | `"..."` / `""` | The full contents of the CLAUDE.md file(s) joined with `\n\n---\n\n` separators, or the empty string `""` when no CLAUDE.md exists. Never `null`. |
+   | `work_dir` | string | `".claude/tmp/attack-review-20260421-1840"` | Concrete path — substitute `{YYYYMMDD-HHMM}` with the actual datetime. |
+   | `datetime` | string | `"2026-04-21 18:40"` | Format: `YYYY-MM-DD HH:MM`. |
+
+   **Canonical example**:
+
    ```json
    {
-     "project_name": "Project name from directory or CLAUDE.md",
-     "scope": "Target scope description",
-     "mode": "full|server|client",
+     "project_name": "fullstack-monorepo",
+     "scope": "Entire codebase",
+     "mode": "full",
      "detected_languages": [
        {
          "language": "typescript",
          "role": "client",
          "framework": "React",
-         "marker_file": "package.json"
+         "marker_file": "client/package.json"
        },
        {
          "language": "go",
@@ -100,13 +136,44 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
          "marker_file": "go.mod"
        }
      ],
-     "is_monorepo": false,
+     "is_monorepo": true,
      "primary_language": "go",
-     "target_files": ["List of target file paths"],
-     "file_count": 0,
-     "claude_md_rules": "CLAUDE.md contents (if present)",
-     "work_dir": ".claude/tmp/attack-review-{YYYYMMDD-HHMM}",
-     "datetime": "YYYY-MM-DD HH:MM"
+     "target_files": [
+       "client/package.json",
+       "client/src/App.tsx",
+       "go.mod",
+       "server/main.go"
+     ],
+     "file_count": 4,
+     "claude_md_rules": "",
+     "work_dir": ".claude/tmp/attack-review-20260421-1840",
+     "datetime": "2026-04-21 18:40"
+   }
+   ```
+
+   **Legacy PHP example** (no marker file, variant field in use):
+
+   ```json
+   {
+     "project_name": "legacy-app",
+     "scope": "Entire codebase",
+     "mode": "server",
+     "detected_languages": [
+       {
+         "language": "php",
+         "role": "server",
+         "framework": "none",
+         "marker_file": null,
+         "variant": "legacy"
+       }
+     ],
+     "is_monorepo": false,
+     "primary_language": "php",
+     "target_files": ["admin.php", "db.php", "index.php"],
+     "file_count": 3,
+     "claude_md_rules": "",
+     "work_dir": ".claude/tmp/attack-review-20260421-1840",
+     "datetime": "2026-04-21 18:40"
    }
    ```
 

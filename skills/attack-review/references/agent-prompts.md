@@ -2,6 +2,68 @@
 
 attack-review エージェントのプロンプトテンプレート。Step 3 でエージェント起動時にこのファイルを読み込み、各エージェントのプロンプトを構築する。
 
+## Placeholder Conventions
+
+テンプレート中の `{...}` には **2 種類** ある。区別を厳守すること。
+
+### (A) 構築時プレースホルダ — 親（attack-review を実行する Claude）が **文字列置換** する
+
+これらは Agent tool の `prompt` を組み立てる **直前** に、親が実値へ置換する。Agent に渡した時点で `{...}` が残っていてはいけない。
+
+| Placeholder | Example value |
+|------------|---------------|
+| `{agent_name}` | `Injection Hunter` |
+| `{agent_key}` | `injection-hunter` |
+| `{attack_domain_name}` | `Injection Attacks` |
+| `{N}` | `1` |
+| `{category}` | `injection` |
+| `{AGENT_PREFIX}` | `INJ` |
+| `{work_dir}` | `.claude/tmp/attack-review-20260421-1840` |
+| `{attack_criteria_section}` | attack-criteria.md から抜き出したテキストブロック — 範囲定義は下記 "Section extraction rules" 参照 |
+| `{lang_profile_sections}` | lang-profiles.md から抜き出したテキストブロック — 範囲定義は下記 "Section extraction rules" 参照 |
+
+### (B) ランタイムリテラル — Agent が **実行時に番号等を採番** して埋める
+
+これらは構築時には置換せず、**そのまま** Agent に渡す。Agent が finding を書き出すときに自力で採番・文字列生成する。
+
+| Literal | Meaning |
+|---------|---------|
+| `{NNN}` | 3 桁ゼロパディングの連番。Agent が `INJ-001`, `INJ-002`, ... のように順に埋める |
+
+**見分け方**: (A) は placeholders table に明示列挙されたキー。(B) は JSON スキーマ例の中に登場する `{NNN}` のみ。これ以外の `{...}` が見つかったら (A) の置換漏れなのでレビューし直すこと。
+
+## Section Extraction Rules
+
+### `{attack_criteria_section}` の貼付範囲
+
+`attack-criteria.md` の **`## Agent N: <name> — ...` 見出しの行** から、**次の `---` セパレータ直前** までを（見出し含めて）そのまま貼り込む。
+
+- 含む: Check Items サブセクション（`### N-1. ...`）すべて、Language-Agnostic Patterns サブセクション（Agent 1 末尾のみ）
+- 含まない: ファイル冒頭の "## Risk Matrix" セクション（これはテンプレート本体側の "## Risk Assessment" で別途提供されるため、二重化しない）
+
+### `{lang_profile_sections}` の貼付範囲
+
+検出された言語ごとに、`lang-profiles.md` の **`## <Language>` 見出しの行** から、**次の `---` セパレータ直前** までを貼り込む。複数言語検出時は各セクションを順に連結する。
+
+**サブセクションフィルタ（TypeScript / JavaScript のみ該当）**:
+
+| Agent | Injected portion |
+|-------|------------------|
+| Agent 1 (Injection Hunter) — server only | `## TypeScript / JavaScript` の見出し + `### Server (Node.js)` サブセクションのみ。`### Client (Browser)` は **含めない** |
+| Agent 3 (Client Attack Specialist) — client only | `## TypeScript / JavaScript` の見出し + `### Client (Browser)` サブセクションのみ。`### Server (Node.js)` は含めない |
+| Agent 2 / 4 / 5 / 6 — all languages | `## TypeScript / JavaScript` 全体（Server と Client の両サブセクション） |
+
+**PHP Legacy の扱い**:
+
+`detected_languages[].variant === "legacy"` のときは、`## PHP` セクションを貼り込む際に次の順で注入する:
+
+1. `### Modern (Composer-Managed)` サブセクション全文
+2. `### Legacy (PHP 5.x)` サブセクション全文
+
+理由: Legacy セクション冒頭の "All vectors from Modern PHP apply, PLUS:" を実効化するため、Modern の全 bullet を Legacy より先に具体展開する。lang-profiles.md Usage Notes の "agents receiving the Legacy section do NOT also need the Modern section separately" は「Modern セクションを **別のセクションヘッダーとして追加で注入するな**」（=重複注入禁止）の意であり、「Modern bullet の内容を含めるな」ではない。Modern は 1 回だけ、Legacy より前に連結する。
+
+`variant === "modern"` または variant 指定なしのときは `### Modern (Composer-Managed)` サブセクションのみを注入する。
+
 ## Agent 1-6 共通プロンプトテンプレート (general-purpose)
 
 Agent 1〜6 はすべて同じテンプレート構造を持つ。`{placeholders}` を実際の値で置換して使用する。
@@ -63,15 +125,17 @@ For each finding, assess:
   - Medium: limited data exposure, service disruption, single-user impact
   - Low: information disclosure with minimal sensitivity, minor inconvenience
 
-- **Risk Level** (combined):
+- **Risk Level** (combined — Likelihood x Impact, 4x4):
 
-              Impact
-         Low  Med  High Crit
-  Like.
-  Crit | H    C    C    C
-  High | M    H    C    C
-  Med  | L    M    H    C
-  Low  | L    L    M    H
+                      Impact
+                 Low    Med    High   Crit
+  Likelihood:
+    critical  |  Med    High   Crit   Crit
+    high      |  Low    Med    High   Crit
+    medium    |  Low    Med    High   High
+    low       |  Low    Low    Med    High
+
+  (All axes use the 4-value scale `critical | high | medium | low`.)
 
 ## PoC Construction
 

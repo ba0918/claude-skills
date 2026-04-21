@@ -6,16 +6,25 @@ attack-review エージェントが参照する攻撃チェックリスト。各
 ## Risk Matrix
 
 すべての発見は Likelihood x Impact で評価する。
+**語彙の統一**: Likelihood / Impact / Risk Level はすべて `critical | high | medium | low` の 4 値で表現する（JSON 出力スキーマに合わせる）。
 
 | | Impact: Low | Impact: Medium | Impact: High | Impact: Critical |
 |---|---|---|---|---|
-| **Likelihood: Certain** | Medium | High | Critical | Critical |
-| **Likelihood: Likely** | Low | Medium | High | Critical |
-| **Likelihood: Possible** | Low | Medium | High | High |
-| **Likelihood: Unlikely** | Low | Low | Medium | High |
+| **Likelihood: Critical** | Medium | High | Critical | Critical |
+| **Likelihood: High**     | Low    | Medium | High     | Critical |
+| **Likelihood: Medium**   | Low    | Medium | High     | High |
+| **Likelihood: Low**      | Low    | Low    | Medium   | High |
 
 - **Likelihood**: 攻撃の発見容易性 + 悪用容易性（ツールで自動化可能か、認証不要か、公開情報から推測可能か）
+  - `critical`: trivially exploitable, automated tools detect it, no authentication needed
+  - `high`: exploitable with moderate effort, publicly known technique
+  - `medium`: requires specific conditions or insider knowledge
+  - `low`: theoretical, requires significant effort or unusual conditions
 - **Impact**: 被害の深刻度（RCE、データ漏洩、権限昇格、サービス停止、金銭的損失）
+  - `critical`: full system compromise, mass data breach, RCE
+  - `high`: significant data leak, privilege escalation, account takeover
+  - `medium`: limited data exposure, service disruption, single-user impact
+  - `low`: information disclosure with minimal sensitivity, minor inconvenience
 
 ---
 

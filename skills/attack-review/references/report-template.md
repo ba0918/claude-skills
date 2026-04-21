@@ -24,12 +24,12 @@ attack-review 統合エージェントが参照するレポートテンプレー
 ├──────────────────────────┬──────────┬──────┬───────┬───────┬────────┤
 │  Attack Domain           │ Critical │ High │  Med  │  Low  │ Total  │
 ├──────────────────────────┼──────────┼──────┼───────┼───────┼────────┤
-│  Injection & Input       │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
-│  Auth & Session          │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
-│  Data Exposure           │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
-│  Access Control          │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
-│  Crypto & Secrets        │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
-│  Config & Deployment     │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
+│  Injection               │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
+│  AuthN/AuthZ             │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
+│  Client Attack           │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
+│  Data & Secrets          │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
+│  Infra & Supply Chain    │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
+│  Business Logic          │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
 ├──────────────────────────┼──────────┼──────┼───────┼───────┼────────┤
 │  TOTAL                   │    {n}   │  {n} │  {n}  │  {n}  │  {n}   │
 └──────────────────────────┴──────────┴──────┴───────┴───────┴────────┘
@@ -86,7 +86,7 @@ attack-review 統合エージェントが参照するレポートテンプレー
 |-----------|------|
 | `project_name` | プロジェクト名（リポジトリ名またはディレクトリ名） |
 | `datetime` | レビュー実行日時 `YYYY-MM-DD HH:MM:SS` |
-| `mode` | 実行モード（`full` / `quick` / `targeted:{path}` 等） |
+| `mode` | 実行モード: `full` / `server` / `client` のいずれか |
 | `detected_languages` | 検出された言語・フレームワーク（カンマ区切り） |
 | `overall_posture` | 総合リスク姿勢: `Critical Risk` / `High Risk` / `Moderate Risk` / `Low Risk` / `Minimal Risk` |
 | `critical_count` / `high_count` / `medium_count` / `low_count` | 各リスクレベルの検出数 |
@@ -96,7 +96,7 @@ attack-review 統合エージェントが参照するレポートテンプレー
 ### summary.txt 表示ルール
 
 - **Top 5 Attack Scenarios**: finding が 5 件未満の場合は存在する分だけ表示する
-- **Top 5 の並び順**: リスクレベル降順（Critical > High > Medium > Low）、同一レベル内は Impact 降順
+- **Top 5 の並び順**: リスクレベル降順（Critical > High > Medium > Low）、同一レベル内は Likelihood 降順（likelihood higher first）
 - **Codex Perspective**: Codex エージェントの JSON が利用可能な場合は上位 3 件を表示、利用不可の場合は警告メッセージを表示
 - **overall_posture の決定**: 検出された finding の最高重大度に基づく。Critical が 1 件以上 → `Critical Risk`、High が 1 件以上 → `High Risk`、Medium のみ → `Moderate Risk`、Low のみ → `Low Risk`、finding ゼロ → `Minimal Risk`
 - **Risk distribution テーブル**: 該当 finding がゼロの場合は `0` を表示（行自体は省略しない）
@@ -136,25 +136,29 @@ attack-review 統合エージェントが参照するレポートテンプレー
 
 | Attack Domain | Critical | High | Medium | Low | Total |
 |---------------|----------|------|--------|-----|-------|
-| Injection & Input Validation | {n} | {n} | {n} | {n} | {n} |
-| Authentication & Session Management | {n} | {n} | {n} | {n} | {n} |
-| Sensitive Data Exposure | {n} | {n} | {n} | {n} | {n} |
-| Access Control & Authorization | {n} | {n} | {n} | {n} | {n} |
-| Cryptography & Secrets Management | {n} | {n} | {n} | {n} | {n} |
-| Configuration & Deployment | {n} | {n} | {n} | {n} | {n} |
+| Injection (Agent 1) | {n} | {n} | {n} | {n} | {n} |
+| AuthN/AuthZ (Agent 2) | {n} | {n} | {n} | {n} | {n} |
+| Client Attack (Agent 3) | {n} | {n} | {n} | {n} | {n} |
+| Data & Secrets (Agent 4) | {n} | {n} | {n} | {n} | {n} |
+| Infra & Supply Chain (Agent 5) | {n} | {n} | {n} | {n} | {n} |
+| Business Logic (Agent 6) | {n} | {n} | {n} | {n} | {n} |
 | **TOTAL** | **{n}** | **{n}** | **{n}** | **{n}** | **{n}** |
+
+> **Mode-specific rows**: `server` mode では Agent 3 (Client Attack) の行を `N/A — skipped in server mode` と表示する。`client` mode では Agent 1 (Injection) を `N/A — skipped in client mode` と表示する。エージェント未完了（graceful degradation）の場合は `N/A — agent did not complete` と表示する。
 
 ---
 
 ## 3. Risk Matrix Legend
 
-Findings are categorized using a **Likelihood x Impact** risk matrix:
+Findings are categorized using a **Likelihood x Impact** risk matrix.
+All axes use the 4-value scale `critical | high | medium | low` (matching the JSON output schema).
 
-|                  | Impact: Low | Impact: Medium | Impact: High | Impact: Critical |
-|------------------|-------------|----------------|--------------|------------------|
-| **Likelihood: High**   | Medium | High     | Critical | Critical |
-| **Likelihood: Medium** | Low    | Medium   | High     | Critical |
-| **Likelihood: Low**    | Low    | Low      | Medium   | High     |
+|                          | Impact: Low | Impact: Medium | Impact: High | Impact: Critical |
+|--------------------------|-------------|----------------|--------------|------------------|
+| **Likelihood: Critical** | Medium      | High           | Critical     | Critical         |
+| **Likelihood: High**     | Low         | Medium         | High         | Critical         |
+| **Likelihood: Medium**   | Low         | Medium         | High         | High             |
+| **Likelihood: Low**      | Low         | Low            | Medium       | High             |
 
 **Likelihood factors**: Attack complexity, required privileges, user interaction needed, exploit availability.
 
@@ -362,14 +366,14 @@ Impact assessment considers:
 
 ### B. Attack Domains
 
-| Domain | Coverage |
-|--------|----------|
-| Injection & Input Validation | SQL injection, XSS, command injection, path traversal, template injection, SSRF, deserialization, prototype pollution |
-| Authentication & Session Management | Broken authentication, session fixation, credential stuffing, JWT weaknesses, OAuth misconfigurations, MFA bypass |
-| Sensitive Data Exposure | Hardcoded secrets, PII leakage, insufficient encryption at rest/transit, verbose error messages, log injection of secrets |
-| Access Control & Authorization | IDOR, privilege escalation, missing function-level access control, CORS misconfiguration, forced browsing |
-| Cryptography & Secrets Management | Weak algorithms, insufficient key length, improper random generation, missing integrity checks, insecure key storage |
-| Configuration & Deployment | Debug mode in production, default credentials, missing security headers, insecure dependency versions, open admin interfaces |
+| # | Agent / Domain | Coverage |
+|---|----------------|----------|
+| 1 | Injection Hunter | SQL injection, command injection, SSRF, path traversal, SSTI, XXE, LDAP injection, header injection (server-side sinks) |
+| 2 | AuthN/AuthZ Breaker | Authentication bypass, IDOR, privilege escalation, JWT weaknesses, session management flaws, OAuth misconfiguration, Cookie security |
+| 3 | Client Attack Specialist | Reflected / Stored / DOM-based XSS, CSRF, DOM Clobbering, prototype pollution (client), open redirect, clickjacking, postMessage abuse, CSS injection |
+| 4 | Data & Secrets Exfiltrator | Hardcoded secrets, error message leakage, PII in logs, excessive API responses, exposed files/dirs, source map leaks |
+| 5 | Infra & Supply Chain Exploiter | CORS misconfiguration, missing security headers, dependency CVEs, default credentials, insecure TLS, CI/CD poisoning, container misconfig |
+| 6 | Business Logic Abuser | Race conditions / TOCTOU, payment/pricing manipulation, rate limiting gaps, enumeration, mass assignment, workflow bypass, business-logic DoS, replay attacks |
 
 ### C. Analyzed Files
 
@@ -412,10 +416,10 @@ Impact assessment considers:
 | `detected_frameworks` | 検出されたフレームワーク（カンマ区切り） |
 | `overall_posture` | 総合リスク姿勢 |
 | `executive_narrative` | エグゼクティブサマリーの本文（3-5 文） |
-| `risk_level` | `Critical` / `High` / `Medium` / `Low` |
-| `likelihood` | `High` / `Medium` / `Low` |
-| `impact` | `Critical` / `High` / `Medium` / `Low` |
-| `attack_domain` | 6 ドメインのいずれか |
+| `risk_level` | `critical` / `high` / `medium` / `low`（JSON スキーマ準拠、表示は先頭大文字でも可） |
+| `likelihood` | `critical` / `high` / `medium` / `low`（JSON スキーマ準拠） |
+| `impact` | `critical` / `high` / `medium` / `low`（JSON スキーマ準拠） |
+| `attack_domain` | Appendix B の 6 ドメインのいずれか（Injection / AuthN/AuthZ / Client Attack / Data & Secrets / Infra & Supply Chain / Business Logic） |
 | `cwe_id` | CWE 番号（例: `CWE-89`） |
 | `cwe_name` | CWE 名称（例: `SQL Injection`） |
 | `owasp_category` | OWASP Top 10 カテゴリ（例: `A03:2021 Injection`） |
