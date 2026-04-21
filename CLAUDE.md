@@ -105,7 +105,7 @@ commands/problem-solving.md  →  skills/problem-solving/SKILL.md
 | `iterate` | cycle 後の追加指示をサイズ適応型の軽量改善ループで実行。Phase 4 レビューに Codex セカンドオピニオンを並行取得 |
 | `doc-check` | ドキュメントとコードベースの整合性を検証・自動修正 |
 | `issue` | plan 中に発見したスコープ外の問題を記録・管理し、plan → cycle に繋げる。polling ワークフローで `ready/` キューを self-driving 消化するラルフループも提供 |
-| `parallel-cycle` | 自然言語の指示を複数 plan に分解し、worktree で並行 cycle 実行・自動マージ |
+| `parallel-cycle` | 自然言語の指示を複数 plan に分解し、worktree で並行 cycle 実行・自動マージ。Codex CLI 版は `codex-skills/parallel-cycle/`（`spawn_agent` / `wait_agent` / `$<skill>` / `git worktree` 直叩き、承認プロンプトは撤廃して完全 headless、ワークフロー自体は Claude 版と同一） |
 | `investigate` | 問題を読み取り専用で調査し、構造化レポートを出力。ファイル編集は一切行わない |
 | `brainstorm` | アイデアの壁打ちに特化。発散→収束→plan化の導線を提供。壁打ち中はファイル編集禁止。各ターンで Codex セカンドオピニオンを取得し多角的な視点を提供 |
 | `doc-write` | LLMとのやり取り・調査結果をリーダブルなドキュメントに昇華。Mermaid図付き |

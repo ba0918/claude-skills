@@ -1,0 +1,1 @@
+../../../skills/parallel-cycle/references/merge-strategy.md

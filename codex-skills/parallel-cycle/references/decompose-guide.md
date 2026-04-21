@@ -1,0 +1,1 @@
+../../../skills/parallel-cycle/references/decompose-guide.md
