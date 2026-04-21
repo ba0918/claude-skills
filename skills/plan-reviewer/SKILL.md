@@ -44,6 +44,8 @@ Sources to collect:
 
 **Important**: Always verify that line numbers and code snippets in the plan match the actual code. Any discrepancies should be flagged as Feasibility issues.
 
+**Missing optional sources**: `.claude/review-rules.md`, `docs/ARCHITECTURE.md`, and `docs/SECURITY.md` are all optional. When absent, continue the review using `CLAUDE.md` + the generic checklists in [review-dimensions.md](references/review-dimensions.md); do not block. Note the absence once in the final report (e.g. `Project-specific review rules: not present (falling back to CLAUDE.md + generic checklist)`).
+
 ### Step 2.5: UI/UX Review Trigger Detection
 
 Scan the plan content for UI/UX signals. If ANY of the following are detected, include Review 7 (UI/UX) in the parallel review:
@@ -59,9 +61,15 @@ Scan the plan content for UI/UX signals. If ANY of the following are detected, i
 
 If no signals detected and no override, skip Review 7.
 
+**When Review 7 is skipped**, the final dimension table must omit the UI/UX row entirely (do not render it as N/A). Note the skip once near the top of the report (e.g. `UI/UX Review: SKIPPED (no UI/UX signals detected)`). See [output-format.md](references/output-format.md) for the canonical rule.
+
+**When Review 7 is triggered**, note the activation once near the top of the report in the symmetric form: `UI/UX Review: TRIGGERED (detected: <list of signals>)`. List up to 4 representative signals (keywords or file extensions); do not dump every match. The dimension table includes the UI/UX row as normal.
+
 ### Step 3: Execute 7-Dimension Parallel Review + Codex Second Opinion
 
 Launch up to **7 reviews + 1 Codex agent in parallel** (Review 7: UI/UX is conditional — see Step 2.5). Each review runs as an Explore agent or general-purpose agent. The Codex agent runs as `subagent_type: "codex:codex-rescue"`.
+
+**Execution fallback**: Parallel dispatch via the Agent tool is the preferred mode. If the Agent tool is unavailable (e.g. the reviewer is itself running as a sub-agent and cannot spawn further agents, or the tool is disabled), run the dimensions **sequentially in the same session** — apply each dimension's checklist one at a time and compose the final integrated report yourself. Sequential execution must still produce the same output format as parallel; only the dispatch mechanism changes. Note the fallback once in the report (`Execution mode: sequential (Agent tool unavailable)`).
 
 Each review applies perspectives in the following priority order:
 1. Project-specific rules from `.claude/review-rules.md` (highest priority)

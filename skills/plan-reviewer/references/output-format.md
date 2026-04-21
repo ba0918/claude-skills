@@ -71,7 +71,7 @@ PLAN REVIEW COMPLETE
 │ Alternatives        │   85   │ 🛑 BLOCK│
 └─────────────────────┴────────┴────────┘
 
-Overall Verdict: ⚠️ WARN (Max score: 85 → BLOCK)
+Overall Verdict: 🛑 BLOCK (Max score: 85, driven by Alternatives)
 
 ────────────────────────────────────────
 
@@ -120,3 +120,13 @@ Overall Verdict: ⚠️ WARN (Max score: 85 → BLOCK)
 - If any dimension is BLOCK, overall is BLOCK
 - If no BLOCK but one or more WARN, overall is WARN
 - If all PASS, overall is PASS
+
+**Verdict emoji usage (consistent per-dimension and overall):**
+- ✅ for PASS, ⚠️ for WARN, 🛑 for BLOCK
+- The overall verdict emoji must match the rule above — never let example text and rules disagree.
+
+### Dimension Table When UI/UX Is Skipped
+
+When Step 2.5 determines UI/UX review is not triggered, **omit the UI/UX row entirely** from the dimension table (do not render it as N/A). The table shows only dimensions that were actually evaluated. The column width stays the same; no placeholder row.
+
+Explicitly note the skip once near the top of the report, e.g. `UI/UX Review: SKIPPED (no UI/UX signals detected)`.

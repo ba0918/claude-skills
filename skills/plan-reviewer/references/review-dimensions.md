@@ -3,6 +3,34 @@
 Detailed checklists and scoring criteria for 7 review dimensions.
 Language and framework agnostic. Add project-specific perspectives via `.claude/review-rules.md`.
 
+## Scoring Guide (applies to every dimension)
+
+Each dimension emits a `confidence` score in 0–100. The **score = severity of the most
+severe issue found** within that dimension, capped by the number and breadth of issues.
+The three verdict ranges (PASS / WARN / BLOCK) map to concrete anchors so reviewers
+don't have to guess.
+
+| Score anchor | Inside a range | Meaning |
+|---|---|---|
+| **90–100** | BLOCK, ceiling | At least one critical issue that makes the plan unsafe to implement as-is (exploit, data loss, clearly unrunnable, missing test plan entirely). |
+| **80–89** | BLOCK, floor | One critical issue **or** two important issues stacking. Still must-fix. |
+| **65–79** | WARN, ceiling | One important issue **or** multiple minor issues pointing to the same weakness. Recommend fix but not blocking. |
+| **50–64** | WARN, floor | Room for improvement visible (one important issue, or a cluster of minors). |
+| **25–49** | PASS, ceiling | Only minor / cosmetic issues, plan is sound. |
+| **0–24** | PASS, floor | No issues found; this dimension is exemplary. |
+
+Rules:
+
+1. Pick the anchor for the **single most severe issue**, then adjust **within that band only**
+   based on how many other issues of similar or lower severity also apply.
+2. Never jump anchors based on count alone — 5 minor issues do NOT aggregate into a BLOCK.
+   Escalation requires a qualifying single issue at the higher severity.
+3. `severity` in individual issues uses: `critical` = BLOCK anchor, `important` = WARN anchor,
+   `minor` = PASS anchor. The dimension score must be consistent with its issues' severities.
+4. If a dimension has zero issues, its score must be ≤ 24 (PASS floor). Do not assign
+   a PASS-ceiling score just to look conservative — that obscures which dimensions were
+   actually clean.
+
 ## Table of Contents
 
 1. [Feasibility](#1-feasibility)
