@@ -47,8 +47,8 @@ create "Title" [--summary "Description"] [--tags "tag1,tag2"] [--source "path"]
 
 - **Title** (required): The first argument. Quotes are optional for single-word titles.
 - **--summary** (optional): Detailed description. Defaults to the same as title if omitted.
-- **--tags** (optional): Comma-separated tags.
-- **--source** (optional): Source plan file path, etc.
+- **--tags** (optional): Comma-separated tags. When omitted, the frontmatter value is the empty string `tags:` (do **not** delete the line, do **not** insert `(none)`).
+- **--source** (optional): Source plan file path, etc. When omitted, the frontmatter value is the empty string `source:` (do **not** delete the line, do **not** insert `(none)`).
 
 If arguments are given as free-form text without flags, extract title from the first phrase, and infer summary, tags, and source from context.
 
@@ -58,7 +58,7 @@ If arguments are given as free-form text without flags, extract title from the f
 2. **Preview & confirmation** — Use `request_user_input` to present the following and obtain user approval before proceeding:
    - Parsed fields: title, summary, tags, source
    - `docs/issues/` directory existence check result
-   - If `docs/issues/issue-status.md` exists, check for existing issues with similar titles and list them (if any)
+   - If `docs/issues/issue-status.md` exists, scan the Issue column for **exact title matches** of open issues (case-insensitive, after trimming whitespace). List each matching row. Do NOT use substring or fuzzy matching — exact match only.
    - Options: "Create" (proceed) / "Cancel" (abort)
    - If the user selects "Cancel", display "Issue creation cancelled." and exit
 3. Create the `docs/issues/` directory (if it doesn't exist, use `mkdir -p`)
@@ -74,14 +74,16 @@ If arguments are given as free-form text without flags, extract title from the f
 5. Generate the slug:
    - Timestamp: `yyyymmddhhmmss` format (`date +%Y%m%d%H%M%S`)
    - Remove path separator characters and special characters from the title: slashes (`/`), double dots (`..`), backslashes (`\`), etc.
-   - Convert the remaining characters to kebab-case (spaces → hyphens, lowercase, keep only alphanumeric characters and hyphens)
+   - Convert the remaining characters to kebab-case (spaces → hyphens, lowercase, keep only alphanumeric characters and hyphens `[a-z0-9-]`)
+   - **Non-ASCII title fallback**: If the title contains non-ASCII characters (e.g., Japanese, Chinese, Korean, Cyrillic), the LLM must produce a **meaning-based English kebab-title** (transliteration or translation — whichever yields a readable identifier). Do NOT romanize character-by-character (`roguin-taimu-auto` is wrong; `fix-login-timeout` is right). After conversion, apply the ASCII rules above. If the resulting kebab-title is empty, use `untitled-{short_hash}` where `short_hash` is the first 8 chars of `echo -n "$title" | sha1sum`.
    - Final slug: `{yyyymmddhhmmss}_{kebab-title}`
-6. Read [references/issue-template.md](references/issue-template.md), replace placeholders, and write to `docs/issues/{slug}.md`
+6. Read [references/issue-template.md](references/issue-template.md), replace placeholders, and write to `docs/issues/{slug}.md` via `apply_patch`. Omitted optional fields (`tags`, `source`) resolve to empty strings per the Argument Format rules above — the frontmatter line stays present with an empty value.
 7. Add a row to the end of the table in `docs/issues/issue-status.md`:
    ```
    | [{slug}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | {summary} |
    ```
-8. Update **Last Updated** to today's date
+   - **Escape rules for the Summary column**: Replace every literal pipe `|` with `\|`, and replace every newline with a single space. Do NOT truncate. Apply the same escape to tags if they ever contain `|` (unlikely).
+8. Update **Last Updated** to the current timestamp in `YYYY-MM-DD HH:MM:SS` format (same format as Step 4's template — time component required, not date-only).
 9. Display the creation result:
    ```
    ✅ Issue created!
@@ -99,13 +101,14 @@ Display a list of open issues.
 ### Steps
 
 1. Read `docs/issues/issue-status.md`
-   - If it doesn't exist: Display "No issues have been registered yet" and exit
-2. Display the table contents as-is
-3. Count the table rows and display a summary:
+   - If the file does not exist: Display `No issues have been registered yet` and exit
+   - If the file exists but has **zero data rows** (header + separator only): Still display the file and output `📊 Open issues: 0` (this is distinct from the "file not found" case above — do NOT fall through to the not-found message)
+2. Display **the entire file contents** as-is (`# Issue Status` heading, `**Last Updated:** ...` line, and the full table including header/separator/data rows). Do NOT omit any part of the file.
+3. Count **only the data rows** of the table (exclude the `| Issue | Tags | Created | Summary |` header row and the `|-------|...|` separator row). Display a summary:
    ```
    📊 Open issues: {N}
    ```
-4. If open issue count exceeds 10, display a warning:
+4. If open issue count is **11 or more** (i.e. `N >= 11`, not `N > 10` interpreted as `N >= 10`), display a warning **in addition to** the Step 3 summary:
    ```
    ⚠️ Open issues: {N} — 未使用の issue がないか確認してください。`$issue close` で不要な issue をアーカイブできます。
    ```
@@ -119,9 +122,9 @@ This procedure is used by both Plan Workflow and Cycle Workflow. Do NOT duplicat
 ### Steps
 
 1. Read `docs/issues/issue-status.md`
-   - If it doesn't exist: Display "No issues have been registered yet" and exit
-2. **Issue selection** — behavior depends on the number of open issues:
-   - **0 issues**: Display "No open issues found" and exit
+   - If the file does not exist: Display `No issues have been registered yet` and exit (same message as List Workflow Step 1)
+2. **Issue selection** — behavior depends on the number of open issues (counted as List Workflow Step 3 does — data rows only):
+   - **0 issues** (file exists but has zero data rows): Display `No open issues found` and exit
    - **1 issue**: Use `request_user_input` to confirm with the user. Present the issue details and offer two options: the issue slug (to proceed) and "Cancel" (to abort).
    - **2+ issues**: Use `request_user_input` to present all issue slugs as options plus "Cancel". Ask the user to select the target issue.
 3. Read the selected issue file (`docs/issues/{slug}.md`)
