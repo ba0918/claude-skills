@@ -22,14 +22,25 @@ Additional instruction → Scope analysis → Size judgment ─→ Small → Imp
    ls -t docs/plans/*.md 2>/dev/null | grep -v _result | head -1
    ```
 2. Load context using the following fallback chain:
-   - **Plan file exists** → Read it to understand what has already been implemented
-   - **Plan file not found, `docs/status.md` exists** → Read `docs/status.md` to infer current project state
-   - **Neither exists** → Run `git log --oneline -10` and `git diff HEAD~3 --stat` to derive context from recent commits
-   - If all fallbacks fail, proceed with the user's instructions only (no prior context). Display:
+   - **Plan file exists** → Read it to understand what has already been implemented. No warning.
+   - **Plan file not found, `docs/status.md` exists** → Read `docs/status.md` to infer current project state. Display:
      ```
-     ⚠️ No plan file or status found. Proceeding with instructions only.
+     ⚠️ No plan file found. Using docs/status.md as fallback context.
      ```
-3. **Detect previous iterate runs**: Check the plan file (if loaded) for existing `## Additional Changes` sections. If found, use the latest one as cumulative context so that consecutive iterate calls build on prior changes rather than starting from scratch.
+   - **Neither exists** → Try `git log --oneline -10` and `git diff HEAD~3 --stat`. If `HEAD~3` cannot be resolved (e.g., fresh repo with fewer than 4 commits), degrade stepwise: `HEAD~1` → `HEAD` → `git log --oneline -10` only. Display based on what was retrieved:
+     - git log + diff successful:
+       ```
+       ⚠️ No plan file or status.md found. Using partial context from git history.
+       ```
+     - git log only (no diff available):
+       ```
+       ⚠️ No plan file or status.md found. Only git log available — proceeding with minimal context.
+       ```
+     - git log also fails (non-git dir or empty repo):
+       ```
+       ⚠️ No plan file, status.md, or git history found. Proceeding with instructions only.
+       ```
+3. **Detect previous iterate runs**: Check the plan file (if loaded) for existing `## Additional Changes` sections. If found, use **all** sections as cumulative context (not just the latest) so that consecutive iterate calls build on the complete change history rather than only the most recent increment.
 4. Get the user's additional instructions from `$ARGUMENTS`
 
 ## Phase 1: Scope Analysis
@@ -49,7 +60,10 @@ See [references/scope-criteria.md](references/scope-criteria.md) for detailed cr
 
 Before size judgment, check if this is a consecutive iterate call within the same session by looking for `## Additional Changes` sections in the plan file (loaded in Phase 0, Step 3).
 
-**If no plan file was loaded in Phase 0** (fallback path was used), skip this pre-check entirely and treat as 1st call.
+**If no plan file was loaded in Phase 0** (fallback path was used), skip this pre-check entirely and treat as 1st call. Display a single-line notice so the skipped check is visible in the log:
+```
+ℹ️ Consecutive call detection skipped (no plan file loaded).
+```
 
 Count `N = (number of ## Additional Changes sections found) + 1` (current call included).
 
@@ -108,7 +122,9 @@ Instructions to the agent:
 - Follow existing code style and conventions
 - Comply with AGENTS.md rules
 - Reference review-rules.md if it exists (`.codex/review-rules.md` → `.claude/review-rules.md` → `review-rules.md`)
-- Add tests for changes that require testing
+- Add tests for changes that require testing (test-first when feasible: write a failing test, make it pass, refactor)
+  - **Exception — non-executable changes** (documentation only: README/CHANGELOG/comments/markdown with no behavior change): tests do not apply. Instead, the implementation agent must (a) state explicitly that tests are skipped because the change has no executable behavior, and (b) still run the existing test suite to confirm nothing breaks.
+  - **Config files are NOT automatically non-executable**: `tsconfig.json` strict-mode flips, `package.json` dep/script changes, linter rule changes, CI workflow edits all affect runtime or build behavior → tests apply. Only pure content edits (e.g., `description` field in `package.json`) qualify as non-executable.
 - Run existing tests after implementation and confirm all pass
 
 ## Phase 4: Review
@@ -120,6 +136,8 @@ See [references/light-review.md](references/light-review.md) for detailed review
 Launch **1 review agent** via `spawn_agent`:
 - Review from 2 perspectives: Security + Implementation Quality
 - Use review-rules.md as additional criteria if it exists
+- Do NOT issue PASS without test execution evidence
+  - **Exception — non-executable changes** (documentation only, as defined in Phase 3): the gate is satisfied by (a) confirming the existing test suite still passes, or (b) explicit declaration that no executable code is affected. The review agent must state which path applies.
 - Classify findings as BLOCK / WARN / PASS
 
 ### If Large (user chose to continue)
@@ -127,21 +145,35 @@ Launch **1 review agent** via `spawn_agent`:
 Launch **1 review agent** via `spawn_agent`:
 - Review from 4 perspectives: Security + Implementation Quality + Architecture + Completeness
 - Use review-rules.md as additional criteria if it exists
+- Do NOT issue PASS without test execution evidence
+  - **Exception — non-executable changes** (documentation only, as defined in Phase 3): the gate is satisfied by (a) confirming the existing test suite still passes, or (b) explicit declaration that no executable code is affected. The review agent must state which path applies.
 - Classify findings as BLOCK / WARN / PASS
 
 ### Processing Review Results
 
 - **BLOCK found** → Fix and re-review (max 2 iterations)
+  - **If BLOCK remains after 2 iterations**: Halt without completion. Display:
+    ```
+    ⚠️ BLOCK not resolved after 2 fix iterations. Unresolved findings:
+    - {finding 1}
+    - {finding 2}
+    Recommendation: escalate to user — consider $plan for a broader design pass,
+    or address manually before retrying iterate.
+    ```
+    Exit without executing Phase 5 or Phase 6. **Never complete with unresolved BLOCK.**
 - **WARN only** → Apply fixes and complete
 - **All PASS** → Complete as-is
 
 ## Phase 5: Traceability
 
 1. Append an "Additional Changes" section to the latest plan file.
-   - **If no plan file was loaded in Phase 0** (fallback path was used), skip this step and display:
+   - **If no plan file was loaded in Phase 0** (fallback path was used), skip **this step only** (not step 2). Display:
      ```
      ⚠️ Traceability skipped: no plan file found. Changes are recorded in git commits only.
      ```
+   - Step 2 (commit) always runs regardless of plan file presence — the commit itself is the minimum traceability record.
+
+   **`{datetime}` format**: Use `YYYY-MM-DD HH:MM` (24h, local time). Example: `2026-04-21 14:30`.
 
 ```markdown
 
@@ -176,6 +208,9 @@ Plan updated: {plan_file_path}
 
 - **Judge size by actual code impact** — Do not be swayed by the user's expressions like "just a small thing"
 - **Do not block on Large judgment** — Always present options to the user
-- **If unexpected impact is discovered during implementation, halt and report**
-- **Headless operation**: Do not prompt for confirmation except for user choice on Large judgment
-- **BLOCK findings must be resolved** — Never complete with unresolved BLOCK items
+- **If unexpected impact is discovered during implementation, halt and report**. Return path when halted in Phase 3:
+  1. If the newly discovered impact pushes the scope from Small → Large, re-enter Phase 2 with the updated scope and present the Large options to the user via `request_user_input`.
+  2. If the impact is ambiguous or crosses module boundaries in unforeseen ways, escalate to the user directly (do not auto-resume). Suggest `$plan` as the fallback.
+  3. Never silently continue past a halt.
+- **Headless operation**: Do not prompt for confirmation except for user choice on Large judgment and halt escalations
+- **BLOCK findings must be resolved** — Never complete with unresolved BLOCK items (see Phase 4 "Processing Review Results" for the 2-iteration cap behavior)
