@@ -12,7 +12,7 @@
 | **Feature** | {feature-name} |
 | **Started** | {YYYY-MM-DD HH:MM:SS} |
 | **Phase** | 🟡 Planning |
-| **Plan** | [docs/plans/{timestamp}_{feature-slug}.md](./cycles/{timestamp}_{feature-slug}.md) |
+| **Plan** | [docs/plans/{timestamp}_{feature-slug}.md](./plans/{timestamp}_{feature-slug}.md) |
 
 **Current Focus:**
 {1-2 sentence description of what is currently being worked on}
@@ -32,7 +32,7 @@ _Archived sessions can be found in [session-history.md](./session-history.md)._
 
 - [Architecture](./ARCHITECTURE.md)
 - [Coding Principles](./CODING_PRINCIPLES.md)
-- [All Cycles](./cycles/)
+- [All Plans](./plans/)
 - [Project Root](../)
 
 ---

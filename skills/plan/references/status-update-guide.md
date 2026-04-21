@@ -59,7 +59,7 @@ If `## 🔗 Quick Links` section is missing, add it (using the template from sta
 
 - [Architecture](./ARCHITECTURE.md)
 - [Coding Principles](./CODING_PRINCIPLES.md)
-- [All Cycles](./cycles/)
+- [All Plans](./plans/)
 - [Project Root](../)
 ```
 
@@ -133,7 +133,7 @@ Ask user or infer from context:
 | **Feature** | Phase 3: Options UI & Hot Reload |
 | **Started** | 2026-02-08 01:08:55 |
 | **Phase** | 🟡 In Progress |  <!-- Changed from Planning -->
-| **Plan** | [docs/plans/20260208010855_phase-3-options-ui-hot-reload.md](./cycles/20260208010855_phase-3-options-ui-hot-reload.md) |
+| **Plan** | [docs/plans/20260208010855_phase-3-options-ui-hot-reload.md](./plans/20260208010855_phase-3-options-ui-hot-reload.md) |
 
 **Current Focus:**
 Phase 3-1 implementation in progress. Theme system extended with 4 new themes.
@@ -164,7 +164,7 @@ Archive the completed session to `docs/session-history.md`.
 2. Add new entry as the first row (immediately after the header):
 
 ```markdown
-| `20260208010855` | Phase 3: Options UI & Hot Reload | 2026-02-08 | 2026-02-08 | [Link](./cycles/20260208010855_phase-3-options-ui-hot-reload.md) |
+| `20260208010855` | Phase 3: Options UI & Hot Reload | 2026-02-08 | 2026-02-08 | [Link](./plans/20260208010855_phase-3-options-ui-hot-reload.md) |
 ```
 
 **Step 2b: Clear status.md Session History**

@@ -32,13 +32,19 @@ mkdir -p docs/plans
 
 ### Phase 2: Gather Requirements
 
-Ask the user:
+Required information:
 
 1. **Feature name** - What are we implementing?
 2. **Brief description** - What is the goal?
 3. **Type** - New feature / Enhancement / Bug fix / Refactoring
 
-Keep questions concise. Avoid overwhelming the user with too many questions at once.
+**When to skip asking:**
+
+- If the user's initial request already contains all three (explicitly or unambiguously inferable), extract them and skip asking.
+- Under Auto mode / headless invocation (e.g. called from `issue-cycle`, `cycle`), never block on questions — infer from available context and proceed.
+- Otherwise, ask the user. Keep questions concise; avoid overwhelming with too many at once.
+
+Record what was inferred vs. what was asked so the user can correct it.
 
 ### Phase 3: Create Plan Document
 
@@ -50,7 +56,21 @@ Keep questions concise. Avoid overwhelming the user with too many questions at o
 - Convert spaces to hyphens
 - Lowercase
 - Remove non-alphanumeric characters except hyphens
+- Collapse repeated hyphens; trim leading/trailing hyphens
 - Example: "Markdown Hot Reload" → "markdown-hot-reload"
+
+**Non-ASCII input (Japanese, Chinese, Korean, etc.):**
+
+The slug MUST end up as `[a-z0-9-]+` only. For non-ASCII feature names, convert to English before applying the rules above:
+
+1. **Translate by meaning** (preferred): extract the core concept from the feature name and user's description. Align with existing naming in the project if there is a related term.
+   - Example: 「モックアップ比較ツール」 → `mockup-diff-tool` (aligned with existing `mockup-diff` skill)
+   - Example: 「ユーザー認証機能」 → `user-authentication`
+2. **Romanize** (fallback): if the term is a proper noun or brand with no English equivalent, use Hepburn-style romanization.
+   - Example: 「あずき餡」 → `azuki-an`
+3. **Ask the user** (last resort): if neither translation nor romanization yields a clear slug (ambiguous meaning, multiple valid translations), ask the user for a preferred English slug. Do NOT fall through to an empty or garbled slug.
+
+Apply the ASCII rules above to the converted string. Record the original name verbatim in the plan document's `# {Feature Name}` header and the status.md `Feature` column so meaning is preserved.
 
 **Template:** See [references/plan-template.md](references/plan-template.md) for the full plan document structure.
 
@@ -77,6 +97,18 @@ If `docs/status.md` exists, check for legacy format (inline session history with
 
 - **If status.md exists:** (After migration if needed) Move current session to history, add new session to current
 - **If status.md doesn't exist:** Create new file using [references/status-template.md](references/status-template.md)
+
+**Handling an unfinished Current Session:**
+
+If the existing Current Session is still `🟡 Planning` or `🟡 In Progress` when a new plan is being created, the previous session must be resolved before overwriting Current Session. Apply in order:
+
+1. **Interactive mode**: ask the user which to do:
+   - (a) Resume the previous session (suggest `/claude-skills:plan-resume` and abort the new plan creation)
+   - (b) Archive the previous session as **abandoned** (move to `session-history.md` with `Completed` = current timestamp and append `(abandoned)` suffix to the Feature column so it's visually distinguishable)
+   - (c) Archive the previous session as **completed** (if the user confirms it was actually finished but status wasn't updated)
+2. **Auto mode / headless invocation** (e.g. called from `cycle`, `issue-cycle`, `parallel-cycle`): default to **(b) archive as abandoned** without prompting. Log the archival action in the "Next Steps" output so the user can correct it if needed.
+
+In all cases, after the previous session is resolved, proceed with adding the new session as Current Session.
 
 **Status structure:**
 - Current Session (table format with Cycle ID, feature, started time, phase, plan link)
