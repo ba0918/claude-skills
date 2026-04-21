@@ -1,6 +1,6 @@
 ---
 name: issue
-description: Issue management for tracking out-of-scope problems discovered during plan execution. Supports create, list, plan, cycle, and close workflows. Use when user wants to record issues, view issue list, create a plan from an issue, convert issues to plan/cycle, or close resolved issues.
+description: Issue management for tracking out-of-scope problems discovered during plan execution. Supports create, list, plan, cycle, close, and polling workflows. Use when user wants to record issues, view issue list, create a plan from an issue, convert issues to plan/cycle, close resolved issues, or run a self-driving polling loop to consume the ready queue.
 ---
 
 # Issue Management
@@ -48,8 +48,8 @@ create "Title" [--summary "Description"] [--tags "tag1,tag2"] [--source "path"]
 
 - **Title** (required): The first argument. Quotes are optional for single-word titles.
 - **--summary** (optional): Detailed description. Defaults to the same as title if omitted.
-- **--tags** (optional): Comma-separated tags.
-- **--source** (optional): Source plan file path, etc.
+- **--tags** (optional): Comma-separated tags. When omitted, the frontmatter value is the empty string `tags:` (do **not** delete the line, do **not** insert `(none)`).
+- **--source** (optional): Source plan file path, etc. When omitted, the frontmatter value is the empty string `source:` (do **not** delete the line, do **not** insert `(none)`).
 
 If arguments are given as free-form text without flags, extract title from the first phrase, and infer summary, tags, and source from context.
 
@@ -59,7 +59,7 @@ If arguments are given as free-form text without flags, extract title from the f
 2. **Preview & confirmation** — Use AskUserQuestion to present the following and obtain user approval before proceeding:
    - Parsed fields: title, summary, tags, source
    - `docs/issues/` directory existence check result
-   - If `docs/issues/issue-status.md` exists, check for existing issues with similar titles and list them (if any)
+   - If `docs/issues/issue-status.md` exists, scan the Issue column for **exact title matches** of open issues (case-insensitive, after trimming whitespace). List each matching row. Do NOT use substring or fuzzy matching — exact match only.
    - Options: "Create" (proceed) / "Cancel" (abort)
    - If the user selects "Cancel", display "Issue creation cancelled." and exit
 3. Create the `docs/issues/` directory (if it doesn't exist, use `mkdir -p`)
@@ -75,14 +75,16 @@ If arguments are given as free-form text without flags, extract title from the f
 5. Generate the slug:
    - Timestamp: `yyyymmddhhmmss` format (`date +%Y%m%d%H%M%S`)
    - Remove path separator characters and special characters from the title: slashes (`/`), double dots (`..`), backslashes (`\`), etc.
-   - Convert the remaining characters to kebab-case (spaces → hyphens, lowercase, keep only alphanumeric characters and hyphens)
+   - Convert the remaining characters to kebab-case (spaces → hyphens, lowercase, keep only alphanumeric characters and hyphens `[a-z0-9-]`)
+   - **Non-ASCII title fallback**: If the title contains non-ASCII characters (e.g., Japanese, Chinese, Korean, Cyrillic), the LLM must produce a **meaning-based English kebab-title** (transliteration or translation — whichever yields a readable identifier). Do NOT romanize character-by-character (`roguin-taimu-auto` is wrong; `fix-login-timeout` is right). After conversion, apply the ASCII rules above. If the resulting kebab-title is empty, use `untitled-{short_hash}` where `short_hash` is the first 8 chars of `echo -n "$title" | sha1sum`.
    - Final slug: `{yyyymmddhhmmss}_{kebab-title}`
-6. Read [references/issue-template.md](references/issue-template.md), replace placeholders, and write to `docs/issues/{slug}.md`
+6. Read [references/issue-template.md](references/issue-template.md), replace placeholders, and write to `docs/issues/{slug}.md`. Omitted optional fields (`tags`, `source`) resolve to empty strings per the Argument Format rules above — the frontmatter line stays present with an empty value.
 7. Add a row to the end of the table in `docs/issues/issue-status.md`:
    ```
    | [{slug}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | {summary} |
    ```
-8. Update **Last Updated** to today's date
+   - **Escape rules for the Summary column**: Replace every literal pipe `|` with `\|`, and replace every newline with a single space. Do NOT truncate. Apply the same escape to tags if they ever contain `|` (unlikely).
+8. Update **Last Updated** to the current timestamp in `YYYY-MM-DD HH:MM:SS` format (same format as Step 4's template — time component required, not date-only).
 9. Display the creation result:
    ```
    ✅ Issue created!
