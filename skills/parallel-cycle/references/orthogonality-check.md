@@ -4,9 +4,14 @@ Logic for checking file orthogonality between plans and determining execution gr
 
 ## Core Algorithm
 
-### Step 1: Extract Affected File Sets
+### Step 1: Extract Affected File Sets and Dependencies
 
-From each plan's "Files to Change" section, extract the set of files that will be created or modified.
+From each plan file, extract two pieces of information:
+
+- **Files to Change** (or equivalent section) → set of files to be created or modified
+- **Dependencies** (or equivalent section) → explicit ordering constraints. If absent, treat the plan as independent.
+
+In direct plan file mode, the dependency graph comes entirely from these plan-file sections — there is no decompose-time graph.
 
 ```
 Plan A files: {a1.ts, a2.ts, a3.test.ts}
@@ -30,9 +35,15 @@ Combine intersection results with the dependency graph to form execution groups.
 
 **Rules:**
 1. A plan cannot be in a group earlier than its dependencies
-2. Plans with file intersections must be in different groups (the one with lower priority goes first)
+2. Plans with file intersections must be in different groups
 3. Within a group, all plans are independent (no intersections, no dependency edges)
 4. Maximize parallelism: place each plan in the earliest valid group
+
+**Tie-break when two plans share files with no dependency ordering:**
+1. Lower priority value goes first (if declared)
+2. If priorities tie or absent:
+   - Direct plan file mode → argument order
+   - Natural language mode → plan letter (alphabetical)
 
 ### Step 4: Validate Groups
 

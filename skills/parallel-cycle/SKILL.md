@@ -63,6 +63,12 @@ Also produce the dependency graph and suggested execution groups.
 
 See [references/decompose-guide.md](references/decompose-guide.md) for detailed decomposition principles.
 
+**Immediately after Step 0.1, count the resulting plans and branch:**
+
+- **0 plans** → jump to the "Edge Cases" section below (error exit). Skip Step 0.2 and Step 0.3.
+- **1 plan** → jump to the "Edge Cases" section below (fallback to `claude-skills:cycle`). Skip Step 0.2 and Step 0.3.
+- **2+ plans** → continue to Step 0.2.
+
 ### Step 0.2: User Approval
 
 Present the decomposition result to the user:
@@ -108,24 +114,35 @@ Description: {plan_description}
 Affected files: {file_list}
 ```
 
-Each plan is saved to `docs/plans/{timestamp}_{slug}.md`.
+Each plan is saved to `docs/plans/{timestamp}_{slug}.md`. All plans in the same batch share a single `{timestamp}` (captured once at Step 0.3 entry) and are differentiated only by `{slug}`.
+
+**Parallelism**: Step 0.3 may invoke the Agent tool for all plans in parallel (up to the 3-concurrent Agent cap). Plan file generation is an independent write per plan; there is no data dependency between generations.
 
 ### Edge Cases
 
-- **0 plans**: Display error message and exit
-- **1 plan**: Display message and fall back to normal `/claude-skills:cycle`:
-  ```
-  Single plan detected. Falling back to /claude-skills:cycle.
-  ```
-  Invoke the `claude-skills:cycle` skill via Skill tool and exit.
+- **0 plans**: Display an error message and exit. Do not invoke any fallback.
+- **1 plan**: Fall back to `/claude-skills:cycle` using the steps below. Do NOT display the DECOMPOSE RESULT block and do NOT ask for approval — 1-plan fallback is headless.
+
+  1. Display only the fallback message (single line, verbatim):
+     ```
+     Single plan detected. Falling back to /claude-skills:cycle.
+     ```
+  2. Skip Step 0.3 (do NOT generate a plan file). The downstream `claude-skills:cycle` skill will create a plan itself if it needs one.
+  3. Invoke `claude-skills:cycle` via the Skill tool, passing the original `$ARGUMENTS` string verbatim as its input. Do not re-word, summarize, or substitute a plan file path.
+  4. Exit immediately after the Skill invocation. Do not proceed to Phase 1, Phase 2, Phase 3, or Phase 4.
 
 ## Phase 1: Orthogonality Check & Grouping
 
 See [references/orthogonality-check.md](references/orthogonality-check.md) for detailed logic.
 
-### Step 1.1: Extract Affected Files
+### Step 1.1: Extract Affected Files and Dependencies
 
-Read each plan file and extract the file list from the "Files to Change" or equivalent section.
+Read each plan file and extract:
+
+- **Files to Change** (or equivalent section) → affected file set for orthogonality check
+- **Dependencies** (or equivalent section) → explicit dependency graph. If no such section exists, treat the plan as independent of all others.
+
+Both are inputs to Step 1.3. In direct plan file mode (Phase 0 skipped), the dependency graph comes entirely from these extracted sections — there is no separate decompose-time graph.
 
 ### Step 1.2: Compute Intersections
 
@@ -139,6 +156,15 @@ Combine intersection results with the dependency graph:
 2. Plans with dependencies → dependent goes in a later group
 3. Maximize parallelism within constraints
 4. Maximum 3 concurrent cycles per group (split into sub-batches if more)
+
+**Tie-breaking rules** (when two plans share files but no dependency determines the order):
+
+1. If priorities are declared in the plan files → lower priority value goes first
+2. If priorities are equal or absent:
+   - Direct plan file mode (Phase 0 skipped) → argument order (first-listed plan goes first)
+   - Natural language mode (Phase 0 executed) → plan letter (alphabetical; [A] before [B])
+
+The tie-break is deterministic — never leave the order to implicit judgment.
 
 ### Step 1.4: Display Groups
 
