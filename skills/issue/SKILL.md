@@ -102,13 +102,14 @@ Display a list of open issues.
 ### Steps
 
 1. Read `docs/issues/issue-status.md`
-   - If it doesn't exist: Display "No issues have been registered yet" and exit
-2. Display the table contents as-is
-3. Count the table rows and display a summary:
+   - If the file does not exist: Display `No issues have been registered yet` and exit
+   - If the file exists but has **zero data rows** (header + separator only): Still display the file and output `📊 Open issues: 0` (this is distinct from the "file not found" case above — do NOT fall through to the not-found message)
+2. Display **the entire file contents** as-is (`# Issue Status` heading, `**Last Updated:** ...` line, and the full table including header/separator/data rows). Do NOT omit any part of the file.
+3. Count **only the data rows** of the table (exclude the `| Issue | Tags | Created | Summary |` header row and the `|-------|...|` separator row). Display a summary:
    ```
    📊 Open issues: {N}
    ```
-4. If open issue count exceeds 10, display a warning:
+4. If open issue count is **11 or more** (i.e. `N >= 11`, not `N > 10` interpreted as `N >= 10`), display a warning **in addition to** the Step 3 summary:
    ```
    ⚠️ Open issues: {N} — 未使用の issue がないか確認してください。`/claude-skills:issue-close` で不要な issue をアーカイブできます。
    ```
@@ -122,9 +123,9 @@ This procedure is used by both Plan Workflow and Cycle Workflow. Do NOT duplicat
 ### Steps
 
 1. Read `docs/issues/issue-status.md`
-   - If it doesn't exist: Display "No issues have been registered yet" and exit
-2. **Issue selection** — behavior depends on the number of open issues:
-   - **0 issues**: Display "No open issues found" and exit
+   - If the file does not exist: Display `No issues have been registered yet` and exit (same message as List Workflow Step 1)
+2. **Issue selection** — behavior depends on the number of open issues (counted as List Workflow Step 3 does — data rows only):
+   - **0 issues** (file exists but has zero data rows): Display `No open issues found` and exit
    - **1 issue**: Use AskUserQuestion to confirm with the user. Present the issue details and offer two options: the issue slug (to proceed) and "Cancel" (to abort).
    - **2+ issues**: Use AskUserQuestion to present all issue slugs as options plus "Cancel". Ask the user to select the target issue.
 3. Read the selected issue file (`docs/issues/{slug}.md`)
