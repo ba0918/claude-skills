@@ -101,7 +101,11 @@ Commits: {N}
 
 ## Phase 3: サマリー生成
 
+**Phase 3 の実行主体**: メインコンテキストで直接ツール（Bash / Read / Write / Edit / Skill）を呼ぶ。Phase 1 / 1.5 / 2 と異なり **Agent には委譲しない**（成果物生成・status 管理・commit はメインが一貫して責任を持つため）。
+
 **Phase 3 の各ステップは独立して実行し、個別のステップが失敗しても残りのステップを続行する。** 失敗したステップは `phase3_failures` リストに記録し、最終表示に含める。
+
+**Failure 判定の一般ルール**: ガード条件（スキップ許容）に該当せず、かつステップが完遂できない状態（例: 必要なファイル / セクションが見つからない、parse 不能、ツールが予期せぬエラーを返した）は全て failure として `phase3_failures` に記録する。ユーザーへの確認や cycle 全体の中断は行わない。
 
 1. `git log` で Phase 2 のコミット一覧を取得する
 2. サマリーファイルを生成: `docs/plans/results/{plan_basename}_result.md` に出力（ディレクトリがなければ `mkdir -p` で作成）
@@ -133,16 +137,25 @@ Commits: {N}
 ```
 
 3. status.md を完了状態に更新する:
-   - **ガード条件**: `docs/status.md` の Current Session が既に空（`_No active session`）または Completed の場合はこのステップをスキップする
-   - `skills/plan/references/status-update-guide.md` の **Case 2（In Progress → Completed）** の手順に従う:
+   - **Step 3a: Pre-check（failure 判定の先行チェック）**: `docs/status.md` を Read し、Current Session セクションが存在するかを確認する
+     - Current Session 見出し自体が存在しない、またはテーブル構造が parse 不能
+       → `phase3_failures` に `"status.md update"` を追加して次のステップへ進む（**ガードではなく失敗として扱う**）
+     - Current Session セクションが存在する → Step 3b へ
+   - **Step 3b: ガード条件（いずれかに該当すればスキップ）**:
+     - Current Session 本文が `_No active session` で始まる（セクションはあるが未初期化）
+     - Current Session テーブルの Status が `Completed`
+     - 上記いずれかに該当すれば、何もせず次のステップへ進む（失敗ではない）
+   - **Step 3c: 通常処理（ガードに該当しない場合）**: `skills/plan/references/status-update-guide.md` の **Case 2（In Progress → Completed）** の手順に従う:
      - Step 2a: session-history.md にアーカイブ
      - Step 2b: Session History セクションをクリア
      - Step 2c: Current Session をクリア
-   - **失敗時**: `phase3_failures` に `"status.md update"` を追加し、次のステップへ進む
+   - **Step 3c 実行中の失敗時**（Edit 失敗、ファイル書き込み失敗など）: `phase3_failures` に `"status.md update"` を追加し、次のステップへ進む
 
-4. **サイクル成果物をコミット**: result ファイル・status.md・session-history.md・計画ファイルなど、Phase 3 で更新されたファイルをまとめてコミットする
-   - Skill ツールで `claude-skills:commit` を実行する
-   - コミット対象がなければスキップする
+4. **サイクル成果物をコミット**: Phase 2 完了後に作業ディレクトリへ残っている全ての uncommitted changes をまとめてコミットする
+   - 典型的な対象: Step 2 で新規作成した result ファイル / Step 3 で更新した `docs/status.md` / `docs/session-history.md` / Phase 2 agent が commit し損ねた計画ファイルの更新など
+   - Skill ツールで `claude-skills:commit` を **引数なし** で実行する（commit skill が `git status` / `git diff` から対象を自動検出してコミット単位を分割する）
+   - Step 3 が失敗した場合、status.md / session-history.md は更新されていないため自然と commit 対象には入らない（result ファイルだけがコミットされる想定）
+   - 対象なしの場合、commit skill 側でスキップ判定する
    - **失敗時**: `phase3_failures` に `"commit"` を追加し、次のステップへ進む
 
 5. **Issue 自動 close**: 計画ファイルを読み、`**Issue:**` 行が存在するか確認する
