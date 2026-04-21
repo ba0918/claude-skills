@@ -30,14 +30,26 @@ codebase-review Progress:
 
 Determine target scope based on arguments:
 
-| Argument | Target |
-|----------|--------|
-| None | Entire codebase (under src/) |
-| `--diff` | Only files changed in `git diff HEAD` |
-| Directory name | Specific directory |
+| Argument | `scope` string | target_files source |
+|----------|----------------|---------------------|
+| None | `"entire codebase under src/"` | `git ls-files src/` (or `find src/ -type f` if not a git repo) |
+| `--diff` | `"diff (git diff HEAD)"` | `git diff HEAD --name-only --diff-filter=AM` (Added/Modified only; Deleted is skipped since the file no longer exists) |
+| Directory name `<dir>` | `"directory: <dir>"` | `git ls-files <dir>/` (fallback: `find <dir> -type f`) |
 
-Target files: `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.py`, `*.go`, `*.rs`, `*.java`, `*.php` and other source code.
-Exclude: `node_modules/`, `dist/`, `build/`, `.git/`, `*.test.*`, `*.spec.*`, `*.d.ts`, lock files.
+After collecting the raw list, apply both filters in order. Patterns are interpreted as **glob patterns (`fnmatch` semantics)**: `*` matches any characters except `/` within a path component, and path-prefix patterns like `dist/` match any file under that directory.
+
+1. **Extension allowlist**: `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.py`, `*.go`, `*.rs`, `*.java`, `*.php`
+2. **Path/suffix blocklist**: `node_modules/`, `dist/`, `build/`, `.git/`, `*.test.*`, `*.spec.*`, `*.d.ts`, lock files (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `Cargo.lock`, `go.sum`, etc.)
+
+Config files like `package.json` / `Cargo.toml` / `tsconfig.json` are **not** in the allowlist and are therefore excluded as review targets. They may still be read in Step 2 for project structure context.
+
+**Empty target abort (evaluate BEFORE Step 2 — do not create the work directory if the list is empty)**: If the filtered target_files list is empty (e.g., clean working tree on `--diff`, or project with no matching source files), do NOT create the work directory and do NOT launch any agents. Print and exit cleanly:
+
+```
+⚠️ CODEBASE REVIEW SKIPPED: No reviewable source files found.
+   Scope: {scope}
+   If you expected files, re-check the argument or verify the allowlist/blocklist.
+```
 
 ### Step 2: Analyze Project Structure & Prepare Work Directory
 
@@ -63,10 +75,10 @@ Exclude: `node_modules/`, `dist/`, `build/`, `.git/`, `*.test.*`, `*.spec.*`, `*
    cat > {work_dir}/context.json << 'EOF'
    {
      "project_name": "Project name",
-     "scope": "Target scope description",
-     "target_files": ["List of target file paths"],
-     "file_count": file_count,
-     "agents_md_rules": "AGENTS.md contents (if present)",
+     "scope": "Step 1 scope string (e.g., \"entire codebase under src/\" / \"diff (git diff HEAD)\" / \"directory: crates/core\")",
+     "target_files": ["List of filtered target file paths from Step 1"],
+     "file_count": "len(target_files) — the review-target count after filtering, NOT total repo size",
+     "agents_md_rules": "AGENTS.md contents (empty string \"\" if absent)",
      "work_dir": ".codex/tmp/codebase-review-{YYYYMMDD-HHMM}",
      "datetime": "YYYY-MM-DD HH:MM"
    }
@@ -76,6 +88,8 @@ Exclude: `node_modules/`, `dist/`, `build/`, `.git/`, `*.test.*`, `*.spec.*`, `*
 ### Step 3: Launch 4 Agents in Parallel
 
 Issue exactly 4 `spawn_agent` calls in a single turn. Prompt templates are in [references/agent-prompts.md](references/agent-prompts.md).
+
+**Placeholder expansion**: When building each agent's prompt, replace every placeholder (`{variable}`, `<Agent template>`, "Content of the relevant section from references/review-criteria.md", `{work_dir}`, etc.) with the **actual content** inlined — do not forward unresolved placeholders to the sub-agent. The sub-agent does not have SKILL.md context and cannot resolve them.
 
 ```
 spawn_agent: "security-review"
@@ -130,14 +144,31 @@ After all 4 agents complete (`wait_agent`), verify results:
    Check .codex/tmp/codebase-review-{YYYYMMDD-HHMM}/ for any partial results.
    ```
 
+3. **Partial score normalization (only when 2-3/4 agents succeeded)**: When one or more subcategories are missing, the integration agent must compute:
+
+   ```
+   partial_overall = Σ(available subcategory score × weight) / Σ(available weights)
+   ```
+
+   **Relation to the full-review formula (§Step 4 #2)**: The canonical formula `Overall = Σ(score × weight / 100)` assumes the 8 weights sum to 100, so dividing by 100 normalizes to 0-100. When some subcategories are absent, `Σ(available weights)` replaces the fixed 100 in the denominator. The two formulas are mathematically equivalent when all 8 subcategories are present; the partial form is a pure generalization.
+   - Weights are the percentage values defined in §Step 4 (security=20, secrets=15, ...). Because scores are 0-100 and `Σ(available weights)` is on the same scale, the division directly yields a 0-100 normalized value — **do not multiply by 100 again** (that would overflow).
+   - Example: available={security(20)=78, secrets(15)=85, quality(15)=72, logic(15)=80} → (78·20 + 85·15 + 72·15 + 80·15) / (20+15+15+15) = 5115 / 65 ≈ 79.
+   - Round to the nearest integer.
+   - Missing rows in the scoreboard show `"N/A"` (score) and `"N/A — agent did not complete"` (status).
+   - Label the overall score as `"Partial Score (N/8 subcategories)"` so users cannot mistake it for a full review.
+   - Do NOT substitute 0 for missing subcategories — that penalizes areas that weren't measured and misrepresents the review.
+   - Rank thresholds (90-100=S, 80-89=A, ..., 0-49=F) apply to `partial_overall` as well; append `(partial)` after the rank letter to signal data incompleteness (e.g., `B (partial)`).
+
 ### Step 4: Launch Integration Agent
 
 **After confirming at least 2 review agents have completed**, launch the integration agent via `spawn_agent`.
 
-If some agents are missing, add to the integration agent prompt:
+**Only when ≥1 agent failed** (i.e., 2-3/4 succeeded; skip this line entirely when 4/4 succeed), add to the integration agent prompt:
 ```
-Note: The following agent results are missing: {list}. Generate the report using only the available agent results. Mark missing categories as "N/A — agent did not complete" in the report.
+Note: The following agent results are missing: {list}. Generate the report using only the available agent results. Mark missing categories as "N/A — agent did not complete" in the report. Apply the partial score normalization rule from §Step 3.5: partial_overall = Σ(available score × weight) / Σ(available weights), rounded to the nearest integer (do NOT multiply by 100 — scores are already 0-100 and the denominator is in the same scale). Label the result as "Partial Score (N/8 subcategories)" and append "(partial)" to the rank letter.
 ```
+
+`{list}` uses filename form — comma-separated JSON filenames (e.g., `agent-2-performance.json, agent-4-hygiene.json`), **not** agent display names or category names.
 
 #### Integration Agent Prompt Template
 
@@ -201,7 +232,7 @@ Output in the following format exactly:
   │ Improvements            │  XX   │ XXXXXXXXXX │
   └─────────────────────────┴───────┴────────────┘
 
-  Critical Issues: {N}
+  Critical Issues: {N}     # N = sum across available agents only; missing agents contribute 0
   Major Issues: {N}
   Minor Issues: {N}
 
@@ -213,7 +244,9 @@ Output in the following format exactly:
 ════════════════════════════════════════════════════════════════════════
 ```
 
-Status: 90+→EXCELLENT, 70+→GOOD, 50+→NEEDS WORK, <50→CRITICAL
+Status: 90+→EXCELLENT, 70+→GOOD, 50+→NEEDS WORK, <50→CRITICAL, N/A→"N/A — agent did not complete".
+
+**Column width**: The Status column is not fixed-width — expand it as needed so `"N/A — agent did not complete"` fits on a single line. Keep the box-drawing characters consistent.
 
 **Output 2: {work_dir}/report.md**
 
@@ -239,7 +272,10 @@ Do not include any other text in your final response.
 After confirming the integration agent has completed:
 
 1. **Read** `{work_dir}/summary.txt` with `shell` (cat) and display it to the console as-is
-2. **Copy** report: `cp {work_dir}/report.md docs/reviews/review-{YYYYMMDD-HHMM}.md`
+2. **Copy** report (ensure target directory exists first):
+   ```bash
+   mkdir -p docs/reviews && cp {work_dir}/report.md docs/reviews/review-{YYYYMMDD-HHMM}.md
+   ```
 3. Display completion message (including report file path)
 
 **Note**: Do not read files other than summary.txt (agent-*.json, report.md) into the main context.
@@ -255,7 +291,28 @@ After confirming the integration agent has completed:
 - **Agent timeout**: If an agent does not complete within a reasonable time, treat it as failed
 
 ### Integration agent failure (Step 4)
-- **Integration agent fails**: Read available agent JSON files directly and generate a minimal summary in the main context (fallback to inline reporting)
+- **Integration agent fails** (no `summary.txt` was produced): Read available agent JSON files directly and generate a minimal summary in the main context (inline fallback).
+  - **Skip the Step 5 `cp` step** — there is no `report.md` to place.
+  - Tell the user explicitly: `⚠️ Integration agent failed. No docs/reviews/review-*.md was generated. Raw JSON is in {work_dir}/ for manual inspection.`
+  - **Inline fallback summary template** (keep it compact — top 3 critical + top 3 major is sufficient; do not expand full issue lists to preserve main context):
+    ```
+    ⚠️ Integration agent failed — inline fallback summary.
+    Scope: {scope}
+    Available agents: {comma-separated list}
+    Missing agents:   {comma-separated list, or "none"}
+
+    Partial Score (N/8 subcategories): {score}/100   Rank: {rank} (partial if applicable)
+
+    Top 3 critical issues:
+      1. [critical] {message} ({file}:{line})
+      2. ...
+    Top 3 major issues:
+      1. [major] {message} ({file}:{line})
+      2. ...
+
+    Raw JSON: {work_dir}/
+    ```
+  - Apply the §Step 3.5 #3 partial normalization even in fallback mode when fewer than 8 subcategories are available.
 
 ## Important Rules
 
