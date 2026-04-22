@@ -51,37 +51,43 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 3. **行き詰まり提案済みフラグを初期化**: `stuck_hint_shown = false`
 4. 壁打ち対話ループに入る:
    a. ユーザーの発言を受け取る
-   a2. **行き詰まり検出**（`stuck_hint_shown == false` の場合のみ）:
+   b. **行き詰まり検出**（`stuck_hint_shown == false` の場合のみ）:
       - ユーザー発言に以下のトリガーキーワード（部分一致、大文字小文字無視）が含まれるか判定:
         - 日本語: 「行き詰ま」「わからない」「どうすれば」「手詰まり」「煮詰ま」「堂々巡り」「進まない」
         - 英語: "stuck", "no idea", "don't know", "dead end", "going in circles"
-      - キーワード検出時、以下を表示し `stuck_hint_shown = true` に設定:
+      - キーワード検出時、以下のブロックを**ステップ d で生成する Claude 応答本文の冒頭**に配置し、`stuck_hint_shown = true` に設定（誘導ブロック → 通常応答本文 → `💡 Codex の視点:` セクション、の順で出力する）:
         ```
         💡 行き詰まった時は `/claude-skills:problem-solving` で思考ツールを試せます:
         - `simplify` — 「全ては〇〇の特殊ケース」を見つける
-        - `invert` — 前提を反転させてみ��
+        - `invert` — 前提を反転させてみる
         - `collide` — 無関係な概念を衝突させる
         - `scale` — 極端なスケールでテストする
         - `pattern` — 他ドメインのパターンから学ぶ
         ```
       - 2回目以降のキーワード検出では表示を抑制する（`stuck_hint_shown == true` なのでスキップ）
-   b. **Codex セカンドオピニオン取得**（`codex_available == true` の場合のみ）:
+   c. **Codex セカンドオピニオン取得**（`codex_available == true` の場合のみ）:
       - Agent ツール（`subagent_type: "codex:codex-rescue"`）でユーザーの発言 + 壁打ちテーマ + これまでの議論の要約を送信
       - プロンプト: 「以下の壁打ちテーマとユーザーの発言に対して、異なる視点・反論・見落とし・関連するアイデアを提供してください。テーマ: {theme}。ユーザーの発言: {user_message}。これまでの議論: {summary}」
+        - **`{summary}` の扱い**: 初回ターン（履歴なし）の場合は `（最初のターン、履歴なし）` という文字列を代入する。2ターン目以降は過去ターンの議論要約（1〜3 文程度）を代入する
       - セキュリティ制約: 会話テキストのみを渡す（ファイル読み取り結果は渡さない）
       - **成功時**: Codex の意見を保持して次のステップへ
-      - **失敗時**: 初回のみ `⚠️ Codex unavailable — proceeding with Claude only` を表示し、`codex_available = false` に設定。以降のターンでは Codex 呼び出しをスキップ
-   c. Claude が応答を生成する（Codex の意見があればそれを統合）:
+      - **失敗時**: 以下のいずれかに該当する場合は失敗として扱う:
+        - Agent ツール呼び出しがエラーを返した
+        - Agent ツールがタイムアウトした
+        - Agent ツール自体が環境に存在しない / 呼び出し不可（`subagent_type: "codex:codex-rescue"` が利用不能）
+        - Codex の応答が空、または指定フォーマットを満たさない
+      - 失敗時の処理: 初回のみ `⚠️ Codex unavailable — proceeding with Claude only` を表示し、`codex_available = false` に設定。以降のターンでは Codex 呼び出しをスキップ
+   d. Claude が応答を生成する（Codex の意見があればそれを統合）:
       - ユーザーのアイデアに対して質問・深掘り・反論・別視点を提供
       - Codex の意見がある場合、応答末尾に以下のセクションを追記:
         ```
         💡 Codex の視点:
         {Codex の意見の要約}
         ```
-   d. 必要に応じて既存のコードベースを Read/Grep で調査（読み取り専用）
-   e. AskUserQuestion で次の入力を求める
-   f. ユーザーが「wrap」「まとめて」「終わり」等と言ったらループ終了
-4. ループ終了時に Wrap Workflow への誘導メッセージを表示:
+   e. 必要に応じて既存のコードベースを Read/Grep で調査（読み取り専用）
+   f. AskUserQuestion で次の入力を求める
+   g. ユーザーが「wrap」「まとめて」「終わり」等と言ったらループ終了
+5. ループ終了時に Wrap Workflow への誘導メッセージを表示:
    ```
    壁打ちを終了します。
    `/claude-skills:brainstorm-wrap` でアイデアをメモに整理できます。
@@ -161,19 +167,23 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 
 1. `docs/ideas/idea-status.md` を読む
    - なければ「まだアイデアがありません」と表示して終了
-2. AskUserQuestion で対象アイデアを選択
+2. AskUserQuestion で対象アイデアを選択（エントリが 1 件のみでも省略せず明示的に選択プロセスを実行する）
 3. アイデアファイルを読み込む
+   - **Title の出典**: `idea-status.md` のテーブルの最初のカラムのリンクテキスト（= Wrap Workflow で保存した `kebab-title`）を使用する
+   - **Summary の出典**: アイデアファイル本文の `## Summary` セクションの内容
 4. Skill ツールで `claude-skills:plan-create` を実行（引数フォーマット: `{Title}: {Summary from idea file}` — plan-create は $ARGUMENTS をそのまま What & Why の種として使う）
+   - **plan-create の出力**: 実行後、plan-create は `docs/plans/{new_timestamp}_{kebab-title}.md` を新規生成する（`new_timestamp` は plan-create 起動時の `date +%Y%m%d%H%M%S`）。このパスを「生成された plan ファイルパス」として保持し、Step 4.5 の引数に渡す
 4.5. Optional cycle execution:
-   - If `--team-cycle` is present in the original `$ARGUMENTS`: Remove the flag, then execute `claude-skills:team-cycle` via the Skill tool with the created plan. Skip Step 7 (Next Steps display).
-   - Else if `--cycle` is present in the original `$ARGUMENTS`: Remove the flag, then execute `claude-skills:cycle` via the Skill tool with the created plan. Skip Step 7 (Next Steps display).
-   - Otherwise: Continue to Step 5 (no cycle execution, show Next Steps as usual).
+   - If `--team-cycle` is present in the original `$ARGUMENTS`: Remove the flag, then execute `claude-skills:team-cycle` via the Skill tool with the created plan file path (from Step 4) as the argument. Skip Step 7 entirely (do not output any completion message — team-cycle produces its own completion log).
+   - Else if `--cycle` is present in the original `$ARGUMENTS`: Remove the flag, then execute `claude-skills:cycle` via the Skill tool with the created plan file path (from Step 4) as the argument. Skip Step 7 entirely (do not output any completion message — cycle produces its own completion log).
+   - Otherwise: Continue to Step 5 (no cycle execution, show the completion message with Next Steps in Step 7 as usual).
    - Note: If both `--team-cycle` and `--cycle` are specified, `--team-cycle` takes priority.
-5. アイデアの Status を `💡 Idea` → `📋 Planned` に更新
-6. アーカイブ処理を実行:
+5. アーカイブ処理を実行（Status 更新前にファイルを移動する）:
    - `docs/ideas/archives/` ディレクトリを作成（なければ `mkdir -p`）
    - `docs/ideas/{slug}.md` を `docs/ideas/archives/{slug}.md` に移動
-   - `idea-status.md` のテーブルから該当エントリを削除
+   - `idea-status.md` のテーブルから該当エントリを削除し、`Last Updated` を今日の日付に更新
+6. アーカイブされたアイデアファイル内の Status 欄を更新（移動後のファイルが対象）:
+   - `docs/ideas/archives/{slug}.md` 内の `**Status:** 💡 Idea` を `**Status:** 📋 Planned` に書き換える
 7. 完了メッセージ表示:
    ```
    ✅ アイデアから plan を作成しました!
@@ -217,7 +227,7 @@ Session Workflow と同一の制約が適用される:
 
    ここから壁打ちを再開します！
    ```
-4. Session Workflow と同じ対話ループを実行（Codex セカンドオピニオン付き — Session Workflow のステップ 2-3f と同一）
+4. Session Workflow と同じ対話ループを実行（Codex セカンドオピニオン付き — Session Workflow のステップ 4a-4g と同一）
    - 前回の Open Questions を優先的に議論の起点とする
    - 各ターンで Codex のセカンドオピニオンを取得し、`💡 Codex の視点:` として追記
    - Codex 接続失敗時は `⚠️ Codex unavailable — proceeding with Claude only` を表示し以降スキップ
