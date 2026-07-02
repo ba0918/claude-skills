@@ -501,7 +501,9 @@ skills/               # Claude Code 用スキル（ロジック本体）
     ├── lang-detect.md            # 言語・フレームワーク検出契約（attack-review 等が共有）
     ├── tdd-contract.md           # TDD 共通契約（cycle/iterate/tdd が共有）
     ├── verification-gate.md      # 完了前検証ゲート契約（証拠なし完了主張の防止）
-    └── design-system-contract.md # デザインシステム検証の共通契約
+    ├── design-system-contract.md # デザインシステム検証の共通契約
+    ├── orchestration-patterns.md # エージェントオーケストレーション設計契約（endorsed/アンチパターン）
+    └── skill-authoring.md        # スキル執筆仕様（frontmatter 契約 / 執筆原則 / チェックリスト）
 codex-skills/         # Codex CLI 用スキル（Codex ネイティブ API に変換）
 ├── commit/           # 自動コミット（Codex 版）
 ├── investigate/      # 読み取り専用調査（Codex 版）
