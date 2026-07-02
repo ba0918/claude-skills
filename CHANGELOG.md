@@ -4,6 +4,24 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.27.0
+
+新スキル `sweep-fix` を追加。指定範囲で見つけた問題をコードベース全体へ横展開して
+一括修正する find-one-fix-all 型ワークフロー。
+
+- **6フェーズ構成**: SCOPE（範囲確定）→ ANALYZE（問題検出、severity-and-verdicts 準拠）→
+  SWEEP（パターン化 + 横展開検索。Grep / ast-grep / LSP を使い分け、存在確認 +
+  Grep フォールバック付き。問題複数時は並行ファンアウト + `.claude/tmp/sweep-fix/` マージ、
+  `model: opus` 明示）→ VERIFY（文脈検証）→ FIX（verification-gate 準拠）→ REPORT
+- **偽陽性対策を独立フェーズとして強制**: 候補を CONFIRMED / FALSE_POSITIVE / UNCERTAIN の
+  3値判定にし、判定根拠の記録を必須化。UNCERTAIN → CONFIRMED への昇格を禁止する
+  fail-safe（迷ったら直さない）。「検索は広く、修正は狭く」で偽陰性対策（検索段階）と
+  偽陽性対策（検証段階）の責務を分離
+- **references**: `context-verification.md`（判定チェックリスト5項目 + 判定例）、
+  `pattern-extraction.md`（問題→検索シグネチャ変換ガイド + アンチパターン）
+- **skills-first 方針の初適用**: 新規スキルとして初めて command なしで追加
+  （`/claude-skills:sweep-fix` で直接起動）。Codex 版は需要を見てから codex-sync で移植予定
+
 ## 1.26.0
 
 サブエージェントのモデル階層（Model Tiering）を導入。高額モデル（Fable 等）の
