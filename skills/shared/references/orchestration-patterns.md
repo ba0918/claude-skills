@@ -110,6 +110,36 @@ Agent の「成功しました」報告を信じて結果を取り込む。
 
 **代わりに**: [verification-gate.md](verification-gate.md) に従い、VCS diff・テスト出力等のエビデンスで独立に検証してからマージする。
 
+## モデル階層（Model Tiering）
+
+サブエージェントは**セッションのモデルを継承する**。高額モデル（Fable 等）のセッションから
+ファンアウト系スキルを起動すると、配下全員が高額モデルで走ってコストが爆発する。
+これを防ぐため、**Agent 呼び出しには `model` パラメータを明示する**（継承に任せない）。
+
+### 原則
+
+1. **レバレッジ**: 上流の判断（plan 作成、分解、合意形成）ほど下流への波及が大きい。賢いモデルは上流に張る
+2. **検証ゲートで守られたフェーズは安くできる**: tdd-contract / verification-gate が機械的に失敗を拾うフェーズ（実装等）は、モデルのミスがループで回収できる。安くする候補はここ
+3. **ゲートのないレビュー・発見系は安くしない**: レビューの見逃しは機械的に検出されず静かに素通りする。レビュワーは読み中心でトークン消費が実装より1桁小さく、opus 維持の絶対コストは小さい（保険料が安い）
+4. **model 明示の第一目的は高額モデルの継承防止**: opus vs sonnet の差額より、Fable 等のセッションモデルが配下全体に波及する事故の方が桁違いに大きい
+
+### 標準マッピング
+
+| 役割 | model 指定 | 実例 |
+|------|-----------|------|
+| セッション本体（壁打ち / plan 作成 / 難問デバッグ / 分解判断） | 指定なし（ユーザーがセッションモデルで選択） | brainstorm, team-plan の Lead, parallel-cycle の分解 |
+| 実装・refine エージェント（長時間・大規模） | `opus` | cycle Phase 1/1.5/2, iterate Phase 3（Large）, parallel-cycle の cycle 実行 |
+| 軽量実装（小規模 + 検証ゲートあり） | `sonnet` | iterate Phase 3（Small） |
+| ファンアウトレビュワー・統合エージェント | `opus` | plan-reviewer 7観点, codebase-review 4体+統合, attack-review 6体+統合, iterate Phase 4, AgenticTeam メンバー |
+| 機械的作業（plan ファイル生成、スキャン） | `sonnet` or `haiku` | parallel-cycle Step 0.3 |
+| 読み取り専用調査 | `Explore` サブエージェント（自前のモデル設定を持つ） | iterate Phase 1 |
+
+### 禁止・注意事項
+
+- **attack-review 系エージェントを `fable` で走らせない**。Fable はサイバーセキュリティ分類器を持ち、正当な防御目的のセキュリティレビューでも `refusal` を返すことがある。コスト以前に成果物が壊れる
+- `model` 指定は Claude の Agent tool のパラメータ。**Codex エージェント（`codex:codex-rescue`）には適用しない**（Codex 側のモデルは Codex CLI の設定に従う）
+- fork（コンテキスト継承型）は `model` 指定を無視してセッションモデルで走る。安いモデルにしたい作業を fork に流さない
+
 ## 判断フロー
 
 ```

@@ -70,6 +70,6 @@ description: <何をするか>。<いつ使うか（トリガー語）>。
 - [ ] CLAUDE.md のコマンド対応表・主要スキル表を更新した
 - [ ] README.md（コマンド表・スキル表・ファイル構成）を更新した
 - [ ] Codex 版を作った場合は AGENTS.md を更新し、同期台帳を更新した
-- [ ] 複数エージェントを使う場合は [orchestration-patterns.md](orchestration-patterns.md) の判断フローを通した
+- [ ] 複数エージェントを使う場合は [orchestration-patterns.md](orchestration-patterns.md) の判断フローを通し、Agent 呼び出しに model 指定（モデル階層準拠）を明示した
 - [ ] `python3 scripts/validate_repo.py` が全チェック合格
 - [ ] バージョン bump 時は plugin.json / marketplace.json / CHANGELOG.md を更新した
