@@ -42,7 +42,7 @@ Decompose a natural language instruction into multiple plans.
 
 ### Step 0.1: Analyze and Decompose
 
-Use the Agent tool to decompose the instruction:
+Use the Agent tool to decompose the instruction. Do **not** set a `model` param here — decomposition and orthogonality judgment are high-leverage upstream decisions that should run on the session model (see [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering):
 
 **Agent prompt:**
 ```
@@ -104,7 +104,7 @@ Use AskUserQuestion for approval.
 
 ### Step 0.3: Generate Plan Files
 
-For each approved plan, use the Agent tool to generate a plan file:
+For each approved plan, use the Agent tool (`model: "sonnet"` — mechanical file generation from an already-approved decomposition) to generate a plan file:
 
 **Agent prompt:**
 ```
@@ -190,7 +190,7 @@ Execute each group sequentially. Within each group, execute cycles in parallel.
 For each cycle in the group, **in parallel**:
 
 1. **Create worktree**: Use the `EnterWorktree` tool to create an isolated worktree and branch
-2. **Execute cycle**: Use the Agent tool to run the cycle in the worktree:
+2. **Execute cycle**: Use the Agent tool (`model: "opus"` — implementation is protected by the verification gate and must not inherit an expensive session model) to run the cycle in the worktree:
 
    **Agent prompt:**
    ```

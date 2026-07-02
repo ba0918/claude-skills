@@ -95,6 +95,7 @@ Agent(
   name: "security-review",
   description: "Security & Secrets Review",
   subagent_type: "general-purpose",
+  model: "opus",
   mode: "bypassPermissions",
   prompt: <Agent 1-4 template from references/agent-prompts.md>
           dimension = "Security + Secrets"
@@ -105,6 +106,7 @@ Agent(
   name: "performance-review",
   description: "Performance & Memory Review",
   subagent_type: "general-purpose",
+  model: "opus",
   mode: "bypassPermissions",
   prompt: <Agent 1-4 template>
           dimension = "Performance + Memory Efficiency"
@@ -115,6 +117,7 @@ Agent(
   name: "quality-review",
   description: "Implementation Quality Review",
   subagent_type: "general-purpose",
+  model: "opus",
   mode: "bypassPermissions",
   prompt: <Agent 1-4 template>
           dimension = "Implementation Quality + Logical Consistency"
@@ -125,6 +128,7 @@ Agent(
   name: "hygiene-review",
   description: "Code Hygiene Review",
   subagent_type: "general-purpose",
+  model: "opus",
   mode: "bypassPermissions",
   prompt: <Agent 1-4 template>
           dimension = "Code Duplication + Other Improvements"
@@ -201,7 +205,7 @@ After all 5 agents complete, verify results:
 
 **After confirming at least 2 review agents have completed**, launch the integration agent via the Agent tool (`mode: bypassPermissions`).
 
-Integration agent: `subagent_type: general-purpose`, `mode: bypassPermissions`
+Integration agent: `subagent_type: general-purpose`, `model: "opus"`, `mode: bypassPermissions`
 
 **Only when ≥1 core agent failed** (i.e., 2-3/4 core succeeded; skip this line entirely when 4/4 succeed), add to the integration agent prompt:
 ```

@@ -67,7 +67,7 @@ If no signals detected and no override, skip Review 7.
 
 ### Step 3: Execute 7-Dimension Parallel Review + Codex Second Opinion
 
-Launch up to **7 reviews + 1 Codex agent in parallel** (Review 7: UI/UX is conditional — see Step 2.5). Each review runs as an Explore agent or general-purpose agent. The Codex agent runs as `subagent_type: "codex:codex-rescue"`.
+Launch up to **7 reviews + 1 Codex agent in parallel** (Review 7: UI/UX is conditional — see Step 2.5). Each review runs as an Explore agent or general-purpose agent with `model: "opus"` — reviews have no mechanical verification gate (a missed finding passes silently), so they stay on opus; the explicit param prevents inheriting a premium session model such as Fable (see [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering). The Codex agent runs as `subagent_type: "codex:codex-rescue"` (no `model` param — Codex uses its own CLI configuration).
 
 **Execution fallback**: Parallel dispatch via the Agent tool is the preferred mode. If the Agent tool is unavailable (e.g. the reviewer is itself running as a sub-agent and cannot spawn further agents, or the tool is disabled), run the dimensions **sequentially in the same session** — apply each dimension's checklist one at a time and compose the final integrated report yourself. Sequential execution must still produce the same output format as parallel; only the dispatch mechanism changes. Note the fallback once in the report (`Execution mode: sequential (Agent tool unavailable)`).
 

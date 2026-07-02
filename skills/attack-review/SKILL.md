@@ -181,6 +181,8 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
 
 Based on the determined mode, select and launch agents. Issue all Agent tool calls in a **single message** — do not split across multiple messages.
 
+**Model tiering**: core agents and the integration agent run with `model: "opus"` — attack finding has no mechanical verification gate, so a missed vulnerability passes silently; do not drop below opus (see [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering). **Never run these agents on `fable`** — Fable's cybersecurity classifiers can return `refusal` even for legitimate defensive security reviews, breaking the run regardless of cost.
+
 Prompt templates, attack criteria, and language profiles are in:
 - [references/agent-prompts.md](references/agent-prompts.md)
 - [references/attack-criteria.md](references/attack-criteria.md)
@@ -195,6 +197,7 @@ Agent(
   name: "injection-hunter",
   description: "Injection Attack Review",
   subagent_type: "general-purpose",
+  model: "opus",
   mode: "bypassPermissions",
   prompt: <Template from agent-prompts.md>
           agent_name   = "Injection Hunter"
@@ -206,6 +209,7 @@ Agent(
   name: "authn-authz-breaker",
   description: "AuthN/AuthZ Attack Review",
   subagent_type: "general-purpose",
+  model: "opus",
   mode: "bypassPermissions",
   prompt: <Template from agent-prompts.md>
           agent_name   = "AuthN/AuthZ Breaker"
@@ -217,6 +221,7 @@ Agent(
   name: "client-attack-specialist",
   description: "Client-Side Attack Review",
   subagent_type: "general-purpose",
+  model: "opus",
   mode: "bypassPermissions",
   prompt: <Template from agent-prompts.md>
           agent_name   = "Client Attack Specialist"
@@ -228,6 +233,7 @@ Agent(
   name: "data-secrets-exfiltrator",
   description: "Data & Secrets Exposure Review",
   subagent_type: "general-purpose",
+  model: "opus",
   mode: "bypassPermissions",
   prompt: <Template from agent-prompts.md>
           agent_name   = "Data & Secrets Exfiltrator"
@@ -239,6 +245,7 @@ Agent(
   name: "infra-supply-chain-exploiter",
   description: "Infra & Supply Chain Attack Review",
   subagent_type: "general-purpose",
+  model: "opus",
   mode: "bypassPermissions",
   prompt: <Template from agent-prompts.md>
           agent_name   = "Infra & Supply Chain Exploiter"
@@ -250,6 +257,7 @@ Agent(
   name: "business-logic-abuser",
   description: "Business Logic Attack Review",
   subagent_type: "general-purpose",
+  model: "opus",
   mode: "bypassPermissions",
   prompt: <Template from agent-prompts.md>
           agent_name   = "Business Logic Abuser"
@@ -328,7 +336,7 @@ After all agents complete, verify results:
 
 **After confirming sufficient agents have completed**, launch the integration agent.
 
-Integration agent: `subagent_type: general-purpose`, `mode: bypassPermissions`
+Integration agent: `subagent_type: general-purpose`, `model: "opus"`, `mode: bypassPermissions`
 
 Use the integration agent prompt template from [references/agent-prompts.md](references/agent-prompts.md) § Integration Agent Prompt Template.
 

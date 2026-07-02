@@ -115,7 +115,7 @@ Options:
 
 ## Phase 3: Implementation
 
-Launch an implementation agent via the Agent tool (general-purpose).
+Launch an implementation agent via the Agent tool (general-purpose). Model by Phase 2 size judgment: `model: "sonnet"` if **Small** (small scope + the verification gate make the cheaper tier safe), `model: "opus"` if **Large**. See [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering.
 
 Instructions to the agent:
 - Implement the additional instructions
@@ -143,7 +143,7 @@ Store the diff output and inline it into both agent prompts. If the diff exceeds
 ### If Small
 
 Launch **2 agents in parallel** (issue both Agent tool calls in a single message):
-1. **Review agent** (general-purpose):
+1. **Review agent** (general-purpose, `model: "opus"`):
    - Review from 2 perspectives: Security + Implementation Quality
    - Use `.claude/review-rules.md` as additional criteria if it exists
    - Apply `skills/shared/references/verification-gate.md` Gate Function: do NOT issue PASS without test execution evidence
@@ -158,7 +158,7 @@ Launch **2 agents in parallel** (issue both Agent tool calls in a single message
 ### If Large (user chose to continue)
 
 Launch **2 agents in parallel** (issue both Agent tool calls in a single message):
-1. **Review agent** (general-purpose):
+1. **Review agent** (general-purpose, `model: "opus"`):
    - Review from 4 perspectives: Security + Implementation Quality + Architecture + Completeness
    - Use `.claude/review-rules.md` as additional criteria if it exists
    - Apply `skills/shared/references/verification-gate.md` Gate Function: do NOT issue PASS without test execution evidence
