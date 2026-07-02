@@ -13,7 +13,7 @@
   },
   "codex-skills/commit/SKILL.md": {
     "source": "skills/commit/SKILL.md",
-    "source_sha256": "8a8a34dcc04f2a65e186c87b8f2e9c167619b7a6550ce062161f881bae2f71e3"
+    "source_sha256": "4a6b6c7a9b17fba332b55e7d793a23132e750212123a19035c3bf015d801524f"
   },
   "codex-skills/cycle/SKILL.md": {
     "source": "commands/cycle.md",
@@ -37,7 +37,7 @@
   },
   "codex-skills/parallel-cycle/SKILL.md": {
     "source": "skills/parallel-cycle/SKILL.md",
-    "source_sha256": "5dbcc8f32fc0b09952535eea115de746871db8e0765ecb4351e5e3cea4a3c715"
+    "source_sha256": "964c4b25981f841a3b0e7ca5444cc66c8865f125a75275aaeee13a1eb10b638f"
   },
   "codex-skills/plan-reviewer/SKILL.md": {
     "source": "skills/plan-reviewer/SKILL.md",

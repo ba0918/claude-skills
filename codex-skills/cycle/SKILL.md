@@ -1,6 +1,6 @@
 ---
 name: cycle
-description: 計画の refine → implement を全自動で回す（寝てる間に完了するやつ）
+description: 計画の refine → implement を全自動で回す（寝てる間に完了するやつ）。「cycle」「サイクル実行」「計画を自動実装して」で起動。
 ---
 
 # Cycle

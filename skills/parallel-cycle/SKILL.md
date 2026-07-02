@@ -1,6 +1,6 @@
 ---
 name: parallel-cycle
-description: Decompose a natural language instruction into multiple plans, check file orthogonality, execute independent cycles in parallel via worktrees, and merge results. Supports both natural language decomposition and direct plan file specification.
+description: Decompose a natural language instruction into multiple plans, check file orthogonality, execute independent cycles in parallel via worktrees, and merge results. Supports both natural language decomposition and direct plan file specification. Use when the user says "parallel-cycle", "並行実行", "並列で実装", or gives a compound instruction that should be split into independent cycles.
 ---
 
 # Parallel Cycle

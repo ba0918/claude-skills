@@ -20,6 +20,7 @@
   8. AGENTS.md が全 codex-skills 名に言及している（ドリフト検出）
   9. plugin.json と marketplace.json のバージョンが一致する
   10. Claude 版 ⇔ Codex 版スキルの同期台帳（codex-skills/sync-manifest.json）
+  11. SKILL.md description の品質（トリガー語を含む / 1024 字以内）
 
 同期台帳の仕組み:
   codex-skills/ の各スキルは skills/ の対応スキル（cycle のみ commands/cycle.md）を
@@ -80,6 +81,56 @@ def parse_frontmatter_fields(text):
         if m:
             fields[m.group(1)] = m.group(2).strip()
     return {}  # 閉じデリミタなし = frontmatter 不成立
+
+
+def extract_description(text):
+    """frontmatter から description の全文を返す（複数行ブロックスカラー対応）。
+
+    parse_frontmatter_fields は単一行の値しか取れないため、`description: >` 形式の
+    複数行 description はこちらで結合して返す。なければ None。
+    """
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return None
+    body = []
+    closed = False
+    for line in lines[1:]:
+        if line.strip() == "---":
+            closed = True
+            break
+        body.append(line)
+    if not closed:
+        return None
+    desc_lines = []
+    in_desc = False
+    for line in body:
+        if re.match(r"^description:", line):
+            in_desc = True
+            desc_lines.append(re.sub(r"^description:\s*", "", line).strip())
+            continue
+        if in_desc:
+            if re.match(r"^[A-Za-z_-]+:", line):  # 次のトップレベルキー
+                break
+            desc_lines.append(line.strip())
+    if not in_desc:
+        return None
+    if desc_lines and desc_lines[0] in (">", "|", ">-", "|-"):
+        desc_lines = desc_lines[1:]
+    return " ".join(l for l in desc_lines if l).strip()
+
+
+# description は「何をするか」に加えて「いつ起動するか」を含まなければならない。
+# スキル発火はモデルが description を読んで判断するため、トリガー語の欠落は
+# 発火漏れに直結する。日本語スキルは「〜で起動」、英語スキルは "Use when" 等。
+DESCRIPTION_TRIGGER = re.compile(r"で起動|で使用|use when|triggers?:", re.IGNORECASE)
+DESCRIPTION_MAX_LEN = 1024
+
+# トリガー語チェックの免除リスト。免除はスキル側の frontmatter ではなく
+# ここに置く（スキルファイルの編集だけで検証を迂回できないようにするため）。
+# 追加する場合は必ず理由を書くこと。
+DESCRIPTION_TRIGGER_EXEMPT = {
+    # "skills/<name>": "理由",
+}
 
 
 def extract_command_refs(text):
@@ -313,6 +364,27 @@ def run_checks(root):
     errors += check_sync_manifest(
         pairs, _load_manifest(root), _collect_source_hashes(root, pairs)
     )
+
+    # 11. description の品質（トリガー語 / 長さ上限）
+    for subdir in ("skills", "codex-skills"):
+        for skill in _skill_dirs(root, subdir):
+            skill_md = os.path.join(root, subdir, skill, "SKILL.md")
+            if not os.path.isfile(skill_md):
+                continue  # 欠落はチェック2で報告済み
+            desc = extract_description(_read(skill_md))
+            if not desc:
+                continue  # 欠落はチェック3で報告済み
+            rel = f"{subdir}/{skill}"
+            if len(desc) > DESCRIPTION_MAX_LEN:
+                errors.append(
+                    f"[description] {DESCRIPTION_MAX_LEN} 字を超過（{len(desc)} 字）: "
+                    f"{rel}/SKILL.md"
+                )
+            if rel not in DESCRIPTION_TRIGGER_EXEMPT and not DESCRIPTION_TRIGGER.search(desc):
+                errors.append(
+                    f"[description] トリガー語がない（「〜で起動」/ \"Use when\" 等）: "
+                    f"{rel}/SKILL.md"
+                )
 
     return errors
 
