@@ -200,6 +200,7 @@ AskUserQuestion で追加調整を確認:
 
 ## References
 
+- **生成制約の詳細:** [references/generation-constraints.md](references/generation-constraints.md) — 制約の階層 / 許可される自由度 / 禁止事項と対応 lint ルール
 - **Page Schema:** [../design-scaffold/references/page-schema.json](../design-scaffold/references/page-schema.json)
 - **Layout Schema:** [../design-scaffold/references/layout-schema.json](../design-scaffold/references/layout-schema.json)
 - **Catalog Schema:** [../design-scaffold/references/catalog-schema.json](../design-scaffold/references/catalog-schema.json)
