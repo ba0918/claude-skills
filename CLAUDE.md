@@ -167,3 +167,6 @@ claude --plugin-dir /path/to/claude-skills
 - スキルの `SKILL.md` 内で参照する `references/` のファイルは相対パスでリンクしている。パスを変更する場合はリンクも更新すること
 - コマンドの frontmatter（`---` ブロック）の `description` フィールドがスキル一覧での表示に使われる
 - `.skill` ファイルは `.gitignore` で除外されている（単体ファイル形式のスキルは使わない方針）
+- 編集後は `python3 scripts/validate_repo.py` を実行すること。symlink 切れ / 相対リンク切れ / frontmatter 欠落 / CLAUDE.md 対応表とcommands/ の不一致 / README・AGENTS.md のスキル名カバレッジ / plugin.json⇔marketplace.json のバージョン同期を機械検証する。CI（`.github/workflows/validate.yml`）でも push / PR ごとに同じチェックが走る
+- スキルを追加したら README.md（コマンド表・スキル表・ファイル構成）、CLAUDE.md（対応表・主要スキル表）、codex 版があれば AGENTS.md も更新すること（怠ると CI のドリフト検出で fail する）
+- バージョン bump 時は `.claude-plugin/plugin.json` と `.claude-plugin/marketplace.json` の両方を更新し、`CHANGELOG.md` にエントリを追加すること（リリースノートは plugin.json ではなく CHANGELOG.md に書く）

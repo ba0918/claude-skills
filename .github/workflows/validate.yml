@@ -1,0 +1,18 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unit tests (validator pure functions)
+        run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
+
+      - name: Repo consistency checks
+        run: python3 scripts/validate_repo.py
