@@ -4,6 +4,27 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.26.0
+
+サブエージェントのモデル階層（Model Tiering）を導入。高額モデル（Fable 等）の
+セッションからスキルを起動しても、配下のエージェントが高額モデルを継承して
+コストが暴発する事故を構造的に防止する。
+
+- **共通契約**: `orchestration-patterns.md` に「モデル階層」セクションを新設。
+  原則4つ（レバレッジ / 検証ゲートで守られたフェーズは安くできる / ゲートのない
+  レビュー・発見系は安くしない / model 明示の第一目的は高額モデルの継承防止）と
+  標準マッピング表を定義。fork は model 指定を無視する点、Codex エージェントは
+  対象外である点も明記
+- **model 指定の追加**: cycle（refine/修正/実装 = opus）、plan-reviewer（7観点 = opus）、
+  codebase-review（4体+統合 = opus）、attack-review（6体+統合 = opus）、
+  iterate（実装は Small=sonnet / Large=opus のサイズ連動、レビュー = opus）、
+  parallel-cycle（分解 = セッションモデル、plan 生成 = sonnet、cycle 実行 = opus）、
+  team-config（メンバー spawn = opus、Lead = セッションモデル）
+- **attack-review の fable 禁止**: Fable のサイバーセキュリティ分類器は正当な防御
+  目的のレビューでも refusal を返しうるため、コスト以前に成果物が壊れる旨を明記
+- **Codex 版6ペア**: model パラメータは Claude の Agent tool 固有のため反映不要と
+  判断し、同期台帳のみ更新
+
 ## 1.25.0
 
 addyosmani/agent-skills の分析結果から良質なプラクティスを移植。
