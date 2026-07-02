@@ -96,7 +96,7 @@ commands/problem-solving.md  →  skills/problem-solving/SKILL.md
 commands/codex-sync.md       →  skills/codex-sync/SKILL.md
 ```
 
-> `generate-review-rules` はコマンドなし（Skill ツール直接呼び出し）。
+> `generate-review-rules`、`sweep-fix` はコマンドなし（Skill ツール直接呼び出し）。
 
 ### 主要スキル
 
@@ -112,6 +112,7 @@ commands/codex-sync.md       →  skills/codex-sync/SKILL.md
 | `issue` | plan 中に発見したスコープ外の問題を記録・管理し、plan → cycle に繋げる。polling ワークフローで `ready/` キューを self-driving 消化するラルフループも提供 |
 | `parallel-cycle` | 自然言語の指示を複数 plan に分解し、worktree で並行 cycle 実行・自動マージ。Codex CLI 版は `codex-skills/parallel-cycle/`（`spawn_agent` / `wait_agent` / `$<skill>` / `git worktree` 直叩き、承認プロンプトは撤廃して完全 headless、ワークフロー自体は Claude 版と同一） |
 | `investigate` | 問題を読み取り専用で調査し、構造化レポートを出力。ファイル編集は一切行わない |
+| `sweep-fix` | ユーザ指定範囲の問題検出 → パターン化 → コードベース全体への横展開検索（Grep/ast-grep/LSP、存在確認 + Grep フォールバック付き）→ 文脈検証（CONFIRMED/FALSE_POSITIVE/UNCERTAIN の3値判定で偽陽性除去、fail-safe: 迷ったら直さない）→ CONFIRMED 箇所のみ一括修正する find-one-fix-all 型スキル。skills-first 方針により command なし。severity-and-verdicts / orchestration-patterns / verification-gate の共有契約に準拠 |
 | `brainstorm` | アイデアの壁打ちに特化。発散→収束→plan化の導線を提供。壁打ち中はファイル編集禁止。各ターンで Codex セカンドオピニオンを取得し多角的な視点を提供。Codex CLI 版は `codex-skills/brainstorm/`（Codex セカンドオピニオンは冗長なため除外、`request_user_input` ベースの対話ループ、wrap/plan のファイル生成は `apply_patch`） |
 | `doc-write` | LLMとのやり取り・調査結果をリーダブルなドキュメントに昇華。Mermaid図付き |
 | `team-cycle` | AgenticTeam によるチーム議論型レビュー + 自動実装サイクル。4専門レビュワーが議論して計画品質を向上 |
