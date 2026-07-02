@@ -3,6 +3,10 @@
     "source": "skills/attack-review/SKILL.md",
     "source_sha256": "f9d096945902003262b234b26e13efa2428f6f86b97c459d0ab7109b7e06383c"
   },
+  "codex-skills/brainstorm/SKILL.md": {
+    "source": "skills/brainstorm/SKILL.md",
+    "source_sha256": "4dce20b7e3fd9825fa7c305d39ff2037a6f291ec7d413a386d386a4bc846020f"
+  },
   "codex-skills/codebase-review/SKILL.md": {
     "source": "skills/codebase-review/SKILL.md",
     "source_sha256": "0e90d64cb87945f78ecd8f8fc18928cc797ce34c7d5836772b78e4b28385241f"
@@ -42,6 +46,10 @@
   "codex-skills/plan/SKILL.md": {
     "source": "skills/plan/SKILL.md",
     "source_sha256": "77c6d9c26426507afe191546ad80a593e6f9fd5b1beb7cefce17c988b8247231"
+  },
+  "codex-skills/problem-solving/SKILL.md": {
+    "source": "skills/problem-solving/SKILL.md",
+    "source_sha256": "6f5d7837594a8ec57a9c2b5c2a999b194de74bfb5c0a0809da3d991860fbb905"
   },
   "codex-skills/shared/references/team-config.md": {
     "source": "skills/shared/references/team-config.md",

@@ -108,7 +108,7 @@ commands/codex-sync.md       →  skills/codex-sync/SKILL.md
 | `issue` | plan 中に発見したスコープ外の問題を記録・管理し、plan → cycle に繋げる。polling ワークフローで `ready/` キューを self-driving 消化するラルフループも提供 |
 | `parallel-cycle` | 自然言語の指示を複数 plan に分解し、worktree で並行 cycle 実行・自動マージ。Codex CLI 版は `codex-skills/parallel-cycle/`（`spawn_agent` / `wait_agent` / `$<skill>` / `git worktree` 直叩き、承認プロンプトは撤廃して完全 headless、ワークフロー自体は Claude 版と同一） |
 | `investigate` | 問題を読み取り専用で調査し、構造化レポートを出力。ファイル編集は一切行わない |
-| `brainstorm` | アイデアの壁打ちに特化。発散→収束→plan化の導線を提供。壁打ち中はファイル編集禁止。各ターンで Codex セカンドオピニオンを取得し多角的な視点を提供 |
+| `brainstorm` | アイデアの壁打ちに特化。発散→収束→plan化の導線を提供。壁打ち中はファイル編集禁止。各ターンで Codex セカンドオピニオンを取得し多角的な視点を提供。Codex CLI 版は `codex-skills/brainstorm/`（Codex セカンドオピニオンは冗長なため除外、`request_user_input` ベースの対話ループ、wrap/plan のファイル生成は `apply_patch`） |
 | `doc-write` | LLMとのやり取り・調査結果をリーダブルなドキュメントに昇華。Mermaid図付き |
 | `team-cycle` | AgenticTeam によるチーム議論型レビュー + 自動実装サイクル。4専門レビュワーが議論して計画品質を向上 |
 | `team-plan` | AgenticTeam によるチーム議論型の計画作成。4専門家が議論しながら多角的な実装計画を作成 |
@@ -127,7 +127,7 @@ commands/codex-sync.md       →  skills/codex-sync/SKILL.md
 | `mockup-diff` | 承認済みモックアップ HTML vs 実行中アプリのスクショ比較で実装差異を検出・修正。Phase 0: SETUP でプロジェクトを自動調査しテーラーメイドの比較スクリプトを生成。design-validate がトークン準拠の機械検証なのに対し、mockup-diff は spacing/font/layout の実装品質ラストワンマイルを担当 |
 | `test-driven-development` | TDD (RED-GREEN-REFACTOR) の対話型ガイド。各フェーズで Bash テスト実行を要求し、テストファースト開発を強制。共有契約 `tdd-contract.md` + `verification-gate.md` を参照 |
 | `systematic-debugging` | 4フェーズ構造化デバッグ（Root Cause Investigation → Pattern Analysis → Hypothesis & Testing → Implementation）。investigate の補完として修正まで実行。3回失敗ルールでアーキテクチャ問題を検出 |
-| `problem-solving` | 行き詰まった時の思考ツール集。5サブワークフロー（simplify/collide/invert/scale/pattern）で多角的アプローチ。brainstorm セッションからも呼び出し可能。Edit/Write 禁止（概念レベルの議論に集中） |
+| `problem-solving` | 行き詰まった時の思考ツール集。5サブワークフロー（simplify/collide/invert/scale/pattern）で多角的アプローチ。brainstorm セッションからも呼び出し可能。Edit/Write 禁止（概念レベルの議論に集中）。Codex CLI 版は `codex-skills/problem-solving/`（`request_user_input` ベース、apply_patch 禁止、思考手法の内容は Claude 版と同一） |
 | `codex-sync` | Claude 版スキルを Codex 版へ自動移植・差分同期するメタスキル（本リポジトリ専用）。port（新規移植）/ sync（同期台帳の sha256 から前回同期時点を特定し差分のみ移植）/ scan（未同期ペアの一括処理）の3モード。3層変換ルール（機械的置換 / 構造的変換 / 要判断）を適用し、validate → `--update-manifest` まで一気通貫。第3層は自動変換せず人間の判断を仰ぐ |
 
 ### ワークフロー設計パターン
