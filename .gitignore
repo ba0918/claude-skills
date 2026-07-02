@@ -1,9 +1,10 @@
 # cache
 __pycache__
 
-# cladue
+# claude
 .claude/settings.local.json
 .claude/tmp
+.claude/worktrees
 
 # OS
 .DS_Store
