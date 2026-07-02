@@ -11,12 +11,23 @@ skills/<skill-name>/
   SKILL.md          # 必須: メインロジック
   references/       # 任意: テンプレート・チェックリスト等（SKILL.md から相対リンク）
   scripts/          # 任意: 実行ヘルパー（skill-improve の collect.py 等）
-commands/<command>.md  # スキルを呼び出す薄いラッパー。ロジックはスキル側に集約
+commands/<command>.md  # 任意: スキルを呼び出す薄いラッパー（skills-first 方針により新規はデフォルト不要）
 ```
 
 - スキル名はケバブケース。`.skill` 単体ファイル形式は使わない
 - `references/` は本当に使うファイルだけ置く。他スキルの構成を真似た空ディレクトリを作らない
 - 複数スキルで共有する契約・定義は `skills/shared/references/` に置き、各スキルからリンクする
+
+## Commands の位置づけ（skills-first）
+
+ロジックは常に skills に集約し、commands は Claude Code ローカル専用のオプショナルな糖衣とする。
+skills はクロスツールの共通分母（Codex CLI / APM 等のエコシステムは commands 相当を非サポート）であり、
+Claude Code 上でもスキルは `/skill-name` で直接起動できるため、command がなくても発見性は description で確保できる。
+
+- **新規スキルは command なしをデフォルトにする**。SKILL.md の description にトリガー語と引数の使い方を書くことで起動導線を担保する
+- command を追加してよいのは **multi-workflow スキルの名前付きエントリポイント**が必要な場合のみ（例: `issue` スキルに対する issue-create / issue-list / issue-plan。1スキル複数ワークフローの各入口を `/` 補完に個別の説明付きで並べたい場合）
+- command を作る場合もロジックは書かない。Skill ツール呼び出し + `$ARGUMENTS` の受け渡しのみの薄いラッパーに徹する
+- **既存 commands は互換性のため維持する**。1行ラッパーで維持コストはほぼゼロであり、削除は既存ユーザーの `/claude-skills:*` 呼び出しを壊す。積極的に増やさず自然減に任せる
 
 ## Frontmatter 契約（validate_repo.py が強制）
 
@@ -66,7 +77,7 @@ description: <何をするか>。<いつ使うか（トリガー語）>。
 
 ## 新規スキル追加チェックリスト
 
-- [ ] `commands/<name>.md`（薄いラッパー）を追加した（コマンド不要なスキルは除く）
+- [ ] command の要否を skills-first 方針で判断した（デフォルトは command なし。multi-workflow の名前付き入口が必要な場合のみ薄いラッパーを追加）
 - [ ] CLAUDE.md のコマンド対応表・主要スキル表を更新した
 - [ ] README.md（コマンド表・スキル表・ファイル構成）を更新した
 - [ ] Codex 版を作った場合は AGENTS.md を更新し、同期台帳を更新した
