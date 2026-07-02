@@ -1,6 +1,6 @@
 # Project Status
 
-**Last Updated:** 2026-04-15
+**Last Updated:** 2026-07-02
 
 ---
 
@@ -8,14 +8,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Cycle ID** | `20260415164852` |
-| **Feature** | mockup-diff スキルの汎用化リファクタ |
-| **Started** | 2026-04-15 16:48:52 |
-| **Phase** | 🟢 Completed |
-| **Plan** | [docs/plans/20260415164852_mockup-diff-generalization.md](./plans/20260415164852_mockup-diff-generalization.md) |
+| **Cycle ID** | `20260702200752` |
+| **Feature** | sweep-fix スキルの作成 |
+| **Started** | 2026-07-02 20:07:52 |
+| **Phase** | 🟡 In Progress |
+| **Plan** | [docs/plans/20260702200752_sweep-fix-skill.md](./plans/20260702200752_sweep-fix-skill.md) |
 
 **Current Focus:**
-mockup-diff スキルを特定プロジェクト（screen-knowledge Tauri GUI）へのハードコードから脱却させ、Phase 0: SETUP でプロジェクト調査→テーラーメイド比較スクリプト自動生成する汎用スキルにリファクタする。
+指定範囲の問題検出 → パターン化 → コードベース全体への横展開検索 → 文脈検証（偽陽性除去）→ 一括修正を行う find-one-fix-all 型スキルを新規作成する。skills-first 方針で command なし。
 
 ---
 
