@@ -6,6 +6,7 @@
 それらを機械的に検証する。CI（GitHub Actions）とローカルの両方から実行できる。
 
 実行: python3 scripts/validate_repo.py [repo_root]
+      python3 scripts/validate_repo.py --update-manifest [repo_root]
 終了コード: 0 = 全チェック合格 / 1 = 違反あり
 
 チェック項目:
@@ -18,7 +19,17 @@
   7. README.md が全スキル名に言及している（ドリフト検出）
   8. AGENTS.md が全 codex-skills 名に言及している（ドリフト検出）
   9. plugin.json と marketplace.json のバージョンが一致する
+  10. Claude 版 ⇔ Codex 版スキルの同期台帳（codex-skills/sync-manifest.json）
+
+同期台帳の仕組み:
+  codex-skills/ の各スキルは skills/ の対応スキル（cycle のみ commands/cycle.md）を
+  ソースとする移植版。両者は意図的に内容が異なるため diff 比較はできないが、
+  「ソースだけ更新して移植版を忘れる」サイレントドリフトは防ぎたい。
+  そこで sync 時点のソースファイルの sha256 を台帳に記録し、ソースが変わったのに
+  台帳が古いままなら CI を落とす。Codex 版へ反映（または反映不要と判断）したら
+  `--update-manifest` で台帳を更新して合意を記録する。
 """
+import hashlib
 import json
 import os
 import re
@@ -86,6 +97,119 @@ def find_broken_symlinks(root):
             if os.path.islink(path) and not os.path.exists(path):
                 broken.append(path)
     return sorted(broken)
+
+
+SYNC_MANIFEST_PATH = os.path.join("codex-skills", "sync-manifest.json")
+
+# codex スキル名 → Claude 側ソースの特例。デフォルトは skills/<name>/SKILL.md
+CODEX_SOURCE_OVERRIDES = {
+    "cycle": "commands/cycle.md",  # Claude 側は commands のみ（スキル実体なし）
+}
+
+# skills/*/SKILL.md 対応以外で同期追跡したい実ファイルペア (codex側, ソース)
+EXTRA_SYNC_PAIRS = [
+    (
+        "codex-skills/shared/references/team-config.md",
+        "skills/shared/references/team-config.md",
+    ),
+]
+
+
+def resolve_codex_source(codex_skill_name):
+    """codex スキル名から Claude 側ソースのリポジトリ相対パスを返す。"""
+    return CODEX_SOURCE_OVERRIDES.get(
+        codex_skill_name, f"skills/{codex_skill_name}/SKILL.md"
+    )
+
+
+def collect_sync_pairs(root):
+    """同期追跡対象の (codex相対パス, ソース相対パス) 一覧を返す。
+
+    symlink は物理的に同一内容なのでドリフトし得ず、対象外。
+    """
+    pairs = []
+    for skill in _skill_dirs(root, "codex-skills"):
+        codex_rel = f"codex-skills/{skill}/SKILL.md"
+        path = os.path.join(root, codex_rel)
+        if os.path.isfile(path) and not os.path.islink(path):
+            pairs.append((codex_rel, resolve_codex_source(skill)))
+    for codex_rel, source_rel in EXTRA_SYNC_PAIRS:
+        path = os.path.join(root, codex_rel)
+        if os.path.isfile(path) and not os.path.islink(path):
+            pairs.append((codex_rel, source_rel))
+    return pairs
+
+
+def check_sync_manifest(pairs, manifest, source_hashes):
+    """同期台帳を検証し、違反メッセージ一覧を返す。
+
+    pairs: (codex相対パス, ソース相対パス) の一覧
+    manifest: {codex相対パス: {"source": ..., "source_sha256": ...}}
+    source_hashes: {ソース相対パス: sha256 hex}（存在しないソースはキーなし）
+    """
+    errors = []
+    hint = "python3 scripts/validate_repo.py --update-manifest"
+    for codex_rel, source_rel in pairs:
+        source_hash = source_hashes.get(source_rel)
+        if source_hash is None:
+            errors.append(
+                f"[sync] 対応する Claude 版ソースが存在しない: {codex_rel} -> {source_rel}"
+            )
+            continue
+        entry = manifest.get(codex_rel)
+        if not entry:
+            errors.append(f"[sync] sync-manifest に未登録: {codex_rel}（{hint} で登録）")
+        elif entry.get("source") != source_rel:
+            errors.append(
+                f"[sync] sync-manifest の source が不一致: {codex_rel} "
+                f"(台帳: {entry.get('source')} / 期待: {source_rel})"
+            )
+        elif entry.get("source_sha256") != source_hash:
+            errors.append(
+                f"[sync] Claude 版が変更されたが Codex 版が未同期: {source_rel} -> {codex_rel}"
+                f"（内容を同期・または反映不要と判断してから {hint}）"
+            )
+    pair_keys = {codex_rel for codex_rel, _ in pairs}
+    for stale in sorted(set(manifest) - pair_keys):
+        errors.append(f"[sync] sync-manifest に実在しないエントリ: {stale}（{hint} で掃除）")
+    return errors
+
+
+def _sha256_file(path):
+    with open(path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
+def _collect_source_hashes(root, pairs):
+    hashes = {}
+    for _, source_rel in pairs:
+        path = os.path.join(root, source_rel)
+        if os.path.isfile(path):
+            hashes[source_rel] = _sha256_file(path)
+    return hashes
+
+
+def _load_manifest(root):
+    path = os.path.join(root, SYNC_MANIFEST_PATH)
+    if not os.path.isfile(path):
+        return {}
+    return json.loads(_read(path))
+
+
+def update_manifest(root):
+    """現在のソースハッシュで同期台帳を再生成して書き込む。"""
+    pairs = collect_sync_pairs(root)
+    hashes = _collect_source_hashes(root, pairs)
+    manifest = {
+        codex_rel: {"source": source_rel, "source_sha256": hashes[source_rel]}
+        for codex_rel, source_rel in sorted(pairs)
+        if source_rel in hashes
+    }
+    path = os.path.join(root, SYNC_MANIFEST_PATH)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    return manifest
 
 
 def _read(path):
@@ -184,11 +308,22 @@ def run_checks(root):
                     f"({entry.get('version')}) のバージョン不一致"
                 )
 
+    # 10. Claude 版 ⇔ Codex 版の同期台帳
+    pairs = collect_sync_pairs(root)
+    errors += check_sync_manifest(
+        pairs, _load_manifest(root), _collect_source_hashes(root, pairs)
+    )
+
     return errors
 
 
 def main():
-    root = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    args = [a for a in sys.argv[1:] if a != "--update-manifest"]
+    root = args[0] if args else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if "--update-manifest" in sys.argv[1:]:
+        manifest = update_manifest(root)
+        print(f"✓ {SYNC_MANIFEST_PATH} を更新（{len(manifest)} ペア）")
+        return 0
     errors = run_checks(root)
     if errors:
         print(f"✗ {len(errors)} 件の違反:")

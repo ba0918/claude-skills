@@ -1,0 +1,54 @@
+{
+  "codex-skills/attack-review/SKILL.md": {
+    "source": "skills/attack-review/SKILL.md",
+    "source_sha256": "f9d096945902003262b234b26e13efa2428f6f86b97c459d0ab7109b7e06383c"
+  },
+  "codex-skills/codebase-review/SKILL.md": {
+    "source": "skills/codebase-review/SKILL.md",
+    "source_sha256": "0e90d64cb87945f78ecd8f8fc18928cc797ce34c7d5836772b78e4b28385241f"
+  },
+  "codex-skills/commit/SKILL.md": {
+    "source": "skills/commit/SKILL.md",
+    "source_sha256": "8a8a34dcc04f2a65e186c87b8f2e9c167619b7a6550ce062161f881bae2f71e3"
+  },
+  "codex-skills/cycle/SKILL.md": {
+    "source": "commands/cycle.md",
+    "source_sha256": "f2dd839b061036e4c891cd590dfaca4730df8839542092cda0e7fe7a00a58c4d"
+  },
+  "codex-skills/handoff/SKILL.md": {
+    "source": "skills/handoff/SKILL.md",
+    "source_sha256": "49735c84f3498c8e5eec8500835456a989a7d34abb3b32c08a383f5ac91bcb57"
+  },
+  "codex-skills/investigate/SKILL.md": {
+    "source": "skills/investigate/SKILL.md",
+    "source_sha256": "da2f587fa472eaf7f88cb06f3dbae2dac2154c2cd5253111bb6d80ea47ab70a3"
+  },
+  "codex-skills/issue/SKILL.md": {
+    "source": "skills/issue/SKILL.md",
+    "source_sha256": "43cecf7919276e42ff1a77871724e0931d5bd4f70f3c845ed6550428663c093e"
+  },
+  "codex-skills/iterate/SKILL.md": {
+    "source": "skills/iterate/SKILL.md",
+    "source_sha256": "8145633fbd6e0d94805311da8b325000a4c35b6b4963a655d0a7a51d9eef5212"
+  },
+  "codex-skills/parallel-cycle/SKILL.md": {
+    "source": "skills/parallel-cycle/SKILL.md",
+    "source_sha256": "5dbcc8f32fc0b09952535eea115de746871db8e0765ecb4351e5e3cea4a3c715"
+  },
+  "codex-skills/plan-reviewer/SKILL.md": {
+    "source": "skills/plan-reviewer/SKILL.md",
+    "source_sha256": "49e350a19cdd7fbd41480dba2abf4344700b2dc295bc81bb0557fdf51332be71"
+  },
+  "codex-skills/plan/SKILL.md": {
+    "source": "skills/plan/SKILL.md",
+    "source_sha256": "77c6d9c26426507afe191546ad80a593e6f9fd5b1beb7cefce17c988b8247231"
+  },
+  "codex-skills/shared/references/team-config.md": {
+    "source": "skills/shared/references/team-config.md",
+    "source_sha256": "a3b19875d1f1f559d44a931d657f696a8856b680cd3620e5f6e5b6dd4ee8522f"
+  },
+  "codex-skills/team-cycle/SKILL.md": {
+    "source": "skills/team-cycle/SKILL.md",
+    "source_sha256": "cba91ec92434435d7a320874f0dba07f09ebd13d78260f4e0cb535ca96b5650d"
+  }
+}

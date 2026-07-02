@@ -172,4 +172,5 @@ CLAUDE.md             # Claude Code 用プロジェクト説明
 - `codex-skills/` 内の references/ にあるシンボリックリンクは `../../skills/X/references/` を指している。パスを変更する場合はリンクも更新すること
 - `skills/` と `commands/` 配下の既存ファイルは変更しない（Claude Code 版との独立性を維持）
 - `.claude/review-rules.md` はプロジェクト固有のレビュールールで、ツールに依存しない内容。Codex 版でもそのまま参照する
-- 編集後は `python3 scripts/validate_repo.py` でリポジトリ整合性（symlink / リンク切れ / 対応表 / ドキュメントドリフト）を検証すること。CI（GitHub Actions）でも同じチェックが走る
+- 編集後は `python3 scripts/validate_repo.py` でリポジトリ整合性（symlink / リンク切れ / 対応表 / ドキュメントドリフト / Claude⇔Codex 同期台帳）を検証すること。CI（GitHub Actions）でも同じチェックが走る
+- **Claude⇔Codex 同期台帳**: `codex-skills/sync-manifest.json` が各 Codex スキルのソース（`skills/<name>/SKILL.md`、cycle のみ `commands/cycle.md`）の sha256 を記録している。ソース側を変更すると CI が「未同期」で fail するので、Codex 版へ反映（または反映不要と判断）した上で `python3 scripts/validate_repo.py --update-manifest` を実行して台帳を更新すること
