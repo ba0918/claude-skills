@@ -4,6 +4,26 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.25.0
+
+addyosmani/agent-skills の分析結果から良質なプラクティスを移植。
+
+- **Codex バイアス制御**: `codex-integration.md` に「バイアス制御」セクションを新設。
+  自分の結論・レビュー結果を Codex に渡さない（アンカリング防止）/ 敵対的フレーミング必須 /
+  doubt theater 検出（2回連続全棄却・検証なし全採用の両方を Red Flag 化）。
+  セキュリティ節の許可コンテキストから「レビュー結果」を外し、修正ループの再レビューのみ例外化
+- **バリデータ強化（チェック11）**: SKILL.md description のトリガー語
+  （「〜で起動」/ "Use when" 等）と 1024 字上限を CI で機械検証。複数行
+  `description: >` 対応の `extract_description()` を追加。免除リストはバリデータ側に配置
+  （スキルファイル編集による検証迂回を防止）
+- **description 修正**: トリガー語がなかった commit（Claude/Codex）・parallel-cycle
+  （Claude/Codex）・cycle（Codex）の5スキルにトリガー語を追加
+- **共有契約 orchestration-patterns.md 新設**: endorsed パターン7種（Agent 委譲 /
+  並行ファンアウト+ファイルマージ / worktree 分離 / チーム議論 / セカンドオピニオン /
+  polling ループ / リサーチ隔離）+ アンチパターン5種 + 判断フロー + カタログ追加ゲート
+- **共有契約 skill-authoring.md 新設**: frontmatter 契約 / 執筆原則 / 合理化防止テーブルの
+  書き方 / Codex 移植の注意 / 新規スキル追加チェックリストを集約したスキル執筆仕様
+
 ## 1.24.0
 
 codex-sync による brainstorm / problem-solving の Codex 版移植。
