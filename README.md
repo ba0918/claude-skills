@@ -95,6 +95,7 @@ cd ~/develop/claude-skills
 | `/claude-skills:tdd` | TDD (RED-GREEN-REFACTOR) サイクルをガイドし、テストファースト開発を強制 |
 | `/claude-skills:debug` | 4フェーズ構造化デバッグ（根本原因特定 → 修正まで実行） |
 | `/claude-skills:problem-solving` | 行き詰まった時の思考ツール集（simplify/collide/invert/scale/pattern） |
+| `/claude-skills:codex-sync` | Claude 版スキルを Codex 版へ自動移植・差分同期（port / sync / 未同期スキャン） |
 
 ## スキル一覧
 
@@ -130,6 +131,7 @@ cd ~/develop/claude-skills
 | `test-driven-development` | TDD (RED-GREEN-REFACTOR) の対話型ガイド。各フェーズで Bash テスト実行を要求し、テストファーストを強制 |
 | `systematic-debugging` | 4フェーズ構造化デバッグ（Root Cause Investigation → Pattern Analysis → Hypothesis & Testing → Implementation）。3回失敗ルールでアーキテクチャ問題を検出 |
 | `problem-solving` | 行き詰まった時の思考ツール集。5サブワークフロー（simplify/collide/invert/scale/pattern）で多角的アプローチ。ファイル編集禁止 |
+| `codex-sync` | Claude 版スキルを Codex 版へ自動移植・差分同期するメタスキル（本リポジトリ専用）。3層変換ルールを適用し、要判断箇所は人間にエスカレーション。validate → 同期台帳更新まで一気通貫 |
 
 ## 基本ワークフロー
 
@@ -482,6 +484,7 @@ skills/               # Claude Code 用スキル（ロジック本体）
 ├── test-driven-development/ # TDD (RED-GREEN-REFACTOR) 強制ガイド
 ├── systematic-debugging/    # 4フェーズ構造化デバッグ
 ├── problem-solving/  # 行き詰まり打開の思考ツール集（5サブワークフロー）
+├── codex-sync/       # Claude 版 → Codex 版の自動移植・差分同期メタスキル
 ├── team-cycle/       # AgenticTeam チーム議論型レビュー + 自動実装
 ├── team-plan/        # AgenticTeam チーム議論型の計画作成
 ├── team-brainstorm/  # AgenticTeam チーム議論型ブレインストーミング

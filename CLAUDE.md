@@ -89,6 +89,7 @@ commands/mockup-diff.md        →  skills/mockup-diff/SKILL.md
 commands/tdd.md              →  skills/test-driven-development/SKILL.md
 commands/debug.md            →  skills/systematic-debugging/SKILL.md
 commands/problem-solving.md  →  skills/problem-solving/SKILL.md
+commands/codex-sync.md       →  skills/codex-sync/SKILL.md
 ```
 
 > `generate-review-rules` はコマンドなし（Skill ツール直接呼び出し）。
@@ -127,6 +128,7 @@ commands/problem-solving.md  →  skills/problem-solving/SKILL.md
 | `test-driven-development` | TDD (RED-GREEN-REFACTOR) の対話型ガイド。各フェーズで Bash テスト実行を要求し、テストファースト開発を強制。共有契約 `tdd-contract.md` + `verification-gate.md` を参照 |
 | `systematic-debugging` | 4フェーズ構造化デバッグ（Root Cause Investigation → Pattern Analysis → Hypothesis & Testing → Implementation）。investigate の補完として修正まで実行。3回失敗ルールでアーキテクチャ問題を検出 |
 | `problem-solving` | 行き詰まった時の思考ツール集。5サブワークフロー（simplify/collide/invert/scale/pattern）で多角的アプローチ。brainstorm セッションからも呼び出し可能。Edit/Write 禁止（概念レベルの議論に集中） |
+| `codex-sync` | Claude 版スキルを Codex 版へ自動移植・差分同期するメタスキル（本リポジトリ専用）。port（新規移植）/ sync（同期台帳の sha256 から前回同期時点を特定し差分のみ移植）/ scan（未同期ペアの一括処理）の3モード。3層変換ルール（機械的置換 / 構造的変換 / 要判断）を適用し、validate → `--update-manifest` まで一気通貫。第3層は自動変換せず人間の判断を仰ぐ |
 
 ### ワークフロー設計パターン
 
