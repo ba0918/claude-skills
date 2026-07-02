@@ -4,6 +4,23 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.24.0
+
+codex-sync による brainstorm / problem-solving の Codex 版移植。
+
+- **Codex 版 brainstorm 追加**: `codex-skills/brainstorm/`（codex-sync port）。Codex セカンドオピニオン
+  機構は自己レビューで冗長なため丸ごと削除しステップ番号を再整合。`request_user_input` ベースの
+  対話ループは維持（壁打ちが本質のため headless 化しない）。wrap / plan のファイル生成は
+  `apply_patch`、idea-template.md は symlink で共有
+- **Codex 版 problem-solving 追加**: `codex-skills/problem-solving/`（codex-sync port）。
+  5つの思考手法（simplify/collide/invert/scale/pattern）の内容は Claude 版と一字一句同一、
+  ツール参照のみ変換（`request_user_input` / `shell` 読み取り専用 / `apply_patch` 禁止）
+- **brainstorm Codex 版の誘導先を解消**: 行き詰まり検出の誘導ブロックが未移植の problem-solving を
+  指していた REVIEW を、problem-solving 移植完了に伴い `$problem-solving` へ置換
+- **ソース修正**: `skills/problem-solving/SKILL.md` の Dispatch 選択肢に残っていた UTF-8 破損
+  （U+FFFD ×2）を「新しいアイデアが出ない」に修正
+- **同期台帳**: 15 ペアに更新。AGENTS.md / README / CLAUDE.md に両スキルの Codex 版を追記
+
 ## 1.23.0
 
 リポジトリ自己検証基盤と Claude⇔Codex 一元管理の導入。
