@@ -4,6 +4,23 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.31.1
+
+`context-audit` を empirical-prompt-tuning（白紙実行者 × 3〜4 シナリオ × 5 イテレーション）で改善。
+
+- **検出エンジンの recall 改善**（fixture 実測で炙り出したギャップ 3 件）:
+  - CA-S001: リポジトリ全体の basename 索引を導入。親ディレクトリ不在の backtick 参照でも、
+    その basename が木のどこにも無ければ「削除済みディレクトリの stale」として検出
+    （basename が他所に実在する shorthand 表記は従来どおり skip、precision 維持）
+  - CA-D001: 日本語ツール語彙（「Edit ツール」等）を検出対象に追加
+  - CA-C001: Jaccard 足切りを 0.5 → 0.2 に緩和（SKILL の「recall 優先の over-generation」契約に整合）
+- **SKILL.md に「実行契約」を新設**: スクリプトのパス解決（`{skill_dir}` 絶対パス + root=cwd）/
+  非対話フォールバック（明示指示が最優先 → なければ安全側で first-run=(c)・適用なし）/ `{ts}` 採番規約
+- **仕様の明文化**: Phase 2 の candidate 0 件スキップ / 非 git での baseline 運用 + `--update-baseline`
+  の idempotent 性 / CA-S001 の抽出対象（`/` 含むパス表記のみ）/ CA-D001 の行単位・代表 1 語報告 /
+  memory_dir 開示と where マスクの関係
+- 評価結果: 3 シナリオ + hold-out で精度 100%・再試行 0・steps 単調減（A: 17→9）。hold-out で過適合なし
+
 ## 1.31.0
 
 `context-audit` スキルを新規追加。LLM 向け指示ファイル（root の CLAUDE.md / AGENTS.md、
