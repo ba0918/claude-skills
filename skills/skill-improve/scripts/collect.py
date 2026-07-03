@@ -4,6 +4,12 @@ skill-improve: Session data collector for friction signal analysis.
 
 Reads JSONL session data from ~/.claude/projects/ and extracts structural
 friction signals (no message body content) for skill usage analysis.
+
+The `--capture-prompts` mode (opt-in) additionally emits masked user prompt
+text as JSONL; trigger-eval is the second consumer of this mode, using it to
+harvest misfire seeds. Because that mode writes message bodies, its --output
+is mechanically restricted to a git-ignored path under cwd/.claude/tmp. The
+default (body-free) output path and its --output behavior are unchanged.
 """
 
 import argparse
@@ -21,10 +27,30 @@ from typing import Any
 
 ALLOWED_ROOT = Path.home() / ".claude" / "projects"
 
+# Order matters: more specific / higher-signal patterns run first so their
+# replacement text is not re-matched by the generic fallbacks. Known-prefix
+# tokens are detected regardless of surrounding quotes. A prefix-LESS generic
+# "unquoted secret" is intentionally NOT covered (too many false positives).
 SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("aws_key", re.compile(r"AKIA[0-9A-Z]{16}")),
     ("private_key", re.compile(r"-----BEGIN (?:RSA |EC )?PRIVATE KEY-----")),
-    ("jwt", re.compile(r"eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+")),
+    # Full JWT incl. the optional signature segment (a 2-part match would
+    # leave the signature in plaintext).
+    ("jwt", re.compile(r"eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)?")),
+    # Known-prefix credential tokens (quoted or not). sk-ant- must precede sk-.
+    # sk- includes _- so modern OpenAI keys (sk-proj-, sk-svcacct-) are masked.
+    ("prefix_token", re.compile(
+        r"""(?:"""
+        r"""ghp_[A-Za-z0-9]{20,}"""
+        r"""|github_pat_[A-Za-z0-9_]{20,}"""
+        r"""|xoxb-[A-Za-z0-9-]{10,}"""
+        r"""|sk-ant-[A-Za-z0-9_-]{20,}"""
+        r"""|sk-[A-Za-z0-9_-]{20,}"""
+        r"""|AIza[A-Za-z0-9_-]{20,}"""
+        r""")"""
+    )),
+    ("email", re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")),
+    ("home_path", re.compile(r"(?:/home|/Users)/[A-Za-z0-9._-]+")),
     ("generic_secret", re.compile(
         r"""(?:password|secret|token|api[_-]?key|credentials)"""
         r"""\s*[:=]\s*["'][^"']{8,}["']""",
@@ -56,25 +82,25 @@ def resolve_and_validate_path(path: Path) -> Path | None:
     return resolved
 
 
+def _redact(kind: str) -> str:
+    """Full-mask placeholder. No partial disclosure (no first4/last4)."""
+    return f"[REDACTED:{kind}]"
+
+
 def detect_secrets(text: str) -> list[dict[str, str]]:
     """Detect potential secrets in text. Returns list of {type, masked}."""
     findings: list[dict[str, str]] = []
     for name, pattern in SECRET_PATTERNS:
-        for match in pattern.finditer(text):
-            value = match.group()
-            masked = value[:4] + "****" + value[-4:] if len(value) > 12 else "****"
-            findings.append({"type": name, "masked": masked})
+        for _match in pattern.finditer(text):
+            findings.append({"type": name, "masked": _redact(name)})
     return findings
 
 
 def mask_secrets(text: str) -> str:
-    """Replace detected secrets with masked versions."""
+    """Replace detected secrets with full [REDACTED:kind] placeholders."""
     result = text
-    for _name, pattern in SECRET_PATTERNS:
-        def _mask(m: re.Match[str]) -> str:
-            v = m.group()
-            return v[:4] + "****" + v[-4:] if len(v) > 12 else "****"
-        result = pattern.sub(_mask, result)
+    for name, pattern in SECRET_PATTERNS:
+        result = pattern.sub(_redact(name), result)
     return result
 
 
@@ -118,6 +144,25 @@ def find_jsonl_files(session_dirs: list[Path]) -> list[Path]:
         except PermissionError:
             continue
     return jsonl_files
+
+
+def filter_files_by_mtime(files: list[Path], cutoff: datetime) -> list[Path]:
+    """Pre-filter files by mtime before reading any line.
+
+    A file whose mtime is older than cutoff cannot contain in-window turns,
+    so it is skipped without loading its contents into memory. Files whose
+    mtime cannot be read are kept (fail-open on stat, the per-line timestamp
+    filter still applies downstream).
+    """
+    kept: list[Path] = []
+    cutoff_ts = cutoff.timestamp()
+    for f in files:
+        try:
+            if f.stat().st_mtime >= cutoff_ts:
+                kept.append(f)
+        except OSError:
+            kept.append(f)
+    return kept
 
 
 # ---------------------------------------------------------------------------
@@ -415,8 +460,208 @@ def infer_project_name() -> str:
 
 
 # ---------------------------------------------------------------------------
+# --capture-prompts (opt-in): masked prompt text extraction
+# ---------------------------------------------------------------------------
+
+def _iter_user_texts(msg: dict[str, Any]) -> list[str]:
+    """Extract raw user/human text fragments from a JSONL message dict."""
+    inner = msg.get("message", {})
+    if isinstance(inner, dict):
+        role = inner.get("role", msg.get("role", ""))
+        content = inner.get("content", msg.get("content", ""))
+    else:
+        role = msg.get("role", "")
+        content = msg.get("content", "")
+    if role not in ("human", "user"):
+        return []
+    texts: list[str] = []
+    if isinstance(content, str):
+        if content:
+            texts.append(content)
+    elif isinstance(content, list):
+        for part in content:
+            if isinstance(part, dict) and isinstance(part.get("text"), str):
+                texts.append(part["text"])
+    return texts
+
+
+def extract_capture_records(
+    filepath: Path,
+    cutoff: datetime,
+    project: str,
+) -> list[dict[str, Any]]:
+    """Stream a session file and emit masked prompt-capture records.
+
+    Each record follows the fixed schema:
+        {ts, project, user_text_masked, fired_skill, signals}
+
+    - user_text_masked is mask_secrets() applied to the raw user text.
+    - fired_skill is the bare skill name from an inline slash command, else null.
+    - signals flags misfire candidates (e.g. correction_after_skill).
+    Broken JSON and empty lines are skipped.
+    """
+    records: list[dict[str, Any]] = []
+    last_skill: str | None = None
+    try:
+        with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+            for raw_line in f:
+                raw_line = raw_line.strip()
+                if not raw_line:
+                    continue
+                try:
+                    msg = json.loads(raw_line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(msg, dict):
+                    continue
+
+                ts = parse_timestamp(
+                    msg.get("timestamp") or msg.get("created_at") or msg.get("ts")
+                )
+                if ts is not None:
+                    if ts.tzinfo is None:
+                        ts = ts.replace(tzinfo=timezone.utc)
+                    if ts < cutoff:
+                        continue
+
+                texts = _iter_user_texts(msg)
+                if not texts:
+                    # An assistant/Skill turn may fire a skill; track for signals.
+                    is_skill, sname = is_skill_tool_call(msg)
+                    if is_skill and sname:
+                        last_skill = sname
+                    continue
+
+                for text in texts:
+                    fired = extract_skill_name(text)
+                    signals: list[str] = []
+                    if fired:
+                        signals.append("slash_fired")
+                        last_skill = fired
+                    elif last_skill:
+                        signals.append("correction_after_skill")
+                    records.append({
+                        "ts": ts.isoformat() if ts else None,
+                        "project": project,
+                        "user_text_masked": mask_secrets(text),
+                        "fired_skill": fired,
+                        "signals": signals,
+                    })
+    except (OSError, PermissionError):
+        return records
+    return records
+
+
+def validate_capture_output_path(output: str, base: Path) -> Path | None:
+    """Validate a --capture-prompts --output path is contained in `base`.
+
+    The output file itself may not exist yet, so the PARENT directory is
+    resolved with strict=True and containment is checked with
+    Path.is_relative_to (never raw-string startswith, which would allow a
+    sibling like `.claude/tmp2` to escape `.claude/tmp`). The atomic
+    `<output>.tmp` sibling lands in the same parent, so it is covered too.
+    Returns the resolved final path, or None if it escapes `base`.
+    """
+    try:
+        base_resolved = base.resolve()
+    except (OSError, ValueError):
+        return None
+    candidate = Path(output)
+    # Reject degenerate filenames that would resolve to a directory rather
+    # than a new file (is_relative_to is purely lexical and would accept
+    # `.`/`..` as a single-component name).
+    if candidate.name in ("", ".", ".."):
+        return None
+    try:
+        parent_resolved = candidate.parent.resolve(strict=True)
+    except (OSError, ValueError):
+        return None
+    final = parent_resolved / candidate.name
+    if not final.is_relative_to(base_resolved):
+        return None
+    return final
+
+
+def output_is_git_ignored(path: Path) -> bool:
+    """Return True only if `git check-ignore --quiet <path>` exits 0.
+
+    Fail-closed: any non-zero exit (not ignored / no git / undecidable)
+    returns False so prompt capture is refused. We do NOT scan .gitignore
+    text ourselves (anchoring / `!` negation / subdir CWD cause false
+    negatives).
+    """
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["git", "check-ignore", "--quiet", str(path)],
+            cwd=str(path.parent),
+            capture_output=True,
+        )
+        return result.returncode == 0
+    except (OSError, ValueError):
+        return False
+
+
+def write_capture_jsonl(records: list[dict[str, Any]], path: Path) -> None:
+    """Write capture records as JSONL (atomic replace via .tmp sibling)."""
+    tmp_path = str(path) + ".tmp"
+    try:
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            for r in records:
+                f.write(json.dumps(r, ensure_ascii=False) + "\n")
+        os.replace(tmp_path, str(path))
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except FileNotFoundError:
+            pass
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
+def _run_capture_prompts(
+    args: argparse.Namespace,
+    project_filter: str | None,
+    cutoff: datetime,
+) -> int:
+    """Execute the opt-in prompt-capture path. Fail-closed on output safety."""
+    if not args.output:
+        print("error: --capture-prompts requires --output", file=sys.stderr)
+        return 2
+
+    base = Path.cwd() / ".claude" / "tmp"
+    resolved = validate_capture_output_path(args.output, base)
+    if resolved is None:
+        print(
+            f"error: --capture-prompts --output must be under {base}",
+            file=sys.stderr,
+        )
+        return 2
+    if not output_is_git_ignored(resolved):
+        print(
+            f"error: refusing to write prompt bodies to non-git-ignored path: "
+            f"{resolved}",
+            file=sys.stderr,
+        )
+        return 2
+
+    session_dirs = discover_session_dirs(project_filter)
+    jsonl_files = filter_files_by_mtime(find_jsonl_files(session_dirs), cutoff)
+
+    records: list[dict[str, Any]] = []
+    for jf in jsonl_files:
+        project = jf.parent.name
+        records.extend(extract_capture_records(jf, cutoff, project=project))
+
+    write_capture_jsonl(records, resolved)
+    print(
+        f"✓ captured {len(records)} masked prompt records → {resolved}",
+        file=sys.stderr,
+    )
+    return 0
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -438,6 +683,11 @@ def main() -> None:
         "--output", type=str, default=None,
         help="Output file path (default: stdout)"
     )
+    parser.add_argument(
+        "--capture-prompts", action="store_true", default=False,
+        help="Opt-in: emit masked user prompt text as JSONL (requires a "
+             "git-ignored --output under cwd/.claude/tmp)",
+    )
     args = parser.parse_args()
 
     # Determine project filter
@@ -449,6 +699,9 @@ def main() -> None:
     # Calculate cutoff date
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(days=args.days)
+
+    if args.capture_prompts:
+        return _run_capture_prompts(args, project_filter, cutoff)
 
     # Discover session directories
     session_dirs = discover_session_dirs(project_filter)
@@ -577,4 +830,4 @@ def _output_result(result: dict[str, Any], output_path: str | None) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)

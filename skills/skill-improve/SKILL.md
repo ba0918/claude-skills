@@ -38,6 +38,7 @@ skill-improve コマンド
 - `--days N`: 分析対象期間（デフォルト: 30日）
 - `--project NAME`: プロジェクトフィルタ（デフォルト: cwd から推定）
 - `--all-projects`: 全プロジェクトを横断スキャンする。ユーザスコープのスキル分析や、スキル全体の利用傾向を把握したい場合に使う
+- `--capture-prompts`: opt-in。マスク済みの user プロンプト本文を JSONL で出力する（発火漏れ実例の採取用。`trigger-eval` スキルが第二の消費者）。本文を書き出すため `--output` は `cwd/.claude/tmp` 配下 かつ `git check-ignore` 済みのパスに機械的に制限される（fail-closed）。既定の body-free 出力とは別パスで、既存挙動には影響しない。秘匿値のマスクは `[REDACTED:kind]` の完全マスク（AWS / PEM / JWT / email / ホームパス / ghp_ ・ github_pat_ ・ xoxb- ・ sk- ・ sk-ant- ・ AIza 等の既知プレフィックストークンを引用符の有無を問わず検出）
 
 ## Phase 1: データ収集
 
@@ -168,7 +169,7 @@ Report: .claude/tmp/skill-improve-{datetime}/friction-report.md
 
 改善仮説は以下のカテゴリに分類する:
 
-| カテゴリ | 説明 | ��� |
+| カテゴリ | 説明 | 例 |
 |---------|------|-----|
 | UX 改善 | ユーザー体験の摩擦を低減 | エラーメッセージの改善、フロー簡素化 |
 | ロジック修正 | バグや論理的不整合の修正 | 条件分岐の誤り、エッジケース未処理 |
