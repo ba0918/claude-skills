@@ -14,5 +14,11 @@ jobs:
       - name: Unit tests (validator pure functions)
         run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
 
+      - name: Unit tests (trigger-eval scripts)
+        run: python3 -m unittest discover -s skills/trigger-eval/scripts -t skills/trigger-eval/scripts -p 'test_*.py' -v
+
+      - name: Unit tests (skill-improve scripts)
+        run: python3 -m unittest discover -s skills/skill-improve/scripts -t skills/skill-improve/scripts -p 'test_*.py' -v
+
       - name: Repo consistency checks
         run: python3 scripts/validate_repo.py
