@@ -18,8 +18,8 @@ from pathlib import Path
 from typing import Any
 
 _ASCII_RE = re.compile(r"[a-z0-9]{2,}")
-# CJK unigram ranges: Hiragana, Katakana, CJK unified ideographs.
-_CJK_RE = re.compile(r"[぀-ヿ一-鿿]")
+# Contiguous CJK runs: Hiragana, Katakana, CJK unified ideographs.
+_CJK_RUN_RE = re.compile(r"[぀-ヿ一-鿿]+")
 
 
 def tokenize(text: str) -> set[str]:
@@ -27,12 +27,17 @@ def tokenize(text: str) -> set[str]:
 
     - ASCII alphanumeric runs of length >= 2 (single letters dropped as noise),
       lowercased.
-    - Each CJK character as its own unigram token (so Japanese descriptions
-      overlap measurably).
+    - Japanese (CJK) text: each contiguous run is split into sliding bigrams
+      so multi-character words overlap measurably. Bigrams are far more
+      discriminating than single-character unigrams (which collide on common
+      particles/kana). A length-1 run yields no token; a length-2 run yields
+      exactly one bigram (e.g. "計画").
     """
     lowered = text.lower()
     tokens = set(_ASCII_RE.findall(lowered))
-    tokens.update(_CJK_RE.findall(lowered))
+    for run in _CJK_RUN_RE.findall(lowered):
+        for i in range(len(run) - 1):
+            tokens.add(run[i : i + 2])
     return tokens
 
 

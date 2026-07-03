@@ -20,10 +20,34 @@ class TestTokenize(unittest.TestCase):
         self.assertNotIn("a", toks)
         self.assertIn("bb", toks)
 
-    def test_cjk_unigrams(self):
+    def test_cjk_bigrams(self):
+        # Japanese runs are tokenized as sliding bigrams (not unigrams).
         toks = sc.tokenize("計画レビュー")
-        self.assertIn("計", toks)
-        self.assertIn("画", toks)
+        self.assertIn("計画", toks)
+        self.assertIn("画レ", toks)
+        self.assertIn("ュー", toks)
+        # single-char CJK unigrams are no longer emitted
+        self.assertNotIn("計", toks)
+        self.assertNotIn("画", toks)
+
+    def test_two_char_word_is_one_bigram(self):
+        # a 2-char run yields exactly one bigram token
+        toks = sc.tokenize("計画")
+        self.assertEqual(toks, {"計画"})
+
+    def test_single_char_run_excluded(self):
+        # a length-1 CJK run produces no token (surrounded by ASCII/space)
+        toks = sc.tokenize("A 語 B")
+        self.assertNotIn("語", toks)
+        self.assertEqual(toks, set())
+
+    def test_ascii_and_japanese_mixed(self):
+        # ASCII words and Japanese bigrams coexist; ASCII unchanged
+        toks = sc.tokenize("commit を実行する")
+        self.assertIn("commit", toks)
+        self.assertIn("実行", toks)
+        self.assertIn("行す", toks)
+        self.assertNotIn("を", toks)  # length-1 run dropped
 
     def test_empty(self):
         self.assertEqual(sc.tokenize(""), set())
