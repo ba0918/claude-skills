@@ -1,6 +1,6 @@
 # Project Status
 
-**Last Updated:** 2026-07-03 (trigger-eval 完了)
+**Last Updated:** 2026-07-03 21:30:00
 
 ---
 
@@ -8,7 +8,7 @@
 
 _アクティブなセッションはありません。_
 
-**Last Completed:** `20260703125252` trigger-eval スキル新規作成 — 🟢 Complete（scripts 3種 + collect.py 拡張 / unittest 103件 + validate 合格 / v1.29.0）。詳細は [session-history.md](./session-history.md)。
+**Last Completed:** `20260703190611` context-audit スキル新規作成 — 🟢 Complete（scripts 4種 + shared 化 2種 / unittest 93件 + 回帰全パス + validate 合格 / 敵対的レビュー 7 指摘全修正 / v1.31.0）。詳細は [session-history.md](./session-history.md)。
 
 ---
 

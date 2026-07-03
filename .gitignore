@@ -5,6 +5,8 @@ __pycache__
 .claude/settings.local.json
 .claude/tmp
 .claude/worktrees
+# context-audit: 中間 JSON/レポートは .claude/tmp/context-audit/ (上の .claude/tmp でカバー)。
+# baseline (.claude/context-audit-baseline.json) はチーム共有目的で commit するため無視しない。
 
 # OS
 .DS_Store
