@@ -5,6 +5,11 @@ Rules are classified into three categories based on required action.
 
 ## Classification Criteria
 
+> The AUTO_FIX / NEEDS_JUDGMENT / REPORT_ONLY axis is a shared contract, defined
+> in [../../shared/references/fix-action-taxonomy.md](../../shared/references/fix-action-taxonomy.md)
+> (also consumed by context-audit). It is orthogonal to severity. The summary below
+> is kept for locality; the shared file is authoritative.
+
 ### AUTO_FIX
 Conditions: mechanically verifiable + idempotent + no data loss risk.
 The same operation produces the same result regardless of how many times it runs.
