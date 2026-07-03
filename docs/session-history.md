@@ -2,6 +2,7 @@
 
 | Cycle ID | Feature | Started | Completed | Plan |
 |----------|---------|---------|-----------|------|
+| `20260703103337` | refactor スキル新規作成 | 2026-07-03 | 2026-07-03 | [Link](./plans/20260703103337_refactor-skill.md) |
 | `20260702200752` | sweep-fix スキルの作成 | 2026-07-02 | 2026-07-02 | [Link](./plans/20260702200752_sweep-fix-skill.md) |
 | `20260415164852` | mockup-diff スキルの汎用化リファクタ | 2026-04-15 | 2026-04-15 | [Link](./plans/20260415164852_mockup-diff-generalization.md) |
 | `20260414184459` | design-guide v2: 機械的検証可能なデザインシステム基盤 | 2026-04-14 | 2026-04-15 | [Link](./plans/20260414184459_design-guide-v2-mechanical-verification.md) |

@@ -1,12 +1,12 @@
 # Project Status
 
-**Last Updated:** 2026-07-02
+**Last Updated:** 2026-07-03
 
 ---
 
 ## 🎯 Current Session
 
-_なし（前セッションは完了済み。[session-history.md](./session-history.md) を参照）_
+_なし（前セッション `20260703103337` refactor スキル新規作成 は 2026-07-03 完了 → [session-history.md](./session-history.md) にアーカイブ済み）_
 
 ---
 
