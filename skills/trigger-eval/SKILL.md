@@ -1,6 +1,6 @@
 ---
 name: trigger-eval
-description: スキルセットの description 発火精度（recall / precision / stability / 80-way confusion matrix）を、description-only の判定 subagent で機械的に実測し、衝突ペアを特定して description 改稿→再評価ループを収束まで回すメタスキル。実測エビデンス（メトリクス差分・holdout ゲート・Tier1↔Tier2 乖離率）で改善を証明する。「trigger-eval」「発火精度」「スキル発火の計測」「トリガー評価」「description 改稿」「confusion matrix でスキル衝突を見たい」で起動。`empirical-prompt-tuning`（本文実行の質）に対し選択層（description→発火）を測る姉妹スキル。対象は本リポジトリの `skills/`、`--dir PATH`、`--user-scope`（~/.claude/skills）。`--no-e2e` で Tier 2 実発火検証をスキップ。v1 はプラグインキャッシュのハッシュ付きネスト構造を対象外とする。
+description: スキルセットの description 発火精度（recall / precision / stability / 80-way confusion matrix）を、description-only の判定 subagent で機械的に実測し、衝突ペアを特定して description 改稿→再評価ループを収束まで回すメタスキル。実測エビデンス（メトリクス差分・holdout ゲート・Tier1↔Tier2 乖離率）で改善を証明する。「trigger-eval」「発火精度」「スキル発火の計測」「トリガー評価」「description 改稿」「confusion matrix でスキル衝突を見たい」で起動。`empirical-prompt-tuning`（本文実行の質）に対し選択層（description→発火）を測る姉妹スキル。対象は本リポジトリの `skills/`、`--dir PATH`、`--user-scope`（~/.claude/skills）。`--no-e2e` で Tier 2 実発火検証をスキップ。Tier 1 は selection / autonomous の 2 モードで計測し `--selection-only` で selection のみに絞れる。v1 はプラグインキャッシュのハッシュ付きネスト構造を対象外とする。
 ---
 
 # trigger-eval
@@ -116,7 +116,7 @@ python3 skills/trigger-eval/scripts/aggregate_metrics.py \
 
 ### Phase 6: 再評価 → 収束判定
 
-Phase 3–5 を反復。停止条件は次のいずれか:
+Phase 3–5 を反復。停止条件の判定は **selection モードの系列を正とする**（autonomous は参考系列・キャリブレーション信号であり、収束・悪化判定に混ぜない。metrics-spec.md のモード軸を参照）。停止条件は次のいずれか:
 
 1. **収束**: 連続 2 イテレーションで macro recall / precision の改善が +1pt 未満。
 2. **ハードキャップ**: `max_iterations = 5`。
