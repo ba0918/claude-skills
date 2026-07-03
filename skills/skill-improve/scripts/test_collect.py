@@ -204,6 +204,44 @@ class TestGitIgnoreGate(unittest.TestCase):
             p.write_text("{}\n")
             self.assertFalse(collect.output_is_git_ignored(p))
 
+    def test_undecidable_exit_fails_closed_with_hint(self):
+        # exit code other than 0/1 (e.g. 128: git could not run) -> undecidable.
+        # fail-closed (refuse write) AND emit an actionable stderr hint.
+        import io
+        import subprocess
+        from contextlib import redirect_stderr
+        from unittest import mock
+
+        completed = subprocess.CompletedProcess(
+            args=["git", "check-ignore"], returncode=128, stdout=b"", stderr=b"fatal: ..."
+        )
+        buf = io.StringIO()
+        with mock.patch("subprocess.run", return_value=completed) as m:
+            with redirect_stderr(buf):
+                result = collect.output_is_git_ignored(Path("/whatever/p.jsonl"))
+        self.assertFalse(result)  # fail-closed
+        m.assert_called_once()
+        msg = buf.getvalue()
+        self.assertIn("check-ignore", msg)
+        self.assertIn("GIT_CONFIG_GLOBAL=/dev/null", msg)
+
+    def test_not_ignored_exit1_no_hint(self):
+        # exit 1 = decidable "not ignored" -> refuse but NO undecidable hint
+        import io
+        import subprocess
+        from contextlib import redirect_stderr
+        from unittest import mock
+
+        completed = subprocess.CompletedProcess(
+            args=["git", "check-ignore"], returncode=1, stdout=b"", stderr=b""
+        )
+        buf = io.StringIO()
+        with mock.patch("subprocess.run", return_value=completed):
+            with redirect_stderr(buf):
+                result = collect.output_is_git_ignored(Path("/whatever/p.jsonl"))
+        self.assertFalse(result)
+        self.assertEqual(buf.getvalue(), "")
+
 
 class TestMtimePreFilter(unittest.TestCase):
     def test_filters_old_files(self):

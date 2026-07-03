@@ -585,10 +585,18 @@ def validate_capture_output_path(output: str, base: Path) -> Path | None:
 def output_is_git_ignored(path: Path) -> bool:
     """Return True only if `git check-ignore --quiet <path>` exits 0.
 
-    Fail-closed: any non-zero exit (not ignored / no git / undecidable)
-    returns False so prompt capture is refused. We do NOT scan .gitignore
-    text ourselves (anchoring / `!` negation / subdir CWD cause false
-    negatives).
+    `git check-ignore --quiet` exit codes:
+      0   -> path is ignored (allow)
+      1   -> path is not ignored (decidable "no")
+      >=2 -> git itself could not run (e.g. sandbox can't read ~/.gitconfig);
+             the answer is *undecidable*.
+
+    Fail-closed on every non-zero exit (not ignored / no git / undecidable)
+    so prompt capture is refused. On the undecidable case we additionally
+    emit an actionable stderr hint, because a silent False there is easily
+    mistaken for "correctly refused a tracked path". We do NOT scan
+    .gitignore text ourselves (anchoring / `!` negation / subdir CWD cause
+    false negatives).
     """
     import subprocess
     try:
@@ -597,9 +605,20 @@ def output_is_git_ignored(path: Path) -> bool:
             cwd=str(path.parent),
             capture_output=True,
         )
-        return result.returncode == 0
     except (OSError, ValueError):
         return False
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        return False
+    # Undecidable: git could not evaluate the path. Fail-closed + hint.
+    print(
+        f"[collect] git check-ignore を実行できませんでした (exit {result.returncode})。"
+        " サンドボックスで ~/.gitconfig が読めない等が原因の可能性があります。"
+        " GIT_CONFIG_GLOBAL=/dev/null を設定して再実行してください。",
+        file=sys.stderr,
+    )
+    return False
 
 
 def write_capture_jsonl(records: list[dict[str, Any]], path: Path) -> None:
