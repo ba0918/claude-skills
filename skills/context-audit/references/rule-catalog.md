@@ -27,10 +27,10 @@ Category prefix: `S`=stale, `U`=unsafe, `D`=drift, `C`=contradiction, `M`=memory
 
 | ID | Category | Severity | Action | 検証 | 内容 |
 |----|----------|----------|--------|------|------|
-| CA-S001 | stale | WARN | AUTO_FIX / NEEDS_JUDGMENT | 純関数 | 存在しないファイル/ディレクトリへの参照。edit-distance ≤1 かつ一意候補のみ AUTO_FIX、それ以外は NEEDS_JUDGMENT |
+| CA-S001 | stale | WARN | AUTO_FIX / NEEDS_JUDGMENT | 純関数 | 存在しないファイル/ディレクトリへの参照。抽出対象は `/` を含むパス表記のみ（裸のファイル名は precision のため対象外）。edit-distance ≤1 かつ一意候補のみ AUTO_FIX、それ以外は NEEDS_JUDGMENT |
 | CA-S002 | stale | WARN | NEEDS_JUDGMENT | 純関数 | 存在しない `skills/<name>/` `codex-skills/<name>/` ディレクトリ参照 |
 | CA-U001 | unsafe | WARN | REPORT_ONLY | 純関数 | 確認省略・破壊的操作を許可する語彙（regex ベース） |
-| CA-D001 | drift | INFO | REPORT_ONLY | 純関数 | AGENTS.md への Claude 専用ツール語彙（Edit/Write 等）の混入 |
+| CA-D001 | drift | INFO | REPORT_ONLY | 純関数 | AGENTS.md への Claude 専用ツール語彙（Edit/Write 等、日本語「〜ツール」表記含む）の混入。行単位で finding 化し、1 行に複数語彙があっても代表 1 語で報告 |
 | CA-D002 | drift | WARN | NEEDS_JUDGMENT | 純関数 | スキル一覧カバレッジ差分（実ディレクトリ vs 指示ファイル記載）。`validate_repo.py` 検出時は自動スキップ |
 | CA-C001 | contradiction | WARN | REPORT_ONLY | 混成 | 同一 subject への禁止/許可衝突。candidate 抽出は純関数（recall 優先）、判定は LLM |
 | CA-M001 | memory | WARN | AUTO_FIX / NEEDS_JUDGMENT | 純関数 | メモリ frontmatter schema。整形の揺れは AUTO_FIX（正規化・body 不変）、必須キー欠落/未知 type は NEEDS_JUDGMENT |

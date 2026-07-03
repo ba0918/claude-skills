@@ -45,16 +45,24 @@ NEEDS_JUDGMENT の提示）・AUTO_FIX の適用のみを担う。決定性は g
 
 command は作らない（skills-first 方針。single-workflow のため名前付き入口も不要）。
 
+## 実行契約（パス解決・非対話フォールバック）
+
+- **スクリプトのパス解決**: 以下のコマンド例の `{skill_dir}` は**このスキル自身の配置ディレクトリ**（スキル読込時に提示される base directory。plugin インストール時はキャッシュ配下）。スクリプトは**絶対パス**で起動する。`{project_root}` は**ユーザーのプロジェクトルート（cwd）**であり、監査対象の root 引数に渡す（root は memory slug 解決にも使われるため cwd と一致させること）。
+- **非対話フォールバック**: headless / subagent 実行等で AskUserQuestion が使えない場合、**最優先はユーザーの事前の明示指示**（選択肢相当の指示があればそれに従う。例:「baseline として確定して」= (a) 相当）。明示指示がなければ状態を変更しない安全側に倒す — first-run は **(c) フルレポート相当**（baseline は書き込まない）、Phase 4 の AUTO_FIX / NEEDS_JUDGMENT は**適用せずレポート送り**（レポートでは NEEDS_JUDGMENT を REPORT_ONLY と混同しない独立枠で提示する）。
+- `{ts}` は `date +%Y%m%d-%H%M%S` で採番し、フェーズ間で同一値を使い回す（既存生成物は上書きしない）。
+
 ## ワークフロー
 
-出力先はすべて `.claude/tmp/context-audit/`（git-ignored）。`{ts}` は実行時刻。
+出力先はすべて `.claude/tmp/context-audit/`（監査対象プロジェクト配下、git-ignored）。
 
 ### Phase 0: Discovery
 
 ```bash
-python3 skills/context-audit/scripts/collect_targets.py . \
+python3 {skill_dir}/scripts/collect_targets.py {project_root} \
   --output .claude/tmp/context-audit/targets-{ts}.json
 ```
+
+（`{skill_dir}` はこのスキルの配置ディレクトリ、`{project_root}` はユーザーのプロジェクトルート = cwd。実行契約参照）
 
 - **path allowlist（決定的・純関数）** で対象を収集。対象: root の `CLAUDE.md` / `AGENTS.md`、
   `.claude/rules/*.md` / `rules/*.md`、`.claude/review-rules.md` + cwd 対応プロジェクトメモリ。
@@ -66,12 +74,14 @@ python3 skills/context-audit/scripts/collect_targets.py . \
 - **baseline 不在を検知したら first-run フロー**を AskUserQuestion で提示: 「(a) 現状を baseline
   として確定し以降は新規 finding のみ / (b) 重大度上位のみ triage / (c) フルレポート」。初回の overwhelm を回避。
 - レポートに `memory_dir`（解決済み絶対パス）を明示し、どのプロジェクトを読んだか可視化する。
+  （finding 個別の `where` は redaction で home パスがマスクされるため、監査先の開示は
+  この Phase 0 の `memory_dir` フィールドが正）。
 
 ### Phase 1: Static Checks
 
 ```bash
-python3 skills/context-audit/scripts/static_checks.py \
-  .claude/tmp/context-audit/targets-{ts}.json --root . \
+python3 {skill_dir}/scripts/static_checks.py \
+  .claude/tmp/context-audit/targets-{ts}.json --root {project_root} \
   --output .claude/tmp/context-audit/findings-{ts}.json
 ```
 
@@ -85,12 +95,13 @@ python3 skills/context-audit/scripts/static_checks.py \
 
 - `static_checks.py` が抽出した CA-C001 の contradiction candidate（recall 優先の over-generation）を、
   LLM が「矛盾 / 意図的差分 / 優先順位で解決済み / 不明」に分類する。**修正はしない**。
+- candidate が 0 件の場合、Phase 2 は何もせずスキップしてよい。
 - LLM に渡すのは **redaction 済みの正規化最小 claim テキストのみ**（生のメモリ行・PII を渡さない）。
 
 ### Phase 3: Aggregate
 
 ```bash
-python3 skills/context-audit/scripts/aggregate_report.py \
+python3 {skill_dir}/scripts/aggregate_report.py \
   .claude/tmp/context-audit/findings-{ts}.json \
   --baseline .claude/context-audit-baseline.json \
   --output .claude/tmp/context-audit/report-{ts}.json
@@ -107,7 +118,7 @@ python3 skills/context-audit/scripts/aggregate_report.py \
 - **AUTO_FIX**: `apply_fixes.py` で計算した差分を **unified diff で提示 → バッチ確認**
   （「N 件の auto-fix を適用しますか？」）の上で適用。
   ```bash
-  python3 skills/context-audit/scripts/apply_fixes.py \
+  python3 {skill_dir}/scripts/apply_fixes.py \
     .claude/tmp/context-audit/findings-{ts}.json --write
   ```
 - **NEEDS_JUDGMENT**: fix-type / rule ID でグルーピングしてバッチ提示（「12 件のパス typo 修正を
@@ -125,6 +136,8 @@ python3 skills/context-audit/scripts/aggregate_report.py \
   slug 解決は実 Claude Code に一致 + reverse-verify、曖昧なら fail-safe skip。
 - **secret は値を転記せずパターン名 + file:line のみ**。redaction は全 line-context の不変条件。
 - **baseline は commit するが opaque finding ID のみ格納**（検出値・本文を絶対に載せない）。
+  非 git プロジェクトではファイルとして保持するだけでよい。`--update-baseline` は既存 baseline が
+  あっても現状の finding で再確定する（idempotent）。
 - **CA-D002 は `validate_repo.py` 検出時に自動スキップ**（機械的 deconflict、prose 判断に頼らない）。
 
 ## テスト
