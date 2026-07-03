@@ -111,16 +111,45 @@ def _extract_path_refs(content: str) -> list[tuple[str, int, str]]:
     return refs
 
 
-def _backtick_ref_is_anchored(root: str, ref: str) -> bool:
+_INDEX_SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv",
+                    "vendor", ".claude", "target", "dist", "build"}
+_INDEX_MAX_FILES = 20000
+
+
+def _repo_basename_index(root: str) -> tuple[frozenset[str], bool]:
+    """(basenames in the tree, complete?). Bounded walk; on truncation the
+    caller must fail safe (treat unknown names as existing)."""
+    names: set[str] = set()
+    complete = True
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in _INDEX_SKIP_DIRS]
+        names.update(filenames)
+        if len(names) > _INDEX_MAX_FILES:
+            complete = False
+            break
+    return frozenset(names), complete
+
+
+def _backtick_ref_is_anchored(root: str, ref: str,
+                              basename_index: tuple[frozenset[str], bool] | None = None) -> bool:
     """False-positive filter for backtick spans (precision over recall):
-    only treat a backtick ref as checkable when it has a file extension
-    (directory-only mentions like `references/` are prose) AND its parent
-    directory exists in the repo (anchored to real structure; a missing
-    parent means illustrative shorthand like `skill-improve/collect.py`)."""
+    a backtick ref is checkable only when it has a file extension
+    (directory-only mentions like `references/` are prose) AND either
+    (a) its parent directory exists in the repo (anchored to real structure),
+    or (b) no file with that basename exists anywhere in the tree — a missing
+    parent with the basename present elsewhere is illustrative shorthand like
+    `skill-improve/collect.py`, but a basename found nowhere is the
+    deleted-directory stale case and must stay checkable."""
     if not re.search(r"\.[A-Za-z0-9]+$", os.path.basename(ref)):
         return False
     parent_abs = os.path.normpath(os.path.join(root, os.path.dirname(ref)))
-    return os.path.isdir(parent_abs)
+    if os.path.isdir(parent_abs):
+        return True
+    names, complete = basename_index if basename_index is not None \
+        else _repo_basename_index(root)
+    if not complete:
+        return False  # truncated index: fail safe toward "shorthand, skip"
+    return os.path.basename(ref) not in names
 
 
 def _ref_exists(root: str, ref: str) -> bool:
@@ -204,12 +233,16 @@ def parse_frontmatter_lines(content: str) -> list[tuple[str, str, str]] | None:
 def check_ca_s001(targets, ctx):
     findings = []
     root = ctx["root"]
+    basename_index = None  # built lazily, once per run
     for t in targets:
         if t["category"] != "instruction":
             continue
         for ref, line, source in _extract_path_refs(t["content"]):
-            if source == "backtick" and not _backtick_ref_is_anchored(root, ref):
-                continue  # prose example, not a checkable reference (fail-safe)
+            if source == "backtick":
+                if basename_index is None:
+                    basename_index = _repo_basename_index(root)
+                if not _backtick_ref_is_anchored(root, ref, basename_index):
+                    continue  # prose example, not a checkable reference (fail-safe)
             if _ref_exists(root, ref):
                 continue
             cand = _autofix_candidate(root, ref)
@@ -276,7 +309,9 @@ def check_ca_u001(targets, ctx):
 
 _CLAUDE_TOOLS = ("Edit", "Write", "MultiEdit", "NotebookEdit", "TodoWrite")
 _CLAUDE_TOOL_RE = re.compile(
-    r"`(" + "|".join(_CLAUDE_TOOLS) + r")`|\b(" + "|".join(_CLAUDE_TOOLS) + r")\s+tool\b"
+    r"`(" + "|".join(_CLAUDE_TOOLS) + r")`"
+    r"|\b(" + "|".join(_CLAUDE_TOOLS) + r")\s+tool\b"
+    r"|\b(" + "|".join(_CLAUDE_TOOLS) + r")\s*ツール"  # 日本語語彙（「Edit ツール」）
 )
 
 
@@ -288,7 +323,7 @@ def check_ca_d001(targets, ctx):
         for i, line in enumerate(t["content"].splitlines(), start=1):
             m = _CLAUDE_TOOL_RE.search(line)
             if m:
-                tool = m.group(1) or m.group(2)
+                tool = m.group(1) or m.group(2) or m.group(3)
                 findings.append(make_finding(
                     "CA-D001", "INFO", "REPORT_ONLY", f"{t['rel']}:{i}",
                     what=f"AGENTS.md に Claude 専用ツール語彙 `{tool}` が混入",
@@ -388,7 +423,9 @@ def check_ca_c001(targets, ctx):
         rb, lb, _pb, tb, xb = claims[y]
         union = ta | tb
         jac = len(ta & tb) / len(union) if union else 0.0
-        if jac < 0.5:
+        # Recall-priority over-generation (SKILL contract): candidates go to
+        # LLM classification, so the cut only removes near-zero overlap noise.
+        if jac < 0.2:
             continue
         findings.append(make_finding(
             "CA-C001", "WARN", "REPORT_ONLY",

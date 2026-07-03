@@ -102,13 +102,27 @@ class TestCA_S001_StaleFileRef(unittest.TestCase):
             self.assertEqual(f, [])
 
     def test_backtick_ref_with_missing_parent_not_flagged(self):
-        # `skill-improve/collect.py` shorthand: parent dir doesn't exist at root,
-        # so it's illustrative shorthand, not an anchored stale reference.
+        # `skill-improve/collect.py` shorthand: parent dir doesn't exist at root
+        # but a file with that basename exists elsewhere in the tree, so it's
+        # illustrative shorthand, not an anchored stale reference.
         with tempfile.TemporaryDirectory() as tmp:
             root = self._root(tmp)
+            (root / "tools").mkdir()
+            (root / "tools" / "collect.py").write_text("x", encoding="utf-8")
             t = target("claude_md", "see `ghostdir/collect.py` for details")
             f = [x for x in sc.run_checks([t], ctx(root=str(root))) if x["id"] == "CA-S001"]
             self.assertEqual(f, [])
+
+    def test_backtick_ref_basename_nowhere_flagged(self):
+        # Parent dir missing AND no file with that basename anywhere in the
+        # tree: this is the deleted-directory stale case (e.g. `docs/spec.md`
+        # after docs/ was removed) — must be reported, not silenced.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._root(tmp)
+            t = target("claude_md", "仕様は `docs/spec.md` を参照")
+            f = [x for x in sc.run_checks([t], ctx(root=str(root))) if x["id"] == "CA-S001"]
+            self.assertEqual(len(f), 1)
+            self.assertEqual(f[0]["action"], "NEEDS_JUDGMENT")
 
     def test_backtick_ref_with_existing_parent_flagged(self):
         # Anchored to real structure but leaf missing -> genuine stale candidate.
@@ -166,6 +180,14 @@ class TestCA_D001_ToolDrift(unittest.TestCase):
         t = target("claude_md", "use the `Edit` tool")
         f = [x for x in sc.run_checks([t], ctx()) if x["id"] == "CA-D001"]
         self.assertEqual(f, [])
+
+    def test_japanese_tool_vocab_flagged(self):
+        # 「Edit ツール」 (Japanese vocabulary, no backticks) is still Claude
+        # tool vocabulary leaking into AGENTS.md.
+        t = target("agents_md", "ファイル修正には Edit ツールと Write ツールを使うこと")
+        f = [x for x in sc.run_checks([t], ctx()) if x["id"] == "CA-D001"]
+        self.assertTrue(f)
+        self.assertIn("Edit", f[0]["what"])
 
 
 class TestCA_D002_CoverageDiff(unittest.TestCase):
@@ -234,6 +256,16 @@ class TestCA_C001_ContradictionCandidates(unittest.TestCase):
         b = target("rules", "コミットは日本語で書くな", path="b.md")
         f = [x for x in sc.run_checks([a, b], ctx()) if x["id"] == "CA-C001"]
         self.assertEqual(f, [])
+
+    def test_partially_overlapping_subject_paired(self):
+        # Realistic contradiction with modest token overlap (Jaccard ~0.23):
+        # candidate extraction is recall-priority over-generation, so this
+        # must reach the LLM classification stage, not be cut by the filter.
+        a = target("claude_md", "main ブランチへの直接コミットを禁止する", path="a.md")
+        b = target("rules", "軽微な修正は main に直接コミットしてよい", path="b.md")
+        f = [x for x in sc.run_checks([a, b], ctx()) if x["id"] == "CA-C001"]
+        self.assertTrue(f)
+        self.assertEqual(f[0]["action"], "REPORT_ONLY")
 
 
 class TestCA_M001_MemorySchema(unittest.TestCase):
