@@ -2,6 +2,14 @@
 
 `aggregate_metrics.py` とその unittest が実装する式の唯一の正典。フィクスチャの期待値はこの式から手計算する。判定は非決定的だが、集計は判定結果 JSON に対して決定的なので、テストは手書きの判定結果 JSON をフィクスチャにする。
 
+## モード軸（selection / autonomous）
+
+判定は selection / autonomous の 2 モードで実施される（`judge-protocol.md` 参照）。**モードは集計スキーマに影響しない**:
+
+- モードごとに独立した判定結果 JSON（`judged-{mode}-iterN.json`）を生成し、**それぞれを既存の `aggregate()` にそのまま通して** `metrics-{mode}-iterN.json` を得る。`aggregate_metrics.py` は無改修（モードを引数に取らない。ファイル名でモードを分けるだけ）。
+- **2 モードの判定結果を 1 つの JSON に混ぜて集計してはならない**（母集団が異なる。`judge-protocol.md` の妥当性限界を参照）。
+- **改稿ループ（SKILL.md Phase 6）の収束・悪化ガードは selection を正**とする。autonomous は**参考系列** + Tier1(selection)↔Tier2 乖離のキャリブレーション信号として扱う（autonomous 単独で revert 判断はしない）。
+
 ## ケース JSON スキーマ
 
 ```json

@@ -16,6 +16,7 @@ trigger-eval                # 本リポジトリの skills/ を対象に Phase 0
 trigger-eval --dir PATH     # 任意のフラットなスキルディレクトリ
 trigger-eval --user-scope   # ~/.claude/skills
 trigger-eval --no-e2e       # Tier 2 実発火検証をスキップ（デフォルトは実行）
+trigger-eval --selection-only  # Tier 1 を selection モードのみ計測（デフォルトは selection + autonomous）
 ```
 
 command は作らない（skills-first 方針。single-workflow のため名前付き入口も不要）。
@@ -84,20 +85,27 @@ python3 skills/trigger-eval/scripts/static_collisions.py \
 
 判定エージェント（Agent ツール、**model: sonnet 明示**、新規 subagent）に description 一覧 + ケースバッチを渡し JSON 回答を回収する。[judge-protocol.md](references/judge-protocol.md) に従う:
 
+- **判定は 2 モードで実施する**（`judge-protocol.md` の selection / autonomous）。**デフォルトは selection + autonomous の両方を計測**し、`--selection-only` で従来動作（selection のみ）に戻す。入出力スキーマは共通で、フレーミングだけが異なる。モードごとに `judged-{mode}-iterN.json` を別々に生成する（混合禁止）。
+- 入力の配布は **インライン渡し、または `skills.json` + バッチファイルの 2 ファイルのみ Read 許可**のいずれか（`judge-protocol.md`「入力の配布方法」）。
 - バッチ ≤20 ケース、並行 dispatch（最大 4）。ケース順シャッフル。
 - 回収時に**「判定数 == ケース数」を検証**。バッチ不正は 1 回だけ再判定 → なお不正なら `INVALID` 実体化。
 - stability のため同一ケースを独立に 2 判定（イテレーション 2 回目以降は固定サンプル 20–30 ケースに縮約、`--full-stability` で全数）。
-- 判定プロンプトで「ツールは一切使うな・ファイルを読むな・与えられた一覧のみで判定せよ」を明示（soft guarantee）。
+- 判定プロンプトで「ツールは一切使うな・与えられた入力のみで判定せよ」を明示（soft guarantee）。ファイル渡し時は許可した 2 ファイル以外を読まないことも明示。
 
 ### Phase 4: 集計
 
 ```bash
+# モードごとに同じスクリプトを別々に通す（aggregate_metrics.py は無改修）
 python3 skills/trigger-eval/scripts/aggregate_metrics.py \
-  .claude/tmp/trigger-eval-{ts}/judged-iterN.json \
-  --output .claude/tmp/trigger-eval-{ts}/metrics-iterN.json
+  .claude/tmp/trigger-eval-{ts}/judged-selection-iterN.json \
+  --output .claude/tmp/trigger-eval-{ts}/metrics-selection-iterN.json
+# --selection-only でない限り autonomous も同様に集計
+python3 skills/trigger-eval/scripts/aggregate_metrics.py \
+  .claude/tmp/trigger-eval-{ts}/judged-autonomous-iterN.json \
+  --output .claude/tmp/trigger-eval-{ts}/metrics-autonomous-iterN.json
 ```
 
-`metrics-spec.md` の式で recall / precision / specificity / stability / confusion matrix / invalid_rate を算出。
+`metrics-spec.md` の式で recall / precision / specificity / stability / confusion matrix / invalid_rate を算出。**2 モードの結果は混合せず**、収束・悪化ガードは selection を正・autonomous は参考系列（`metrics-spec.md`「モード軸」）。
 
 ### Phase 5: 改稿
 
@@ -126,6 +134,7 @@ Phase 3–5 を反復。停止条件は次のいずれか:
 `.claude/tmp/trigger-eval-{ts}/report.md` に出力:
 
 - メトリクス推移 / confusion 上位（**全行列ダンプではなく非ゼロセル・上位 N ペアのみ**、raw と正規化率 `confusion(A,B)/related_cases(A,B)` を併記）
+- **selection / autonomous のモード別併記**（`--selection-only` 時は selection のみ）。selection を主指標、autonomous を参考系列として並べ、両者の乖離を salience 信号として記す。**混合値は出さない**
 - 改稿差分 / Tier1↔Tier2 乖離率 / holdout 判定
 - **統合 / 棲み分け再設計候補ペア**（静的プレパス上位 + 改稿 2 回で confusion が解消しないペア）
 - 実行メタデータ（判定モデル / 日付 / `cases.json` と `cases_holdout.json` の sha256 / stability サンプル台帳）
