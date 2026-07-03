@@ -2,6 +2,7 @@
 
 | Cycle ID | Feature | Started | Completed | Plan |
 |----------|---------|---------|-----------|------|
+| `20260703125252` | trigger-eval スキル新規作成（スキル発火精度の実測・改善メタスキル） | 2026-07-03 | 2026-07-03 | [Link](./plans/20260703125252_trigger-eval-skill.md) |
 | `20260703103337` | refactor スキル新規作成 | 2026-07-03 | 2026-07-03 | [Link](./plans/20260703103337_refactor-skill.md) |
 | `20260702200752` | sweep-fix スキルの作成 | 2026-07-02 | 2026-07-02 | [Link](./plans/20260702200752_sweep-fix-skill.md) |
 | `20260415164852` | mockup-diff スキルの汎用化リファクタ | 2026-04-15 | 2026-04-15 | [Link](./plans/20260415164852_mockup-diff-generalization.md) |
