@@ -118,6 +118,7 @@ cd ~/develop/claude-skills
 | `parallel-cycle` | 自然言語の指示を分解し、worktree で並行 cycle 実行・自動マージ |
 | `investigate` | 問題を読み取り専用で調査し、構造化レポートを出力。ファイル編集は一切行わない |
 | `sweep-fix` | 指定範囲の問題検出 → 全体への横展開検索 → 文脈検証（偽陽性除去）→ 一括修正の find-one-fix-all 型スキル。コマンドなし（`/claude-skills:sweep-fix` で直接起動） |
+| `refactor` | 指定スコープを完全理解し**動作を完全に維持したまま**リファクタ → 類似コードへ文脈検証つき横展開。発見したバグは修正せず issue 化案を提示。コマンドなし（`/claude-skills:refactor` で直接起動） |
 | `brainstorm` | アイデアの壁打ちに特化。発散→収束→plan化の導線を提供。壁打ち中はファイル編集禁止 |
 | `team-cycle` | AgenticTeam によるチーム議論型レビュー + 自動実装サイクル。4専門レビュワーが議論して計画品質を向上 |
 | `team-plan` | AgenticTeam によるチーム議論型の計画作成。4専門家が議論しながら多角的な実装計画を作成 |
@@ -481,6 +482,7 @@ skills/               # Claude Code 用スキル（ロジック本体）
 ├── parallel-cycle/   # 指示分解 + worktree 並行 cycle 実行オーケストレータ
 ├── investigate/      # 読み取り専用の問題調査・構造化レポート
 ├── sweep-fix/        # find-one-fix-all: 局所の問題を全体へ横展開検索・文脈検証・一括修正
+├── refactor/         # 動作保持リファクタ + 類似コード横展開（バグは issue 化案として提示）
 ├── brainstorm/       # アイデアの壁打ち・発散→収束→plan化（ファイル編集禁止）
 ├── design-guide/     # 対話型ディスカバリーで DESIGN.md 生成（Session/Update/Mockup）
 ├── design-scaffold/  # DESIGN.md → tokens.json + tokens.css + lint 設定
