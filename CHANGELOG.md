@@ -4,6 +4,34 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.28.0
+
+新スキル `refactor` を追加。実装完了後のコードを**動作を完全に維持したまま**リファクタリングし、
+コードベース全体の類似コードへ文脈検証つきで横展開する。sweep-fix が「問題（バグ）起点の
+find-one-fix-all」なのに対し、refactor は「動作保持の表現改善」起点。
+
+- **7フェーズ構成**: SCOPE（スコープ解釈・安全上限 50 ファイル・一時コード除外）→
+  UNDERSTAND（Chesterton's Fence + 検証手段の確保。テスト/型検査/probe のない箇所は APPLY しない）→
+  IDENTIFY（4値分類 REFACTOR_CANDIDATE / BUG_FOUND / OUT_OF_SCOPE / ALREADY_CLEAN、no-op Gate、
+  performance Gate）→ SWEEP（similarity-ts/rs / ast-grep / Grep を役割別に使い分け、存在確認 +
+  フォールバック、範囲限定）→ VERIFY（3値判定 ★品質の要）→ APPLY（origin は APPLY、
+  スコープ外 sweep_candidates は opt-in、1改善ずつ最大10件、Rule of 500）→ REPORT
+- **Iron Laws**: 動作完全維持 / Chesterton's Fence / バグは直さず issue 化案を提示 /
+  既にきれいなら no-op / 迷ったら直さない（証明手段なしは APPLY 不可）
+- **検証観点は自前で持つ**: sweep-fix の context-verification.md は「同じ**バグ**が成立するか」を
+  問う設計で、動作保持検証（「同じ**変換**を動作保持で適用できるか」）とは問いが逆向きのため流用せず、
+  refactor 固有の `references/behavior-preservation-checks.md` を新設。3値判定の**定義**は
+  共有契約 severity-and-verdicts.md に準拠
+- **references**: `refactoring-catalog.md`（改善パターン C1-C12 + 過度な単純化の罠 +
+  「新しいチームメンバー」テスト）、`similarity-detection.md`（ツール役割別使い分け +
+  存在確認・言語カバレッジ非対称性・フォールバック）、`behavior-preservation-checks.md`
+  （動作保持の6観点チェックリスト + 判定例）
+- **バグ修正はしない**: 発見した `BUG_FOUND` は修正せず REPORT で `issue` スキルの起動コマンド案
+  （タイトル・本文の下書き付き）として提示。refactor 実行中は docs/issues を書き換えない
+- **skills-first 方針**: command なし（`/claude-skills:refactor` で直接起動）
+- **初版は Claude 版のみ**: sweep-fix と同じ戦略で、Codex 版は需要を見てから codex-sync で移植予定
+  （`codex-skills/` / `AGENTS.md` / `sync-manifest.json` は変更なし）
+
 ## 1.27.1
 
 sweep-fix を empirical prompt tuning（白紙エージェント10実行 + hold-out 過適合チェック、
