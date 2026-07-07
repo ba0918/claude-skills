@@ -4,6 +4,34 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.32.0
+
+`skill-regression` スキルを新規追加。スキルの「調律済みの挙動」を fixture として資産化し、
+SKILL.md や共有契約の変更時に影響スキルだけへ回帰評価を回すハーネス。
+
+- **課題**: empirical tuning で確立した合格基準はセッションと共に消え、共有契約 1 ファイルの
+  編集が参照スキル十数個の挙動を無検証で変える（実測: `verification-gate.md` の変更は
+  推移参照込みで 14 スキルに波及）。trigger-eval が「発火」を守る一方、「実行の質」の回帰は
+  誰も見ていなかった
+- **挙動面 (behavior surface)**: `skills/<name>/` 配下 + SKILL.md からの md リンク推移閉包
+  （共有契約含む）を `dep_graph.py` で算出し、変更ファイル → 影響スキルを逆引き
+- **検証台帳 `ledger.json`**: sync-manifest と同思想。挙動面が前回検証時から変わったのに
+  台帳が古いままなら CI fail。`--update --accept` で「実行せず不要判断」を明示記録
+  （黙殺だけを不可能にする）。fixture を持つスキルのみ追跡（opt-in）
+- **fixture 契約**: `skills/<name>/fixtures.json`。シナリオ 2〜3 本 + [critical] 付き要件
+  3〜7 項目。白紙実行者 subagent（model 明示・毎回新規 dispatch・worktree 隔離）で再生し、
+  critical 全 ○ で合格。生産手段（empirical tuning / plan 受け入れ条件 / 手動設計）に非依存
+- **共有純関数 `skills/shared/scripts/md_links.py`** を新設（リンク抽出 + 推移閉包）。
+  `dep_graph.py` / `ledger.py` とあわせて全て TDD（RED→GREEN）で unittest 検証
+- **初の fixture 資産化: context-audit**: 1.31.1 EPT が検証した挙動（CA-S001 backtick 参照 /
+  CA-C001 矛盾 / CA-D001 日本語ツール語彙 / 非対話フォールバックでの AUTO_FIX 不適用・baseline
+  非書き込み / 誤検出ゼロの precision）を 3 シナリオ・14 要件に固定。白紙実行者 3 体で全シナリオ
+  合格（critical 全 ○ + ファイル無改変をハッシュで機械検証）を確認し台帳に記録
+- **CI のテスト発見を自動化**: `.github/workflows/validate.yml` のハードコード 3 ステップを
+  `skills/*/scripts` の自動発見ループに置換。従来 CI から漏れていた context-audit の
+  96 テストが回るようになった（新スキルのテストが黙って漏れる構造を根絶）。
+  あわせて `ledger.py --check` を CI ゲートに追加
+
 ## 1.31.1
 
 `context-audit` を empirical-prompt-tuning（白紙実行者 × 3〜4 シナリオ × 5 イテレーション）で改善。
