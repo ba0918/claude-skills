@@ -4,6 +4,28 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.38.0
+
+`goal-decomposition` スキル新設 — 大枠ゴールを Loop Readiness Dossier にコンパイルする入口。
+
+- **共有契約 `goal-decomposition-pattern.md`**: 既存 4 契約（loop-engineering / convergence-pattern /
+  polling-pattern / measurement-identity）の上流「翻訳層」。Dossier Schema v1（canonical キー階層の単一ソース）/
+  第一問決定木（完了条件 / 未達検出器 / 人間判断 → `wire_to` 5 値の導出）/ 5 軸 routing proof /
+  status ライフサイクル（draft/approved/superseded/rejected、approved は実行権限を与えない）/
+  wire_to×exit_to compatibility matrix / proxy oracle 許容条件（LLM judge 主観評価は禁止）/
+  supply gap 3 分類 playbook / 信頼境界 fence 規約 / 既存契約への写像表 / GD001-GD302 rule catalog を定義。
+- **`skills/goal-decomposition/`**: 薄い orchestrator（command なし、compile / validate の 2 ワークフロー）。
+  compile の出力は常に `status: draft`、承認は人間が JSON を直接編集する。secret redaction は 2 段構え
+  （自由文はマスク / 構造フィールドは検出で compile 中止）。
+- **`dossier_lint.py`**: 純関数 RULES registry（GD001-GD302、終了コード 0/1/2、object_pairs_hook で
+  重複キー検出 / commonpath + symlink 拒否の path containment / secret マスク）。unittest 60 ケース +
+  catalog-sync（契約 rule 表 ⇔ RULES の一致保証）。
+- **`validate_repo.py` チェック13**: `docs/loop/dossiers/*.json` を dossier_lint で in-process 検査し
+  error 級のみ CI fail。壊れた dossier は `[dossier] parse-error` に変換して validate_repo 全体の abort を防ぐ。
+  CONTRACT_VOCAB に goal-decomposition-pattern.md（ci_gate / resident_sensor / dissolve）を登録。
+- **E2E 具体例**: `docs/loop/dossiers/20260707230000_doc-quality.json`（「ドキュメント品質を上げて維持する」）を
+  正式スキーマで作成し lint 合格を確認。md ビューは JSON からの一方向生成 + sha256 marker（tamper-evident）。
+
 ## 1.37.2
 
 閉ループの予行演習（③ 残 findings 処理を polling パイプラインで消化）。

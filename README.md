@@ -116,6 +116,7 @@ cd ~/develop/claude-skills
 | `github-issue` | GitHub issue を起点に polling → draft PR → Codex レビュー → auto merge まで自走。ラベルベース状態機械 + 多重防御 atomic claim + fail-closed Codex ゲート |
 | `loop-triage` | センサー（validate_repo / ledger --check / context-audit）の finding を冪等化・admission 分類して `docs/issues/ready/` に自動供給するループ中枢。自己修飾ゲート（fixture 非保有スキルに触れる変更は inbox 降格）付き。コマンドなし（`/claude-skills:loop-triage` で直接起動）。本リポジトリ専用 |
 | `goal-loop` | 機械検証可能な oracle（「全テスト green」「lint ゼロ」）が真になるまで修正を自律反復する条件収束型ループ。oracle ファイル群をハッシュロックし、テストを弱めて合格する oracle-gaming を機械的に遮断。stall / oscillation 検出つき。コマンドなし（`/claude-skills:goal-loop` で直接起動）。汎用スキル |
+| `goal-decomposition` | 大枠ゴール（「コードベース全体を精査してリファクタ完遂」等）を Loop Readiness Dossier（自走可能性の型検査結果）にコンパイルし、goal-loop / loop-triage / inbox / measurement への配線先を第一問決定木で機械決定する入口スキル。主成果は「自走してはいけない断片を機械的に説明して止めること」。compile（ゴール → dossier draft）/ validate（dossier_lint）の 2 ワークフロー。`dossier_lint.py`（GD001-GD302 の純関数 lint、validate_repo チェック13 で CI 強制）付き。コマンドなし（`/claude-skills:goal-decomposition` で直接起動）。本リポジトリ専用 |
 | `handoff` | セッション間のコンテキスト引き継ぎ。save で現在のコンテキストを `docs/handoff/` に構造化保存、restore で次セッションが読込→自動削除（揮発型） |
 | `parallel-cycle` | 自然言語の指示を分解し、worktree で並行 cycle 実行・自動マージ |
 | `investigate` | 問題を読み取り専用で調査し、構造化レポートを出力。ファイル編集は一切行わない |
@@ -508,6 +509,7 @@ skills/               # Claude Code 用スキル（ロジック本体）
 ├── skill-improve/    # セッションデータ分析によるスキル改善メタスキル
 ├── doc-audit/        # docs 内アーティファクトの横断スキャン・不整合修復
 ├── migrate-cycles-to-plans/ # cycles → plans マイグレーション
+├── goal-decomposition/  # 大枠ゴール → Loop Readiness Dossier コンパイラ（dossier_lint 付き）
 └── shared/references/     # 複数スキルが共有するリソース
     ├── team-config.md            # AgenticTeam ロール定義（team-plan/cycle/brainstorm 共有）
     ├── severity-and-verdicts.md  # 重大度・判定基準（team-plan/cycle 共有）
@@ -518,6 +520,7 @@ skills/               # Claude Code 用スキル（ロジック本体）
     ├── verification-gate.md      # 完了前検証ゲート契約（証拠なし完了主張の防止）
     ├── design-system-contract.md # デザインシステム検証の共通契約
     ├── orchestration-patterns.md # エージェントオーケストレーション設計契約（endorsed/アンチパターン）
+    ├── goal-decomposition-pattern.md # 大枠ゴール → dossier 翻訳層契約（Schema / 決定木 / GD* rule / 写像表）
     └── skill-authoring.md        # スキル執筆仕様（frontmatter 契約 / 執筆原則 / チェックリスト）
 codex-skills/         # Codex CLI 用スキル（Codex ネイティブ API に変換）
 ├── commit/           # 自動コミット（Codex 版）
