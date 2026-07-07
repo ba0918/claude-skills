@@ -115,6 +115,7 @@ cd ~/develop/claude-skills
 | `issue` | スコープ外の問題を記録・管理し plan → cycle に繋げる。polling ワークフローで `ready/` キューを self-driving 消化するラルフループも提供 |
 | `github-issue` | GitHub issue を起点に polling → draft PR → Codex レビュー → auto merge まで自走。ラベルベース状態機械 + 多重防御 atomic claim + fail-closed Codex ゲート |
 | `loop-triage` | センサー（validate_repo / ledger --check / context-audit）の finding を冪等化・admission 分類して `docs/issues/ready/` に自動供給するループ中枢。自己修飾ゲート（fixture 非保有スキルに触れる変更は inbox 降格）付き。コマンドなし（`/claude-skills:loop-triage` で直接起動）。本リポジトリ専用 |
+| `goal-loop` | 機械検証可能な oracle（「全テスト green」「lint ゼロ」）が真になるまで修正を自律反復する条件収束型ループ。oracle ファイル群をハッシュロックし、テストを弱めて合格する oracle-gaming を機械的に遮断。stall / oscillation 検出つき。コマンドなし（`/claude-skills:goal-loop` で直接起動）。汎用スキル |
 | `handoff` | セッション間のコンテキスト引き継ぎ。save で現在のコンテキストを `docs/handoff/` に構造化保存、restore で次セッションが読込→自動削除（揮発型） |
 | `parallel-cycle` | 自然言語の指示を分解し、worktree で並行 cycle 実行・自動マージ |
 | `investigate` | 問題を読み取り専用で調査し、構造化レポートを出力。ファイル編集は一切行わない |

@@ -53,7 +53,7 @@
       "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
       "skills/shared/references/team-config.md": "fc8364e37b5c0a79a4b56c50858f3d63f7270087739359a4283c0575c1df7d28",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
-      "skills/skill-regression/SKILL.md": "dfa64bf94dcf146a25deacdd2459396a07510cef8e75f3c026b70ba28f9c2e09",
+      "skills/skill-regression/SKILL.md": "119d639a27aa258ef922e269440fa48bda919323d18434331cbd093e8a3a243a",
       "skills/skill-regression/references/executor-contract.md": "73158fd5d8c060c0a6238333a2407f1c2b3ef8ce24391850990f1173734844ba",
       "skills/skill-regression/references/fixture-schema.md": "261097e46ba6b79e4b627037f8d06a0ffb693d6c4470572f6a564b8b91205657"
     },
@@ -82,7 +82,7 @@
       "skills/skill-regression/references/executor-contract.md",
       "skills/skill-regression/references/fixture-schema.md"
     ],
-    "surface_sha256": "4e9f2d97c28a245ac64c4dc9b87b3b51c546edae75eb0be7920d06f987f7dfb4",
+    "surface_sha256": "f7f269e390cb4db8a3786521fe96f644793f2a2b0c7fa92652e5891b97512fb4",
     "verified": "2026-07-07"
   },
   "issue": {
@@ -102,7 +102,7 @@
       "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
       "skills/shared/references/team-config.md": "fc8364e37b5c0a79a4b56c50858f3d63f7270087739359a4283c0575c1df7d28",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
-      "skills/skill-regression/SKILL.md": "dfa64bf94dcf146a25deacdd2459396a07510cef8e75f3c026b70ba28f9c2e09",
+      "skills/skill-regression/SKILL.md": "119d639a27aa258ef922e269440fa48bda919323d18434331cbd093e8a3a243a",
       "skills/skill-regression/references/executor-contract.md": "73158fd5d8c060c0a6238333a2407f1c2b3ef8ce24391850990f1173734844ba",
       "skills/skill-regression/references/fixture-schema.md": "261097e46ba6b79e4b627037f8d06a0ffb693d6c4470572f6a564b8b91205657"
     },
@@ -127,7 +127,7 @@
       "skills/skill-regression/references/executor-contract.md",
       "skills/skill-regression/references/fixture-schema.md"
     ],
-    "surface_sha256": "5c16868e1d0c4249c85b965b2e64f38a3291b9b541b5cc0206a2a30c3a5f8e6e",
+    "surface_sha256": "c6c5bc90ca13f1acee0bf93750d149ac1c5df93b2e228fadf57dd751569d747c",
     "verified": "2026-07-07"
   }
 }
