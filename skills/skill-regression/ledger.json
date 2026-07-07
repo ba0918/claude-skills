@@ -9,7 +9,7 @@
       "skills/context-audit/scripts/aggregate_report.py": "9acdb60cbda5dcf18b2d69ccb4a42910852a5ec7723d1abe49a3a253ad4fcb10",
       "skills/context-audit/scripts/apply_fixes.py": "d37bc3064138bf2c8325157edfd2aeb38a14ad70a637835f0616658f77b02231",
       "skills/context-audit/scripts/collect_targets.py": "347ba498ac6d5f2b4fa43e802486c4dbe552b33358d3d65e9dd096bc6cc129ac",
-      "skills/context-audit/scripts/static_checks.py": "cab83ec89e57671d5689c73b606ebfd4eb376ec8f952060fec7ccd6adafb42cc",
+      "skills/context-audit/scripts/static_checks.py": "9506a36893c4652923c88a247a6466bfb1fa167816d7a2e73402551b07efc207",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
       "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
@@ -29,7 +29,7 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "9ec1be7865791609ecd5af723e58bdc656bf305f2e94f66517bda0fa3934d5c3",
+    "surface_sha256": "f511067ad0a9a5a582ff557e762f2a148391bab153be88fd69223d9a446e43b3",
     "verified": "2026-07-07"
   }
 }

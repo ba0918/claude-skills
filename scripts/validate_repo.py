@@ -37,6 +37,15 @@ import os
 import re
 import sys
 
+sys.path.insert(
+    0,
+    os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "..", "skills", "shared", "scripts",
+    ),
+)
+from frontmatter import extract_description, parse_frontmatter_fields  # noqa: E402,F401
+
 EXCLUDED_DIRS = {".git", ".claude", ".codex", "node_modules", "__pycache__"}
 
 # 例示用プレースホルダと判定するパターン: {var} 含み / URL / アンカー /
@@ -69,55 +78,8 @@ def is_checkable_link(link):
     return True
 
 
-def parse_frontmatter_fields(text):
-    """YAML frontmatter のトップレベル `key: value` を dict で返す。なければ空 dict。"""
-    lines = text.splitlines()
-    if not lines or lines[0].strip() != "---":
-        return {}
-    fields = {}
-    for line in lines[1:]:
-        if line.strip() == "---":
-            return fields
-        m = re.match(r"^([A-Za-z_-]+):\s*(.*)$", line)
-        if m:
-            fields[m.group(1)] = m.group(2).strip()
-    return {}  # 閉じデリミタなし = frontmatter 不成立
-
-
-def extract_description(text):
-    """frontmatter から description の全文を返す（複数行ブロックスカラー対応）。
-
-    parse_frontmatter_fields は単一行の値しか取れないため、`description: >` 形式の
-    複数行 description はこちらで結合して返す。なければ None。
-    """
-    lines = text.splitlines()
-    if not lines or lines[0].strip() != "---":
-        return None
-    body = []
-    closed = False
-    for line in lines[1:]:
-        if line.strip() == "---":
-            closed = True
-            break
-        body.append(line)
-    if not closed:
-        return None
-    desc_lines = []
-    in_desc = False
-    for line in body:
-        if re.match(r"^description:", line):
-            in_desc = True
-            desc_lines.append(re.sub(r"^description:\s*", "", line).strip())
-            continue
-        if in_desc:
-            if re.match(r"^[A-Za-z_-]+:", line):  # 次のトップレベルキー
-                break
-            desc_lines.append(line.strip())
-    if not in_desc:
-        return None
-    if desc_lines and desc_lines[0] in (">", "|", ">-", "|-"):
-        desc_lines = desc_lines[1:]
-    return " ".join(l for l in desc_lines if l).strip()
+# frontmatter パーサは skills/shared/scripts/frontmatter.py に共有化した
+# （context-audit / trigger-eval と同一実装。冒頭の import を参照）。
 
 
 # description は「何をするか」に加えて「いつ起動するか」を含まなければならない。

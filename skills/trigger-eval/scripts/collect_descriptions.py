@@ -19,6 +19,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(
+    0, str(Path(__file__).resolve().parent.parent.parent / "shared" / "scripts")
+)
+from frontmatter import parse_name_and_description as parse_frontmatter  # noqa: E402,F401
+
 # plugin prefix like "claude-skills:" or "wiki:"
 _PLUGIN_PREFIX_RE = re.compile(r"^[a-z][a-z0-9-]*:")
 
@@ -32,51 +37,8 @@ def normalize_bare_name(name: str) -> str:
     return _PLUGIN_PREFIX_RE.sub("", name.strip(), count=1)
 
 
-def parse_frontmatter(text: str) -> dict[str, str] | None:
-    """Parse YAML-ish frontmatter into {name, description}.
-
-    Returns None when no `---` delimited frontmatter block is present.
-    A missing `description` becomes an empty string. Multi-line
-    descriptions (indented continuation lines) are joined with spaces.
-    """
-    lines = text.splitlines()
-    if not lines or lines[0].strip() != "---":
-        return None
-    body: list[str] = []
-    closed = False
-    for line in lines[1:]:
-        if line.strip() == "---":
-            closed = True
-            break
-        body.append(line)
-    if not closed:
-        return None
-
-    name = ""
-    desc_lines: list[str] = []
-    in_desc = False
-    for line in body:
-        m_name = re.match(r"^name:\s*(.*)$", line)
-        if m_name:
-            name = m_name.group(1).strip()
-            in_desc = False
-            continue
-        m_desc = re.match(r"^description:\s*(.*)$", line)
-        if m_desc:
-            in_desc = True
-            desc_lines.append(m_desc.group(1).strip())
-            continue
-        if in_desc:
-            # continuation only if indented (still part of description)
-            if re.match(r"^[A-Za-z_-]+:", line):
-                in_desc = False
-                continue
-            desc_lines.append(line.strip())
-
-    if desc_lines and desc_lines[0] in (">", "|", ">-", "|-"):
-        desc_lines = desc_lines[1:]
-    description = " ".join(l for l in desc_lines if l).strip()
-    return {"name": name, "description": description}
+# frontmatter parsing is shared via skills/shared/scripts/frontmatter.py
+# (`parse_frontmatter` is an alias of parse_name_and_description, see import).
 
 
 def collect_from_dir(dir_path: Path) -> list[dict[str, str]]:

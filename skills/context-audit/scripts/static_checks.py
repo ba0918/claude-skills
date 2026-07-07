@@ -28,6 +28,7 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "shared", "scripts")
 )
 import secret_detect  # noqa: E402
+from frontmatter import parse_frontmatter_lines  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Finding helpers
@@ -206,24 +207,8 @@ def _line_of(content: str, needle: str) -> int:
     return 1
 
 
-# ---------------------------------------------------------------------------
-# Frontmatter (regex-based, no PyYAML — mirrors validate_repo.py)
-# ---------------------------------------------------------------------------
-
-def parse_frontmatter_lines(content: str) -> list[tuple[str, str, str]] | None:
-    """Return [(key, value, raw_line)] for top-level frontmatter keys, or None
-    if there is no closed frontmatter block."""
-    lines = content.splitlines()
-    if not lines or lines[0].strip() != "---":
-        return None
-    out = []
-    for line in lines[1:]:
-        if line.strip() == "---":
-            return out
-        m = re.match(r"^([A-Za-z_][A-Za-z0-9_-]*):(.*)$", line)
-        if m:
-            out.append((m.group(1), m.group(2).strip(), line))
-    return None  # unclosed
+# Frontmatter parsing is shared via skills/shared/scripts/frontmatter.py
+# (imported at the top alongside secret_detect).
 
 
 # ---------------------------------------------------------------------------
