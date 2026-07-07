@@ -405,6 +405,18 @@ class TestBuildSkeleton(unittest.TestCase):
         meta = parse_checkpoint(out, "20260708012132")
         self.assertEqual(meta.verify_on_restore, [])
 
+    def test_skeleton_roundtrips_with_newline_in_path(self):
+        # A path containing a newline must not break the strict parser of the
+        # freshly-written skeleton (round-trip safety on unusual filenames).
+        pz = "M  weird\nname.py\x00".encode("utf-8")
+        out = build_skeleton(
+            pz, "abc1234", "sha256:" + "0" * 64, "manual-session",
+            "20260708012132", "2026-07-08T01:30:00+09:00",
+        )
+        meta = parse_checkpoint(out, "20260708012132")  # must not raise
+        self.assertEqual(len(meta.dirty_files), 1)
+        self.assertNotIn("\n", meta.dirty_files[0])
+
     def test_atomic_write_creates_and_is_idempotent(self):
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "sub", "dir", "out.md")

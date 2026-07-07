@@ -340,13 +340,19 @@ def parse_checkpoint(text, filename_cycle_id):
 # ==========================================================================
 # classify (pure) — parse gate already passed
 # ==========================================================================
-def classify(meta, current_head, current_fingerprint, *, sibling_paths=None,
+def classify(meta, current_head, current_fingerprint, *,
              current_dirty_files=None, conflict_marker=False):
     """Semantic 5-verdict classification on a parsed checkpoint.
 
     Priority: superseded > conflict > degraded > stale > valid.
     (Parse conflict is terminal and handled *before* this — see the CLI layer /
     checkpoint-pattern.md § "層分離".)
+
+    conflict_marker is the write-side overwrite-race signal. In v1 no caller
+    sets it (single-writer/single-host model — the anti-overwrite guarantee is
+    skill discipline, not code-enforced); the parameter is the v2 wire point for
+    written_at/fingerprint race detection and is exercised by the unit tests so
+    the priority ordering stays frozen.
     """
     # 1. superseded — HEAD advanced. base_head is ground-truth-relative.
     if meta.base_head != current_head:
@@ -371,6 +377,18 @@ def classify(meta, current_head, current_fingerprint, *, sibling_paths=None,
 # ==========================================================================
 # build_skeleton (pure) + atomic write
 # ==========================================================================
+def _escape_list_item(s):
+    """Keep a dirty-file list item on a single line so the freshly-written
+    skeleton round-trips through the strict parser. Paths may legitimately
+    contain newlines/CR/tab (git -z is byte-literal); we escape them to visible
+    two-char sequences. dirty_files is informational — the staleness source of
+    truth is dirty_fingerprint (computed from raw porcelain), so a display-only
+    escape is safe."""
+    return s.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\r").replace(
+        "\t", "\\t"
+    )
+
+
 def build_skeleton(porcelain_z, head, fingerprint, owner, cycle_id, written_at):
     """Generate the machine-field skeleton. Narrative is filled by the LLM."""
     if owner not in OWNERS:
@@ -379,7 +397,7 @@ def build_skeleton(porcelain_z, head, fingerprint, owner, cycle_id, written_at):
         raise ParseError(f"cycle_id 形式違反: {cycle_id!r}")
     mode = OWNER_MODE[owner]
     files = dirty_paths(parse_porcelain(porcelain_z))
-    masked = [mask_secrets(p) for p in files]
+    masked = [_escape_list_item(mask_secrets(p)) for p in files]
     files_block = "\n".join(f"  - {p}" for p in masked) if masked else ""
 
     lines = [
