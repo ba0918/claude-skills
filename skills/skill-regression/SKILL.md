@@ -49,7 +49,8 @@ description: スキルの「調律済みの挙動」を fixture（シナリオ +
    (c) どちらも無ければ [references/fixture-schema.md](references/fixture-schema.md) の設計指針に従い新規設計
 2. **fixtures.json の作成**: スキーマに従い `skills/<skill>/fixtures.json` を書く。
    シナリオは 2〜3 本（中央値 1 + edge 1〜2）、要件は各 3〜7 項目、`critical: true` を最低 1 つ
-3. **初回実行**: run ワークフローで全シナリオを実行し、全合格を確認する。
+3. **初回実行**: run ワークフローの **Step 2〜4（実行・判定・報告）** で全シナリオを実行し、
+   全合格を確認する（Step 1 の逆引きと Step 5 の台帳更新は capture 側の手順を使う）。
    落ちる fixture をそのまま資産化しない（後続の回帰評価が常に赤くなり、台帳が意味を失う）
 4. **台帳記録**: `python3 {skill_dir}/scripts/ledger.py --update <skill> {repo_root}`
 5. **計測イベント追記**: ledger は最新 1 件しか持たないため、検証イベントの履歴を
@@ -61,8 +62,14 @@ description: スキルの「調律済みの挙動」を fixture（シナリオ +
 1. **対象の決定**:
    - スキル名の指定があればそれ。無ければ変更ファイルから逆引きする:
      `git diff --name-only HEAD`（未 commit 変更）または指定 commit 範囲を取り、
-     `python3 {skill_dir}/scripts/ledger.py --impact <changed>... {repo_root}` で影響スキルを得る
+     `python3 {skill_dir}/scripts/ledger.py --impact <changed>... {repo_root}` で影響スキルを得る。
+     git が使えない / 変更ファイルが会話で明示されている場合は、そのパスを `--impact` に直接渡す
    - 影響スキルのうち fixture を持つものだけが評価対象。持たないものは対象外として報告に列挙する
+   - **run と `--accept` の目安**: 機械パーストークン・コード・コマンド・frontmatter キーに
+     一切触れない純プロ―ズ変更（句読点・言い回し）は `--accept` 相当。それ以外は run。
+     迷ったら run（fail-safe）
+   - 台帳が既に verified（`accepted-without-run` 含む）でも、ユーザーが回帰評価を求めたら
+     run してよい。実 run の `pass` で accepted-without-run を上書きするのは台帳品質の向上
 2. **実行**: 対象スキルの `fixtures.json` を読み、シナリオごとに白紙実行者 subagent を
    [references/executor-contract.md](references/executor-contract.md) の契約で起動する。
    - 同一メッセージ内で複数 Agent 呼び出しを並べて並行実行（[orchestration-patterns.md](../shared/references/orchestration-patterns.md) 準拠）

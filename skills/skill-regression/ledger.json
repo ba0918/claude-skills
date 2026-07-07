@@ -4,13 +4,13 @@
       "skills/commit/SKILL.md": "cc346f0e6d6f4698ede53dca6729bf3ce87830f7575f674bf74d1686dd8f2a09",
       "skills/commit/fixtures.json": "710da57415bc87d5128794ac2c0d12f6f9abd95abe9e66005a30abbf0932ff94"
     },
-    "result": "accepted-without-run",
+    "result": "pass",
     "surface": [
       "skills/commit/SKILL.md",
       "skills/commit/fixtures.json"
     ],
     "surface_sha256": "0fee59fded20bc1ca1605b4c8ae5a2cca736e35911716ee8069d87cd38df0d8d",
-    "verified": "2026-07-07"
+    "verified": "2026-07-08"
   },
   "context-audit": {
     "file_sha256": {
@@ -66,8 +66,8 @@
       "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
       "skills/shared/references/team-config.md": "fc8364e37b5c0a79a4b56c50858f3d63f7270087739359a4283c0575c1df7d28",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
-      "skills/skill-regression/SKILL.md": "119d639a27aa258ef922e269440fa48bda919323d18434331cbd093e8a3a243a",
-      "skills/skill-regression/references/executor-contract.md": "73158fd5d8c060c0a6238333a2407f1c2b3ef8ce24391850990f1173734844ba",
+      "skills/skill-regression/SKILL.md": "c5e9c53184dec8e0bf884867fec20e6defe0880c19145e19bd29a8ac80fdb9d8",
+      "skills/skill-regression/references/executor-contract.md": "bc26e9c9f0544e3f7f232335d28bb9a485296e81650181bef37ea396352d0f08",
       "skills/skill-regression/references/fixture-schema.md": "261097e46ba6b79e4b627037f8d06a0ffb693d6c4470572f6a564b8b91205657"
     },
     "result": "accepted-without-run",
@@ -95,8 +95,8 @@
       "skills/skill-regression/references/executor-contract.md",
       "skills/skill-regression/references/fixture-schema.md"
     ],
-    "surface_sha256": "903e7ce9d325c56ca074fbd903501fe46226e772761574a1acd21637d78e09f9",
-    "verified": "2026-07-07"
+    "surface_sha256": "9483ab64b02e4ff670c562dbb2f9d6452f5de1781859b1b923710f72fa6760ea",
+    "verified": "2026-07-08"
   },
   "handoff": {
     "file_sha256": {
@@ -130,8 +130,8 @@
       "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
       "skills/shared/references/team-config.md": "fc8364e37b5c0a79a4b56c50858f3d63f7270087739359a4283c0575c1df7d28",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
-      "skills/skill-regression/SKILL.md": "119d639a27aa258ef922e269440fa48bda919323d18434331cbd093e8a3a243a",
-      "skills/skill-regression/references/executor-contract.md": "73158fd5d8c060c0a6238333a2407f1c2b3ef8ce24391850990f1173734844ba",
+      "skills/skill-regression/SKILL.md": "c5e9c53184dec8e0bf884867fec20e6defe0880c19145e19bd29a8ac80fdb9d8",
+      "skills/skill-regression/references/executor-contract.md": "bc26e9c9f0544e3f7f232335d28bb9a485296e81650181bef37ea396352d0f08",
       "skills/skill-regression/references/fixture-schema.md": "261097e46ba6b79e4b627037f8d06a0ffb693d6c4470572f6a564b8b91205657"
     },
     "result": "accepted-without-run",
@@ -155,8 +155,8 @@
       "skills/skill-regression/references/executor-contract.md",
       "skills/skill-regression/references/fixture-schema.md"
     ],
-    "surface_sha256": "c6c5bc90ca13f1acee0bf93750d149ac1c5df93b2e228fadf57dd751569d747c",
-    "verified": "2026-07-07"
+    "surface_sha256": "5fb0167af70d24264f8b4362011fc5fd9422a990b70cbdf6d7657ff8963d7be7",
+    "verified": "2026-07-08"
   },
   "plan": {
     "file_sha256": {
