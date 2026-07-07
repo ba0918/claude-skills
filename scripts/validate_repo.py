@@ -235,11 +235,54 @@ CODEX_SOURCE_OVERRIDES = {
     "cycle": "commands/cycle.md",  # Claude 側は commands のみ（スキル実体なし）
 }
 
-# skills/*/SKILL.md 対応以外で同期追跡したい実ファイルペア (codex側, ソース)
+# skills/*/SKILL.md 対応以外で同期追跡したい実ファイルペア (codex側, ソース)。
+# ツール名・Codex 第二意見節を含む references は symlink 共有できず変換済み実体コピーに
+# なる（tool-mapping.md「共有契約の可搬性ポリシー」参照）。実体コピーはすべてここに登録し、
+# ソース側の変更を台帳で検知する。
 EXTRA_SYNC_PAIRS = [
     (
         "codex-skills/shared/references/team-config.md",
         "skills/shared/references/team-config.md",
+    ),
+    (
+        "codex-skills/attack-review/references/report-template.md",
+        "skills/attack-review/references/report-template.md",
+    ),
+    (
+        "codex-skills/codebase-review/references/report-template.md",
+        "skills/codebase-review/references/report-template.md",
+    ),
+    (
+        "codex-skills/codebase-review/references/review-criteria.md",
+        "skills/codebase-review/references/review-criteria.md",
+    ),
+    (
+        "codex-skills/plan-reviewer/references/output-format.md",
+        "skills/plan-reviewer/references/output-format.md",
+    ),
+    (
+        "codex-skills/plan-reviewer/references/review-dimensions.md",
+        "skills/plan-reviewer/references/review-dimensions.md",
+    ),
+    (
+        "codex-skills/iterate/references/light-review.md",
+        "skills/iterate/references/light-review.md",
+    ),
+    (
+        "codex-skills/parallel-cycle/references/decompose-guide.md",
+        "skills/parallel-cycle/references/decompose-guide.md",
+    ),
+    (
+        "codex-skills/parallel-cycle/references/merge-strategy.md",
+        "skills/parallel-cycle/references/merge-strategy.md",
+    ),
+    (
+        "codex-skills/team-cycle/references/review-flow.md",
+        "skills/team-cycle/references/review-flow.md",
+    ),
+    (
+        "codex-skills/team-cycle/references/code-review-flow.md",
+        "skills/team-cycle/references/code-review-flow.md",
     ),
 ]
 

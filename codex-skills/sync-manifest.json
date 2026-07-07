@@ -3,6 +3,10 @@
     "source": "skills/attack-review/SKILL.md",
     "source_sha256": "21c6a92c023e0dc13f653a4467b857c465040426ace3b230af0d43eb18f08e15"
   },
+  "codex-skills/attack-review/references/report-template.md": {
+    "source": "skills/attack-review/references/report-template.md",
+    "source_sha256": "6cb0aef82367d10221577453df6cc8c089c7f47fa6781cb40c8c8c1f48bf487a"
+  },
   "codex-skills/brainstorm/SKILL.md": {
     "source": "skills/brainstorm/SKILL.md",
     "source_sha256": "4dce20b7e3fd9825fa7c305d39ff2037a6f291ec7d413a386d386a4bc846020f"
@@ -10,6 +14,14 @@
   "codex-skills/codebase-review/SKILL.md": {
     "source": "skills/codebase-review/SKILL.md",
     "source_sha256": "240c56d2580b60fc03b31de0ce0d4a15cab1777af354a7fb14479c97aba0d763"
+  },
+  "codex-skills/codebase-review/references/report-template.md": {
+    "source": "skills/codebase-review/references/report-template.md",
+    "source_sha256": "9256017ff0408f91d0c9545cf2de3d05c65cdf1a7ade24424d1329b9f8ac3e94"
+  },
+  "codex-skills/codebase-review/references/review-criteria.md": {
+    "source": "skills/codebase-review/references/review-criteria.md",
+    "source_sha256": "060e31920c6e41b9a8386822c0b5048893df42ca479cc37732956c146bb9bc42"
   },
   "codex-skills/commit/SKILL.md": {
     "source": "skills/commit/SKILL.md",
@@ -35,13 +47,33 @@
     "source": "skills/iterate/SKILL.md",
     "source_sha256": "2adaf90e22caf773955dd053a499b2ba07efaf5d4b99736e83e5b890a152be05"
   },
+  "codex-skills/iterate/references/light-review.md": {
+    "source": "skills/iterate/references/light-review.md",
+    "source_sha256": "40c32cf5079467c7b71068d604b1faa6066d1d7198d93cafa5f9a485f6f9356a"
+  },
   "codex-skills/parallel-cycle/SKILL.md": {
     "source": "skills/parallel-cycle/SKILL.md",
     "source_sha256": "1b4723c3d3cc7db7c9995953283c78da91a145278d896484d75e67dd5416cfbe"
   },
+  "codex-skills/parallel-cycle/references/decompose-guide.md": {
+    "source": "skills/parallel-cycle/references/decompose-guide.md",
+    "source_sha256": "3c0e1a13dbd28b383fadc6800cc4cbdf66f1332d81d6b5666a73a3edb0b2d70d"
+  },
+  "codex-skills/parallel-cycle/references/merge-strategy.md": {
+    "source": "skills/parallel-cycle/references/merge-strategy.md",
+    "source_sha256": "53b7cc9a5f757e6ecb1adcf2ab265d5908e2cb39483f25dc4b1c5c607299b338"
+  },
   "codex-skills/plan-reviewer/SKILL.md": {
     "source": "skills/plan-reviewer/SKILL.md",
     "source_sha256": "6c1432005b429be4287f11fb8dfd4fe4a451727beb3bdbdc1ae3752aea586a4f"
+  },
+  "codex-skills/plan-reviewer/references/output-format.md": {
+    "source": "skills/plan-reviewer/references/output-format.md",
+    "source_sha256": "3140912a79e485dc23545b99335b1e581863a3d28df2694b8b4ed8e22f1d0230"
+  },
+  "codex-skills/plan-reviewer/references/review-dimensions.md": {
+    "source": "skills/plan-reviewer/references/review-dimensions.md",
+    "source_sha256": "9768104a5b6883ff2a82d9ef91f255d3c07e32e620584d9d9daead0333c5c83a"
   },
   "codex-skills/plan/SKILL.md": {
     "source": "skills/plan/SKILL.md",
@@ -58,5 +90,13 @@
   "codex-skills/team-cycle/SKILL.md": {
     "source": "skills/team-cycle/SKILL.md",
     "source_sha256": "cba91ec92434435d7a320874f0dba07f09ebd13d78260f4e0cb535ca96b5650d"
+  },
+  "codex-skills/team-cycle/references/code-review-flow.md": {
+    "source": "skills/team-cycle/references/code-review-flow.md",
+    "source_sha256": "8ae3cceec9d2de076f6e95f26fba62fbe32fb5480375d3e8ba3b11b57c0f8c72"
+  },
+  "codex-skills/team-cycle/references/review-flow.md": {
+    "source": "skills/team-cycle/references/review-flow.md",
+    "source_sha256": "f65f06782ffbea146a6a89db541ae561931fe240ff9fac6598fc53866783d679"
   }
 }

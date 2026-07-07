@@ -1,0 +1,1 @@
+../../../skills/shared/references/tdd-contract.md
