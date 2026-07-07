@@ -114,6 +114,7 @@ status: {in-progress | blocked | reviewing}
 
 - 引数でパスが指定されていればそれを使う
 - なければ `docs/handoff/` 配下で最新（mtime 降順）のファイルを選ぶ
+  - mtime が同一で順序が決まらない場合は、ファイル名先頭のタイムスタンプ（`YYYYMMDD_HHMMSS`）の降順をタイブレークとして使う
 - 該当ファイルがなければ「handoff ファイルが見つからないよ」と報告して終了
 
 ### Phase 2: Load & Internalize
@@ -142,7 +143,7 @@ status: {in-progress | blocked | reviewing}
 
 ## List Workflow
 
-`docs/handoff/` 配下のファイルを mtime 降順（最新が上）で一覧表示する。フォーマットは以下の番号付き Markdown リスト固定:
+`docs/handoff/` 配下のファイルを mtime 降順（最新が上）で一覧表示する。mtime が同一で順序が決まらない場合は、ファイル名先頭のタイムスタンプ（`YYYYMMDD_HHMMSS`）の降順をタイブレークとして使う。フォーマットは以下の番号付き Markdown リスト固定:
 
 ```markdown
 ## Handoff 一覧（{件数} 件）

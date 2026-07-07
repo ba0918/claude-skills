@@ -104,7 +104,7 @@ If the existing Current Session is still `🟡 Planning` or `🟡 In Progress` w
 
 1. **Interactive mode**: ask the user which to do:
    - (a) Resume the previous session (suggest `/claude-skills:plan-resume` and abort the new plan creation)
-   - (b) Archive the previous session as **abandoned** (move to `session-history.md` with `Completed` = current timestamp and append `(abandoned)` suffix to the Feature column so it's visually distinguishable)
+   - (b) Archive the previous session as **abandoned** (move to `session-history.md` with `Completed` = current timestamp and append `(abandoned)` suffix to the Feature column so it's visually distinguishable). Follow `session-history.md`'s existing convention for the Started / Completed columns: date only (`YYYY-MM-DD`), no time-of-day, even though the source status.md session used a full timestamp.
    - (c) Archive the previous session as **completed** (if the user confirms it was actually finished but status wasn't updated)
 2. **Auto mode / headless invocation** (e.g. called from `cycle`, `issue-cycle`, `parallel-cycle`): default to **(b) archive as abandoned** without prompting. Log the archival action in the "Next Steps" output so the user can correct it if needed.
 
@@ -196,6 +196,7 @@ Use when user wants to update implementation progress:
      3. Remove Completed entries from Session History in status.md
      4. Clear Current Session
    - Update "Last Updated" timestamp
+   - The "Completed" timestamp is the current time at the moment this update is executed (obtained via the `date` command) — never estimate or backdate it to when the user believes they finished
 
 4. **Confirm update**
    ```

@@ -56,7 +56,7 @@ git branch -vv
 
 ### Abort Conditions
 
-- **No changes**: Neither staged nor unstaged changes exist
+- **No changes**: No staged, unstaged, **or untracked** changes exist. Untracked files alone do not trigger this abort condition — they must still be evaluated in Phase 3
 - **main/master branch**: Do not commit directly (warn user and exit)
 - **Merge conflict in progress**: Unresolved conflict markers exist
 - **Obviously broken state**:
@@ -69,11 +69,13 @@ git branch -vv
 
 ### 3.1 Change Classification
 
-Classify each file's changes along the following axes:
+Classify each file's changes, including untracked files (not just staged/modified ones), along the following axes:
 
 - **Path**: src/ / test/ / docs/ / config/ etc.
 - **Nature of change**: feat / fix / refactor / docs / test / chore / style / perf
 - **Relatedness**: Whether they belong to the same feature/purpose
+
+**Untracked file exclusion**: If an untracked file is clearly not a user work product (e.g. a verification-harness byproduct or a temporary/scratch file), exclude it from the commit. When excluding, state the excluded file(s) and the reason in the Phase 5 report.
 
 ### 3.2 Commit Strategy
 

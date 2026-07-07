@@ -134,6 +134,7 @@ status: {in-progress | blocked | reviewing}
 
 - 引数でパスが指定されていればそれを使う
 - なければ `codex_file_search` または `shell ls -t docs/handoff/*.md | head -1` で最新（mtime 降順）のファイルを選ぶ
+- mtime が同一で順序が決まらない場合は、ファイル名先頭のタイムスタンプ（`YYYYMMDD_HHMMSS`）の降順をタイブレークとして使う
 - 該当ファイルがなければ「handoff ファイルが見つからないよ」と送信して終了（削除も何もしない）
 
 ### Phase 2: Load & Internalize
@@ -164,7 +165,7 @@ status: {in-progress | blocked | reviewing}
 
 ## List Workflow
 
-`docs/handoff/` 配下のファイルを mtime 降順（最新が上）で一覧表示する。
+`docs/handoff/` 配下のファイルを mtime 降順（最新が上）で一覧表示する。mtime が同一で順序が決まらない場合は、ファイル名先頭のタイムスタンプ（`YYYYMMDD_HHMMSS`）の降順をタイブレークとして使う。
 
 ```bash
 # shell で取得

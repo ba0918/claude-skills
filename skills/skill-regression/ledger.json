@@ -1,15 +1,15 @@
 {
   "commit": {
     "file_sha256": {
-      "skills/commit/SKILL.md": "4a6b6c7a9b17fba332b55e7d793a23132e750212123a19035c3bf015d801524f",
+      "skills/commit/SKILL.md": "cc346f0e6d6f4698ede53dca6729bf3ce87830f7575f674bf74d1686dd8f2a09",
       "skills/commit/fixtures.json": "710da57415bc87d5128794ac2c0d12f6f9abd95abe9e66005a30abbf0932ff94"
     },
-    "result": "pass",
+    "result": "accepted-without-run",
     "surface": [
       "skills/commit/SKILL.md",
       "skills/commit/fixtures.json"
     ],
-    "surface_sha256": "6044adcac05193799fc69e36e6e2e11c2307e68870438c83887f9d192e8133ab",
+    "surface_sha256": "0fee59fded20bc1ca1605b4c8ae5a2cca736e35911716ee8069d87cd38df0d8d",
     "verified": "2026-07-07"
   },
   "context-audit": {
@@ -48,7 +48,7 @@
   "github-issue": {
     "file_sha256": {
       "skills/context-audit/references/baseline-format.md": "ed998a2c7fbe69f81b54e28e84e57d51e84d3251bbf3293d7335d86c3126ac81",
-      "skills/github-issue/SKILL.md": "c9128d83e6b6a6650658c9a34e043700b91b0341ce7bcca534714818053e83c7",
+      "skills/github-issue/SKILL.md": "6228cb5cb7a907c071b544248652c2cbf2be0f0a975839bb7d4eabb26da02a21",
       "skills/github-issue/fixtures.json": "d3018eb6e283bb8df58aa5b139c0ce9e334f25b58d7c516ce1e6b5490960ecea",
       "skills/github-issue/references/cleanup-spec.md": "95125e8c661ac6d9b20dffaaaf8c12afc6d777aa29bde234a82b4267e86ef095",
       "skills/github-issue/references/codex-review-loop.md": "19e54be0fe9d1f92c344b81fee0584d0833171ddd98ecbabb21d3ad533225323",
@@ -95,20 +95,20 @@
       "skills/skill-regression/references/executor-contract.md",
       "skills/skill-regression/references/fixture-schema.md"
     ],
-    "surface_sha256": "f7f269e390cb4db8a3786521fe96f644793f2a2b0c7fa92652e5891b97512fb4",
+    "surface_sha256": "903e7ce9d325c56ca074fbd903501fe46226e772761574a1acd21637d78e09f9",
     "verified": "2026-07-07"
   },
   "handoff": {
     "file_sha256": {
-      "skills/handoff/SKILL.md": "49735c84f3498c8e5eec8500835456a989a7d34abb3b32c08a383f5ac91bcb57",
+      "skills/handoff/SKILL.md": "6483b9af4a386ab304d0d4a6de624d468b138b3181b981e445a3d8d314d24f38",
       "skills/handoff/fixtures.json": "cab6f73df5c2c095542846d14d71614ba09b780bbb04a58f8d00f0c3598eb3e9"
     },
-    "result": "pass",
+    "result": "accepted-without-run",
     "surface": [
       "skills/handoff/SKILL.md",
       "skills/handoff/fixtures.json"
     ],
-    "surface_sha256": "132f169e4d2ec7fe62b5f3d7b7a58803189b8b165be33da2c01fca3650eeb010",
+    "surface_sha256": "7670d3d130dd14dd86098390df6c79e6a8b38dcfde9ad86056be3ed36224a269",
     "verified": "2026-07-07"
   },
   "issue": {
@@ -158,13 +158,13 @@
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "77c6d9c26426507afe191546ad80a593e6f9fd5b1beb7cefce17c988b8247231",
+      "skills/plan/SKILL.md": "ad652a647cf40e0c6a7a09081814e7aef8bac35d94a34a486dbbdfbbdb3c9d37",
       "skills/plan/fixtures.json": "53aa1c06d65afc4b35f9aa7cbc1b1593243ccea5cf9b2e27eeb8217fffc1b1ff",
       "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
       "skills/plan/references/status-template.md": "08db3e2d130deaf2c86990228cde0b01c7adbb87f934c84de950e4a250670a0a",
       "skills/plan/references/status-update-guide.md": "26ebe6b2f5eb48ff06602f0bddf14e18b05c8747d065ea9a58ab10c3d61291c8"
     },
-    "result": "pass",
+    "result": "accepted-without-run",
     "surface": [
       "skills/plan/SKILL.md",
       "skills/plan/fixtures.json",
@@ -172,7 +172,7 @@
       "skills/plan/references/status-template.md",
       "skills/plan/references/status-update-guide.md"
     ],
-    "surface_sha256": "5cc5855bd72c298662743206d1d6db33d01461d9847ceeab0d12c6b0c24ca65e",
+    "surface_sha256": "811d188a22b4efd07e059f02f97b2ec4fd06edb556e65452a0d1a2fa5fc9d041",
     "verified": "2026-07-07"
   }
 }
