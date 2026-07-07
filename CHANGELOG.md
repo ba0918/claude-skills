@@ -4,6 +4,19 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.37.1
+
+fixture カバレッジ拡大（loop-triage 自己修飾ゲートの自動化範囲を広げる）。
+
+- **plan / commit / handoff に回帰 fixture を新規追加**（各 3 シナリオ、白紙実行者で全合格）:
+  - plan: headless 作成 / 非 ASCII slug + 未完了セッションの abandoned アーカイブ / Completed 遷移
+  - commit: 論理分割（feat/docs 別コミット + 個別 add）/ .env 除外 / 変更なし abort
+  - handoff: restore（最新選択・固定サマリ・復元後削除）/ list（原文転記・案内なし）/ not-found
+- fixture 保有スキルが 3 → 6 に倍増。これらのスキル（+共有契約経由の挙動面）に触れる
+  loop-triage の AUTO_FIX finding が inbox 降格なしで enqueue 可能になった
+- iterate は Phase 1 の Agent（Explore）委譲が subagent 実行者では再生不能（入れ子 spawn 禁止）
+  なため対象から外し、完全 FS 再生可能な handoff を採用
+
 ## 1.37.0
 
 ループエンジニアリング基盤の後半2ピッチ + スコープ明文化。
