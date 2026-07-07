@@ -73,7 +73,11 @@ description: <何をするか>。<いつ使うか（トリガー語）>。
 
 - Claude 版 SKILL.md（cycle のみ `commands/cycle.md`）を変更したら、Codex 版への反映要否を判断し、`python3 scripts/validate_repo.py --update-manifest` で同期台帳を更新する（怠ると CI が fail）
 - 移植は codex-sync スキルの3層変換ルール（機械的置換 / 構造的変換 / 要判断）に従う
-- ツール非依存の references は複製せず `skills/` への symlink で共有する
+- references の共有判定は **内容基準**で行う: 真にツール非依存（ツール名・Codex 第二意見節・
+  Claude 固有パスを一切含まない）なら `skills/` への symlink、1つでも含むなら変換済み
+  実体コピーにして `validate_repo.py` の `EXTRA_SYNC_PAIRS` に登録する
+  （「テンプレだから中立」という推定で symlink しない — 判定基準は
+  `codex-skills/shared/references/tool-mapping.md` の「共有契約の可搬性ポリシー」）
 
 ## 新規スキル追加チェックリスト
 

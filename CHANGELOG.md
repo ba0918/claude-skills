@@ -4,6 +4,32 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.34.0
+
+Codex パリティを「信頼ベース」から「検証ベース」へ。14 ペア全部の Claude 版⇔Codex 版を
+意味レベルで敵対的に突き合わせ、9 ペア計 15 件のドリフトを修正。sha 一致 =「見た」の記録
+しか守れなかった台帳の死角を、構造ごと塞いだ。
+
+- **構造的根本原因の特定と修正**: ツール名（SendMessage / ExitWorktree / AskUserQuestion）や
+  Codex 第二意見節を含む references 10 本が「tool-independent」と誤判定されて symlink 共有
+  されており、Codex 実行者に Claude 方言と削除済みの第二意見指示が見え続けていた
+  （本文は正しく変換済み = 本文と参照が直接矛盾）。10 本すべてを変換済み実体コピーに置換し、
+  `EXTRA_SYNC_PAIRS` で台帳追跡に載せた（15 → 25 ペア）
+- **実質的な意味喪失の復元**: codex cycle の実装プロンプトに TDD（tdd-contract）+
+  verification-gate 注入を復元 / codex iterate の TDD 義務を「when feasible」から契約準拠に
+  復元 + テストアンチパターン禁止を復元 / codex plan-reviewer に最新ドキュメント確認ヒント復元
+- **点在ミスの修正**: codex commit の verification-gate 参照を cross-tree パスから codex ローカル
+  リンクへ / codex issue の Next Steps を issue スコープ（`$issue cycle --team`）に修正
+- **codex shared 契約の拡充**: verification-gate.md / tdd-contract.md を symlink 追加。
+  codex-integration（Codex 内では無意味）/ skill-authoring（リポジトリ開発メタ）/
+  orchestration-patterns（model 階層が Claude 固有）は不移植と tool-mapping.md に明文化
+  （「共有契約の可搬性ポリシー」新設: symlink / 変換コピー / 不移植の3分類）
+- **規約統一**: codebase-review / plan-reviewer / commit に `(Codex Edition)` H1 +
+  「Codex CLI ツールの使い分け」節を補完、attack-review に同節を補完
+- **監査で IN_SYNC を確認**: handoff / investigate / plan / brainstorm / problem-solving の
+  5 ペアは移植品質良好（brainstorm の第二意見除去とステップ再番号の整合まで検証済み）
+- skill-authoring.md に references 共有の内容基準判定を明文化（「テンプレだから中立」推定の禁止）
+
 ## 1.33.0
 
 共有契約システムの意味的再統一。11 本の契約と全スキルを突き合わせ、「宣言だけ共有・実体は
