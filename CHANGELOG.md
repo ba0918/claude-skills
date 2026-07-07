@@ -4,6 +4,25 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.35.0
+
+ベースライン整備。検証インフラの再実装重複と検査の死角を4点まとめて解消。
+
+- **frontmatter パーサの共有化**: validate_repo.py / context-audit / trigger-eval が
+  各自再実装していた YAML frontmatter パーサを `skills/shared/scripts/frontmatter.py`
+  に統合（TDD、28 テスト）。キー正規表現は最も正確な `[A-Za-z_][A-Za-z0-9_-]*` に統一。
+  乖離すると description トリガー語チェックの正しさに直結する箇所
+- **チェック5の対象拡大**: references/**/*.md（共有契約含む）の相対リンクも検査対象に。
+  検出した実リンク切れ（codex 側 severity-and-verdicts → fix-action-taxonomy）は
+  symlink 追加で修正。plan のテンプレ内例示リンクは理由付き `LINK_CHECK_EXEMPT` で免除
+- **チェック7/8の word-boundary 化**: bare substring 一致では issue ⊂ github-issue、
+  plan ⊂ team-plan が誤合格していたのを `mentions_name` で修正
+- **design-lint の機械化**: description の「機械的に検出」「CI 組み込み可能」の実体が
+  エージェント prose だったのを、lint-contract 準拠の実行スクリプト
+  `skills/design-lint/scripts/design_lint.py`（DL001-006 / DL101-103 / DL201-204、
+  標準ライブラリのみ、63 unittest、終了コード 0/1/2）として実装。SKILL.md は
+  スクリプト実行 + 結果解釈に書き換え、ルール適用の暗算再現を禁止
+
 ## 1.34.0
 
 Codex パリティを「信頼ベース」から「検証ベース」へ。14 ペア全部の Claude 版⇔Codex 版を
