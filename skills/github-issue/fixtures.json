@@ -1,0 +1,37 @@
+{
+  "skill": "github-issue",
+  "scenarios": [
+    {
+      "id": "gi-001",
+      "title": "state_root 解決と graceful stop — GitHub 書き込みゼロで halt",
+      "source": "manual",
+      "executor_model": "sonnet",
+      "isolation": "worktree",
+      "prompt": "GitHub ラベル駆動の自動処理ループを一時停止したい。状態ディレクトリは環境変数 XDG_STATE_HOME=./xdg-state（このリポジトリ直下の相対パス）を使うこと。この環境では gh の認証が使えないが、停止の確認に GitHub アクセスは不要のはず — pre-check の認証失敗は記録した上で続行してよい。graceful stop を仕込んでから polling を 1 tick 実行し、GitHub への書き込みが一切発生せずに halt することを確認して。",
+      "requirements": [
+        { "text": "state_root を <XDG_STATE_HOME>/claude-skills/github-issue/{repo_slug}-{clone_id} 形式で解決している（clone_id は正規化した git remote URL の SHA-1 先頭 16 hex）", "critical": true },
+        { "text": ".STOP を state_root 直下に配置し、tick が halt_reason=\"stop.graceful\" で停止している", "critical": true },
+        { "text": "gh の書き込み系コマンド（issue edit / label 付与・削除 / pr merge / issue close / assignee 変更）を一切実行していない", "critical": true },
+        { "text": "kill file の存在チェックを .STOP.hard → .STOP の順で行っている", "critical": false },
+        { "text": "TickResult が構造化カウンタで出力されている", "critical": false }
+      ],
+      "notes": "gh への実書き込みを伴う経路（claim 3 段防御 / mark_done / mark_failed の dual-write）は live GitHub API が必要なため fixture 化対象外とする（単一ホスト前提 + 本物の issue を汚染するリスク）。本シナリオはプリフライト（state_root 解決 / kill file halt）だけを回帰面として固定する。gh 未認証環境（sandbox CI 等）では SKILL.md の Common Pre-checks が strict には terminate を示唆するため、prompt 側で「認証失敗は記録の上で続行」を明示して再現性を担保している（pre-check gate と polling の関係が SKILL.md 上曖昧な点は既知の findings として別途追跡）。"
+    },
+    {
+      "id": "gi-002",
+      "title": "Label Mapping の状態判定 — invalid state の fail-closed を含む",
+      "source": "manual",
+      "executor_model": "sonnet",
+      "isolation": "none",
+      "prompt": "GitHub の issue に claude 系ラベルが混在していて、自動処理ループがそれぞれをどう扱うのか分からなくなった。次の 4 つのラベル集合それぞれについて、polling がどの状態として扱うか・claim（list_ready）の対象になるかを根拠付きで教えて: (a) claude-auto のみ (b) claude-auto + claude-review (c) claude-auto + claude-failed-transient + claude-failed-permanent (d) claude-auto + claude-failed",
+      "requirements": [
+        { "text": "(a) を ready（claim 可能、list_ready 対象）と判定している", "critical": true },
+        { "text": "(b) を running substate（review）として list_ready の client-side filter で除外すると判定している", "critical": true },
+        { "text": "(c) を invalid state として warn + failed/permanent 扱い（fail-closed）と判定している", "critical": true },
+        { "text": "(d) を legacy alias として failed/permanent と判定している", "critical": false },
+        { "text": "判定根拠として state_of_failure の precedence（新ラベルが存在する場合は旧 alias を無視）に言及している", "critical": false }
+      ],
+      "notes": "polling-adapter.md §Label Mapping（canonical SSOT）の判定ロジックが prose から正しく再構成できることを固定する。読み取り専用のため isolation: none。"
+    }
+  ]
+}

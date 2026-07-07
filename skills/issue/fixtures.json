@@ -1,0 +1,74 @@
+{
+  "skill": "issue",
+  "scenarios": [
+    {
+      "id": "is-001",
+      "title": "初回 tick の dry-run 強制と claim/release rollback",
+      "source": "manual",
+      "executor_model": "sonnet",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "docs/issues/ready/20260601090000_fix-readme-typo.md": "---\ntitle: Fix README typo\nstatus: open\ncreated: 2026-06-01 09:00:00\ntags: docs\nsource:\n---\n\n## 概要\n\nREADME の Installation 節に typo がある（`insall` → `install`）。\n\n## 備考\n\n受け入れ条件: typo が修正されていること。\n",
+          "docs/issues/ready/20260601090100_add-lint-rule.md": "---\ntitle: Add lint rule for trailing whitespace\nstatus: open\ncreated: 2026-06-01 09:01:00\ntags: ci\nsource:\n---\n\n## 概要\n\n行末空白を検出する lint ルールを CI に追加したい。\n\n## 備考\n\n受け入れ条件: CI 設定に行末空白チェックが追加されていること。\n"
+        }
+      },
+      "prompt": "docs/issues/ の ready キューに issue を積んである。polling を 1 tick 実行してキューを消化して。",
+      "requirements": [
+        { "text": ".polling-initialized が存在しないため dry-run が強制され、cycle / parallel-cycle への委譲が一切発生していない", "critical": true },
+        { "text": "tick 終了後、claim された issue がすべて ready/ に戻っており、running/ に孤児ディレクトリ・.claim が残っていない", "critical": true },
+        { "text": "TickResult が構造化カウンタ（run_id / tick_started_at / claimed / halt_reason=\"dry_run\"）として出力され、自由文サマリで代替されていない", "critical": true },
+        { "text": "kill file の存在チェックを .STOP.hard → .STOP の順で行っている", "critical": false },
+        { "text": "list_ready が max_parallel（デフォルト 4）を上限とした早期打ち切り走査であることを認識している", "critical": false }
+      ],
+      "notes": "現実の使用場面の中央値（初回起動）。契約 §10 の初回起動ポリシーと §5 step 6 の dry-run rollback を固定する。"
+    },
+    {
+      "id": "is-002",
+      "title": "kill file 2 系統の優先順位と即時 halt",
+      "source": "manual",
+      "executor_model": "sonnet",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "docs/issues/.polling-initialized": "",
+          "docs/issues/.STOP": "",
+          "docs/issues/.STOP.hard": "",
+          "docs/issues/ready/20260601100000_dangling-task.md": "---\ntitle: Dangling task\nstatus: open\ncreated: 2026-06-01 10:00:00\ntags:\nsource:\n---\n\n## 概要\n\n停止確認用のダミー issue。\n\n## 備考\n\n(Add supplementary information here if available)\n"
+        }
+      },
+      "prompt": "自動処理ループを緊急停止したくて停止ファイルを置いた。polling を 1 tick 実行して、ちゃんと止まることを確認して。",
+      "requirements": [
+        { "text": "halt_reason が \"stop.hard\" である（.STOP と .STOP.hard が両方存在する場合、hard が優先される）", "critical": true },
+        { "text": "claim が 1 件も発生せず、ready/ の issue が移動していない", "critical": true },
+        { "text": "kill file チェックが tick の他ステップ（orphan recovery / archive / list_ready）より先に実行されている", "critical": false },
+        { "text": "TickResult が構造化カウンタで出力されている", "critical": false }
+      ],
+      "notes": "契約 §6.1 の kill file 優先順位（hard → graceful の順でチェック、戻り順 = チェック順）を固定する edge。"
+    },
+    {
+      "id": "is-003",
+      "title": "orphan recovery — 死亡 pid の回収と PermissionError の fail-safe",
+      "source": "manual",
+      "executor_model": "sonnet",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "docs/issues/.polling-initialized": "",
+          "docs/issues/running/20260601110000_crashed-task/issue.md": "---\ntitle: Crashed task\nstatus: open\ncreated: 2026-06-01 11:00:00\ntags:\nsource:\n---\n\n## 概要\n\n前回 tick 中にプロセスがクラッシュして running に残った issue。\n\n## 備考\n\n(Add supplementary information here if available)\n",
+          "docs/issues/running/20260601110000_crashed-task/.claim": "pid: 9999999\nstarted_at: 2026-07-06T12:00:00Z\n",
+          "docs/issues/running/20260601110100_alive-task/issue.md": "---\ntitle: Alive task\nstatus: open\ncreated: 2026-06-01 11:01:00\ntags:\nsource:\n---\n\n## 概要\n\n別プロセスが現在も実行中の issue（rollback してはいけない）。\n\n## 備考\n\n(Add supplementary information here if available)\n",
+          "docs/issues/running/20260601110100_alive-task/.claim": "pid: 1\nstarted_at: 2026-07-06T12:00:00Z\n"
+        }
+      },
+      "prompt": "前回の polling がクラッシュしたみたいで running/ に残骸がある。--dry-run で 1 tick 回して、正しく回復するか確認して。",
+      "requirements": [
+        { "text": "死亡 pid（9999999）の issue が ready/ に戻り、.claim と running/ 配下のディレクトリが片付いている", "critical": true },
+        { "text": "pid 1 の issue は alive 扱い（fail-safe）とし rollback せず、.claim の内容（pid / started_at）も変更していない（kill(pid,0) の PermissionError は alive 扱いという契約分岐を認識していること。実際に EPERM が発生するかは環境依存のため問わない）", "critical": true },
+        { "text": "回復した issue が同 tick の list_ready / claim 対象になり、--dry-run のため release で ready/ に戻っている", "critical": false },
+        { "text": "TickResult に halt_reason=\"dry_run\" と claimed 数が構造化出力されている", "critical": false }
+      ],
+      "notes": "契約 §6.4 / FS adapter §6 の orphan recovery を固定する edge。pid 9999999 は pid_max（Linux デフォルト 4194304）超過で ESRCH（確実に dead）、pid 1 は非 root からの kill(1,0) が EPERM（alive 扱いの fail-safe 分岐）。transient→permanent 昇格は実 cycle 失敗が必要なため fixture 対象外。"
+    }
+  ]
+}
