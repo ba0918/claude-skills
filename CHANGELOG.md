@@ -4,6 +4,22 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.37.2
+
+閉ループの予行演習（③ 残 findings 処理を polling パイプラインで消化）。
+
+- **4 スキルの仕様曖昧点を明文化**（fixture 白紙実行者の報告に基づく。Codex 版 3 スキルへも同期）:
+  - github-issue: Common Pre-checks 失敗は fail-closed で polling を起動しない（例外は
+    ユーザー明示時のみ）+ nameWithOwner 取得を `fetch_git_remote_url()` と同順に統一
+  - handoff: mtime 同秒タイはファイル名タイムスタンプ降順でタイブレーク（restore / list 両方）
+  - plan: Completed 日時 = 更新実行時点の現在時刻 / abandoned 行は `YYYY-MM-DD` 粒度
+  - commit: 「変更」に untracked を含む（untracked のみでは abort しない、
+    非作業成果物は理由付きで除外可）
+- **供給→消化の初 E2E 実証**: 4 件を `docs/issues/ready/` に enqueue → 初回強制 dry-run tick
+  （claim 4→release 4）→ 本 tick で claim → 並行実装 → 回帰台帳 → mark_done。
+  tick イベント 2 件が measurement spine に記録され、`report --skill issue` が
+  初の実データ（成功率 100%）を返すようになった
+
 ## 1.37.1
 
 fixture カバレッジ拡大（loop-triage 自己修飾ゲートの自動化範囲を広げる）。
