@@ -162,15 +162,19 @@ Use when user wants to resume from previous session:
    に従い、以下を実行する（verdict 表・優先順位・セキュリティ規約の正本は契約側。ここでは重複記載しない）:
 
    - `docs/plans/checkpoints/{cycle_id}.md` が**存在すれば**、
-     `python3 skills/shared/scripts/checkpoint.py classify --file docs/plans/checkpoints/{cycle_id}.md`
+     `python3 {checkpoint.py のパス} classify --repo {プロジェクトルート} --file docs/plans/checkpoints/{cycle_id}.md`
      を実行し、出力 verdict と終了コードで分岐する。存在しなければ何もせず通常 resume を続行する。
+     `{checkpoint.py のパス}` はスキル配布位置基準（本リポジトリでは `skills/shared/scripts/checkpoint.py`、
+     対象プロジェクト外にあるなら絶対パス）。`--repo` は常に明示（cwd = プロジェクトルートなら `--repo .`）。
+     詳細は契約「CLI 呼び出し規約」。
    - **分岐**:
      - `valid` (exit 0): checkpoint の `decision` / `next` を復元の起点として提示する。ただし
        `evidence` は **historical（過去観測）** と明示ラベルし、`verify_on_restore` は**表示のみ**
        （自動実行しない）で案内する。valid でも verification-gate はスキップしない。
      - `stale` (exit 10): 叙述は参考扱い。現在の diff から状態を再構成するよう促す。
      - `superseded` (exit 11): HEAD が前進済み。checkpoint の**削除を提案**する（ユーザー確認つき・
-       **自動削除しない**）。出力に `dirty_overlap` があれば「現 dirty set と重なりあり」と併記する。
+       **自動削除しない**）。出力に `dirty_overlap:` 行があれば「現 dirty set と重なりあり」と併記する
+       （行が無ければ重なりなしの意味 — 自分で再計算しなくてよい）。
      - `degraded` (exit 12): dirty set と HEAD 以外は信用しない旨を提示（v1 では通常 emit されない）。
      - `conflict` (exit 13, parse / semantic): **警告して無視し、通常 resume を続行する**
        （壊れた補助ファイルが正常な resume をブロックしてはならない — 呼び出し側の非対称）。
@@ -213,6 +217,7 @@ Use when user wants to update implementation progress:
 2. **Determine new phase**
    - 🟡 Planning → 🟡 In Progress (when starting implementation)
    - 🟡 In Progress → 🟢 Completed (when cycle done)
+   - Work interrupted mid-way (user pausing, not done): keep the current phase as-is (no transition, no archive)
 
 3. **Update docs/status.md**
    - Update Current Session phase
@@ -232,7 +237,12 @@ Use when user wants to update implementation progress:
 
    - `git status --porcelain=v1` が**非空のまま**セッションを終える場合（＝ clean に commit して終わらない）、
      checkpoint 骨格を生成する:
-     `python3 skills/shared/scripts/checkpoint.py skeleton --cycle-id {cycle_id} --owner manual-session --written-at $(date -Iseconds) --output`
+     `python3 {checkpoint.py のパス} skeleton --repo {プロジェクトルート} --cycle-id {cycle_id} --owner manual-session --written-at $(date -Iseconds) --output`
+     （パスと `--repo` の書き方は契約「CLI 呼び出し規約」— 本リポジトリでは
+     `skills/shared/scripts/checkpoint.py` + `--repo .`）
+   - **checkpoint 生成はセッション最後の書き込みにする**: status.md 等の tracked ファイル編集を
+     全て確定させた**後**に skeleton を実行する。生成後にファイルを編集すると fingerprint が
+     即 stale になる（checkpoints/ 配下だけが除外対象）。
    - 骨格生成後、叙述 2 文（`## decision` = plan からの逸脱判断 1 文 / `## next` = 次の一手 1 個）だけを
      LLM が埋める。`## evidence` は観測コマンド + タイムスタンプ必須（例: `Observed 01:25: <cmd> exited 0`）。
    - 機械フィールド（`dirty_files` / `dirty_fingerprint` / `base_head`）はスクリプトが git から生成する。

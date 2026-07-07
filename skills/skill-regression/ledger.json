@@ -100,9 +100,9 @@
   },
   "handoff": {
     "file_sha256": {
-      "skills/handoff/SKILL.md": "2098d43cf4dce3392eca312455f1c37afea38a0f79a162cbac07dc1eae481075",
+      "skills/handoff/SKILL.md": "4a130b815ac71df4cfa321d50a7cbde1ad222e9ad02474b64f3a60e3c90dbd54",
       "skills/handoff/fixtures.json": "63df31a4874be4a40668a8f8c19122a15851bd5bf966c2b166c1711004565ee0",
-      "skills/shared/references/checkpoint-pattern.md": "47ef877e0c1c6ab5d57c3e9eda7c97b7f419ad2890b74074539daf65a62f6dfa"
+      "skills/shared/references/checkpoint-pattern.md": "7879c41cd9512f5a37f70df0a8ad8fcb797a7e8c6a9b20ec11372b5da1386949"
     },
     "result": "accepted-without-run",
     "surface": [
@@ -110,7 +110,7 @@
       "skills/handoff/fixtures.json",
       "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "fa1e87685c328b31a432c338e995913bbf80d07dd463cf8f3d9164ac66cf06ca",
+    "surface_sha256": "3c6b337061d7c5ab01dc0e9793775fb61808023c8428963f12b4d00619c2a844",
     "verified": "2026-07-08"
   },
   "issue": {
@@ -160,12 +160,12 @@
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "66f4600a66417bed773ecca2d4d9548f188453c82ad4348f7a22df51143fbf34",
+      "skills/plan/SKILL.md": "0aa18705f607749a5f124072e59b264e8c12cec3dd76876e5ebe0da701df80d7",
       "skills/plan/fixtures.json": "5917df82763a6620fe6f50acc653480ae438590023335e5ef8131caddaef2562",
       "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
       "skills/plan/references/status-template.md": "08db3e2d130deaf2c86990228cde0b01c7adbb87f934c84de950e4a250670a0a",
       "skills/plan/references/status-update-guide.md": "1e2ae4b0bbf0c29e881389dab27b697d2b3e9e3c58b3bbe40ab885e3b8092014",
-      "skills/shared/references/checkpoint-pattern.md": "47ef877e0c1c6ab5d57c3e9eda7c97b7f419ad2890b74074539daf65a62f6dfa"
+      "skills/shared/references/checkpoint-pattern.md": "7879c41cd9512f5a37f70df0a8ad8fcb797a7e8c6a9b20ec11372b5da1386949"
     },
     "result": "accepted-without-run",
     "surface": [
@@ -176,7 +176,7 @@
       "skills/plan/references/status-update-guide.md",
       "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "53c179633d2dd9d230fd3d8c85a306a15bbe94784449fdefaec5bca760132473",
+    "surface_sha256": "9016c4a4d5b03c94fc8b65d461a7b816789c1a612c7cca2dd3c040d6231122b8",
     "verified": "2026-07-08"
   }
 }
