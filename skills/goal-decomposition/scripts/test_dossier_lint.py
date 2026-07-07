@@ -101,6 +101,12 @@ class TestGD001(unittest.TestCase):
         d["oracles"] = "notalist"
         self.assertIn("GD001", rules_hit(d))
 
+    def test_bool_schema_version_rejected(self):
+        # bool is a subclass of int — must still be a type error.
+        d = base_dossier()
+        d["schema_version"] = True
+        self.assertIn("GD001", rules_hit(d))
+
 
 class TestGD002(unittest.TestCase):
     def test_bad_enum(self):
@@ -155,6 +161,11 @@ class TestGD004(unittest.TestCase):
         del d["fragments"][0]["exit_to"]
         self.assertIn("GD004", rules_hit(d))
 
+    def test_wrong_type(self):
+        d = base_dossier()
+        d["fragments"][0]["exit_to"] = 42
+        self.assertIn("GD004", rules_hit(d))
+
 
 class TestGD005(unittest.TestCase):
     def test_dangling_reference(self):
@@ -166,6 +177,18 @@ class TestGD005(unittest.TestCase):
         d = base_dossier()
         d["fragments"][0]["blocked_by"] = ["inbox:q1"]
         self.assertNotIn("GD005", rules_hit(d))
+
+    def test_fragment_reference_ok(self):
+        d = base_dossier()
+        d["fragments"].append(dict(d["fragments"][0], id="frag:b",
+                                   blocked_by=["frag:a"]))
+        self.assertNotIn("GD005", rules_hit(d))
+
+    def test_oracle_reference_rejected(self):
+        # Contract §11: blocked_by targets are fragment/inbox ids only.
+        d = base_dossier()
+        d["fragments"][0]["blocked_by"] = ["oracle:lint"]
+        self.assertIn("GD005", rules_hit(d))
 
 
 class TestGD006(unittest.TestCase):
@@ -316,6 +339,13 @@ class TestGD203(unittest.TestCase):
         d["oracles"][0]["command"] = "curl -H 'token: " + FAKE_AWS + "'"
         self.assertIn("GD203", rules_hit(d))
 
+    def test_absolute_path_in_command(self):
+        # Contract §9: GD203 covers absolute paths in command too — even ones
+        # (like /etc/...) that no secret pattern would catch.
+        d = base_dossier()
+        d["oracles"][0]["command"] = "/etc/custom-runner check"
+        self.assertIn("GD203", rules_hit(d))
+
     def test_relative_paths_ok(self):
         self.assertNotIn("GD203", rules_hit(base_dossier()))
 
@@ -362,11 +392,13 @@ class TestSeverityAndExitCode(unittest.TestCase):
 
 class TestSecretMasking(unittest.TestCase):
     def test_findings_are_masked(self):
-        # A secret embedded in a free-text field must not leak into messages.
+        # GD203 echoes the offending oracle_files entry into its message; the
+        # finalize_findings pass must mask the secret value in that echo.
         d = base_dossier()
-        d["goal"]["statement"] = "鍵は " + FAKE_AWS + " です"
-        del d["status"]  # force at least one finding that echoes context
-        blob = " ".join(f["message"] + f["fix"] for f in dl.run_checks(d))
+        d["oracles"][0]["oracle_files"] = ["docs/" + FAKE_AWS + ".md"]
+        findings = dl.run_checks(d)
+        self.assertIn("GD203", {f["rule"] for f in findings})
+        blob = " ".join(f["message"] + f["fix"] + f["locator"] for f in findings)
         self.assertNotIn(FAKE_AWS, blob)
 
 
@@ -466,10 +498,36 @@ class TestCatalogSync(unittest.TestCase):
         for rid, meta in dl.RULES.items():
             self.assertEqual(catalog[rid], meta["severity"], f"{rid} severity")
 
+    def _parse_compat(self):
+        """Parse the §4.1 matrix table: rows `| \\`wire\\` | ✓/✗ | ... |`."""
+        header = None
+        matrix = {}
+        row_re = re.compile(r"^\|\s*`([a-z-]+)`\s*\|(.+)\|\s*$")
+        with open(self.CONTRACT, encoding="utf-8") as f:
+            for line in f:
+                line = line.rstrip("\n")
+                if header is None and "wire_to \\ exit_to" in line:
+                    cells = [c.strip() for c in line.strip("|").split("|")]
+                    header = cells[1:]  # exit_to column names
+                    continue
+                if header is None:
+                    continue
+                m = row_re.match(line)
+                if not m:
+                    if matrix:
+                        break  # table ended
+                    continue
+                marks = [c.strip() for c in m.group(2).split("|")]
+                matrix[m.group(1)] = {
+                    header[i] for i, mark in enumerate(marks) if mark == "✓"}
+        return matrix
+
     def test_compat_matrix_matches_contract(self):
-        # The §4.1 table must agree with dossier_lint._COMPAT.
-        for wire, exits in dl._COMPAT.items():
-            self.assertTrue(exits, f"{wire} has no compatible exit")
+        # The §4.1 table and dossier_lint._COMPAT must not drift: cell-level
+        # equality, not just non-emptiness.
+        contract = self._parse_compat()
+        self.assertEqual(contract, dl._COMPAT,
+                         "contract §4.1 matrix and _COMPAT diverge")
 
 
 class TestApprovedIntegration(unittest.TestCase):

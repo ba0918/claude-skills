@@ -195,7 +195,10 @@ def check_gd004(d, ctx):
 
 def check_gd005(d, ctx):
     findings = []
-    valid = set(_all_ids(d))  # any fragment/oracle/sensor/inbox id is a valid target
+    # Contract §11: blocked_by targets are fragment/inbox ids only (an oracle
+    # or sensor cannot "resolve" and unblock anything).
+    valid = {f.get("id") for f in _fragments(d) if isinstance(f.get("id"), str)}
+    valid |= {i.get("id") for i in _inbox(d) if isinstance(i.get("id"), str)}
     for frag in _fragments(d):
         bb = frag.get("blocked_by")
         if not isinstance(bb, list):
@@ -358,11 +361,13 @@ def check_gd203(d, ctx):
                         f"oracle_files に絶対パスまたは secret が混入: {entry}",
                         "repo 相対の明示列挙にする（絶対パス・secret は禁止）"))
         cmd = o.get("command")
-        if _has_secret(cmd):
+        cmd_has_abs = isinstance(cmd, str) and any(
+            _is_abs(tok) for tok in cmd.split())
+        if _has_secret(cmd) or cmd_has_abs:
             findings.append(make_finding(
                 "GD203", "error", f, f"{oid}.command",
-                "command に secret が混入",
-                "command から secret を除去する（環境変数化）"))
+                "command に secret または絶対パスが混入",
+                "command から secret を除去し（環境変数化）、パスは repo 相対にする"))
     for i in _all_ids(d):
         if _is_abs(i) or _has_secret(i):
             findings.append(make_finding(
