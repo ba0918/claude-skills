@@ -6,6 +6,8 @@ import os
 import tempfile
 import unittest
 
+import json
+
 from validate_repo import (
     extract_md_links,
     is_checkable_link,
@@ -18,7 +20,83 @@ from validate_repo import (
     collect_link_sources,
     check_relative_links,
     mentions_name,
+    check_dossiers,
 )
+
+
+def _valid_dossier():
+    return {
+        "schema_version": 1,
+        "status": "draft",
+        "superseded_by": None,
+        "goal": {"statement": "g", "non_goals": ["x"], "ssot": "docs/"},
+        "oracles": [{
+            "id": "oracle:a", "type": "true", "command": "true",
+            "oracle_files": ["docs/status.md"], "owner": "me",
+        }],
+        "fragments": [{
+            "id": "frag:a", "wire_to": "goal-loop", "exit_to": "ci_gate",
+            "routing_proof": "p", "auto_fix_allowed": False,
+            "why_not_auto_fix": "r", "self_modification_risk": "low",
+            "blocked_by": [],
+        }],
+        "sensors": [{"id": "sensor:a",
+                     "rules": ["r"],
+                     "findings_policy": {"fix_action": "REPORT_ONLY", "enqueue": False}}],
+        "inbox": [{"id": "inbox:q", "question": "?", "reclassify_when": "w"}],
+        "measurement": {"metrics": ["m"], "stop_conditions": ["s"]},
+    }
+
+
+class TestCheckDossiers(unittest.TestCase):
+    """チェック13: docs/loop/dossiers/*.json を dossier_lint で in-process 検査。"""
+
+    def _write(self, root, name, obj_or_text):
+        ddir = os.path.join(root, "docs", "loop", "dossiers")
+        os.makedirs(ddir, exist_ok=True)
+        path = os.path.join(ddir, name)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(obj_or_text if isinstance(obj_or_text, str)
+                    else json.dumps(obj_or_text))
+
+    def test_absent_dir_is_noop(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.assertEqual(check_dossiers(root), [])
+
+    def test_empty_dir_is_noop(self):
+        with tempfile.TemporaryDirectory() as root:
+            os.makedirs(os.path.join(root, "docs", "loop", "dossiers"))
+            self.assertEqual(check_dossiers(root), [])
+
+    def test_valid_dossier_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "ok.json", _valid_dossier())
+            self.assertEqual(check_dossiers(root), [])
+
+    def test_error_dossier_is_reported(self):
+        with tempfile.TemporaryDirectory() as root:
+            bad = _valid_dossier()
+            del bad["status"]  # GD002 error
+            self._write(root, "bad.json", bad)
+            errors = check_dossiers(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("[dossier]", errors[0])
+            self.assertIn("GD002", errors[0])
+
+    def test_warn_only_dossier_does_not_fail(self):
+        with tempfile.TemporaryDirectory() as root:
+            warn = _valid_dossier()
+            warn["goal"]["non_goals"] = []  # GD302 warn only
+            self._write(root, "warn.json", warn)
+            self.assertEqual(check_dossiers(root), [])
+
+    def test_broken_json_reports_parse_error_without_crashing(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "broken.json", "{ not json ")
+            errors = check_dossiers(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("[dossier]", errors[0])
+            self.assertIn("parse-error", errors[0])
 
 
 class TestExtractMdLinks(unittest.TestCase):

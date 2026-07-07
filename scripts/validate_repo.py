@@ -22,6 +22,7 @@
   10. Claude 版 ⇔ Codex 版スキルの同期台帳（codex-skills/sync-manifest.json）
   11. SKILL.md description の品質（トリガー語を含む / 1024 字以内）
   12. 共有契約語彙の適合（契約の識別語彙を使う skill / command は契約を md リンクする）
+  13. docs/loop/dossiers/*.json の dossier lint（error 級のみ CI fail）
 
 同期台帳の仕組み:
   codex-skills/ の各スキルは skills/ の対応スキル（cycle のみ commands/cycle.md）を
@@ -113,6 +114,8 @@ CONTRACT_VOCAB = [
      (".STOP.hard", "failed_streak", "max_wallclock"), 2),
     ("skills/shared/references/codex-integration.md",
      ("codex:codex-rescue",), 1),
+    ("skills/shared/references/goal-decomposition-pattern.md",
+     ("ci_gate", "resident_sensor", "dissolve"), 2),
 ]
 
 # チェック12の免除リスト。免除はスキル側ではなくここに置く（迂回防止）。理由必須。
@@ -416,6 +419,42 @@ LINK_CHECK_EXEMPT = {
 }
 
 
+_DOSSIER_LINT_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..", "skills", "goal-decomposition", "scripts")
+
+
+def check_dossiers(root):
+    """チェック13: docs/loop/dossiers/*.json を dossier_lint で in-process 検査する。
+
+    error 級 finding のみを `[dossier] <file>: GDxxx <message>` 形式で返す
+    （warn は CI fail させない）。1 つの壊れた dossier で validate_repo 全体が
+    traceback で落ちないよう、各ファイルは dossier_lint の例外集合で包まれた
+    `_lint_one` を通す（parse-error は errors エントリに変換される）。
+    """
+    ddir = os.path.join(root, "docs", "loop", "dossiers")
+    if not os.path.isdir(ddir):
+        return []
+    if _DOSSIER_LINT_DIR not in sys.path:
+        sys.path.insert(0, _DOSSIER_LINT_DIR)
+    import dossier_lint  # noqa: E402
+
+    errors = []
+    for name in sorted(os.listdir(ddir)):
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(ddir, name)
+        rel = os.path.relpath(path, root).replace(os.sep, "/")
+        findings, err = dossier_lint._lint_one(path, ddir)
+        if err is not None:
+            errors.append(f"[dossier] {rel}: parse-error {err}")
+            continue
+        for f in findings:
+            if f.get("severity") == "error":
+                errors.append(f"[dossier] {rel}: {f['rule']} {f['message']}")
+    return errors
+
+
 def check_relative_links(root, sources=None, exempt=None):
     """各ソース内の相対 .md リンクの実在を検証し、違反メッセージを返す。"""
     if sources is None:
@@ -533,6 +572,9 @@ def run_checks(root):
 
     # 12. 共有契約語彙の適合
     errors += check_contract_conformance(root)
+
+    # 13. dossier lint（docs/loop/dossiers/*.json）
+    errors += check_dossiers(root)
 
     return errors
 
