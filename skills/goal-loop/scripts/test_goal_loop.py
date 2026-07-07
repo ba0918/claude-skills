@@ -299,6 +299,76 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(len(sig), 16)
         int(sig, 16)
 
+    def _run_halt(self, lines, extra_args=()):
+        with tempfile.TemporaryDirectory() as td:
+            hist = Path(td) / "history.txt"
+            hist.write_text("".join(line + "\n" for line in lines))
+            return subprocess.run(
+                [sys.executable, str(GOAL_LOOP_PY), "halt", str(hist),
+                 *extra_args],
+                capture_output=True, text=True,
+            )
+
+    def test_halt_cli_none_exits_0(self):
+        r = self._run_halt(["aaaa", "bbbb"])
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout.strip(), "none")
+
+    def test_halt_cli_stall_exits_3(self):
+        r = self._run_halt(["aaaa", "aaaa", "aaaa"])
+        self.assertEqual(r.returncode, 3, r.stderr)
+        self.assertEqual(r.stdout.strip(), "stall")
+
+    def test_halt_cli_oscillation_exits_4(self):
+        r = self._run_halt(["aa", "bb", "aa", "bb", "aa", "bb"])
+        self.assertEqual(r.returncode, 4, r.stderr)
+        self.assertEqual(r.stdout.strip(), "oscillation")
+
+    def test_halt_cli_ignores_blank_lines_and_whitespace(self):
+        r = self._run_halt(["aaaa", "", "  aaaa  ", "aaaa"])
+        self.assertEqual(r.returncode, 3, r.stderr)
+
+    def test_halt_cli_empty_history_is_none(self):
+        r = self._run_halt([])
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout.strip(), "none")
+
+    def test_halt_cli_custom_stall_limit(self):
+        r = self._run_halt(["aaaa", "aaaa"], extra_args=["--stall-limit", "2"])
+        self.assertEqual(r.returncode, 3, r.stderr)
+
+    def test_halt_cli_missing_file_exits_2(self):
+        r = subprocess.run(
+            [sys.executable, str(GOAL_LOOP_PY), "halt", "/nonexistent/hist.txt"],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(r.returncode, 2)
+
+    def test_lock_excludes_pycache_and_pyc(self):
+        # oracle 実行自体が生む bytecode キャッシュを lock に含めると
+        # false tamper（oracle_tampered 誤検出）になるため、自動除外する。
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td)
+            tests = tdp / "tests"
+            (tests / "__pycache__").mkdir(parents=True)
+            (tests / "test_a.py").write_text("def test_a(): assert True\n")
+            (tests / "__pycache__" / "test_a.cpython-312.pyc").write_bytes(b"\x00fake")
+            (tests / "stray.pyc").write_bytes(b"\x00stray")
+            manifest_path = tdp / "manifest.json"
+
+            r = subprocess.run(
+                [sys.executable, str(GOAL_LOOP_PY), "lock", str(tests),
+                 "--out", str(manifest_path)],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(r.returncode, 0, r.stderr)
+            import json as _json
+            manifest = _json.loads(manifest_path.read_text())
+            keys = "\n".join(manifest)
+            self.assertIn("test_a.py", keys)
+            self.assertNotIn("__pycache__", keys)
+            self.assertNotIn(".pyc", keys)
+
 
 if __name__ == "__main__":
     unittest.main()

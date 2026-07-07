@@ -36,6 +36,11 @@ CLI:
 
   signature
       stdin から failure_signature を計算して stdout に出力する。
+
+  halt HISTORY.txt [--stall-limit N] [--window N] [--max-period N]
+      signature を 1 行 1 個で追記した履歴ファイルを読み、
+      detect_convergence_halt を実行する。none: exit 0 / stall: exit 3 /
+      oscillation: exit 4。空行・前後空白は無視する。
 """
 from __future__ import annotations
 
@@ -149,14 +154,20 @@ def _collect_paths(args: list[str]) -> list[Path]:
     ディレクトリは再帰的に配下の全ファイルを対象にする。glob 展開自体は
     shell に任せる想定（このリストは既に個別パスとして渡ってくる）。
     """
+    def _is_build_artifact(p: Path) -> bool:
+        # oracle 実行自体が生成・更新するビルド生成物（bytecode キャッシュ）は
+        # oracle の意味を定義しないため lock から除外する。含めると oracle 実行の
+        # たびに hash が揺れて oracle_tampered の誤検出になる。
+        return p.suffix == ".pyc" or "__pycache__" in p.parts
+
     paths: list[Path] = []
     for arg in args:
         p = Path(arg)
         if p.is_dir():
             for sub in sorted(p.rglob("*")):
-                if sub.is_file():
+                if sub.is_file() and not _is_build_artifact(sub):
                     paths.append(sub)
-        else:
+        elif not _is_build_artifact(p):
             paths.append(p)
     return paths
 
@@ -208,6 +219,33 @@ def cmd_signature(argv: list[str]) -> int:
     return 0
 
 
+HALT_EXIT_CODES = {None: 0, "stall": 3, "oscillation": 4}
+
+
+def cmd_halt(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="goal_loop.py halt")
+    parser.add_argument("history", help="signature を 1 行 1 個で追記した履歴ファイル")
+    parser.add_argument("--stall-limit", type=int, default=3)
+    parser.add_argument("--window", type=int, default=6)
+    parser.add_argument("--max-period", type=int, default=3)
+    ns = parser.parse_args(argv)
+
+    path = Path(ns.history)
+    if not path.is_file():
+        print(f"history が読めない: {path}", file=sys.stderr)
+        return 2
+    history = [line.strip() for line in path.read_text().splitlines() if line.strip()]
+
+    verdict = detect_convergence_halt(
+        history,
+        stall_limit=ns.stall_limit,
+        window=ns.window,
+        max_period=ns.max_period,
+    )
+    print(verdict if verdict else "none")
+    return HALT_EXIT_CODES[verdict]
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if not argv:
@@ -221,6 +259,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_verify(rest)
     if command == "signature":
         return cmd_signature(rest)
+    if command == "halt":
+        return cmd_halt(rest)
 
     print(f"unknown command: {command}", file=sys.stderr)
     return 2

@@ -31,36 +31,69 @@ goal-loop "<goal の自然言語記述>" [--oracle "COMMAND"] [--oracle-files PA
 
 ### Step 1: Oracle の確定
 
-1. `--oracle` があればそれ。無ければ goal 記述とプロジェクト構成（package.json / Cargo.toml /
-   pyproject.toml / Makefile 等）から判定コマンドを推定する
+1. `--oracle` があればそれ。無ければ goal 記述とプロジェクト構成から判定コマンドを推定する。
+   推定はプロジェクトが**公式に案内する入口を優先**する（README 記載のコマンド >
+   Makefile / package.json scripts の test ターゲット > 生のテストランナー直叩き）
 2. `--oracle-files` があればそれ。無ければ oracle が読む検証定義（テストディレクトリ全体・
-   lint 設定・検証スクリプト）を列挙する。**狭めない** — テストディレクトリは全体を含めるのが既定（契約 §2）
+   lint 設定・検証スクリプト）を列挙する。**狭めない** — テストディレクトリは全体を含めるのが既定（契約 §2）。
+   oracle コマンドを**定義する**ファイル（Makefile の test ターゲット等）も含めるのを推奨
+   （コマンド書き換えによる gaming も遮断できる）。ただし implementer が正当に触り得る
+   ファイル（package.json 全体等）は誤 halt の元なので判断して除外してよい。
+   ビルド生成物（`__pycache__` / `*.pyc`）は lock がスクリプト側で自動除外する
 3. AskUserQuestion で oracle（コマンド + files + expected_exit）を 1 度だけ確認する。
    ヘッドレス文脈（cycle 内等）では推定値をそのまま採用し、報告に明記する
 
 ### Step 2: Lock
 
 ```bash
-TS=$(date +%Y%m%d%H%M%S); WORK=.claude/tmp/goal-loop/$TS; mkdir -p $WORK
+TS=$(date +%Y%m%d%H%M%S); WORK=$(pwd)/.claude/tmp/goal-loop/$TS; mkdir -p $WORK
 python3 {skill_dir}/scripts/goal_loop.py lock {oracle_files...} --out $WORK/manifest.json
 ```
+
+`$WORK` は**絶対パスで確定させ、以降の全ステップで同じ値を使い続ける**（Bash 呼び出しは
+ステートレスなので、確定した WORK の絶対パスを自分のコンテキストに控えておく。
+再取得の仕組みは作らない — TS を跨いで解決しようとするとロック対象がずれる）。
+
+manifest のパスは **lock 実行時の cwd 相対**で記録・解決される。lock / verify は必ず
+**プロジェクトルート（同じ cwd）**で実行すること — 別ディレクトリから verify を叩くと
+ファイルが見つからず偽 tamper（exit 2）になる。
 
 ### Step 3: Iteration Loop（契約 §5 の擬似コードに準拠）
 
 各イテレーション i = 1..max_iter で:
 
-1. **Kill file check**: `.claude/tmp/goal-loop/$TS/.STOP`（graceful）/ `.STOP.hard` を確認、存在で即 halt
-2. **Integrity verify**: `python3 {skill_dir}/scripts/goal_loop.py verify $WORK/manifest.json`
+1. **Kill file check**: `$WORK/.STOP`（graceful）/ `$WORK/.STOP.hard` を確認、存在で即 halt。
+   kill file の基準ディレクトリは**絶対パスの $WORK**（polling-pattern §6 の「絶対パス解決」は
+   これで満たす — 相対パスで別の場所を見ない）
+2. **Wallclock check**: 開始からの経過が max_wallclock（既定 30m）を超えていたら
+   `halt_reason="max_wallclock"` で終了
+3. **Integrity verify**: `python3 {skill_dir}/scripts/goal_loop.py verify $WORK/manifest.json`
    - exit 2 なら `halt_reason="oracle_tampered"`。改変パスを報告して**即終了**（修正もロールバックもしない）
-3. **Oracle 実行**: oracle command を Bash で実行し、出力を `$WORK/iter-{i}.log` に保存
-   - `expected_exit` と一致 → **収束**。Step 4 へ
-4. **Signature 記録**: `python3 {skill_dir}/scripts/goal_loop.py signature < $WORK/iter-{i}.log` を
-   履歴に追加し、stall / oscillation を判定（`detect_convergence_halt`、契約 §4.2）。検出で halt
-5. **Implementer 委譲**: Agent（model: `sonnet`、大きな修正のみ `opus`）に以下を渡して修正させる:
+4. **Oracle 実行**: oracle command を Bash で実行し、出力を `$WORK/iter-{i}.log` に保存
+   - `expected_exit` と一致 → **収束**。Step 4 へ（収束した iter の signature は積まない）
+5. **Signature 記録と収束不能判定**（両方 CLI で機械実行 — 暗算・目視判定をしない）:
+   ```bash
+   python3 {skill_dir}/scripts/goal_loop.py signature < $WORK/iter-{i}.log >> $WORK/history.txt
+   python3 {skill_dir}/scripts/goal_loop.py halt $WORK/history.txt
+   ```
+   halt の exit code: 0 = 継続 / 3 = stall / 4 = oscillation。3 か 4 なら halt_reason に
+   そのまま採用して終了
+6. **Implementer 委譲**: Agent（model: `sonnet`、大きな修正のみ `opus`）に以下を渡して修正させる。
+   委譲は**同期的に扱う** — implementer の結果を受け取るまでコントローラのターンを終えない
+   （結果待ちのままターンを終えるとループが迷子になる）。implementer が no-op で戻っても、
+   oracle 再実行・signature 記録・halt 判定は**毎イテレーション実行**する（stall 検出の反復を
+   成立させるため。no-op を理由にループを手動で打ち切らない）:
    - oracle の失敗出力（当該 iter のログ）
    - 「**oracle_files（{列挙}）の編集は禁止**。テスト・検証定義を変更して通すのは失敗と同義」という明示指示
+   - 「コード内に明示された承認ゲート・制約（『変更には承認が必要』等のコメント / fence）を
+     無断で越えない。**越えなければ修正不能なら何も変更せず、その旨を報告して戻る（no-op）**」という明示指示
    - 修正対象はプロダクションコードのみ
-6. 次のイテレーションへ
+7. 次のイテレーションへ
+
+> **収束不能の設計意図**: テスト期待値とプロダクション制約（承認ゲート）が衝突して自律修正が
+> 原理的に不可能な場合、専用の halt_reason は発明しない。implementer が no-op で戻る →
+> 同一失敗が反復 → **stall として機械停止**するのが正規経路。報告にはループ外で人間が
+> 決めるべき選択肢（承認を得て変更 / oracle を定義し直して再 lock・再開始）を申し送りとして含める。
 
 ### Step 4: 完了報告（verification-gate 準拠）
 
