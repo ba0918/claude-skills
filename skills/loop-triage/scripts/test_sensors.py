@@ -179,6 +179,57 @@ class MapContextAuditTest(unittest.TestCase):
         findings = map_context_audit(raw)
         self.assertEqual(len(findings), 1)
         self.assertEqual(findings[0]["what"], "矛盾する指示")
+        self.assertNotIn("why", findings[0])
+
+    def test_why_is_carried_through(self):
+        # SKILL Step 5 の「概要 = what + why」が成立するよう、why を写像で落とさない
+        raw = [{
+            "id": "CA-D005",
+            "severity": "WARN",
+            "fix_action": "AUTO_FIX",
+            "where": "d.md:7",
+            "what": "旧形式の表記",
+            "why": "機械的置換で解消する",
+        }]
+        findings = map_context_audit(raw)
+        self.assertEqual(findings[0]["why"], "機械的置換で解消する")
+
+
+class TestCliContextAudit(unittest.TestCase):
+    """SKILL.md が規定する --context-audit PATH の取り込み経路（CLI 統合）。"""
+
+    def test_context_audit_flag_merges_findings(self):
+        import json
+        import subprocess
+        import sys
+        import tempfile
+        from pathlib import Path
+
+        script = Path(__file__).resolve().parent / "sensors.py"
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td)
+            ca = tdp / "ca.json"
+            ca.write_text(json.dumps([
+                {"id": "CA-S001", "severity": "WARN",
+                 "fix_action": "NEEDS_JUDGMENT",
+                 "where": "CLAUDE.md:10", "what": "古い指示"},
+                {"id": "CA-S002", "severity": "PASS",
+                 "fix_action": "REPORT_ONLY",
+                 "where": "CLAUDE.md:20", "what": "問題なし"},
+            ]))
+            out = tdp / "out.json"
+            # repo-root は validate/ledger スクリプトが存在しない空ディレクトリ
+            # （_run_capture が空文字扱い → 機械センサー findings は 0 件）
+            r = subprocess.run(
+                [sys.executable, str(script), "--repo-root", str(tdp),
+                 "--out", str(out), "--context-audit", str(ca)],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(r.returncode, 0, r.stderr)
+            findings = json.loads(out.read_text())
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0]["sensor"], "context-audit")
+            self.assertEqual(findings[0]["rule"], "CA-S001")
 
 
 if __name__ == "__main__":

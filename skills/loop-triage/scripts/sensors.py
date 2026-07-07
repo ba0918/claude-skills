@@ -110,7 +110,7 @@ def map_context_audit(findings):
             where["line"] = line
         what = finding.get("what", "")
         rule_id = finding.get("id")
-        result.append({
+        mapped = {
             "sensor": "context-audit",
             "rule": rule_id,
             "severity": finding.get("severity"),
@@ -119,7 +119,11 @@ def map_context_audit(findings):
             "what": what,
             "suggested_title": f"context-audit: {rule_id} {what[:40]}",
             "affected_paths": [path],
-        })
+        }
+        # SKILL Step 5 の「概要 = what + why」用に why を落とさない（任意フィールド）
+        if finding.get("why"):
+            mapped["why"] = finding["why"]
+        result.append(mapped)
     return result
 
 
@@ -140,6 +144,10 @@ def main(argv=None):
     )
     parser.add_argument("--repo-root", required=True)
     parser.add_argument("--out", required=True)
+    parser.add_argument(
+        "--context-audit", metavar="PATH", default=None,
+        help="context-audit の findings JSON（リスト）。map_context_audit で写像して結合する",
+    )
     args = parser.parse_args(argv)
 
     root = os.path.abspath(args.repo_root)
@@ -152,6 +160,11 @@ def main(argv=None):
     ledger_text = _run_capture([sys.executable, ledger_script, "--check", root], root)
 
     findings = parse_validate_output(validate_text) + parse_ledger_check(ledger_text)
+
+    if args.context_audit:
+        with open(args.context_audit, encoding="utf-8") as f:
+            raw = json.load(f)
+        findings += map_context_audit(raw)
 
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(findings, f, ensure_ascii=False, indent=2, sort_keys=True)
