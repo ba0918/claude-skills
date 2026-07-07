@@ -14,7 +14,7 @@
   2. skills/ / codex-skills/ の各スキルディレクトリに SKILL.md がある
   3. SKILL.md frontmatter に name / description がある
   4. commands/*.md frontmatter に description がある
-  5. SKILL.md / commands/*.md 内の相対 .md リンクが実在する
+  5. SKILL.md / commands/*.md / references/**/*.md 内の相対 .md リンクが実在する
   6. CLAUDE.md のコマンド対応表 ⇔ commands/ 実ファイルが一致する
   7. README.md が全スキル名に言及している（ドリフト検出）
   8. AGENTS.md が全 codex-skills 名に言及している（ドリフト検出）
@@ -361,6 +361,73 @@ def _skill_dirs(root, subdir):
     )
 
 
+def collect_link_sources(root):
+    """チェック5の対象ファイルを集める。
+
+    SKILL.md / commands/*.md に加えて、skills・codex-skills 配下の
+    references/**/*.md（shared 含む — 共有契約こそリンク切れの影響が大きい）。
+    """
+    sources = []
+    for subdir in ("skills", "codex-skills"):
+        base = os.path.join(root, subdir)
+        if not os.path.isdir(base):
+            continue
+        for entry in sorted(os.listdir(base)):
+            skill_dir = os.path.join(base, entry)
+            if not os.path.isdir(skill_dir):
+                continue
+            skill_md = os.path.join(skill_dir, "SKILL.md")
+            if os.path.isfile(skill_md):
+                sources.append(skill_md)
+            refs = os.path.join(skill_dir, "references")
+            if os.path.isdir(refs):
+                for dirpath, _, files in os.walk(refs):
+                    for name in sorted(files):
+                        if name.endswith(".md"):
+                            sources.append(os.path.join(dirpath, name))
+    commands_dir = os.path.join(root, "commands")
+    if os.path.isdir(commands_dir):
+        sources += [
+            os.path.join(commands_dir, n)
+            for n in sorted(os.listdir(commands_dir)) if n.endswith(".md")
+        ]
+    return sources
+
+
+# リンク検査の免除リスト。免除はファイル側ではなくここに置く
+# （ファイル編集だけで検証を迂回できないようにするため）。必ず理由を書くこと。
+LINK_CHECK_EXEMPT = {
+    # テンプレート本文のリンクは「生成先プロジェクトの docs/ 構造」を指す例示
+    # であり、このリポジトリ内には存在しない
+    "skills/plan/references/status-template.md": "生成先 docs/ の例示リンク",
+    "skills/plan/references/status-update-guide.md": "生成先 docs/ の例示リンク",
+    "codex-skills/plan/references/status-template.md": "生成先 docs/ の例示リンク",
+    "codex-skills/plan/references/status-update-guide.md": "生成先 docs/ の例示リンク",
+}
+
+
+def check_relative_links(root, sources=None, exempt=None):
+    """各ソース内の相対 .md リンクの実在を検証し、違反メッセージを返す。"""
+    if sources is None:
+        sources = collect_link_sources(root)
+    if exempt is None:
+        exempt = LINK_CHECK_EXEMPT
+    errors = []
+    for src in sources:
+        rel = os.path.relpath(src, root).replace(os.sep, "/")
+        if rel in exempt:
+            continue
+        src_dir = os.path.dirname(src)
+        for link in extract_md_links(_read(src)):
+            if not is_checkable_link(link):
+                continue
+            if not os.path.isfile(os.path.normpath(os.path.join(src_dir, link))):
+                errors.append(
+                    f"[link] リンク切れ: {os.path.relpath(src, root)} -> {link}"
+                )
+    return errors
+
+
 def run_checks(root):
     """全チェックを実行し、違反メッセージの一覧を返す（空なら合格）。"""
     errors = []
@@ -391,23 +458,8 @@ def run_checks(root):
         if not fields.get("description"):
             errors.append(f"[frontmatter] description がない: commands/{name}")
 
-    # 5. 相対 .md リンクの実在
-    link_sources = []
-    for subdir in ("skills", "codex-skills"):
-        for skill in _skill_dirs(root, subdir):
-            path = os.path.join(root, subdir, skill, "SKILL.md")
-            if os.path.isfile(path):
-                link_sources.append(path)
-    link_sources += [os.path.join(commands_dir, n) for n in command_files]
-    for src in link_sources:
-        src_dir = os.path.dirname(src)
-        for link in extract_md_links(_read(src)):
-            if not is_checkable_link(link):
-                continue
-            if not os.path.isfile(os.path.normpath(os.path.join(src_dir, link))):
-                errors.append(
-                    f"[link] リンク切れ: {os.path.relpath(src, root)} -> {link}"
-                )
+    # 5. 相対 .md リンクの実在（SKILL.md / commands / references）
+    errors += check_relative_links(root)
 
     # 6. CLAUDE.md 対応表 ⇔ commands/ 実ファイル
     claude_md = os.path.join(root, "CLAUDE.md")

@@ -15,6 +15,8 @@ from validate_repo import (
     resolve_codex_source,
     check_sync_manifest,
     check_contract_conformance,
+    collect_link_sources,
+    check_relative_links,
 )
 
 
@@ -170,6 +172,92 @@ class TestCheckSyncManifest(unittest.TestCase):
         errors = check_sync_manifest(self.PAIRS, manifest, hashes)
         self.assertEqual(len(errors), 1)
         self.assertIn("source が不一致", errors[0])
+
+
+class TestCollectLinkSources(unittest.TestCase):
+    """チェック5の対象収集: SKILL.md / commands/*.md に加えて references/*.md も含む。"""
+
+    def _write(self, root, rel, content="x"):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def test_includes_skill_md_commands_and_references(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/a/SKILL.md")
+            self._write(root, "skills/a/references/detail.md")
+            self._write(root, "commands/z.md")
+            rels = {os.path.relpath(p, root) for p in collect_link_sources(root)}
+            self.assertEqual(
+                rels,
+                {"skills/a/SKILL.md", "skills/a/references/detail.md",
+                 "commands/z.md"},
+            )
+
+    def test_includes_shared_and_codex_references(self):
+        # shared は _skill_dirs から除外されるが、共有契約こそリンク検査が必要
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/shared/references/contract.md")
+            self._write(root, "codex-skills/b/SKILL.md")
+            self._write(root, "codex-skills/b/references/nested/deep.md")
+            self._write(root, "codex-skills/shared/references/tool-mapping.md")
+            rels = {os.path.relpath(p, root) for p in collect_link_sources(root)}
+            self.assertEqual(
+                rels,
+                {"skills/shared/references/contract.md",
+                 "codex-skills/b/SKILL.md",
+                 "codex-skills/b/references/nested/deep.md",
+                 "codex-skills/shared/references/tool-mapping.md"},
+            )
+
+    def test_non_md_files_in_references_are_excluded(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/a/SKILL.md")
+            self._write(root, "skills/a/references/schema.json")
+            rels = {os.path.relpath(p, root) for p in collect_link_sources(root)}
+            self.assertEqual(rels, {"skills/a/SKILL.md"})
+
+
+class TestCheckRelativeLinks(unittest.TestCase):
+    def _write(self, root, rel, content="x"):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def test_broken_link_in_references_is_reported(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/a/references/detail.md",
+                        "[ghost](../../shared/references/ghost.md) を参照。")
+            errors = check_relative_links(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("skills/a/references/detail.md", errors[0])
+            self.assertIn("ghost.md", errors[0])
+
+    def test_valid_links_pass(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/shared/references/contract.md")
+            self._write(root, "skills/a/SKILL.md",
+                        "[契約](../shared/references/contract.md) 参照。")
+            self._write(root, "skills/a/references/detail.md",
+                        "[契約](../../shared/references/contract.md) 参照。")
+            self.assertEqual(check_relative_links(root), [])
+
+    def test_placeholder_links_are_skipped(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/a/references/detail.md",
+                        "[plan](docs/plans/{timestamp}_{slug}.md) を生成する。")
+            self.assertEqual(check_relative_links(root), [])
+
+    def test_exempt_file_is_skipped(self):
+        # テンプレファイル内のリンクは生成先プロジェクトの構造を指す例示
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/a/references/template.md",
+                        "[archive](./session-history.md) を参照。")
+            exempt = {"skills/a/references/template.md": "テンプレの例示リンク"}
+            self.assertEqual(check_relative_links(root, exempt=exempt), [])
+            self.assertEqual(len(check_relative_links(root, exempt={})), 1)
 
 
 class TestCheckContractConformance(unittest.TestCase):
