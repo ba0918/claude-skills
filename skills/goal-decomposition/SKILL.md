@@ -50,6 +50,20 @@ goal と oracle_files 候補に関連するパスに調査を限定する。**fu
 `auto_fix_allowed` / `self_modification_risk` / `exit_to` を埋め、各断片 1 行の `routing_proof` を書く
 （非 AUTO_FIX 断片は `why_not_auto_fix` 必須）。
 
+- **proxy の扱い**（決定木に明示リーフはない）: 完了条件だが真の oracle を機械化できない断片は、
+  §5.2 / §10 ③ の proxy / 中間 oracle を検討し、`human_limit_approved: false` + inbox 承認待ちで
+  goal-loop に blocked 配線してよい。headless でも proxy **採用判断**は compile が下してよい
+  （人間担保は承認ゲート = GD104 が持つ）
+- **oracle.command は実在しなくてよい**（dossier は設計図であり実行しない）。未実装のコマンドは
+  routing_proof か oracle 側に aspirational である旨を 1 語添える
+- **oracle_files は verifier をロックする** — 「oracle の意味を定義する側」（検証スクリプト・テスト・
+  期待値。[convergence-pattern §2](../shared/references/convergence-pattern.md) と同義）を列挙する。
+  修正対象のターゲット文書はロック対象ではない（ターゲットが検証定義を兼ねる場合のみ含める）
+- **exit_to の使い分け**（matrix 上どちらも合法なとき）: 常駐検出は `resident_sensor` を既定とし、
+  恒久ブロックへ昇格させる意図が明確なときだけ `ci_gate` を選ぶ
+- **measurement.metrics**: 未接続の新規計測は `proposed:` プレフィックスで明示し、既存計測名
+  （events.jsonl / ledger 等）と区別して書く
+
 ### Step 3: 人間への 3 質問（headless 時はスキップ）
 
 質問攻めにしない。人間には以下の 3 つだけ聞く（文言固定）:
@@ -64,7 +78,10 @@ goal と oracle_files 候補に関連するパスに調査を限定する。**fu
 
 ### Step 4: secret redaction（契約 §9・import ベース）
 
-書き出しパイプライン順序: **JSON 生成 → secret チェック → 検出時はファイル未作成で中止 → 合格時のみ md 生成**。
+書き出しパイプライン順序: **JSON 生成 → secret チェック → 検出時は中止 → 合格時のみ md 生成**。
+実務手順: JSON はまず `.claude/tmp/goal-decomposition/` に一時ファイルとして書き、そこで検査する。
+合格したら `docs/loop/dossiers/` へ配置し、検出したら一時ファイルを削除して中止する
+（dossiers ディレクトリに検査前のファイルを置かない・検出時に残骸を残さない）。
 
 - **自由文フィールド**（`goal.statement` / `inbox[].question` / `routing_proof` 等）は `mask_secrets` でマスク
 - **構造フィールド**（`oracle_files` / hash 値 / `id`）は `detect_secrets` で**検出したら compile を中止**
@@ -101,9 +118,11 @@ goal と oracle_files 候補に関連するパスに調査を限定する。**fu
 python3 {skill_dir}/scripts/dossier_lint.py [docs/loop/dossiers/{slug}.json ...]
 ```
 
-- 引数なしなら `docs/loop/dossiers/` 直下の全 `*.json` を検査する
+- 引数なしなら `docs/loop/dossiers/` 直下の全 `*.json` を検査する。特定 dossier の検査を頼まれたら
+  そのパスだけを引数指定する（無関係な dossier を巻き込まない）
 - 終了コード: `0` = pass（warn のみも 0）/ `1` = error 級 finding / `2` = 前提不成立
-- error 級があれば finding を提示し、契約 §11 の rule 表を参照して修正案を出す（lint は修正しない）
+- error 級があれば finding を提示し、契約 §11 の rule 表を参照して修正案を出す（lint は修正しない）。
+  検査結果はテキスト報告のみ — validate はファイルを一切書かない（writer は compile だけ）
 
 ## 合理化防止
 
