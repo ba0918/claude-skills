@@ -62,7 +62,7 @@ Verify whether the contents of the following document are consistent with the cu
 
 ## Output Format
 For each finding, report:
-- severity: AUTO_FIX | NEEDS_JUDGMENT | OK
+- action: AUTO_FIX | NEEDS_JUDGMENT | OK
 - file: Target file path
 - section: Relevant section name
 - description: Description of the discrepancy
@@ -71,6 +71,11 @@ For each finding, report:
 ```
 
 ## Judgment Criteria
+
+AUTO_FIX / NEEDS_JUDGMENT semantics follow the shared
+[fix-action-taxonomy.md](../../shared/references/fix-action-taxonomy.md)
+(`OK` is doc-check's own value — see its "doc-check の `OK` との差異" section).
+This classification is a fix-action axis, not a severity axis.
 
 ### AUTO_FIX (auto-fixable)
 - Simple factual errors (references to non-existent files, etc.)

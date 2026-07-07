@@ -1,5 +1,8 @@
 # Memory Audit（メモリ監査の詳細）
 
+> 本ファイルの AUTO_FIX / NEEDS_JUDGMENT / REPORT_ONLY は共通契約
+> [fix-action-taxonomy.md](../../shared/references/fix-action-taxonomy.md) に従う。
+
 プロジェクトメモリ（`~/.claude/projects/{cwd-slug}/memory/*.md`）は、長期運用で腐敗しても
 既存のどのスキルの射程にも入っていない。context-audit はこれを監査対象に含めるが、
 **プライバシー事故を防ぐため対象範囲を厳格に絞る**。

@@ -112,7 +112,9 @@ Apply detection rules from [references/checks.md](references/checks.md) to the s
 For each applicable rule (respecting category filter):
 
 1. Evaluate the rule's logic against the scan data
-2. If a problem is detected, record:
+2. If a problem is detected, record (the `category` values follow the shared
+   [fix-action-taxonomy.md](../shared/references/fix-action-taxonomy.md); `severity`
+   is doc-audit's local ERROR/WARN/INFO scale, orthogonal to `category`):
    ```
    {
      rule: "rule_name",

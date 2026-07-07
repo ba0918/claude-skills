@@ -154,6 +154,10 @@ Output format: [output-format.md](references/output-format.md)
 | 50-79 | WARN | Review warnings, modify plan if necessary |
 | 0-49 | PASS | OK to start implementation |
 
+> BLOCK / WARN / PASS here are the score-band dialect of the shared severity scale —
+> see [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md)
+> §スコアバンド用法（plan-reviewer 方言）. Do not introduce a separate severity system.
+
 ### Step 5: Output Review Report
 
 Output the final summary containing:

@@ -1,7 +1,7 @@
 # Fix-Action Taxonomy 共通契約
 
 doc-audit / context-audit が共有する「検出した finding をどう扱うか」の分類軸。
-これは **severity（BLOCK/WARN/INFO/PASS, `severity-and-verdicts.md`）とは直交する別軸**であり、
+これは **severity（BLOCK/WARN/INFO/PASS, [severity-and-verdicts.md](severity-and-verdicts.md)）とは直交する別軸**であり、
 「その finding に対して自動修正してよいか」を決める。出自は doc-audit の
 `references/checks.md` のローカル分類で、context-audit が 3 番目の consumer になるため共有化した。
 
@@ -9,7 +9,7 @@ doc-audit / context-audit が共有する「検出した finding をどう扱う
 
 | 軸 | 値 | 意味 | 定義元 |
 |----|----|------|--------|
-| severity | BLOCK / WARN / INFO / PASS | 問題の重大度（どれだけ困るか） | `severity-and-verdicts.md` |
+| severity | BLOCK / WARN / INFO / PASS | 問題の重大度（どれだけ困るか） | [severity-and-verdicts.md](severity-and-verdicts.md) |
 | fix action | AUTO_FIX / NEEDS_JUDGMENT / REPORT_ONLY | 修正の自動化可否（どう直すか） | 本ファイル |
 
 例: 重大度 WARN でも AUTO_FIX なことも、REPORT_ONLY なこともある。両者を混同しない。
@@ -66,3 +66,5 @@ finding に fix action を割り当てる前に自問する:
 
 - `doc-audit`（`references/checks.md`）— docs ⇔ docs の不整合分類
 - `context-audit`（`references/rule-catalog.md`）— 指示ファイル・メモリの CA-* ルール分類
+- `doc-check`（`references/content-checks.md`）— AUTO_FIX / NEEDS_JUDGMENT を共有しつつ
+  `OK` 2値体系を維持する（「doc-check の `OK` との差異」節参照）

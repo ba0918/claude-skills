@@ -89,7 +89,11 @@ Launch Agent tools (general-purpose) **in parallel** for each document:
 
 - Provide each agent with the target document content and change context (diff)
 - Have them verify from 4 perspectives: architecture descriptions, workflow descriptions, configuration descriptions, and API documentation
-- Have them classify results by severity (AUTO_FIX / NEEDS_JUDGMENT / OK)
+- Have them classify results by fix action (AUTO_FIX / NEEDS_JUDGMENT / OK).
+  AUTO_FIX / NEEDS_JUDGMENT follow the shared
+  [fix-action-taxonomy.md](../shared/references/fix-action-taxonomy.md); `OK` is
+  doc-check's own third value (see that contract's "doc-check の `OK` との差異" section) —
+  this axis is orthogonal to severity
 
 In `all` mode, since there is no diff, have agents explore the project structure from scratch.
 

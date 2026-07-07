@@ -16,6 +16,10 @@ refactor Phase 4（VERIFY）で使用する判定基準。横展開検索（Phas
 | **FALSE_POSITIVE** | 表面上似ているが文脈が違う（適用不可・不要） | いずれかの項目で「適用できない/すべきでない」ことが確認できた。除外理由を必ず記録 |
 | **UNCERTAIN** | 適用可否が文脈依存で判断材料が不足 | どちらとも確認できない。修正せずユーザに委ねる |
 
+> フレーム（3値・Iron Law・fail-safe）の定義元は共通契約
+> [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) の
+> 「文脈検証の3値判定」。本ファイルは refactor 固有の検証述語（動作保持）を特殊化する。
+
 ## The Iron Law
 
 ```

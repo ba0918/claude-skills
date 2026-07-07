@@ -16,6 +16,10 @@ Whether the changes introduce security risks.
 
 ### Verdict
 
+Severity semantics follow the shared
+[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md);
+the per-perspective anchors below are iterate-specific applications.
+
 - **BLOCK**: Unvalidated external input, sensitive data exposure, injection vulnerability
 - **WARN**: Validation exists but is incomplete, error messages contain too much information
 - **PASS**: No security issues

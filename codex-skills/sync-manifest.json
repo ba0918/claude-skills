@@ -41,7 +41,7 @@
   },
   "codex-skills/plan-reviewer/SKILL.md": {
     "source": "skills/plan-reviewer/SKILL.md",
-    "source_sha256": "73c91acd994138c23228d614921ba1d9caef8eefae93aba6b7cd1754d27a0c5b"
+    "source_sha256": "6c1432005b429be4287f11fb8dfd4fe4a451727beb3bdbdc1ae3752aea586a4f"
   },
   "codex-skills/plan/SKILL.md": {
     "source": "skills/plan/SKILL.md",
@@ -53,7 +53,7 @@
   },
   "codex-skills/shared/references/team-config.md": {
     "source": "skills/shared/references/team-config.md",
-    "source_sha256": "027537e3aa1b8c858cfb16261a768be2229867fb92a6ea4b8e8d22db001f31ee"
+    "source_sha256": "fc8364e37b5c0a79a4b56c50858f3d63f7270087739359a4283c0575c1df7d28"
   },
   "codex-skills/team-cycle/SKILL.md": {
     "source": "skills/team-cycle/SKILL.md",

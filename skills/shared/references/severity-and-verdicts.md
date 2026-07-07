@@ -1,7 +1,10 @@
 # Severity & Verdicts
 
-チームレビュー・コードレビューで使用する重大度定義と判定基準。
-team-plan、team-cycle の各フローが参照する共通リソース。
+チームレビュー・コードレビューで使用する重大度定義と判定基準、および
+find-then-verify 型スキルの文脈検証3値判定。team-plan / team-cycle のほか、
+sweep-fix / refactor / iterate / context-audit 等が参照する共通リソース。
+finding の「修正の自動化可否」は直交する別軸
+[fix-action-taxonomy.md](fix-action-taxonomy.md) が定義する。
 
 ## 重大度定義
 
@@ -11,6 +14,15 @@ team-plan、team-cycle の各フローが参照する共通リソース。
 | **WARN** | 要検討。対処しなくても致命的ではないが改善すべき | パフォーマンス懸念、保守性の低下、エッジケース未対応 | O(n^2) アルゴリズム（n が小さい場合）、DRY 違反、エラーメッセージ不足 |
 | **INFO** | 参考情報。対応は任意 | スタイル提案、将来の改善案、代替アプローチの紹介 | 命名改善提案、ライブラリ推奨、将来のリファクタリング候補 |
 | **PASS** | 問題なし | 該当観点で問題が検出されなかった | - |
+
+> **`PASS` の多義に注意**: 重大度の PASS（観点単位で問題なし）と、後述のコードレビュー判定の
+> PASS（レビュー全体の合格）は別の軸。文脈でどちらかを明示すること。
+
+### スコアバンド用法（plan-reviewer 方言）
+
+plan-reviewer はリスクスコア（0-100）を BLOCK（80-100）/ WARN（50-79）/ PASS（0-49）の
+バンドにマップする。ラベルは重大度と同じだが入力はスコアであり、「高リスク帯 = BLOCK」という
+本表の意味に整合するマッピングとして承認済みの方言（別の重大度体系を新設しない）。
 
 ## 計画レビュー判定
 
@@ -32,6 +44,25 @@ team-plan、team-cycle の各フローが参照する共通リソース。
 
 - **通常モード**: 修正指示を Agent に渡して再実装 → 再レビュー（最大1回リトライ）
 - **headless モード**: ユーザーにレビュー結果を出力し処理を中断（ユーザーが次のアクションを判断）
+
+## 文脈検証の3値判定
+
+横展開検索・類似検出で見つけた候補を「本当に対処してよいか」文脈で検証するときの共通フレーム。
+sweep-fix / refactor / skill-regression 等の find-then-verify 型スキルが使用する。
+**本節がフレーム（3値・Iron Law・fail-safe）の定義元**。
+
+| verdict | 意味 | 扱い |
+|---------|------|------|
+| **CONFIRMED** | 検証述語を根拠付きで満たす | 対処してよい |
+| **FALSE_POSITIVE** | 字面は一致するが文脈上は該当しない | 対処しない（理由を記録する） |
+| **UNCERTAIN** | 判断に必要な文脈・根拠が不足 | 対処しない（fail-safe）。報告のみ |
+
+- **The Iron Law**: 根拠を書けない CONFIRMED は存在しない。書けなければ UNCERTAIN に降格する
+- 迷ったら UNCERTAIN に倒す。UNCERTAIN を対処対象に含めない（偽陽性の混入より取りこぼしの方が安全）
+- **CONFIRMED の検証述語はスキルごとに特殊化する（意図的差分）**:
+  sweep-fix は「同じ問題が同じ理由で成立する」（`skills/sweep-fix/references/context-verification.md`）、
+  refactor は「動作を保持したまま安全に適用できる」（`skills/refactor/references/behavior-preservation-checks.md`）。
+  述語の定義は各スキル側、フレームは本節が所有する
 
 ## メタレビュー規則
 

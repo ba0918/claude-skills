@@ -4,17 +4,17 @@
       "skills/context-audit/SKILL.md": "48e72e6c3340ae26b66d8de85faa000dd152dade8300252a558e69fd282e7cae",
       "skills/context-audit/fixtures.json": "8c5bea492178d0048be9e2c7f0c26099d68935dcfc8905cccb1c87d15fc2d218",
       "skills/context-audit/references/baseline-format.md": "ed998a2c7fbe69f81b54e28e84e57d51e84d3251bbf3293d7335d86c3126ac81",
-      "skills/context-audit/references/memory-audit.md": "061509fe4f7ce51dade29a162b1a944c1f8aff22fa9515332e926e02d22d6134",
+      "skills/context-audit/references/memory-audit.md": "f66300795762677f810d9bafc29c7c161e5b889bbdb2e7c22ca6393d8bed94ee",
       "skills/context-audit/references/rule-catalog.md": "3d1ce03ca5e862801b22987a4ed0e00e7f850ab1fbb35e26eff487c5d2c3a5a4",
       "skills/context-audit/scripts/aggregate_report.py": "9acdb60cbda5dcf18b2d69ccb4a42910852a5ec7723d1abe49a3a253ad4fcb10",
       "skills/context-audit/scripts/apply_fixes.py": "d37bc3064138bf2c8325157edfd2aeb38a14ad70a637835f0616658f77b02231",
       "skills/context-audit/scripts/collect_targets.py": "347ba498ac6d5f2b4fa43e802486c4dbe552b33358d3d65e9dd096bc6cc129ac",
       "skills/context-audit/scripts/static_checks.py": "cab83ec89e57671d5689c73b606ebfd4eb376ec8f952060fec7ccd6adafb42cc",
-      "skills/shared/references/fix-action-taxonomy.md": "af67db6f3ce615c99787d973d8cd23714dbc1c693ed22405e9da88d797283e2b",
-      "skills/shared/references/severity-and-verdicts.md": "67b475815cc7e962b45117f3732f683490bc134452572e3e97773d7e90d393f4",
+      "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
+      "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
-    "result": "pass",
+    "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/SKILL.md",
       "skills/context-audit/fixtures.json",
@@ -29,7 +29,7 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "c8cfb164534ffd17ec53153b119ad574302f76b090332e8e89e2aeea1e928798",
+    "surface_sha256": "9ec1be7865791609ecd5af723e58bdc656bf305f2e94f66517bda0fa3934d5c3",
     "verified": "2026-07-07"
   }
 }

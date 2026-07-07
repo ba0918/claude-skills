@@ -32,6 +32,10 @@
 }
 ```
 
+例中の CONFIRMED / FALSE_POSITIVE / UNCERTAIN は
+[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) の
+「文脈検証の3値判定」の語彙（要件文で共有語彙を使うときは定義元の意味で書く）。
+
 | フィールド | 必須 | 意味 |
 |-----------|------|------|
 | `skill` | ✓ | 対象スキル名（ディレクトリ名と一致） |

@@ -30,6 +30,6 @@ Skill ツールで `claude-skills:issue` を実行する。引数: `polling $ARG
 ## References
 
 - SKILL.md: `skills/issue/SKILL.md` の Polling Workflow セクション
-- 共通契約: `skills/shared/references/polling-pattern.md`
+- 共通契約: [`skills/shared/references/polling-pattern.md`](../skills/shared/references/polling-pattern.md)
 - FS adapter: `skills/issue/references/polling-state.md`
 - 純関数: `skills/issue/references/polling-state-machine.md`
