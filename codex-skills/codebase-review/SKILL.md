@@ -3,7 +3,13 @@ name: codebase-review
 description: コードベース全体を4つの専門エージェント（セキュリティ/機密情報、パフォーマンス/メモリ、実装品質/論理整合性、コード衛生/改善点）で並行レビューし、100点満点でスコアリングする。「コードベースレビュー」「全体レビュー」「codebase review」「コード品質チェック」「プロジェクト全体を分析」で起動。AGENTS.mdがあればプロジェクト固有ルールも自動で考慮する。
 ---
 
-# Codebase Review
+# Codebase Review (Codex Edition)
+
+## Codex CLI ツールの使い分け
+
+- レビューエージェント起動: `spawn_agent` / `wait_agent`（4体並行）
+- ファイル読み取り・結果 JSON 受け渡し: `shell`（`cat` / `rg`、`.codex/tmp/`）
+- レポート出力: `shell` heredoc
 
 Review the entire codebase with 4 specialized agents in parallel and generate an integrated score report.
 

@@ -87,7 +87,7 @@ BLOCKs addressed: {N}/{total}
 ## Phase 2: Implement（自動実装）
 
 1. `spawn_agent` で実装エージェントを起動する:
-   - プロンプト: 「計画ファイル {plan_file_path} の全ステップを実装してください。各ステップ完了ごとにコミットし、ステータスを更新してください。完了したら実装サマリー（変更ファイル数、テスト数、コミット数）を報告してください。」
+   - プロンプト: 「計画ファイル {plan_file_path} の全ステップを実装してください。`codex-skills/shared/references/tdd-contract.md` に従いテストファースト（RED → GREEN → REFACTOR）で進め、各ステップ完了ごとにコミットし、ステータスを更新してください。完了宣言前に `codex-skills/shared/references/verification-gate.md` の Gate Function を適用し、テスト実行結果のエビデンスを含む実装サマリー（変更ファイル数、テスト数、コミット数）を報告してください。」
 2. `wait_agent` で結果を受け取る
    - **エージェントがエラーを返した場合**: 1回だけ自動リトライする。リトライも失敗した場合はエラー内容を表示し、どのステップまで完了したかを記録してサイクルを中断する
      ```

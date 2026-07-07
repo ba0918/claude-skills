@@ -5,6 +5,12 @@ description: コードベースを攻撃者視点で6つの専門エージェン
 
 # Attack Review (Codex Edition)
 
+## Codex CLI ツールの使い分け
+
+- 攻撃観点エージェント起動: `spawn_agent` / `wait_agent`（6体並行）
+- テックスタック検出・結果 JSON 受け渡し: `shell`（`cat` / `rg`、`.codex/tmp/`）
+- レポート出力: `shell` heredoc
+
 Review the codebase from an **attacker's perspective** with 6 specialized penetration testing agents in parallel. Generate a risk-matrix-based threat report with concrete attack scenarios, reproduction steps, and PoC examples.
 
 **Context-saving design**: All agent analysis results are passed via files; only summaries flow into the main context.

@@ -151,8 +151,8 @@ Create a plan from an issue without running cycle. Use when you want to review/d
 
    ## Next Steps
    1. Review and discuss the plan
-   2. Run `$team-cycle` for team-reviewed implementation (recommended)
-   3. Run `$cycle` for lightweight implementation
+   2. Run `$issue cycle --team` for team-reviewed implementation (recommended)
+   3. Run `$issue cycle` for lightweight implementation
    4. Issue will be auto-closed when cycle completes
    ```
 

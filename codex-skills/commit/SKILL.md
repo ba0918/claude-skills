@@ -3,7 +3,13 @@ name: commit
 description: 変更内容を分析し、論理単位で自動コミットする。確認なしで即実行。「コミットして」「commit」「変更を保存して」で起動。
 ---
 
-# Auto Commit
+# Auto Commit (Codex Edition)
+
+## Codex CLI ツールの使い分け
+
+- 差分確認・テスト実行: `shell`（`git diff` / `git status` / テストコマンド）
+- コミット: `shell`（`git add` / `git commit`）
+- ユーザー確認: なし（確認なし即実行が本スキルの原則）
 
 Skill that analyzes changes and automatically commits them in logical units without asking for user confirmation.
 
@@ -29,7 +35,7 @@ git branch -vv
 
 ## Phase 1.5: Best-Effort Test Verification
 
-**Verification Gate** (best-effort): `skills/shared/references/verification-gate.md` をベストエフォートで適用する。commit の Core Principle「No confirmation」を遵守し、テスト失敗でブロックしない。
+**Verification Gate** (best-effort): [verification-gate.md](../shared/references/verification-gate.md) をベストエフォートで適用する。commit の Core Principle「No confirmation」を遵守し、テスト失敗でブロックしない。
 
 1. テストフレームワークを自動検出する:
    - `package.json` (scripts.test) → `npm test`

@@ -3,7 +3,13 @@ name: plan-reviewer
 description: 実装計画を7観点で徹底レビューし信頼スコアで判定する。「plan review」「計画をレビュー」「計画を確認」で起動。引数に「refine」を含むと review → fix ループで計画を自動改善する。「plan refine」「計画を改善」で起動。
 ---
 
-# Plan Reviewer
+# Plan Reviewer (Codex Edition)
+
+## Codex CLI ツールの使い分け
+
+- 観点別レビュー起動: `spawn_agent` / `wait_agent`（不可時は同一セッションで逐次実行）
+- 計画・コード読み取り: `shell`（`cat` / `ls -t` / `rg`）
+- 計画修正（refine）: `apply_patch`
 
 Quality gate that deeply reviews implementation plans from 7 expert perspectives before implementation begins.
 
@@ -86,7 +92,7 @@ Each review applies perspectives in the following priority order:
 #### Review 1: Feasibility
 
 - Verify affected files exist, check line number accuracy
-- Verify APIs/libraries used actually exist
+- Verify APIs/libraries used actually exist (for external libraries, recommend checking the latest official docs before trusting memory)
 - Implementation environment constraints (runtime limitations, platform compatibility, etc.)
 - Estimate validity
 - Implementation order dependencies

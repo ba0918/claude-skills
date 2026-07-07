@@ -122,7 +122,8 @@ Instructions to the agent:
 - Follow existing code style and conventions
 - Comply with AGENTS.md rules
 - Reference review-rules.md if it exists (`.codex/review-rules.md` → `.claude/review-rules.md` → `review-rules.md`)
-- Add tests for changes that require testing (test-first when feasible: write a failing test, make it pass, refactor)
+- Follow [tdd-contract.md](../shared/references/tdd-contract.md): write tests FIRST (RED), implement to pass (GREEN), then refactor
+- Avoid testing anti-patterns: never assert on mocks' existence, never add test-only methods to production code, never mock without understanding the dependency's side effects
   - **Exception — non-executable changes** (documentation only: README/CHANGELOG/comments/markdown with no behavior change): tests do not apply. Instead, the implementation agent must (a) state explicitly that tests are skipped because the change has no executable behavior, and (b) still run the existing test suite to confirm nothing breaks.
   - **Config files are NOT automatically non-executable**: `tsconfig.json` strict-mode flips, `package.json` dep/script changes, linter rule changes, CI workflow edits all affect runtime or build behavior → tests apply. Only pure content edits (e.g., `description` field in `package.json`) qualify as non-executable.
 - Run existing tests after implementation and confirm all pass
