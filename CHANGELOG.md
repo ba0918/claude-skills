@@ -4,6 +4,38 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.33.0
+
+共有契約システムの意味的再統一。11 本の契約と全スキルを突き合わせ、「宣言だけ共有・実体は
+インライン再発明」のドリフトを解消し、以後の再発を CI で機械的に止める。
+
+- **文脈検証3値判定（CONFIRMED/FALSE_POSITIVE/UNCERTAIN）の定義元を新設**:
+  CLAUDE.md や refactor が「severity-and-verdicts 準拠」と宣言していたのに、当の契約に
+  定義が存在しなかった（事実上の定義は sweep-fix の references に散在）。severity-and-verdicts.md
+  に汎用フレーム（3値・Iron Law・fail-safe）を新設し、CONFIRMED の検証述語は各スキルの
+  意図的特殊化として維持（sweep-fix = バグ成立 / refactor = 動作保持）・相互リンクで接続
+- **team-config の自己矛盾を解消**: 冒頭注記（メンバー = opus、9343065 のモデル階層コミット由来）と
+  §モデル指定表（sonnet、階層導入前の残骸）が矛盾していた。opus に統一（Codex 版は model
+  パラメータ自体が Claude 固有のため反映不要と判断、台帳更新済み）
+- **plan-reviewer のスコアバンド用法を承認済み方言として明文化**: BLOCK/WARN/PASS を
+  リスクスコア帯にマップする用法を severity-and-verdicts に記載し、Claude / Codex 両版の
+  SKILL.md から契約へリンク（トークン変更なし = 挙動不変）
+- **doc-check の軸混同を修正**: fix action（AUTO_FIX/NEEDS_JUDGMENT/OK）を `severity:` と
+  ラベルしていた箇所を `action:` に修正し、fix-action-taxonomy の差異節へリンク
+- **インライン複製を参照に接続**: doc-audit / context-audit(memory-audit) / iterate(light-review) /
+  skill-regression(fixture-schema) / commands/plan-implement / commands/issue-polling に契約リンクを追加。
+  severity-and-verdicts ⇔ fix-action-taxonomy を相互リンク化
+- **チェック12（共有契約語彙の適合）を validate_repo.py に新設**: 契約を一意に識別する語彙
+  （AUTO_FIX 系 / CONFIRMED 系 / PASS WITH NOTES 系 / polling ガード / codex:codex-rescue）を
+  使う skill / command が契約への md リンクを持たないと CI fail。免除は理由必須の
+  `CONTRACT_VOCAB_EXEMPT`。TDD で追加（6 テスト）、既存リポジトリで偽陽性ゼロを確認
+- **regression harness が初稼働**: 契約編集で context-audit が stale 判定され、変更が追記のみで
+  挙動無影響と裁定して `--update --accept` を記録（黙殺不可能の設計が機能）
+- 不介入と判断した重複（意図的再利用）: Gate Function / Iron Law 見出しの別ドメイン再利用、
+  tdd-contract と lang-detect のマーカーファイル表（目的が異なる）、design-system-contract の
+  独自検証階層。codex-skills 側の契約未移植（fix-action / verification-gate / codex-integration /
+  polling / orchestration が codex shared に不在）は Codex パリティ作業（ピッチ3）の scope として残す
+
 ## 1.32.0
 
 `skill-regression` スキルを新規追加。スキルの「調律済みの挙動」を fixture として資産化し、
