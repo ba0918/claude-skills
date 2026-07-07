@@ -1,4 +1,17 @@
 {
+  "commit": {
+    "file_sha256": {
+      "skills/commit/SKILL.md": "4a6b6c7a9b17fba332b55e7d793a23132e750212123a19035c3bf015d801524f",
+      "skills/commit/fixtures.json": "710da57415bc87d5128794ac2c0d12f6f9abd95abe9e66005a30abbf0932ff94"
+    },
+    "result": "pass",
+    "surface": [
+      "skills/commit/SKILL.md",
+      "skills/commit/fixtures.json"
+    ],
+    "surface_sha256": "6044adcac05193799fc69e36e6e2e11c2307e68870438c83887f9d192e8133ab",
+    "verified": "2026-07-07"
+  },
   "context-audit": {
     "file_sha256": {
       "skills/context-audit/SKILL.md": "48e72e6c3340ae26b66d8de85faa000dd152dade8300252a558e69fd282e7cae",
@@ -85,6 +98,19 @@
     "surface_sha256": "f7f269e390cb4db8a3786521fe96f644793f2a2b0c7fa92652e5891b97512fb4",
     "verified": "2026-07-07"
   },
+  "handoff": {
+    "file_sha256": {
+      "skills/handoff/SKILL.md": "49735c84f3498c8e5eec8500835456a989a7d34abb3b32c08a383f5ac91bcb57",
+      "skills/handoff/fixtures.json": "cab6f73df5c2c095542846d14d71614ba09b780bbb04a58f8d00f0c3598eb3e9"
+    },
+    "result": "pass",
+    "surface": [
+      "skills/handoff/SKILL.md",
+      "skills/handoff/fixtures.json"
+    ],
+    "surface_sha256": "132f169e4d2ec7fe62b5f3d7b7a58803189b8b165be33da2c01fca3650eeb010",
+    "verified": "2026-07-07"
+  },
   "issue": {
     "file_sha256": {
       "skills/context-audit/references/baseline-format.md": "ed998a2c7fbe69f81b54e28e84e57d51e84d3251bbf3293d7335d86c3126ac81",
@@ -128,6 +154,25 @@
       "skills/skill-regression/references/fixture-schema.md"
     ],
     "surface_sha256": "c6c5bc90ca13f1acee0bf93750d149ac1c5df93b2e228fadf57dd751569d747c",
+    "verified": "2026-07-07"
+  },
+  "plan": {
+    "file_sha256": {
+      "skills/plan/SKILL.md": "77c6d9c26426507afe191546ad80a593e6f9fd5b1beb7cefce17c988b8247231",
+      "skills/plan/fixtures.json": "53aa1c06d65afc4b35f9aa7cbc1b1593243ccea5cf9b2e27eeb8217fffc1b1ff",
+      "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
+      "skills/plan/references/status-template.md": "08db3e2d130deaf2c86990228cde0b01c7adbb87f934c84de950e4a250670a0a",
+      "skills/plan/references/status-update-guide.md": "26ebe6b2f5eb48ff06602f0bddf14e18b05c8747d065ea9a58ab10c3d61291c8"
+    },
+    "result": "pass",
+    "surface": [
+      "skills/plan/SKILL.md",
+      "skills/plan/fixtures.json",
+      "skills/plan/references/plan-template.md",
+      "skills/plan/references/status-template.md",
+      "skills/plan/references/status-update-guide.md"
+    ],
+    "surface_sha256": "5cc5855bd72c298662743206d1d6db33d01461d9847ceeab0d12c6b0c24ca65e",
     "verified": "2026-07-07"
   }
 }

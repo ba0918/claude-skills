@@ -1,0 +1,61 @@
+{
+  "skill": "handoff",
+  "scenarios": [
+    {
+      "id": "ho-001",
+      "title": "restore — 最新選択・固定サマリ・復元後自動削除",
+      "source": "manual",
+      "executor_model": "sonnet",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "docs/handoff/20260705_090000_auth-refactor-debug.md": "---\ncreated: 2026-07-05T09:00:00+09:00\nbranch: feature/auth\nstatus: blocked\n---\n\n# Handoff: 認証リファクタのデバッグ引き継ぎ\n\n## TL;DR\nJWT 検証のリファクタ中に既存テストが 2 件失敗し、原因調査の途中。\n\n## 目的 / Why\nJWT 検証まわりの責務分離リファクタ。\n\n## 現在の状態\n### 進行中\n- tests/test_jwt.py の失敗 2 件の原因調査\n\n## 次のアクション\n1. tests/test_jwt.py の失敗ログを確認する\n",
+          "docs/handoff/20260706_183000_search-api-pagination.md": "---\ncreated: 2026-07-06T18:30:00+09:00\nbranch: feature/search-api\nstatus: in-progress\n---\n\n# Handoff: 検索 API ページネーション実装の引き継ぎ\n\n## TL;DR\n検索 API のページネーション実装は 8 割完了、カーソル方式を採用した。\n残りはエッジケースのテストとドキュメント。\n\n## 目的 / Why\n一覧 API のレスポンス肥大化を防ぐため、カーソルベースのページネーションを導入する。\n\n## これまでの流れ\n- offset 方式を検討したが深いページで劣化するため却下、カーソル方式を採用\n\n## 現在の状態\n### 完了\n- カーソルのエンコード/デコード実装\n### 進行中\n- 空ページ・末尾ページのエッジケーステスト\n### 未着手\n- API ドキュメント更新\n\n## 関連ファイル\n- `/home/user/projects/myapp/src/api/search.py` — ページネーション本体\n\n## 決定事項 / 制約\n- カーソルは base64(JSON) で不透明トークンとして扱う\n\n## 未解決の課題\n- カーソル改竄時のエラーコードを 400 にするか 422 にするか未決\n\n## 次のアクション\n1. 空ページ・末尾ページのテストを追加する\n2. カーソル改竄時のエラーコードを決めて実装する\n3. API ドキュメントを更新する\n\n## 注意点\n- カーソルの互換性を壊す変更はリリースノート必須\n"
+        }
+      },
+      "prompt": "前セッションからの引き継ぎを復元して。続きをやりたい。",
+      "requirements": [
+        { "text": "最新の handoff（20260706_183000_search-api-pagination.md）を選択して読み込んでいる（古い方ではない）", "critical": true },
+        { "text": "復元サマリが固定フォーマット（## 引き継ぎ内容 / 目的 1 行 / 現在地 / 次のアクション最大 3 つ）で提示されている", "critical": true },
+        { "text": "復元成功後に該当ファイルを確認なしで削除し、「引き継ぎ完了！{basename} は削除したよ」形式（basename のみ・フルパス不使用）で報告している", "critical": true },
+        { "text": "古い方（20260705_090000_auth-refactor-debug.md）は削除されず残っている", "critical": true },
+        { "text": "注意点の再掲など余計な装飾をサマリに足していない", "critical": false }
+      ],
+      "notes": "restore の中央値。最新選択・固定サマリ・使い捨て（即削除）の3原則を固定する。save workflow は実会話履歴が必要なため fixture 対象外。"
+    },
+    {
+      "id": "ho-002",
+      "title": "list — mtime 降順・TL;DR 原文転記・案内行なし",
+      "source": "manual",
+      "executor_model": "sonnet",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "docs/handoff/20260705_090000_auth-refactor-debug.md": "---\ncreated: 2026-07-05T09:00:00+09:00\nbranch: feature/auth\nstatus: blocked\n---\n\n# Handoff: 認証リファクタのデバッグ引き継ぎ\n\n## TL;DR\nJWT 検証のリファクタ中に既存テストが 2 件失敗し、原因調査の途中。\n\n## 次のアクション\n1. tests/test_jwt.py の失敗ログを確認する\n",
+          "docs/handoff/20260706_183000_search-api-pagination.md": "---\ncreated: 2026-07-06T18:30:00+09:00\nbranch: feature/search-api\nstatus: in-progress\n---\n\n# Handoff: 検索 API ページネーション実装の引き継ぎ\n\n## TL;DR\n検索 API のページネーション実装は 8 割完了、カーソル方式を採用した。\n残りはエッジケースのテストとドキュメント。\n\n## 次のアクション\n1. 空ページ・末尾ページのテストを追加する\n"
+        }
+      },
+      "prompt": "保存してある引き継ぎの一覧を見せて。",
+      "requirements": [
+        { "text": "番号付きリストが新しい順（search-api が 1 番、auth-refactor が 2 番）で、filename / 日時 / status / TL;DR を含む指定フォーマットになっている", "critical": true },
+        { "text": "TL;DR が各ファイルの ## TL;DR セクション最初の非空行の原文そのまま（末尾の「。」含む、要約・切り詰めなし）で転記されている", "critical": true },
+        { "text": "末尾に restore 方法の案内行を付けていない", "critical": false },
+        { "text": "list によってファイルが削除・変更されていない", "critical": true }
+      ],
+      "notes": "list の出力契約（フォーマット固定・原文転記・案内なし）を固定する edge。"
+    },
+    {
+      "id": "ho-003",
+      "title": "restore — 対象なしの安全終了",
+      "source": "manual",
+      "executor_model": "sonnet",
+      "isolation": "worktree",
+      "prompt": "引き継ぎを復元して。",
+      "requirements": [
+        { "text": "handoff ファイルが見つからない旨を報告して終了している（エラーで落ちたり別ファイルを勝手に読んだりしない）", "critical": true },
+        { "text": "ファイル・ディレクトリを新規作成も削除もしていない", "critical": false }
+      ],
+      "notes": "docs/handoff/ 不在時の not-found 分岐を固定する edge。"
+    }
+  ]
+}
