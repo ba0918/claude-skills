@@ -21,6 +21,7 @@
   9. plugin.json と marketplace.json のバージョンが一致する
   10. Claude 版 ⇔ Codex 版スキルの同期台帳（codex-skills/sync-manifest.json）
   11. SKILL.md description の品質（トリガー語を含む / 1024 字以内）
+  12. 共有契約語彙の適合（契約の識別語彙を使う skill / command は契約を md リンクする）
 
 同期台帳の仕組み:
   codex-skills/ の各スキルは skills/ の対応スキル（cycle のみ commands/cycle.md）を
@@ -131,6 +132,83 @@ DESCRIPTION_MAX_LEN = 1024
 DESCRIPTION_TRIGGER_EXEMPT = {
     # "skills/<name>": "理由",
 }
+
+
+# チェック12: 共有契約の識別語彙。unit（skills/<name>/ 全体 or commands/<file>.md 単体）が
+# min_distinct 種類以上の語彙を含むなら、その unit 内のどこかで契約への md リンクを要求する。
+# 「宣言だけ共有・実体はインライン再発明」のドリフトを機械的に止めるのが目的。
+# BLOCK / WARN 単体のような汎用語は偽陽性が多いため対象にしない — 契約を一意に識別する
+# 複合語彙のみ登録する。対象は skills/ + commands/ のみ（codex-skills/ は契約の移植が
+# 部分的で、リンク先が存在しないため対象外。移植完了時に拡張する）。
+CONTRACT_VOCAB = [
+    ("skills/shared/references/fix-action-taxonomy.md",
+     ("AUTO_FIX", "NEEDS_JUDGMENT", "REPORT_ONLY"), 2),
+    ("skills/shared/references/severity-and-verdicts.md",
+     ("CONFIRMED", "FALSE_POSITIVE", "UNCERTAIN"), 2),
+    ("skills/shared/references/severity-and-verdicts.md",
+     ("PASS WITH NOTES", "APPROVED WITH CONCERNS"), 1),
+    ("skills/shared/references/polling-pattern.md",
+     (".STOP.hard", "failed_streak", "max_wallclock"), 2),
+    ("skills/shared/references/codex-integration.md",
+     ("codex:codex-rescue",), 1),
+]
+
+# チェック12の免除リスト。免除はスキル側ではなくここに置く（迂回防止）。理由必須。
+CONTRACT_VOCAB_EXEMPT = {
+    # "skills/<name>" または "commands/<file>.md": "理由",
+}
+
+
+def _conformance_units(root):
+    """チェック12の unit（識別子 → md ファイル一覧）を返す。"""
+    units = {}
+    for skill in _skill_dirs(root, "skills"):
+        base = os.path.join(root, "skills", skill)
+        files = []
+        for dirpath, dirnames, filenames in os.walk(base):
+            dirnames[:] = [d for d in dirnames if d not in EXCLUDED_DIRS]
+            files += [
+                os.path.join(dirpath, n) for n in sorted(filenames)
+                if n.endswith(".md")
+            ]
+        units[f"skills/{skill}"] = files
+    commands_dir = os.path.join(root, "commands")
+    if os.path.isdir(commands_dir):
+        for name in sorted(os.listdir(commands_dir)):
+            if name.endswith(".md"):
+                units[f"commands/{name}"] = [os.path.join(commands_dir, name)]
+    return units
+
+
+def check_contract_conformance(root, vocab=None, exempt=None):
+    """チェック12を実行し、違反メッセージ一覧を返す。"""
+    vocab = CONTRACT_VOCAB if vocab is None else vocab
+    exempt = CONTRACT_VOCAB_EXEMPT if exempt is None else exempt
+    errors = []
+    for unit, files in sorted(_conformance_units(root).items()):
+        if unit in exempt:
+            continue
+        texts = []
+        linked = set()
+        for path in files:
+            text = _read(path)
+            texts.append(text)
+            for link in extract_md_links(text):
+                if not is_checkable_link(link):
+                    continue
+                target = os.path.normpath(
+                    os.path.join(os.path.dirname(path), link))
+                linked.add(os.path.relpath(target, root).replace(os.sep, "/"))
+        for contract_rel, tokens, min_distinct in vocab:
+            used = sorted(t for t in tokens if any(t in x for x in texts))
+            if len(used) < min_distinct or contract_rel in linked:
+                continue
+            errors.append(
+                f"[contract] {unit} が契約語彙 {'/'.join(used)} を使用しているが "
+                f"{contract_rel} への md リンクがない（参照を張るか、意図的な別体系なら "
+                f"validate_repo.py の CONTRACT_VOCAB_EXEMPT に理由付きで登録）"
+            )
+    return errors
 
 
 def extract_command_refs(text):
@@ -385,6 +463,9 @@ def run_checks(root):
                     f"[description] トリガー語がない（「〜で起動」/ \"Use when\" 等）: "
                     f"{rel}/SKILL.md"
                 )
+
+    # 12. 共有契約語彙の適合
+    errors += check_contract_conformance(root)
 
     return errors
 

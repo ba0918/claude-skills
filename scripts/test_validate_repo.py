@@ -14,6 +14,7 @@ from validate_repo import (
     find_broken_symlinks,
     resolve_codex_source,
     check_sync_manifest,
+    check_contract_conformance,
 )
 
 
@@ -169,6 +170,79 @@ class TestCheckSyncManifest(unittest.TestCase):
         errors = check_sync_manifest(self.PAIRS, manifest, hashes)
         self.assertEqual(len(errors), 1)
         self.assertIn("source が不一致", errors[0])
+
+
+class TestCheckContractConformance(unittest.TestCase):
+    """チェック12: 契約語彙を使う unit（skill dir / command file）は契約を md リンクすること。"""
+
+    VOCAB = [
+        ("skills/shared/references/fake-contract.md",
+         ("ALPHA_ONE", "ALPHA_TWO", "ALPHA_THREE"), 2),
+    ]
+
+    def _write(self, root, rel, content):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def _base(self, root):
+        self._write(root, "skills/shared/references/fake-contract.md",
+                    "ALPHA_ONE / ALPHA_TWO / ALPHA_THREE の定義。")
+
+    def test_usage_without_link_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, "skills/a/SKILL.md",
+                        "findings を ALPHA_ONE と ALPHA_TWO に分類する。")
+            errors = check_contract_conformance(root, vocab=self.VOCAB, exempt={})
+            self.assertEqual(len(errors), 1)
+            self.assertIn("skills/a", errors[0])
+            self.assertIn("fake-contract.md", errors[0])
+
+    def test_link_in_any_unit_file_satisfies(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, "skills/a/SKILL.md",
+                        "分類は ALPHA_ONE / ALPHA_TWO。詳細は references を参照。")
+            self._write(root, "skills/a/references/detail.md",
+                        "[契約](../../shared/references/fake-contract.md) に従う。")
+            self.assertEqual(
+                check_contract_conformance(root, vocab=self.VOCAB, exempt={}), [])
+
+    def test_below_min_distinct_is_not_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, "skills/a/SKILL.md", "ALPHA_ONE だけ言及する。")
+            self.assertEqual(
+                check_contract_conformance(root, vocab=self.VOCAB, exempt={}), [])
+
+    def test_command_file_is_its_own_unit(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, "commands/x.md", "ALPHA_ONE と ALPHA_THREE を使う。")
+            self._write(
+                root, "commands/y.md",
+                "ALPHA_ONE と ALPHA_THREE を使う。"
+                "[契約](../skills/shared/references/fake-contract.md) 参照。")
+            errors = check_contract_conformance(root, vocab=self.VOCAB, exempt={})
+            self.assertEqual(len(errors), 1)
+            self.assertIn("commands/x.md", errors[0])
+
+    def test_exempt_unit_is_skipped(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, "skills/a/SKILL.md", "ALPHA_ONE と ALPHA_TWO。")
+            self.assertEqual(
+                check_contract_conformance(
+                    root, vocab=self.VOCAB,
+                    exempt={"skills/a": "理由"}), [])
+
+    def test_shared_contract_files_are_not_units(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)  # 契約自身が語彙を全部含むが unit ではない
+            self.assertEqual(
+                check_contract_conformance(root, vocab=self.VOCAB, exempt={}), [])
 
 
 if __name__ == "__main__":
