@@ -4,6 +4,25 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.37.0
+
+ループエンジニアリング基盤の後半2ピッチ + スコープ明文化。
+
+- **計測 identity 統一（measurement-identity.md）**: 5つの計測系（polling TickResult /
+  skill-regression ledger / trigger-eval / skill-improve / cycle 結果）を
+  `skill × surface_sha256（挙動面 fingerprint）× run_id` の identity triple で結合する共通契約。
+  イベントは `docs/loop/events.jsonl` に append-only で記録し、
+  `measurement_identity.py report --skill X` が instruction バージョン別の成功率と
+  直近改稿の効果差分を1コマンドで出す。No new silos rule 付き
+- **goal-loop スキル新規作成 + convergence-pattern 共有契約**: polling-pattern（キュー消化型）の
+  姉妹契約として条件収束型ループを新設。oracle_files のハッシュロック + 毎イテレーション verify で
+  「テストを弱めて合格」する oracle-gaming を `oracle_tampered` halt で機械的に遮断
+  （ループ内 manifest 更新 API は存在させない）。failure signature による stall / oscillation
+  検出、maker/checker 分離（oracle 実行はコントローラのみ）。純関数 40 unittest
+- **skill-regression の Codex スコープ明文化**: `codex-skills/` が回帰対象外である理由
+  （fixture 再生は Claude Agent ランタイム前提、本文同期は codex-sync が担保）と
+  拡張時の順序（実行手段 → 検出範囲）を意図的 non-goal として SKILL.md に明記
+
 ## 1.36.0
 
 ループエンジニアリング基盤（出典: Addy Osmani "Loop Engineering"）。polling ループの
