@@ -100,16 +100,18 @@
   },
   "handoff": {
     "file_sha256": {
-      "skills/handoff/SKILL.md": "6483b9af4a386ab304d0d4a6de624d468b138b3181b981e445a3d8d314d24f38",
-      "skills/handoff/fixtures.json": "cab6f73df5c2c095542846d14d71614ba09b780bbb04a58f8d00f0c3598eb3e9"
+      "skills/handoff/SKILL.md": "2098d43cf4dce3392eca312455f1c37afea38a0f79a162cbac07dc1eae481075",
+      "skills/handoff/fixtures.json": "63df31a4874be4a40668a8f8c19122a15851bd5bf966c2b166c1711004565ee0",
+      "skills/shared/references/checkpoint-pattern.md": "0fb0f429108668e687f2d06fabd7c86927aca9ee5809853a2cdae77543a8b43f"
     },
     "result": "accepted-without-run",
     "surface": [
       "skills/handoff/SKILL.md",
-      "skills/handoff/fixtures.json"
+      "skills/handoff/fixtures.json",
+      "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "7670d3d130dd14dd86098390df6c79e6a8b38dcfde9ad86056be3ed36224a269",
-    "verified": "2026-07-07"
+    "surface_sha256": "03163f3ddda108f4ca0de94a39f108711ff226f63d521123984030cc7fb9abcd",
+    "verified": "2026-07-08"
   },
   "issue": {
     "file_sha256": {
@@ -158,11 +160,12 @@
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "ad652a647cf40e0c6a7a09081814e7aef8bac35d94a34a486dbbdfbbdb3c9d37",
-      "skills/plan/fixtures.json": "53aa1c06d65afc4b35f9aa7cbc1b1593243ccea5cf9b2e27eeb8217fffc1b1ff",
+      "skills/plan/SKILL.md": "66f4600a66417bed773ecca2d4d9548f188453c82ad4348f7a22df51143fbf34",
+      "skills/plan/fixtures.json": "5917df82763a6620fe6f50acc653480ae438590023335e5ef8131caddaef2562",
       "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
       "skills/plan/references/status-template.md": "08db3e2d130deaf2c86990228cde0b01c7adbb87f934c84de950e4a250670a0a",
-      "skills/plan/references/status-update-guide.md": "26ebe6b2f5eb48ff06602f0bddf14e18b05c8747d065ea9a58ab10c3d61291c8"
+      "skills/plan/references/status-update-guide.md": "1e2ae4b0bbf0c29e881389dab27b697d2b3e9e3c58b3bbe40ab885e3b8092014",
+      "skills/shared/references/checkpoint-pattern.md": "0fb0f429108668e687f2d06fabd7c86927aca9ee5809853a2cdae77543a8b43f"
     },
     "result": "accepted-without-run",
     "surface": [
@@ -170,9 +173,10 @@
       "skills/plan/fixtures.json",
       "skills/plan/references/plan-template.md",
       "skills/plan/references/status-template.md",
-      "skills/plan/references/status-update-guide.md"
+      "skills/plan/references/status-update-guide.md",
+      "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "811d188a22b4efd07e059f02f97b2ec4fd06edb556e65452a0d1a2fa5fc9d041",
-    "verified": "2026-07-07"
+    "surface_sha256": "18fbb78994a6f46245dcc8cac47bb9415c35922d1dcc9ad267d24e2fda13d624",
+    "verified": "2026-07-08"
   }
 }

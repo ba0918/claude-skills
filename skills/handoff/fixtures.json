@@ -56,6 +56,27 @@
         { "text": "ファイル・ディレクトリを新規作成も削除もしていない", "critical": false }
       ],
       "notes": "docs/handoff/ 不在時の not-found 分岐を固定する edge。"
+    },
+    {
+      "id": "ho-004",
+      "title": "restore — handoff 0 件時の checkpoint fallback（read-only・削除しない）",
+      "source": "manual",
+      "executor_model": "sonnet",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "docs/status.md": "# Project Status\n\n**Last Updated:** 2026-06-01 09:30:00\n\n---\n\n## 🎯 Current Session\n\n| Cycle ID | Feature | Started | Phase | Plan |\n|----------|---------|---------|-------|------|\n| `20260601090000` | Foo Refactor | 2026-06-01 09:00:00 | 🔵 Implementing | [plan](./plans/20260601090000_foo-refactor.md) |\n\n**Current Focus:**\nfoo モジュールのリファクタ中。\n\n---\n\n## 🔗 Quick Links\n\n- [All Plans](./plans/)\n",
+          "docs/plans/20260601090000_foo-refactor.md": "# Foo Refactor\n\n## Overview\nfoo モジュールのリファクタ。\n\n## Progress\n- [ ] 実装\n",
+          "docs/plans/checkpoints/20260601090000.md": "---\ncycle_id: \"20260601090000\"\nowner: manual-session\nmode: normal\nwritten_at: 2026-06-01T09:30:00+09:00\nbase_head: 0000000000000000000000000000000000000000\ndirty_fingerprint: sha256:0000000000000000000000000000000000000000000000000000000000000000\ndirty_files:\n  - src/foo.py\nverify_on_restore: []\n---\n## decision\nnone\n\n## evidence\nObserved 09:25: pytest exited 0\n\n## next\nsplit foo into two modules\n"
+        }
+      },
+      "prompt": "前セッションからの引き継ぎを復元して。",
+      "requirements": [
+        { "text": "docs/handoff/ に handoff ファイルが 0 件のため、docs/status.md の active plan（20260601090000）の checkpoint fallback に入っている（即 not-found 終了していない）", "critical": true },
+        { "text": "checkpoint.py classify を実行し verdict で分岐している（base_head 不一致のため superseded と判定し削除を提案、自動削除していない）", "critical": true },
+        { "text": "checkpoint ファイル docs/plans/checkpoints/20260601090000.md が restore 後も削除されずに残っている（fallback は read-only）", "critical": true }
+      ],
+      "notes": "handoff restore の checkpoint fallback を固定する edge。handoff 0 件のときだけ走り、checkpoint が唯一の情報源。fixture の base_head 全ゼロで superseded が決定的。handoff の『読了後削除』を checkpoint に波及させない read-only 規律を凍結する。"
     }
   ]
 }

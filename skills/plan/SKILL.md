@@ -155,6 +155,32 @@ Use when user wants to resume from previous session:
    - Show current focus description
    - Guide user on next steps based on phase
 
+2.5. **Restore execution-state checkpoint (if any)**
+
+   plan resume では checkpoint は**補助情報**である。共有契約
+   [../shared/references/checkpoint-pattern.md](../shared/references/checkpoint-pattern.md)
+   に従い、以下を実行する（verdict 表・優先順位・セキュリティ規約の正本は契約側。ここでは重複記載しない）:
+
+   - `docs/plans/checkpoints/{cycle_id}.md` が**存在すれば**、
+     `python3 skills/shared/scripts/checkpoint.py classify --file docs/plans/checkpoints/{cycle_id}.md`
+     を実行し、出力 verdict と終了コードで分岐する。存在しなければ何もせず通常 resume を続行する。
+   - **分岐**:
+     - `valid` (exit 0): checkpoint の `decision` / `next` を復元の起点として提示する。ただし
+       `evidence` は **historical（過去観測）** と明示ラベルし、`verify_on_restore` は**表示のみ**
+       （自動実行しない）で案内する。valid でも verification-gate はスキップしない。
+     - `stale` (exit 10): 叙述は参考扱い。現在の diff から状態を再構成するよう促す。
+     - `superseded` (exit 11): HEAD が前進済み。checkpoint の**削除を提案**する（ユーザー確認つき・
+       **自動削除しない**）。出力に `dirty_overlap` があれば「現 dirty set と重なりあり」と併記する。
+     - `degraded` (exit 12): dirty set と HEAD 以外は信用しない旨を提示（v1 では通常 emit されない）。
+     - `conflict` (exit 13, parse / semantic): **警告して無視し、通常 resume を続行する**
+       （壊れた補助ファイルが正常な resume をブロックしてはならない — 呼び出し側の非対称）。
+   - **エッジ分岐**:
+     - **active session なし** / status.md に対応する Current Session がない場合でも、cycle_id が判れば
+       checkpoint パスは計算できる。ファイルがあれば上記どおり classify する。
+     - **orphan checkpoint**（status.md に対応 cycle_id がないが checkpoint ファイルは在る）: 警告した上で
+       `stale` 相当（叙述は参考）として提示する。
+   - checkpoint は resume では**削除しない**（read-only）。削除は superseded 時の提案のみ。
+
 3. **Confirm readiness**
    ```
    📋 Current Session Loaded!
@@ -198,7 +224,25 @@ Use when user wants to update implementation progress:
    - Update "Last Updated" timestamp
    - The "Completed" timestamp is the current time at the moment this update is executed (obtained via the `date` command) — never estimate or backdate it to when the user believes they finished
 
-4. **Confirm update**
+4. **Exit condition — write an execution-state checkpoint if leaving work dirty**
+
+   Status Update は checkpoint 書き出しの**副トリガー**である（主トリガーは handoff save）。
+   共有契約 [../shared/references/checkpoint-pattern.md](../shared/references/checkpoint-pattern.md)
+   に従い、更新後に以下を判定する:
+
+   - `git status --porcelain=v1` が**非空のまま**セッションを終える場合（＝ clean に commit して終わらない）、
+     checkpoint 骨格を生成する:
+     `python3 skills/shared/scripts/checkpoint.py skeleton --cycle-id {cycle_id} --owner manual-session --written-at $(date -Iseconds) --output`
+   - 骨格生成後、叙述 2 文（`## decision` = plan からの逸脱判断 1 文 / `## next` = 次の一手 1 個）だけを
+     LLM が埋める。`## evidence` は観測コマンド + タイムスタンプ必須（例: `Observed 01:25: <cmd> exited 0`）。
+   - 機械フィールド（`dirty_files` / `dirty_fingerprint` / `base_head`）はスクリプトが git から生成する。
+     手で書かない。`dirty_files` は `secret_detect.mask_secrets` 通過済み。
+   - clean に commit して終わる場合は checkpoint を**書かない**（成功時は書かない）。既存 checkpoint が
+     あれば HEAD 前進で自然失効する（削除しない）。
+   - **v1 の限界**: 明示ワークフローを通らず終わるセッション（突然の中断・/clear）では書かれない
+     （契約の v2 スコープ参照）。
+
+5. **Confirm update**
    ```
    ✅ Status updated!
 

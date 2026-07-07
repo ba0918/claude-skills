@@ -213,6 +213,18 @@ Moved to Session History ✅
 Ready for next cycle!
 ```
 
+## Execution-State Checkpoint (derivative, existence-only)
+
+長生きセッションで dirty のまま終わる場合の実行状態復元は
+[../../shared/references/checkpoint-pattern.md](../../shared/references/checkpoint-pattern.md)
+が所有する。status.md に checkpoint の状態フィールドを**持たせない**:
+
+- checkpoint リンクは status.md 上の**維持義務のある状態フィールドにしない**。存在時に触れるとしても
+  「存在するときだけの派生的 1 行」に留める（`docs/plans/checkpoints/{cycle_id}.md` が在れば言及する程度）。
+- resume 側は `cycle_id` から checkpoint パスを機械的に計算できる（status.md に保存する必要がない）。
+- checkpoint の書き出しは Status Update Workflow の出口条件（SKILL.md § Status Update Workflow の
+  「Exit condition」）で行い、`git status --porcelain=v1` 非空のまま終わるときだけ生成する。
+
 ## Example: Full Update Flow
 
 ### Scenario: User finishes Phase 3-1

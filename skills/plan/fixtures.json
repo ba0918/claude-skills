@@ -57,6 +57,28 @@
         { "text": "更新確認（Cycle ID / 新 Phase / 更新時刻）が出力されている", "critical": false }
       ],
       "notes": "Status Update Workflow の Completed 遷移（アーカイブ + Current クリア）を固定する edge。実行環境の worktree はリポジトリ自身のコピーのため docs/session-history.md が既存で、「既存 → 先頭挿入」分岐が通常経路になる（初回 capture で確認済み）。"
+    },
+    {
+      "id": "pl-004",
+      "title": "resume — checkpoint 分岐（HEAD 前進済み = superseded、自動削除しない）",
+      "source": "manual",
+      "executor_model": "sonnet",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "docs/status.md": "# Project Status\n\n**Last Updated:** 2026-06-01 09:30:00\n\n---\n\n## 🎯 Current Session\n\n| Cycle ID | Feature | Started | Phase | Plan |\n|----------|---------|---------|-------|------|\n| `20260601090000` | Foo Refactor | 2026-06-01 09:00:00 | 🔵 Implementing | [plan](./plans/20260601090000_foo-refactor.md) |\n\n**Current Focus:**\nfoo モジュールのリファクタ中。\n\n---\n\n## 🔗 Quick Links\n\n- [All Plans](./plans/)\n",
+          "docs/plans/20260601090000_foo-refactor.md": "# Foo Refactor\n\n## Overview\nfoo モジュールのリファクタ。\n\n## Progress\n- [ ] 実装\n",
+          "docs/plans/checkpoints/20260601090000.md": "---\ncycle_id: \"20260601090000\"\nowner: manual-session\nmode: normal\nwritten_at: 2026-06-01T09:30:00+09:00\nbase_head: 0000000000000000000000000000000000000000\ndirty_fingerprint: sha256:0000000000000000000000000000000000000000000000000000000000000000\ndirty_files:\n  - src/foo.py\nverify_on_restore: []\n---\n## decision\nnone\n\n## evidence\nObserved 09:25: pytest exited 0\n\n## next\nsplit foo into two modules\n"
+        }
+      },
+      "prompt": "前回の続きから。resume して。",
+      "requirements": [
+        { "text": "docs/plans/checkpoints/20260601090000.md の存在を検知し、checkpoint.py classify を実行して verdict で分岐している（checkpoint を無視して素通りしていない）", "critical": true },
+        { "text": "base_head が現在 HEAD と一致しないため superseded と判定し、checkpoint の削除を『提案』している（自動削除していない）", "critical": true },
+        { "text": "checkpoint ファイル docs/plans/checkpoints/20260601090000.md が resume 後も削除されずに残っている（read-only）", "critical": true },
+        { "text": "通常の resume（Cycle ID / Feature / Phase / Plan リンクの提示）も併せて行われている", "critical": false }
+      ],
+      "notes": "plan resume の checkpoint 統合を固定する edge。fixture の base_head は全ゼロの偽 sha なので worktree の実 HEAD と必ず不一致 → superseded が決定的に出る。superseded 時の『削除は提案のみ・自動削除しない』read-only 規律を凍結する。"
     }
   ]
 }
