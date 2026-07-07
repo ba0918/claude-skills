@@ -45,8 +45,12 @@ list_ready(effective_parallel)  # claim 数自体を物理上限に合わせる
 
 例:
 ```
-schedule create --cron "*/10 * * * *" --command "/github-issue-polling"
+schedule create --cron "*/10 * * * *" --command "/github-issue-polling --stateless"
 ```
+
+> **必ず `--stateless` を付けること**: cron 起動は 1 invocation = 1 tick でプロセスが毎回死ぬため、
+> `--stateless` なしでは `max_iter` / `max_wallclock` / `failed_streak` の 3 重ガードが毎回リセットされ実質無効になる
+> （共通契約 [`§6.5 Tick Session`](../../shared/references/polling-pattern.md#65-tick-session-ステートレス実行の-safety-brake-永続化) 参照）。
 
 ## Override Example
 

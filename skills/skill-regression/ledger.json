@@ -31,5 +31,57 @@
     ],
     "surface_sha256": "f511067ad0a9a5a582ff557e762f2a148391bab153be88fd69223d9a446e43b3",
     "verified": "2026-07-07"
+  },
+  "github-issue": {
+    "file_sha256": {
+      "skills/github-issue/SKILL.md": "09f27fabd3b7c829f9c783ed3ae9bca52152c899286b2b898c639b5f2e87960e",
+      "skills/github-issue/fixtures.json": "d3018eb6e283bb8df58aa5b139c0ce9e334f25b58d7c516ce1e6b5490960ecea",
+      "skills/github-issue/references/cleanup-spec.md": "95125e8c661ac6d9b20dffaaaf8c12afc6d777aa29bde234a82b4267e86ef095",
+      "skills/github-issue/references/codex-review-loop.md": "19e54be0fe9d1f92c344b81fee0584d0833171ddd98ecbabb21d3ad533225323",
+      "skills/github-issue/references/config-defaults.md": "c1ec30f3dacc15715d0f1863a20f8382c458126a5ae5c6c924f5408a0c71b079",
+      "skills/github-issue/references/gh-commands.md": "b78291b2c1bf34b866084fd1b79e86de8e3a720b14e0af7b33ac03198e186206",
+      "skills/github-issue/references/label-spec.md": "1f37a70d4e827aef55912f61eeefde9d4030424bca495232b2fcc545ef55fe59",
+      "skills/github-issue/references/polling-adapter.md": "7b72b7c17ed97b790011f6c026a34bce5abd9bc0ded52de91473104e70109702",
+      "skills/github-issue/references/secret-scanner.md": "5e1df48668b3c11183e46e9c18a15a3622c579292394df5125a740805472f62b",
+      "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
+      "skills/shared/references/polling-pattern.md": "3b4a46525e64daf941d736d91934492886aa62818863028ebb05040af1eaefa0"
+    },
+    "result": "accepted-without-run",
+    "surface": [
+      "skills/github-issue/SKILL.md",
+      "skills/github-issue/fixtures.json",
+      "skills/github-issue/references/cleanup-spec.md",
+      "skills/github-issue/references/codex-review-loop.md",
+      "skills/github-issue/references/config-defaults.md",
+      "skills/github-issue/references/gh-commands.md",
+      "skills/github-issue/references/label-spec.md",
+      "skills/github-issue/references/polling-adapter.md",
+      "skills/github-issue/references/secret-scanner.md",
+      "skills/shared/references/codex-integration.md",
+      "skills/shared/references/polling-pattern.md"
+    ],
+    "surface_sha256": "21fb3d509da0bc5afa0af52de78ffdf954054e2da4d306ff9065907465a9566e",
+    "verified": "2026-07-07"
+  },
+  "issue": {
+    "file_sha256": {
+      "skills/issue/SKILL.md": "06cacff67eaff3ac8f92d7fd922064df41d3e8bec8059bc4f040edfa0c46ed2c",
+      "skills/issue/fixtures.json": "9f23acb778b8246616a0342599d23bb1e2022467b1ff7324375ec1340edc5508",
+      "skills/issue/references/issue-template.md": "9ba616322895f24ee0f277c4fc13cfa44b382a834dabe36b426939b131ec0eb0",
+      "skills/issue/references/polling-state-machine.md": "438c727257fe038f431d1fdd16a32169d50f241835e669e4dc42b300e55b5193",
+      "skills/issue/references/polling-state.md": "95e7272da0c54adb2ca190c7511b3b6eee25406ab8835a044ac412b8bd331957",
+      "skills/shared/references/polling-pattern.md": "3b4a46525e64daf941d736d91934492886aa62818863028ebb05040af1eaefa0"
+    },
+    "result": "accepted-without-run",
+    "surface": [
+      "skills/issue/SKILL.md",
+      "skills/issue/fixtures.json",
+      "skills/issue/references/issue-template.md",
+      "skills/issue/references/polling-state-machine.md",
+      "skills/issue/references/polling-state.md",
+      "skills/shared/references/polling-pattern.md"
+    ],
+    "surface_sha256": "dc0d20d7347895fece14309e302fa0a68b4c84966a617d580f773b55e6394cea",
+    "verified": "2026-07-07"
   }
 }

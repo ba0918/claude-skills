@@ -22,7 +22,7 @@
 
 ## Interface Table
 
-共通契約 [§3 Interface Table](../../shared/references/polling-pattern.md#3-interface-table-state-adapter-契約) の 11 メソッドをすべて実装する。下表は Label adapter の実装マッピング詳細版。
+共通契約 [§3 Interface Table](../../shared/references/polling-pattern.md#3-interface-table-state-adapter-契約) の 13 メソッドをすべて実装する。下表は Label adapter の実装マッピング詳細版。
 
 | Interface (§3) | Label adapter 実装 |
 |---|---|
@@ -37,6 +37,8 @@
 | `archive_month_boundary()` | §`archive_month_boundary()` |
 | `rollback_orphans(now)` | §`rollback_orphans(now)` |
 | `sanitize_slug(raw)` | §`sanitize_slug(raw)` |
+| `load_session()` | §`load_session() / save_session(session)` |
+| `save_session(session)` | §`load_session() / save_session(session)` |
 
 ### list_ready(limit)
 
@@ -150,7 +152,11 @@ mark_failed(slug, kind) -> Result:
 
 ### kill_file_path()
 
-`(<state_root>/.STOP, <state_root>/.STOP.hard)` の絶対パスペアを返す。`state_root` 解決は §`state_root Resolution` を参照。
+`(<state_root>/.STOP.hard, <state_root>/.STOP)` の絶対パスペアを返す（**戻り順 = チェック順**、hard 優先。共通契約 §3 準拠）。`state_root` 解決は §`state_root Resolution` を参照。
+
+### load_session() / save_session(session)
+
+共通契約 §6.5 の tick session。`<state_root>/session.json` を `write_atomic` 手順（§Platform Assumptions）で読み書きする。parse 失敗は FS Retry State と同じ隔離リネーム規約（`.corrupt.{ts}`）に従い `None` 扱い。
 
 ### archive_month_boundary()
 
@@ -197,6 +203,9 @@ is_running(labels) := "claude-running" ∈ labels OR "claude-review" ∈ labels
 ```
 # Precedence: 新ラベルが存在する場合、旧 alias は無視する（stale 残留対策）
 state_of_failure(labels):
+  if "claude-failed-transient" ∈ labels and "claude-failed-permanent" ∈ labels:
+    warn("invalid state: both failure labels present")
+    return PERMANENT                               # invalid state は fail-closed（下記参照）
   if "claude-failed-transient" ∈ labels:  return TRANSIENT
   if "claude-failed-permanent" ∈ labels:  return PERMANENT
   if "claude-failed" ∈ labels:             return PERMANENT  # legacy alias
@@ -328,6 +337,7 @@ def normalize_git_url(url: str) -> str:
   .STOP.hard                            file mode 0600  # hard stop
   .polling-initialized                  file mode 0600  # 初回フラグ
   .last_archive_month                   file mode 0600  # "YYYY-MM" キャッシュ
+  session.json                          file mode 0600  # tick session (共通契約 §6.5、--stateless 時のみ)
   retry/                                dir mode 0700
     {issue_number}.json                 file mode 0600  # {retry_count, last_failed_at, run_id}
   claim/                                dir mode 0700

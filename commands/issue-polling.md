@@ -8,6 +8,7 @@ Skill ツールで `claude-skills:issue` を実行する。引数: `polling $ARG
 
 - `--once` (default): 1 tick のみ実行して終了
 - `--loop`: kill file または safety brake 発動まで tick を繰り返す
+- `--stateless`: cron / scheduler 用の 1 invocation = 1 tick。safety brake カウンタを `session.json` に永続化する（`--loop` と排他、共通契約 §6.5）
 - `--max-parallel N`: 同時 claim 上限（default 4）
 - `--max-iter N`: loop モードでの tick 回数上限（default 10）
 - `--max-wallclock DURATION`: loop モードでの経過時間上限（default 1h）

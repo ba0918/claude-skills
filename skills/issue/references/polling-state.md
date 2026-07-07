@@ -14,8 +14,9 @@
 docs/issues/
   .STOP                          # graceful kill file (契約 §6.1)
   .STOP.hard                     # hard kill file (契約 §6.1)
-  .polling-initialized           # 初回起動ポリシー用マーカー (契約 §10)
+  .polling-initialized           # 初回起動ポリシー用マーカー (契約 §10、作成責務は本節 Note)
   .last_archive_month            # month boundary cache (契約 §9)
+  session.json                   # tick session (契約 §6.5、--stateless 時のみ)
   issue-status.md                # 既存 index (create workflow 互換)
   ready/{slug}.md                # claim 可能
   running/{slug}/
@@ -32,6 +33,14 @@ docs/issues/
 
 既存 `close workflow` の `archives/` フラット配置と共存する（同名衝突は FS 上で発生しえない前提）。
 
+> **`.polling-initialized` の作成責務（Label adapter と同一規約）:** adapter が**初回 tick 成功後**に自動作成する。
+> tick 成功の定義は「`halt_reason` が `None` または `"dry_run"` で完了した時点」。一度作成したら更新しない。
+> ユーザーが手動削除すると次 tick が再度 `--dry-run` 強制になる（意図的な再確認用途）。
+>
+> **`.claim` のシリアライズ形式:** `pid: <int>` と `started_at: <ISO8601>` の 2 行テキスト（この順、他フィールド禁止）。
+> `pid` は **tick 実行主体（polling プロセス）の pid**（委譲先 cycle の pid ではない）。
+> parse 不能な `.claim` は orphan recovery で warn + rollback 対象（安全側）とする。
+
 ---
 
 ## 2. Interface Implementation (契約 §3 の FS 実装)
@@ -40,15 +49,17 @@ docs/issues/
 |---|---|
 | `list_ready(limit)` | `ready/` を `readdir` で走査し `limit` 件見つかり次第 return（**早期打ち切り必須**、全件スキャン禁止） |
 | `claim(slug)` | `mkdir running/{slug}` → `rename ready/{slug}.md running/{slug}/issue.md` → `write running/{slug}/.claim` (pid + started_at)。途中失敗時は Partial Claim Rollback（§4） |
-| `release(slug)` | `rename running/{slug}/issue.md ready/{slug}.md` → `rmdir running/{slug}` |
-| `mark_done(slug)` | `rename running/{slug}/issue.md done/{slug}.md` → `rmdir running/{slug}` |
-| `mark_failed(slug, kind)` | `rename running/{slug}/issue.md failed/{kind}/{slug}.md` → `rmdir running/{slug}` |
+| `release(slug)` | `rename running/{slug}/issue.md ready/{slug}.md` → `rm running/{slug}/.claim` → `rmdir running/{slug}` |
+| `mark_done(slug)` | `rename running/{slug}/issue.md done/{slug}.md` → `rm running/{slug}/.claim` → `rmdir running/{slug}` |
+| `mark_failed(slug, kind)` | `rename running/{slug}/issue.md failed/{kind}/{slug}.md` → `rm running/{slug}/.claim` → `rmdir running/{slug}` |
 | `retry_count(slug)` | frontmatter `retry_count` 読み取り（未定義は 0） |
 | `increment_retry(slug)` | frontmatter `retry_count` を +1 して書き戻し、新値を返す |
-| `kill_file_path()` | `(abspath(state_root/.STOP), abspath(state_root/.STOP.hard))` |
+| `kill_file_path()` | `(abspath(state_root/.STOP.hard), abspath(state_root/.STOP))` — 戻り順 = チェック順（§7） |
 | `archive_month_boundary()` | §5 参照 |
 | `rollback_orphans(now)` | §6 参照 |
 | `sanitize_slug(raw)` | §3 参照 |
+| `load_session()` | `session.json` を read + JSON parse。無ければ `None`、parse 失敗は warn + `{basename}.corrupt.{ts}` に隔離リネームして `None`（新 session 開始） |
+| `save_session(session)` | `session.json.tmp.{pid}` に書き込み → `rename` で atomic 置換（契約 §6.5） |
 
 ---
 
@@ -100,6 +111,9 @@ archive_month_boundary():
   cur_month = now.strftime("%Y-%m")
   cached = read(state_root/.last_archive_month)   # 無ければ ""
   if cached == cur_month: return 0                # ← O(1) early return
+  if cached == "":                                # 初回起動: 過去月が特定できない
+    write(state_root/.last_archive_month, cur_month)
+    return 0                                      # 移動しない (契約 §9。archives/{空文字}/ 防止)
   # 境界跨ぎ: done/ をスキャンして archives/{cached}/ に移動
   moved = move_all(done/*, archives/{cached}/)
   write(state_root/.last_archive_month, cur_month)

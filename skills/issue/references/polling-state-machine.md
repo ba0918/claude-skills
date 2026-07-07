@@ -91,7 +91,38 @@ month_boundary_crossed(now, last_check) = (now.year_month != last_check.year_mon
 
 ---
 
-## 5. 純関数の性質（verification checklist）
+## 5. `session_resume_action(prev, now, config) -> Resume | StartNew | Halt{reason}`
+
+**純関数。** `--stateless` tick の再開判定（契約 §6.5）。`now` は引数注入。
+
+### Full Match Table
+
+| `prev` | 条件 | Output |
+|---|---|---|
+| `None` | — | `StartNew` |
+| `halt_reason == "failed_streak"` | 常に（期限切れでも） | `Halt{failed_streak}`（**sticky**、`session.json` 削除まで拒否） |
+| `halt_reason ∈ {max_iter, max_wallclock}` | `now - started_at <= max_wallclock` | `Halt{halt_reason}` |
+| `halt_reason ∈ {max_iter, max_wallclock}` | `now - started_at > max_wallclock` | `StartNew` |
+| `halt_reason == null` | `now - started_at > max_wallclock` | `StartNew` |
+| `halt_reason == null` | `now - started_at <= max_wallclock` | `Resume` |
+
+---
+
+## 6. `next_session_state(session, tick_result) -> Session`
+
+**純関数。** tick 完了後のカウンタ更新（契約 §6.5）。入力は TickResult のみ（adapter 事情を知らない）。
+
+| tick の結果 | `failed_streak` | `iter_count` |
+|---|---|---|
+| `failed_transient + failed_permanent > 0` かつ `done == 0` | `+1` | `+1` |
+| `done > 0` | `0` にリセット | `+1` |
+| `claimed == 0` または `halt_reason == "dry_run"` | 変更なし | `+1` |
+
+カウンタ更新後の halt 判定（`failed_streak >= limit` → `"failed_streak"`、`now - started_at > max_wallclock` → `"max_wallclock"`、`iter_count >= max_iter` → `"max_iter"`、優先順この順）を `halt_reason` に書き込んで返す。
+
+---
+
+## 7. 純関数の性質（verification checklist）
 
 - [ ] `now` / `random` / ファイル I/O / ネットワーク I/O を一切呼ばない
 - [ ] 同じ入力に対し常に同じ出力を返す
@@ -100,7 +131,7 @@ month_boundary_crossed(now, last_check) = (now.year_month != last_check.year_mon
 
 ---
 
-## 6. 参照
+## 8. 参照
 
 - 共通契約 §2 Transition Table（本ファイルの `transition` は §2 表と完全一致する）
 - 共通契約 §4 Pure Function Signatures
