@@ -132,7 +132,7 @@ commands/codex-sync.md       →  skills/codex-sync/SKILL.md
 | `design-scaffold` | DESIGN.md から machine-readable なデザインシステム（`.design/tokens.json` + `tokens.css` + `lint-config.json` + React theme）を scaffold 生成。DESIGN.md の「値の辞書」を機械的検証可能な schema ベースのシステムに変換する |
 | `design-generate` | ページ定義（`.design/pages/*.json`）+ コンポーネントカタログに基づいて制約付きページ生成。LLM の自由度をコンテンツのみに限定し再現性を保証。生成後に自動 lint 実行 |
 | `design-validate` | Static Lint → Visual Regression (Playwright) → Rubric Judge (LLM) の多段階検証ゲート。weighted average (mechanical 60% / visual 22% / llm-judge 18%) で合否判定。verification-gate 契約準拠の evidence 出力。lint/visual/full/report モード切替 |
-| `design-lint` | プロジェクトのコードベースを `.design/tokens.json` に基づいて lint し、デザイントークン違反（DL001-006 トークン / DL101-103 コンポーネント / DL201-204 ページ構成）を機械的に検出。CI にも組み込み可能 |
+| `design-lint` | プロジェクトのコードベースを `.design/tokens.json` に基づいて lint し、デザイントークン違反（DL001-006 トークン / DL101-103 コンポーネント / DL201-204 ページ構成）を機械的に検出。実体は実行スクリプト `skills/design-lint/scripts/design_lint.py`（標準ライブラリのみ・unittest 付き）で、エージェントは実行と結果解釈のみを担う。終了コード 0/1/2 でそのまま CI に組み込み可能 |
 | `mockup-diff` | 承認済みモックアップ HTML vs 実行中アプリのスクショ比較で実装差異を検出・修正。Phase 0: SETUP でプロジェクトを自動調査しテーラーメイドの比較スクリプトを生成。design-validate がトークン準拠の機械検証なのに対し、mockup-diff は spacing/font/layout の実装品質ラストワンマイルを担当 |
 | `test-driven-development` | TDD (RED-GREEN-REFACTOR) の対話型ガイド。各フェーズで Bash テスト実行を要求し、テストファースト開発を強制。共有契約 `tdd-contract.md` + `verification-gate.md` を参照 |
 | `systematic-debugging` | 4フェーズ構造化デバッグ（Root Cause Investigation → Pattern Analysis → Hypothesis & Testing → Implementation）。investigate の補完として修正まで実行。3回失敗ルールでアーキテクチャ問題を検出 |
