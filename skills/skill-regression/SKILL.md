@@ -52,6 +52,9 @@ description: スキルの「調律済みの挙動」を fixture（シナリオ +
 3. **初回実行**: run ワークフローで全シナリオを実行し、全合格を確認する。
    落ちる fixture をそのまま資産化しない（後続の回帰評価が常に赤くなり、台帳が意味を失う）
 4. **台帳記録**: `python3 {skill_dir}/scripts/ledger.py --update <skill> {repo_root}`
+5. **計測イベント追記**: ledger は最新 1 件しか持たないため、検証イベントの履歴を
+   [measurement-identity.md §4](../shared/references/measurement-identity.md#4-既存系の写像表) に従い追記する:
+   `python3 skills/shared/scripts/measurement_identity.py emit --system skill-regression --event verification --skill <skill> --repo-root {repo_root} --outcome '{"result":"pass","scenarios":N}'`（`--accept` の場合は `"result":"accepted-without-run"`）
 
 ## run — 回帰評価
 
@@ -68,7 +71,7 @@ description: スキルの「調律済みの挙動」を fixture（シナリオ +
 3. **判定**: executor-contract の判定規則で各シナリオを ○/× 判定する。
    スキル単位の合格 = 全シナリオで `[critical]` 要件が全て ○
 4. **報告**: シナリオ別の結果表（合格/不合格・落ちた critical 項目・実行者の不明瞭点自己申告）を提示する
-5. **台帳更新**: 全合格したスキルのみ `--update <skill>`。不合格のスキルは台帳を進めず、
+5. **台帳更新**: 全合格したスキルのみ `--update <skill>`（capture Step 5 と同様に計測イベントも追記する）。不合格のスキルは台帳を進めず、
    原因（スキル側の回帰 or fixture の陳腐化）を切り分けて報告する。
    fixture の陳腐化と判断した場合は fixture を修正して capture からやり直す —
    ただし**シナリオを楽にする方向の修正は禁止**（回帰を隠すだけ）

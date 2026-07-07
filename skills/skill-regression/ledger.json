@@ -34,7 +34,8 @@
   },
   "github-issue": {
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "09f27fabd3b7c829f9c783ed3ae9bca52152c899286b2b898c639b5f2e87960e",
+      "skills/context-audit/references/baseline-format.md": "ed998a2c7fbe69f81b54e28e84e57d51e84d3251bbf3293d7335d86c3126ac81",
+      "skills/github-issue/SKILL.md": "c9128d83e6b6a6650658c9a34e043700b91b0341ce7bcca534714818053e83c7",
       "skills/github-issue/fixtures.json": "d3018eb6e283bb8df58aa5b139c0ce9e334f25b58d7c516ce1e6b5490960ecea",
       "skills/github-issue/references/cleanup-spec.md": "95125e8c661ac6d9b20dffaaaf8c12afc6d777aa29bde234a82b4267e86ef095",
       "skills/github-issue/references/codex-review-loop.md": "19e54be0fe9d1f92c344b81fee0584d0833171ddd98ecbabb21d3ad533225323",
@@ -44,10 +45,21 @@
       "skills/github-issue/references/polling-adapter.md": "7b72b7c17ed97b790011f6c026a34bce5abd9bc0ded52de91473104e70109702",
       "skills/github-issue/references/secret-scanner.md": "5e1df48668b3c11183e46e9c18a15a3622c579292394df5125a740805472f62b",
       "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
-      "skills/shared/references/polling-pattern.md": "3b4a46525e64daf941d736d91934492886aa62818863028ebb05040af1eaefa0"
+      "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
+      "skills/shared/references/loop-engineering.md": "2794e2907e4995042778f10574fe5f7fecc0f2c710d43c484f998b1569961c62",
+      "skills/shared/references/measurement-identity.md": "8067e1d4ff6c56bad37771df5acd2f9e8551effcf74a3384279c167a63320431",
+      "skills/shared/references/orchestration-patterns.md": "9d471e34c145f52a7da2fd625ba8c5b4692e5c0b6f34de473c6c9901fa192b45",
+      "skills/shared/references/polling-pattern.md": "3b4a46525e64daf941d736d91934492886aa62818863028ebb05040af1eaefa0",
+      "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
+      "skills/shared/references/team-config.md": "fc8364e37b5c0a79a4b56c50858f3d63f7270087739359a4283c0575c1df7d28",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
+      "skills/skill-regression/SKILL.md": "dfa64bf94dcf146a25deacdd2459396a07510cef8e75f3c026b70ba28f9c2e09",
+      "skills/skill-regression/references/executor-contract.md": "73158fd5d8c060c0a6238333a2407f1c2b3ef8ce24391850990f1173734844ba",
+      "skills/skill-regression/references/fixture-schema.md": "261097e46ba6b79e4b627037f8d06a0ffb693d6c4470572f6a564b8b91205657"
     },
     "result": "accepted-without-run",
     "surface": [
+      "skills/context-audit/references/baseline-format.md",
       "skills/github-issue/SKILL.md",
       "skills/github-issue/fixtures.json",
       "skills/github-issue/references/cleanup-spec.md",
@@ -58,30 +70,64 @@
       "skills/github-issue/references/polling-adapter.md",
       "skills/github-issue/references/secret-scanner.md",
       "skills/shared/references/codex-integration.md",
-      "skills/shared/references/polling-pattern.md"
+      "skills/shared/references/fix-action-taxonomy.md",
+      "skills/shared/references/loop-engineering.md",
+      "skills/shared/references/measurement-identity.md",
+      "skills/shared/references/orchestration-patterns.md",
+      "skills/shared/references/polling-pattern.md",
+      "skills/shared/references/severity-and-verdicts.md",
+      "skills/shared/references/team-config.md",
+      "skills/shared/references/verification-gate.md",
+      "skills/skill-regression/SKILL.md",
+      "skills/skill-regression/references/executor-contract.md",
+      "skills/skill-regression/references/fixture-schema.md"
     ],
-    "surface_sha256": "21fb3d509da0bc5afa0af52de78ffdf954054e2da4d306ff9065907465a9566e",
+    "surface_sha256": "4e9f2d97c28a245ac64c4dc9b87b3b51c546edae75eb0be7920d06f987f7dfb4",
     "verified": "2026-07-07"
   },
   "issue": {
     "file_sha256": {
-      "skills/issue/SKILL.md": "06cacff67eaff3ac8f92d7fd922064df41d3e8bec8059bc4f040edfa0c46ed2c",
+      "skills/context-audit/references/baseline-format.md": "ed998a2c7fbe69f81b54e28e84e57d51e84d3251bbf3293d7335d86c3126ac81",
+      "skills/issue/SKILL.md": "935ef2e58bcfd43b526a1e6a7109a86bf2a6f1e90f124ae6cb2bcfce2077fe9d",
       "skills/issue/fixtures.json": "9f23acb778b8246616a0342599d23bb1e2022467b1ff7324375ec1340edc5508",
       "skills/issue/references/issue-template.md": "9ba616322895f24ee0f277c4fc13cfa44b382a834dabe36b426939b131ec0eb0",
       "skills/issue/references/polling-state-machine.md": "438c727257fe038f431d1fdd16a32169d50f241835e669e4dc42b300e55b5193",
       "skills/issue/references/polling-state.md": "95e7272da0c54adb2ca190c7511b3b6eee25406ab8835a044ac412b8bd331957",
-      "skills/shared/references/polling-pattern.md": "3b4a46525e64daf941d736d91934492886aa62818863028ebb05040af1eaefa0"
+      "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
+      "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
+      "skills/shared/references/loop-engineering.md": "2794e2907e4995042778f10574fe5f7fecc0f2c710d43c484f998b1569961c62",
+      "skills/shared/references/measurement-identity.md": "8067e1d4ff6c56bad37771df5acd2f9e8551effcf74a3384279c167a63320431",
+      "skills/shared/references/orchestration-patterns.md": "9d471e34c145f52a7da2fd625ba8c5b4692e5c0b6f34de473c6c9901fa192b45",
+      "skills/shared/references/polling-pattern.md": "3b4a46525e64daf941d736d91934492886aa62818863028ebb05040af1eaefa0",
+      "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
+      "skills/shared/references/team-config.md": "fc8364e37b5c0a79a4b56c50858f3d63f7270087739359a4283c0575c1df7d28",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
+      "skills/skill-regression/SKILL.md": "dfa64bf94dcf146a25deacdd2459396a07510cef8e75f3c026b70ba28f9c2e09",
+      "skills/skill-regression/references/executor-contract.md": "73158fd5d8c060c0a6238333a2407f1c2b3ef8ce24391850990f1173734844ba",
+      "skills/skill-regression/references/fixture-schema.md": "261097e46ba6b79e4b627037f8d06a0ffb693d6c4470572f6a564b8b91205657"
     },
     "result": "accepted-without-run",
     "surface": [
+      "skills/context-audit/references/baseline-format.md",
       "skills/issue/SKILL.md",
       "skills/issue/fixtures.json",
       "skills/issue/references/issue-template.md",
       "skills/issue/references/polling-state-machine.md",
       "skills/issue/references/polling-state.md",
-      "skills/shared/references/polling-pattern.md"
+      "skills/shared/references/codex-integration.md",
+      "skills/shared/references/fix-action-taxonomy.md",
+      "skills/shared/references/loop-engineering.md",
+      "skills/shared/references/measurement-identity.md",
+      "skills/shared/references/orchestration-patterns.md",
+      "skills/shared/references/polling-pattern.md",
+      "skills/shared/references/severity-and-verdicts.md",
+      "skills/shared/references/team-config.md",
+      "skills/shared/references/verification-gate.md",
+      "skills/skill-regression/SKILL.md",
+      "skills/skill-regression/references/executor-contract.md",
+      "skills/skill-regression/references/fixture-schema.md"
     ],
-    "surface_sha256": "dc0d20d7347895fece14309e302fa0a68b4c84966a617d580f773b55e6394cea",
+    "surface_sha256": "5c16868e1d0c4249c85b965b2e64f38a3291b9b541b5cc0206a2a30c3a5f8e6e",
     "verified": "2026-07-07"
   }
 }

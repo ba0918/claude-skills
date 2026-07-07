@@ -279,6 +279,13 @@ issue 本文を LLM コンテキストへ渡す際は **必ず** 以下のデリ
 12. **Persist** — Step 11 の結果を受けて adapter で I/O 実行: `adapter.mark_done(slug)` / `adapter.mark_failed(slug, kind)` で状態遷移を永続化（契約 §3）
 13. **Emit TickResult** — 構造化カウンタのみ出力（契約 §7、自由文禁止）。`run_id` + `tick_started_at` をキーに、外部ログと後で相関可能
 14. **Session persist（`--stateless` のみ）** — `next_session_state(session, tick_result)` で カウンタ更新 + halt 判定を計算し、`adapter.save_session()` で永続化（契約 §6.5）
+15. **Measurement event append** — TickResult のカウンタを計測イベントとして追記する（[measurement-identity.md §4](../shared/references/measurement-identity.md#4-既存系の写像表)）:
+    ```bash
+    python3 skills/shared/scripts/measurement_identity.py emit \
+      --system polling-fs --event tick --skill issue --repo-root {repo_root} \
+      --run-id {run_id} --outcome '{"claimed":N,"done":N,"failed_transient":N,"failed_permanent":N,"halt_reason":"..."}'
+    ```
+    失敗しても warn のみで tick 全体は失敗にしない（計測は本処理をブロックしない）
 
 ### Loop Mode
 

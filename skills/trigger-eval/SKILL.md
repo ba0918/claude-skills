@@ -107,6 +107,9 @@ python3 skills/trigger-eval/scripts/aggregate_metrics.py \
 
 `metrics-spec.md` の式で recall / precision / specificity / stability / confusion matrix / invalid_rate を算出。**2 モードの結果は混合せず**、収束・悪化ガードは selection を正・autonomous は参考系列（`metrics-spec.md`「モード軸」）。
 
+計測完了時（各 iter の selection 系列）、対象スキルごとに計測イベントを追記して実行間比較を可能にする（[measurement-identity.md §4](../shared/references/measurement-identity.md#4-既存系の写像表)、推奨）:
+`python3 skills/shared/scripts/measurement_identity.py emit --system trigger-eval --event eval --skill <対象スキル> --repo-root {repo_root} --outcome '{"recall":R,"precision":P,"stability":S}'`
+
 ### Phase 5: 改稿
 
 - ワースト（confusion 上位ペア or recall 最低スキル）に絞って description を改稿（**1 イテレーション 1 テーマ**）。

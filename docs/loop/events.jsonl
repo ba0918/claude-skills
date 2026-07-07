@@ -1,0 +1,2 @@
+{"ts": "2026-07-07T11:42:24.264351+00:00", "system": "skill-regression", "event": "verification", "skill": "issue", "surface_sha256": "5c16868e1d0c4249c85b965b2e64f38a3291b9b541b5cc0206a2a30c3a5f8e6e", "run_id": null, "outcome": {"result": "accepted-without-run"}}
+{"ts": "2026-07-07T11:42:24.286175+00:00", "system": "skill-regression", "event": "verification", "skill": "github-issue", "surface_sha256": "4e9f2d97c28a245ac64c4dc9b87b3b51c546edae75eb0be7920d06f987f7dfb4", "run_id": null, "outcome": {"result": "accepted-without-run"}}

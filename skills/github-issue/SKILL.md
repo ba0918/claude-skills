@@ -125,6 +125,7 @@ claim 3 段防御 / state_root 解決 / error_kind 分類 / rollback 5 段階な
 12. **TickResult emit**: 共通契約 §7 Tick Schema に準拠した構造化カウンタ `{run_id, tick_started_at, claimed, done, failed_transient, failed_permanent, halt_reason?}` を返す。`run_id` / `tick_started_at` を含む全 7 フィールドは不変（共通契約 §7 参照）
 13. **初回 tick 成功時**: `<state_root>/.polling-initialized` を `write_atomic` で作成（次 tick から dry-run 強制解除）
 14. **Session persist（`--stateless` のみ）**: `next_session_state(session, tick_result)` でカウンタ更新 + halt 判定を計算し、`adapter.save_session()` で永続化（共通契約 §6.5）
+15. **Measurement event append**: TickResult のカウンタを計測イベントとして追記する（[measurement-identity.md §4](../shared/references/measurement-identity.md#4-既存系の写像表)）: `python3 skills/shared/scripts/measurement_identity.py emit --system polling-label --event tick --skill github-issue --repo-root {repo_root} --run-id {run_id} --outcome '{TickResult カウンタ JSON}'`。失敗しても warn のみで tick をブロックしない
 
 ### スナップショット境界
 
