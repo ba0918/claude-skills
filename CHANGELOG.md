@@ -4,6 +4,29 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.36.0
+
+ループエンジニアリング基盤（出典: Addy Osmani "Loop Engineering"）。polling ループの
+「発見 → 供給」上流を新設し、自走ループの安全装置を cron 運用まで拡張した3点。
+
+- **polling 回帰 fixture の資産化**: `issue` / `github-issue` に fixtures.json を新規追加
+  （初回 dry-run 強制 / kill file 優先順位 / orphan recovery + fail-safe / state_root 解決 +
+  graceful stop / Label Mapping 判定の5シナリオ）。白紙実行者による全シナリオ合格を台帳に記録し、
+  ループ本体の挙動面変更が CI で検証を強制されるようになった
+- **stateless tick session（polling-pattern §6.5）**: cron / scheduler の 1 invocation = 1 tick
+  実行でも 3 重ガード（max_iter / max_wallclock / failed_streak）を `session.json` で維持。
+  `--stateless` フラグを両 adapter に追加。`failed_streak` halt は sticky（session.json を
+  人間が削除するまで自動再開しない）。fixture 実行者が発見した契約ドリフト6件
+  （kill_file_path 戻り順の契約⇔adapter 不一致、state_of_failure 擬似コードの fail-closed 矛盾、
+  archive 初回の空文字パス穴、.claim 形式未規定、.polling-initialized 作成責務未規定、
+  早期 halt 時の run_id 未定義）も同時修正
+- **loop-triage スキル新規作成 + loop-engineering 共有契約**: センサー（validate_repo 違反 /
+  ledger --check の stale / context-audit findings）を Finding Schema に正規化し、
+  stable finding_id で冪等化（baseline suppression + queue dedup）→ fix_action × severity の
+  純関数 admission → AUTO_FIX 級のみ `docs/issues/ready/` に enqueue して polling に供給する
+  ループ中枢。loop-defining ファイルに触れる finding は fixture 非保有スキルが1つでもあれば
+  inbox 降格する自己修飾ゲート付き（回帰網がある範囲でだけ自動化）。純関数4本 + 111 unittest
+
 ## 1.35.0
 
 ベースライン整備。検証インフラの再実装重複と検査の死角を4点まとめて解消。
