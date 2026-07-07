@@ -17,6 +17,7 @@ from validate_repo import (
     check_contract_conformance,
     collect_link_sources,
     check_relative_links,
+    mentions_name,
 )
 
 
@@ -172,6 +173,33 @@ class TestCheckSyncManifest(unittest.TestCase):
         errors = check_sync_manifest(self.PAIRS, manifest, hashes)
         self.assertEqual(len(errors), 1)
         self.assertIn("source が不一致", errors[0])
+
+
+class TestMentionsName(unittest.TestCase):
+    """チェック7/8のドリフト検出: bare substring だと issue ⊂ github-issue 等が誤合格する。"""
+
+    def test_exact_word_matches(self):
+        self.assertTrue(mentions_name("| issue | issue 管理 |", "issue"))
+        self.assertTrue(mentions_name("`issue` スキル", "issue"))
+
+    def test_longer_hyphenated_name_does_not_match_shorter(self):
+        self.assertFalse(mentions_name("github-issue を使う", "issue"))
+        self.assertFalse(mentions_name("team-plan で計画する", "plan"))
+        self.assertFalse(mentions_name("issue-close を呼ぶ", "issue"))
+
+    def test_path_segments_match(self):
+        self.assertTrue(mentions_name("skills/issue/SKILL.md", "issue"))
+        self.assertTrue(mentions_name("codex-skills/plan/", "plan"))
+
+    def test_plugin_prefix_form_matches(self):
+        self.assertTrue(mentions_name("/claude-skills:issue を実行", "issue"))
+
+    def test_shorter_name_inside_word_does_not_match(self):
+        self.assertFalse(mentions_name("displanned", "plan"))
+
+    def test_hyphenated_skill_name_matches_exactly(self):
+        self.assertTrue(mentions_name("github-issue polling", "github-issue"))
+        self.assertFalse(mentions_name("github-issue2 という別物", "github-issue"))
 
 
 class TestCollectLinkSources(unittest.TestCase):

@@ -361,6 +361,16 @@ def _skill_dirs(root, subdir):
     )
 
 
+def mentions_name(text, name):
+    """text がスキル名 name に word-boundary で言及しているか。
+
+    bare substring だと issue ⊂ github-issue / plan ⊂ team-plan が
+    誤合格するため、英数字とハイフンの連続を1語として境界判定する。
+    """
+    pattern = rf"(?<![A-Za-z0-9-]){re.escape(name)}(?![A-Za-z0-9-])"
+    return re.search(pattern, text) is not None
+
+
 def collect_link_sources(root):
     """チェック5の対象ファイルを集める。
 
@@ -475,10 +485,10 @@ def run_checks(root):
     readme = _read(os.path.join(root, "README.md")) if os.path.isfile(os.path.join(root, "README.md")) else ""
     agents = _read(os.path.join(root, "AGENTS.md")) if os.path.isfile(os.path.join(root, "AGENTS.md")) else ""
     for skill in _skill_dirs(root, "skills"):
-        if skill not in readme:
+        if not mentions_name(readme, skill):
             errors.append(f"[drift] README.md がスキルに言及していない: {skill}")
     for skill in _skill_dirs(root, "codex-skills"):
-        if skill not in agents:
+        if not mentions_name(agents, skill):
             errors.append(f"[drift] AGENTS.md が codex スキルに言及していない: {skill}")
 
     # 9. plugin.json ⇔ marketplace.json バージョン同期
