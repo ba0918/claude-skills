@@ -4,6 +4,37 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.39.0
+
+`rolling-checkpoint` — 長生きセッションの実行状態復元（自動 handoff の再設計）。plan resume /
+handoff restore に「dirty のまま終わった実行状態」の復元を追加。**Claude-only**（plan / handoff の
+Codex 版追随は v2）。
+
+- **共有契約 `checkpoint-pattern.md`**: checkpoint は worktree バックアップではなく現在の git 状態と
+  照合して使う restore ガイド。フォーマット（YAML frontmatter + 固定キー短文）/ 純関数シグネチャ正本 /
+  parse ゲート + semantic 5 分類（valid / stale / superseded / degraded / conflict、優先順位
+  `superseded > conflict > degraded > stale > valid`）/ 所有境界（4 項目）と禁止事項 / 呼び出し側非対称
+  （plan resume は conflict 無視続行・handoff fallback は conflict 停止）/ checkpoint vs handoff 境界 /
+  セキュリティ規約 / v1 カバレッジ限界と v2 スコープを定義。
+- **`skills/shared/scripts/checkpoint.py`**: 純関数群（`compute_fingerprint` / strict `parse_checkpoint` /
+  `classify` / `build_skeleton`）+ skeleton / classify CLI。git 呼び出しは CLI 層のみ（DI）。
+  セキュリティは文書でなくコードで強制 — PyYAML 不使用 strict parser（重複キー・未知 owner/mode・
+  owner⇔mode 不一致・cycle_id `[0-9]{14}` を拒否）/ realpath containment + symlink 拒否 /
+  `secret_detect.mask_secrets` / `verify_on_restore` は `{cmd,args}` 構造のみで**どの verdict でも自動実行しない**
+  （headless では確認プロンプトも出さず表示のみ）。fingerprint は `git status --porcelain=v1 -z` +
+  `git diff HEAD` 全文 + untracked content sha256 を入力にし `--untracked-files=all` で collapsed dir を展開。
+  `test_checkpoint.py` 46 ケース（fingerprint / porcelain -z parse / strict parse / セキュリティ強制 /
+  classify マトリクス / skeleton / exit codes）。
+- **plan / handoff スキル統合**: plan Resume に checkpoint classify 分岐（orphan / parse conflict 無視続行
+  含む）+ Status Update に dirty 出口条件（checkpoint 骨格生成）。handoff save に dirty 時の checkpoint
+  書き出し（主トリガー）+ restore に handoff 0 件時の checkpoint fallback（read-only・削除しない）。
+  plan / handoff の fixtures に checkpoint 分岐 edge（pl-004 / ho-004）を追加。
+- **意図的な非強制**: verdict 語彙（`superseded` 等）は goal-decomposition dossier status との false
+  positive を避けるため validate_repo チェック12に登録せず、遵守は skill-regression fixture で守る。
+- **v2 送り**: PreCompact / PostToolUse hook（runtime 強制）/ plan 不在の `_workspace` fallback /
+  parallel-cycle 多重 writer（契約改訂級）/ measurement `checkpoint_written` イベント（契約改訂級）/
+  Codex 版展開。
+
 ## 1.38.0
 
 `goal-decomposition` スキル新設 — 大枠ゴールを Loop Readiness Dossier にコンパイルする入口。

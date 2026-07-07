@@ -33,7 +33,7 @@
   },
   "codex-skills/handoff/SKILL.md": {
     "source": "skills/handoff/SKILL.md",
-    "source_sha256": "6483b9af4a386ab304d0d4a6de624d468b138b3181b981e445a3d8d314d24f38"
+    "source_sha256": "2098d43cf4dce3392eca312455f1c37afea38a0f79a162cbac07dc1eae481075"
   },
   "codex-skills/investigate/SKILL.md": {
     "source": "skills/investigate/SKILL.md",
@@ -77,7 +77,7 @@
   },
   "codex-skills/plan/SKILL.md": {
     "source": "skills/plan/SKILL.md",
-    "source_sha256": "ad652a647cf40e0c6a7a09081814e7aef8bac35d94a34a486dbbdfbbdb3c9d37"
+    "source_sha256": "66f4600a66417bed773ecca2d4d9548f188453c82ad4348f7a22df51143fbf34"
   },
   "codex-skills/problem-solving/SKILL.md": {
     "source": "skills/problem-solving/SKILL.md",

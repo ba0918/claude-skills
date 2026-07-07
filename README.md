@@ -521,6 +521,7 @@ skills/               # Claude Code 用スキル（ロジック本体）
     ├── design-system-contract.md # デザインシステム検証の共通契約
     ├── orchestration-patterns.md # エージェントオーケストレーション設計契約（endorsed/アンチパターン）
     ├── goal-decomposition-pattern.md # 大枠ゴール → dossier 翻訳層契約（Schema / 決定木 / GD* rule / 写像表）
+    ├── checkpoint-pattern.md     # 実行状態復元契約（fingerprint / parse ゲート + 5 分類 / plan resume・handoff restore 共有）
     └── skill-authoring.md        # スキル執筆仕様（frontmatter 契約 / 執筆原則 / チェックリスト）
 codex-skills/         # Codex CLI 用スキル（Codex ネイティブ API に変換）
 ├── commit/           # 自動コミット（Codex 版）
