@@ -19,3 +19,14 @@ Thumbs.db
 
 # Claude Code artifacts
 *.skill
+
+# issue polling FS adapter のランタイム状態（ホスト固有・揮発物。ready/done/failed は
+# キュー内容＝正当な issue なので ignore しない）
+docs/issues/.polling-initialized
+docs/issues/.last_archive_month
+docs/issues/session.json
+docs/issues/session.json.tmp.*
+docs/issues/session.json.corrupt.*
+docs/issues/.STOP
+docs/issues/.STOP.hard
+docs/issues/running/
