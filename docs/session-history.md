@@ -2,6 +2,7 @@
 
 | Cycle ID | Feature | Started | Completed | Plan |
 |----------|---------|---------|-----------|------|
+| `20260708225136` | Codex 既存スキルの request_user_input を Plan mode 限定バグとして retrofit | 2026-07-08 | 2026-07-08 | [Link](./plans/20260708225136_codex-request-user-input-retrofit.md) |
 | `20260708215304` | goal-loop verify の追加ファイル検出漏れ修正（oracle-gaming 抜け道の封鎖） | 2026-07-08 | 2026-07-08 | [Link](./plans/20260708215304_goal-loop-verify-added-file-detection.md) |
 | `20260708012132` | rolling-checkpoint — 長生きセッションの実行状態復元（自動 handoff の再設計） | 2026-07-08 | 2026-07-08 | [Link](./plans/20260708012132_rolling-checkpoint-session-state.md) |
 | `20260707222735` | goal-decomposition スキル新規作成（大枠ゴール → Loop Readiness Dossier コンパイラ） | 2026-07-07 | 2026-07-07 | [Link](./plans/20260707222735_goal-decomposition-loop-intake.md) |
