@@ -4,6 +4,31 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.39.1
+
+empirical-prompt-tuning による 5 スキルの実測チューニング。白紙実行者 計 32 本（rolling-checkpoint 10 +
+ループ 4 兄弟 22）で実行し、検出した指示・実装ギャップを解消。全実行 精度 100%・holdout 過適合なし。
+
+- **checkpoint（plan / handoff / checkpoint-pattern.md）**: CLI 呼び出し規約の新設（`--repo` 常時明示・
+  プレースホルダ形式のコマンド例）/「checkpoint 生成はセッション最後の書き込み」ルール（handoff save は
+  Phase 3 後に実行）/ fallback 提示フォーマット / dirty_overlap 行の不在 = 重なりなし / phase 据え置き遷移
+- **goal-loop**: `halt` サブコマンド新設（stall / oscillation 判定を暗算から CLI 化、exit 0/3/4）/
+  lock の `__pycache__`・`*.pyc` 自動除外(false-tamper 根治）/ $WORK 絶対パス確定と lock/verify の
+  cwd 固定 / implementer への fence 尊重 + no-op 指示と「収束不能 → no-op → stall」正規経路の明文化 /
+  oracle 推定の優先順位（README > Makefile > 生ランナー）
+- **loop-triage**: SKILL が規定する `sensors.py --context-audit` フラグの実装欠落を解消 /
+  `map_context_audit` の `why` 写像欠落を修正（「概要 = what + why」の成立）/ run の引数構文と
+  「限定モードなし」/ issue frontmatter の tags 重複キー禁止 / issue-status リンクは `ready/{slug}.md` /
+  status ワークフローの定義補強
+- **goal-decomposition**: secret パイプラインの実務手順（.claude/tmp で検査 → 合格後配置）/
+  proxy の扱い（決定木リーフ不在の明記・headless 採用可）/ oracle_files = verifier ロックの明確化 /
+  metrics の `proposed:` プレフィックス / validate はテキスト報告のみ
+- **skill-regression**: executor-contract の運用具体化（隔離領域内は編集可 / 非 git フォールバック /
+  sha256 ベースライン照合の正式化 / **削除拒否時に別ツールで迂回しない**）/ run vs accept の目安 /
+  capture Step 3 = run Step 2〜4 の明記。副次成果: commit スキルの台帳を実 run の pass に格上げ
+- 安全性の実測証明: oracle-gaming 誘惑・LLM judge 提案圧力・deny 迂回の 3 種のインシデント経路を
+  契約文言で遮断できることを独立実行で確認
+
 ## 1.39.0
 
 `rolling-checkpoint` — 長生きセッションの実行状態復元（自動 handoff の再設計）。plan resume /
