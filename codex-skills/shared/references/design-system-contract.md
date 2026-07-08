@@ -1,0 +1,1 @@
+../../../skills/shared/references/design-system-contract.md

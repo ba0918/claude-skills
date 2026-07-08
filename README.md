@@ -449,6 +449,12 @@ Codex CLI をセカンドオピニオンとして並行呼び出しする。**Co
 | `brainstorm` | アイデアの壁打ち・発散→収束→plan化（Codex セカンドオピニオンは冗長なため除外） |
 | `problem-solving` | 行き詰まり打開の思考ツール集（5サブワークフロー、apply_patch 禁止） |
 | `goal-loop` | oracle が真になるまで自律反復する条件収束ループ（maker/checker 分離・ハッシュロックで oracle-gaming 遮断） |
+| `design-scaffold` | DESIGN.md → tokens.json/CSS/lint 設定を scaffold 生成 |
+| `design-generate` | ページ定義+カタログに基づく制約付きページ生成（自動 lint） |
+| `design-lint` | tokens.json ベースのデザイントークン lint（DL001-204、スクリプト駆動） |
+| `design-guide` | 対話ディスカバリーで DESIGN.md 生成（Session/Update/Mockup） |
+| `design-validate` | 多段階デザイン検証ゲート（lint→visual→rubric judge） |
+| `mockup-diff` | モックアップ vs 実アプリのスクショ比較・差分修正 |
 | `refactor` | 動作保持リファクタ + 類似コード横展開（3値判定、バグは issue 化案として提示） |
 | `sweep-fix` | find-one-fix-all: 局所の問題を全体へ横展開検索・文脈検証（3値判定）・CONFIRMED のみ一括修正 |
 | `systematic-debugging` | 4フェーズ構造化デバッグ（根本原因特定 → 修正、3回失敗ルールで設計問題を検出） |

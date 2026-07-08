@@ -31,6 +31,42 @@
     "source": "commands/cycle.md",
     "source_sha256": "789c77467c875e41ca1c1c3fc6e6e1d8ec1f3de7612e01c8a2d4760fa5936714"
   },
+  "codex-skills/design-generate/SKILL.md": {
+    "source": "skills/design-generate/SKILL.md",
+    "source_sha256": "7e5d76eed4b2ef8518c74f9172d692d887e26540cadf0474c0bace6e53a25a8e"
+  },
+  "codex-skills/design-guide/SKILL.md": {
+    "source": "skills/design-guide/SKILL.md",
+    "source_sha256": "5c4b086b8d2b9b1ff22c921fcee7b344bc04ccf8a4f6dcae752380f061ae8735"
+  },
+  "codex-skills/design-guide/references/design-md-template.md": {
+    "source": "skills/design-guide/references/design-md-template.md",
+    "source_sha256": "f429ad90dfc1650e1efe49fceee49ffba3b261be385e0c50487e24ca701fbf81"
+  },
+  "codex-skills/design-guide/references/discovery-questions.md": {
+    "source": "skills/design-guide/references/discovery-questions.md",
+    "source_sha256": "86fbadd5097fc1062f89e726341e23c25586dc761785d3d2a3f4c9c6997bba1b"
+  },
+  "codex-skills/design-lint/SKILL.md": {
+    "source": "skills/design-lint/SKILL.md",
+    "source_sha256": "e34f994d484daa7ae9f822f8f1a42669435d064c79f8f7b05732774d09fc03a2"
+  },
+  "codex-skills/design-lint/references/lint-contract.md": {
+    "source": "skills/design-lint/references/lint-contract.md",
+    "source_sha256": "2a4a1b0981689bbc1d0e0d233c0746023bba8856880c456c87e82bdb36af5465"
+  },
+  "codex-skills/design-scaffold/SKILL.md": {
+    "source": "skills/design-scaffold/SKILL.md",
+    "source_sha256": "0909ef1a42f3c13131cf3fca9356792fb471f43fac836bff95a8d3da03a00c77"
+  },
+  "codex-skills/design-validate/SKILL.md": {
+    "source": "skills/design-validate/SKILL.md",
+    "source_sha256": "e01cce7882fb3a672975eb04257d7ae0072c734fe41c1dc9f7e31f98a5d79eb2"
+  },
+  "codex-skills/design-validate/references/validation-pipeline.md": {
+    "source": "skills/design-validate/references/validation-pipeline.md",
+    "source_sha256": "d8c3533caa3fd8e7ed6a9f21aa6b07452242ca7779aae930babefdc4312c1e69"
+  },
   "codex-skills/doc-check/SKILL.md": {
     "source": "skills/doc-check/SKILL.md",
     "source_sha256": "a0177bb4cdcef0f77113d87ceb40bb6fe8a918057d969b96b8240b9e623cc881"
@@ -66,6 +102,14 @@
   "codex-skills/iterate/references/light-review.md": {
     "source": "skills/iterate/references/light-review.md",
     "source_sha256": "40c32cf5079467c7b71068d604b1faa6066d1d7198d93cafa5f9a485f6f9356a"
+  },
+  "codex-skills/mockup-diff/SKILL.md": {
+    "source": "skills/mockup-diff/SKILL.md",
+    "source_sha256": "2043029f0cb6f54d94eee3d67cb8e7d36f051edae4401755f08f6b3af1e1639a"
+  },
+  "codex-skills/mockup-diff/references/script-requirements.md": {
+    "source": "skills/mockup-diff/references/script-requirements.md",
+    "source_sha256": "02ad9f4f7a9a6939eebea4c9ddc3f423fc8535fd17c923f8bd17ab83d2d8ff99"
   },
   "codex-skills/parallel-cycle/SKILL.md": {
     "source": "skills/parallel-cycle/SKILL.md",

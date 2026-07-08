@@ -285,6 +285,26 @@ EXTRA_SYNC_PAIRS = [
         "codex-skills/shared/references/convergence-pattern.md",
         "skills/shared/references/convergence-pattern.md",
     ),
+    (
+        "codex-skills/design-lint/references/lint-contract.md",
+        "skills/design-lint/references/lint-contract.md",
+    ),
+    (
+        "codex-skills/design-validate/references/validation-pipeline.md",
+        "skills/design-validate/references/validation-pipeline.md",
+    ),
+    (
+        "codex-skills/design-guide/references/design-md-template.md",
+        "skills/design-guide/references/design-md-template.md",
+    ),
+    (
+        "codex-skills/design-guide/references/discovery-questions.md",
+        "skills/design-guide/references/discovery-questions.md",
+    ),
+    (
+        "codex-skills/mockup-diff/references/script-requirements.md",
+        "skills/mockup-diff/references/script-requirements.md",
+    ),
 ]
 
 
