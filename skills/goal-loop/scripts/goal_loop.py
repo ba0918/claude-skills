@@ -16,23 +16,31 @@ CLI として提供する。
 
 CLI:
   lock FILE... --out MANIFEST.json
-      ファイル群を読んで oracle_manifest を JSON 保存する。
-      glob 展開は shell に任せる。ディレクトリを渡すと再帰的に
-      配下の全ファイルを対象にする。
+      ファイル群を読んで v2 manifest（{version:2, roots:[...], files:{...}}）を
+      JSON 保存する。roots は lock に渡した生引数列（走査 root）、files は
+      解決済みの path -> sha256 マップ。glob 展開は shell に任せる。ディレクトリを
+      渡すと再帰的に配下の全ファイルを対象にする。
+      注意: manifest（--out）は **どの lock root の配下にも置かない**こと。root 配下に
+      置くと verify の再走査がそれを「追加ファイル」と見なし常に oracle_tampered に
+      なる（fail-closed だが誤停止する footgun）。SKILL の $WORK/.claude/tmp 慣習で回避。
 
   verify MANIFEST.json
-      現在のファイル状態を再ハッシュして verify_oracle_integrity を行う。
-      ok なら exit 0。tampered なら該当パスを 1 行ずつ stderr に出し exit 2。
+      manifest の roots を **再走査**して current 集合を再構築し、各ファイルを
+      再ハッシュして verify_oracle_integrity を行う。ok なら exit 0。tampered
+      （変更・削除・**追加**）なら該当パスを 1 行ずつ stderr に出し exit 2。
 
-      **非対称性の明記**: 純関数 verify_oracle_integrity は
-      manifest/current の両方向の差分（変更・削除・追加）を検出できるが、
-      この CLI の `current` は manifest に記録されたパスのみを再ハッシュして
-      構築する。そのため、manifest 記録パスの親ディレクトリ配下に
-      "新規追加" されたファイル（lock 後に置かれた新しいファイル）は
-      current 集合に現れず検出されない。lock 時にディレクトリ指定で
-      列挙された「追加」検出は、oracle_manifest/verify_oracle_integrity を
-      直接呼ぶ側（unittest 等）でのみ保証される契約であり、CLI verify は
-      「manifest に載っているものが変更・消失していないか」のみを見る。
+      追加検出について: roots を _collect_paths で再走査するため、ディレクトリ
+      形式で lock された root 配下に lock 後に置かれた新規ファイル（例: 失敗を
+      握りつぶす conftest.py）も current に現れ、manifest に無いパスとして
+      oracle_tampered（exit 2）で検出される。これは契約 convergence-pattern.md
+      §3.3 / §4.2 の「追加をすべて検出」を CLI 層でも満たすためのもの。
+      ただし追加検出はディレクトリ粒度の root にのみ有効（shell glob で個別
+      ファイル列に展開して渡された場合、兄弟ファイルの追加は検出できない）。
+
+      fail-closed: manifest 欠落・読取不能・壊れた JSON・非 dict・v2 型不正・
+      roots 走査中の OSError（symlink ループ等）はすべて exit 2 + stderr で
+      拒否する。旧フラット形式へのフォールバックや exit 1 の取りこぼしは作らない
+      （弱挙動への downgrade 経路 = oracle-gaming の抜け道になるため）。
 
   signature
       stdin から failure_signature を計算して stdout に出力する。
@@ -74,6 +82,36 @@ def verify_oracle_integrity(manifest: dict[str, str], current: dict[str, str]) -
         if path not in manifest:
             tampered.add(path)
     return {"ok": not tampered, "tampered": sorted(tampered)}
+
+
+def parse_manifest_envelope(raw: object) -> tuple[list[str], dict[str, str]]:
+    """v2 manifest エンベロープを型検証し (roots, files) を返す（純関数・fail-closed）。
+
+    manifest は implementer 作業ツリー内に置かれ書込可能なため、型まで厳密に検証する:
+      - `isinstance(raw, dict)` ガード必須。null / [] / str / number を
+        トップレベルに書くと json.loads は成功するが、後続の raw.get() が
+        AttributeError → 未捕捉 exit 1（fail-open）になる。dict でなければ即 ValueError。
+      - version == 2 かつ roots が list かつ files が dict でなければ ValueError。
+      - roots の **各要素が str** であること。要素が非 str（int / null / list 等）だと
+        後段の `Path(arg)` が TypeError を送出し、cmd_verify の except OSError に
+        捕まらず exit 1（fail-open）に漏れる。要素型までここで検証し ValueError に倒す。
+
+    旧フラット形式（version/roots 無し）へのフォールバックは作らない。verify を
+    弱挙動へ downgrade する経路（= oracle-gaming の抜け道）を残さないため、
+    不一致はすべて ValueError（呼び出し側が exit 2 に変換）で拒否する。
+    """
+    if not isinstance(raw, dict):
+        raise ValueError("manifest must be a JSON object")
+    if (
+        raw.get("version") != 2
+        or not isinstance(raw.get("roots"), list)
+        or not isinstance(raw.get("files"), dict)
+    ):
+        raise ValueError("manifest must be v2 {version:2, roots:[...], files:{...}}")
+    roots = raw["roots"]
+    if not all(isinstance(r, str) for r in roots):
+        raise ValueError("manifest roots must be a list of strings")
+    return roots, raw["files"]
 
 
 _TS_RE = re.compile(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[^\s]*")
@@ -148,26 +186,43 @@ def make_loop_result(
 # ---------------------------------------------------------------------------
 
 
+def _is_excluded(rel: Path) -> bool:
+    """oracle 実行の一時生成物か判定する（純関数・セキュリティ上重要）。
+
+    oracle 実行自体が生成・更新する一時生成物は oracle の意味を定義しないため
+    lock/verify から除外する。含めると oracle 実行のたびに（追加検出有効化後は
+    特に）hash や集合が揺れて oracle_tampered の誤検出になる。
+      - bytecode: *.pyc / __pycache__/
+      - hidden: . 始まりのディレクトリ/ファイル（.pytest_cache / .mypy_cache /
+        .ruff_cache / .hypothesis / .coverage / .git 等をまとめてカバー）
+
+    引数 `rel` は **lock root からの相対パス**（ディレクトリ root: relative_to(root) /
+    ファイル root: basename のみ）。絶対パス全体で hidden 判定すると、lock root の
+    祖先に hidden 要素（~/.config, 一時ディレクトリ等）があると locked 配下の正当
+    ファイルまで全除外され manifest が空化する（= verify が常に ok の無防備 fail-open
+    回帰）ため、必ず相対パス要素で評価する。
+    """
+    if rel.suffix == ".pyc":
+        return True
+    return any(part == "__pycache__" or part.startswith(".") for part in rel.parts)
+
+
 def _collect_paths(args: list[str]) -> list[Path]:
     """引数（ファイル or ディレクトリ）を実ファイルパスの一覧に展開する。
 
     ディレクトリは再帰的に配下の全ファイルを対象にする。glob 展開自体は
     shell に任せる想定（このリストは既に個別パスとして渡ってくる）。
     """
-    def _is_build_artifact(p: Path) -> bool:
-        # oracle 実行自体が生成・更新するビルド生成物（bytecode キャッシュ）は
-        # oracle の意味を定義しないため lock から除外する。含めると oracle 実行の
-        # たびに hash が揺れて oracle_tampered の誤検出になる。
-        return p.suffix == ".pyc" or "__pycache__" in p.parts
-
     paths: list[Path] = []
     for arg in args:
         p = Path(arg)
         if p.is_dir():
             for sub in sorted(p.rglob("*")):
-                if sub.is_file() and not _is_build_artifact(sub):
+                if sub.is_file() and not _is_excluded(sub.relative_to(p)):
                     paths.append(sub)
-        elif not _is_build_artifact(p):
+        elif not _is_excluded(Path(p.name)):
+            # ファイル引数は存在確認をしない（削除済みでも append）。verify 側で
+            # read_bytes の OSError を削除として fail-closed 扱いにするため。
             paths.append(p)
     return paths
 
@@ -180,7 +235,14 @@ def cmd_lock(argv: list[str]) -> int:
 
     paths = _collect_paths(ns.files)
     contents = {str(p): p.read_bytes() for p in paths}
-    manifest = oracle_manifest(contents)
+    files = oracle_manifest(contents)
+
+    # v2 manifest: roots（走査 root = lock の生引数）と files（解決済み hash）を
+    # 両方保存する。roots を verify が再走査して追加ファイルを検出する。
+    # roots は str(Path(arg)) で正規化（既存 files キーが str(p) 保存なのと同一挙動。
+    # 相対はそのまま / 絶対はそのまま。新たな cwd 正規化は導入しない）。
+    roots = [str(Path(arg)) for arg in ns.files]
+    manifest = {"version": 2, "roots": roots, "files": files}
 
     out_path = Path(ns.out)
     out_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
@@ -192,17 +254,37 @@ def cmd_verify(argv: list[str]) -> int:
     parser.add_argument("manifest", help="lock で生成した manifest JSON")
     ns = parser.parse_args(argv)
 
-    manifest: dict[str, str] = json.loads(Path(ns.manifest).read_text())
+    # manifest 読取・パース・v2 型検証をまとめて fail-closed（exit 2）にマップする。
+    # read_text の OSError（欠落・読取不能）/ json の ValueError（JSONDecodeError は
+    # ValueError サブクラス）/ parse_manifest_envelope の ValueError（非 dict・型不正・
+    # 旧形式）を区別せず invalid manifest として拒否。旧形式フォールバックは作らない。
+    try:
+        raw = json.loads(Path(ns.manifest).read_text())
+        roots, files = parse_manifest_envelope(raw)
+    except (OSError, ValueError) as exc:
+        print(f"invalid manifest: {exc}", file=sys.stderr)
+        return 2
 
+    # 列挙フェーズ: roots を再走査。rglob はジェネレータを即時実体化するため
+    # symlink ループ・サブディレクトリ権限エラー由来の OSError はここで送出される。
+    # 放置すると exit 1（fail-open）で握りつぶされるため exit 2 に倒す。
+    try:
+        paths = _collect_paths(roots)
+    except OSError as exc:
+        print(f"oracle scan failed: {exc}", file=sys.stderr)
+        return 2
+
+    # 再ハッシュフェーズ: 各ファイルを再ハッシュして current を構築。read_bytes の
+    # OSError（削除・権限・列挙後の race）は current から除外 -> manifest にあって
+    # current にない = 削除として verify_oracle_integrity が exit 2 で検出する。
     current: dict[str, str] = {}
-    for path in manifest:
-        p = Path(path)
-        if p.exists():
-            current[path] = hashlib.sha256(p.read_bytes()).hexdigest()
-        # 存在しない場合は current に含めない -> verify_oracle_integrity が
-        # "manifest にあるが current にない" = 削除として検出する。
+    for p in paths:
+        try:
+            current[str(p)] = hashlib.sha256(p.read_bytes()).hexdigest()
+        except OSError:
+            pass
 
-    result = verify_oracle_integrity(manifest, current)
+    result = verify_oracle_integrity(files, current)
     if result["ok"]:
         return 0
 
@@ -249,7 +331,7 @@ def cmd_halt(argv: list[str]) -> int:
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if not argv:
-        print("usage: goal_loop.py {lock,verify,signature} ...", file=sys.stderr)
+        print("usage: goal_loop.py {lock,verify,signature,halt} ...", file=sys.stderr)
         return 2
 
     command, rest = argv[0], argv[1:]

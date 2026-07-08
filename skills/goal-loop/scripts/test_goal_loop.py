@@ -11,12 +11,16 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import goal_loop
 from goal_loop import (
+    _is_excluded,
+    cmd_verify,
     detect_convergence_halt,
     failure_signature,
     make_loop_result,
     normalize_output,
     oracle_manifest,
+    parse_manifest_envelope,
     verify_oracle_integrity,
 )
 
@@ -94,6 +98,96 @@ class TestVerifyOracleIntegrity(unittest.TestCase):
 
     def test_empty_manifest_and_current_is_ok(self):
         self.assertEqual(verify_oracle_integrity({}, {}), {"ok": True, "tampered": []})
+
+
+class TestParseManifestEnvelope(unittest.TestCase):
+    def test_valid_v2_returns_roots_and_files(self):
+        raw = {"version": 2, "roots": ["tests"], "files": {"tests/a.py": "abc"}}
+        roots, files = parse_manifest_envelope(raw)
+        self.assertEqual(roots, ["tests"])
+        self.assertEqual(files, {"tests/a.py": "abc"})
+
+    def test_valid_v2_empty_roots_and_files(self):
+        roots, files = parse_manifest_envelope({"version": 2, "roots": [], "files": {}})
+        self.assertEqual(roots, [])
+        self.assertEqual(files, {})
+
+    def test_version_not_2_raises(self):
+        with self.assertRaises(ValueError):
+            parse_manifest_envelope({"version": 1, "roots": [], "files": {}})
+
+    def test_version_missing_raises(self):
+        with self.assertRaises(ValueError):
+            parse_manifest_envelope({"roots": [], "files": {}})
+
+    def test_roots_not_list_raises(self):
+        with self.assertRaises(ValueError):
+            parse_manifest_envelope({"version": 2, "roots": "tests", "files": {}})
+
+    def test_files_not_dict_raises(self):
+        with self.assertRaises(ValueError):
+            parse_manifest_envelope({"version": 2, "roots": [], "files": []})
+
+    def test_roots_with_non_string_element_raises(self):
+        # roots は list だが要素が str でない場合、後段の Path(arg) が TypeError を
+        # 送出し、except OSError に捕まらず exit 1（fail-open）になる。純関数側で
+        # 要素型まで検証して ValueError（-> exit 2）に倒す。
+        for bad in ([123], [None], [[]], ["ok", 5], [{"a": 1}]):
+            with self.assertRaises(ValueError):
+                parse_manifest_envelope({"version": 2, "roots": bad, "files": {}})
+
+    def test_legacy_flat_format_raises(self):
+        # 旧フラット形式（パス -> hex のみ、version/roots 無し）は fail-closed で拒否
+        with self.assertRaises(ValueError):
+            parse_manifest_envelope({"tests/a.py": "abc123", "tests/b.py": "def456"})
+
+    def test_non_dict_toplevel_raises(self):
+        # null / [] / str / number をトップレベルに書いても AttributeError で
+        # exit 1 に落ちず、ValueError にマップされること
+        for raw in (None, [], "s", 42, 3.14, True):
+            with self.assertRaises(ValueError):
+                parse_manifest_envelope(raw)
+
+    def test_legacy_manifest_with_files_key_but_no_version_raises(self):
+        # "files" という名の oracle ファイルを含む旧 manifest でも version が無ければ弾く
+        raw = {"files": "somehash", "tests/a.py": "abc"}
+        with self.assertRaises(ValueError):
+            parse_manifest_envelope(raw)
+
+
+class TestIsExcluded(unittest.TestCase):
+    """除外述語は lock root からの **相対パス** で評価する（絶対パス全体で評価すると
+    祖先の hidden 要素で正当ファイルまで全除外され manifest 空化 = fail-open 回帰）。
+    セキュリティ上重要なため純関数として直接検証する。"""
+
+    def test_plain_file_not_excluded(self):
+        self.assertFalse(_is_excluded(Path("test_a.py")))
+
+    def test_nested_plain_file_not_excluded(self):
+        self.assertFalse(_is_excluded(Path("sub/dir/test_b.py")))
+
+    def test_pyc_excluded_at_any_depth(self):
+        self.assertTrue(_is_excluded(Path("a.pyc")))
+        self.assertTrue(_is_excluded(Path("sub/a.pyc")))
+
+    def test_pycache_dir_component_excluded(self):
+        self.assertTrue(_is_excluded(Path("__pycache__/a.txt")))
+        self.assertTrue(_is_excluded(Path("pkg/__pycache__/mod.pyc")))
+
+    def test_hidden_leaf_file_excluded(self):
+        self.assertTrue(_is_excluded(Path(".coverage")))
+
+    def test_hidden_dir_component_excluded(self):
+        self.assertTrue(_is_excluded(Path(".pytest_cache/v/cache/lastfailed")))
+        self.assertTrue(_is_excluded(Path("tests/.mypy_cache/x")))
+
+    def test_git_dir_excluded(self):
+        self.assertTrue(_is_excluded(Path(".git/config")))
+
+    def test_non_hidden_conftest_not_excluded(self):
+        # 主脅威（非 hidden の conftest.py）は除外されないこと
+        self.assertFalse(_is_excluded(Path("conftest.py")))
+        self.assertFalse(_is_excluded(Path("tests/conftest.py")))
 
 
 class TestNormalizeOutput(unittest.TestCase):
@@ -364,10 +458,209 @@ class TestCLI(unittest.TestCase):
             self.assertEqual(r.returncode, 0, r.stderr)
             import json as _json
             manifest = _json.loads(manifest_path.read_text())
-            keys = "\n".join(manifest)
+            # v2 形式: 除外は files キーに対して検査する
+            keys = "\n".join(manifest["files"])
             self.assertIn("test_a.py", keys)
             self.assertNotIn("__pycache__", keys)
             self.assertNotIn(".pyc", keys)
+
+    def _lock(self, roots, manifest_path):
+        return subprocess.run(
+            [sys.executable, str(GOAL_LOOP_PY), "lock", *roots,
+             "--out", str(manifest_path)],
+            capture_output=True, text=True,
+        )
+
+    def _verify(self, manifest_path):
+        return subprocess.run(
+            [sys.executable, str(GOAL_LOOP_PY), "verify", str(manifest_path)],
+            capture_output=True, text=True,
+        )
+
+    def test_lock_outputs_v2_envelope(self):
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td)
+            tests = tdp / "tests"
+            tests.mkdir()
+            (tests / "test_a.py").write_text("def test_a(): assert True\n")
+            manifest_path = tdp / "manifest.json"
+            r = self._lock([str(tests)], manifest_path)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            import json as _json
+            m = _json.loads(manifest_path.read_text())
+            self.assertEqual(m["version"], 2)
+            self.assertEqual(m["roots"], [str(tests)])
+            self.assertIn(str(tests / "test_a.py"), m["files"])
+
+    def test_added_file_in_dir_is_tampered_cli(self):
+        # ディレクトリを lock -> 配下に新規 .py 追加 -> verify exit 2 + stderr にパス
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td)
+            tests = tdp / "tests"
+            tests.mkdir()
+            (tests / "test_a.py").write_text("def test_a(): assert True\n")
+            manifest_path = tdp / "manifest.json"
+            self.assertEqual(self._lock([str(tests)], manifest_path).returncode, 0)
+            self.assertEqual(self._verify(manifest_path).returncode, 0)
+
+            sneaky = tests / "conftest.py"
+            sneaky.write_text("def pytest_collectstart(): pass\n")
+            r = self._verify(manifest_path)
+            self.assertEqual(r.returncode, 2, r.stderr)
+            self.assertIn(str(sneaky), r.stderr)
+
+    def test_added_file_to_empty_dir_cli(self):
+        # ファイル 0 個のディレクトリを lock -> 1 本追加 -> verify exit 2
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td)
+            tests = tdp / "tests"
+            tests.mkdir()
+            manifest_path = tdp / "manifest.json"
+            self.assertEqual(self._lock([str(tests)], manifest_path).returncode, 0)
+            import json as _json
+            m = _json.loads(manifest_path.read_text())
+            self.assertEqual(m["files"], {})
+            self.assertEqual(m["roots"], [str(tests)])
+            self.assertEqual(self._verify(manifest_path).returncode, 0)
+
+            added = tests / "test_new.py"
+            added.write_text("def test_new(): assert True\n")
+            r = self._verify(manifest_path)
+            self.assertEqual(r.returncode, 2, r.stderr)
+            self.assertIn(str(added), r.stderr)
+
+    def test_delete_in_dir_root_cli(self):
+        # ディレクトリ lock 後にファイル削除 -> verify exit 2 で削除パスを列挙
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td)
+            tests = tdp / "tests"
+            tests.mkdir()
+            fa = tests / "test_a.py"
+            fa.write_text("def test_a(): assert True\n")
+            (tests / "test_b.py").write_text("def test_b(): assert True\n")
+            manifest_path = tdp / "manifest.json"
+            self.assertEqual(self._lock([str(tests)], manifest_path).returncode, 0)
+            self.assertEqual(self._verify(manifest_path).returncode, 0)
+
+            fa.unlink()
+            r = self._verify(manifest_path)
+            self.assertEqual(r.returncode, 2, r.stderr)
+            self.assertIn(str(fa), r.stderr)
+
+    def test_delete_file_root_no_crash_cli(self):
+        # ファイルを直接 lock -> そのファイル削除 -> exit 1 でクラッシュせず exit 2
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td)
+            fa = tdp / "test_a.py"
+            fa.write_text("def test_a(): assert True\n")
+            manifest_path = tdp / "manifest.json"
+            self.assertEqual(self._lock([str(fa)], manifest_path).returncode, 0)
+            self.assertEqual(self._verify(manifest_path).returncode, 0)
+
+            fa.unlink()
+            r = self._verify(manifest_path)
+            self.assertEqual(r.returncode, 2, r.stderr)
+            self.assertIn(str(fa), r.stderr)
+
+    def test_oracle_artifacts_no_false_positive_cli(self):
+        # __pycache__/*.pyc と .pytest_cache/（hidden dir）が生成されても verify exit 0
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td)
+            tests = tdp / "tests"
+            tests.mkdir()
+            (tests / "test_a.py").write_text("def test_a(): assert True\n")
+            manifest_path = tdp / "manifest.json"
+            self.assertEqual(self._lock([str(tests)], manifest_path).returncode, 0)
+
+            # oracle 実行が生成する類の生成物を後から作る
+            (tests / "__pycache__").mkdir()
+            (tests / "__pycache__" / "test_a.cpython-312.pyc").write_bytes(b"\x00fake")
+            pytest_cache = tests / ".pytest_cache" / "v" / "cache"
+            pytest_cache.mkdir(parents=True)
+            (pytest_cache / "lastfailed").write_text("{}\n")
+            (tests / ".coverage").write_bytes(b"\x00cov")
+
+            r = self._verify(manifest_path)
+            self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_hidden_ancestor_no_empty_manifest_cli(self):
+        # 祖先に hidden 要素を含む絶対パス配下を lock -> 非 hidden ファイルが files に載る
+        # （相対パス評価により祖先 hidden で全除外されない）+ 追加検出も効く
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td)
+            tests = tdp / ".hidden" / "tests"
+            tests.mkdir(parents=True)
+            (tests / "test_a.py").write_text("def test_a(): assert True\n")
+            manifest_path = tdp / "manifest.json"
+            self.assertEqual(self._lock([str(tests)], manifest_path).returncode, 0)
+            import json as _json
+            m = _json.loads(manifest_path.read_text())
+            self.assertIn(str(tests / "test_a.py"), m["files"])
+            self.assertEqual(self._verify(manifest_path).returncode, 0)
+
+            added = tests / "conftest.py"
+            added.write_text("x = 1\n")
+            r = self._verify(manifest_path)
+            self.assertEqual(r.returncode, 2, r.stderr)
+            self.assertIn(str(added), r.stderr)
+
+    def test_invalid_manifest_fail_closed_cli(self):
+        # 旧フラット / roots 欠落 / 壊れた JSON / 非 dict を verify に渡すと exit 2
+        cases = [
+            '{"tests/a.py": "abc123"}',            # 旧フラット形式
+            '{"version": 2, "files": {}}',          # roots 欠落
+            '{"version": 1, "roots": [], "files": {}}',  # version 不正
+            'not valid json {{{',                   # 壊れた JSON
+            'null',                                 # 非 dict トップレベル
+            '[]',                                   # 非 dict トップレベル
+        ]
+        with tempfile.TemporaryDirectory() as td:
+            for i, body in enumerate(cases):
+                manifest_path = Path(td) / f"m{i}.json"
+                manifest_path.write_text(body)
+                r = self._verify(manifest_path)
+                self.assertEqual(r.returncode, 2, f"case={body!r} stderr={r.stderr}")
+                self.assertIn("invalid manifest", r.stderr, f"case={body!r}")
+
+    def test_non_string_roots_element_fail_closed_cli(self):
+        # roots 要素が非 str の manifest を verify に渡すと exit 1 クラッシュせず exit 2
+        import json as _json
+        with tempfile.TemporaryDirectory() as td:
+            for i, bad in enumerate(([123], [None], [[]])):
+                manifest_path = Path(td) / f"m{i}.json"
+                manifest_path.write_text(
+                    _json.dumps({"version": 2, "roots": bad, "files": {}})
+                )
+                r = self._verify(manifest_path)
+                self.assertEqual(r.returncode, 2, f"bad={bad!r} stderr={r.stderr}")
+                self.assertIn("invalid manifest", r.stderr, f"bad={bad!r}")
+
+    def test_missing_manifest_file_fail_closed_cli(self):
+        r = subprocess.run(
+            [sys.executable, str(GOAL_LOOP_PY), "verify", "/nonexistent/m.json"],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(r.returncode, 2, r.stderr)
+        self.assertIn("invalid manifest", r.stderr)
+
+    def test_enumeration_oserror_fail_closed(self):
+        # 列挙フェーズ（_collect_paths）の OSError が exit 1 に漏れず exit 2 に倒れる。
+        # symlink ループの再現は環境依存なので、列挙関数へ OSError を注入して代替する。
+        import json as _json
+        with tempfile.TemporaryDirectory() as td:
+            manifest_path = Path(td) / "manifest.json"
+            manifest_path.write_text(_json.dumps(
+                {"version": 2, "roots": ["tests"], "files": {"tests/a.py": "abc"}}
+            ))
+            original = goal_loop._collect_paths
+            try:
+                def _boom(_roots):
+                    raise OSError("too many symbolic links encountered")
+                goal_loop._collect_paths = _boom
+                rc = cmd_verify([str(manifest_path)])
+            finally:
+                goal_loop._collect_paths = original
+            self.assertEqual(rc, 2)
 
 
 if __name__ == "__main__":
