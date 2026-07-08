@@ -64,7 +64,7 @@ Sources to collect:
 Scan the plan content for UI/UX signals. If ANY of the following are detected, include Review 7 (UI/UX) in the parallel review:
 
 **Strong signals (any one triggers):**
-- Keywords: "UI", "UX", "component", "screen", "page", "button", "form", "modal", "frontend", "request_user_input", "accessibility", "a11y"
+- Keywords: "UI", "UX", "component", "screen", "page", "button", "form", "modal", "frontend", "会話ターンでの選択肢提示", "accessibility", "a11y"
 - File extensions in affected files: `.tsx`, `.jsx`, `.vue`, `.svelte`, `.css`, `.scss`, `.html`
 
 **Weak signals (2+ required to trigger):**
@@ -141,7 +141,7 @@ Each review applies perspectives in the following priority order:
 
 - Error messages are actionable (what happened, why, how to fix)
 - Progress feedback for long operations
-- request_user_input option design (Hick's Law, clear labels, defaults)
+- Conversational-turn option presentation design (Hick's Law, clear labels, defaults)
 - Output format consistency with existing skills
 - Cancel/abort path design
 - Information hierarchy (summary first, details on demand)

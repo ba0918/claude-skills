@@ -192,7 +192,7 @@ ls -t docs/handoff/*.md 2>/dev/null
 
 ## Prohibited Actions
 
-- **ユーザーへの確認プロンプト**（`request_user_input`） — save / restore / list 全て headless で完走
+- **ユーザーへの確認プロンプト** — save / restore / list 全て headless で完走
 - **`apply_patch` 以外でのファイル作成** — `shell` の `tee` / `cat <<EOF > file` / リダイレクトは使わない
 - **handoff ファイル以外の編集** — save / restore / list のいずれも `docs/handoff/` 配下以外のファイルを書き換えない
 - **`docs/handoff/` 配下の勝手な一括削除** — restore ワークフロー以外で `rm` を叩かない

@@ -179,4 +179,4 @@ Report execution results concisely.
 - Auto-executing `git rebase -i`
 - `git push --force`
 - `git reset --hard`
-- Prompting the user for confirmation (using request_user_input)
+- Prompting the user for confirmation

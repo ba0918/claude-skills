@@ -98,7 +98,7 @@ cat .codex/review-rules.md 2>/dev/null || cat .claude/review-rules.md 2>/dev/nul
 計画内容を plan-reviewer Step 2.5 と同じキーワード検出ロジックでスキャンする。
 
 **Strong signals (any one triggers):**
-- Keywords: "UI", "UX", "component", "screen", "page", "button", "form", "modal", "frontend", "request_user_input", "accessibility", "a11y"
+- Keywords: "UI", "UX", "component", "screen", "page", "button", "form", "modal", "frontend", "会話ターンでの選択肢提示", "accessibility", "a11y"
 - File extensions in affected files: `.tsx`, `.jsx`, `.vue`, `.svelte`, `.css`, `.scss`, `.html`
 
 **Weak signals (2+ required to trigger):**
@@ -237,7 +237,7 @@ Verdict: {verdict}
 ══════════════════════════════════════
 ```
 
-2. `request_user_input` でユーザーの入力を待つ
+2. 会話ターンでユーザーの入力を待つ（`request_user_input` は Plan mode 限定のため使わない）。headless の自動フロー（issue-team-cycle 等）で応答が得られない場合は、チームがレビュー合意済みの計画に対するコメント募集ゲートなので、安全側デフォルトは「続行」で Phase 2 へ進む（これはチーム合意の実行であって未レビュー変更の強行ではない）
 3. ユーザー入力の判定:
    - 「続行」「OK」「問題なし」等 → Phase 2 へ進む
    - それ以外のテキスト → コメントとして扱い、チーム再議論へ

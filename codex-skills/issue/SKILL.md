@@ -55,7 +55,7 @@ If arguments are given as free-form text without flags, extract title from the f
 ### Steps
 
 1. Parse title, summary, tags, and source from the arguments
-2. **Preview & confirmation** — Use `request_user_input` to present the following and obtain user approval before proceeding:
+2. **Preview & confirmation** — Present the following as a conversational-turn question (list the options and ask the user to reply) and obtain user approval before proceeding. **Codex の `request_user_input` は Plan mode 限定（default/exec 不可）のため使わない。** In headless/exec where no reply is available, if a duplicate title match is found, halt instead of auto-creating (do not ignore the duplicate check); with no duplicate the create branch may proceed:
    - Parsed fields: title, summary, tags, source
    - `docs/issues/` directory existence check result
    - If `docs/issues/issue-status.md` exists, scan the Issue column for **exact title matches** of open issues (case-insensitive, after trimming whitespace). List each matching row. Do NOT use substring or fuzzy matching — exact match only.
@@ -125,8 +125,8 @@ This procedure is used by both Plan Workflow and Cycle Workflow. Do NOT duplicat
    - If the file does not exist: Display `No issues have been registered yet` and exit (same message as List Workflow Step 1)
 2. **Issue selection** — behavior depends on the number of open issues (counted as List Workflow Step 3 does — data rows only):
    - **0 issues** (file exists but has zero data rows): Display `No open issues found` and exit
-   - **1 issue**: Use `request_user_input` to confirm with the user. Present the issue details and offer two options: the issue slug (to proceed) and "Cancel" (to abort).
-   - **2+ issues**: Use `request_user_input` to present all issue slugs as options plus "Cancel". Ask the user to select the target issue.
+   - **1 issue**: Confirm with the user via a conversational-turn question. Present the issue details and offer two options: the issue slug (to proceed) and "Cancel" (to abort). In headless/exec where no reply is available, do NOT auto-select — halt unless the target slug was explicitly given as an argument (never run plan→cycle against an arbitrarily chosen issue).
+   - **2+ issues**: Present all issue slugs as options plus "Cancel" via a conversational-turn question. Ask the user to select the target issue. In headless/exec where no reply is available, do NOT auto-select — halt unless the target slug was explicitly given as an argument.
 3. Read the selected issue file (`docs/issues/{slug}.md`)
    - If not found: Display the file list in `docs/issues/` and exit with an error message
 4. Execute `$plan` based on the issue content (title and summary)
@@ -168,11 +168,11 @@ Connect an issue to plan → cycle for resolution.
 
 1. Execute the **Issue → Plan Conversion** procedure above
 2. **Preflight check** — Read the selected issue file and verify the「備考」(Notes) section has meaningful content (not just the placeholder text):
-   - If the section is empty or contains only the default placeholder: Use `request_user_input` to prompt the user for acceptance criteria or additional context. Update the issue file with the provided information before proceeding.
+   - If the section is empty or contains only the default placeholder: Prompt the user for acceptance criteria or additional context via a conversational-turn question. Update the issue file with the provided information before proceeding. In headless/exec where no reply is available, default to "Skip" (this is a non-destructive branch) and proceed without additional context.
    - Options: provide text input, or "Skip" to proceed without additional context
 3. Execute cycle:
    - If `--team` is present in the arguments:
-     1. **Intake** — Use `request_user_input` to collect discussion focus before starting team-cycle:
+     1. **Intake** — Collect discussion focus via a conversational-turn question before starting team-cycle (in headless/exec with no reply, default to "Skip" and use defaults — non-destructive):
         - 期待する議論の焦点（スコープ）
         - 優先的に検討すべき観点（e.g., セキュリティ、パフォーマンス、アーキテクチャ）
         - 禁止事項や制約（任意）
@@ -195,11 +195,11 @@ Close (archive) an issue.
 ### Arguments
 
 - Issue slug (required — the full slug including timestamp prefix, e.g. `20260323143000_fix-login-timeout`)
-- If omitted: Use `request_user_input` to confirm. Follow the same selection logic as the **Issue → Plan Conversion** procedure Step 2.
+- If omitted: Confirm via a conversational-turn question. Follow the same selection logic as the **Issue → Plan Conversion** procedure Step 2. In headless/exec where no reply is available, do NOT auto-select — halt unless the slug was explicitly given.
 
 ### Steps
 
-1. Get the issue slug from arguments. If omitted, use `request_user_input` following the selection logic in **Issue → Plan Conversion** Step 2.
+1. Get the issue slug from arguments. If omitted, select via a conversational-turn question following the selection logic in **Issue → Plan Conversion** Step 2. In headless/exec where no reply is available, do NOT auto-select — halt unless the slug was explicitly given.
 2. Verify the issue file `docs/issues/{slug}.md` exists
    - If not found: List files in `docs/issues/` and display an error message showing available slugs. Exit.
 3. Create the `docs/issues/archives/` directory (if it doesn't exist, use `mkdir -p`)

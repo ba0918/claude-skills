@@ -71,7 +71,7 @@ Count `N = (number of ## Additional Changes sections found) + 1` (current call i
   ```
   ℹ️ This is the 2nd iterate call in this session.
   ```
-- **N >= 3 (3rd+ call)** → Trigger cumulative Large warning via `request_user_input`:
+- **N >= 3 (3rd+ call)** → Present a cumulative Large warning as a conversational-turn question (list the options and ask the user to reply by number). In headless/exec contexts where no reply is available, do not auto-continue — halt on the safe side and suggest `$plan`:
   ```
   ⚠️ Cumulative iterate detected ({N}th call this session)
   Multiple consecutive iterate calls may indicate the task exceeds iterate's scope.
@@ -82,6 +82,7 @@ Count `N = (number of ## Additional Changes sections found) + 1` (current call i
   ```
   - User selects "1" → Proceed to normal size judgment below
   - User selects "2" → Suggest running `$plan` and exit
+  - No reply (headless/exec) → Halt and suggest `$plan` (do not auto-continue)
 
 ### If Small
 
@@ -97,7 +98,7 @@ Proceed to Phase 3.
 
 ### If Large
 
-Use `request_user_input` to let the user decide:
+Present the decision as a conversational-turn question (list the options and ask the user to reply by number). In headless/exec where no reply is available, do NOT auto-execute — halt on the safe side and suggest `$plan` (consistent with the Security posture):
 
 ```
 ── Scope: Large ──
@@ -112,6 +113,7 @@ Options:
 
 - User selects "1" → Proceed to Phase 3 (Large mode)
 - User selects "2" → Suggest running `$plan` and exit
+- No reply (headless/exec) → Halt without implementing and suggest `$plan`
 
 ## Phase 3: Implementation
 
@@ -208,10 +210,10 @@ Plan updated: {plan_file_path}
 ## Important Rules
 
 - **Judge size by actual code impact** — Do not be swayed by the user's expressions like "just a small thing"
-- **Do not block on Large judgment** — Always present options to the user
+- **Large judgment** — In interactive contexts, always present the options as a conversational-turn question. In headless/exec contexts where no reply is available, do not auto-continue to implementation — halt on the safe side and suggest `$plan` (never proceed to a destructive change without confirmation)
 - **If unexpected impact is discovered during implementation, halt and report**. Return path when halted in Phase 3:
-  1. If the newly discovered impact pushes the scope from Small → Large, re-enter Phase 2 with the updated scope and present the Large options to the user via `request_user_input`.
+  1. If the newly discovered impact pushes the scope from Small → Large, re-enter Phase 2 with the updated scope and present the Large options to the user as a conversational-turn question. In headless/exec where no reply is available, halt and suggest `$plan` (do not auto-continue).
   2. If the impact is ambiguous or crosses module boundaries in unforeseen ways, escalate to the user directly (do not auto-resume). Suggest `$plan` as the fallback.
   3. Never silently continue past a halt.
-- **Headless operation**: Do not prompt for confirmation except for user choice on Large judgment and halt escalations
+- **Headless operation**: Confirmation branches are presented as conversational-turn questions only when an interactive channel is available. **Codex の `request_user_input` は Plan mode 限定（default/exec 不可）のため使わない。** In headless/exec, do not auto-continue on Large judgment or halt escalations — halt on the safe side and suggest `$plan`
 - **BLOCK findings must be resolved** — Never complete with unresolved BLOCK items (see Phase 4 "Processing Review Results" for the 2-iteration cap behavior)
