@@ -9,7 +9,7 @@ Claude 版スキルを Codex 版へ移植・同期する際の変換ルール。
 
 | Claude 版 | Codex 版 | 備考 |
 |-----------|----------|------|
-| `AskUserQuestion` | `request_user_input` | 構造化質問UI |
+| `AskUserQuestion` | 会話ターンでの平文質問（選択肢は列挙。`request_user_input` は Plan mode 限定のため不使用） | headless/exec は安全側デフォルト（no-op / report-only / UNCERTAIN / 中断）に降格 |
 | `Agent` (subagent_type) | `spawn_agent` + `wait_agent` | |
 | `Bash` | `shell` | 見出し内の言及も置換 |
 | `Read` / `Grep` / `Glob` | `shell` (`cat` / `rg` / `find`) | |

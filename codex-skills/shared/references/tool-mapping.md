@@ -11,7 +11,7 @@ Claude Code 版スキルとの対応関係を定義する。
 | `Agent` (mode: bypassPermissions) | `spawn_agent` (full-auto sandbox 内) | approval_mode の設定で制御 |
 | `SendMessage` (to: agent) | `send_message` / `assign_task` | メールボックス方式 |
 | `TeamCreate` / `TeamDelete` | `spawn_agent` グループ + `close_agent` | 専用チーム機能はないが再現可 |
-| `AskUserQuestion` | `request_user_input` | 構造化質問UI（選択肢付き、最大3問） |
+| `AskUserQuestion` | 会話ターンでの平文質問（選択肢を列挙し番号/短文で回答を促す） | **`request_user_input` は Plan mode 限定（default/exec 不可、v0.142.4 で実測確認）なので依存しない**。headless/exec で応答不能なら安全側デフォルト（no-op / report-only / UNCERTAIN / 中断）に降格する |
 | `Skill` (呼び出し) | `$skill-name` テキストメンション | 直接 API 呼び出しなし。spawn_agent で skill 指定も可 |
 | `Read` | `shell` (`cat`, `head`, `tail`) | 専用ツールなし |
 | `Write` | `apply_patch` (Add File) | 独自パッチ形式 |
