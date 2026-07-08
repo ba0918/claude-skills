@@ -1,0 +1,1 @@
+../../../skills/doc-write/references/tech-note-template.md

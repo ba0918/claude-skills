@@ -249,6 +249,42 @@ EXTRA_SYNC_PAIRS = [
         "codex-skills/team-cycle/references/code-review-flow.md",
         "skills/team-cycle/references/code-review-flow.md",
     ),
+    (
+        "codex-skills/refactor/references/behavior-preservation-checks.md",
+        "skills/refactor/references/behavior-preservation-checks.md",
+    ),
+    (
+        "codex-skills/refactor/references/similarity-detection.md",
+        "skills/refactor/references/similarity-detection.md",
+    ),
+    (
+        "codex-skills/sweep-fix/references/context-verification.md",
+        "skills/sweep-fix/references/context-verification.md",
+    ),
+    (
+        "codex-skills/sweep-fix/references/pattern-extraction.md",
+        "skills/sweep-fix/references/pattern-extraction.md",
+    ),
+    (
+        "codex-skills/doc-check/references/content-checks.md",
+        "skills/doc-check/references/content-checks.md",
+    ),
+    (
+        "codex-skills/team-plan/references/planning-flow.md",
+        "skills/team-plan/references/planning-flow.md",
+    ),
+    (
+        "codex-skills/team-brainstorm/references/brainstorm-flow.md",
+        "skills/team-brainstorm/references/brainstorm-flow.md",
+    ),
+    (
+        "codex-skills/team-brainstorm/references/brainstorm-roles.md",
+        "skills/team-brainstorm/references/brainstorm-roles.md",
+    ),
+    (
+        "codex-skills/shared/references/convergence-pattern.md",
+        "skills/shared/references/convergence-pattern.md",
+    ),
 ]
 
 

@@ -448,6 +448,15 @@ Codex CLI をセカンドオピニオンとして並行呼び出しする。**Co
 | `handoff` | セッション間コンテキスト引き継ぎ（save/restore/list、揮発型） |
 | `brainstorm` | アイデアの壁打ち・発散→収束→plan化（Codex セカンドオピニオンは冗長なため除外） |
 | `problem-solving` | 行き詰まり打開の思考ツール集（5サブワークフロー、apply_patch 禁止） |
+| `goal-loop` | oracle が真になるまで自律反復する条件収束ループ（maker/checker 分離・ハッシュロックで oracle-gaming 遮断） |
+| `refactor` | 動作保持リファクタ + 類似コード横展開（3値判定、バグは issue 化案として提示） |
+| `sweep-fix` | find-one-fix-all: 局所の問題を全体へ横展開検索・文脈検証（3値判定）・CONFIRMED のみ一括修正 |
+| `systematic-debugging` | 4フェーズ構造化デバッグ（根本原因特定 → 修正、3回失敗ルールで設計問題を検出） |
+| `doc-check` | ドキュメント↔コードの整合性検証・自動修正 |
+| `doc-write` | 調査結果を Mermaid 付き構造化ドキュメントに昇華（対話ディスカバリー） |
+| `test-driven-development` | TDD (RED-GREEN-REFACTOR) 対話ガイド（shell テスト実行を証拠要求） |
+| `team-plan` | spawn_agent グループによるチーム議論型計画作成（4専門家） |
+| `team-brainstorm` | spawn_agent グループによるチーム議論型発散（4思考スタイル、壁打ち中編集禁止） |
 
 ### Codex CLI での呼び出し
 

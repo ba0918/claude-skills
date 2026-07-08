@@ -1,0 +1,1 @@
+../../../skills/doc-write/references/adr-template.md

@@ -31,6 +31,22 @@
     "source": "commands/cycle.md",
     "source_sha256": "789c77467c875e41ca1c1c3fc6e6e1d8ec1f3de7612e01c8a2d4760fa5936714"
   },
+  "codex-skills/doc-check/SKILL.md": {
+    "source": "skills/doc-check/SKILL.md",
+    "source_sha256": "a0177bb4cdcef0f77113d87ceb40bb6fe8a918057d969b96b8240b9e623cc881"
+  },
+  "codex-skills/doc-check/references/content-checks.md": {
+    "source": "skills/doc-check/references/content-checks.md",
+    "source_sha256": "a363177f99d41c0659ce5ee38c01967e6202253047bb1dc7cdf675a50b15c1d4"
+  },
+  "codex-skills/doc-write/SKILL.md": {
+    "source": "skills/doc-write/SKILL.md",
+    "source_sha256": "e0082cd2ed0e33d4494f0da0f7abf103bbd12d0c78dcecaa023280c76e517b19"
+  },
+  "codex-skills/goal-loop/SKILL.md": {
+    "source": "skills/goal-loop/SKILL.md",
+    "source_sha256": "106f1fa0ab2d8c73cb7b152a4fbbc291ea4c20fc94611badc71377a90663ecaa"
+  },
   "codex-skills/handoff/SKILL.md": {
     "source": "skills/handoff/SKILL.md",
     "source_sha256": "4a130b815ac71df4cfa321d50a7cbde1ad222e9ad02474b64f3a60e3c90dbd54"
@@ -83,9 +99,53 @@
     "source": "skills/problem-solving/SKILL.md",
     "source_sha256": "6f5d7837594a8ec57a9c2b5c2a999b194de74bfb5c0a0809da3d991860fbb905"
   },
+  "codex-skills/refactor/SKILL.md": {
+    "source": "skills/refactor/SKILL.md",
+    "source_sha256": "896390ebc17eac8fe9ff8bdcff974124aeb30c1b0a637678e0f5527517ac79b4"
+  },
+  "codex-skills/refactor/references/behavior-preservation-checks.md": {
+    "source": "skills/refactor/references/behavior-preservation-checks.md",
+    "source_sha256": "8288a6c286dd869c55e916329446f1319948a629de1f2b8406c6863d9dfbcd34"
+  },
+  "codex-skills/refactor/references/similarity-detection.md": {
+    "source": "skills/refactor/references/similarity-detection.md",
+    "source_sha256": "4cb235f4a713766ce348089d791a70a569458d28147b70dce704941aa3c4c260"
+  },
+  "codex-skills/shared/references/convergence-pattern.md": {
+    "source": "skills/shared/references/convergence-pattern.md",
+    "source_sha256": "0fbc8512bc6449853626d59bfaba51325c31159d2e3d1a9e02e4b6809e382ed1"
+  },
   "codex-skills/shared/references/team-config.md": {
     "source": "skills/shared/references/team-config.md",
     "source_sha256": "fc8364e37b5c0a79a4b56c50858f3d63f7270087739359a4283c0575c1df7d28"
+  },
+  "codex-skills/sweep-fix/SKILL.md": {
+    "source": "skills/sweep-fix/SKILL.md",
+    "source_sha256": "8760b295ad12657d0d05c2edea3c1be35948c306655ea85a904c36f1d2f19a24"
+  },
+  "codex-skills/sweep-fix/references/context-verification.md": {
+    "source": "skills/sweep-fix/references/context-verification.md",
+    "source_sha256": "2c1955b9ffa171c4bffb4123a7137e442924ea25c6546754f98e4abb5ce17f5c"
+  },
+  "codex-skills/sweep-fix/references/pattern-extraction.md": {
+    "source": "skills/sweep-fix/references/pattern-extraction.md",
+    "source_sha256": "1caf5f1d67aea83bcd271cfa226c9f0a48a70de2356d2678e89c8ce1bfffc127"
+  },
+  "codex-skills/systematic-debugging/SKILL.md": {
+    "source": "skills/systematic-debugging/SKILL.md",
+    "source_sha256": "a0ab67bb73610c13737679cef2b21638f43adc075f0b1e324e83b49b22a97286"
+  },
+  "codex-skills/team-brainstorm/SKILL.md": {
+    "source": "skills/team-brainstorm/SKILL.md",
+    "source_sha256": "76511b8430968d5bcc49f7aa81a5d561e21efdc71e792e69ccff2bf6de32a250"
+  },
+  "codex-skills/team-brainstorm/references/brainstorm-flow.md": {
+    "source": "skills/team-brainstorm/references/brainstorm-flow.md",
+    "source_sha256": "cc9754ebff242897db11edbaf6ce349ce22365c25e12c99a9eed4140f8ba7927"
+  },
+  "codex-skills/team-brainstorm/references/brainstorm-roles.md": {
+    "source": "skills/team-brainstorm/references/brainstorm-roles.md",
+    "source_sha256": "bd9cd8d2cfcd9805ba5c59fa61f3f4be89db2f08e16df79e6728c49651c7042f"
   },
   "codex-skills/team-cycle/SKILL.md": {
     "source": "skills/team-cycle/SKILL.md",
@@ -98,5 +158,17 @@
   "codex-skills/team-cycle/references/review-flow.md": {
     "source": "skills/team-cycle/references/review-flow.md",
     "source_sha256": "f65f06782ffbea146a6a89db541ae561931fe240ff9fac6598fc53866783d679"
+  },
+  "codex-skills/team-plan/SKILL.md": {
+    "source": "skills/team-plan/SKILL.md",
+    "source_sha256": "72cd3023edb61e2bdb85064b26ddfdc2086415a91feed4932a4aea866ad340ae"
+  },
+  "codex-skills/team-plan/references/planning-flow.md": {
+    "source": "skills/team-plan/references/planning-flow.md",
+    "source_sha256": "4f9d17bf9077d3a7e62b830d16426adfc516ebaf2e860a8dfe50e20cd8937f21"
+  },
+  "codex-skills/test-driven-development/SKILL.md": {
+    "source": "skills/test-driven-development/SKILL.md",
+    "source_sha256": "d7860ec6673b7d991d4f74241619aa57cdef5d80ba0c8e1463f763b6f6b2f976"
   }
 }

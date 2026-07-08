@@ -1,0 +1,1 @@
+../../../skills/doc-check/references/structural-checks.md
