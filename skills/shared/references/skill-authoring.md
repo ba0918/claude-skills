@@ -39,8 +39,8 @@ description: <何をするか>。<いつ使うか（トリガー語）>。
 ```
 
 - **name / description は必須**（チェック3）
-- **description は 1024 字以内**（チェック11）
-- **description はトリガー語を含む**（チェック11）: 日本語スキルは「『◯◯』『◯◯』で起動」、英語スキルは "Use when …"。スキル発火はモデルが description を読んで判断するため、トリガー語の欠落は発火漏れに直結する
+- **description は 1024 字以内**（チェック10）
+- **description はトリガー語を含む**（チェック10）: 日本語スキルは「『◯◯』『◯◯』で起動」、英語スキルは "Use when …"。スキル発火はモデルが description を読んで判断するため、トリガー語の欠落は発火漏れに直結する
 - description に**ワークフローの要約を書かない**。手順を description に書くと、モデルが本文を読まずに要約だけで動く事故が起きる
 - 免除が必要な場合は frontmatter ではなく `validate_repo.py` の `DESCRIPTION_TRIGGER_EXEMPT` に理由付きで登録する（スキルファイルの編集だけで検証を迂回させない）
 

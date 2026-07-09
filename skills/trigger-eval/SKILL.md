@@ -7,7 +7,7 @@ description: スキルセットの description 発火精度（recall / precision
 
 スキル数増加で劣化した「自然言語指示からの自発的スキル発火」を、description の品質として実測・改善するメタスキル。判定エージェントに **description 一覧しか渡さない**（実発火時のモデルの視界を再現）ことで、recall / precision / stability / confusion matrix を機械的に計測し、改稿→再評価を収束まで回す。
 
-**位置づけ**: [`empirical-prompt-tuning`](../empirical-prompt-tuning/SKILL.md) が「本文実行の質」を測るのに対し、trigger-eval は「選択層（description → 発火）」を測る。`validate_repo.py` チェック11（トリガー語の静的存在チェック）とは静的/動的の補完関係。
+**位置づけ**: [`empirical-prompt-tuning`](../empirical-prompt-tuning/SKILL.md) が「本文実行の質」を測るのに対し、trigger-eval は「選択層（description → 発火）」を測る。`validate_repo.py` チェック10（トリガー語の静的存在チェック）とは静的/動的の補完関係。
 
 ## 最小実行レシピ
 

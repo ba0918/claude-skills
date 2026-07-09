@@ -42,7 +42,7 @@ Category prefix: `S`=stale, `U`=unsafe, `D`=drift, `C`=contradiction, `M`=memory
 - **CA-S001 / CA-S002** は doc-check の structural check と表面的に重複するが、所有領域が異なる:
   - **context-audit**: instruction-bearing ファイル（CLAUDE.md / AGENTS.md / rules / memory）を「指示品質」として所有。
   - **doc-check**: 任意の docs を「コード正確性（code ⇔ docs）」として所有。
-- **CA-D002** は `scripts/validate_repo.py` を検出したリポジトリでは自動スキップ（prose の「補完扱い」ではなく機械的に抑制）。validate_repo のチェック7がカバレッジを所有する。
+- **CA-D002** は `scripts/validate_repo.py` を検出したリポジトリでは自動スキップ（prose の「補完扱い」ではなく機械的に抑制）。validate_repo のチェック6がカバレッジを所有する。
 
 ## 実装ノート
 

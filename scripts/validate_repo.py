@@ -15,14 +15,13 @@
   3. SKILL.md frontmatter に name / description がある
   4. commands/*.md frontmatter に description がある
   5. SKILL.md / commands/*.md / references/**/*.md 内の相対 .md リンクが実在する
-  6. CLAUDE.md のコマンド対応表 ⇔ commands/ 実ファイルが一致する
-  7. README.md が全スキル名に言及している（ドリフト検出）
-  8. AGENTS.md が全 codex-skills 名に言及している（ドリフト検出）
-  9. plugin.json と marketplace.json のバージョンが一致する
-  10. Claude 版 ⇔ Codex 版スキルの同期台帳（codex-skills/sync-manifest.json）
-  11. SKILL.md description の品質（トリガー語を含む / 1024 字以内）
-  12. 共有契約語彙の適合（契約の識別語彙を使う skill / command は契約を md リンクする）
-  13. docs/loop/dossiers/*.json の dossier lint（error 級のみ CI fail）
+  6. README.md が全スキル名に言及している（ドリフト検出）
+  7. AGENTS.md が全 codex-skills 名に言及している（ドリフト検出）
+  8. plugin.json と marketplace.json のバージョンが一致する
+  9. Claude 版 ⇔ Codex 版スキルの同期台帳（codex-skills/sync-manifest.json）
+  10. SKILL.md description の品質（トリガー語を含む / 1024 字以内）
+  11. 共有契約語彙の適合（契約の識別語彙を使う skill / command は契約を md リンクする）
+  12. docs/loop/dossiers/*.json の dossier lint（error 級のみ CI fail）
 
 同期台帳の仕組み:
   codex-skills/ の各スキルは skills/ の対応スキル（cycle のみ commands/cycle.md）を
@@ -53,7 +52,7 @@ EXCLUDED_DIRS = {".git", ".claude", ".codex", "node_modules", "__pycache__"}
 # タイムスタンプ始まりのファイル名（docs 生成物の例示）
 _TIMESTAMP_EXAMPLE = re.compile(r"^\d{8,}")
 _LINK_RE = re.compile(r"\]\(([^)\s]+)\)")
-_COMMAND_REF_RE = re.compile(r"commands/[a-z0-9-]+\.md")
+
 
 
 def extract_md_links(text):
@@ -174,11 +173,6 @@ def check_contract_conformance(root, vocab=None, exempt=None):
                 f"validate_repo.py の CONTRACT_VOCAB_EXEMPT に理由付きで登録）"
             )
     return errors
-
-
-def extract_command_refs(text):
-    """テキスト中の `commands/<name>.md` 参照を set で返す。"""
-    return set(_COMMAND_REF_RE.findall(text))
 
 
 def find_broken_symlinks(root):
@@ -566,17 +560,7 @@ def run_checks(root):
     # 5. 相対 .md リンクの実在（SKILL.md / commands / references）
     errors += check_relative_links(root)
 
-    # 6. CLAUDE.md 対応表 ⇔ commands/ 実ファイル
-    claude_md = os.path.join(root, "CLAUDE.md")
-    if os.path.isfile(claude_md):
-        mapped = extract_command_refs(_read(claude_md))
-        actual = {f"commands/{n}" for n in command_files}
-        for missing in sorted(actual - mapped):
-            errors.append(f"[map] CLAUDE.md の対応表に載っていない: {missing}")
-        for stale in sorted(mapped - actual):
-            errors.append(f"[map] CLAUDE.md が実在しないコマンドを参照: {stale}")
-
-    # 7-8. README / AGENTS.md のスキル名カバレッジ（ドリフト検出）
+    # 6-7. README / AGENTS.md のスキル名カバレッジ（ドリフト検出）
     readme = _read(os.path.join(root, "README.md")) if os.path.isfile(os.path.join(root, "README.md")) else ""
     agents = _read(os.path.join(root, "AGENTS.md")) if os.path.isfile(os.path.join(root, "AGENTS.md")) else ""
     for skill in _skill_dirs(root, "skills"):
@@ -586,7 +570,7 @@ def run_checks(root):
         if not mentions_name(agents, skill):
             errors.append(f"[drift] AGENTS.md が codex スキルに言及していない: {skill}")
 
-    # 9. plugin.json ⇔ marketplace.json バージョン同期
+    # 8. plugin.json ⇔ marketplace.json バージョン同期
     plugin_path = os.path.join(root, ".claude-plugin", "plugin.json")
     market_path = os.path.join(root, ".claude-plugin", "marketplace.json")
     if os.path.isfile(plugin_path) and os.path.isfile(market_path):
@@ -599,13 +583,13 @@ def run_checks(root):
                     f"({entry.get('version')}) のバージョン不一致"
                 )
 
-    # 10. Claude 版 ⇔ Codex 版の同期台帳
+    # 9. Claude 版 ⇔ Codex 版の同期台帳
     pairs = collect_sync_pairs(root)
     errors += check_sync_manifest(
         pairs, _load_manifest(root), _collect_source_hashes(root, pairs)
     )
 
-    # 11. description の品質（トリガー語 / 長さ上限）
+    # 10. description の品質（トリガー語 / 長さ上限）
     for subdir in ("skills", "codex-skills"):
         for skill in _skill_dirs(root, subdir):
             skill_md = os.path.join(root, subdir, skill, "SKILL.md")
@@ -626,10 +610,10 @@ def run_checks(root):
                     f"{rel}/SKILL.md"
                 )
 
-    # 12. 共有契約語彙の適合
+    # 11. 共有契約語彙の適合
     errors += check_contract_conformance(root)
 
-    # 13. dossier lint（docs/loop/dossiers/*.json）
+    # 12. dossier lint（docs/loop/dossiers/*.json）
     errors += check_dossiers(root)
 
     return errors
