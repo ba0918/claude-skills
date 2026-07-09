@@ -1,6 +1,8 @@
 ---
 title: empirical-prompt-tuning をリポジトリ内に自炊してメタスキル群の自己完結性を回復する
-status: open
+status: closed
+closed: 2026-07-09 14:10:00
+resolution: implemented
 created: 2026-07-09 12:06:21
 tags: meta-skill,self-contained,license
 source: brainstorm session 2026-07-09（自己完結性と配布戦略）
