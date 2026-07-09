@@ -122,6 +122,9 @@ claude --plugin-dir /path/to/claude-skills
 
 ## 編集時の注意
 
+- **プラットフォーム非依存の記述を徹底する**: スキル本文（SKILL.md / references）では特定 LLM・CLI のツール API 名やモデル名を使わず、自然言語で意図を記述する。Agent Skills 標準に準拠し、Claude Code / Codex CLI / Cursor / Gemini CLI 等どのプラットフォームでも解釈可能な表現にすること
+  - NG: `AskUserQuestion`, `Agent ツール（subagent_type: Explore）`, `Bash`, `Read`, `model: "opus"`
+  - OK: 「ユーザーに確認する」「探索型サブエージェントに委譲」「シェルコマンド」「ファイルを読む」「高性能モデル（tier: high）」
 - スキルの `SKILL.md` 内で参照する `references/` のファイルは相対パスでリンクしている。パスを変更する場合はリンクも更新すること
 - コマンドの frontmatter（`---` ブロック）の `description` フィールドがスキル一覧での表示に使われる
 - `.skill` ファイルは `.gitignore` で除外されている（単体ファイル形式のスキルは使わない方針）
