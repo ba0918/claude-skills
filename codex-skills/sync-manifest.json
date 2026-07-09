@@ -1,7 +1,7 @@
 {
   "codex-skills/attack-review/SKILL.md": {
     "source": "skills/attack-review/SKILL.md",
-    "source_sha256": "21c6a92c023e0dc13f653a4467b857c465040426ace3b230af0d43eb18f08e15"
+    "source_sha256": "4396339f3a6db6ce39697e916c92055eb0748a15cbf69eb85453f58b25911e32"
   },
   "codex-skills/attack-review/references/report-template.md": {
     "source": "skills/attack-review/references/report-template.md",
@@ -9,11 +9,11 @@
   },
   "codex-skills/brainstorm/SKILL.md": {
     "source": "skills/brainstorm/SKILL.md",
-    "source_sha256": "4dce20b7e3fd9825fa7c305d39ff2037a6f291ec7d413a386d386a4bc846020f"
+    "source_sha256": "2471fc2c4f6d8d035fb71cd14daaffd8538d55e08578dfb70b62260ad6f9a8aa"
   },
   "codex-skills/codebase-review/SKILL.md": {
     "source": "skills/codebase-review/SKILL.md",
-    "source_sha256": "240c56d2580b60fc03b31de0ce0d4a15cab1777af354a7fb14479c97aba0d763"
+    "source_sha256": "6c3aa449550ffdfde2caa3ddd1d2b56a3b08c117315cf561d192395fe9267d95"
   },
   "codex-skills/codebase-review/references/report-template.md": {
     "source": "skills/codebase-review/references/report-template.md",
@@ -21,23 +21,23 @@
   },
   "codex-skills/codebase-review/references/review-criteria.md": {
     "source": "skills/codebase-review/references/review-criteria.md",
-    "source_sha256": "060e31920c6e41b9a8386822c0b5048893df42ca479cc37732956c146bb9bc42"
+    "source_sha256": "1ffe5875b71ecadc07190f7528bfa85ad77536ddae9718c35b65ea63f1c52490"
   },
   "codex-skills/commit/SKILL.md": {
     "source": "skills/commit/SKILL.md",
-    "source_sha256": "cc346f0e6d6f4698ede53dca6729bf3ce87830f7575f674bf74d1686dd8f2a09"
+    "source_sha256": "32357107539f47d286eedef4dd1a7ad9b86227067f8042186218bb9cd2e97689"
   },
   "codex-skills/cycle/SKILL.md": {
     "source": "commands/cycle.md",
-    "source_sha256": "789c77467c875e41ca1c1c3fc6e6e1d8ec1f3de7612e01c8a2d4760fa5936714"
+    "source_sha256": "483b78faec85854a2bfa637e8edd99160a70d3aceda7f0734fff8b75cb511d80"
   },
   "codex-skills/design-generate/SKILL.md": {
     "source": "skills/design-generate/SKILL.md",
-    "source_sha256": "7e5d76eed4b2ef8518c74f9172d692d887e26540cadf0474c0bace6e53a25a8e"
+    "source_sha256": "1b65719e6a0bb9ef6fa3c18fa8667dc5ce67edbe1dac96c81420dc3d46b5307c"
   },
   "codex-skills/design-guide/SKILL.md": {
     "source": "skills/design-guide/SKILL.md",
-    "source_sha256": "5c4b086b8d2b9b1ff22c921fcee7b344bc04ccf8a4f6dcae752380f061ae8735"
+    "source_sha256": "2e2413ac33a60a16da2cddd57ff17e502639e792e748d89ddbf00510a9567a70"
   },
   "codex-skills/design-guide/references/design-md-template.md": {
     "source": "skills/design-guide/references/design-md-template.md",
@@ -45,11 +45,11 @@
   },
   "codex-skills/design-guide/references/discovery-questions.md": {
     "source": "skills/design-guide/references/discovery-questions.md",
-    "source_sha256": "86fbadd5097fc1062f89e726341e23c25586dc761785d3d2a3f4c9c6997bba1b"
+    "source_sha256": "aafdbb1c088d828c7b9da66e78afb9570632b686533afa06d901d9d98008bc9a"
   },
   "codex-skills/design-lint/SKILL.md": {
     "source": "skills/design-lint/SKILL.md",
-    "source_sha256": "e34f994d484daa7ae9f822f8f1a42669435d064c79f8f7b05732774d09fc03a2"
+    "source_sha256": "626e110384e2aa65354fc2cbfdd727453f60fa6cb893f457456e2beb4f50e1d5"
   },
   "codex-skills/design-lint/references/lint-contract.md": {
     "source": "skills/design-lint/references/lint-contract.md",
@@ -57,19 +57,19 @@
   },
   "codex-skills/design-scaffold/SKILL.md": {
     "source": "skills/design-scaffold/SKILL.md",
-    "source_sha256": "0909ef1a42f3c13131cf3fca9356792fb471f43fac836bff95a8d3da03a00c77"
+    "source_sha256": "d8f2dbc990d20fc4f0835c59e8ae98555500587e92151656d1f37c34a3ea9d42"
   },
   "codex-skills/design-validate/SKILL.md": {
     "source": "skills/design-validate/SKILL.md",
-    "source_sha256": "e01cce7882fb3a672975eb04257d7ae0072c734fe41c1dc9f7e31f98a5d79eb2"
+    "source_sha256": "06704427e33bcda2b651f6f4c1e36abcbe6f8da755ae6186d4668cb376758c41"
   },
   "codex-skills/design-validate/references/validation-pipeline.md": {
     "source": "skills/design-validate/references/validation-pipeline.md",
-    "source_sha256": "d8c3533caa3fd8e7ed6a9f21aa6b07452242ca7779aae930babefdc4312c1e69"
+    "source_sha256": "65f2e869acc6d5815bb3628e27882937f0170944eafa542c7c5242407059eb3b"
   },
   "codex-skills/doc-check/SKILL.md": {
     "source": "skills/doc-check/SKILL.md",
-    "source_sha256": "a0177bb4cdcef0f77113d87ceb40bb6fe8a918057d969b96b8240b9e623cc881"
+    "source_sha256": "ca63743ded2cfb9963f22fd217f757acceb77af11f1c4f73ce72c30bcf0cadf2"
   },
   "codex-skills/doc-check/references/content-checks.md": {
     "source": "skills/doc-check/references/content-checks.md",
@@ -77,43 +77,43 @@
   },
   "codex-skills/doc-write/SKILL.md": {
     "source": "skills/doc-write/SKILL.md",
-    "source_sha256": "e0082cd2ed0e33d4494f0da0f7abf103bbd12d0c78dcecaa023280c76e517b19"
+    "source_sha256": "8184b78dbfc64a69e2382d4684c86b377a38b0380d2be4f06c1dc69a84c9bca9"
   },
   "codex-skills/goal-loop/SKILL.md": {
     "source": "skills/goal-loop/SKILL.md",
-    "source_sha256": "106f1fa0ab2d8c73cb7b152a4fbbc291ea4c20fc94611badc71377a90663ecaa"
+    "source_sha256": "9907a7005e4cef013aaaea7b1aaece05cfee27234e91ab349269700a52346897"
   },
   "codex-skills/handoff/SKILL.md": {
     "source": "skills/handoff/SKILL.md",
-    "source_sha256": "4a130b815ac71df4cfa321d50a7cbde1ad222e9ad02474b64f3a60e3c90dbd54"
+    "source_sha256": "4fe16e3c70dc5ead6c4fd38bdc50b6a2f229a331109a47aebf1adfeb88a6bca2"
   },
   "codex-skills/investigate/SKILL.md": {
     "source": "skills/investigate/SKILL.md",
-    "source_sha256": "da2f587fa472eaf7f88cb06f3dbae2dac2154c2cd5253111bb6d80ea47ab70a3"
+    "source_sha256": "5a67cad6a147a04124bd44159bc2ae71bc6d12a98caeff1c70a1e19bda3fb013"
   },
   "codex-skills/issue/SKILL.md": {
     "source": "skills/issue/SKILL.md",
-    "source_sha256": "935ef2e58bcfd43b526a1e6a7109a86bf2a6f1e90f124ae6cb2bcfce2077fe9d"
+    "source_sha256": "5b729f64c4dbaf6d7d219dc3d625620afa277e025b6223660753eb5146c9486b"
   },
   "codex-skills/iterate/SKILL.md": {
     "source": "skills/iterate/SKILL.md",
-    "source_sha256": "2adaf90e22caf773955dd053a499b2ba07efaf5d4b99736e83e5b890a152be05"
+    "source_sha256": "c69b851ac0b1b452a9b6943f87db8c9d5e791cdf64863344e8dd6890d02e8d8a"
   },
   "codex-skills/iterate/references/light-review.md": {
     "source": "skills/iterate/references/light-review.md",
-    "source_sha256": "40c32cf5079467c7b71068d604b1faa6066d1d7198d93cafa5f9a485f6f9356a"
+    "source_sha256": "e3dfcdd6788272501e6455d34f628fc4b2cec4dfc38a991859558e7d2a2b1ff3"
   },
   "codex-skills/mockup-diff/SKILL.md": {
     "source": "skills/mockup-diff/SKILL.md",
-    "source_sha256": "2043029f0cb6f54d94eee3d67cb8e7d36f051edae4401755f08f6b3af1e1639a"
+    "source_sha256": "be05b9bbf09853646faad64cfdc2c329b0ba09f30557d61ab06b037a36237ad4"
   },
   "codex-skills/mockup-diff/references/script-requirements.md": {
     "source": "skills/mockup-diff/references/script-requirements.md",
-    "source_sha256": "02ad9f4f7a9a6939eebea4c9ddc3f423fc8535fd17c923f8bd17ab83d2d8ff99"
+    "source_sha256": "84b7f84b9e39d4560fda0fe64d548f09786250391d92f47d500d15ede055323c"
   },
   "codex-skills/parallel-cycle/SKILL.md": {
     "source": "skills/parallel-cycle/SKILL.md",
-    "source_sha256": "1b4723c3d3cc7db7c9995953283c78da91a145278d896484d75e67dd5416cfbe"
+    "source_sha256": "d3a275b8d61e663a43bf7537bb50255d170bd0eb11785ba949f40e249d619675"
   },
   "codex-skills/parallel-cycle/references/decompose-guide.md": {
     "source": "skills/parallel-cycle/references/decompose-guide.md",
@@ -121,11 +121,11 @@
   },
   "codex-skills/parallel-cycle/references/merge-strategy.md": {
     "source": "skills/parallel-cycle/references/merge-strategy.md",
-    "source_sha256": "53b7cc9a5f757e6ecb1adcf2ab265d5908e2cb39483f25dc4b1c5c607299b338"
+    "source_sha256": "712a02a3bb4ddeb2e5c994897b3b085c3bb921ab10b1a2f1db360b75a419aec9"
   },
   "codex-skills/plan-reviewer/SKILL.md": {
     "source": "skills/plan-reviewer/SKILL.md",
-    "source_sha256": "6c1432005b429be4287f11fb8dfd4fe4a451727beb3bdbdc1ae3752aea586a4f"
+    "source_sha256": "3bf48d7388a064aa25a650eee9c6e366c24b091d43cb2c8b4ebff006e06a4798"
   },
   "codex-skills/plan-reviewer/references/output-format.md": {
     "source": "skills/plan-reviewer/references/output-format.md",
@@ -133,7 +133,7 @@
   },
   "codex-skills/plan-reviewer/references/review-dimensions.md": {
     "source": "skills/plan-reviewer/references/review-dimensions.md",
-    "source_sha256": "9768104a5b6883ff2a82d9ef91f255d3c07e32e620584d9d9daead0333c5c83a"
+    "source_sha256": "e0640f19f63d7c02998c2e6b8d832facf299495cc8ac91803fe8a23172e20c06"
   },
   "codex-skills/plan/SKILL.md": {
     "source": "skills/plan/SKILL.md",
@@ -141,11 +141,11 @@
   },
   "codex-skills/problem-solving/SKILL.md": {
     "source": "skills/problem-solving/SKILL.md",
-    "source_sha256": "6f5d7837594a8ec57a9c2b5c2a999b194de74bfb5c0a0809da3d991860fbb905"
+    "source_sha256": "3f8d6aad81471b808e0d36bd38916d990191bc60b6077ae29e210aee9bef62ea"
   },
   "codex-skills/refactor/SKILL.md": {
     "source": "skills/refactor/SKILL.md",
-    "source_sha256": "896390ebc17eac8fe9ff8bdcff974124aeb30c1b0a637678e0f5527517ac79b4"
+    "source_sha256": "064d2a52e4d6712287ee9b5192fc7fe3e9cafa7622fe63fdef930101320a1c29"
   },
   "codex-skills/refactor/references/behavior-preservation-checks.md": {
     "source": "skills/refactor/references/behavior-preservation-checks.md",
@@ -161,11 +161,11 @@
   },
   "codex-skills/shared/references/team-config.md": {
     "source": "skills/shared/references/team-config.md",
-    "source_sha256": "fc8364e37b5c0a79a4b56c50858f3d63f7270087739359a4283c0575c1df7d28"
+    "source_sha256": "d130a6d12c1598ee3e51649013ed1d538e5f2afcfcfeada079748bb00d657ace"
   },
   "codex-skills/sweep-fix/SKILL.md": {
     "source": "skills/sweep-fix/SKILL.md",
-    "source_sha256": "8760b295ad12657d0d05c2edea3c1be35948c306655ea85a904c36f1d2f19a24"
+    "source_sha256": "d0120ff0b74f51625f18f772b30cc9f59ecfb848770f11ea6a4ecd31ab005bbc"
   },
   "codex-skills/sweep-fix/references/context-verification.md": {
     "source": "skills/sweep-fix/references/context-verification.md",
@@ -173,46 +173,46 @@
   },
   "codex-skills/sweep-fix/references/pattern-extraction.md": {
     "source": "skills/sweep-fix/references/pattern-extraction.md",
-    "source_sha256": "1caf5f1d67aea83bcd271cfa226c9f0a48a70de2356d2678e89c8ce1bfffc127"
+    "source_sha256": "511c23c087da40c08406630106dab9b37687a96bb386e025eddea7a720fee417"
   },
   "codex-skills/systematic-debugging/SKILL.md": {
     "source": "skills/systematic-debugging/SKILL.md",
-    "source_sha256": "a0ab67bb73610c13737679cef2b21638f43adc075f0b1e324e83b49b22a97286"
+    "source_sha256": "2880423086887ec495d63165fd06b348a371561a957086813a15782d58ddb15d"
   },
   "codex-skills/team-brainstorm/SKILL.md": {
     "source": "skills/team-brainstorm/SKILL.md",
-    "source_sha256": "76511b8430968d5bcc49f7aa81a5d561e21efdc71e792e69ccff2bf6de32a250"
+    "source_sha256": "f2d80e09741f7a6bd32ed7119bc2f7d4a327885a127f1fb377ee3ef1aa7e0183"
   },
   "codex-skills/team-brainstorm/references/brainstorm-flow.md": {
     "source": "skills/team-brainstorm/references/brainstorm-flow.md",
-    "source_sha256": "cc9754ebff242897db11edbaf6ce349ce22365c25e12c99a9eed4140f8ba7927"
+    "source_sha256": "a0625ca4b3bbcdda78db97359ca8d0ade80c2ec51f17125001d900d00dcf07bc"
   },
   "codex-skills/team-brainstorm/references/brainstorm-roles.md": {
     "source": "skills/team-brainstorm/references/brainstorm-roles.md",
-    "source_sha256": "bd9cd8d2cfcd9805ba5c59fa61f3f4be89db2f08e16df79e6728c49651c7042f"
+    "source_sha256": "6e3ec783015d99ff5fbf5d69eb5129444de4b17469578fe7113394557db69ab6"
   },
   "codex-skills/team-cycle/SKILL.md": {
     "source": "skills/team-cycle/SKILL.md",
-    "source_sha256": "cba91ec92434435d7a320874f0dba07f09ebd13d78260f4e0cb535ca96b5650d"
+    "source_sha256": "a24917322af9d621ce59fc49b149dff336190154c77806941e111cbab61695ba"
   },
   "codex-skills/team-cycle/references/code-review-flow.md": {
     "source": "skills/team-cycle/references/code-review-flow.md",
-    "source_sha256": "8ae3cceec9d2de076f6e95f26fba62fbe32fb5480375d3e8ba3b11b57c0f8c72"
+    "source_sha256": "61f6325ad0a8d7dd78895eacb663a022410f84417081b3bc3a8c9c5a23776667"
   },
   "codex-skills/team-cycle/references/review-flow.md": {
     "source": "skills/team-cycle/references/review-flow.md",
-    "source_sha256": "f65f06782ffbea146a6a89db541ae561931fe240ff9fac6598fc53866783d679"
+    "source_sha256": "777238eae9f5e017dbc193655803915474dfb591ec4b9017fdc4df94f13cff6b"
   },
   "codex-skills/team-plan/SKILL.md": {
     "source": "skills/team-plan/SKILL.md",
-    "source_sha256": "72cd3023edb61e2bdb85064b26ddfdc2086415a91feed4932a4aea866ad340ae"
+    "source_sha256": "2b7b616bbe589252e2a1c8ea93fc9a678a43f3e873fcdea0be220c03ffaf9d10"
   },
   "codex-skills/team-plan/references/planning-flow.md": {
     "source": "skills/team-plan/references/planning-flow.md",
-    "source_sha256": "4f9d17bf9077d3a7e62b830d16426adfc516ebaf2e860a8dfe50e20cd8937f21"
+    "source_sha256": "1ddcb3c3e1d457bf62cf02e2ed26ae2f04f0cc03a77109a4c792c6aafb0d0175"
   },
   "codex-skills/test-driven-development/SKILL.md": {
     "source": "skills/test-driven-development/SKILL.md",
-    "source_sha256": "d7860ec6673b7d991d4f74241619aa57cdef5d80ba0c8e1463f763b6f6b2f976"
+    "source_sha256": "5d36e1551392bc1307d0eb0c55aa1faf082b1360d686b855c7005714fce962f6"
   }
 }
