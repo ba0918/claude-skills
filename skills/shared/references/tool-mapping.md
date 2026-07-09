@@ -1,7 +1,8 @@
-# Tool Mapping: Claude Code → Codex CLI
+# Tool Mapping
 
-Codex CLI スキルで使用するツール変換リファレンス。
-Claude Code 版スキルとの対応関係を定義する。
+スキル本文をプラットフォーム非依存に保つためのツール語彙対応表。
+`SKILL.md` と `references/` では原則として左列・右列の固有 API 名を直書きせず、
+「ファイルを読む」「ファイルを編集する」「サブエージェントに委譲する」「シェルコマンドを実行する」などの共通語彙で書く。
 
 ## ツール変換マッピング
 
@@ -39,23 +40,19 @@ Claude Code 版スキルとの対応関係を定義する。
 | `/claude-skills:issue-close` | `$issue close` |
 | `/claude-skills:team-cycle` | `$team-cycle` |
 
-## Codex Second Opinion
+## Codex Second Opinion の扱い
 
-Claude Code 版では `subagent_type: "codex:codex-rescue"` で Codex をセカンドオピニオンとして呼び出していたが、Codex CLI 版では自分自身を呼ぶ必要がないため **完全に除去** する。
+Codex セカンドオピニオンは、呼び出し元ランタイムとは独立したレビュー視点を得るための任意機能として扱う。
+実行環境が該当する外部レビュー手段を持たない場合は、各スキルの graceful degradation に従い、警告して通常レビューのみで続行する。
 
 ## 共有契約の可搬性ポリシー
 
-`codex-skills/shared/references/` に置く共有契約は次の3分類で管理する:
+`skills/shared/references/` に置く共有契約は、単一の正本として複数ランタイムから読まれる。
+新規・改訂時は次の基準で可搬性を確認する:
 
-- **symlink（tool-agnostic）**: 内容にツール固有語彙がなくそのまま通用するもの。
-  現行: `lang-detect.md` / `severity-and-verdicts.md` / `verification-gate.md` / `tdd-contract.md`
-  （verification-gate / tdd-contract の「Bash」「Agent」表記は概念として Codex の `shell` / `spawn_agent` に読み替え可能で無害）
-- **変換済み実体コピー（sync 追跡）**: ツール名変換が必要なもの。現行: `team-config.md`。
-  スキル側 references も同基準 — ツール名・Codex 第二意見節を含むものは symlink 禁止、実体変換して
-  `validate_repo.py` の `EXTRA_SYNC_PAIRS` で台帳追跡する
-- **不移植（意図的）**: `codex-integration.md`（Claude から Codex を呼ぶ契約。Codex 内では無意味）、
-  `skill-authoring.md`（リポジトリ開発メタ。Claude 側の authoring 資料）、
-  `orchestration-patterns.md`（model 階層等が Claude Agent tool 固有。必要になった時点で変換コピーを検討）
+- **tool-agnostic**: 内容にツール固有 API 名がなく、そのまま複数ランタイムで通用する
+- **platform-aware**: 外部レビュー、サブエージェント、対話確認などランタイム差があるが、共通語彙と fallback で表現できる
+- **platform-specific**: どうしても固有 API 名が必要な場合は、その理由と代替不能性を本文に明記し、影響範囲を最小化する
 
 ## ファイル操作パターン
 

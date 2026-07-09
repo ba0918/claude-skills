@@ -1,41 +1,24 @@
 ---
-title: 未移植 Claude スキルの Codex 移植要否検討
-status: open
+title: 統合前の Codex 移植バックログの棚卸し
+status: closed
 created: 2026-07-09 11:28:22
-tags: codex,port,backlog
+closed: 2026-07-10 01:56:27
+tags: codex,port,backlog,superseded
 source: session 2026-07-08 マージ後の棚卸し
 ---
 
-## 概要
+## 結論
 
-Claude 版のみで Codex 未移植のスキルが11個ある。移植要否を性質で分類した。
+この issue は、スキル本文を単一の `skills/` 正本として Claude Code / Codex CLI / 他エージェントから読む方針に統合したため close する。
 
-### 移植不要（8個）— メタ / 本リポジトリ専用 / レガシー移行
+旧来の「ランタイム別に別スキルを移植する」前提は廃止済み。今後の作業は移植バックログではなく、`SKILL.md` と `references/` をプラットフォーム非依存の自然言語に保つこと、および必要なランタイム差を `skills/shared/references/tool-mapping.md` に集約することとして扱う。
 
-| スキル | 未移植の理由 |
-|--------|------|
-| `codex-sync` | Claude→Codex 移植メタスキルそのもの。Codex 版を作るのは自己矛盾 |
-| `skill-improve` | セッションデータからスキル改善するメタスキル |
-| `skill-regression` | スキル挙動の回帰ハーネス（本リポジトリ専用） |
-| `loop-triage` | センサー→トリアージ→キュー投入（本リポジトリ専用） |
-| `goal-decomposition` | ゴール→Dossier コンパイラ（本リポジトリ専用） |
-| `trigger-eval` | description 発火精度の実測メタスキル |
-| `context-audit` | 指示ファイル・メモリの棚卸し監査（初版 Claude 版のみ） |
-| `migrate-cycles-to-plans` | レガシー移行。一回限りでほぼ不要 |
+## 反映済み
 
-### 移植候補（3個）— 汎用スキル
-
-| スキル | 役割 | 判断軸 |
-|--------|------|--------|
-| `doc-audit` | docs 内アーティファクトの横断監査 | Codex 側で docs 運用するか |
-| `generate-review-rules` | プロジェクト固有レビュールール生成 | Codex 側でレビュー系を使うなら下地に |
-| `github-issue` | GitHub issue polling→PR 自走 | Codex 側で GitHub issue 自走するか（issue の FS 版は移植済み） |
-
-## 備考
-
-- 判断基準: Codex 側でその運用（docs 監査 / レビュールール生成 / GitHub issue 自走）を行う予定があるかどうか。予定がなければ全てスルーで問題ない。
-- 実施する場合は `codex-sync` スキル（Claude 版あり）で移植可能。移植後は Codex 敵対レビューで検証する運用が確立済み。
-- 今すぐ着手する話ではなくバックログとして記録。移植要否を先に決めてから着手する。
+- スキル本文の「別版なし」節を削除
+- 共有 authoring 契約を単一 `skills/` 正本前提へ更新
+- 旧移植コマンドの入口を削除
+- `python3 scripts/validate_repo.py` 合格を確認
 
 ---
 

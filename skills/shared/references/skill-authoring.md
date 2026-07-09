@@ -1,7 +1,7 @@
 # Skill Authoring 共通仕様
 
 本リポジトリでスキルを新規作成・大幅改訂するときのフォーマット仕様と執筆原則。
-skill-improve / codex-sync の判断基準としても参照する。
+skill-improve などのメタスキルの判断基準としても参照する。
 ここに書かれた機械検証可能なルールは `scripts/validate_repo.py` が CI で強制する。
 
 ## ディレクトリ構成
@@ -69,22 +69,18 @@ description: <何をするか>。<いつ使うか（トリガー語）>。
 - 書き方の実例: [verification-gate.md](verification-gate.md) の合理化防止、[tdd-contract.md](tdd-contract.md) の合理化テーブル
 - **Red Flags** は「スキルが守られていない兆候」の観測可能なリスト。レビュー時・自己監視に使う。判定可能な形で書く（「テスト実行せずに GREEN を宣言している」）
 
-## Codex 版を持つスキルの注意
+## クロスツール互換性の注意
 
-- Claude 版 SKILL.md（cycle のみ `commands/cycle.md`）を変更したら、Codex 版への反映要否を判断し、`python3 scripts/validate_repo.py --update-manifest` で同期台帳を更新する（怠ると CI が fail）
-- 移植は codex-sync スキルの3層変換ルール（機械的置換 / 構造的変換 / 要判断）に従う
-- references の共有判定は **内容基準**で行う: 真にツール非依存（ツール名・Codex 第二意見節・
-  Claude 固有パスを一切含まない）なら `skills/` への symlink、1つでも含むなら変換済み
-  実体コピーにして `validate_repo.py` の `EXTRA_SYNC_PAIRS` に登録する
-  （「テンプレだから中立」という推定で symlink しない — 判定基準は
-  `codex-skills/shared/references/tool-mapping.md` の「共有契約の可搬性ポリシー」）
+- スキル本文は `skills/` を単一の正本とし、Claude Code / Codex CLI / Cursor / Gemini CLI などで読める自然言語に保つ
+- `SKILL.md` と `references/` では、特定プラットフォームのツール API 名やモデル名に依存しない表現を使う
+- プラットフォーム差が必要な場合は、本文を分岐コピーせず [tool-mapping.md](tool-mapping.md) に共通語彙と対応方針を集約する
 
 ## 新規スキル追加チェックリスト
 
 - [ ] command の要否を skills-first 方針で判断した（デフォルトは command なし。multi-workflow の名前付き入口が必要な場合のみ薄いラッパーを追加）
-- [ ] CLAUDE.md のコマンド対応表・主要スキル表を更新した
+- [ ] AGENTS.md / README.md の主要スキル表を必要に応じて更新した（CLAUDE.md は薄い wrapper のままにする）
 - [ ] README.md（コマンド表・スキル表・ファイル構成）を更新した
-- [ ] Codex 版を作った場合は AGENTS.md を更新し、同期台帳を更新した
+- [ ] plugin manifest への反映が必要な変更なら `.claude-plugin/` / `.codex-plugin/` を更新した
 - [ ] 複数エージェントを使う場合は [orchestration-patterns.md](orchestration-patterns.md) の判断フローを通し、Agent 呼び出しに model 指定（モデル階層準拠）を明示した
 - [ ] `python3 scripts/validate_repo.py` が全チェック合格
 - [ ] バージョン bump 時は plugin.json / marketplace.json / CHANGELOG.md を更新した
