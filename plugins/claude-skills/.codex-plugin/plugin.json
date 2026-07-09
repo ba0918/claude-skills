@@ -1,0 +1,27 @@
+{
+  "name": "claude-skills",
+  "version": "1.39.1",
+  "description": "Plan, review, and automate implementation workflows with 40+ agent skills",
+  "author": {
+    "name": "ba0918"
+  },
+  "skills": "./skills/",
+  "license": "MIT",
+  "interface": {
+    "displayName": "Claude Skills",
+    "shortDescription": "Plan, review, and automate implementation workflows",
+    "longDescription": "A comprehensive skill set for implementation planning, team-reviewed code cycles, TDD enforcement, codebase review, debugging, and self-driving issue resolution. Agent Skills standard compliant, with tool-mapping for cross-platform compatibility.",
+    "developerName": "ba0918",
+    "category": "Productivity",
+    "capabilities": [
+      "implementation-planning",
+      "code-review",
+      "team-discussion",
+      "issue-management",
+      "tdd-enforcement",
+      "design-system",
+      "security-review"
+    ],
+    "defaultPrompt": "Help me plan and implement a feature."
+  }
+}

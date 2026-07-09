@@ -1,0 +1,20 @@
+{
+  "name": "claude-skills",
+  "interface": {
+    "displayName": "Claude Skills"
+  },
+  "plugins": [
+    {
+      "name": "claude-skills",
+      "source": {
+        "source": "local",
+        "path": "./plugins/claude-skills"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
