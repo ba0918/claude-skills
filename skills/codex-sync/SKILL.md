@@ -127,7 +127,7 @@ python3 scripts/validate_repo.py          # 全チェック合格の確認（こ
   （なければ「なし」）
 
 検証: ✓ 全チェック合格（validate_repo.py）
-推奨: <大規模移植の場合> empirical-prompt-tuning での実機チューニングを推奨
+推奨: <大規模移植の場合> [empirical-prompt-tuning](../empirical-prompt-tuning/SKILL.md) での実機チューニングを推奨
 ```
 
 ## 重要ルール

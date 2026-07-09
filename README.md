@@ -122,6 +122,7 @@ cd ~/develop/claude-skills
 | `investigate` | 問題を読み取り専用で調査し、構造化レポートを出力。ファイル編集は一切行わない |
 | `sweep-fix` | 指定範囲の問題検出 → 全体への横展開検索 → 文脈検証（偽陽性除去）→ 一括修正の find-one-fix-all 型スキル。コマンドなし（`/claude-skills:sweep-fix` で直接起動） |
 | `refactor` | 指定スコープを完全理解し**動作を完全に維持したまま**リファクタ → 類似コードへ文脈検証つき横展開。発見したバグは修正せず issue 化案を提示。コマンドなし（`/claude-skills:refactor` で直接起動） |
+| `empirical-prompt-tuning` | テキスト指示の品質を 3 役分離（チューナー/実行者/checker）で評価し、摩擦タクソノミ + 純関数収束判定で反復改善。対象タイプ別 eval strategy（タスクシナリオ / 遵守プローブ）で制約型指示も測定可能。収束した検証資産は可搬 fixture JSON で出力。出典: mizchi/skills (MIT)。コマンドなし（`/claude-skills:empirical-prompt-tuning` で直接起動） |
 | `trigger-eval` | スキルセットの description 発火精度（recall / precision / stability / confusion matrix）を description-only 判定 subagent で機械的に実測し、衝突ペアを特定して改稿→再評価ループを収束まで回すメタスキル。静的衝突プレパス + Tier 1 選択シミュレーション + Tier 2 E2E 実発火検証。事前固定 + holdout 採用ゲート + 悪化ガードで過適合を防ぐ。コマンドなし（`/claude-skills:trigger-eval` で直接起動） |
 | `context-audit` | LLM 向け指示ファイル（CLAUDE.md / AGENTS.md / .claude/rules / プロジェクトメモリ）の老朽化・矛盾・有害指示・クロスツール乖離を監査する棚卸しスキル。純関数ルールエンジン（CA-* ルール体系）で機械検証し、AUTO_FIX / NEEDS_JUDGMENT / REPORT_ONLY の 3 値で扱う。削除は自動化しない。メモリ監査はデフォルト cwd 対応プロジェクトのみ、グローバルは `--include-global` opt-in。baseline suppression 対応。コマンドなし（`/claude-skills:context-audit` で直接起動） |
 | `skill-regression` | スキルの「調律済みの挙動」を fixture（シナリオ + [critical] 付き要件チェックリスト）として資産化し、SKILL.md や共有契約の変更時に影響スキルだけへ回帰評価を回すハーネス。挙動面（スキル配下 + 参照 md の推移閉包）の依存グラフ逆引き + 検証台帳（ledger.json）+ CI ゲートで「共有契約を直したら参照スキルの再検証を忘れる」サイレント回帰を防ぐ。コマンドなし（`/claude-skills:skill-regression` で直接起動） |
@@ -504,6 +505,7 @@ skills/               # Claude Code 用スキル（ロジック本体）
 ├── investigate/      # 読み取り専用の問題調査・構造化レポート
 ├── sweep-fix/        # find-one-fix-all: 局所の問題を全体へ横展開検索・文脈検証・一括修正
 ├── refactor/         # 動作保持リファクタ + 類似コード横展開（バグは issue 化案として提示）
+├── empirical-prompt-tuning/ # 3役分離 + 純関数収束でテキスト指示の品質を実測・反復改善
 ├── trigger-eval/     # description 発火精度の実測・改善メタスキル（静的プレパス + 2層評価）
 ├── context-audit/    # 指示ファイル・メモリの棚卸し監査（CA-* 純関数ルール + 3値判定 + baseline）
 ├── skill-regression/ # fixture 資産化 + 依存グラフ逆引き + 検証台帳による回帰評価ハーネス

@@ -67,9 +67,10 @@
 
 ## 素材別の変換ガイド
 
-- **empirical tuning の実測から**: tuning で使った評価シナリオと要件チェックリストを
-  そのまま scenarios / requirements に写す。収束時点のチェックリストが最良の回帰資産
-  （tuning 中に動かした項目は最終版だけを採る）
+- **[empirical tuning](../../empirical-prompt-tuning/SKILL.md) の実測から**: 収束時に出力される
+  `fixture.json`（`.claude/tmp/empirical/{ts}/fixture.json`）の `scenarios` / `requirements` を
+  そのまま本スキーマの scenarios / requirements に写す。`source` は `"empirical-tuning:{ts}"` とする。
+  収束時点のチェックリストが最良の回帰資産（tuning 中に動かした項目は最終版だけを採る）
 - **plan の受け入れ条件から**: plan 文書の「完了条件」「検証」節を requirements に変換する。
   実装手順ではなく成果物の性質を書いている項目だけを採る
 - **手動設計**: スキルの description が約束していることを requirements に落とす。

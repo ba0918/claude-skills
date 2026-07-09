@@ -19,8 +19,8 @@ import os
 import re
 import sys
 
-SYSTEMS = {"polling-fs", "polling-label", "skill-regression", "trigger-eval"}
-EVENTS = {"tick", "verification", "eval"}
+SYSTEMS = {"polling-fs", "polling-label", "skill-regression", "trigger-eval", "empirical"}
+EVENTS = {"tick", "verification", "eval", "tuning"}
 
 _SURFACE_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 _RUN_ID_RE = re.compile(r"^[0-9a-f-]{36}$")
@@ -153,6 +153,45 @@ def aggregate_by_surface(events, skill, systems=None):
         denom = group["done"] + group["failed"]
         group["success_rate"] = group["done"] / denom if denom else None
         result.append(group)
+    result.sort(key=lambda g: g["first_ts"])
+    return result
+
+
+def aggregate_tuning_by_surface(events, skill):
+    """event=="tuning" かつ skill 一致のイベントを surface_sha256 別に集計する。"""
+    groups = {}
+    for e in events:
+        if e.get("event") != "tuning" or e.get("skill") != skill:
+            continue
+        surface = e.get("surface_sha256")
+        ts = e.get("ts")
+        outcome = e.get("outcome") or {}
+        group = groups.get(surface)
+        if group is None:
+            group = {
+                "surface_sha256": surface,
+                "tuning_runs": 0,
+                "converged": 0,
+                "total_iterations": 0,
+                "best_precision": None,
+                "first_ts": ts,
+                "last_ts": ts,
+            }
+            groups[surface] = group
+        group["tuning_runs"] += 1
+        if outcome.get("converged"):
+            group["converged"] += 1
+        group["total_iterations"] += outcome.get("iterations", 0) or 0
+        fp = outcome.get("final_precision")
+        if fp is not None:
+            if group["best_precision"] is None or fp > group["best_precision"]:
+                group["best_precision"] = fp
+        if ts < group["first_ts"]:
+            group["first_ts"] = ts
+        if ts > group["last_ts"]:
+            group["last_ts"] = ts
+
+    result = list(groups.values())
     result.sort(key=lambda g: g["first_ts"])
     return result
 

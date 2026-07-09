@@ -61,4 +61,4 @@ python3 scripts/validate_repo.py --update-manifest  # 台帳更新
 python3 scripts/validate_repo.py                    # 全チェック合格を確認（エビデンス）
 ```
 
-大規模な移植（第3層判断を含む）の後は、`empirical-prompt-tuning` での実機チューニングを推奨する。
+大規模な移植（第3層判断を含む）の後は、[`empirical-prompt-tuning`](../../empirical-prompt-tuning/SKILL.md) での実機チューニングを推奨する。

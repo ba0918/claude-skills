@@ -68,6 +68,7 @@ Event {
 | `polling-fs` / `polling-label` | `tick` | `{claimed, done, failed_transient, failed_permanent, halt_reason?}`（TickResult §7 と同一） | tick の TickResult 出力直後（各 SKILL.md の最終 Step）。`skill` = issue / github-issue、`surface_sha256` は tick 開始時に算出 |
 | `skill-regression` | `verification` | `{result: "pass" \| "accepted-without-run", scenarios?: int}` | `ledger.py --update` 実行直後（ledger.json は最新のみ・events は履歴） |
 | `trigger-eval` | `eval` | `{recall, precision, stability}`（対象スキル別に 1 行ずつ） | Tier 1/2 計測完了時（推奨） |
+| `empirical` | `tuning` | `{iterations, scenario_count, converged, final_precision, precision_delta, prompt_bytes_delta}` | 収束完了時（`exit_verdict == "converged"`）。**対象が repo skill の場合のみ配線**（対象が任意プロンプト / CLAUDE.md 節等の場合は `surface_sha256` が算出不能のため配線スキップ。代わりに `instruction_fingerprint` を iteration JSON に記録） |
 
 読み取り専用の系:
 

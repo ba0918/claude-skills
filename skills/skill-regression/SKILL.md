@@ -44,7 +44,7 @@ description: スキルの「調律済みの挙動」を fixture（シナリオ +
 ## capture — 合格基準の資産化
 
 1. **素材の特定**: 対象スキルの合格基準の出どころを確認する。優先順:
-   (a) 直近の empirical tuning セッションのシナリオ + 要件チェックリスト（実測済みで最良）
+   (a) 直近の [empirical tuning](../empirical-prompt-tuning/SKILL.md) セッションの fixture.json（実測済みで最良。変換ガイドは [fixture-schema.md](references/fixture-schema.md) の「素材別の変換ガイド」参照）
    (b) `docs/plans/` の該当 plan の受け入れ条件
    (c) どちらも無ければ [references/fixture-schema.md](references/fixture-schema.md) の設計指針に従い新規設計
 2. **fixtures.json の作成**: スキーマに従い `skills/<skill>/fixtures.json` を書く。
