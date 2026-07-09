@@ -37,6 +37,16 @@ claude plugin install claude-skills@claude-skills
 
 Plugin ではコマンドを `/claude-skills:plan-create` のように名前空間付きで呼び出せる。
 
+### Codex CLI Plugin（一括インストール）
+
+```bash
+codex plugin marketplace add ba0918/claude-skills
+codex plugin add claude-skills@claude-skills
+```
+
+Claude 版スキルがそのままインストールされる。
+Codex は `shared/references/tool-mapping.md` を参照してツール名を読み替える。
+
 ## 基本ワークフロー
 
 plan（計画）→ cycle（自動実装）→ commit（コミット）が基本の流れになる。
