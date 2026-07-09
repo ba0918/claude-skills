@@ -7,7 +7,40 @@ AI コーディングエージェント向けのスキル集。
 
 ## インストール
 
-### gh skill（推奨）
+### Claude Code Plugin（一括インストール・推奨）
+
+全スキル、共有契約、コマンド、ルールをまとめて導入できるため、通常はこちらを推奨する。
+
+```bash
+claude plugin marketplace add ba0918/claude-skills
+claude plugin install claude-skills@claude-skills
+```
+
+Plugin ではコマンドを `/claude-skills:plan-create` のように名前空間付きで呼び出せる。
+
+### Codex CLI Plugin（一括インストール・推奨）
+
+```bash
+codex plugin marketplace add ba0918/claude-skills
+codex plugin add claude-skills@claude-skills
+```
+
+スキル本文はプラットフォーム非依存の自然言語で記述されており、そのまま利用できる。
+
+### Claude Code rules（任意）
+
+`rules/` は Claude Code の常駐ルールとしても使えるが、Plugin フォーマットでは自動配置されない。
+必要な場合のみ手動でコピーする。
+
+```bash
+mkdir -p ~/.claude/rules
+cp rules/*.md ~/.claude/rules/
+```
+
+### gh skill（個別インストール・実験的）
+
+Agent Skills 標準の個別インストールに対応しているが、現時点では標準仕様上、複数スキルから参照される `shared/` 依存を bundle として宣言できない。
+複数スキルを組み合わせて使う場合は Plugin を推奨する。
 
 ```bash
 # 共有契約ライブラリ（他スキルが依存。最初にインストールする）
@@ -22,26 +55,6 @@ gh skill install ba0918/claude-skills --agent claude-code
 
 `--agent` には `claude-code` / `codex` / `github-copilot` / `cursor` / `gemini` 等を指定する。
 `--scope user` を付けるとグローバルインストールになる。
-
-### Claude Code Plugin（一括インストール）
-
-全スキル、コマンド、ルールをまとめて導入したい場合は Plugin が適している。
-
-```bash
-claude plugin marketplace add ba0918/claude-skills
-claude plugin install claude-skills@claude-skills
-```
-
-Plugin ではコマンドを `/claude-skills:plan-create` のように名前空間付きで呼び出せる。
-
-### Codex CLI Plugin（一括インストール）
-
-```bash
-codex plugin marketplace add ba0918/claude-skills
-codex plugin add claude-skills@claude-skills
-```
-
-スキル本文はプラットフォーム非依存の自然言語で記述されており、そのまま利用できる。
 
 ## 基本ワークフロー
 
