@@ -26,11 +26,10 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 
 ### 絶対的な制約
 
-#### 禁止ツール（いかなる状況でも使用禁止）
+#### 禁止操作（いかなる状況でも禁止）
 
-- **Edit** ツール — ファイル編集禁止
-- **Write** ツール — ファイル作成・上書き禁止
-- **NotebookEdit** ツール — ノートブック編集禁止
+- ファイルの編集・作成・上書き禁止
+- ノートブック編集禁止
 
 > Session 中はアイデアの発散に集中する。ファイル操作は Wrap Workflow で行う。
 
@@ -39,17 +38,16 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 - コード生成・実装提案禁止（擬似コードでの概念説明は可）
 - 「じゃあ実装しますね」「コードを書きます」は絶対に言わない
 
-#### 許可ツール
+#### 許可操作
 
-- **Read** — ファイルの読み取り（コードベース調査用）
-- **Grep** — パターン検索（コードベース調査用）
-- **Glob** — ファイル検索（コードベース調査用）
-- **Bash** — **読み取り専用コマンドのみ**（`git log`, `git diff`, `ls`, `cat` 等）
-- **AskUserQuestion** — ユーザーとの対話
-- **TeamCreate** — チーム作成
-- **TeamDelete** — チーム解散
-- **SendMessage** — チームメンバーとの通信
-- **Agent** — サブエージェント起動（チームメンバー spawn 用）
+- ファイルの読み取り（コードベース調査用）
+- パターン検索（コードベース調査用）
+- ファイル一覧取得（コードベース調査用）
+- シェルコマンド（**読み取り専用のみ**: `git log`, `git diff`, `ls`, `cat` 等）
+- ユーザーとの対話（選択肢を提示して確認）
+- チーム作成・解散
+- チームメンバーとのメッセージ通信
+- サブエージェント起動（チームメンバー spawn 用）
 
 ### Flow Overview
 
@@ -61,10 +59,10 @@ Session Workflow
   │    ├─ テーマ取得
   │    └─ Domain Expert 参加の有無を確認
   │
-  ├─ Phase 1: チーム壁打ち（try-finally で TeamDelete 保証）
-  │    ├─ TeamCreate → Agent spawn × 4 (+ optional Domain Expert)
+  ├─ Phase 1: チーム壁打ち（try-finally でチーム解散保証）
+  │    ├─ チーム作成 → メンバー spawn × 4 (+ optional Domain Expert)
   │    ├─ 発散ループ（brainstorm-flow.md 準拠）
-  │    └─ TeamDelete（必ず実行）
+  │    └─ チーム解散（必ず実行）
   │
   └─ Wrap への誘導
 ```
@@ -73,7 +71,7 @@ Session Workflow
 
 #### Step 0.1: 環境変数チェック
 
-**重要**: TeamCreate を使用するには、実験的機能フラグが必要。
+**重要**: チーム作成を使用するには、実験的機能フラグが必要。
 
 以下のコマンドで環境変数を確認する:
 
@@ -97,12 +95,12 @@ Then retry: /claude-skills:team-brainstorm
 #### Step 0.2: テーマ取得
 
 1. `$ARGUMENTS` からテーマを取得する
-   - 空の場合は AskUserQuestion で「何について壁打ちしたいですか？」と聞く
+   - 空の場合は「何について壁打ちしたいですか？」とユーザーに聞く
 2. テーマが得られたらコードベースを調査し、関連ファイルの構造・既存実装を把握する
 
 #### Step 0.3: Domain Expert 確認
 
-AskUserQuestion でユーザーに確認する:
+ユーザーに確認する:
 
 ```
 テーマ: {theme}
@@ -118,7 +116,7 @@ AskUserQuestion でユーザーに確認する:
 
 ### Phase 1: チーム壁打ち（AgenticTeam）
 
-**重要**: Phase 1 の全処理は **TeamDelete を保証する try-finally パターン** で実装する。TeamCreate 成功後、以降のどの段階でエラーが発生しても TeamDelete を必ず実行する。
+**重要**: Phase 1 の全処理は **チーム解散を保証する try-finally パターン** で実装する。チーム作成成功後、以降のどの段階でエラーが発生してもチーム解散を必ず実行する。
 
 #### Step 1.1: コンテキスト収集
 
@@ -131,13 +129,13 @@ cat CLAUDE.md 2>/dev/null || echo ""
 
 #### Step 1.2: チーム作成
 
-TeamCreate ツールでチームを作成する:
+チームを作成する:
 
 - **team_name**: `team-brainstorm-{timestamp}`（timestamp は現在時刻）
 
 #### Step 1.3: メンバー spawn（並行）
 
-[references/brainstorm-roles.md](references/brainstorm-roles.md) に定義されたロールを **並行で** Agent spawn する（Explore サブエージェント型）。
+[references/brainstorm-roles.md](references/brainstorm-roles.md) に定義されたロールを **並行で** サブエージェントとして起動する。
 
 **基本4ロール（必須）:**
 - Challenger（挑戦者）
@@ -158,8 +156,8 @@ TeamCreate ツールでチームを作成する:
 
 **spawn 失敗時の処理:**
 
-- 成功した Agent が 2 名以上 → 続行
-- 成功した Agent が 1 名以下 → TeamDelete して中断:
+- 成功したメンバーが 2 名以上 → 続行
+- 成功したメンバーが 1 名以下 → チーム解散して中断:
 
 ```
 ⛔ TEAM-BRAINSTORM ABORTED: Insufficient team members (need >= 2, got {count})
@@ -172,9 +170,9 @@ Team disbanded.
 
 各ラウンドは3つのフェーズで構成される:
 
-1. **Phase 1 — 開放的発散**: 各ロールに SendMessage でテーマを共有 → 並行で独立にアイデアを3-5個生成 → SendMessage で Lead に報告
+1. **Phase 1 — 開放的発散**: 各ロールにメッセージでテーマを共有 → 並行で独立にアイデアを3-5個生成 → Lead にメッセージで報告
 2. **Phase 2 — 論争メモリ分類**: Lead が全アイデアを Accepted / Controversial / Frontier に分類
-3. **Phase 3 — ユーザーフィードバック + 深掘り**: 分類結果をユーザーに表示 → AskUserQuestion でフィードバック → チームに深掘りを指示
+3. **Phase 3 — ユーザーフィードバック + 深掘り**: 分類結果をユーザーに表示 → ユーザーにフィードバックを確認 → チームに深掘りを指示
 
 **ラウンドサマリー表示（各ラウンド終了時）:**
 
@@ -194,17 +192,17 @@ Total ideas explored: {cumulative_count}
 - 前ラウンドの Controversial と Frontier を追加コンテキストとして含め、深掘りを優先する
 - 新しいアイデアも歓迎する
 
-#### Step 1.5: TeamDelete
+#### Step 1.5: チーム解散
 
 **必ず実行する。** 正常完了・エラー・ユーザー中断のいずれの場合も。
 
-TeamDelete ツールでチームを解散:
+チームを解散:
 
 - **team_name**: `team-brainstorm-{timestamp}`
 
 #### 一時ファイルのクリーンアップ
 
-Session 中に `.claude/tmp/` 配下に一時ファイルを作成した場合は、TeamDelete の直後（Session 終了時）に削除する。
+Session 中に `.claude/tmp/` 配下に一時ファイルを作成した場合は、チーム解散の直後（Session 終了時）に削除する。
 
 ```bash
 rm -f .claude/tmp/team-brainstorm-*.json 2>/dev/null
@@ -236,7 +234,7 @@ Total ideas explored: {total_count}
 ### Steps
 
 1. 現在の会話から壁打ちの内容を整理する（論争メモリを含む）
-2. AskUserQuestion でタイトルとサマリーを確認
+2. ユーザーにタイトルとサマリーを確認
 3. `docs/ideas/` ディレクトリを作成（なければ `mkdir -p`）
 4. slug を生成: `yyyymmddhhmmss_{kebab-title}` (date +%Y%m%d%H%M%S)
 5. [references/session-template.md](references/session-template.md) をもとにメモファイルを生成: `docs/ideas/{slug}.md`
@@ -265,7 +263,7 @@ Total ideas explored: {total_count}
 
 ### セキュリティ
 
-壁打ち内容に機密情報が含まれる場合、メモファイルに書き出す前に AskUserQuestion で確認する。
+壁打ち内容に機密情報が含まれる場合、メモファイルに書き出す前にユーザーに確認する。
 
 ---
 
@@ -289,9 +287,9 @@ Total ideas explored: {total_count}
 
 1. `docs/ideas/idea-status.md` を読む
    - なければ「まだアイデアがありません」と表示して終了
-2. AskUserQuestion で対象アイデアを選択
+2. ユーザーに対象アイデアを選択してもらう
 3. アイデアファイルを読み込む
-4. Skill ツールで `claude-skills:plan-create` を実行（引数フォーマット: `{Title}: {Summary from idea file}` — plan-create は $ARGUMENTS をそのまま What & Why の種として使う）
+4. `claude-skills:plan-create` スキルを実行（引数フォーマット: `{Title}: {Summary from idea file}` — plan-create は $ARGUMENTS をそのまま What & Why の種として使う）
 5. アイデアの Status を `💡 Idea` → `📋 Planned` に更新
 6. アーカイブ処理を実行:
    - `docs/ideas/archives/` ディレクトリを作成（なければ `mkdir -p`）
@@ -317,13 +315,13 @@ Total ideas explored: {total_count}
 ### 絶対的な制約
 
 Session Workflow と同一の制約が適用される:
-- **Edit / Write / NotebookEdit** ツール使用禁止
+- ファイルの編集・作成・上書き・ノートブック編集禁止
 - コード生成・実装提案禁止
 
 ### Steps
 
 1. `resume` キーワード以降の $ARGUMENTS から slug を取得
-   - slug がなければ `docs/ideas/idea-status.md` を読んでテーブルを表示し、AskUserQuestion で対象アイデアを選択
+   - slug がなければ `docs/ideas/idea-status.md` を読んでテーブルを表示し、ユーザーに対象アイデアを選択してもらう
    - `idea-status.md` が存在しなければ「まだアイデアがありません」と表示して終了
 2. `docs/ideas/{slug}.md` を読み込む
    - ファイルが存在しなければ `docs/ideas/` のファイル一覧を表示してエラー終了
@@ -393,7 +391,7 @@ docs/ideas/
 - list / plan のコマンドは既存 brainstorm のコマンドを共用する（idea-status.md が共通なので）
 - 壁打ち内容に機密情報を含めないこと
 - Session 中のファイル編集は一切禁止。アイデアの記録は Wrap Workflow でのみ行う
-- `.claude/tmp/` 配下の一時ファイルは Session 終了時（TeamDelete 直後）にクリーンアップする
+- `.claude/tmp/` 配下の一時ファイルは Session 終了時（チーム解散直後）にクリーンアップする
 
 ## References
 

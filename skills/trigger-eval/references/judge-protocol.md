@@ -70,7 +70,7 @@ Tier 2 は `run_eval.py` 方式の stream 検出（`--output-format stream-json 
 
 - Tier 1 の判定エージェントは「選ぶこと」を指示された**選択器**であり、自律発火（何も発火せず直接回答する）とは分布が異なる。
 - **selection は弁別性の上界、autonomous は想起 (salience) の近似。両者の分布は異なるため結果を混合してはならない。** selection は「起動する前提でどれが最適か」を測るため recall/precision の上界を与え、autonomous は「そもそも起動に値するか」を含むため実運用の想起に近い。混合すると両者の異なる母集団を平均してしまい、どちらの信号も損なう。
-- 判定モデル（sonnet）は実運用のセッションモデルと異なる。
-- したがって Tier 1 の recall/precision は **sonnet 選択器相対の指標**であり、Tier 2 実発火との**乖離率がキャリブレーション信号**になる。
+- 判定モデル（軽量モデル）は実運用のセッションモデルと異なる。
+- したがって Tier 1 の recall/precision は **軽量モデル選択器相対の指標**であり、Tier 2 実発火との**乖離率がキャリブレーション信号**になる。
 - 「判定モデル」「Tier 2 の実行条件（`--max-turns` / timeout / worktree）」は knob である。
 - 判定エージェントのツール禁止は prompt-level の **soft guarantee** である。

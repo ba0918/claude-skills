@@ -55,7 +55,7 @@ Remaining arguments after the mode keyword are treated as scope hints:
 
 **Exclude**: `node_modules/`, `dist/`, `build/`, `.git/`, `vendor/`, `*.test.*`, `*.spec.*`, `*.d.ts`, lock files (`package-lock.json`, `yarn.lock`, `Pipfile.lock`, `go.sum`, `Cargo.lock`, `composer.lock`, `Gemfile.lock`), generated files, minified bundles (`*.min.js`, `*.min.css`).
 
-> **Note**: Lock files are excluded from `target_files` for noise reduction, but Agent 5 may consult them directly via Read if needed to confirm a specific CVE. Manifest files are the primary supply-chain surface.
+> **Note**: Lock files are excluded from `target_files` for noise reduction, but Agent 5 may consult them directly if needed to confirm a specific CVE. Manifest files are the primary supply-chain surface.
 
 ### Step 2: Language Detection & Project Analysis
 
@@ -63,7 +63,7 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
 
 1. Read CLAUDE.md (project root + under `.claude/`) to understand project-specific rules
 2. **Language detection** per the shared contract:
-   - Glob for marker files (Cargo.toml, package.json, go.mod, pyproject.toml, pubspec.yaml, composer.json, etc.)
+   - ファイル一覧取得でマーカーファイルを検索 (Cargo.toml, package.json, go.mod, pyproject.toml, pubspec.yaml, composer.json, etc.)
    - Read dependency sections to detect frameworks
    - Assign roles (server / client / both) per the contract's role determination rules
 3. **Auto-detect mode resolution** (if mode was not explicitly set in Step 1):
@@ -72,7 +72,7 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
    - Only client-role languages → `client`
    - Cannot determine → `full` (safe default)
 4. Understand directory structure
-5. **Obtain datetime via Bash** (use these exact commands — do not guess from context):
+5. **日時をシェルで取得**（以下の正確なコマンドを使用 — コンテキストから推測しない）:
    ```bash
    date +'%Y%m%d-%H%M'   # → e.g. 20260421-1840, used for {YYYYMMDD-HHMM} in work_dir
    date +'%Y-%m-%d %H:%M' # → e.g. 2026-04-21 18:40, used for the datetime field
@@ -92,7 +92,7 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
    Path: .claude/tmp/attack-review-{YYYYMMDD-HHMM}/
    Ensure the directory exists and is writable.
    ```
-8. **Write context.json** (create with Write tool).
+8. **context.json を作成する**。
 
    **Schema** — every field is required unless marked optional. Use the exact types/values shown:
 
@@ -179,100 +179,46 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
 
 ### Step 3: Launch Agents in Parallel
 
-Based on the determined mode, select and launch agents. Issue all Agent tool calls in a **single message** — do not split across multiple messages.
+決定されたモードに基づいてエージェントを選択し起動する。すべてのサブエージェント起動を**単一メッセージで**行う — 複数メッセージに分割しない。
 
-**Model tiering**: core agents and the integration agent run with `model: "opus"` — attack finding has no mechanical verification gate, so a missed vulnerability passes silently; do not drop below opus (see [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering). **Never run these agents on `fable`** — Fable's cybersecurity classifiers can return `refusal` even for legitimate defensive security reviews, breaking the run regardless of cost.
+**モデル階層**: コアエージェントと統合エージェントは高性能モデルで実行する — 攻撃発見には機械的検証ゲートがないため、見落とした脆弱性はそのまま通過する。セキュリティ分類器がリフューザルを返す可能性のあるモデルは使用しない。
 
-Prompt templates, attack criteria, and language profiles are in:
+プロンプトテンプレート・攻撃基準・言語プロファイル:
 - [references/agent-prompts.md](references/agent-prompts.md)
 - [references/attack-criteria.md](references/attack-criteria.md)
 - [references/lang-profiles.md](references/lang-profiles.md)
 
 #### Agent Selection by Mode
 
-**full mode** — all 7 agents:
-```pseudocode
-// All calls in ONE message
-Agent(
-  name: "injection-hunter",
-  description: "Injection Attack Review",
-  subagent_type: "general-purpose",
-  model: "opus",
-  mode: "bypassPermissions",
-  prompt: <Template from agent-prompts.md>
-          agent_name   = "Injection Hunter"
-          criteria     = § Agent 1 from attack-criteria.md
-          lang_profile = Server-role sections from lang-profiles.md
-          output       = "{work_dir}/agent-1-injection.json"
-)
-Agent(
-  name: "authn-authz-breaker",
-  description: "AuthN/AuthZ Attack Review",
-  subagent_type: "general-purpose",
-  model: "opus",
-  mode: "bypassPermissions",
-  prompt: <Template from agent-prompts.md>
-          agent_name   = "AuthN/AuthZ Breaker"
-          criteria     = § Agent 2 from attack-criteria.md
-          lang_profile = All detected language sections from lang-profiles.md
-          output       = "{work_dir}/agent-2-authn-authz.json"
-)
-Agent(
-  name: "client-attack-specialist",
-  description: "Client-Side Attack Review",
-  subagent_type: "general-purpose",
-  model: "opus",
-  mode: "bypassPermissions",
-  prompt: <Template from agent-prompts.md>
-          agent_name   = "Client Attack Specialist"
-          criteria     = § Agent 3 from attack-criteria.md
-          lang_profile = Client-role sections from lang-profiles.md
-          output       = "{work_dir}/agent-3-client-attack.json"
-)
-Agent(
-  name: "data-secrets-exfiltrator",
-  description: "Data & Secrets Exposure Review",
-  subagent_type: "general-purpose",
-  model: "opus",
-  mode: "bypassPermissions",
-  prompt: <Template from agent-prompts.md>
-          agent_name   = "Data & Secrets Exfiltrator"
-          criteria     = § Agent 4 from attack-criteria.md
-          lang_profile = All detected language sections from lang-profiles.md
-          output       = "{work_dir}/agent-4-data-secrets.json"
-)
-Agent(
-  name: "infra-supply-chain-exploiter",
-  description: "Infra & Supply Chain Attack Review",
-  subagent_type: "general-purpose",
-  model: "opus",
-  mode: "bypassPermissions",
-  prompt: <Template from agent-prompts.md>
-          agent_name   = "Infra & Supply Chain Exploiter"
-          criteria     = § Agent 5 from attack-criteria.md
-          lang_profile = All detected language sections from lang-profiles.md
-          output       = "{work_dir}/agent-5-infra-supply-chain.json"
-)
-Agent(
-  name: "business-logic-abuser",
-  description: "Business Logic Attack Review",
-  subagent_type: "general-purpose",
-  model: "opus",
-  mode: "bypassPermissions",
-  prompt: <Template from agent-prompts.md>
-          agent_name   = "Business Logic Abuser"
-          criteria     = § Agent 6 from attack-criteria.md
-          lang_profile = All detected language sections from lang-profiles.md
-          output       = "{work_dir}/agent-6-business-logic.json"
-)
-Agent(
-  name: "codex-review",
-  description: "Codex Security Second Opinion",
-  subagent_type: "codex:codex-rescue",
-  mode: "bypassPermissions",
-  prompt: <Codex template from agent-prompts.md>
-          output       = "{work_dir}/agent-7-codex.json"
-)
+**full mode** — 7 エージェント全起動（すべて自動実行モード・高性能モデル）:
+```
+起動するサブエージェント:
+
+1. injection-hunter        — Injection Attack → {work_dir}/agent-1-injection.json
+                             criteria: § Agent 1 from attack-criteria.md
+                             lang_profile: Server-role sections from lang-profiles.md
+
+2. authn-authz-breaker     — AuthN/AuthZ Attack → {work_dir}/agent-2-authn-authz.json
+                             criteria: § Agent 2 from attack-criteria.md
+                             lang_profile: All detected language sections
+
+3. client-attack-specialist — Client-Side Attack → {work_dir}/agent-3-client-attack.json
+                             criteria: § Agent 3 from attack-criteria.md
+                             lang_profile: Client-role sections from lang-profiles.md
+
+4. data-secrets-exfiltrator — Data & Secrets → {work_dir}/agent-4-data-secrets.json
+                             criteria: § Agent 4 from attack-criteria.md
+                             lang_profile: All detected language sections
+
+5. infra-supply-chain-exploiter — Infra & Supply Chain → {work_dir}/agent-5-infra-supply-chain.json
+                             criteria: § Agent 5 from attack-criteria.md
+                             lang_profile: All detected language sections
+
+6. business-logic-abuser   — Business Logic → {work_dir}/agent-6-business-logic.json
+                             criteria: § Agent 6 from attack-criteria.md
+                             lang_profile: All detected language sections
+
+7. codex-review            — Codex セカンドオピニオン → {work_dir}/agent-7-codex.json
 ```
 
 **server mode** — skip Agent 3 (Client Attack Specialist):
@@ -336,7 +282,7 @@ After all agents complete, verify results:
 
 **After confirming sufficient agents have completed**, launch the integration agent.
 
-Integration agent: `subagent_type: general-purpose`, `model: "opus"`, `mode: bypassPermissions`
+統合エージェント: 汎用サブエージェント、高性能モデル、自動実行モード
 
 Use the integration agent prompt template from [references/agent-prompts.md](references/agent-prompts.md) § Integration Agent Prompt Template.
 

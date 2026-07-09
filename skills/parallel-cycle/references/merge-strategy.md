@@ -71,7 +71,7 @@ Skipped cycles are reported as "skipped due to dependency failure" — distinct 
 After merging (or deciding not to merge), clean up worktrees:
 
 ```bash
-# ExitWorktree handles cleanup automatically
+# Worktree cleanup is handled automatically
 # But verify no stale worktrees remain
 git worktree list
 git worktree prune

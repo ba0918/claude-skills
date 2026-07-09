@@ -25,22 +25,21 @@ Security と Architect が独立して実装コードを分析し、各自の専
 `git diff {base_commit}..HEAD` の変更差分のみ。
 
 - `base_commit` は Phase 2 実装開始直前に `git rev-parse HEAD` でキャプチャしておく
-- diff が 500 行を超える場合はファイル単位で分割して各 Agent に配分する
+- diff が 500 行を超える場合はファイル単位で分割して各サブエージェントに配分する
 
 ### 手順
 
-1. 2名のレビュワーを **並行で** Agent spawn する
+1. 2名のレビュワーを **並行で** サブエージェントとして起動する
 2. 各レビュワーに以下を渡す:
    - `git diff {base_commit}..HEAD` の出力
    - CLAUDE.md の内容
    - [team-config.md](../../shared/references/team-config.md) に定義されたコードレビュー用プロンプト
-3. 各レビュワーは SendMessage で Lead に報告を送る
+3. 各レビュワーは Lead に報告を送る
 
-### Agent プロンプトテンプレート
+### サブエージェントプロンプトテンプレート
 
 ```
 あなたは {role_name} としてコードレビューに参加しています。
-チーム名: {team_name}
 
 {code_review_prompt_from_team_config}
 
@@ -50,7 +49,7 @@ Security と Architect が独立して実装コードを分析し、各自の専
 ## プロジェクトルール (CLAUDE.md)
 {claude_md_content}
 
-レビューが完了したら、SendMessage ツールを使って Lead（team_name: {team_name}、recipient: "lead"）に結果を報告してください。
+レビューが完了したら、Lead に結果を報告してください。
 ```
 
 ## Step 2: 論点整理（Lead）
@@ -61,7 +60,7 @@ Security と Architect が独立して実装コードを分析し、各自の専
 
 ### 手順
 
-1. 全レビュワーからの SendMessage を受け取る
+1. 全レビュワーからの報告を受け取る
 2. 報告を以下に分類する:
 
 | カテゴリ | 説明 | 処理 |
@@ -87,7 +86,7 @@ Security と Architect が独立して実装コードを分析し、各自の専
 
 ### NEEDS FIX 時の処理
 
-1. **通常モード**: 修正指示を Agent に渡して再実装 → 再レビュー（最大1回リトライ）
+1. **通常モード**: 修正指示をサブエージェントに渡して再実装 → 再レビュー（最大1回リトライ）
 2. **headless モード**: ユーザーにレビュー結果を出力し処理を中断
 
 ### 再レビュー

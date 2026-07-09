@@ -2,4 +2,4 @@
 description: "issue を選択して plan を作成する（cycle は実行しない）"
 ---
 
-Skill ツールで `claude-skills:issue` を実行する。引数: `plan $ARGUMENTS`
+スキル `claude-skills:issue` を実行する。引数: `plan $ARGUMENTS`

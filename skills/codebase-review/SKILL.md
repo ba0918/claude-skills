@@ -70,7 +70,7 @@ Config files like `package.json` / `Cargo.toml` / `tsconfig.json` are **not** in
    Path: .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/
    Ensure the directory exists and is writable.
    ```
-6. **Write context.json** (create with Write tool):
+6. **context.json を作成**:
    ```json
    {
      "project_name": "Project name",
@@ -85,64 +85,18 @@ Config files like `package.json` / `Cargo.toml` / `tsconfig.json` are **not** in
 
 ### Step 3: Launch 5 Agents in Parallel
 
-Issue exactly 5 Agent tool calls in a single message. Prompt templates for Agents 1-4 and Agent 5 are in [references/agent-prompts.md](references/agent-prompts.md).
+5 つのサブエージェントを**単一メッセージで並行起動**する。プロンプトテンプレートは [references/agent-prompts.md](references/agent-prompts.md) を参照。
 
-**Placeholder expansion**: When building each agent's prompt — **including the Codex agent** (Agent 5) — replace every placeholder (`{variable}`, `<Agent 1-4 template>`, `<Agent 5 template>`, "Content of the relevant section from references/review-criteria.md", `{work_dir}`, etc.) with the **actual content** inlined. Do not forward unresolved placeholders to any sub-agent, regardless of its `subagent_type`. Sub-agents do not have SKILL.md context and cannot resolve placeholders on their own.
+**プレースホルダ展開**: 各サブエージェントのプロンプトを構築する際、すべてのプレースホルダ（`{variable}` 等）を**実際のコンテンツに展開**してから渡す。サブエージェントは SKILL.md のコンテキストを持たないため、未解決のプレースホルダを転送しない。
 
-```pseudocode
-// All 5 calls in ONE message — do not split across multiple messages
-Agent(
-  name: "security-review",
-  description: "Security & Secrets Review",
-  subagent_type: "general-purpose",
-  model: "opus",
-  mode: "bypassPermissions",
-  prompt: <Agent 1-4 template from references/agent-prompts.md>
-          dimension = "Security + Secrets"
-          criteria  = Section 1 of references/review-criteria.md
-          output    = "{work_dir}/agent-1-security.json"
-)
-Agent(
-  name: "performance-review",
-  description: "Performance & Memory Review",
-  subagent_type: "general-purpose",
-  model: "opus",
-  mode: "bypassPermissions",
-  prompt: <Agent 1-4 template>
-          dimension = "Performance + Memory Efficiency"
-          criteria  = Section 2 of references/review-criteria.md
-          output    = "{work_dir}/agent-2-performance.json"
-)
-Agent(
-  name: "quality-review",
-  description: "Implementation Quality Review",
-  subagent_type: "general-purpose",
-  model: "opus",
-  mode: "bypassPermissions",
-  prompt: <Agent 1-4 template>
-          dimension = "Implementation Quality + Logical Consistency"
-          criteria  = Section 3 of references/review-criteria.md
-          output    = "{work_dir}/agent-3-quality.json"
-)
-Agent(
-  name: "hygiene-review",
-  description: "Code Hygiene Review",
-  subagent_type: "general-purpose",
-  model: "opus",
-  mode: "bypassPermissions",
-  prompt: <Agent 1-4 template>
-          dimension = "Code Duplication + Other Improvements"
-          criteria  = Section 4 of references/review-criteria.md
-          output    = "{work_dir}/agent-4-hygiene.json"
-)
-Agent(
-  name: "codex-review",
-  description: "Codex Second Opinion Review",
-  subagent_type: "codex:codex-rescue",
-  mode: "bypassPermissions",
-  prompt: <Agent 5 template from references/agent-prompts.md>
-          output    = "{work_dir}/agent-5-codex.json"
-)
+```
+起動するサブエージェント（すべて自動実行モード・高性能モデル）:
+
+1. security-review  — Security + Secrets → {work_dir}/agent-1-security.json
+2. performance-review — Performance + Memory → {work_dir}/agent-2-performance.json
+3. quality-review   — Implementation Quality + Logic → {work_dir}/agent-3-quality.json
+4. hygiene-review   — Code Duplication + Improvements → {work_dir}/agent-4-hygiene.json
+5. codex-review     — Codex セカンドオピニオン → {work_dir}/agent-5-codex.json
 ```
 
 Codex セキュリティ制約・フォールバックの共通パターン: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
@@ -179,7 +133,7 @@ After all 5 agents complete, verify results:
    Check .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/ for any partial results.
    ```
 
-3. **Codex agent (Agent 5) is independent**: If `agent-5-codex.json` is missing for any reason (`codex:codex-rescue` plugin not installed, Codex CLI unreachable, sandbox blocked, explicit failure), display a warning and proceed without Codex perspective:
+3. **Codex agent (Agent 5) is independent**: If `agent-5-codex.json` is missing for any reason (Codex plugin not installed, Codex CLI unreachable, sandbox blocked, explicit failure), display a warning and proceed without Codex perspective:
    ```
    ⚠️ Codex second opinion unavailable — proceeding with existing review only.
    ```
@@ -203,9 +157,7 @@ After all 5 agents complete, verify results:
 
 ### Step 4: Launch Integration Agent
 
-**After confirming at least 2 review agents have completed**, launch the integration agent via the Agent tool (`mode: bypassPermissions`).
-
-Integration agent: `subagent_type: general-purpose`, `model: "opus"`, `mode: bypassPermissions`
+**少なくとも 2 つのレビューエージェントが完了したことを確認した後**、統合エージェント（汎用サブエージェント、高性能モデル、自動実行モード）を起動する。
 
 **Only when ≥1 core agent failed** (i.e., 2-3/4 core succeeded; skip this line entirely when 4/4 succeed), add to the integration agent prompt:
 ```
@@ -330,8 +282,8 @@ Do not include any other text in your final response.
 
 After confirming the integration agent has completed:
 
-1. **Read** `{work_dir}/summary.txt` with the Read tool and display it to the console as-is
-2. **Copy** with Bash tool (ensure target directory exists first):
+1. `{work_dir}/summary.txt` を読み取り、コンソールにそのまま表示する
+2. シェルでコピー（ターゲットディレクトリの存在を事前に確認）:
    ```bash
    mkdir -p docs/reviews && cp {work_dir}/report.md docs/reviews/review-{YYYYMMDD-HHMM}.md
    ```
@@ -377,11 +329,11 @@ After confirming the integration agent has completed:
 ## Important Rules
 
 - **Headless execution**: Do not prompt the user for confirmation at any step.
-- **All agents must use `mode: bypassPermissions`**: This is critical. Without it, agents will be blocked by permission prompts when reading source files and writing result JSON, causing cascading tool errors.
-- **Parallel execution via single message**: Issue all Agent tool calls in a single message to run them in parallel. Do NOT use `run_in_background` (that is a Bash tool parameter, not an Agent tool parameter).
-- **Codex agent uses Bash only**: The Codex agent (`subagent_type: "codex:codex-rescue"`) can only use the Bash tool. All file reads/writes must use shell commands (`cat`, `tee`, etc.), not Read/Write/Edit tools.
+- **全エージェントを自動実行モードで起動する**: これが不可欠。権限プロンプトでブロックされるとカスケード障害になる。
+- **単一メッセージで並行起動**: すべてのサブエージェント呼び出しを 1 つのメッセージにまとめて並行実行する。
+- **Codex エージェントはシェルコマンドのみ使用**: Codex セカンドオピニオン・エージェントのファイル読み書きはすべてシェルコマンド（`cat`, `tee` 等）で行う。
 - **Graceful degradation**: Partial results are better than no results. If some agents fail, generate a report from the successful agents.
-- **Do not read agent-*.json or report.md into the main context** (except summary.txt). This preserves context window space.
+- **agent-*.json や report.md をメインコンテキストに読み込まない**（summary.txt のみ）。コンテキストウィンドウの節約。
 
 ## Reference
 

@@ -51,7 +51,7 @@ Sources to collect:
 Scan the plan content for UI/UX signals. If ANY of the following are detected, include Review 7 (UI/UX) in the parallel review:
 
 **Strong signals (any one triggers):**
-- Keywords: "UI", "UX", "component", "screen", "page", "button", "form", "modal", "frontend", "AskUserQuestion", "accessibility", "a11y"
+- Keywords: "UI", "UX", "component", "screen", "page", "button", "form", "modal", "frontend", "ユーザー確認", "accessibility", "a11y"
 - File extensions in affected files: `.tsx`, `.jsx`, `.vue`, `.svelte`, `.css`, `.scss`, `.html`
 
 **Weak signals (2+ required to trigger):**
@@ -67,9 +67,9 @@ If no signals detected and no override, skip Review 7.
 
 ### Step 3: Execute 7-Dimension Parallel Review + Codex Second Opinion
 
-Launch up to **7 reviews + 1 Codex agent in parallel** (Review 7: UI/UX is conditional — see Step 2.5). Each review runs as an Explore agent or general-purpose agent with `model: "opus"` — reviews have no mechanical verification gate (a missed finding passes silently), so they stay on opus; the explicit param prevents inheriting a premium session model such as Fable (see [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering). The Codex agent runs as `subagent_type: "codex:codex-rescue"` (no `model` param — Codex uses its own CLI configuration).
+最大 **7 レビュー + 1 Codex エージェントを並行起動**する（Review 7: UI/UX は条件付き — Step 2.5 参照）。各レビューは探索型または汎用のサブエージェントとして起動する — レビューには機械的検証ゲートがなく（見落とした指摘はそのまま通過する）、高性能モデルで実行する。Codex エージェントは Codex セカンドオピニオンとして並行起動する。
 
-**Execution fallback**: Parallel dispatch via the Agent tool is the preferred mode. If the Agent tool is unavailable (e.g. the reviewer is itself running as a sub-agent and cannot spawn further agents, or the tool is disabled), run the dimensions **sequentially in the same session** — apply each dimension's checklist one at a time and compose the final integrated report yourself. Sequential execution must still produce the same output format as parallel; only the dispatch mechanism changes. Note the fallback once in the report (`Execution mode: sequential (Agent tool unavailable)`).
+**Execution fallback**: サブエージェントの並行起動が推奨モード。サブエージェントが利用できない場合（例: 自身がサブエージェントとして実行中でさらなるサブエージェントを生成できない等）、各次元のチェックリストを**同一セッション内で逐次実行**する。逐次実行でも並行実行と同じ出力フォーマットを生成すること。フォールバックをレポートに 1 度記載する（`Execution mode: sequential (subagent unavailable)`）。
 
 Each review applies perspectives in the following priority order:
 1. Project-specific rules from `.claude/review-rules.md` (highest priority)
@@ -128,7 +128,7 @@ Each review applies perspectives in the following priority order:
 
 - Error messages are actionable (what happened, why, how to fix)
 - Progress feedback for long operations
-- AskUserQuestion option design (Hick's Law, clear labels, defaults)
+- ユーザー確認の選択肢設計（Hick's Law、明確なラベル、デフォルト値）
 - Output format consistency with existing skills
 - Cancel/abort path design
 - Information hierarchy (summary first, details on demand)
@@ -137,7 +137,7 @@ Each review applies perspectives in the following priority order:
 
 #### Review 8: Codex Second Opinion (always runs)
 
-Launch a Codex agent (`subagent_type: "codex:codex-rescue"`) **in parallel** with Reviews 1-7.
+Codex セカンドオピニオン・エージェントを Reviews 1-7 と**並行で**起動する。
 
 **Prompt to Codex agent:**
 ```

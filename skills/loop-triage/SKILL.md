@@ -137,7 +137,7 @@ python3 {skill_dir}/scripts/triage.py $OUT/findings-*.json \
   --repo-root {repo_root} --update-baseline .claude/loop-baseline.json
 ```
 
-実行前に AskUserQuestion で「何件を baseline 化するか」の確認を必ず取る（自走文脈では baseline 化しない）。
+実行前にユーザーに確認して「何件を baseline 化するか」の承認を必ず取る（自走文脈では baseline 化しない）。
 
 ## status — 棚卸し
 

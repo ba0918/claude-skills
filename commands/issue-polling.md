@@ -2,7 +2,7 @@
 description: "ready キューを消化し続ける self-driving polling ループを起動する（ラルフループ型、bypass-permissions 前提）"
 ---
 
-Skill ツールで `claude-skills:issue` を実行する。引数: `polling $ARGUMENTS`
+スキル `claude-skills:issue` を実行する。引数: `polling $ARGUMENTS`
 
 ## Flags
 

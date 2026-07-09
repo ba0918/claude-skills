@@ -24,7 +24,7 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
 
 The contract covers: Rust, TypeScript/JavaScript, Go, Python, Dart, PHP (including legacy 5.x), Java/Kotlin, Ruby, C#, HTML/CSS.
 
-Use Glob to search for marker files. If multiple matches are found across subdirectories, it may be a monorepo.
+ファイル一覧取得でマーカーファイルを検索する。サブディレクトリに複数マッチがある場合、モノレポの可能性がある。
 
 ### Step 3: Generate Rules
 

@@ -157,12 +157,12 @@ codebase-review の並行分析パターンと同型。
 
 ## モデル・権限指定
 
-| ロール | モデル | mode | 理由 |
-|--------|--------|------|------|
-| friction-detector | sonnet | bypassPermissions | 定量分析、コスト抑制。結果JSONをtmpに書き出すため権限必須 |
-| pattern-analyzer | sonnet | bypassPermissions | パターン検出、コスト抑制。同上 |
-| expectation-auditor | sonnet | bypassPermissions | 比較分析、コスト抑制。同上 |
-| drift-detector | sonnet | bypassPermissions | ドリフト検出、コスト抑制。同上 |
-| 統合エージェント | sonnet | bypassPermissions | レポート生成、コスト抑制。同上 |
+| ロール | モデル | 実行モード | 理由 |
+|--------|--------|------------|------|
+| friction-detector | 軽量モデル | 自動実行 | 定量分析、コスト抑制。結果JSONをtmpに書き出すため権限必須 |
+| pattern-analyzer | 軽量モデル | 自動実行 | パターン検出、コスト抑制。同上 |
+| expectation-auditor | 軽量モデル | 自動実行 | 比較分析、コスト抑制。同上 |
+| drift-detector | 軽量モデル | 自動実行 | ドリフト検出、コスト抑制。同上 |
+| 統合エージェント | 軽量モデル | 自動実行 | レポート生成、コスト抑制。同上 |
 
-**Important**: `mode: bypassPermissions` は全エージェントで必須。バックグラウンドエージェントは権限プロンプトでブロックされるとファイル書き込みが完全に失敗する。
+**Important**: 全エージェントを自動実行モードで起動すること。バックグラウンドエージェントは権限プロンプトでブロックされるとファイル書き込みが完全に失敗する。

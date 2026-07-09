@@ -24,29 +24,28 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 
 ### 絶対的な制約
 
-#### 禁止ツール（いかなる状況でも使用禁止）
+#### 禁止操作（いかなる状況でも禁止）
 
-- **Edit** ツール — ファイル編集禁止
-- **Write** ツール — ファイル作成・上書き禁止
-- **NotebookEdit** ツール — ノートブック編集禁止
+- ファイルの編集・作成・上書き禁止
+- ノートブック編集禁止
 
 #### 禁止行為
 
 - コード生成・実装提案禁止（擬似コードでの概念説明は可）
 - 「じゃあ実装しますね」「コードを書きます」は絶対に言わない
 
-#### 許可ツール
+#### 許可操作
 
-- **Read** — ファイルの読み取り（コードベース調査用）
-- **Grep** — パターン検索（コードベース調査用）
-- **Glob** — ファイル検索（コードベース調査用）
-- **Bash** — **読み取り専用コマンドのみ**（`git log`, `git diff`, `ls`, `cat` 等）
-- **Agent** — **Codex セカンドオピニオン取得のみ**（`subagent_type: "codex:codex-rescue"` 限定）
-- **AskUserQuestion** — ユーザーとの対話
+- ファイルの読み取り（コードベース調査用）
+- パターン検索（コードベース調査用）
+- ファイル一覧取得（コードベース調査用）
+- シェルコマンド（**読み取り専用のみ**: `git log`, `git diff`, `ls`, `cat` 等）
+- Codex セカンドオピニオンの取得（サブエージェント経由）
+- ユーザーとの対話（選択肢を提示して確認）
 
 ### フロー
 
-1. テーマを $ARGUMENTS から取得（なければ AskUserQuestion で聞く）
+1. テーマを $ARGUMENTS から取得（なければユーザーに聞く）
 2. **Codex 接続状態を初期化**: `codex_available = true`
 3. **行き詰まり提案済みフラグを初期化**: `stuck_hint_shown = false`
 4. 壁打ち対話ループに入る:
@@ -66,15 +65,15 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
         ```
       - 2回目以降のキーワード検出では表示を抑制する（`stuck_hint_shown == true` なのでスキップ）
    c. **Codex セカンドオピニオン取得**（`codex_available == true` の場合のみ）:
-      - Agent ツール（`subagent_type: "codex:codex-rescue"`）でユーザーの発言 + 壁打ちテーマ + これまでの議論の要約を送信
+      - Codex セカンドオピニオン用のサブエージェントでユーザーの発言 + 壁打ちテーマ + これまでの議論の要約を送信
       - プロンプト: 「以下の壁打ちテーマとユーザーの発言に対して、異なる視点・反論・見落とし・関連するアイデアを提供してください。テーマ: {theme}。ユーザーの発言: {user_message}。これまでの議論: {summary}」
         - **`{summary}` の扱い**: 初回ターン（履歴なし）の場合は `（最初のターン、履歴なし）` という文字列を代入する。2ターン目以降は過去ターンの議論要約（1〜3 文程度）を代入する
       - セキュリティ制約: 会話テキストのみを渡す（ファイル読み取り結果は渡さない）
       - **成功時**: Codex の意見を保持して次のステップへ
       - **失敗時**: 以下のいずれかに該当する場合は失敗として扱う:
-        - Agent ツール呼び出しがエラーを返した
-        - Agent ツールがタイムアウトした
-        - Agent ツール自体が環境に存在しない / 呼び出し不可（`subagent_type: "codex:codex-rescue"` が利用不能）
+        - サブエージェント呼び出しがエラーを返した
+        - サブエージェントがタイムアウトした
+        - Codex セカンドオピニオンが環境に存在しない / 呼び出し不可
         - Codex の応答が空、または指定フォーマットを満たさない
       - 失敗時の処理: 初回のみ `⚠️ Codex unavailable — proceeding with Claude only` を表示し、`codex_available = false` に設定。以降のターンでは Codex 呼び出しをスキップ
    d. Claude が応答を生成する（Codex の意見があればそれを統合）:
@@ -84,8 +83,8 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
         💡 Codex の視点:
         {Codex の意見の要約}
         ```
-   e. 必要に応じて既存のコードベースを Read/Grep で調査（読み取り専用）
-   f. AskUserQuestion で次の入力を求める
+   e. 必要に応じて既存のコードベースをファイル読み取り・パターン検索で調査（読み取り専用）
+   f. ユーザーに次の入力を求める
    g. ユーザーが「wrap」「まとめて」「終わり」等と言ったらループ終了
 5. ループ終了時に Wrap Workflow への誘導メッセージを表示:
    ```
@@ -93,7 +92,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
    `/claude-skills:brainstorm-wrap` でアイデアをメモに整理できます。
    ```
 
-**Note**: Claude の応答生成と Agent 呼び出しは並行実行できないため、Codex 呼び出し → Claude 応答生成の順で逐次実行する。
+**Note**: Claude の応答生成とサブエージェント呼び出しは並行実行できないため、Codex 呼び出し → Claude 応答生成の順で逐次実行する。
 
 共通パターンの詳細: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
 
@@ -116,7 +115,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 ### Steps
 
 1. 現在の会話から壁打ちの内容を整理する
-2. AskUserQuestion でタイトルとサマリーを確認
+2. ユーザーにタイトルとサマリーを確認
 3. `docs/ideas/` ディレクトリを作成（なければ `mkdir -p`）
 4. slug を生成: `yyyymmddhhmmss_{kebab-title}` (date +%Y%m%d%H%M%S)
 5. [references/idea-template.md](references/idea-template.md) をもとにメモファイルを生成: `docs/ideas/{slug}.md`
@@ -143,7 +142,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 
 ### セキュリティ
 
-壁打ち内容に機密情報が含まれる場合、メモファイルに書き出す前に AskUserQuestion で確認する。
+壁打ち内容に機密情報が含まれる場合、メモファイルに書き出す前にユーザーに確認する。
 
 ---
 
@@ -167,11 +166,11 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 
 1. `docs/ideas/idea-status.md` を読む
    - なければ「まだアイデアがありません」と表示して終了
-2. AskUserQuestion で対象アイデアを選択（エントリが 1 件のみでも省略せず明示的に選択プロセスを実行する）
+2. ユーザーに対象アイデアを選択してもらう（エントリが 1 件のみでも省略せず明示的に選択プロセスを実行する）
 3. アイデアファイルを読み込む
    - **Title の出典**: `idea-status.md` のテーブルの最初のカラムのリンクテキスト（= Wrap Workflow で保存した `kebab-title`）を使用する
    - **Summary の出典**: アイデアファイル本文の `## Summary` セクションの内容
-4. Skill ツールで `claude-skills:plan-create` を実行（引数フォーマット: `{Title}: {Summary from idea file}` — plan-create は $ARGUMENTS をそのまま What & Why の種として使う）
+4. `claude-skills:plan-create` スキルを実行（引数フォーマット: `{Title}: {Summary from idea file}` — plan-create は $ARGUMENTS をそのまま What & Why の種として使う）
    - **plan-create の出力**: 実行後、plan-create は `docs/plans/{new_timestamp}_{kebab-title}.md` を新規生成する（`new_timestamp` は plan-create 起動時の `date +%Y%m%d%H%M%S`）。このパスを「生成された plan ファイルパス」として保持し、Step 4.5 の引数に渡す
 4.5. Optional cycle execution:
    - If `--team-cycle` is present in the original `$ARGUMENTS`: Remove the flag, then execute `claude-skills:team-cycle` via the Skill tool with the created plan file path (from Step 4) as the argument. Skip Step 7 entirely (do not output any completion message — team-cycle produces its own completion log).
@@ -205,13 +204,13 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 ### 絶対的な制約
 
 Session Workflow と同一の制約が適用される:
-- **Edit / Write / NotebookEdit** ツール使用禁止
+- ファイルの編集・作成・上書き・ノートブック編集禁止
 - コード生成・実装提案禁止
 
 ### Steps
 
 1. `resume` キーワード以降の $ARGUMENTS から slug を取得
-   - slug がなければ `docs/ideas/idea-status.md` を読んでテーブルを表示し、AskUserQuestion で対象アイデアを選択
+   - slug がなければ `docs/ideas/idea-status.md` を読んでテーブルを表示し、ユーザーに対象アイデアを選択してもらう
    - `idea-status.md` が存在しなければ「まだアイデアがありません」と表示して終了
 2. `docs/ideas/{slug}.md` を読み込む
    - ファイルが存在しなければ `docs/ideas/` のファイル一覧を表示してエラー終了

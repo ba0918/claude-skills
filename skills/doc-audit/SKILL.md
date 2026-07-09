@@ -165,10 +165,10 @@ For each AUTO_FIX problem, in order:
 
 1. Display the problem and planned action
 2. Execute the fix:
-   - **Status updates** (Rules 1, 3, 7): Use Edit tool to modify the relevant Markdown table
-   - **File moves** (Rule 2): Use Bash to move files, then Edit to update index
-   - **History additions** (Rule 4): Use Edit to append rows to session-history.md
-   - **Index sync** (Rule 8): Use Edit to add/update entries in index files
+   - **Status updates** (Rules 1, 3, 7): 該当 Markdown テーブルを差分編集
+   - **File moves** (Rule 2): シェルでファイルを移動し、インデックスを差分編集
+   - **History additions** (Rule 4): session-history.md に行を追記
+   - **Index sync** (Rule 8): インデックスファイルにエントリを追加・更新
 3. Record result: `{rule, status: "Done", description}`
 
 **Idempotency guarantee**: Before each fix, verify the problem still exists. If already resolved (e.g., by a previous fix in this run), skip.

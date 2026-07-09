@@ -45,7 +45,7 @@ Additional instruction → Scope analysis → Size judgment ─→ Small → Imp
 
 ## Phase 1: Scope Analysis
 
-Use the Agent tool (subagent_type: Explore) to investigate:
+探索型サブエージェントに委譲して調査する:
 
 1. Compare the additional instructions against existing code and estimate the impact scope
 2. List files that need to be changed
@@ -71,7 +71,7 @@ Count `N = (number of ## Additional Changes sections found) + 1` (current call i
   ```
   ℹ️ This is the 2nd iterate call in this session.
   ```
-- **N >= 3 (3rd+ call)** → Trigger cumulative Large warning via AskUserQuestion:
+- **N >= 3 (3rd+ call)** → Trigger cumulative Large warning（ユーザーに選択肢を提示して確認）:
   ```
   ⚠️ Cumulative iterate detected ({N}th call this session)
   Multiple consecutive iterate calls may indicate the task exceeds iterate's scope.
@@ -97,7 +97,7 @@ Proceed to Phase 3.
 
 ### If Large
 
-Use AskUserQuestion to let the user decide:
+ユーザーに選択肢を提示して判断を仰ぐ:
 
 ```
 ── Scope: Large ──
@@ -115,7 +115,7 @@ Options:
 
 ## Phase 3: Implementation
 
-Launch an implementation agent via the Agent tool (general-purpose). Model by Phase 2 size judgment: `model: "sonnet"` if **Small** (small scope + the verification gate make the cheaper tier safe), `model: "opus"` if **Large**. See [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering.
+実装サブエージェントを起動する。Phase 2 のサイズ判定に応じてモデルを選択: **Small** なら軽量モデル（スコープが小さく検証ゲートがあるため安全）、**Large** なら高性能モデル。See [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering.
 
 Instructions to the agent:
 - Implement the additional instructions
@@ -128,11 +128,11 @@ Instructions to the agent:
 - Avoid testing anti-patterns defined in `rules/testing-anti-patterns.md`
 - Run existing tests after implementation and confirm all pass
 
-## Phase 4: Review + Codex Second Opinion
+## Phase 4: Review + Codex セカンドオピニオン
 
 See [references/light-review.md](references/light-review.md) for detailed review perspectives.
 
-**Before dispatching the review/Codex agents**: the iterate main context captures the diff once so both agents see the same input.
+**レビュー / Codex エージェントを起動する前に**: iterate のメインコンテキストで diff を一度取得し、両エージェントに同じ入力を渡す。
 ```bash
 git diff HEAD           # uncommitted changes, to be committed shortly
 # or
@@ -142,33 +142,33 @@ Store the diff output and inline it into both agent prompts. If the diff exceeds
 
 ### If Small
 
-Launch **2 agents in parallel** (issue both Agent tool calls in a single message):
-1. **Review agent** (general-purpose, `model: "opus"`):
-   - Review from 2 perspectives: Security + Implementation Quality
-   - Use `.claude/review-rules.md` as additional criteria if it exists
-   - Apply `skills/shared/references/verification-gate.md` Gate Function: do NOT issue PASS without test execution evidence
-     - **Exception — non-executable changes** (documentation only, as defined in Phase 3): Gate Function is satisfied by (a) confirming the existing test suite still passes, or (b) explicit declaration that no executable code is affected. The review agent must state which path applies.
-   - Classify findings as BLOCK / WARN / PASS
-2. **Codex agent** (`subagent_type: "codex:codex-rescue"`, Bash tool only):
-   - Provide the change diff (`git diff`) and the user's instructions directly in the prompt
-   - If the diff exceeds ~50KB, pass a summarized diff (file list + `git diff --stat` + key hunks) instead of the full diff to avoid token overflow
-   - Ask for design issues, edge cases, and alternative approaches
-   - Security constraint: pass diff only, not raw source files
+**2 つのサブエージェントを並行起動する**（同一メッセージで同時に発行）:
+1. **レビューエージェント**（高性能モデル）:
+   - Security + Implementation Quality の 2 観点でレビュー
+   - `.claude/review-rules.md` があれば追加基準として使用
+   - `skills/shared/references/verification-gate.md` Gate Function を適用: テスト実行証拠なしで PASS を出さない
+     - **例外 — 非実行的変更**（Phase 3 で定義したドキュメントのみの変更）: 既存テストスイートがパスすること、または実行コードへの影響がないことの明示的宣言で Gate Function を満たす。レビューエージェントはどちらのパスを適用するか明記する
+   - Findings を BLOCK / WARN / PASS に分類
+2. **Codex セカンドオピニオンエージェント**（シェルコマンドのみ使用可能）:
+   - change diff (`git diff`) とユーザーの指示をプロンプトに直接提供
+   - diff が ~50KB を超える場合は要約 diff（ファイルリスト + `git diff --stat` + 重要な hunks）を渡す
+   - 設計上の問題、エッジケース、代替アプローチを求める
+   - セキュリティ制約: diff のみを渡し、生のソースファイルは渡さない
 
 ### If Large (user chose to continue)
 
-Launch **2 agents in parallel** (issue both Agent tool calls in a single message):
-1. **Review agent** (general-purpose, `model: "opus"`):
-   - Review from 4 perspectives: Security + Implementation Quality + Architecture + Completeness
-   - Use `.claude/review-rules.md` as additional criteria if it exists
-   - Apply `skills/shared/references/verification-gate.md` Gate Function: do NOT issue PASS without test execution evidence
-     - **Exception — non-executable changes** (documentation only, as defined in Phase 3): Gate Function is satisfied by (a) confirming the existing test suite still passes, or (b) explicit declaration that no executable code is affected. The review agent must state which path applies.
-   - Classify findings as BLOCK / WARN / PASS
-2. **Codex agent** (`subagent_type: "codex:codex-rescue"`, Bash tool only):
-   - Provide the change diff (`git diff`) and the user's instructions directly in the prompt
-   - If the diff exceeds ~50KB, pass a summarized diff (file list + `git diff --stat` + key hunks) instead of the full diff to avoid token overflow
-   - Ask for design issues, edge cases, and alternative approaches
-   - Security constraint: pass diff only, not raw source files
+**2 つのサブエージェントを並行起動する**（同一メッセージで同時に発行）:
+1. **レビューエージェント**（高性能モデル）:
+   - Security + Implementation Quality + Architecture + Completeness の 4 観点でレビュー
+   - `.claude/review-rules.md` があれば追加基準として使用
+   - `skills/shared/references/verification-gate.md` Gate Function を適用: テスト実行証拠なしで PASS を出さない
+     - **例外 — 非実行的変更**（Phase 3 で定義したドキュメントのみの変更）: 既存テストスイートがパスすること、または実行コードへの影響がないことの明示的宣言で Gate Function を満たす。レビューエージェントはどちらのパスを適用するか明記する
+   - Findings を BLOCK / WARN / PASS に分類
+2. **Codex セカンドオピニオンエージェント**（シェルコマンドのみ使用可能）:
+   - change diff (`git diff`) とユーザーの指示をプロンプトに直接提供
+   - diff が ~50KB を超える場合は要約 diff（ファイルリスト + `git diff --stat` + 重要な hunks）を渡す
+   - 設計上の問題、エッジケース、代替アプローチを求める
+   - セキュリティ制約: diff のみを渡し、生のソースファイルは渡さない
 
 ### Codex Result Integration
 
@@ -224,7 +224,7 @@ Common patterns: [../shared/references/codex-integration.md](../shared/reference
 - Codex Second Opinion: {PASS|WARN|unavailable}
 ```
 
-2. Execute `claude-skills:commit` via the Skill tool to commit changes
+2. `claude-skills:commit` スキルを呼び出して変更をコミットする
 
 ## Phase 6: Completion Report
 
@@ -243,7 +243,7 @@ Plan updated: {plan_file_path}
 - **Judge size by actual code impact** — Do not be swayed by the user's expressions like "just a small thing"
 - **Do not block on Large judgment** — Always present options to the user
 - **If unexpected impact is discovered during implementation, halt and report**. Return path when halted in Phase 3:
-  1. If the newly discovered impact pushes the scope from Small → Large, re-enter Phase 2 with the updated scope and present the Large options to the user via AskUserQuestion.
+  1. If the newly discovered impact pushes the scope from Small → Large, re-enter Phase 2 with the updated scope and present the Large options to the user（選択肢を提示して確認）.
   2. If the impact is ambiguous or crosses module boundaries in unforeseen ways, escalate to the user directly (do not auto-resume). Suggest `/claude-skills:plan-create` as the fallback.
   3. Never silently continue past a halt.
 - **Headless operation**: Do not prompt for confirmation except for user choice on Large judgment and halt escalations

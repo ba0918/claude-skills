@@ -6,7 +6,7 @@ description: "サーバーサイドに特化した攻撃者視点レビュー（
 
 ## 手順
 
-1. Skill ツールで `claude-skills:attack-review` を起動する
+1. スキル `claude-skills:attack-review` を起動する
 2. 引数に `server` を先頭に付与し、残りの `$ARGUMENTS` を続けて渡す
    - 例: `server`, `server --diff`, `server src/api/`
 3. サーバーサイド攻撃に特化した5つのエージェント + Codex が並行でレビューを実行する

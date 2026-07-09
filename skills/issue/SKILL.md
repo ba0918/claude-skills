@@ -56,7 +56,7 @@ If arguments are given as free-form text without flags, extract title from the f
 ### Steps
 
 1. Parse title, summary, tags, and source from the arguments
-2. **Preview & confirmation** — Use AskUserQuestion to present the following and obtain user approval before proceeding:
+2. **Preview & confirmation** — ユーザーに選択肢を提示して確認 to present the following and obtain user approval before proceeding:
    - Parsed fields: title, summary, tags, source
    - `docs/issues/` directory existence check result
    - If `docs/issues/issue-status.md` exists, scan the Issue column for **exact title matches** of open issues (case-insensitive, after trimming whitespace). List each matching row. Do NOT use substring or fuzzy matching — exact match only.
@@ -126,11 +126,11 @@ This procedure is used by both Plan Workflow and Cycle Workflow. Do NOT duplicat
    - If the file does not exist: Display `No issues have been registered yet` and exit (same message as List Workflow Step 1)
 2. **Issue selection** — behavior depends on the number of open issues (counted as List Workflow Step 3 does — data rows only):
    - **0 issues** (file exists but has zero data rows): Display `No open issues found` and exit
-   - **1 issue**: Use AskUserQuestion to confirm with the user. Present the issue details and offer two options: the issue slug (to proceed) and "Cancel" (to abort).
-   - **2+ issues**: Use AskUserQuestion to present all issue slugs as options plus "Cancel". Ask the user to select the target issue.
+   - **1 issue**: ユーザーに選択肢を提示して確認 to confirm with the user. Present the issue details and offer two options: the issue slug (to proceed) and "Cancel" (to abort).
+   - **2+ issues**: ユーザーに選択肢を提示して確認 to present all issue slugs as options plus "Cancel". Ask the user to select the target issue.
 3. Read the selected issue file (`docs/issues/{slug}.md`)
    - If not found: Display the file list in `docs/issues/` and exit with an error message
-4. Execute `claude-skills:plan-create` via the Skill tool based on the issue content (title and summary)
+4. Execute `claude-skills:plan-create` via the skill invocation based on the issue content (title and summary)
    - Arguments: Pass the issue's title and summary
    - **CRITICAL**: The plan file MUST be created at `docs/plans/{timestamp}_{slug}.md`. Do NOT use `docs/cycles/` or any other directory. Verify the file was created in `docs/plans/` before proceeding.
    - **IMPORTANT**: Include `**Issue:** {slug}` in the plan header (no underscores, no markdown emphasis — just the raw slug). This field is used by `cycle` to auto-close the issue upon completion. See `plan/SKILL.md` "Optional `Issue` field" for the authoritative format.
@@ -169,17 +169,17 @@ Connect an issue to plan → cycle for resolution.
 
 1. Execute the **Issue → Plan Conversion** procedure above
 2. **Preflight check** — Read the selected issue file and verify the「備考」(Notes) section has meaningful content (not just the placeholder text):
-   - If the section is empty or contains only the default placeholder: Use AskUserQuestion to prompt the user for acceptance criteria or additional context. Update the issue file with the provided information before proceeding.
+   - If the section is empty or contains only the default placeholder: ユーザーに選択肢を提示して確認 to prompt the user for acceptance criteria or additional context. Update the issue file with the provided information before proceeding.
    - Options: provide text input, or "Skip" to proceed without additional context
 3. Execute cycle:
    - If `--team` is present in the arguments:
-     1. **Intake** — Use AskUserQuestion to collect discussion focus before starting team-cycle:
+     1. **Intake** — ユーザーに選択肢を提示して確認 to collect discussion focus before starting team-cycle:
         - 期待する議論の焦点（スコープ）
         - 優先的に検討すべき観点（e.g., セキュリティ、パフォーマンス、アーキテクチャ）
         - 禁止事項や制約（任意）
         - Options: provide text input, or "Skip" to use defaults
-     2. Remove `--team` from arguments, then execute `claude-skills:team-cycle` via the Skill tool with the created plan. Include the intake information in the arguments if provided.
-   - Otherwise: Execute `claude-skills:cycle` via the Skill tool with the created plan
+     2. Remove `--team` from arguments, then execute `claude-skills:team-cycle` via the skill invocation with the created plan. Include the intake information in the arguments if provided.
+   - Otherwise: Execute `claude-skills:cycle` via the skill invocation with the created plan
 4. Error handling:
    - If plan creation fails: Display the error and exit. The issue remains open.
    - If cycle fails or is interrupted: Display the error and the path to the created plan file. The issue remains open. Inform the user they can retry with `/claude-skills:cycle` using the existing plan — no need to re-run issue-cycle.
@@ -196,16 +196,16 @@ Close (archive) an issue.
 ### Arguments
 
 - Issue slug (required — the full slug including timestamp prefix, e.g. `20260323143000_fix-login-timeout`)
-- If omitted: Use AskUserQuestion to confirm. Follow the same selection logic as the **Issue → Plan Conversion** procedure Step 2.
+- If omitted: ユーザーに選択肢を提示して確認 to confirm. Follow the same selection logic as the **Issue → Plan Conversion** procedure Step 2.
 
 ### Steps
 
-1. Get the issue slug from arguments. If omitted, use AskUserQuestion following the selection logic in **Issue → Plan Conversion** Step 2.
+1. Get the issue slug from arguments. If omitted, use ユーザーに確認 following the selection logic in **Issue → Plan Conversion** Step 2.
 2. Verify the issue file `docs/issues/{slug}.md` exists
    - If not found: List files in `docs/issues/` and display an error message showing available slugs. Exit.
 3. Create the `docs/issues/archives/` directory (if it doesn't exist, use `mkdir -p`)
 4. Move the issue file to `docs/issues/archives/` (using `mv` command)
-5. Remove the row containing the slug from `docs/issues/issue-status.md` using the Edit tool
+5. Remove the row containing the slug from `docs/issues/issue-status.md`
 6. Update **Last Updated** to today's date
 7. Display the result:
    ```

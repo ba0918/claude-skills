@@ -98,15 +98,15 @@ R004, R007 の weight は他の項目に再配分されます。
 
 ### Step 5: Stage 4 — Rubric Judge
 
-Agent ツールで独立 judge エージェントを起動。
+独立した judge サブエージェントを起動する。
 
 1. 対象のスクリーンショットを準備（Stage 3 で撮影済み、または baseline を使用）
-2. DESIGN.md の Do's/Don'ts セクションを Read
+2. DESIGN.md の Do's/Don'ts セクションを読み込む
 3. rubric.json の `llm-judge` 項目のプロンプトを構築
-4. Agent を起動し、構造化された評価を取得
+4. サブエージェントを起動し、構造化された評価を取得
 5. 結果を R005, R006 にマッピング
 
-**重要:** judge Agent は **Read-only**。ファイル編集は一切行わない。
+**重要:** judge サブエージェントは **読み取り専用**。ファイル編集は一切行わない。
 
 ### Step 6: Aggregation + 最終判定
 
@@ -167,7 +167,7 @@ validation-pipeline.md の Stage 5 に従い:
 
 - 検証結果は **捏造しない**。全てのスコアは実際のツール実行結果に基づく
 - evidence は verification-gate 契約に準拠した形式で出力する
-- LLM judge は生成した LLM とは **別の Agent インスタンス** で実行する
+- LLM judge は生成した LLM とは **別のサブエージェント** で実行する
 - baseline なしで visual test を「pass」と判定してはならない
 - lint のみの場合でも evidence を残す（partial evidence として）
 

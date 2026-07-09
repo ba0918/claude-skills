@@ -70,7 +70,7 @@ codex-sync Progress:
 
 ## Step 3: 移植・変換の実行
 
-**Agent ツールに委譲**（`subagent_type: general-purpose`, `mode: bypassPermissions`）。
+**サブエージェントに委譲**（汎用型、自動実行モード）。
 プロンプトには以下を**実内容でインライン展開**して渡す（プレースホルダのまま転送しない）:
 
 - porting-rules.md の全文
@@ -79,7 +79,7 @@ codex-sync Progress:
 - 指示: 第1〜2層ルールを機械的に適用し、第3層に該当する箇所は**変換せず**
   `<!-- REVIEW: 理由 -->` コメントを挿入した上で、要判断リストとして返答に含めること
 
-Agent の出力で `codex-skills/<name>/SKILL.md` を作成（port）または更新（sync）する。
+サブエージェントの出力で `codex-skills/<name>/SKILL.md` を作成（port）または更新（sync）する。
 
 **references の処理**（port のみ）: ツール非依存の references は symlink を張る:
 

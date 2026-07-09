@@ -20,7 +20,7 @@ Input (natural language or plan files)
   │     Extract affected files → intersection check → execution groups
   │
   ├── Phase 2: Parallel Execution (per group)
-  │     EnterWorktree → Agent (cycle) → ExitWorktree
+  │     worktree 作成 → サブエージェント (cycle) → worktree 削除
   │
   ├── Phase 3: Merge
   │     Merge successful branches → test → revert on failure
@@ -42,9 +42,9 @@ Decompose a natural language instruction into multiple plans.
 
 ### Step 0.1: Analyze and Decompose
 
-Use the Agent tool to decompose the instruction. Do **not** set a `model` param here — decomposition and orthogonality judgment are high-leverage upstream decisions that should run on the session model (see [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering):
+サブエージェントに指示を分解させる。ここではモデルを明示指定しない — 分解と直交性判定は上流の重要判断であり、セッションモデルで実行すべき（see [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering）:
 
-**Agent prompt:**
+**サブエージェントへの指示:**
 ```
 Analyze the following instruction and decompose it into independent implementation plans.
 Follow the decomposition guide principles.
@@ -96,7 +96,7 @@ Estimated total groups: {M} rounds
 Proceed? (y/n/edit)
 ```
 
-Use AskUserQuestion for approval.
+ユーザーに選択肢を提示して承認を得る。
 
 - **y** → Proceed
 - **n** → Abort with message
@@ -104,11 +104,11 @@ Use AskUserQuestion for approval.
 
 ### Step 0.3: Generate Plan Files
 
-For each approved plan, use the Agent tool (`model: "sonnet"` — mechanical file generation from an already-approved decomposition) to generate a plan file:
+承認された各計画について、サブエージェント（軽量モデル — 承認済み分解からの機械的ファイル生成）で計画ファイルを生成する:
 
-**Agent prompt:**
+**サブエージェントへの指示:**
 ```
-Use the Skill tool to invoke `claude-skills:plan` to create a plan for the following feature.
+`claude-skills:plan` スキルを呼び出して以下の機能の計画を作成せよ。
 Feature: {plan_title}
 Description: {plan_description}
 Affected files: {file_list}
@@ -116,7 +116,7 @@ Affected files: {file_list}
 
 Each plan is saved to `docs/plans/{timestamp}_{slug}.md`. All plans in the same batch share a single `{timestamp}` (captured once at Step 0.3 entry) and are differentiated only by `{slug}`.
 
-**Parallelism**: Step 0.3 may invoke the Agent tool for all plans in parallel (up to the 3-concurrent Agent cap). Plan file generation is an independent write per plan; there is no data dependency between generations.
+**並行性**: Step 0.3 では全計画のサブエージェントを並行起動してよい（最大 3 並行）。計画ファイル生成は計画ごとに独立した書き込みで、生成間にデータ依存はない。
 
 ### Edge Cases
 
@@ -128,8 +128,8 @@ Each plan is saved to `docs/plans/{timestamp}_{slug}.md`. All plans in the same 
      Single plan detected. Falling back to /claude-skills:cycle.
      ```
   2. Skip Step 0.3 (do NOT generate a plan file). The downstream `claude-skills:cycle` skill will create a plan itself if it needs one.
-  3. Invoke `claude-skills:cycle` via the Skill tool, passing the original `$ARGUMENTS` string verbatim as its input. Do not re-word, summarize, or substitute a plan file path.
-  4. Exit immediately after the Skill invocation. Do not proceed to Phase 1, Phase 2, Phase 3, or Phase 4.
+  3. `claude-skills:cycle` スキルを呼び出し、元の `$ARGUMENTS` 文字列をそのまま入力として渡す。言い換え・要約・計画ファイルパスへの置換はしない。
+  4. スキル呼び出し後は即座に終了する。Phase 1, Phase 2, Phase 3, Phase 4 には進まない。
 
 ## Phase 1: Orthogonality Check & Grouping
 
@@ -189,21 +189,21 @@ Execute each group sequentially. Within each group, execute cycles in parallel.
 
 For each cycle in the group, **in parallel**:
 
-1. **Create worktree**: Use the `EnterWorktree` tool to create an isolated worktree and branch
-2. **Execute cycle**: Use the Agent tool (`model: "opus"` — implementation is protected by the verification gate and must not inherit an expensive session model) to run the cycle in the worktree:
+1. **worktree 作成**: git worktree で分離された作業ツリーとブランチを作成する
+2. **cycle 実行**: サブエージェント（高性能モデル — 実装は検証ゲートで保護されるため、高額セッションモデルを継承させない）を起動して worktree 内で cycle を実行する:
 
-   **Agent prompt:**
+   **サブエージェントへの指示:**
    ```
    You are working in a worktree at: {worktree_path}
    Branch: {branch_name}
 
-   Execute the Skill tool to invoke `claude-skills:plan-implement` for the plan file: {plan_file_path}
-   Implement all steps. Commit after each step. Update the progress table.
-   When done, report: files changed, tests added, commits made.
+   `claude-skills:plan-implement` スキルを呼び出して計画ファイル {plan_file_path} を実装せよ。
+   全ステップを実装し、各ステップ後にコミットし、進捗テーブルを更新する。
+   完了時に報告: 変更ファイル数、追加テスト数、コミット数。
    ```
 
-3. **Collect result**: Record success/failure and summary for each cycle
-4. **Cleanup worktree**: Use the `ExitWorktree` tool to remove the worktree
+3. **結果収集**: 各 cycle の成功/失敗とサマリーを記録する
+4. **worktree 削除**: git worktree を削除してクリーンアップする
 
 ### Failure Handling
 
@@ -213,7 +213,7 @@ For each cycle in the group, **in parallel**:
 
 ### Concurrency Limit
 
-Maximum 3 Agent invocations in parallel per group. If a group has more than 3 cycles, split into sub-batches of 3.
+グループあたり最大 3 サブエージェントを並行起動する。3 を超える場合はサブバッチに分割する。
 
 ### Important: status.md Write Suppression
 
@@ -307,7 +307,7 @@ Save the summary to `docs/plans/results/{base_plan_name}_result.md`:
 
 ## Important Rules
 
-- **Orchestrator is glue code only** — All heavy logic is delegated to Agent/Skill invocations
+- **Orchestrator is glue code only** — All heavy logic is delegated to subagent/skill invocations
 - **File orthogonality is the safety guarantee** — Never allow parallel execution of plans with file intersections
 - **Partial success is acceptable** — Merge what succeeds, preserve what fails
 - **Single user confirmation point** — Only Phase 0 approval. Everything else is headless

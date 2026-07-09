@@ -35,7 +35,7 @@ design-guide → design-scaffold → design-generate
 ```
 Phase 0: SETUP    — プロジェクト調査 + 比較スクリプト自動生成（初回のみ）
 Phase 1: CAPTURE  — 生成スクリプトでモック + アプリの両方をスクショ撮影
-Phase 2: COMPARE  — スクショを Read ツールで並べて目視比較
+Phase 2: COMPARE  — スクショを並べて目視比較
 Phase 3: ANALYZE  — CSS / コンポーネント / フォントの差分原因を特定
 Phase 4: FIX      — コード修正 + テスト更新
 Phase 5: VERIFY   — 再スクショで差分解消を確認
@@ -54,7 +54,7 @@ Phase 5: VERIFY   — 再スクショで差分解消を確認
 
 #### 1-1. フレームワーク・ビルドツール検出
 
-Glob/Grep で以下を調査:
+ファイル検索・パターン検索で以下を調査:
 
 | ファイル | 検出対象 |
 |---------|---------|
@@ -72,14 +72,14 @@ Glob/Grep で以下を調査:
 
 #### 1-3. モックアップ HTML の DOM 構造解析
 
-モックアップファイルを Read で読み込み:
+モックアップファイルを読み込み:
 - ページ切替の仕組み（CSS class toggle, hash routing, 個別 HTML ファイル等）
 - ナビゲーション要素のセレクタ
 - ページコンテナのセレクタ・ID パターン
 
 #### 1-4. アプリ側のナビゲーション構造
 
-アプリのソースコードを Grep で調査:
+アプリのソースコードをパターン検索で調査:
 - ルーティング方法（React Router, file-based routing 等）
 - ナビゲーションコンポーネントのセレクタ
 - ページ遷移の方法（リンクボタン、タブ等）
@@ -95,7 +95,7 @@ Glob/Grep で以下を調査:
 
 ### Step 2: config.json 生成
 
-調査結果を基に config.json のドラフトを作成し、AskUserQuestion でユーザーに確認する。
+調査結果を基に config.json のドラフトを作成し、ユーザーに確認する。
 
 ```
 header: "config 確認"
@@ -118,7 +118,7 @@ Mockup:      mockups/base/{page}.html
 Output:      .design/mockup-diff/screenshots
 ```
 
-確認後、`.design/mockup-diff/config.json` に Write する。
+確認後、`.design/mockup-diff/config.json` に保存する。
 
 **config.json のスキーマ:**
 
@@ -182,10 +182,10 @@ Output:      .design/mockup-diff/screenshots
 
 `apiMock.type` が `none` 以外の場合:
 
-1. アプリのソースコードから API コール（invoke, fetch 等）を Grep で検出
+1. アプリのソースコードから API コール（invoke, fetch 等）をパターン検索で検出
 2. 各 API エンドポイントに対する決定論的なダミーレスポンスを生成
-3. `.design/mockup-diff/mock-responses.json` に Write
-4. AskUserQuestion でレスポンスの内容を確認
+3. `.design/mockup-diff/mock-responses.json` に保存
+4. ユーザーに確認を取ってレスポンスの内容を確認
 
 ### Step 5: 動作確認（dry run）
 
@@ -244,11 +244,11 @@ node .design/mockup-diff/compare.mjs --pages today,report
 
 ## Phase 2: COMPARE
 
-Read ツールでスクショを並べて確認する。config.json の `output` と `pages` を参照して全ページ分を確認する:
+スクショ画像を読み込んで並べて確認する。config.json の `output` と `pages` を参照して全ページ分を確認する:
 
 ```
-Read {output}/mockup-{page}.png
-Read {output}/app-{page}.png
+{output}/mockup-{page}.png
+{output}/app-{page}.png
 ```
 
 **全ページ分を確認するまで次に進まない。**
@@ -331,7 +331,7 @@ Read {output}/app-{page}.png
 ## Phase 5: VERIFY
 
 1. Phase 1 と同じ手順で再度スクリプト実行
-2. Read ツールで新しいスクショとモックを再比較
+2. 新しいスクショとモックの画像を読み込んで再比較
 3. 全ての修正必須差分が解消されたことを確認
 4. 結果をユーザーに報告
 

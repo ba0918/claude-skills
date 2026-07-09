@@ -13,7 +13,7 @@
       "id": "sf-001",
       "title": "単一ファイル指摘からの横展開",
       "source": "docs/plans/20260702143000_sweep-fix.md",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {
@@ -42,7 +42,7 @@
 | `scenarios[].id` | ✓ | スキル内で一意な短い ID。安定させる（報告・履歴の追跡キー） |
 | `scenarios[].title` | ✓ | 1 行のシナリオ名 |
 | `scenarios[].source` | ✓ | この合格基準の出どころ（tuning セッションの plan doc / 手動設計なら `manual`）。来歴が追えない fixture は陳腐化判断ができない |
-| `scenarios[].executor_model` | - | 省略時 `sonnet`。`opus` に上げた場合は理由を `notes` に書く |
+| `scenarios[].executor_tier` | - | 省略時 `standard`。`high` に上げた場合は理由を `notes` に書く |
 | `scenarios[].isolation` | - | `worktree`（ファイル生成・編集を伴う）/ `none`（読み取り・対話のみ）。省略時 `worktree`（安全側） |
 | `scenarios[].setup.files` | - | シナリオ実行前に worktree 内へ配置するファイル（相対パス → 内容）。isolation が `worktree` の場合のみ有効 |
 | `scenarios[].prompt` | ✓ | 実行者に渡す状況設定。ユーザー発話として自然な文にする（スキル名を直接指定しない — 発火判定は trigger-eval の領分、ここでは本文実行の質だけを測る） |

@@ -289,9 +289,9 @@ Do not include any other text in your response. All details go in the JSON file.
 | `{attack_criteria_section}` | § Agent 6 from [attack-criteria.md](attack-criteria.md) |
 | `{lang_profile_sections}` | All detected language sections from [lang-profiles.md](lang-profiles.md) |
 
-## Agent 7: Codex Second Opinion (codex:codex-rescue)
+## Agent 7: Codex Second Opinion
 
-Codex エージェントは Bash ツールのみ使用可能。Read/Write/Edit ツールは使えない。
+Codex エージェントはシェルコマンドのみ使用可能。ファイルの読み取り・編集・作成は直接行えない。
 
 ```
 You are a Codex-powered security second opinion agent.

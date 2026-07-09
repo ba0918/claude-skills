@@ -73,7 +73,7 @@ goal と oracle_files 候補に関連するパスに調査を限定する。**fu
    差分『{gap}』を承知で下限として承認しますか？」
 3. **routing proof の差分承認**: 「{断片} を {wire_to} に配線しました（根拠: {proof}）。この配線でよいですか？」
 
-**headless 時は AskUserQuestion をスキップして draft を出し**、未解決の承認事項を inbox エントリ +
+**headless 時はユーザーへの確認をスキップして draft を出し**、未解決の承認事項を inbox エントリ +
 `blocked_by` に記録する（状態ゲートが人間承認を担保するので compile が対話をブロックしない）。
 
 ### Step 4: secret redaction（契約 §9・import ベース）

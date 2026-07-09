@@ -195,7 +195,7 @@ This dimension is triggered conditionally — only when the plan involves change
 
 - [ ] Error messages are actionable: include what happened, why, and how to fix it
 - [ ] Progress feedback is provided for operations taking > 5 seconds
-- [ ] AskUserQuestion options follow Hick's Law: ≤ 4 options, clear labels, sensible defaults
+- [ ] User-facing choice prompts follow Hick's Law: ≤ 4 options, clear labels, sensible defaults
 - [ ] Output format is consistent with existing skills (terminology, indentation, section headers)
 - [ ] Cancel/abort paths are designed and tested (not just happy path)
 - [ ] Information hierarchy follows "summary first, details on demand" pattern

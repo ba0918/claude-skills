@@ -76,7 +76,7 @@ See [references/structural-checks.md](references/structural-checks.md) for detai
 
 - **Missing entries**: Add following the format of existing entries
 - **Extra entries**: Do not delete; report as WARN (may be intentional)
-- **Use the Edit tool for fixes** (do not overwrite entire files with Write)
+- **修正は差分編集で行う**（ファイル全体の上書きではなく、該当箇所のみ編集する）
 
 ## Phase 3: Content Check
 
@@ -85,7 +85,7 @@ See [references/content-checks.md](references/content-checks.md) for detailed pe
 
 ### Execution Steps
 
-Launch Agent tools (general-purpose) **in parallel** for each document:
+各ドキュメントについてサブエージェントを**並行で**起動する:
 
 - Provide each agent with the target document content and change context (diff)
 - Have them verify from 4 perspectives: architecture descriptions, workflow descriptions, configuration descriptions, and API documentation
@@ -99,8 +99,8 @@ In `all` mode, since there is no diff, have agents explore the project structure
 
 ### Processing Results
 
-1. AUTO_FIX: Apply fixes using the Edit tool based on the fix suggestion
-2. NEEDS_JUDGMENT: Confirm with user via AskUserQuestion, then fix based on their response
+1. AUTO_FIX: 修正提案に基づいて差分編集で修正を適用する
+2. NEEDS_JUDGMENT: ユーザーに確認してから、回答に基づいて修正する
 3. OK: Record as-is
 
 ## Phase 4: Report
@@ -130,4 +130,4 @@ DOC-CHECK ({scope}: {N} commits / all)
 - **Maintain generality** — Do not hardcode specific project structures. Detect dynamically from actual state
 - **Do not delete extra entries** — They may be intentionally kept; only report them
 - **Run structural checks first** — Perform fast, reliable structural checks first; defer costly content checks
-- **Leverage parallel execution** — Run content checks in parallel agents per document to reduce processing time
+- **Leverage parallel execution** — Run content checks in parallel subagents per document to reduce processing time

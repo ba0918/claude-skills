@@ -2,7 +2,7 @@
 description: "GitHub `claude-auto` issue を self-driving で消化する polling ループ tick。`/loop` と組み合わせて常駐運用、単一ホスト前提"
 ---
 
-Skill ツールで `claude-skills:github-issue` を実行する。引数: `polling $ARGUMENTS`
+スキル `claude-skills:github-issue` を実行する。引数: `polling $ARGUMENTS`
 
 ## Flags
 
