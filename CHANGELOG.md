@@ -4,6 +4,37 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.41.0
+
+統合漏れクリーンアップ。
+
+- `commands/codex-sync.md` を削除（スキル本体は 1.40.0 で削除済み）
+- 各 SKILL.md / 共有契約 / issue から「Claude 版のみ」「Codex 移植」等のレガシー前提を除去
+- `tool-mapping.md` を「変換リファレンス」から「ランタイム差の参考資料」に改題
+- `skill-authoring.md` から Codex 移植セクションを削除
+- 関連 issue 2 件をクローズ（統合により superseded）
+- `empirical-prompt-tuning`: Codex 自己チューニングにより環境制約の代替案を明確化
+
+## 1.40.0
+
+プラットフォーム非依存化。スキル本文から LLM 固有のツール API 名・モデル名を排除し、
+Agent Skills 標準準拠のクロスプラットフォーム互換を実現。superpowers (obra/superpowers)
+のアプローチに倣い、自然言語で意図を記述する方式に統一。
+
+- **ツール名変換（111 ファイル）**: `Read` / `Edit` / `Write` / `Bash` / `Agent` /
+  `AskUserQuestion` / `SendMessage` / `TeamCreate` / `TeamDelete` / `Grep` / `Glob` /
+  `NotebookEdit` / `EnterWorktree` / `ExitWorktree` / `subagent_type` /
+  `mode: bypassPermissions` → 全て自然言語に
+- **モデル名変換**: `opus` → tier:high / 高性能モデル、`sonnet` → tier:standard / 軽量モデル
+- **セクション名統一**: 禁止ツール → 禁止操作、許可ツール → 許可操作
+- **codex-skills/ 完全削除**: 62 ファイル・13,902 行削減。デュアル構造を廃止
+- **codex-sync スキル削除**: 同期機能が不要に
+- **validate_repo.py**: Codex 同期台帳チェック・`--update-manifest` を除去
+- **CLAUDE.md / AGENTS.md 統合**: AGENTS.md を正本化、CLAUDE.md は `@AGENTS.md` の薄いラッパーに
+- **CLAUDE.md 編集ルール追加**: プラットフォーム非依存の記述を徹底する旨の NG/OK 例付きガイド
+- `.codex-plugin/plugin.json`: `skills: "./skills/"` でプラットフォーム共通の skills/ を参照
+- `.agents/plugins/marketplace.json`: openai/plugins 標準に準拠した配置に移動
+
 ## 1.39.1
 
 empirical-prompt-tuning による 5 スキルの実測チューニング。白紙実行者 計 32 本（rolling-checkpoint 10 +
