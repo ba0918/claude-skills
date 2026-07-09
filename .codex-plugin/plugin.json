@@ -5,7 +5,7 @@
   "author": {
     "name": "ba0918"
   },
-  "skills": "./skills/",
+  "skills": "../skills/",
   "license": "MIT",
   "interface": {
     "displayName": "Claude Skills",

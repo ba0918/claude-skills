@@ -8,7 +8,7 @@
       "name": "claude-skills",
       "source": {
         "source": "local",
-        "path": "./plugins/claude-skills"
+        "path": "."
       },
       "policy": {
         "installation": "AVAILABLE",
