@@ -1,101 +1,47 @@
 # AGENTS.md
 
-This file provides guidance to Codex CLI when working with code in this repository.
+This file is the shared project instruction source for Claude Code, Codex CLI, and other agents.
+`CLAUDE.md` must stay a thin wrapper that imports this file with `@AGENTS.md`.
 
 ## プロジェクト概要
 
-Agent Skills 標準に準拠した自作スキル集。実装計画の作成→レビュー→自動実装までのワークフローを提供する。
-Claude Code / Codex CLI / Cursor / Gemini CLI 等のプラットフォームで利用可能。
-スキル本文はプラットフォーム非依存の自然言語で記述されており、特定 CLI のツール API 名に依存しない。
+このリポジトリは Agent Skills 標準に準拠したスキル集である。
+実装計画の作成、レビュー、自動実装、コミット、調査、セキュリティレビュー、デザイン検証、TDD、issue 自走ループなどをスキルとして提供する。
 
-## アーキテクチャ
+スキル本文はプラットフォーム非依存の自然言語で記述し、Claude Code / Codex CLI / Cursor / Gemini CLI など複数のエージェント環境で読める状態を保つ。
 
-### ディレクトリ構造
+## 主要構成
 
-- **skills/** — スキル定義（プラットフォーム共通）。各ディレクトリが `SKILL.md`（メインロジック）を持ち、必要に応じて `references/`（テンプレート・チェックリスト等の参照資料）を含む
-- **commands/** — スラッシュコマンド（`/claude-skills:plan-create` 等）。スキルの薄いラッパー
-- **skills/shared/** — 複数スキルが共有するリソース（ロール定義・共有契約等）
+- `skills/` — スキル本体。各スキルは `SKILL.md` を持ち、必要に応じて `references/` や `scripts/` を含む
+- `skills/shared/` — 複数スキルが参照する共有契約、参照資料、共通スクリプト
+- `commands/` — スラッシュコマンド。スキルを呼び出す薄いラッパーで、ロジックはスキル側に集約する
+- `rules/` — 常駐ルールとして使える補助指示
+- `scripts/` — リポジトリ整合性バリデータなどの開発用スクリプト
+- `.claude-plugin/` / `.codex-plugin/` — 各プラットフォーム向け plugin manifest
 
-### スキル呼び出し
+## スキル運用
 
-Codex CLI では `$skill-name` 形式のテキストメンションでスキルを呼び出す:
+- ユーザーがスキル名を明示した場合は、そのスキルの `SKILL.md` を読んでから作業する。
+- 新規スキルは skills-first を基本とし、command は追加しない。command を追加するのは、multi-workflow スキルの名前付き入口が必要な場合に限る。
+- command は薄い入口に留め、判断・手順・契約は `skills/<name>/SKILL.md` または `references/` に置く。
+- 主要スキルの一覧と用途は `README.md` を参照する。常時ロードされるこのファイルへ詳細なスキルカタログを複製しない。
 
-| 操作 | コマンド |
-|------|---------|
-| 計画作成 | `$plan` |
-| 計画レビュー | `$plan-reviewer` |
-| 全自動サイクル | `$cycle` |
-| 自動コミット | `$commit` |
-| 軽量改善 | `$iterate` |
-| 読み取り専用調査 | `$investigate` |
-| issue 管理 | `$issue create/list/close` |
-| チーム議論型サイクル | `$team-cycle` |
-| コードベース全体レビュー | `$codebase-review` |
-| 攻撃者視点レビュー | `$attack-review [server/client/full]` |
-| 並行 cycle 実行 | `$parallel-cycle` |
-| セッション引き継ぎ | `$handoff save/restore/list` |
-| アイデア壁打ち | `$brainstorm [wrap/list/plan/resume/テーマ]` |
-| 行き詰まり打開の思考ツール | `$problem-solving [simplify/collide/invert/scale/pattern]` |
-| 条件収束ループ | `$goal-loop [oracle / 「〜まで回して」]` |
-| デザイン scaffold | `$design-scaffold` |
-| 制約付きページ生成 | `$design-generate` |
-| デザイントークン lint | `$design-lint` |
-| デザインガイド作成 | `$design-guide [update/mockup]` |
-| デザイン検証ゲート | `$design-validate [lint/visual/full/report]` |
-| モックアップ差分 | `$mockup-diff` |
-| 動作保持リファクタ | `$refactor [スコープ]` |
-| 問題の横展開一括修正 | `$sweep-fix [スコープ]` |
-| 構造化デバッグ | `$systematic-debugging [問題 / investigate レポート]` |
-| ドキュメント整合性チェック | `$doc-check [コミット数 / all / パス]` |
-| ドキュメント化 | `$doc-write [テーマ / resume]` |
-| TDD ガイド | `$test-driven-development` |
-| チーム議論型計画 | `$team-plan` |
-| チーム議論型発散 | `$team-brainstorm [wrap/list/plan/resume/テーマ]` |
+## 編集ルール
 
-### 主要スキル
+- `SKILL.md` と `references/` では、特定プラットフォームのツール API 名やモデル名に依存しない表現を使う。
+  - NG: 固有のツール API 名、固有のモデル名、特定 CLI だけで通じる呼び出し形式
+  - OK: 「シェルコマンドを実行する」「ファイルを読む」「ファイルを編集する」「サブエージェントに委譲する」「高性能モデル」
+- 共有契約の語彙（例: `AUTO_FIX` / `NEEDS_JUDGMENT` / `REPORT_ONLY`, `CONFIRMED` / `FALSE_POSITIVE` / `UNCERTAIN`）を使う場合は、該当する `skills/shared/references/` の契約へ md リンクを張る。
+- スキル内リンクは相対 md リンクを使い、ファイル移動時は参照も更新する。
+- スキルを追加・削除・改名したら `README.md` と必要な plugin manifest を更新する。常時指示の詳細化で解決せず、機械検証やスキル本文を正本にする。
+- `CLAUDE.md` へ直接プロジェクト指示を追加しない。共通指示が必要ならこの `AGENTS.md` を更新する。
 
-| スキル | 役割 |
-|--------|------|
-| `commit` | 変更を分析し論理単位で自動コミット |
-| `investigate` | 問題を読み取り専用で調査し、構造化レポートを出力 |
-| `plan` | 計画ファイルの生成・管理 |
-| `plan-reviewer` | 7観点並行レビュー |
-| `issue` | スコープ外の問題を記録・管理 |
-| `iterate` | cycle 後の追加指示を軽量改善ループで実行 |
-| `cycle` | 計画の refine → implement を全自動で回す |
-| `team-cycle` | チーム議論型レビュー + 自動実装サイクル |
-| `codebase-review` | 4エージェント並行によるコードベース全体レビュー |
-| `attack-review` | 6エージェント並行の攻撃者視点レビュー |
-| `parallel-cycle` | 指示を複数 plan に分解し、並行 cycle 実行・マージ |
-| `brainstorm` | アイデアの壁打ちに特化。発散→収束→plan化 |
-| `goal-loop` | 機械検証可能な oracle が真になるまで自律反復 |
-| `sweep-fix` | 問題を検出→パターン化→横展開検索→一括修正 |
-| `refactor` | 動作保持のまま表現を改善し、類似コードへ横展開 |
+## 検証
 
-## 基本ワークフロー
+編集後は次を実行する。
 
-```
-$plan ○○機能を追加したい
-  ↓ docs/plans/{timestamp}_{slug}.md が生成される
-$plan-reviewer
-  ↓ 6-7観点のレビュー結果が出力される
-$cycle
-  ↓ refine→implement→commit の全自動サイクル
+```bash
+python3 scripts/validate_repo.py
 ```
 
-## ファイル構成
-
-```
-.claude-plugin/   # Claude Code Plugin マニフェスト
-.codex-plugin/    # Codex CLI Plugin マニフェスト
-commands/         # スラッシュコマンド
-skills/           # スキル定義（プラットフォーム共通）
-rules/            # グローバルルール
-AGENTS.md         # Codex CLI 用プロジェクト説明（本ファイル）
-CLAUDE.md         # Claude Code 用プロジェクト説明
-```
-
-## 編集時の注意
-
-- スキル本文ではプラットフォーム固有のツール API 名やモデル名を使わず、自然言語で意図を記述すること（Agent Skills 標準準拠）
-- 編集後は `python3 scripts/validate_repo.py` でリポジトリ整合性を検証すること。CI でも同じチェックが走る
+この validator は symlink、frontmatter、相対リンク、README のスキル名カバレッジ、plugin version 同期、description 品質、共有契約語彙、dossier lint を検証する。CI でも同じチェックが走る。
