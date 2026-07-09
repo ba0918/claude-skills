@@ -12,10 +12,7 @@ from validate_repo import (
     extract_md_links,
     is_checkable_link,
     parse_frontmatter_fields,
-    extract_command_refs,
     find_broken_symlinks,
-    resolve_codex_source,
-    check_sync_manifest,
     check_contract_conformance,
     collect_link_sources,
     check_relative_links,
@@ -154,22 +151,6 @@ class TestParseFrontmatterFields(unittest.TestCase):
         self.assertNotIn("description", fields)
 
 
-class TestExtractCommandRefs(unittest.TestCase):
-    def test_extracts_command_paths(self):
-        text = (
-            "commands/plan-create.md  →  skills/plan/SKILL.md\n"
-            "commands/cycle.md        →  plan-refine + plan-implement\n"
-        )
-        self.assertEqual(
-            extract_command_refs(text),
-            {"commands/plan-create.md", "commands/cycle.md"},
-        )
-
-    def test_dedupes(self):
-        text = "commands/commit.md commands/commit.md"
-        self.assertEqual(extract_command_refs(text), {"commands/commit.md"})
-
-
 class TestFindBrokenSymlinks(unittest.TestCase):
     def test_detects_broken_and_ignores_valid(self):
         with tempfile.TemporaryDirectory() as root:
@@ -187,70 +168,6 @@ class TestFindBrokenSymlinks(unittest.TestCase):
             os.mkdir(gitdir)
             os.symlink(os.path.join(root, "nope"), os.path.join(gitdir, "broken"))
             self.assertEqual(find_broken_symlinks(root), [])
-
-
-class TestResolveCodexSource(unittest.TestCase):
-    def test_default_maps_to_skills_dir(self):
-        self.assertEqual(resolve_codex_source("plan"), "skills/plan/SKILL.md")
-        self.assertEqual(resolve_codex_source("commit"), "skills/commit/SKILL.md")
-
-    def test_cycle_maps_to_command(self):
-        # cycle は Claude 側にスキル実体がなく commands/cycle.md がソース
-        self.assertEqual(resolve_codex_source("cycle"), "commands/cycle.md")
-
-
-class TestCheckSyncManifest(unittest.TestCase):
-    PAIRS = [("codex-skills/plan/SKILL.md", "skills/plan/SKILL.md")]
-
-    def _manifest(self, sha):
-        return {
-            "codex-skills/plan/SKILL.md": {
-                "source": "skills/plan/SKILL.md",
-                "source_sha256": sha,
-            }
-        }
-
-    def test_in_sync_returns_no_errors(self):
-        hashes = {"skills/plan/SKILL.md": "abc123"}
-        self.assertEqual(
-            check_sync_manifest(self.PAIRS, self._manifest("abc123"), hashes), []
-        )
-
-    def test_source_changed_reports_drift(self):
-        hashes = {"skills/plan/SKILL.md": "NEWHASH"}
-        errors = check_sync_manifest(self.PAIRS, self._manifest("abc123"), hashes)
-        self.assertEqual(len(errors), 1)
-        self.assertIn("未同期", errors[0])
-
-    def test_unregistered_pair_reports_error(self):
-        hashes = {"skills/plan/SKILL.md": "abc123"}
-        errors = check_sync_manifest(self.PAIRS, {}, hashes)
-        self.assertEqual(len(errors), 1)
-        self.assertIn("未登録", errors[0])
-
-    def test_missing_source_reports_error(self):
-        errors = check_sync_manifest(self.PAIRS, self._manifest("abc123"), {})
-        self.assertEqual(len(errors), 1)
-        self.assertIn("存在しない", errors[0])
-
-    def test_stale_manifest_entry_reports_error(self):
-        manifest = self._manifest("abc123")
-        manifest["codex-skills/ghost/SKILL.md"] = {
-            "source": "skills/ghost/SKILL.md",
-            "source_sha256": "dead",
-        }
-        hashes = {"skills/plan/SKILL.md": "abc123"}
-        errors = check_sync_manifest(self.PAIRS, manifest, hashes)
-        self.assertEqual(len(errors), 1)
-        self.assertIn("実在しない", errors[0])
-
-    def test_source_path_mismatch_reports_error(self):
-        manifest = self._manifest("abc123")
-        manifest["codex-skills/plan/SKILL.md"]["source"] = "skills/other/SKILL.md"
-        hashes = {"skills/plan/SKILL.md": "abc123"}
-        errors = check_sync_manifest(self.PAIRS, manifest, hashes)
-        self.assertEqual(len(errors), 1)
-        self.assertIn("source が不一致", errors[0])
 
 
 class TestMentionsName(unittest.TestCase):
@@ -301,20 +218,13 @@ class TestCollectLinkSources(unittest.TestCase):
                  "commands/z.md"},
             )
 
-    def test_includes_shared_and_codex_references(self):
-        # shared は _skill_dirs から除外されるが、共有契約こそリンク検査が必要
+    def test_includes_shared_references(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, "skills/shared/references/contract.md")
-            self._write(root, "codex-skills/b/SKILL.md")
-            self._write(root, "codex-skills/b/references/nested/deep.md")
-            self._write(root, "codex-skills/shared/references/tool-mapping.md")
             rels = {os.path.relpath(p, root) for p in collect_link_sources(root)}
             self.assertEqual(
                 rels,
-                {"skills/shared/references/contract.md",
-                 "codex-skills/b/SKILL.md",
-                 "codex-skills/b/references/nested/deep.md",
-                 "codex-skills/shared/references/tool-mapping.md"},
+                {"skills/shared/references/contract.md"},
             )
 
     def test_non_md_files_in_references_are_excluded(self):
