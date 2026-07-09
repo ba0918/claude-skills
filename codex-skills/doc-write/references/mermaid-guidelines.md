@@ -1,1 +1,0 @@
-../../../skills/doc-write/references/mermaid-guidelines.md

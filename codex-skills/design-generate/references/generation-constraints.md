@@ -1,1 +1,0 @@
-../../../skills/design-generate/references/generation-constraints.md

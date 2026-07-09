@@ -1,1 +1,0 @@
-../../../skills/plan/references/plan-template.md

@@ -1,1 +1,0 @@
-../../../skills/team-brainstorm/references/session-template.md

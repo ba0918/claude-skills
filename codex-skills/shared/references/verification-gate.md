@@ -1,1 +1,0 @@
-../../../skills/shared/references/verification-gate.md

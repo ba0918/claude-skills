@@ -1,1 +1,0 @@
-../../../skills/brainstorm/references/idea-template.md

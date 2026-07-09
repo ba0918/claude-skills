@@ -23,9 +23,6 @@ gh skill install ba0918/claude-skills --agent claude-code
 `--agent` には `claude-code` / `codex` / `github-copilot` / `cursor` / `gemini` 等を指定する。
 `--scope user` を付けるとグローバルインストールになる。
 
-> スキル本文は Claude Code のツール名で記述されている。
-> Codex 等で利用する場合は、`shared/references/tool-mapping.md` の変換マッピングを参照する。
-
 ### Claude Code Plugin（一括インストール）
 
 全スキル、コマンド、ルールをまとめて導入したい場合は Plugin が適している。
@@ -44,8 +41,7 @@ codex plugin marketplace add ba0918/claude-skills
 codex plugin add claude-skills@claude-skills
 ```
 
-Claude 版スキルがそのままインストールされる。
-Codex は `shared/references/tool-mapping.md` を参照してツール名を読み替える。
+スキル本文はプラットフォーム非依存の自然言語で記述されており、そのまま利用できる。
 
 ## 基本ワークフロー
 
@@ -146,7 +142,6 @@ plan（計画）→ cycle（自動実装）→ commit（コミット）が基本
 | `empirical-prompt-tuning` | テキスト指示の品質を実測・反復改善 |
 | `context-audit` | 指示ファイルの老朽化を監査 |
 | `skill-regression` | 共有契約の変更による回帰を検出 |
-| `codex-sync` | Claude 版から Codex 版への自動移植 |
 | `migrate-cycles-to-plans` | 旧 docs/cycles/ から docs/plans/ への移行 |
 
 ## 構成
@@ -154,8 +149,7 @@ plan（計画）→ cycle（自動実装）→ commit（コミット）が基本
 ```
 skills/          スキル本体（SKILL.md + references/ + scripts/）
   shared/        複数スキルが参照する共有契約とユーティリティ
-commands/        Claude Code 用スラッシュコマンド（スキルへの薄いラッパー）
-codex-skills/    Codex CLI 用スキル（将来的に skills/ へ統合予定）
+commands/        スラッシュコマンド（スキルへの薄いラッパー）
 rules/           設計原則とテストアンチパターン
 scripts/         リポジトリ整合性バリデータ（CI で自動実行）
 ```
@@ -168,9 +162,6 @@ claude --plugin-dir /path/to/claude-skills
 
 # 整合性チェック
 python3 scripts/validate_repo.py
-
-# Codex 同期台帳の更新
-python3 scripts/validate_repo.py --update-manifest
 ```
 
 リポジトリ整合性チェックは GitHub Actions で push / PR ごとに実行される。

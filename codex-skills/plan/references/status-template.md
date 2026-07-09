@@ -1,1 +1,0 @@
-../../../skills/plan/references/status-template.md

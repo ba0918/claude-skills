@@ -1,1 +1,0 @@
-../../../skills/design-guide/references/anti-patterns.md

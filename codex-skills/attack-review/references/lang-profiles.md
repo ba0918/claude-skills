@@ -1,1 +1,0 @@
-../../../skills/attack-review/references/lang-profiles.md

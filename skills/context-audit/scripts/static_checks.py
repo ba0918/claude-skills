@@ -550,7 +550,7 @@ def run_checks(targets: list[dict], ctx: dict) -> list[dict]:
 def build_context(root: str, targets: list[dict]) -> dict:
     root = os.path.abspath(root)
     skill_names = set()
-    for sub in ("skills", "codex-skills"):
+    for sub in ("skills",):
         base = os.path.join(root, sub)
         if os.path.isdir(base):
             for d in os.listdir(base):

@@ -1,1 +1,0 @@
-../../../skills/shared/references/lang-detect.md

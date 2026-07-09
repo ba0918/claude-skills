@@ -1,1 +1,0 @@
-../../../skills/shared/references/polling-pattern.md

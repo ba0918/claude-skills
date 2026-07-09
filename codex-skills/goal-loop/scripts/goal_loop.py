@@ -1,1 +1,0 @@
-../../../skills/goal-loop/scripts/goal_loop.py

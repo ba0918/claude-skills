@@ -6,32 +6,20 @@
 それらを機械的に検証する。CI（GitHub Actions）とローカルの両方から実行できる。
 
 実行: python3 scripts/validate_repo.py [repo_root]
-      python3 scripts/validate_repo.py --update-manifest [repo_root]
 終了コード: 0 = 全チェック合格 / 1 = 違反あり
 
 チェック項目:
   1. 壊れた symlink が存在しない
-  2. skills/ / codex-skills/ の各スキルディレクトリに SKILL.md がある
+  2. skills/ の各スキルディレクトリに SKILL.md がある
   3. SKILL.md frontmatter に name / description がある
   4. commands/*.md frontmatter に description がある
   5. SKILL.md / commands/*.md / references/**/*.md 内の相対 .md リンクが実在する
   6. README.md が全スキル名に言及している（ドリフト検出）
-  7. AGENTS.md が全 codex-skills 名に言及している（ドリフト検出）
-  8. plugin.json と marketplace.json のバージョンが一致する
-  9. Claude 版 ⇔ Codex 版スキルの同期台帳（codex-skills/sync-manifest.json）
-  10. SKILL.md description の品質（トリガー語を含む / 1024 字以内）
-  11. 共有契約語彙の適合（契約の識別語彙を使う skill / command は契約を md リンクする）
-  12. docs/loop/dossiers/*.json の dossier lint（error 級のみ CI fail）
-
-同期台帳の仕組み:
-  codex-skills/ の各スキルは skills/ の対応スキル（cycle のみ commands/cycle.md）を
-  ソースとする移植版。両者は意図的に内容が異なるため diff 比較はできないが、
-  「ソースだけ更新して移植版を忘れる」サイレントドリフトは防ぎたい。
-  そこで sync 時点のソースファイルの sha256 を台帳に記録し、ソースが変わったのに
-  台帳が古いままなら CI を落とす。Codex 版へ反映（または反映不要と判断）したら
-  `--update-manifest` で台帳を更新して合意を記録する。
+  7. plugin.json と marketplace.json のバージョンが一致する
+  8. SKILL.md description の品質（トリガー語を含む / 1024 字以内）
+  9. 共有契約語彙の適合（契約の識別語彙を使う skill / command は契約を md リンクする）
+  10. docs/loop/dossiers/*.json の dossier lint（error 級のみ CI fail）
 """
-import hashlib
 import json
 import os
 import re
@@ -96,12 +84,11 @@ DESCRIPTION_TRIGGER_EXEMPT = {
 }
 
 
-# チェック12: 共有契約の識別語彙。unit（skills/<name>/ 全体 or commands/<file>.md 単体）が
+# チェック9: 共有契約の識別語彙。unit（skills/<name>/ 全体 or commands/<file>.md 単体）が
 # min_distinct 種類以上の語彙を含むなら、その unit 内のどこかで契約への md リンクを要求する。
 # 「宣言だけ共有・実体はインライン再発明」のドリフトを機械的に止めるのが目的。
 # BLOCK / WARN 単体のような汎用語は偽陽性が多いため対象にしない — 契約を一意に識別する
-# 複合語彙のみ登録する。対象は skills/ + commands/ のみ（codex-skills/ は契約の移植が
-# 部分的で、リンク先が存在しないため対象外。移植完了時に拡張する）。
+# 複合語彙のみ登録する。
 CONTRACT_VOCAB = [
     ("skills/shared/references/fix-action-taxonomy.md",
      ("AUTO_FIX", "NEEDS_JUDGMENT", "REPORT_ONLY"), 2),
@@ -117,14 +104,14 @@ CONTRACT_VOCAB = [
      ("ci_gate", "resident_sensor", "dissolve"), 2),
 ]
 
-# チェック12の免除リスト。免除はスキル側ではなくここに置く（迂回防止）。理由必須。
+# チェック9の免除リスト。免除はスキル側ではなくここに置く（迂回防止）。理由必須。
 CONTRACT_VOCAB_EXEMPT = {
     # "skills/<name>" または "commands/<file>.md": "理由",
 }
 
 
 def _conformance_units(root):
-    """チェック12の unit（識別子 → md ファイル一覧）を返す。"""
+    """チェック9の unit（識別子 → md ファイル一覧）を返す。"""
     units = {}
     for skill in _skill_dirs(root, "skills"):
         base = os.path.join(root, "skills", skill)
@@ -145,7 +132,7 @@ def _conformance_units(root):
 
 
 def check_contract_conformance(root, vocab=None, exempt=None):
-    """チェック12を実行し、違反メッセージ一覧を返す。"""
+    """チェック9を実行し、違反メッセージ一覧を返す。"""
     vocab = CONTRACT_VOCAB if vocab is None else vocab
     exempt = CONTRACT_VOCAB_EXEMPT if exempt is None else exempt
     errors = []
@@ -187,218 +174,6 @@ def find_broken_symlinks(root):
     return sorted(broken)
 
 
-SYNC_MANIFEST_PATH = os.path.join("codex-skills", "sync-manifest.json")
-
-# codex スキル名 → Claude 側ソースの特例。デフォルトは skills/<name>/SKILL.md
-CODEX_SOURCE_OVERRIDES = {
-    "cycle": "commands/cycle.md",  # Claude 側は commands のみ（スキル実体なし）
-}
-
-# skills/*/SKILL.md 対応以外で同期追跡したい実ファイルペア (codex側, ソース)。
-# ツール名・Codex 第二意見節を含む references は symlink 共有できず変換済み実体コピーに
-# なる（tool-mapping.md「共有契約の可搬性ポリシー」参照）。実体コピーはすべてここに登録し、
-# ソース側の変更を台帳で検知する。
-EXTRA_SYNC_PAIRS = [
-    (
-        "codex-skills/shared/references/team-config.md",
-        "skills/shared/references/team-config.md",
-    ),
-    (
-        "codex-skills/attack-review/references/report-template.md",
-        "skills/attack-review/references/report-template.md",
-    ),
-    (
-        "codex-skills/codebase-review/references/report-template.md",
-        "skills/codebase-review/references/report-template.md",
-    ),
-    (
-        "codex-skills/codebase-review/references/review-criteria.md",
-        "skills/codebase-review/references/review-criteria.md",
-    ),
-    (
-        "codex-skills/plan-reviewer/references/output-format.md",
-        "skills/plan-reviewer/references/output-format.md",
-    ),
-    (
-        "codex-skills/plan-reviewer/references/review-dimensions.md",
-        "skills/plan-reviewer/references/review-dimensions.md",
-    ),
-    (
-        "codex-skills/iterate/references/light-review.md",
-        "skills/iterate/references/light-review.md",
-    ),
-    (
-        "codex-skills/parallel-cycle/references/decompose-guide.md",
-        "skills/parallel-cycle/references/decompose-guide.md",
-    ),
-    (
-        "codex-skills/parallel-cycle/references/merge-strategy.md",
-        "skills/parallel-cycle/references/merge-strategy.md",
-    ),
-    (
-        "codex-skills/team-cycle/references/review-flow.md",
-        "skills/team-cycle/references/review-flow.md",
-    ),
-    (
-        "codex-skills/team-cycle/references/code-review-flow.md",
-        "skills/team-cycle/references/code-review-flow.md",
-    ),
-    (
-        "codex-skills/refactor/references/behavior-preservation-checks.md",
-        "skills/refactor/references/behavior-preservation-checks.md",
-    ),
-    (
-        "codex-skills/refactor/references/similarity-detection.md",
-        "skills/refactor/references/similarity-detection.md",
-    ),
-    (
-        "codex-skills/sweep-fix/references/context-verification.md",
-        "skills/sweep-fix/references/context-verification.md",
-    ),
-    (
-        "codex-skills/sweep-fix/references/pattern-extraction.md",
-        "skills/sweep-fix/references/pattern-extraction.md",
-    ),
-    (
-        "codex-skills/doc-check/references/content-checks.md",
-        "skills/doc-check/references/content-checks.md",
-    ),
-    (
-        "codex-skills/team-plan/references/planning-flow.md",
-        "skills/team-plan/references/planning-flow.md",
-    ),
-    (
-        "codex-skills/team-brainstorm/references/brainstorm-flow.md",
-        "skills/team-brainstorm/references/brainstorm-flow.md",
-    ),
-    (
-        "codex-skills/team-brainstorm/references/brainstorm-roles.md",
-        "skills/team-brainstorm/references/brainstorm-roles.md",
-    ),
-    (
-        "codex-skills/shared/references/convergence-pattern.md",
-        "skills/shared/references/convergence-pattern.md",
-    ),
-    (
-        "codex-skills/design-lint/references/lint-contract.md",
-        "skills/design-lint/references/lint-contract.md",
-    ),
-    (
-        "codex-skills/design-validate/references/validation-pipeline.md",
-        "skills/design-validate/references/validation-pipeline.md",
-    ),
-    (
-        "codex-skills/design-guide/references/design-md-template.md",
-        "skills/design-guide/references/design-md-template.md",
-    ),
-    (
-        "codex-skills/design-guide/references/discovery-questions.md",
-        "skills/design-guide/references/discovery-questions.md",
-    ),
-    (
-        "codex-skills/mockup-diff/references/script-requirements.md",
-        "skills/mockup-diff/references/script-requirements.md",
-    ),
-]
-
-
-def resolve_codex_source(codex_skill_name):
-    """codex スキル名から Claude 側ソースのリポジトリ相対パスを返す。"""
-    return CODEX_SOURCE_OVERRIDES.get(
-        codex_skill_name, f"skills/{codex_skill_name}/SKILL.md"
-    )
-
-
-def collect_sync_pairs(root):
-    """同期追跡対象の (codex相対パス, ソース相対パス) 一覧を返す。
-
-    symlink は物理的に同一内容なのでドリフトし得ず、対象外。
-    """
-    pairs = []
-    for skill in _skill_dirs(root, "codex-skills"):
-        codex_rel = f"codex-skills/{skill}/SKILL.md"
-        path = os.path.join(root, codex_rel)
-        if os.path.isfile(path) and not os.path.islink(path):
-            pairs.append((codex_rel, resolve_codex_source(skill)))
-    for codex_rel, source_rel in EXTRA_SYNC_PAIRS:
-        path = os.path.join(root, codex_rel)
-        if os.path.isfile(path) and not os.path.islink(path):
-            pairs.append((codex_rel, source_rel))
-    return pairs
-
-
-def check_sync_manifest(pairs, manifest, source_hashes):
-    """同期台帳を検証し、違反メッセージ一覧を返す。
-
-    pairs: (codex相対パス, ソース相対パス) の一覧
-    manifest: {codex相対パス: {"source": ..., "source_sha256": ...}}
-    source_hashes: {ソース相対パス: sha256 hex}（存在しないソースはキーなし）
-    """
-    errors = []
-    hint = "python3 scripts/validate_repo.py --update-manifest"
-    for codex_rel, source_rel in pairs:
-        source_hash = source_hashes.get(source_rel)
-        if source_hash is None:
-            errors.append(
-                f"[sync] 対応する Claude 版ソースが存在しない: {codex_rel} -> {source_rel}"
-            )
-            continue
-        entry = manifest.get(codex_rel)
-        if not entry:
-            errors.append(f"[sync] sync-manifest に未登録: {codex_rel}（{hint} で登録）")
-        elif entry.get("source") != source_rel:
-            errors.append(
-                f"[sync] sync-manifest の source が不一致: {codex_rel} "
-                f"(台帳: {entry.get('source')} / 期待: {source_rel})"
-            )
-        elif entry.get("source_sha256") != source_hash:
-            errors.append(
-                f"[sync] Claude 版が変更されたが Codex 版が未同期: {source_rel} -> {codex_rel}"
-                f"（内容を同期・または反映不要と判断してから {hint}）"
-            )
-    pair_keys = {codex_rel for codex_rel, _ in pairs}
-    for stale in sorted(set(manifest) - pair_keys):
-        errors.append(f"[sync] sync-manifest に実在しないエントリ: {stale}（{hint} で掃除）")
-    return errors
-
-
-def _sha256_file(path):
-    with open(path, "rb") as f:
-        return hashlib.sha256(f.read()).hexdigest()
-
-
-def _collect_source_hashes(root, pairs):
-    hashes = {}
-    for _, source_rel in pairs:
-        path = os.path.join(root, source_rel)
-        if os.path.isfile(path):
-            hashes[source_rel] = _sha256_file(path)
-    return hashes
-
-
-def _load_manifest(root):
-    path = os.path.join(root, SYNC_MANIFEST_PATH)
-    if not os.path.isfile(path):
-        return {}
-    return json.loads(_read(path))
-
-
-def update_manifest(root):
-    """現在のソースハッシュで同期台帳を再生成して書き込む。"""
-    pairs = collect_sync_pairs(root)
-    hashes = _collect_source_hashes(root, pairs)
-    manifest = {
-        codex_rel: {"source": source_rel, "source_sha256": hashes[source_rel]}
-        for codex_rel, source_rel in sorted(pairs)
-        if source_rel in hashes
-    }
-    path = os.path.join(root, SYNC_MANIFEST_PATH)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(manifest, f, ensure_ascii=False, indent=2)
-        f.write("\n")
-    return manifest
-
-
 def _read(path):
     with open(path, encoding="utf-8") as f:
         return f.read()
@@ -427,14 +202,12 @@ def mentions_name(text, name):
 def collect_link_sources(root):
     """チェック5の対象ファイルを集める。
 
-    SKILL.md / commands/*.md に加えて、skills・codex-skills 配下の
+    SKILL.md / commands/*.md に加えて、skills 配下の
     references/**/*.md（shared 含む — 共有契約こそリンク切れの影響が大きい）。
     """
     sources = []
-    for subdir in ("skills", "codex-skills"):
-        base = os.path.join(root, subdir)
-        if not os.path.isdir(base):
-            continue
+    base = os.path.join(root, "skills")
+    if os.path.isdir(base):
         for entry in sorted(os.listdir(base)):
             skill_dir = os.path.join(base, entry)
             if not os.path.isdir(skill_dir):
@@ -464,8 +237,6 @@ LINK_CHECK_EXEMPT = {
     # であり、このリポジトリ内には存在しない
     "skills/plan/references/status-template.md": "生成先 docs/ の例示リンク",
     "skills/plan/references/status-update-guide.md": "生成先 docs/ の例示リンク",
-    "codex-skills/plan/references/status-template.md": "生成先 docs/ の例示リンク",
-    "codex-skills/plan/references/status-update-guide.md": "生成先 docs/ の例示リンク",
 }
 
 
@@ -475,7 +246,7 @@ _DOSSIER_LINT_DIR = os.path.join(
 
 
 def check_dossiers(root):
-    """チェック13: docs/loop/dossiers/*.json を dossier_lint で in-process 検査する。
+    """チェック10: docs/loop/dossiers/*.json を dossier_lint で in-process 検査する。
 
     error 級 finding のみを `[dossier] <file>: GDxxx <message>` 形式で返す
     （warn は CI fail させない）。1 つの壊れた dossier で validate_repo 全体が
@@ -536,16 +307,15 @@ def run_checks(root):
         errors.append(f"[symlink] 壊れた symlink: {os.path.relpath(path, root)}")
 
     # 2-3. スキルディレクトリと SKILL.md frontmatter
-    for subdir in ("skills", "codex-skills"):
-        for skill in _skill_dirs(root, subdir):
-            skill_md = os.path.join(root, subdir, skill, "SKILL.md")
-            if not os.path.isfile(skill_md):
-                errors.append(f"[skill] SKILL.md がない: {subdir}/{skill}/")
-                continue
-            fields = parse_frontmatter_fields(_read(skill_md))
-            for key in ("name", "description"):
-                if not fields.get(key):
-                    errors.append(f"[frontmatter] {key} がない: {subdir}/{skill}/SKILL.md")
+    for skill in _skill_dirs(root, "skills"):
+        skill_md = os.path.join(root, "skills", skill, "SKILL.md")
+        if not os.path.isfile(skill_md):
+            errors.append(f"[skill] SKILL.md がない: skills/{skill}/")
+            continue
+        fields = parse_frontmatter_fields(_read(skill_md))
+        for key in ("name", "description"):
+            if not fields.get(key):
+                errors.append(f"[frontmatter] {key} がない: skills/{skill}/SKILL.md")
 
     # 4. commands frontmatter
     commands_dir = os.path.join(root, "commands")
@@ -560,17 +330,13 @@ def run_checks(root):
     # 5. 相対 .md リンクの実在（SKILL.md / commands / references）
     errors += check_relative_links(root)
 
-    # 6-7. README / AGENTS.md のスキル名カバレッジ（ドリフト検出）
+    # 6. README.md のスキル名カバレッジ（ドリフト検出）
     readme = _read(os.path.join(root, "README.md")) if os.path.isfile(os.path.join(root, "README.md")) else ""
-    agents = _read(os.path.join(root, "AGENTS.md")) if os.path.isfile(os.path.join(root, "AGENTS.md")) else ""
     for skill in _skill_dirs(root, "skills"):
         if not mentions_name(readme, skill):
             errors.append(f"[drift] README.md がスキルに言及していない: {skill}")
-    for skill in _skill_dirs(root, "codex-skills"):
-        if not mentions_name(agents, skill):
-            errors.append(f"[drift] AGENTS.md が codex スキルに言及していない: {skill}")
 
-    # 8. plugin.json ⇔ marketplace.json バージョン同期
+    # 7. plugin.json ⇔ marketplace.json バージョン同期
     plugin_path = os.path.join(root, ".claude-plugin", "plugin.json")
     market_path = os.path.join(root, ".claude-plugin", "marketplace.json")
     if os.path.isfile(plugin_path) and os.path.isfile(market_path):
@@ -583,49 +349,37 @@ def run_checks(root):
                     f"({entry.get('version')}) のバージョン不一致"
                 )
 
-    # 9. Claude 版 ⇔ Codex 版の同期台帳
-    pairs = collect_sync_pairs(root)
-    errors += check_sync_manifest(
-        pairs, _load_manifest(root), _collect_source_hashes(root, pairs)
-    )
+    # 8. description の品質（トリガー語 / 長さ上限）
+    for skill in _skill_dirs(root, "skills"):
+        skill_md = os.path.join(root, "skills", skill, "SKILL.md")
+        if not os.path.isfile(skill_md):
+            continue
+        desc = extract_description(_read(skill_md))
+        if not desc:
+            continue
+        rel = f"skills/{skill}"
+        if len(desc) > DESCRIPTION_MAX_LEN:
+            errors.append(
+                f"[description] {DESCRIPTION_MAX_LEN} 字を超過（{len(desc)} 字）: "
+                f"{rel}/SKILL.md"
+            )
+        if rel not in DESCRIPTION_TRIGGER_EXEMPT and not DESCRIPTION_TRIGGER.search(desc):
+            errors.append(
+                f"[description] トリガー語がない（「〜で起動」/ \"Use when\" 等）: "
+                f"{rel}/SKILL.md"
+            )
 
-    # 10. description の品質（トリガー語 / 長さ上限）
-    for subdir in ("skills", "codex-skills"):
-        for skill in _skill_dirs(root, subdir):
-            skill_md = os.path.join(root, subdir, skill, "SKILL.md")
-            if not os.path.isfile(skill_md):
-                continue  # 欠落はチェック2で報告済み
-            desc = extract_description(_read(skill_md))
-            if not desc:
-                continue  # 欠落はチェック3で報告済み
-            rel = f"{subdir}/{skill}"
-            if len(desc) > DESCRIPTION_MAX_LEN:
-                errors.append(
-                    f"[description] {DESCRIPTION_MAX_LEN} 字を超過（{len(desc)} 字）: "
-                    f"{rel}/SKILL.md"
-                )
-            if rel not in DESCRIPTION_TRIGGER_EXEMPT and not DESCRIPTION_TRIGGER.search(desc):
-                errors.append(
-                    f"[description] トリガー語がない（「〜で起動」/ \"Use when\" 等）: "
-                    f"{rel}/SKILL.md"
-                )
-
-    # 11. 共有契約語彙の適合
+    # 9. 共有契約語彙の適合
     errors += check_contract_conformance(root)
 
-    # 12. dossier lint（docs/loop/dossiers/*.json）
+    # 10. dossier lint（docs/loop/dossiers/*.json）
     errors += check_dossiers(root)
 
     return errors
 
 
 def main():
-    args = [a for a in sys.argv[1:] if a != "--update-manifest"]
-    root = args[0] if args else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    if "--update-manifest" in sys.argv[1:]:
-        manifest = update_manifest(root)
-        print(f"✓ {SYNC_MANIFEST_PATH} を更新（{len(manifest)} ペア）")
-        return 0
+    root = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     errors = run_checks(root)
     if errors:
         print(f"✗ {len(errors)} 件の違反:")

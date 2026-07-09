@@ -1,1 +1,0 @@
-../../../skills/design-lint/scripts/test_design_lint.py
