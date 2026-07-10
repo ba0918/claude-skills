@@ -155,6 +155,7 @@ plan（計画）→ cycle（自動実装）→ commit（コミット）が基本
 | `empirical-prompt-tuning` | テキスト指示の品質を実測・反復改善 |
 | `context-audit` | 指示ファイルの老朽化を監査 |
 | `skill-regression` | 共有契約の変更による回帰を検出 |
+| `skill-interface-audit` | SKILL.md の API 契約完備性を静的監査 |
 | `migrate-cycles-to-plans` | 旧 docs/cycles/ から docs/plans/ への移行 |
 
 ## 構成
