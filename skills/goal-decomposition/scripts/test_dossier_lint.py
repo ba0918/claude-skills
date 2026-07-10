@@ -36,7 +36,7 @@ def base_dossier():
             "id": "oracle:lint",
             "type": "true",
             "command": "python3 scripts/validate_repo.py",
-            "oracle_files": ["docs/status.md"],
+            "oracle_files": [".agents/artifacts/status.md"],
             "owner": "maintainer",
         }],
         "fragments": [{
@@ -438,7 +438,7 @@ class TestLoadRobustness(unittest.TestCase):
 class TestPathContainment(unittest.TestCase):
     def test_inside_dir_ok(self):
         root = tempfile.mkdtemp()
-        ddir = os.path.join(root, "docs", "loop", "dossiers")
+        ddir = os.path.join(root, ".agents", "artifacts", "loop", "dossiers")
         os.makedirs(ddir)
         p = os.path.join(ddir, "a.json")
         with open(p, "w") as f:
@@ -447,10 +447,10 @@ class TestPathContainment(unittest.TestCase):
                          os.path.realpath(p))
 
     def test_prefix_sibling_rejected(self):
-        # docs/loop/dossiers-evil must not pass a startswith-style check.
+        # .agents/artifacts/loop/dossiers-evil must not pass a startswith-style check.
         root = tempfile.mkdtemp()
-        ddir = os.path.join(root, "docs", "loop", "dossiers")
-        evil = os.path.join(root, "docs", "loop", "dossiers-evil")
+        ddir = os.path.join(root, ".agents", "artifacts", "loop", "dossiers")
+        evil = os.path.join(root, ".agents", "artifacts", "loop", "dossiers-evil")
         os.makedirs(ddir)
         os.makedirs(evil)
         p = os.path.join(evil, "a.json")

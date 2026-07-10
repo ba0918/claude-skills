@@ -3,7 +3,7 @@
 
 skills/shared/references/measurement-identity.md の Event Record 契約（§3）を
 実装する。全 writer（polling 両 adapter / skill-regression / trigger-eval）は
-このモジュールの make_event / validate_event を経由して docs/loop/events.jsonl
+このモジュールの make_event / validate_event を経由して .agents/artifacts/loop/events.jsonl
 に append する。surface_sha256 は skill-regression/scripts/ledger.py の
 fingerprint() を再利用する（再実装禁止、契約 §2）。
 
@@ -25,7 +25,7 @@ EVENTS = {"tick", "verification", "eval", "tuning"}
 _SURFACE_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 _RUN_ID_RE = re.compile(r"^[0-9a-f-]{36}$")
 
-_DEFAULT_EVENTS_REL = os.path.join("docs", "loop", "events.jsonl")
+_DEFAULT_EVENTS_REL = os.path.join(".agents", "artifacts", "loop", "events.jsonl")
 
 
 def validate_event(d):

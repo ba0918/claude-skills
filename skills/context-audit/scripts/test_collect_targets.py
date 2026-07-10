@@ -89,13 +89,13 @@ class TestCollectRepoTargets(unittest.TestCase):
     def test_excludes_archival_dirs(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            plans = root / "docs" / "plans"
+            plans = root / ".agents" / "artifacts" / "plans"
             plans.mkdir(parents=True)
             (plans / "20260101_x.md").write_text("plan", encoding="utf-8")
             (root / "CLAUDE.md").write_text("x", encoding="utf-8")
             result = ct.collect_repo_targets(str(root))
             paths = {t["path"] for t in result["targets"]}
-            self.assertTrue(all("docs/plans" not in p for p in paths))
+            self.assertTrue(all(".agents/artifacts/plans" not in p for p in paths))
 
     def test_empty_repo_no_crash(self):
         with tempfile.TemporaryDirectory() as tmp:

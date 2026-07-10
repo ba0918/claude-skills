@@ -12,7 +12,7 @@
 | **Feature** | {feature-name} |
 | **Started** | {YYYY-MM-DD HH:MM:SS} |
 | **Phase** | 🟡 Planning |
-| **Plan** | [docs/plans/{timestamp}_{feature-slug}.md](./plans/{timestamp}_{feature-slug}.md) |
+| **Plan** | [.agents/artifacts/plans/{timestamp}_{feature-slug}.md](./plans/{timestamp}_{feature-slug}.md) |
 
 **Current Focus:**
 {1-2 sentence description of what is currently being worked on}
@@ -23,7 +23,7 @@
 
 _Archived sessions can be found in [session-history.md](./session-history.md)._
 
-<!-- Note: Completed sessions are automatically archived to docs/session-history.md.
+<!-- Note: Completed sessions are automatically archived to .agents/artifacts/session-history.md.
      Only active sessions remain in this section. -->
 
 ---

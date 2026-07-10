@@ -34,7 +34,7 @@ Conditions: informational only. No action is taken in v1.
 **Logic:**
 1. Parse each row of the ideas table in `idea-status.md`
 2. For each idea:
-   - If a matching cycle exists in `docs/plans/` (by title/slug) AND cycle status is Complete → idea status should be `Implemented` or archived
+   - If a matching cycle exists in `.agents/artifacts/plans/` (by title/slug) AND cycle status is Complete → idea status should be `Implemented` or archived
    - If a matching skill directory exists in `skills/` → idea status should be `Implemented` or archived
    - If idea status says `Planned` but no cycle file exists → flag as stale
 3. Compare expected status with actual status in the table
@@ -50,12 +50,12 @@ Conditions: informational only. No action is taken in v1.
 **Detects:** Ideas with status `Planned` or `Implemented` that have not been moved to `archives/`.
 
 **Logic:**
-1. Read `docs/ideas/idea-status.md`
+1. Read `.agents/artifacts/ideas/idea-status.md`
 2. For each idea with status `Planned` or `Implemented`:
-   - Check if the idea file still exists in `docs/ideas/` (not in `archives/`)
+   - Check if the idea file still exists in `.agents/artifacts/ideas/` (not in `archives/`)
    - If a corresponding cycle exists and is Complete, the idea should be archived
 
-**Fix Action:** Move the idea file to `docs/ideas/archives/` and update `idea-status.md` entry.
+**Fix Action:** Move the idea file to `.agents/artifacts/ideas/archives/` and update `idea-status.md` entry.
 
 ---
 
@@ -63,14 +63,14 @@ Conditions: informational only. No action is taken in v1.
 
 **Category:** AUTO_FIX
 
-**Detects:** Completed plans still listed in `docs/status.md` Current Session that should have been archived to `session-history.md`.
+**Detects:** Completed plans still listed in `.agents/artifacts/status.md` Current Session that should have been archived to `session-history.md`.
 
 **Logic:**
-1. Read `docs/status.md` Current Session table
+1. Read `.agents/artifacts/status.md` Current Session table
 2. For each entry:
    - Read the referenced plan file
    - If plan status is `Complete` → it should be in `session-history.md`, not in Current Session
-3. Cross-reference with `docs/session-history.md`
+3. Cross-reference with `.agents/artifacts/session-history.md`
 
 **Fix Action:** Remove from `status.md` Current Session table and add to `session-history.md` if not already present.
 
@@ -80,18 +80,18 @@ Conditions: informational only. No action is taken in v1.
 
 **Category:** AUTO_FIX
 
-**Detects:** Completed cycles not recorded in `docs/session-history.md`.
+**Detects:** Completed cycles not recorded in `.agents/artifacts/session-history.md`.
 
 **Logic:**
-1. Scan all files in `docs/plans/` (excluding `results/`)
+1. Scan all files in `.agents/artifacts/plans/` (excluding `results/`)
 2. For each cycle file:
    - Parse the Status line
    - If status is `Complete`:
-     - Check if the cycle ID appears in `docs/session-history.md`
+     - Check if the cycle ID appears in `.agents/artifacts/session-history.md`
      - If not found → flag as missing
 3. Report all missing entries
 
-**Fix Action:** Append missing completed cycles to `docs/session-history.md` following the existing table format.
+**Fix Action:** Append missing completed cycles to `.agents/artifacts/session-history.md` following the existing table format.
 
 ---
 
@@ -102,7 +102,7 @@ Conditions: informational only. No action is taken in v1.
 **Detects:** Plans stuck in `Planning` or `In Progress` status while newer plans have been started.
 
 **Logic:**
-1. Scan all files in `docs/plans/`
+1. Scan all files in `.agents/artifacts/plans/`
 2. For each file:
    - Parse Status and timestamp from filename
    - If status is `Planning` or `In Progress`:
@@ -121,7 +121,7 @@ Conditions: informational only. No action is taken in v1.
 **Detects:** Semantically duplicate open issues.
 
 **Logic:**
-1. Read `docs/issues/issue-status.md`
+1. Read `.agents/artifacts/issues/issue-status.md`
 2. For each open issue:
    - Read the issue file content
    - Compare title and description against all other open issues
@@ -139,9 +139,9 @@ Conditions: informational only. No action is taken in v1.
 **Detects:** Issues listed as open in `issue-status.md` but already resolved by a completed cycle.
 
 **Logic:**
-1. Read `docs/issues/issue-status.md`
+1. Read `.agents/artifacts/issues/issue-status.md`
 2. For each open issue:
-   - Search `docs/plans/` for plans that reference this issue (by title or issue ID)
+   - Search `.agents/artifacts/plans/` for plans that reference this issue (by title or issue ID)
    - If a referencing cycle has status `Complete` → issue may be resolved
 3. Present findings with cycle reference
 
@@ -156,11 +156,11 @@ Conditions: informational only. No action is taken in v1.
 **Detects:** Mismatch between index files (`idea-status.md`, `issue-status.md`) and actual files in the directory.
 
 **Logic:**
-1. For `docs/ideas/`:
+1. For `.agents/artifacts/ideas/`:
    - List all `.md` files (excluding `idea-status.md` and `archives/`)
    - Parse all entries in `idea-status.md`
    - Detect: files present but not in index, entries in index but file missing
-2. For `docs/issues/`:
+2. For `.agents/artifacts/issues/`:
    - Same logic with `issue-status.md`
 
 **Fix Action:**
@@ -173,10 +173,10 @@ Conditions: informational only. No action is taken in v1.
 
 **Category:** REPORT_ONLY
 
-**Detects:** Growing number of files in `docs/plans/results/` as an informational warning.
+**Detects:** Growing number of files in `.agents/artifacts/plans/results/` as an informational warning.
 
 **Logic:**
-1. Count files in `docs/plans/results/`
+1. Count files in `.agents/artifacts/plans/results/`
 2. If count exceeds threshold (default: 20) → include in report
 3. Report file count and oldest/newest file dates
 
@@ -191,7 +191,7 @@ Conditions: informational only. No action is taken in v1.
 **Detects:** Files using legacy date format (`YYYY-MM-DD`) in filenames instead of the unified `yyyymmddhhmmss` format.
 
 **Logic:**
-1. Scan filenames in `docs/ideas/`, `docs/issues/`, and `docs/plans/`
+1. Scan filenames in `.agents/artifacts/ideas/`, `.agents/artifacts/issues/`, and `.agents/artifacts/plans/`
 2. Detect filenames matching pattern `\d{4}-\d{2}-\d{2}` (legacy format)
 3. Compare against expected format `\d{14}` (unified format)
 4. Flag files using legacy format

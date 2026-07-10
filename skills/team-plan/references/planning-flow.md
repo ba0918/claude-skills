@@ -166,7 +166,7 @@ Lead が各ラウンド終了時にユーザー向けに以下を出力する:
    - `skills/plan/references/plan-template.md` のフォーマットに準拠
    - 議論のハイライトを計画ファイルに含める
    - 各メンバーの提案がどう反映されたかを記録
-3. `docs/plans/{timestamp}_{slug}.md` に出力する
+3. `.agents/artifacts/plans/{timestamp}_{slug}.md` に出力する
 
 ### 計画ファイルに含める追加セクション
 

@@ -8,10 +8,10 @@
 
 ## 1. Directory Layout
 
-`state_root` = `docs/issues/`
+`state_root` = `.agents/artifacts/issues/`
 
 ```
-docs/issues/
+.agents/artifacts/issues/
   .STOP                          # graceful kill file (契約 §6.1)
   .STOP.hard                     # hard kill file (契約 §6.1)
   .polling-initialized           # 初回起動ポリシー用マーカー (契約 §10、作成責務は本節 Note)

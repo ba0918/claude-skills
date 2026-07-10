@@ -9,9 +9,9 @@
       "isolation": "worktree",
       "prompt": "Markdown ファイルのホットリロード機能を追加したい。ファイル変更を監視して自動で再レンダリングする新機能。実装計画を立てて。",
       "requirements": [
-        { "text": "plan ファイルが docs/plans/{14桁timestamp}_{slug}.md に作成されている（docs/cycles/ 等の別ディレクトリでない）", "critical": true },
+        { "text": "plan ファイルが .agents/artifacts/plans/{14桁timestamp}_{slug}.md に作成されている（docs/cycles/ 等の別ディレクトリでない）", "critical": true },
         { "text": "slug が [a-z0-9-]+ のみで、要求の意味を表す英語 kebab-case（markdown-hot-reload 等）になっている", "critical": true },
-        { "text": "docs/status.md が作成され、Current Session に当該 plan への参照（Cycle ID / Plan リンク）が入っている", "critical": true },
+        { "text": ".agents/artifacts/status.md が作成され、Current Session に当該 plan への参照（Cycle ID / Plan リンク）が入っている", "critical": true },
         { "text": "要求に機能名・説明・種別が揃っているため、ユーザーへの追加質問なしで進んでいる", "critical": false },
         { "text": "完了報告に plan / status のパスと Next Steps 案内がある", "critical": false }
       ],
@@ -25,14 +25,14 @@
       "isolation": "worktree",
       "setup": {
         "files": {
-          "docs/status.md": "# Project Status\n\n**Last Updated:** 2026-06-01 09:30:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260601090000` |\n| **Feature** | Old Feature Cleanup |\n| **Started** | 2026-06-01 09:00:00 |\n| **Phase** | 🟡 In Progress |\n| **Plan** | [docs/plans/20260601090000_old-feature-cleanup.md](./plans/20260601090000_old-feature-cleanup.md) |\n\n**Current Focus:**\nCleaning up old feature flags.\n\n---\n\n## 📜 Session History\n\n_Archived sessions can be found in [session-history.md](./session-history.md)._\n\n---\n\n## 🔗 Quick Links\n\n- [All Plans](./plans/)\n",
-          "docs/plans/20260601090000_old-feature-cleanup.md": "# Old Feature Cleanup\n\n## Overview\n古いフィーチャーフラグの掃除。\n\n## Progress\n- [ ] flags の棚卸し\n"
+          ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-06-01 09:30:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260601090000` |\n| **Feature** | Old Feature Cleanup |\n| **Started** | 2026-06-01 09:00:00 |\n| **Phase** | 🟡 In Progress |\n| **Plan** | [.agents/artifacts/plans/20260601090000_old-feature-cleanup.md](./plans/20260601090000_old-feature-cleanup.md) |\n\n**Current Focus:**\nCleaning up old feature flags.\n\n---\n\n## 📜 Session History\n\n_Archived sessions can be found in [session-history.md](./session-history.md)._\n\n---\n\n## 🔗 Quick Links\n\n- [All Plans](./plans/)\n",
+          ".agents/artifacts/plans/20260601090000_old-feature-cleanup.md": "# Old Feature Cleanup\n\n## Overview\n古いフィーチャーフラグの掃除。\n\n## Progress\n- [ ] flags の棚卸し\n"
         }
       },
       "prompt": "（cycle パイプラインからの自動呼び出し想定。確認プロンプトは出さず推定で進めること）『ユーザー認証機能』の実装計画を作って。ログイン/ログアウトとセッション管理を含む新機能。",
       "requirements": [
-        { "text": "新 plan が docs/plans/{14桁timestamp}_{英訳kebab-slug}.md に作成されている（slug は user-authentication 等の意味ベース英訳で [a-z0-9-]+ のみ。ローマ字逐次変換や日本語混じりでない）", "critical": true },
-        { "text": "未完了だった既存 Current Session（20260601090000）が headless 既定の (b) abandoned として docs/session-history.md にアーカイブされ（Feature 列に (abandoned) 相当の識別）、status.md の Current Session が新 plan に置き換わっている", "critical": true },
+        { "text": "新 plan が .agents/artifacts/plans/{14桁timestamp}_{英訳kebab-slug}.md に作成されている（slug は user-authentication 等の意味ベース英訳で [a-z0-9-]+ のみ。ローマ字逐次変換や日本語混じりでない）", "critical": true },
+        { "text": "未完了だった既存 Current Session（20260601090000）が headless 既定の (b) abandoned として .agents/artifacts/session-history.md にアーカイブされ（Feature 列に (abandoned) 相当の識別）、status.md の Current Session が新 plan に置き換わっている", "critical": true },
         { "text": "元の機能名『ユーザー認証機能』が plan ヘッダまたは status.md の Feature 列に原文で保持されている", "critical": false },
         { "text": "abandoned アーカイブを行った事実が出力（Next Steps 等）で言及されている", "critical": false }
       ],
@@ -46,17 +46,17 @@
       "isolation": "worktree",
       "setup": {
         "files": {
-          "docs/status.md": "# Project Status\n\n**Last Updated:** 2026-06-02 10:00:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260602093000` |\n| **Feature** | CSV Export |\n| **Started** | 2026-06-02 09:30:00 |\n| **Phase** | 🟡 In Progress |\n| **Plan** | [docs/plans/20260602093000_csv-export.md](./plans/20260602093000_csv-export.md) |\n\n**Current Focus:**\nエクスポート処理の実装中。\n\n---\n\n## 📜 Session History\n\n_Archived sessions can be found in [session-history.md](./session-history.md)._\n\n---\n\n## 🔗 Quick Links\n\n- [All Plans](./plans/)\n",
-          "docs/plans/20260602093000_csv-export.md": "# CSV Export\n\n## Overview\n一覧画面の CSV エクスポート機能。\n\n## Progress\n- [x] 実装\n- [x] テスト\n"
+          ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-06-02 10:00:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260602093000` |\n| **Feature** | CSV Export |\n| **Started** | 2026-06-02 09:30:00 |\n| **Phase** | 🟡 In Progress |\n| **Plan** | [.agents/artifacts/plans/20260602093000_csv-export.md](./plans/20260602093000_csv-export.md) |\n\n**Current Focus:**\nエクスポート処理の実装中。\n\n---\n\n## 📜 Session History\n\n_Archived sessions can be found in [session-history.md](./session-history.md)._\n\n---\n\n## 🔗 Quick Links\n\n- [All Plans](./plans/)\n",
+          ".agents/artifacts/plans/20260602093000_csv-export.md": "# CSV Export\n\n## Overview\n一覧画面の CSV エクスポート機能。\n\n## Progress\n- [x] 実装\n- [x] テスト\n"
         }
       },
       "prompt": "cycle 完了したよ。ステータス更新お願い。",
       "requirements": [
-        { "text": "完了した 20260602093000 / CSV Export のセッションが docs/session-history.md に表形式で記録されている（既存なら表の先頭に挿入、不在なら新規作成 — どちらの分岐でも記録されていること）", "critical": true },
-        { "text": "docs/status.md の Current Session がクリアされ、Last Updated が更新されている", "critical": true },
+        { "text": "完了した 20260602093000 / CSV Export のセッションが .agents/artifacts/session-history.md に表形式で記録されている（既存なら表の先頭に挿入、不在なら新規作成 — どちらの分岐でも記録されていること）", "critical": true },
+        { "text": ".agents/artifacts/status.md の Current Session がクリアされ、Last Updated が更新されている", "critical": true },
         { "text": "更新確認（Cycle ID / 新 Phase / 更新時刻）が出力されている", "critical": false }
       ],
-      "notes": "Status Update Workflow の Completed 遷移（アーカイブ + Current クリア）を固定する edge。実行環境の worktree はリポジトリ自身のコピーのため docs/session-history.md が既存で、「既存 → 先頭挿入」分岐が通常経路になる（初回 capture で確認済み）。"
+      "notes": "Status Update Workflow の Completed 遷移（アーカイブ + Current クリア）を固定する edge。実行環境の worktree はリポジトリ自身のコピーのため .agents/artifacts/session-history.md が既存で、「既存 → 先頭挿入」分岐が通常経路になる（初回 capture で確認済み）。"
     },
     {
       "id": "pl-004",
@@ -66,16 +66,16 @@
       "isolation": "worktree",
       "setup": {
         "files": {
-          "docs/status.md": "# Project Status\n\n**Last Updated:** 2026-06-01 09:30:00\n\n---\n\n## 🎯 Current Session\n\n| Cycle ID | Feature | Started | Phase | Plan |\n|----------|---------|---------|-------|------|\n| `20260601090000` | Foo Refactor | 2026-06-01 09:00:00 | 🔵 Implementing | [plan](./plans/20260601090000_foo-refactor.md) |\n\n**Current Focus:**\nfoo モジュールのリファクタ中。\n\n---\n\n## 🔗 Quick Links\n\n- [All Plans](./plans/)\n",
-          "docs/plans/20260601090000_foo-refactor.md": "# Foo Refactor\n\n## Overview\nfoo モジュールのリファクタ。\n\n## Progress\n- [ ] 実装\n",
-          "docs/plans/checkpoints/20260601090000.md": "---\ncycle_id: \"20260601090000\"\nowner: manual-session\nmode: normal\nwritten_at: 2026-06-01T09:30:00+09:00\nbase_head: 0000000000000000000000000000000000000000\ndirty_fingerprint: sha256:0000000000000000000000000000000000000000000000000000000000000000\ndirty_files:\n  - src/foo.py\nverify_on_restore: []\n---\n## decision\nnone\n\n## evidence\nObserved 09:25: pytest exited 0\n\n## next\nsplit foo into two modules\n"
+          ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-06-01 09:30:00\n\n---\n\n## 🎯 Current Session\n\n| Cycle ID | Feature | Started | Phase | Plan |\n|----------|---------|---------|-------|------|\n| `20260601090000` | Foo Refactor | 2026-06-01 09:00:00 | 🔵 Implementing | [plan](./plans/20260601090000_foo-refactor.md) |\n\n**Current Focus:**\nfoo モジュールのリファクタ中。\n\n---\n\n## 🔗 Quick Links\n\n- [All Plans](./plans/)\n",
+          ".agents/artifacts/plans/20260601090000_foo-refactor.md": "# Foo Refactor\n\n## Overview\nfoo モジュールのリファクタ。\n\n## Progress\n- [ ] 実装\n",
+          ".agents/artifacts/plans/checkpoints/20260601090000.md": "---\ncycle_id: \"20260601090000\"\nowner: manual-session\nmode: normal\nwritten_at: 2026-06-01T09:30:00+09:00\nbase_head: 0000000000000000000000000000000000000000\ndirty_fingerprint: sha256:0000000000000000000000000000000000000000000000000000000000000000\ndirty_files:\n  - src/foo.py\nverify_on_restore: []\n---\n## decision\nnone\n\n## evidence\nObserved 09:25: pytest exited 0\n\n## next\nsplit foo into two modules\n"
         }
       },
       "prompt": "前回の続きから。resume して。",
       "requirements": [
-        { "text": "docs/plans/checkpoints/20260601090000.md の存在を検知し、checkpoint.py classify を実行して verdict で分岐している（checkpoint を無視して素通りしていない）", "critical": true },
+        { "text": ".agents/artifacts/plans/checkpoints/20260601090000.md の存在を検知し、checkpoint.py classify を実行して verdict で分岐している（checkpoint を無視して素通りしていない）", "critical": true },
         { "text": "base_head が現在 HEAD と一致しないため superseded と判定し、checkpoint の削除を『提案』している（自動削除していない）", "critical": true },
-        { "text": "checkpoint ファイル docs/plans/checkpoints/20260601090000.md が resume 後も削除されずに残っている（read-only）", "critical": true },
+        { "text": "checkpoint ファイル .agents/artifacts/plans/checkpoints/20260601090000.md が resume 後も削除されずに残っている（read-only）", "critical": true },
         { "text": "通常の resume（Cycle ID / Feature / Phase / Plan リンクの提示）も併せて行われている", "critical": false }
       ],
       "notes": "plan resume の checkpoint 統合を固定する edge。fixture の base_head は全ゼロの偽 sha なので worktree の実 HEAD と必ず不一致 → superseded が決定的に出る。superseded 時の『削除は提案のみ・自動削除しない』read-only 規律を凍結する。"

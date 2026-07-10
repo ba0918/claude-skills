@@ -5,6 +5,8 @@ description: docs 内の全アーティファクト（ideas, issues, cycles, ses
 
 # Doc Audit
 
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+
 Skill that scans all documentation artifacts within the project and detects/fixes inconsistencies between them.
 
 ## Distinction from doc-check
@@ -30,10 +32,10 @@ Before starting, verify:
 1. Check if `docs/` directory exists in the project root
    - If not found → report "Target directory `docs/` not found." and stop
 2. Note which index files exist:
-   - `docs/ideas/idea-status.md` — if missing, skip idea-related rules
-   - `docs/issues/issue-status.md` — if missing, skip issue-related rules
-   - `docs/status.md` — if missing, skip status-related rules
-   - `docs/session-history.md` — if missing, skip history-related rules
+   - `.agents/artifacts/ideas/idea-status.md` — if missing, skip idea-related rules
+   - `.agents/artifacts/issues/issue-status.md` — if missing, skip issue-related rules
+   - `.agents/artifacts/status.md` — if missing, skip status-related rules
+   - `.agents/artifacts/session-history.md` — if missing, skip history-related rules
 
 ## Phase 1: Scan
 
@@ -42,30 +44,30 @@ Collect metadata from all documentation artifacts. Execute scans sequentially.
 ### 1.1 Ideas Scan (skip if category filter excludes)
 
 ```
-Target: docs/ideas/
+Target: .agents/artifacts/ideas/
 ```
 
-1. Read `docs/ideas/idea-status.md`
+1. Read `.agents/artifacts/ideas/idea-status.md`
    - Parse the Markdown table: extract each row's idea name, file link, tags, created date, status, summary
    - If parse fails → record WARN "Failed to parse idea-status.md" and skip idea rules
-2. List all `.md` files in `docs/ideas/` (excluding `idea-status.md`)
-3. List all files in `docs/ideas/archives/` (create list; directory may not exist)
+2. List all `.md` files in `.agents/artifacts/ideas/` (excluding `idea-status.md`)
+3. List all files in `.agents/artifacts/ideas/archives/` (create list; directory may not exist)
 4. For each idea entry:
-   - Check if a corresponding cycle exists in `docs/plans/` by matching slug/title
+   - Check if a corresponding cycle exists in `.agents/artifacts/plans/` by matching slug/title
    - Check if a corresponding skill directory exists in `skills/` by matching name
 5. Record: `{ideas: [{name, file, status, has_cycle, cycle_status, has_skill, is_archived}]}`
 
 ### 1.2 Issues Scan (skip if category filter excludes)
 
 ```
-Target: docs/issues/
+Target: .agents/artifacts/issues/
 ```
 
-1. Read `docs/issues/issue-status.md`
+1. Read `.agents/artifacts/issues/issue-status.md`
    - Parse the Markdown table: extract each row's issue name, file link, tags, created date, summary
    - If parse fails → record WARN and skip issue rules
-2. List all `.md` files in `docs/issues/` (excluding `issue-status.md`)
-3. List all files in `docs/issues/archives/`
+2. List all `.md` files in `.agents/artifacts/issues/` (excluding `issue-status.md`)
+3. List all files in `.agents/artifacts/issues/archives/`
 4. For each issue entry:
    - Check if a corresponding cycle references this issue
 5. Record: `{issues: [{name, file, tags, is_resolved_by_cycle, cycle_ref}]}`
@@ -73,19 +75,19 @@ Target: docs/issues/
 ### 1.3 Cycles Scan (skip if category filter excludes)
 
 ```
-Target: docs/plans/
+Target: .agents/artifacts/plans/
 ```
 
-1. List all `.md` files in `docs/plans/` (excluding `results/` subdirectory)
+1. List all `.md` files in `.agents/artifacts/plans/` (excluding `results/` subdirectory)
 2. For each cycle file:
    - Parse filename: extract timestamp and slug
    - Read the file and parse: Status line, Cycle ID, Feature name, Started date
    - Determine if Completed: status contains "Complete" or "Done"
-3. Read `docs/session-history.md`
+3. Read `.agents/artifacts/session-history.md`
    - Parse the table: extract all recorded cycle IDs
-4. Read `docs/status.md`
+4. Read `.agents/artifacts/status.md`
    - Parse Current Session table: extract listed cycle IDs and their phases
-5. Count files in `docs/plans/results/` if directory exists
+5. Count files in `.agents/artifacts/plans/results/` if directory exists
 6. Record: `{cycles: [{id, slug, status, is_completed, in_session_history, in_status_current}], results_count}`
 
 ### 1.4 Cross-Reference Data Assembly
@@ -197,7 +199,7 @@ After all fixes are processed, display the fix results report following the temp
 |------|--------|
 | `docs/` directory does not exist | Report "Target directory not found" and exit |
 | `idea-status.md` / `issue-status.md` missing | Skip the corresponding category's scan and note in report |
-| `docs/status.md` / `docs/session-history.md` missing | Skip related checks and note in report |
+| `.agents/artifacts/status.md` / `.agents/artifacts/session-history.md` missing | Skip related checks and note in report |
 | Markdown table parse failure | Skip the file's rule checks and report as WARN |
 | File write error during AUTO_FIX | Record error and continue to next problem (partial fix tolerance) |
 | `archives/` directory does not exist | Create it before executing the move operation |

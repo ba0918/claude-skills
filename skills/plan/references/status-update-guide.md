@@ -1,10 +1,10 @@
 # Status Update Guide
 
-Detailed instructions for updating docs/status.md during implementation cycles.
+Detailed instructions for updating .agents/artifacts/status.md during implementation cycles.
 
 ## Legacy Format Auto-Migration
 
-When reading an existing `docs/status.md`, check whether it uses the legacy format (inline session history) and automatically migrate it to the new format (session-history.md separated).
+When reading an existing `.agents/artifacts/status.md`, check whether it uses the legacy format (inline session history) and automatically migrate it to the new format (session-history.md separated).
 
 ### Detection Criteria
 
@@ -29,8 +29,8 @@ From the `## 📜 Session History` or `## Session History` section, collect all 
 
 #### Step 2: Write to session-history.md
 
-- **If `docs/session-history.md` exists:** Insert the extracted rows immediately after the header separator row (`|---|`), before any existing data rows
-- **If `docs/session-history.md` does not exist:** Create it with:
+- **If `.agents/artifacts/session-history.md` exists:** Insert the extracted rows immediately after the header separator row (`|---|`), before any existing data rows
+- **If `.agents/artifacts/session-history.md` does not exist:** Create it with:
 
 ```markdown
 # Session History
@@ -70,7 +70,7 @@ If the footer note (`**Note:** This file is auto-managed by the \`plan\` skill.`
 ### Idempotency
 
 - If the file is already in new format (contains `session-history.md` link in Session History section), skip all migration steps
-- If `docs/status.md` does not exist, skip migration (a new file will be created from the template)
+- If `.agents/artifacts/status.md` does not exist, skip migration (a new file will be created from the template)
 - Running migration multiple times produces the same result
 
 ### Timing
@@ -99,7 +99,7 @@ Migration runs at Phase 4 ("Read existing status.md"), **before** any new sessio
 ### Step 1: Read Current Status
 
 ```bash
-cat docs/status.md
+cat .agents/artifacts/status.md
 ```
 
 Parse the "Current Session" table to extract:
@@ -120,7 +120,7 @@ Ask user or infer from context:
 - User says: "implementation done", "cycle complete", "done"
 - Trigger: User commits final changes
 
-### Step 3: Update docs/status.md
+### Step 3: Update .agents/artifacts/status.md
 
 #### Case 1: Planning → In Progress
 
@@ -133,7 +133,7 @@ Ask user or infer from context:
 | **Feature** | Phase 3: Options UI & Hot Reload |
 | **Started** | 2026-02-08 01:08:55 |
 | **Phase** | 🟡 In Progress |  <!-- Changed from Planning -->
-| **Plan** | [docs/plans/20260208010855_phase-3-options-ui-hot-reload.md](./plans/20260208010855_phase-3-options-ui-hot-reload.md) |
+| **Plan** | [.agents/artifacts/plans/20260208010855_phase-3-options-ui-hot-reload.md](./plans/20260208010855_phase-3-options-ui-hot-reload.md) |
 
 **Current Focus:**
 Phase 3-1 implementation in progress. Theme system extended with 4 new themes.
@@ -150,9 +150,9 @@ Move Current Session to Session History archive and clear Current Session.
 
 **Step 2a: Archive to session-history.md**
 
-Archive the completed session to `docs/session-history.md`.
+Archive the completed session to `.agents/artifacts/session-history.md`.
 
-1. If `docs/session-history.md` does not exist, create it with the following header:
+1. If `.agents/artifacts/session-history.md` does not exist, create it with the following header:
 
 ```markdown
 # Session History
@@ -220,7 +220,7 @@ Ready for next cycle!
 が所有する。status.md に checkpoint の状態フィールドを**持たせない**:
 
 - checkpoint リンクは status.md 上の**維持義務のある状態フィールドにしない**。存在時に触れるとしても
-  「存在するときだけの派生的 1 行」に留める（`docs/plans/checkpoints/{cycle_id}.md` が在れば言及する程度）。
+  「存在するときだけの派生的 1 行」に留める（`.agents/artifacts/plans/checkpoints/{cycle_id}.md` が在れば言及する程度）。
 - resume 側は `cycle_id` から checkpoint パスを機械的に計算できる（status.md に保存する必要がない）。
 - checkpoint の書き出しは Status Update Workflow の出口条件（SKILL.md § Status Update Workflow の
   「Exit condition」）で行い、`git status --porcelain=v1` 非空のまま終わるときだけ生成する。
@@ -233,11 +233,11 @@ Ready for next cycle!
 
 **Actions:**
 
-1. Read docs/status.md
+1. Read .agents/artifacts/status.md
 2. Extract current cycle: `20260208010855`
 3. Phase transition: `🟡 In Progress` → `🟢 Completed`
 4. Get completion timestamp: `date +"%Y-%m-%d %H:%M:%S"`
-5. Update docs/status.md:
+5. Update .agents/artifacts/status.md:
    - Move current to history with completion time
    - Add summary of what was accomplished
    - Clear current session

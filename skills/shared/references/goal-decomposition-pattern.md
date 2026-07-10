@@ -23,7 +23,7 @@
 
 - 配線の**実行**（goal-loop 起動 / sensor adapter 生成 / inbox 自動起票）はしない。dossier は「型検査結果」であり
   実行権限を与えない（§6）。特に inbox は loop-triage の route 結果であり、writer を増やさない
-- dossier をイベント化して `docs/loop/events.jsonl` に載せることはしない（measurement-identity 契約の
+- dossier をイベント化して `.agents/artifacts/loop/events.jsonl` に載せることはしない（measurement-identity 契約の
   閉 enum 改訂が必要なため v1 スコープ外）
 
 ---
@@ -32,7 +32,7 @@
 
 契約・fixture・lint 実装の 3 者が暗黙スキーマでドリフトしないよう、canonical キー階層をここで固定する。
 **未知フィールドは無視**（前方互換）。dossier は **JSON canonical + md レポートの 2 層**で、lint は JSON のみを
-対象とし、md はビュー（生成物）扱い。置き場は `docs/loop/dossiers/{timestamp}_{slug}.json` + 同名 `.md`。
+対象とし、md はビュー（生成物）扱い。置き場は `.agents/artifacts/loop/dossiers/{timestamp}_{slug}.json` + 同名 `.md`。
 
 ```jsonc
 {

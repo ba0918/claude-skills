@@ -1,9 +1,11 @@
 ---
 name: loop-triage
-description: リポジトリの問題をセンサー（validate_repo / ledger --check / context-audit 等）で検出し、finding を冪等化・admission 分類して docs/issues/ready/ キューに自動投入するループ中枢スキル。AUTO_FIX 級のみ enqueue し、ループ定義ファイルに触れる変更は fixture 非保有なら inbox に降格する自己修飾ゲートを持つ。「loop-triage」「ループトリアージ」「センサー実行して issue 化」「finding をキューに積んで」「ループ中枢」「自己修飾ゲート」で起動。issue polling（消化側）の上流に位置する供給側。本リポジトリ専用。
+description: リポジトリの問題をセンサー（validate_repo / ledger --check / context-audit 等）で検出し、finding を冪等化・admission 分類して .agents/artifacts/issues/ready/ キューに自動投入するループ中枢スキル。AUTO_FIX 級のみ enqueue し、ループ定義ファイルに触れる変更は fixture 非保有なら inbox に降格する自己修飾ゲートを持つ。「loop-triage」「ループトリアージ」「センサー実行して issue 化」「finding をキューに積んで」「ループ中枢」「自己修飾ゲート」で起動。issue polling（消化側）の上流に位置する供給側。本リポジトリ専用。
 ---
 
 # Loop Triage
+
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
 センサーが検出した finding を、人手を介さず安全に polling キューへ供給する。
 **共通契約（必読・直リンク）:** [../shared/references/loop-engineering.md](../shared/references/loop-engineering.md)
@@ -82,7 +84,7 @@ python3 {skill_dir}/scripts/triage.py $OUT/findings-*.json \
 各 enqueue 対象について [issue の Slug 定義](../issue/SKILL.md#slug-definition)に従い issue を生成する:
 
 1. slug: `{yyyymmddhhmmss}_{suggested_title の英語 kebab 化}`（非 ASCII は意味ベース英訳）
-2. `docs/issues/ready/{slug}.md` を [issue-template](../issue/references/issue-template.md) 準拠で作成し、
+2. `.agents/artifacts/issues/ready/{slug}.md` を [issue-template](../issue/references/issue-template.md) 準拠で作成し、
    frontmatter を以下のとおりにする:
    ```yaml
    finding_id: {finding_id}          # 新規キーとして追加
@@ -90,7 +92,7 @@ python3 {skill_dir}/scripts/triage.py $OUT/findings-*.json \
    gate: skill-regression            # decisions に gate がある場合のみ新規キーとして追加
    ```
    本文の概要 = what + why、備考 = 受け入れ条件（finding の解消を機械的に確認する方法。例: 該当センサーの再実行で当該 finding_id が消えること）
-3. `docs/issues/issue-status.md` に行を追加（存在しなければ issue スキルのテンプレで新規作成。
+3. `.agents/artifacts/issues/issue-status.md` に行を追加（存在しなければ issue スキルのテンプレで新規作成。
    Issue 列のリンクは実ファイル位置に合わせ `ready/{slug}.md` とする（テンプレ例の直下パスのままにしない）。
    Summary 列には finding の what（先頭 1 文）を使う。パイプ・改行エスケープ規則は
    [issue SKILL.md](../issue/SKILL.md) Create Workflow Step 7 に従う）
@@ -102,7 +104,7 @@ CLI を持たないモジュールなので、`detect_secrets` を import して
 
 ### Step 6: inbox（route = "inbox"）
 
-`docs/loop/inbox.md` に追記する（無ければ見出し `# Loop Inbox` で新規作成）:
+`.agents/artifacts/loop/inbox.md` に追記する（無ければ見出し `# Loop Inbox` で新規作成）:
 
 ```markdown
 ## {YYYY-MM-DD HH:MM} {finding_id} [{sensor}/{rule}] {suggested_title}
@@ -141,8 +143,8 @@ python3 {skill_dir}/scripts/triage.py $OUT/findings-*.json \
 
 ## status — 棚卸し
 
-- `docs/loop/inbox.md` の未処理エントリ数（`## ` 見出し = 1 エントリ、全件を未処理とみなす）と、
-  `docs/issues/ready|running|failed` の件数を提示する（存在しないディレクトリは 0 扱い）
+- `.agents/artifacts/loop/inbox.md` の未処理エントリ数（`## ` 見出し = 1 エントリ、全件を未処理とみなす）と、
+  `.agents/artifacts/issues/ready|running|failed` の件数を提示する（存在しないディレクトリは 0 扱い）
 - `finding_id` 付き issue（loop-triage 由来）とそれ以外を区別して数える
 - 読み取りのみ（ファイルの作成・変更・削除をしない）。報告フォーマットは run Step 7 と同じ
   summary-first（テーブル + 一言サマリ）に準拠する

@@ -5,9 +5,11 @@ description: GitHub issue を起点に Claude が自走し、polling → 並列 
 
 # github-issue Skill
 
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+
 GitHub issue を信頼境界とした自走型ワークフロー。ラベルベース状態機械で並行安全に実行制御し、`/loop` 連携で headless に動作する。
 
-> **Scope:** このスキルは GitHub 上の issue/PR を扱う。ローカル `docs/issues/` を扱う `issue` スキルとは独立。
+> **Scope:** このスキルは GitHub 上の issue/PR を扱う。ローカル `.agents/artifacts/issues/` を扱う `issue` スキルとは独立。
 
 ## Workflow Selection
 

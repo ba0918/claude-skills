@@ -49,7 +49,7 @@ class TestComputeFingerprint(unittest.TestCase):
         )
 
     def test_checkpoints_dir_excluded(self):
-        with_ckpt = b"M  a.py\x00M  docs/plans/checkpoints/20260708012132.md\x00"
+        with_ckpt = b"M  a.py\x00M  .agents/artifacts/plans/checkpoints/20260708012132.md\x00"
         without = b"M  a.py\x00"
         self.assertEqual(
             compute_fingerprint(with_ckpt, "d", {}),
@@ -102,7 +102,7 @@ class TestParsePorcelain(unittest.TestCase):
         self.assertEqual(paths, ["gone.py", "u.txt"])
 
     def test_dirty_paths_excludes_checkpoints(self):
-        pz = b"M  a.py\x00M  docs/plans/checkpoints/x.md\x00"
+        pz = b"M  a.py\x00M  .agents/artifacts/plans/checkpoints/x.md\x00"
         self.assertEqual(dirty_paths(parse_porcelain(pz)), ["a.py"])
 
 
@@ -251,7 +251,7 @@ class TestSecurity(unittest.TestCase):
 
     def test_containment_rejects_outside_path(self):
         with tempfile.TemporaryDirectory() as d:
-            ckdir = os.path.join(d, "docs", "plans", "checkpoints")
+            ckdir = os.path.join(d, ".agents", "artifacts", "plans", "checkpoints")
             os.makedirs(ckdir)
             outside = os.path.join(d, "evil.md")
             with open(outside, "w") as f:
@@ -261,7 +261,7 @@ class TestSecurity(unittest.TestCase):
 
     def test_containment_rejects_symlink(self):
         with tempfile.TemporaryDirectory() as d:
-            ckdir = os.path.join(d, "docs", "plans", "checkpoints")
+            ckdir = os.path.join(d, ".agents", "artifacts", "plans", "checkpoints")
             os.makedirs(ckdir)
             target = os.path.join(d, "target.md")
             with open(target, "w") as f:
@@ -273,7 +273,7 @@ class TestSecurity(unittest.TestCase):
 
     def test_containment_accepts_inside_path(self):
         with tempfile.TemporaryDirectory() as d:
-            ckdir = os.path.join(d, "docs", "plans", "checkpoints")
+            ckdir = os.path.join(d, ".agents", "artifacts", "plans", "checkpoints")
             os.makedirs(ckdir)
             inside = os.path.join(ckdir, "20260708012132.md")
             with open(inside, "w") as f:
@@ -282,7 +282,7 @@ class TestSecurity(unittest.TestCase):
 
     def test_checkpoint_path_rejects_bad_cycle_id(self):
         with tempfile.TemporaryDirectory() as d:
-            ckdir = os.path.join(d, "docs", "plans", "checkpoints")
+            ckdir = os.path.join(d, ".agents", "artifacts", "plans", "checkpoints")
             os.makedirs(ckdir)
             with self.assertRaises(ParseError):
                 checkpoint_path(ckdir, "../evil")
@@ -388,7 +388,7 @@ class TestBuildSkeleton(unittest.TestCase):
         self.assertIn("reconstruct_from_diff", out)
 
     def test_skeleton_excludes_checkpoints_dir(self):
-        pz = b"M  a.py\x00M  docs/plans/checkpoints/20260708012132.md\x00"
+        pz = b"M  a.py\x00M  .agents/artifacts/plans/checkpoints/20260708012132.md\x00"
         out = build_skeleton(
             pz, "abc1234", "sha256:" + "0" * 64, "manual-session",
             "20260708012132", "2026-07-08T01:30:00+09:00",

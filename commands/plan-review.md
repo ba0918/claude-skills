@@ -2,12 +2,14 @@
 description: "直近の実装計画を7観点（実現可能性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・代替手法・UI/UX条件付き）で徹底レビューする"
 ---
 
+Artifact paths follow the [Agent Artifact Store contract](../skills/shared/references/artifact-store.md).
+
 `claude-skills:plan-reviewer` スキルを使用して、直近の実装計画をレビューする。
 
 ## 手順
 
 1. Skillツールで `claude-skills:plan-reviewer` を起動する
 2. ユーザーの引数 `$ARGUMENTS` にファイルパスがあればそれを対象にする
-3. 引数が空の場合は `docs/plans/` 内の最新の計画ファイルを自動選択する
+3. 引数が空の場合は `.agents/artifacts/plans/` 内の最新の計画ファイルを自動選択する
 4. 7観点（実現可能性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・代替手法・UI/UX条件付き）でレビューを実行する
 5. PASS/WARN/BLOCK の判定結果をユーザーに提示する

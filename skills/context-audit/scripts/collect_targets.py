@@ -3,8 +3,8 @@
 context-audit: audit-target discovery & classification.
 
 Deterministic path-allowlist discovery (no content inference). Only files on
-an explicit allowlist are collected, so archival/temp areas (docs/plans,
-docs/ideas, .claude/tmp, ...) are excluded by construction. Missing targets
+an explicit allowlist are collected, so archival/temp areas (.agents/artifacts/plans,
+.agents/artifacts/ideas, .claude/tmp, ...) are excluded by construction. Missing targets
 graceful-skip; a single unreadable file never aborts the whole audit.
 
 Memory auditing defaults to the cwd-corresponding project only. The cwd->slug

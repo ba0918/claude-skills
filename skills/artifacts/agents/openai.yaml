@@ -1,0 +1,4 @@
+interface:
+  display_name: "Artifact Store"
+  short_description: "Initialize, inspect, and migrate agent artifacts"
+  default_prompt: "Use $artifacts to inspect or initialize this project artifact store."

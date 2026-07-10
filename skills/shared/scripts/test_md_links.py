@@ -46,12 +46,12 @@ class TestIsCheckableLink(unittest.TestCase):
             self.assertFalse(md_links.is_checkable_link(link), link)
 
     def test_placeholders_are_not(self):
-        self.assertFalse(md_links.is_checkable_link("docs/plans/{ts}_{slug}.md"))
-        self.assertFalse(md_links.is_checkable_link("docs/plans/*.md"))
+        self.assertFalse(md_links.is_checkable_link(".agents/artifacts/plans/{ts}_{slug}.md"))
+        self.assertFalse(md_links.is_checkable_link(".agents/artifacts/plans/*.md"))
 
     def test_timestamp_examples_are_not(self):
         self.assertFalse(
-            md_links.is_checkable_link("docs/plans/20260101120000_example.md")
+            md_links.is_checkable_link(".agents/artifacts/plans/20260101120000_example.md")
         )
 
 

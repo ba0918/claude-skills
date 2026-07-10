@@ -5,6 +5,8 @@ description: プロジェクトのドキュメント（README.md、CLAUDE.md、A
 
 # Doc Check
 
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+
 Skill that verifies consistency between documentation and the codebase, and auto-fixes discrepancies.
 
 ## Arguments
@@ -37,7 +39,7 @@ find docs/ -name '*.md' 2>/dev/null
 ls CLAUDE.md .claude/CLAUDE.md 2>/dev/null
 ```
 
-Exclude: `node_modules/`, `vendor/`, `.git/`, `CHANGELOG.md`, `LICENSE.md`, `docs/plans/` (plan files are not targets)
+Exclude: `node_modules/`, `vendor/`, `.git/`, `CHANGELOG.md`, `LICENSE.md`, `.agents/artifacts/plans/` (plan files are not targets)
 
 ### 1.2 Scope Determination
 

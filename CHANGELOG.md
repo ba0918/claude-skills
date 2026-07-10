@@ -4,6 +4,16 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.43.0
+
+Agent Artifact Store を導入し、作業成果物を公開文書の `docs/` から分離。
+
+- LLM 非依存の `.agents/artifacts/` と共有ポリシー `.agents/artifacts.yml` を追加
+- `artifacts` スキルに `init / status / migrate` workflow を追加
+- fail-closed resolver、Git 追跡検査、legacy/split-brain 検出、2段階 migration を実装
+- plan、issue、brainstorm、loop と関連 consumer・fixture を共通 namespace へ移行
+- 既定の artifact store を local・Git 非追跡に変更
+
 ## 1.42.0
 
 skill-interface-audit 新規追加。各 SKILL.md を API 仕様として静的監査するメタスキル。

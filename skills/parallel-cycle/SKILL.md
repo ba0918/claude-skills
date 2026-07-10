@@ -5,6 +5,8 @@ description: Decompose a natural language instruction into multiple plans, check
 
 # Parallel Cycle
 
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+
 Orchestrator skill that decomposes a compound instruction into multiple independent plans, executes them in parallel using worktrees, and merges the results.
 
 ## Flow Overview
@@ -114,7 +116,7 @@ Description: {plan_description}
 Affected files: {file_list}
 ```
 
-Each plan is saved to `docs/plans/{timestamp}_{slug}.md`. All plans in the same batch share a single `{timestamp}` (captured once at Step 0.3 entry) and are differentiated only by `{slug}`.
+Each plan is saved to `.agents/artifacts/plans/{timestamp}_{slug}.md`. All plans in the same batch share a single `{timestamp}` (captured once at Step 0.3 entry) and are differentiated only by `{slug}`.
 
 **並行性**: Step 0.3 では全計画のサブエージェントを並行起動してよい（最大 3 並行）。計画ファイル生成は計画ごとに独立した書き込みで、生成間にデータ依存はない。
 
@@ -217,7 +219,7 @@ For each cycle in the group, **in parallel**:
 
 ### Important: status.md Write Suppression
 
-During parallel execution, do NOT update `docs/status.md` or `docs/session-history.md` from individual cycles. The orchestrator will perform a single consolidated update after all cycles complete.
+During parallel execution, do NOT update `.agents/artifacts/status.md` or `.agents/artifacts/session-history.md` from individual cycles. The orchestrator will perform a single consolidated update after all cycles complete.
 
 ## Phase 3: Merge
 
@@ -257,7 +259,7 @@ git worktree prune
 
 ### Step 4.1: Update Status
 
-Update `docs/status.md` with consolidated results for all cycles.
+Update `.agents/artifacts/status.md` with consolidated results for all cycles.
 
 ### Step 4.2: Display Summary
 
@@ -282,7 +284,7 @@ Files changed: {total_files}
 
 ### Step 4.3: Generate Result File
 
-Save the summary to `docs/plans/results/{base_plan_name}_result.md`:
+Save the summary to `.agents/artifacts/plans/results/{base_plan_name}_result.md`:
 
 ```markdown
 # Parallel Cycle Result

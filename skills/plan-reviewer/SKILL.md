@@ -5,6 +5,8 @@ description: 実装計画を7観点（実現可能性・セキュリティ・パ
 
 # Plan Reviewer
 
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+
 Quality gate that deeply reviews implementation plans from 7 expert perspectives before implementation begins.
 
 ## Progress Checklist
@@ -23,10 +25,10 @@ plan-review Progress:
 
 ### Step 1: Identify Latest Plan File
 
-Find the most recent plan file from `docs/plans/`. If a specific file is provided as an argument, use that instead.
+Find the most recent plan file from `.agents/artifacts/plans/`. If a specific file is provided as an argument, use that instead.
 
 ```bash
-ls -t docs/plans/*.md 2>/dev/null | head -1
+ls -t .agents/artifacts/plans/*.md 2>/dev/null | head -1
 ```
 
 Read the full contents of the plan file. If the status is anything other than Planning, display a warning (reviewing an in-progress or completed plan is of limited value).

@@ -18,7 +18,8 @@
   7. plugin.json と marketplace.json のバージョンが一致する
   8. SKILL.md description の品質（トリガー語を含む / 1024 字以内）
   9. 共有契約語彙の適合（契約の識別語彙を使う skill / command は契約を md リンクする）
-  10. docs/loop/dossiers/*.json の dossier lint（error 級のみ CI fail）
+  10. .agents/artifacts/loop/dossiers/*.json の dossier lint（error 級のみ CI fail）
+  11. .agents/artifacts.yml と local store の Git 安全性
 """
 import json
 import os
@@ -33,6 +34,7 @@ sys.path.insert(
     ),
 )
 from frontmatter import extract_description, parse_frontmatter_fields  # noqa: E402,F401
+from artifact_store import ArtifactStoreError, inspect as inspect_artifact_store  # noqa: E402
 
 EXCLUDED_DIRS = {".git", ".claude", ".codex", "node_modules", "__pycache__"}
 
@@ -102,6 +104,8 @@ CONTRACT_VOCAB = [
      ("codex:codex-rescue",), 1),
     ("skills/shared/references/goal-decomposition-pattern.md",
      ("ci_gate", "resident_sensor", "dissolve"), 2),
+    ("skills/shared/references/artifact-store.md",
+     (".agents/artifacts",), 1),
 ]
 
 # チェック9の免除リスト。免除はスキル側ではなくここに置く（迂回防止）。理由必須。
@@ -246,14 +250,14 @@ _DOSSIER_LINT_DIR = os.path.join(
 
 
 def check_dossiers(root):
-    """チェック10: docs/loop/dossiers/*.json を dossier_lint で in-process 検査する。
+    """チェック10: .agents/artifacts/loop/dossiers/*.json を dossier_lint で in-process 検査する。
 
     error 級 finding のみを `[dossier] <file>: GDxxx <message>` 形式で返す
     （warn は CI fail させない）。1 つの壊れた dossier で validate_repo 全体が
     traceback で落ちないよう、各ファイルは dossier_lint の例外集合で包まれた
     `_lint_one` を通す（parse-error は errors エントリに変換される）。
     """
-    ddir = os.path.join(root, "docs", "loop", "dossiers")
+    ddir = os.path.join(root, ".agents", "artifacts", "loop", "dossiers")
     if not os.path.isdir(ddir):
         return []
     if _DOSSIER_LINT_DIR not in sys.path:
@@ -274,6 +278,18 @@ def check_dossiers(root):
             if f.get("severity") == "error":
                 errors.append(f"[dossier] {rel}: {f['rule']} {f['message']}")
     return errors
+
+
+def check_artifact_store(root):
+    """Agent Artifact Store policy and Git safety errors."""
+    artifact_policy = os.path.join(root, ".agents", "artifacts.yml")
+    if not os.path.isfile(artifact_policy):
+        return []
+    try:
+        status = inspect_artifact_store(root)
+        return [f"[artifact-store] {error}" for error in status["errors"]]
+    except ArtifactStoreError as exc:
+        return [f"[artifact-store] {exc}"]
 
 
 def check_relative_links(root, sources=None, exempt=None):
@@ -372,8 +388,11 @@ def run_checks(root):
     # 9. 共有契約語彙の適合
     errors += check_contract_conformance(root)
 
-    # 10. dossier lint（docs/loop/dossiers/*.json）
+    # 10. dossier lint（.agents/artifacts/loop/dossiers/*.json）
     errors += check_dossiers(root)
+
+    # 11. Agent Artifact Store policy / Git safety
+    errors += check_artifact_store(root)
 
     return errors
 

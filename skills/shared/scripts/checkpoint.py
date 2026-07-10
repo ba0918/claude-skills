@@ -27,8 +27,8 @@ from dataclasses import dataclass, field
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from secret_detect import mask_secrets  # noqa: E402
 
-CHECKPOINTS_SUBDIR = "docs/plans/checkpoints"
-_CHECKPOINT_PREFIX = "docs/plans/checkpoints/"
+CHECKPOINTS_SUBDIR = ".agents/artifacts/plans/checkpoints"
+_CHECKPOINT_PREFIX = ".agents/artifacts/plans/checkpoints/"
 
 # v1 accepts only [0-9]{14}. The reserved checkpoint_id grammar (for future
 # parallel-cycle) is [0-9]{14}(-[a-z0-9-]+)? — kept as documentation only; v1
@@ -61,7 +61,7 @@ class ParseError(Exception):
 
 
 class ContainmentError(Exception):
-    """Path escapes docs/plans/checkpoints/ or is a symlink."""
+    """Path escapes .agents/artifacts/plans/checkpoints/ or is a symlink."""
 
 
 @dataclass

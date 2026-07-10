@@ -85,7 +85,7 @@ class TestIsLoopDefining(unittest.TestCase):
         self.assertFalse(admission.is_loop_defining("scripts/other.py"))
 
     def test_plan_doc_does_not_match(self):
-        self.assertFalse(admission.is_loop_defining("docs/plans/x.md"))
+        self.assertFalse(admission.is_loop_defining(".agents/artifacts/plans/x.md"))
 
     def test_readme_does_not_match(self):
         self.assertFalse(admission.is_loop_defining("README.md"))
@@ -104,7 +104,7 @@ class TestGateDecision(unittest.TestCase):
 
     def test_no_loop_defining_paths_is_not_gated(self):
         result = admission.gate_decision(
-            ["docs/plans/x.md", "README.md"],
+            [".agents/artifacts/plans/x.md", "README.md"],
             path_to_skills=lambda p: ["irrelevant"],
             skills_with_fixtures=set(),
         )
@@ -209,7 +209,7 @@ class TestRoute(unittest.TestCase):
 
     def test_budget_demotes_to_inbox_when_cap_reached(self):
         result = admission.route(
-            self._finding(affected_paths=["docs/plans/x.md"]),
+            self._finding(affected_paths=[".agents/artifacts/plans/x.md"]),
             queue_ids=set(),
             baseline=set(),
             fid="0badc0de00000001",
@@ -235,7 +235,7 @@ class TestRoute(unittest.TestCase):
 
     def test_ungated_enqueue_has_no_gate_key(self):
         result = admission.route(
-            self._finding(affected_paths=["docs/plans/x.md"]),
+            self._finding(affected_paths=[".agents/artifacts/plans/x.md"]),
             queue_ids=set(),
             baseline=set(),
             fid="abad1dea00000001",

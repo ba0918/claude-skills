@@ -34,7 +34,7 @@ import secret_detect  # noqa: E402
 # ---------------------------------------------------------------------------
 
 MAX_SIZE = 1_000_000  # bytes; larger dossiers are treated as a precondition fail
-DOSSIERS_DIR = "docs/loop/dossiers"
+DOSSIERS_DIR = ".agents/artifacts/loop/dossiers"
 
 REQUIRED_BLOCKS = {
     "goal": dict,

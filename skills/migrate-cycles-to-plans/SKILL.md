@@ -1,13 +1,15 @@
 ---
 name: migrate-cycles-to-plans
-description: "Migrate docs/cycles/ to docs/plans/ across a project. Renames the directory, updates all text references in markdown files, and flips CRITICAL guard warnings. Supports check (dry-run) and run modes. Use when upgrading from older versions of claude-skills that used docs/cycles/ for plan storage. Triggers: \"migrate\", \"docs/cycles → docs/plans\", \"rename cycles to plans\"."
+description: "Migrate docs/cycles/ to .agents/artifacts/plans/ across a project. Renames the directory, updates all text references in markdown files, and flips CRITICAL guard warnings. Supports check (dry-run) and run modes. Use when upgrading from older versions of claude-skills that used docs/cycles/ for plan storage. Triggers: \"migrate\", \"docs/cycles → .agents/artifacts/plans\", \"rename cycles to plans\"."
 ---
 
-# Migrate: docs/cycles/ → docs/plans/
+# Migrate: docs/cycles/ → .agents/artifacts/plans/
 
-Migrate the legacy `docs/cycles/` directory to `docs/plans/`.
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
-Older versions of this plugin stored plan files under `docs/cycles/`. This caused LLMs to frequently create files in `docs/plans/` instead (the natural inference from "plan"). This migration renames the directory and updates all references.
+Migrate the legacy `docs/cycles/` directory to `.agents/artifacts/plans/`.
+
+Older versions of this plugin stored plan files under `docs/cycles/`. This caused LLMs to frequently create files in `.agents/artifacts/plans/` instead (the natural inference from "plan"). This migration renames the directory and updates all references.
 
 ## Usage
 

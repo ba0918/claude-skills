@@ -5,6 +5,8 @@ description: LLM 向け指示ファイル（CLAUDE.md / AGENTS.md / .claude/rule
 
 # context-audit
 
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+
 LLM の行動品質は指示層（CLAUDE.md / AGENTS.md / rules / メモリ）の健全性に依存する。
 長期運用でこの層が腐敗（陳腐化した参照・矛盾・破壊的許可・クロスツール乖離）すると LLM の挙動が劣化するが、
 既存の doc-check（docs⇔code）/ doc-audit（docs⇔docs）はこの「**指示としての品質**」を見ておらず、
@@ -67,7 +69,7 @@ python3 {skill_dir}/scripts/collect_targets.py {project_root} \
 - **path allowlist（決定的・純関数）** で対象を収集。対象: root の `CLAUDE.md` / `AGENTS.md`、
   `.claude/rules/*.md` / `rules/*.md`、`.claude/review-rules.md` + cwd 対応プロジェクトメモリ。
 - 存在しない対象（例: `.claude/rules/` 不在）は graceful-skip（`skipped` に記録、エラーにしない）。
-- ネストしたサブディレクトリの CLAUDE.md/AGENTS.md、`docs/plans/`・`docs/ideas/`・`.claude/tmp/` 等の
+- ネストしたサブディレクトリの CLAUDE.md/AGENTS.md、`.agents/artifacts/plans/`・`.agents/artifacts/ideas/`・`.claude/tmp/` 等の
   archival/一時領域は allowlist に含めない（＝除外）。
 - 非 UTF-8 / 読込失敗の 1 ファイルが監査全体を中断しない（`errors='replace'` / skip-and-report）。
 - `--include-global` 指定時のみグローバル設定を追加。

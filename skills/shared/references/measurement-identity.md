@@ -16,7 +16,7 @@
 | skill-regression | 挙動面の検証イベント | `ledger.json` | 最新 1 件のみ（履歴なし） |
 | trigger-eval | 発火精度メトリクス | なし（レポートのみ） | 実行間比較ができない |
 | skill-improve | セッション摩擦 | session JSONL（読み取り） | 逸話単位、instruction 版と未結合 |
-| cycle 結果 | plan 実行の成果 | `docs/plans/results` | 自由文、機械集計不能 |
+| cycle 結果 | plan 実行の成果 | `.agents/artifacts/plans/results` | 自由文、機械集計不能 |
 
 このままでは「SKILL.md のこの改稿は成功率を上げたのか」に原理的に答えられない。
 **新しいサイロを足すことは解決ではない** — 結合キーの統一が解決である。
@@ -40,7 +40,7 @@
 
 ## 3. Event Record Schema
 
-`docs/loop/events.jsonl` に 1 行 1 イベントで append する（commit 対象。単一ホスト前提は
+`.agents/artifacts/loop/events.jsonl` に 1 行 1 イベントで append する（commit 対象。単一ホスト前提は
 polling と同じ）。**構造化フィールドのみ・自由文禁止・secret 禁止**（TickResult §7 の哲学を継承）。
 
 ```
@@ -83,7 +83,7 @@ Event {
 
 ```bash
 python3 skills/shared/scripts/measurement_identity.py report --skill issue \
-  [--events docs/loop/events.jsonl]
+  [--events .agents/artifacts/loop/events.jsonl]
 ```
 
 - surface_sha256 別に `{ticks, done, failed, success_rate, first_ts, last_ts}` を集計し、
@@ -95,7 +95,7 @@ python3 skills/shared/scripts/measurement_identity.py report --skill issue \
 
 ## 6. 運用
 
-- `docs/loop/events.jsonl` は肥大化したら `docs/loop/archives/YYYY-MM.jsonl` へ月次で移動してよい
+- `.agents/artifacts/loop/events.jsonl` は肥大化したら `.agents/artifacts/loop/archives/YYYY-MM.jsonl` へ月次で移動してよい
   （polling の archive パターンと同じ。report は `--events` 複数指定で跨げる）
 - イベントの**削除・書き換えは禁止**（append-only。誤記録はそのまま残し、次の正しいイベントで上書きせず補正もしない — 計測の改竄可能性を構造的に排除する）
 - writer の追加・変更は本契約の写像表（§4）の更新とセットで行う

@@ -5,7 +5,9 @@ description: Issue management for tracking out-of-scope problems discovered duri
 
 # Issue Management
 
-Provides a flow to record out-of-scope problems discovered during plan execution as local files in `docs/issues/`, and later connect them to plan → cycle.
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+
+Provides a flow to record out-of-scope problems discovered during plan execution as local files in `.agents/artifacts/issues/`, and later connect them to plan → cycle.
 
 ## Slug Definition
 
@@ -58,12 +60,12 @@ If arguments are given as free-form text without flags, extract title from the f
 1. Parse title, summary, tags, and source from the arguments
 2. **Preview & confirmation** — ユーザーに選択肢を提示して確認 to present the following and obtain user approval before proceeding:
    - Parsed fields: title, summary, tags, source
-   - `docs/issues/` directory existence check result
-   - If `docs/issues/issue-status.md` exists, scan the Issue column for **exact title matches** of open issues (case-insensitive, after trimming whitespace). List each matching row. Do NOT use substring or fuzzy matching — exact match only.
+   - `.agents/artifacts/issues/` directory existence check result
+   - If `.agents/artifacts/issues/issue-status.md` exists, scan the Issue column for **exact title matches** of open issues (case-insensitive, after trimming whitespace). List each matching row. Do NOT use substring or fuzzy matching — exact match only.
    - Options: "Create" (proceed) / "Cancel" (abort)
    - If the user selects "Cancel", display "Issue creation cancelled." and exit
-3. Create the `docs/issues/` directory (if it doesn't exist, use `mkdir -p`)
-4. If `docs/issues/issue-status.md` does not exist, create it with the following template:
+3. Create the `.agents/artifacts/issues/` directory (if it doesn't exist, use `mkdir -p`)
+4. If `.agents/artifacts/issues/issue-status.md` does not exist, create it with the following template:
    ```markdown
    # Issue Status
 
@@ -78,8 +80,8 @@ If arguments are given as free-form text without flags, extract title from the f
    - Convert the remaining characters to kebab-case (spaces → hyphens, lowercase, keep only alphanumeric characters and hyphens `[a-z0-9-]`)
    - **Non-ASCII title fallback**: If the title contains non-ASCII characters (e.g., Japanese, Chinese, Korean, Cyrillic), the LLM must produce a **meaning-based English kebab-title** (transliteration or translation — whichever yields a readable identifier). Do NOT romanize character-by-character (`roguin-taimu-auto` is wrong; `fix-login-timeout` is right). After conversion, apply the ASCII rules above. If the resulting kebab-title is empty, use `untitled-{short_hash}` where `short_hash` is the first 8 chars of `echo -n "$title" | sha1sum`.
    - Final slug: `{yyyymmddhhmmss}_{kebab-title}`
-6. Read [references/issue-template.md](references/issue-template.md), replace placeholders, and write to `docs/issues/{slug}.md`. Omitted optional fields (`tags`, `source`) resolve to empty strings per the Argument Format rules above — the frontmatter line stays present with an empty value.
-7. Add a row to the end of the table in `docs/issues/issue-status.md`:
+6. Read [references/issue-template.md](references/issue-template.md), replace placeholders, and write to `.agents/artifacts/issues/{slug}.md`. Omitted optional fields (`tags`, `source`) resolve to empty strings per the Argument Format rules above — the frontmatter line stays present with an empty value.
+7. Add a row to the end of the table in `.agents/artifacts/issues/issue-status.md`:
    ```
    | [{slug}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | {summary} |
    ```
@@ -88,8 +90,8 @@ If arguments are given as free-form text without flags, extract title from the f
 9. Display the creation result:
    ```
    ✅ Issue created!
-   📄 File: docs/issues/{slug}.md
-   📋 Index: docs/issues/issue-status.md
+   📄 File: .agents/artifacts/issues/{slug}.md
+   📋 Index: .agents/artifacts/issues/issue-status.md
    💡 Tip: `/claude-skills:issue-list` で現在の issue 一覧を確認できます
    ```
 
@@ -101,7 +103,7 @@ Display a list of open issues.
 
 ### Steps
 
-1. Read `docs/issues/issue-status.md`
+1. Read `.agents/artifacts/issues/issue-status.md`
    - If the file does not exist: Display `No issues have been registered yet` and exit
    - If the file exists but has **zero data rows** (header + separator only): Still display the file and output `📊 Open issues: 0` (this is distinct from the "file not found" case above — do NOT fall through to the not-found message)
 2. Display **the entire file contents** as-is (`# Issue Status` heading, `**Last Updated:** ...` line, and the full table including header/separator/data rows). Do NOT omit any part of the file.
@@ -122,17 +124,17 @@ This procedure is used by both Plan Workflow and Cycle Workflow. Do NOT duplicat
 
 ### Steps
 
-1. Read `docs/issues/issue-status.md`
+1. Read `.agents/artifacts/issues/issue-status.md`
    - If the file does not exist: Display `No issues have been registered yet` and exit (same message as List Workflow Step 1)
 2. **Issue selection** — behavior depends on the number of open issues (counted as List Workflow Step 3 does — data rows only):
    - **0 issues** (file exists but has zero data rows): Display `No open issues found` and exit
    - **1 issue**: ユーザーに選択肢を提示して確認 to confirm with the user. Present the issue details and offer two options: the issue slug (to proceed) and "Cancel" (to abort).
    - **2+ issues**: ユーザーに選択肢を提示して確認 to present all issue slugs as options plus "Cancel". Ask the user to select the target issue.
-3. Read the selected issue file (`docs/issues/{slug}.md`)
-   - If not found: Display the file list in `docs/issues/` and exit with an error message
+3. Read the selected issue file (`.agents/artifacts/issues/{slug}.md`)
+   - If not found: Display the file list in `.agents/artifacts/issues/` and exit with an error message
 4. Execute `claude-skills:plan-create` via the skill invocation based on the issue content (title and summary)
    - Arguments: Pass the issue's title and summary
-   - **CRITICAL**: The plan file MUST be created at `docs/plans/{timestamp}_{slug}.md`. Do NOT use `docs/cycles/` or any other directory. Verify the file was created in `docs/plans/` before proceeding.
+   - **CRITICAL**: The plan file MUST be created at `.agents/artifacts/plans/{timestamp}_{slug}.md`. Do NOT use `docs/cycles/` or any other directory. Verify the file was created in `.agents/artifacts/plans/` before proceeding.
    - **IMPORTANT**: Include `**Issue:** {slug}` in the plan header (no underscores, no markdown emphasis — just the raw slug). This field is used by `cycle` to auto-close the issue upon completion. See `plan/SKILL.md` "Optional `Issue` field" for the authoritative format.
 
 ---
@@ -147,8 +149,8 @@ Create a plan from an issue without running cycle. Use when you want to review/d
 2. Display completion message:
    ```
    ✅ Plan created from issue!
-   📄 Plan: docs/plans/{timestamp}_{slug}.md
-   📋 Issue: docs/issues/{slug}.md
+   📄 Plan: .agents/artifacts/plans/{timestamp}_{slug}.md
+   📋 Issue: .agents/artifacts/issues/{slug}.md
 
    ## Next Steps
    1. Review and discuss the plan
@@ -201,17 +203,17 @@ Close (archive) an issue.
 ### Steps
 
 1. Get the issue slug from arguments. If omitted, use ユーザーに確認 following the selection logic in **Issue → Plan Conversion** Step 2.
-2. Verify the issue file `docs/issues/{slug}.md` exists
-   - If not found: List files in `docs/issues/` and display an error message showing available slugs. Exit.
-3. Create the `docs/issues/archives/` directory (if it doesn't exist, use `mkdir -p`)
-4. Move the issue file to `docs/issues/archives/` (using `mv` command)
-5. Remove the row containing the slug from `docs/issues/issue-status.md`
+2. Verify the issue file `.agents/artifacts/issues/{slug}.md` exists
+   - If not found: List files in `.agents/artifacts/issues/` and display an error message showing available slugs. Exit.
+3. Create the `.agents/artifacts/issues/archives/` directory (if it doesn't exist, use `mkdir -p`)
+4. Move the issue file to `.agents/artifacts/issues/archives/` (using `mv` command)
+5. Remove the row containing the slug from `.agents/artifacts/issues/issue-status.md`
 6. Update **Last Updated** to today's date
 7. Display the result:
    ```
    ✅ Issue closed!
-   📦 Archived: docs/issues/archives/{slug}.md
-   📋 Index updated: docs/issues/issue-status.md
+   📦 Archived: .agents/artifacts/issues/archives/{slug}.md
+   📋 Index updated: .agents/artifacts/issues/issue-status.md
    ```
 
 ---
@@ -262,7 +264,7 @@ issue 本文を LLM コンテキストへ渡す際は **必ず** 以下のデリ
 >
 > **`--once` mode の扱い**: Step 4 の Safety brake check のうち `max_iter` / `max_wallclock` は Loop Controller 用（契約 §1 で責務境界）。`--once` では trivially pass（評価すらしない）でよい。`failed_streak` も同様（単発 tick では累積しない）。
 
-1. **State root 解決** — `docs/issues/` を絶対パス化（契約 §6.1 / FS adapter §7）
+1. **State root 解決** — `.agents/artifacts/issues/` を絶対パス化（契約 §6.1 / FS adapter §7）
 2. **Initial policy** — `state_root/.polling-initialized` が無ければ `--dry-run` を強制（契約 §10）
 3. **Kill file check** — `adapter.kill_file_path()` が返すタプル `(hard, graceful)` の順（= `.STOP.hard` → `.STOP`）で存在確認。どちらか存在した時点で即 halt（契約 §6.1 / FS adapter §7）。**戻り順 = チェック順**
 4. **Safety brake check** — `max_iter` / `max_wallclock` / `failed_streak` の 3 重ガードを評価（契約 §6.2）。`--once` mode では本 Step は trivially pass（Loop Controller の責務、契約 §1）。`--stateless` mode では `adapter.load_session()` → `session_resume_action(prev, now, config)` で評価し、`Halt{reason}` なら claim せず即 `TickResult(halt_reason=reason)` で終了（契約 §6.5。`failed_streak` halt は sticky — `session.json` 削除まで再開しない）
@@ -300,7 +302,7 @@ Workflow Selection が `polling` を検知したら、本セクションの Step
 ## File Structure (generated in the project using this skill)
 
 ```
-docs/issues/
+.agents/artifacts/issues/
   issue-status.md             - Index file (LLM reads this first)
   yyyymmddhhmmss_<kebab-title>.md - Individual issue files
   archives/                   - Storage for closed issues

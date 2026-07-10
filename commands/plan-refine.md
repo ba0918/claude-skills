@@ -2,6 +2,8 @@
 description: "実装計画を review → fix ループで改善する"
 ---
 
+Artifact paths follow the [Agent Artifact Store contract](../skills/shared/references/artifact-store.md).
+
 実装計画を `claude-skills:plan-reviewer` スキルでレビューし、検出された問題に対して
 計画ファイルを直接編集して改善する。これを WARN 以上の警告がなくなるか、
 最大イテレーション数に達するまでループする。
@@ -9,14 +11,14 @@ description: "実装計画を review → fix ループで改善する"
 ## パラメータ
 
 - `$ARGUMENTS` の最初の数値: 最大イテレーション数（デフォルト: 3）
-- `$ARGUMENTS` のファイルパス: 対象計画ファイル（省略時は `docs/plans/` 内の最新を自動選択）
+- `$ARGUMENTS` のファイルパス: 対象計画ファイル（省略時は `.agents/artifacts/plans/` 内の最新を自動選択）
 
 ## フロー
 
 ### Iteration 1（フルレビュー）
 
 1. Skillツールで `claude-skills:plan-reviewer` を起動（7観点フルレビュー、UI/UX は条件付き）
-   - 対象ファイルは引数で指定。省略時は `docs/plans/` 内の最新を自動選択
+   - 対象ファイルは引数で指定。省略時は `.agents/artifacts/plans/` 内の最新を自動選択
    - 対象ファイルのパスを記憶しておく（以降のイテレーションで再利用）
 2. 結果が全て PASS → 終了（完了報告へ）
 3. WARN/BLOCK がある場合:

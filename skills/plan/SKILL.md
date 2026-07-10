@@ -1,9 +1,11 @@
 ---
 name: plan
-description: Create timestamped implementation plans with automatic docs/status.md management and progress tracking. Use when user requests (1) "make a plan", "create a plan", "design this feature" for creating new plans, or (2) "update status", "planning done", "implementation complete", "cycle done" for updating implementation progress, or (3) "resume", "continue from last time", "前回の続き", "前回の続きから" for loading the current session state. Alternative to Claude Code's standard plan mode with timestamp-based file naming and status tracking.
+description: Create timestamped implementation plans with automatic .agents/artifacts/status.md management and progress tracking. Use when user requests (1) "make a plan", "create a plan", "design this feature" for creating new plans, or (2) "update status", "planning done", "implementation complete", "cycle done" for updating implementation progress, or (3) "resume", "continue from last time", "前回の続き", "前回の続きから" for loading the current session state. Alternative to Claude Code's standard plan mode with timestamp-based file naming and status tracking.
 ---
 
 # Plan
+
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
 Create implementation plans with timestamp-based filenames and automatic project status tracking.
 
@@ -12,8 +14,8 @@ Create implementation plans with timestamp-based filenames and automatic project
 When the user requests a plan:
 
 1. Generate timestamp: `yyyymmddhhmmss` format
-2. Create plan document: `docs/plans/{timestamp}_{feature-slug}.md`
-3. Update status tracker: `docs/status.md`
+2. Create plan document: `.agents/artifacts/plans/{timestamp}_{feature-slug}.md`
+3. Update status tracker: `.agents/artifacts/status.md`
 4. Guide user to next steps (typically `tdd-red`)
 
 ## Workflow
@@ -27,7 +29,7 @@ Create necessary directories and generate timestamp.
 date +%Y%m%d%H%M%S
 
 # Ensure directories exist
-mkdir -p docs/plans
+mkdir -p .agents/artifacts/plans
 ```
 
 ### Phase 2: Gather Requirements
@@ -48,9 +50,9 @@ Record what was inferred vs. what was asked so the user can correct it.
 
 ### Phase 3: Create Plan Document
 
-**File path:** `docs/plans/{timestamp}_{feature-slug}.md`
+**File path:** `.agents/artifacts/plans/{timestamp}_{feature-slug}.md`
 
-**CRITICAL**: Plan files MUST be created under `docs/plans/` directory. Do NOT use `docs/cycles/` or any other directory. This constraint applies regardless of how this skill is invoked (directly, via issue-cycle, or any other caller).
+**CRITICAL**: Plan files MUST be created under `.agents/artifacts/plans/` directory. Do NOT use `docs/cycles/` or any other directory. This constraint applies regardless of how this skill is invoked (directly, via issue-cycle, or any other caller).
 
 **Feature slug rules:**
 - Convert spaces to hyphens
@@ -87,11 +89,11 @@ When creating a plan from an issue (via `issue-plan` or `issue-cycle`), add `**I
 
 ### Phase 4: Update Status Tracker
 
-Read existing `docs/status.md` if it exists.
+Read existing `.agents/artifacts/status.md` if it exists.
 
 **Legacy format auto-migration:**
 
-If `docs/status.md` exists, check for legacy format (inline session history without `session-history.md` link). If detected, run the migration steps defined in [references/status-update-guide.md](references/status-update-guide.md) § "Legacy Format Auto-Migration" **before** writing new session data. This transparently converts old-style status files to the new separated format.
+If `.agents/artifacts/status.md` exists, check for legacy format (inline session history without `session-history.md` link). If detected, run the migration steps defined in [references/status-update-guide.md](references/status-update-guide.md) § "Legacy Format Auto-Migration" **before** writing new session data. This transparently converts old-style status files to the new separated format.
 
 **Update logic:**
 
@@ -122,8 +124,8 @@ Display to user:
 ```
 ✅ Implementation plan created!
 
-📄 Plan: docs/plans/{timestamp}_{feature-slug}.md
-📊 Status: docs/status.md
+📄 Plan: .agents/artifacts/plans/{timestamp}_{feature-slug}.md
+📊 Status: .agents/artifacts/status.md
 
 ## Next Steps
 
@@ -147,7 +149,7 @@ Use when user wants to resume from previous session:
 
 1. **Read current status**
    ```bash
-   cat docs/status.md
+   cat .agents/artifacts/status.md
    ```
 
 2. **Display current session**
@@ -161,8 +163,8 @@ Use when user wants to resume from previous session:
    [../shared/references/checkpoint-pattern.md](../shared/references/checkpoint-pattern.md)
    に従い、以下を実行する（verdict 表・優先順位・セキュリティ規約の正本は契約側。ここでは重複記載しない）:
 
-   - `docs/plans/checkpoints/{cycle_id}.md` が**存在すれば**、
-     `python3 {checkpoint.py のパス} classify --repo {プロジェクトルート} --file docs/plans/checkpoints/{cycle_id}.md`
+   - `.agents/artifacts/plans/checkpoints/{cycle_id}.md` が**存在すれば**、
+     `python3 {checkpoint.py のパス} classify --repo {プロジェクトルート} --file .agents/artifacts/plans/checkpoints/{cycle_id}.md`
      を実行し、出力 verdict と終了コードで分岐する。存在しなければ何もせず通常 resume を続行する。
      `{checkpoint.py のパス}` はスキル配布位置基準（本リポジトリでは `skills/shared/scripts/checkpoint.py`、
      対象プロジェクト外にあるなら絶対パス）。`--repo` は常に明示（cwd = プロジェクトルートなら `--repo .`）。
@@ -192,7 +194,7 @@ Use when user wants to resume from previous session:
    Cycle: {cycle-id}
    Feature: {feature-name}
    Phase: {phase}
-   Plan: docs/plans/{cycle-id}_{feature-slug}.md
+   Plan: .agents/artifacts/plans/{cycle-id}_{feature-slug}.md
 
    Current Focus:
    {current-focus-description}
@@ -211,7 +213,7 @@ Use when user wants to update implementation progress:
 
 1. **Read current status**
    ```bash
-   cat docs/status.md
+   cat .agents/artifacts/status.md
    ```
 
 2. **Determine new phase**
@@ -219,11 +221,11 @@ Use when user wants to update implementation progress:
    - 🟡 In Progress → 🟢 Completed (when cycle done)
    - Work interrupted mid-way (user pausing, not done): keep the current phase as-is (no transition, no archive)
 
-3. **Update docs/status.md**
+3. **Update .agents/artifacts/status.md**
    - Update Current Session phase
    - If completed:
-     1. Archive the session to `docs/session-history.md` (add as first row in table format)
-     2. If `docs/session-history.md` does not exist, create it with headers
+     1. Archive the session to `.agents/artifacts/session-history.md` (add as first row in table format)
+     2. If `.agents/artifacts/session-history.md` does not exist, create it with headers
      3. Remove Completed entries from Session History in status.md
      4. Clear Current Session
    - Update "Last Updated" timestamp

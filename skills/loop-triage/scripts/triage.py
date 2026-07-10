@@ -121,7 +121,7 @@ def main(argv=None):
     baseline_path = Path(args.baseline)
     baseline = fi.load_baseline(
         baseline_path.read_text() if baseline_path.exists() else "")
-    queue_ids = fi.collect_queue_ids(str(root / "docs" / "issues"))
+    queue_ids = fi.collect_queue_ids(str(root / ".agents" / "artifacts" / "issues"))
     skills_with_fixtures = {
         p.parent.name for p in (root / "skills").glob("*/fixtures.json")}
 

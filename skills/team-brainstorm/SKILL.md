@@ -5,6 +5,8 @@ description: チーム議論型のブレインストーミング。4つの異な
 
 # Team Brainstorm
 
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+
 AgenticTeam を使った複数の思考スタイルによるチーム議論型ブレインストーミング。
 1人の Claude では視点が偏りがちな発散フェーズを、4つの異なるロール（Challenger/Explorer/Connector/Grounded）で多角化し、アイデアの質と多様性を向上させる。
 
@@ -235,12 +237,12 @@ Total ideas explored: {total_count}
 
 1. 現在の会話から壁打ちの内容を整理する（論争メモリを含む）
 2. ユーザーにタイトルとサマリーを確認
-3. `docs/ideas/` ディレクトリを作成（なければ `mkdir -p`）
+3. `.agents/artifacts/ideas/` ディレクトリを作成（なければ `mkdir -p`）
 4. slug を生成: `yyyymmddhhmmss_{kebab-title}` (date +%Y%m%d%H%M%S)
-5. [references/session-template.md](references/session-template.md) をもとにメモファイルを生成: `docs/ideas/{slug}.md`
+5. [references/session-template.md](references/session-template.md) をもとにメモファイルを生成: `.agents/artifacts/ideas/{slug}.md`
    - 論争メモリ（Accepted / Controversial / Frontier）のセクションを含める
    - Round History を含める
-6. `docs/ideas/idea-status.md` を更新（なければ以下のテンプレートで作成）:
+6. `.agents/artifacts/ideas/idea-status.md` を更新（なければ以下のテンプレートで作成）:
    ```markdown
    # Idea Status
 
@@ -257,8 +259,8 @@ Total ideas explored: {total_count}
 9. 完了メッセージ表示:
    ```
    ✅ アイデアを保存しました!
-   📄 File: docs/ideas/{slug}.md
-   📋 Index: docs/ideas/idea-status.md
+   📄 File: .agents/artifacts/ideas/{slug}.md
+   📋 Index: .agents/artifacts/ideas/idea-status.md
    ```
 
 ### セキュリティ
@@ -271,7 +273,7 @@ Total ideas explored: {total_count}
 
 ### Steps
 
-1. `docs/ideas/idea-status.md` を読む
+1. `.agents/artifacts/ideas/idea-status.md` を読む
    - なければ「まだアイデアがありません」と表示して終了
 2. テーブル内容をそのまま表示
 3. 件数サマリーを表示:
@@ -285,21 +287,21 @@ Total ideas explored: {total_count}
 
 ### Steps
 
-1. `docs/ideas/idea-status.md` を読む
+1. `.agents/artifacts/ideas/idea-status.md` を読む
    - なければ「まだアイデアがありません」と表示して終了
 2. ユーザーに対象アイデアを選択してもらう
 3. アイデアファイルを読み込む
 4. `claude-skills:plan-create` スキルを実行（引数フォーマット: `{Title}: {Summary from idea file}` — plan-create は $ARGUMENTS をそのまま What & Why の種として使う）
 5. アイデアの Status を `💡 Idea` → `📋 Planned` に更新
 6. アーカイブ処理を実行:
-   - `docs/ideas/archives/` ディレクトリを作成（なければ `mkdir -p`）
-   - `docs/ideas/{slug}.md` を `docs/ideas/archives/{slug}.md` に移動
+   - `.agents/artifacts/ideas/archives/` ディレクトリを作成（なければ `mkdir -p`）
+   - `.agents/artifacts/ideas/{slug}.md` を `.agents/artifacts/ideas/archives/{slug}.md` に移動
    - `idea-status.md` のテーブルから該当エントリを削除
 7. 完了メッセージ表示:
    ```
    ✅ アイデアから plan を作成しました!
-   📄 Plan: docs/plans/{timestamp}_{slug}.md
-   📦 Archived: docs/ideas/archives/{slug}.md
+   📄 Plan: .agents/artifacts/plans/{timestamp}_{slug}.md
+   📦 Archived: .agents/artifacts/ideas/archives/{slug}.md
 
    ## Next Steps
    1. `/plan-review` で計画をレビュー
@@ -321,10 +323,10 @@ Session Workflow と同一の制約が適用される:
 ### Steps
 
 1. `resume` キーワード以降の $ARGUMENTS から slug を取得
-   - slug がなければ `docs/ideas/idea-status.md` を読んでテーブルを表示し、ユーザーに対象アイデアを選択してもらう
+   - slug がなければ `.agents/artifacts/ideas/idea-status.md` を読んでテーブルを表示し、ユーザーに対象アイデアを選択してもらう
    - `idea-status.md` が存在しなければ「まだアイデアがありません」と表示して終了
-2. `docs/ideas/{slug}.md` を読み込む
-   - ファイルが存在しなければ `docs/ideas/` のファイル一覧を表示してエラー終了
+2. `.agents/artifacts/ideas/{slug}.md` を読み込む
+   - ファイルが存在しなければ `.agents/artifacts/ideas/` のファイル一覧を表示してエラー終了
 3. メモの内容を要約して表示し、Session Workflow の Phase 0 から開始する（テーマはメモのタイトルを使用）:
    ```
    📄 アイデア "{title}" を読み込みました。
@@ -355,7 +357,7 @@ Session Workflow と同一の制約が適用される:
 ### Wrap での上書き更新
 
 Resume 後に Wrap Workflow が実行された場合:
-- 既存の `docs/ideas/{slug}.md` を**上書き更新**する（新規作成ではない）
+- 既存の `.agents/artifacts/ideas/{slug}.md` を**上書き更新**する（新規作成ではない）
 - slug は元のメモのものをそのまま使用する
 - idea-status.md のテーブル行は更新不要（slug が変わらないため）
 - **Last Updated** のみ今日の日付に更新する
@@ -365,7 +367,7 @@ Resume 後に Wrap Workflow が実行された場合:
 ## File Structure (generated in the project using this skill)
 
 ```
-docs/ideas/
+.agents/artifacts/ideas/
   idea-status.md             - インデックスファイル（既存 brainstorm と共有）
   yyyymmddhhmmss_{slug}.md   - 個別アイデアメモ（論争メモリ含む）
   archives/                  - 完了・破棄したアイデアの保管先

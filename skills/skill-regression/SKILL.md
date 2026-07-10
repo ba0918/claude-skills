@@ -5,6 +5,8 @@ description: スキルの「調律済みの挙動」を fixture（シナリオ +
 
 # Skill Regression
 
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+
 スキルは prose で書かれたプログラムであり、SKILL.md・references・共有契約の編集はすべて「挙動変更」である。
 しかし empirical tuning で確立した合格基準はセッションと共に消え、次の編集が調律済みの挙動を
 壊しても誰も気づけない。本スキルはその合格基準を **fixture として資産化**し、
@@ -45,7 +47,7 @@ description: スキルの「調律済みの挙動」を fixture（シナリオ +
 
 1. **素材の特定**: 対象スキルの合格基準の出どころを確認する。優先順:
    (a) 直近の [empirical tuning](../empirical-prompt-tuning/SKILL.md) セッションの fixture.json（実測済みで最良。変換ガイドは [fixture-schema.md](references/fixture-schema.md) の「素材別の変換ガイド」参照）
-   (b) `docs/plans/` の該当 plan の受け入れ条件
+   (b) `.agents/artifacts/plans/` の該当 plan の受け入れ条件
    (c) どちらも無ければ [references/fixture-schema.md](references/fixture-schema.md) の設計指針に従い新規設計
 2. **fixtures.json の作成**: スキーマに従い `skills/<skill>/fixtures.json` を書く。
    シナリオは 2〜3 本（中央値 1 + edge 1〜2）、要件は各 3〜7 項目、`critical: true` を最低 1 つ

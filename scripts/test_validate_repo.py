@@ -3,6 +3,7 @@
 実行: python3 -m unittest discover scripts
 """
 import os
+import subprocess
 import tempfile
 import unittest
 
@@ -18,6 +19,7 @@ from validate_repo import (
     check_relative_links,
     mentions_name,
     check_dossiers,
+    check_artifact_store,
 )
 
 
@@ -29,7 +31,7 @@ def _valid_dossier():
         "goal": {"statement": "g", "non_goals": ["x"], "ssot": "docs/"},
         "oracles": [{
             "id": "oracle:a", "type": "true", "command": "true",
-            "oracle_files": ["docs/status.md"], "owner": "me",
+            "oracle_files": [".agents/artifacts/status.md"], "owner": "me",
         }],
         "fragments": [{
             "id": "frag:a", "wire_to": "goal-loop", "exit_to": "ci_gate",
@@ -46,10 +48,10 @@ def _valid_dossier():
 
 
 class TestCheckDossiers(unittest.TestCase):
-    """チェック13: docs/loop/dossiers/*.json を dossier_lint で in-process 検査。"""
+    """チェック13: .agents/artifacts/loop/dossiers/*.json を dossier_lint で in-process 検査。"""
 
     def _write(self, root, name, obj_or_text):
-        ddir = os.path.join(root, "docs", "loop", "dossiers")
+        ddir = os.path.join(root, ".agents", "artifacts", "loop", "dossiers")
         os.makedirs(ddir, exist_ok=True)
         path = os.path.join(ddir, name)
         with open(path, "w", encoding="utf-8") as f:
@@ -62,7 +64,7 @@ class TestCheckDossiers(unittest.TestCase):
 
     def test_empty_dir_is_noop(self):
         with tempfile.TemporaryDirectory() as root:
-            os.makedirs(os.path.join(root, "docs", "loop", "dossiers"))
+            os.makedirs(os.path.join(root, ".agents", "artifacts", "loop", "dossiers"))
             self.assertEqual(check_dossiers(root), [])
 
     def test_valid_dossier_passes(self):
@@ -96,6 +98,38 @@ class TestCheckDossiers(unittest.TestCase):
             self.assertIn("parse-error", errors[0])
 
 
+class TestCheckArtifactStore(unittest.TestCase):
+    def _repo(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        root = temp.name
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        os.makedirs(os.path.join(root, ".agents"), exist_ok=True)
+        with open(os.path.join(root, ".gitignore"), "w", encoding="utf-8") as handle:
+            handle.write("/.agents/artifacts/\n")
+        return root
+
+    def test_valid_local_policy_passes(self):
+        root = self._repo()
+        with open(os.path.join(root, ".agents", "artifacts.yml"), "w", encoding="utf-8") as handle:
+            handle.write(
+                "schema_version: 1\nroot: .agents/artifacts\n"
+                "visibility: local\nworktree_scope: worktree\n"
+            )
+        self.assertEqual([], check_artifact_store(root))
+
+    def test_unknown_schema_is_reported(self):
+        root = self._repo()
+        with open(os.path.join(root, ".agents", "artifacts.yml"), "w", encoding="utf-8") as handle:
+            handle.write(
+                "schema_version: 2\nroot: .agents/artifacts\n"
+                "visibility: local\nworktree_scope: worktree\n"
+            )
+        errors = check_artifact_store(root)
+        self.assertEqual(1, len(errors))
+        self.assertIn("schema_version", errors[0])
+
+
 class TestExtractMdLinks(unittest.TestCase):
     def test_extracts_relative_links(self):
         text = "詳細は [criteria](references/review-criteria.md) と [shared](../shared/references/team-config.md) を参照。"
@@ -120,7 +154,7 @@ class TestIsCheckableLink(unittest.TestCase):
 
     def test_placeholder_is_skipped(self):
         self.assertFalse(is_checkable_link("{slug}.md"))
-        self.assertFalse(is_checkable_link("docs/plans/{timestamp}_{slug}.md"))
+        self.assertFalse(is_checkable_link(".agents/artifacts/plans/{timestamp}_{slug}.md"))
 
     def test_url_and_anchor_are_skipped(self):
         self.assertFalse(is_checkable_link("https://example.com/page.md"))
@@ -263,7 +297,7 @@ class TestCheckRelativeLinks(unittest.TestCase):
     def test_placeholder_links_are_skipped(self):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, "skills/a/references/detail.md",
-                        "[plan](docs/plans/{timestamp}_{slug}.md) を生成する。")
+                        "[plan](.agents/artifacts/plans/{timestamp}_{slug}.md) を生成する。")
             self.assertEqual(check_relative_links(root), [])
 
     def test_exempt_file_is_skipped(self):

@@ -12,7 +12,7 @@
     {
       "id": "sf-001",
       "title": "単一ファイル指摘からの横展開",
-      "source": "docs/plans/20260702143000_sweep-fix.md",
+      "source": ".agents/artifacts/plans/20260702143000_sweep-fix.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {

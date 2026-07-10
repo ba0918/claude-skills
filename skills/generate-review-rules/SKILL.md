@@ -5,6 +5,8 @@ description: プロジェクトの CLAUDE.md、ドキュメント、コード構
 
 # Generate Review Rules
 
+Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+
 Analyze the project's documentation and code structure to generate project-specific review rules in `.claude/review-rules.md` for use with plan-reviewer and code reviews.
 
 ## Workflow
@@ -16,7 +18,7 @@ Read the following sources in order (only those that exist):
 1. `CLAUDE.md` (project root) — Focus on Design Principles, Tech Stack, and Architecture sections
 2. `docs/ARCHITECTURE.md` or `docs/architecture.md`
 3. `docs/SECURITY.md` or `docs/security.md`
-4. `docs/status.md` — Understand the current project state
+4. `.agents/artifacts/status.md` — Understand the current project state
 
 ### Step 2: Detect Project Characteristics
 

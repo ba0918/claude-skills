@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # migrate-cycles-to-plans.sh
 #
-# Migrate docs/cycles/ → docs/plans/ across a project.
+# Migrate docs/cycles/ → .agents/artifacts/plans/ across a project.
 # - Renames the directory
 # - Updates all text references in *.md files
 # - Flips CRITICAL guard warnings
@@ -16,7 +16,7 @@ set -euo pipefail
 MODE="${1:-check}"
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 OLD_DIR="docs/cycles"
-NEW_DIR="docs/plans"
+NEW_DIR=".agents/artifacts/plans"
 
 # Counters
 files_to_move=0
@@ -100,7 +100,7 @@ updated_count=0
 for f in "${ref_files[@]}"; do
   relpath="${f#"$PROJECT_ROOT"/}"
 
-  # The file may now be under docs/plans/ instead of docs/cycles/
+  # The file may now be under .agents/artifacts/plans/ instead of docs/cycles/
   actual_path="$f"
   if [[ ! -f "$actual_path" ]]; then
     actual_path="${f/docs\/cycles/docs\/plans}"
@@ -110,30 +110,30 @@ for f in "${ref_files[@]}"; do
     continue
   fi
 
-  # Replace docs/cycles → docs/plans (handles both with and without trailing slash)
+  # Replace docs/cycles → .agents/artifacts/plans (handles both with and without trailing slash)
   if grep -q "docs/cycles" "$actual_path" 2>/dev/null; then
-    sed -i 's|docs/cycles|docs/plans|g' "$actual_path"
+    sed -i 's|docs/cycles|.agents/artifacts/plans|g' "$actual_path"
     updated_count=$((updated_count + 1))
     echo "   ✓ $relpath"
   fi
 done
 
 # Step 3: Flip CRITICAL guard warnings
-# Old: "Do NOT use docs/plans/" → New: "Do NOT use docs/cycles/"
-# (After step 2, the old warning became "Do NOT use docs/plans/" which is now wrong)
+# Old: "Do NOT use .agents/artifacts/plans/" → New: "Do NOT use docs/cycles/"
+# (After step 2, the old warning became "Do NOT use .agents/artifacts/plans/" which is now wrong)
 echo ""
 echo "🔄 Flipping CRITICAL guard warnings ..."
 
 guard_count=0
 mapfile -t guard_files < <(
   grep -rl --include='*.md' --exclude-dir='.git' --exclude-dir='node_modules' \
-    "Do NOT use docs/plans/" "$PROJECT_ROOT" 2>/dev/null || true
+    "Do NOT use .agents/artifacts/plans/" "$PROJECT_ROOT" 2>/dev/null || true
 )
 
 for f in "${guard_files[@]}"; do
   [[ -z "$f" ]] && continue
   if [[ -f "$f" ]]; then
-    sed -i 's|Do NOT use docs/plans/|Do NOT use docs/cycles/|g' "$f"
+    sed -i 's|Do NOT use .agents/artifacts/plans/|Do NOT use docs/cycles/|g' "$f"
     relpath="${f#"$PROJECT_ROOT"/}"
     guard_count=$((guard_count + 1))
     echo "   ✓ $relpath"

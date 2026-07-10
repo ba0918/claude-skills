@@ -87,7 +87,7 @@ class TestCA_S001_StaleFileRef(unittest.TestCase):
     def test_placeholder_ref_ignored(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = self._root(tmp)
-            t = target("claude_md", "see `docs/plans/{timestamp}_{slug}.md`")
+            t = target("claude_md", "see `.agents/artifacts/plans/{timestamp}_{slug}.md`")
             f = [x for x in sc.run_checks([t], ctx(root=str(root))) if x["id"] == "CA-S001"]
             self.assertEqual(f, [])
 

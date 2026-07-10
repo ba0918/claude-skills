@@ -150,13 +150,14 @@ plan（計画）→ cycle（自動実装）→ commit（コミット）が基本
 
 | スキル | 用途 |
 |--------|------|
+| `artifacts` | Agent Artifact Store の初期化・状態診断・移行 |
 | `skill-improve` | セッションデータからスキルの摩擦を検出 |
 | `trigger-eval` | description の発火精度を実測・改善 |
 | `empirical-prompt-tuning` | テキスト指示の品質を実測・反復改善 |
 | `context-audit` | 指示ファイルの老朽化を監査 |
 | `skill-regression` | 共有契約の変更による回帰を検出 |
 | `skill-interface-audit` | SKILL.md の API 契約完備性を静的監査 |
-| `migrate-cycles-to-plans` | 旧 docs/cycles/ から docs/plans/ への移行 |
+| `migrate-cycles-to-plans` | 旧 docs/cycles/ から .agents/artifacts/plans/ への移行 |
 
 ## 構成
 
