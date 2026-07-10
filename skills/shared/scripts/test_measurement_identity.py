@@ -255,6 +255,43 @@ class TestDefaultEventsPath(unittest.TestCase):
             self.assertIn("mv", warning)
 
 
+class TestRuntimeContainment(unittest.TestCase):
+    def test_events_path_inside_repo_is_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, ".agents", "runtime", "loop", "events.jsonl")
+            self.assertIsNone(mi.runtime_containment_error(tmp, path))
+
+    def test_symlinked_runtime_dir_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+                tempfile.TemporaryDirectory() as outside:
+            agents = os.path.join(tmp, ".agents")
+            os.makedirs(agents)
+            os.symlink(outside, os.path.join(agents, "runtime"))
+            path = os.path.join(tmp, ".agents", "runtime", "loop", "events.jsonl")
+            error = mi.runtime_containment_error(tmp, path)
+            self.assertIsNotNone(error)
+            self.assertIn("symlink", error)
+
+    def test_emit_refuses_symlinked_default_runtime(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+                tempfile.TemporaryDirectory() as outside:
+            agents = os.path.join(tmp, ".agents")
+            os.makedirs(agents)
+            os.symlink(outside, os.path.join(agents, "runtime"))
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc = mi.main([
+                    "emit", "--system", "skill-regression",
+                    "--event", "verification", "--skill", "issue",
+                    "--repo-root", tmp,
+                    "--outcome", json.dumps({"result": "pass"}),
+                ])
+            self.assertNotEqual(rc, 0)
+            self.assertIn("symlink", err.getvalue())
+            # 何も書き込まれていない（symlink 先へのエスケープなし）
+            self.assertEqual([], os.listdir(outside))
+
+
 class TestFormatReport(unittest.TestCase):
     def test_shortens_surface_and_includes_delta_line(self):
         agg = [

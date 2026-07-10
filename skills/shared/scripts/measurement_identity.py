@@ -31,6 +31,31 @@ _DEFAULT_EVENTS_REL = os.path.join(".agents", "runtime", "loop", "events.jsonl")
 _LEGACY_EVENTS_REL = os.path.join(".agents", "artifacts", "loop", "events.jsonl")
 
 
+def runtime_containment_error(repo_root, events_path):
+    """runtime 領域の書き込み先を検証する。問題なければ None、違反なら説明文字列。
+
+    Artifact Store 契約の containment 検証と同じ思想: repo_root から events_path までの
+    経路成分に symlink があれば拒否し、realpath が repo_root 配下から出ていれば拒否する
+    （symlink 経由の repo 外エスケープ防止）。存在しない成分は作成前なので検査対象外。
+    """
+    repo_real = os.path.realpath(repo_root)
+    repo_abs = os.path.abspath(repo_root)
+    target = os.path.abspath(events_path)
+    # repo_root 直下から events_path の親まで、存在する成分の symlink を検査
+    candidate = os.path.dirname(target)
+    while candidate and candidate not in (repo_real, repo_abs) \
+            and candidate != os.path.dirname(candidate):
+        if os.path.islink(candidate):
+            return f"events path component is a symlink: {candidate}"
+        candidate = os.path.dirname(candidate)
+    if os.path.islink(target):
+        return f"events path is a symlink: {target}"
+    resolved = os.path.realpath(os.path.dirname(target))
+    if resolved != repo_real and not resolved.startswith(repo_real + os.sep):
+        return f"events path escapes repository: {resolved}"
+    return None
+
+
 def old_events_path_warning(repo_root):
     """旧既定パスに events.jsonl が残っていれば actionable な警告文字列を返す。
 
@@ -349,6 +374,18 @@ def _cmd_emit(rest):
         return 2
 
     repo_root = flags["--repo-root"]
+    events_path = flags["--events"] or os.path.join(repo_root, _DEFAULT_EVENTS_REL)
+    if not flags["--events"]:
+        # 既定 (= runtime 領域) への書き込みは symlink / repo 外エスケープを拒否する。
+        # --events 明示指定は operator の意図的な override として検証しない（後方互換）
+        containment_error = runtime_containment_error(repo_root, events_path)
+        if containment_error:
+            print(f"✗ {containment_error}", file=sys.stderr)
+            return 1
+        warning = old_events_path_warning(repo_root)
+        if warning:
+            print(warning, file=sys.stderr)
+
     outcome = json.loads(flags["--outcome"])
     surface_sha256 = current_surface_sha256(repo_root, flags["--skill"])
     ts = datetime.datetime.now(datetime.timezone.utc).isoformat()
@@ -367,11 +404,6 @@ def _cmd_emit(rest):
         print(f"✗ invalid event: {exc}", file=sys.stderr)
         return 1
 
-    events_path = flags["--events"] or os.path.join(repo_root, _DEFAULT_EVENTS_REL)
-    if not flags["--events"]:
-        warning = old_events_path_warning(repo_root)
-        if warning:
-            print(warning, file=sys.stderr)
     parent = os.path.dirname(events_path)
     if parent:
         os.makedirs(parent, exist_ok=True)
