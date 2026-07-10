@@ -4,6 +4,16 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.42.0
+
+skill-interface-audit 新規追加。各 SKILL.md を API 仕様として静的監査するメタスキル。
+
+- `skill-interface-audit` スキルを追加（SKILL.md + references/ + scripts/）
+- SI-S001〜S004 の純関数ルールエンジン（`static_checks.py`、42 テスト）
+- SI-C001〜C006 の LLM 意味判断ルール（REPORT\_ONLY 上限）
+- skill-authoring.md の執筆原則を正本とし、契約の欠落・構造違反を検出
+- empirical-prompt-tuning / trigger-eval / Codex 敵対レビューで品質検証済み
+
 ## 1.41.0
 
 統合漏れクリーンアップ。
