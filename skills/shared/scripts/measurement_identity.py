@@ -3,8 +3,8 @@
 
 skills/shared/references/measurement-identity.md の Event Record 契約（§3）を
 実装する。全 writer（polling 両 adapter / skill-regression / trigger-eval）は
-このモジュールの make_event / validate_event を経由して .agents/artifacts/loop/events.jsonl
-に append する。surface_sha256 は skill-regression/scripts/ledger.py の
+このモジュールの make_event / validate_event を経由して .agents/runtime/loop/events.jsonl
+（runtime 領域）に append する。surface_sha256 は skill-regression/scripts/ledger.py の
 fingerprint() を再利用する（再実装禁止、契約 §2）。
 
 CLI:

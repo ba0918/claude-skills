@@ -43,7 +43,6 @@ ARTIFACT_KINDS = ("plans", "issues", "ideas", "loop")
 # "Runtime area" section of skills/shared/references/artifact-store.md. Files
 # matching these patterns are runtime state, not artifacts; migration classifies
 # them as suggested_action "skip".
-RUNTIME_ROOT_REL = Path(".agents/runtime")
 RUNTIME_BASENAMES = frozenset({
     ".STOP",
     ".STOP.hard",
@@ -54,12 +53,12 @@ RUNTIME_BASENAMES = frozenset({
 _RUNTIME_TMP_PREFIXES = ("session.json.tmp.", "session.json.corrupt.")
 
 # Derived indexes: regenerated deterministically from the entries, never merged.
-# See the "Derived indexes" section of the Artifact Store contract.
+# See the "Derived indexes" section of the Artifact Store contract. Only
+# top-level *.md entry files are indexed: every subdirectory (archives/, and for
+# issues done/, failed/, but also queue-state dirs like ready/ or running/) is
+# excluded — the index covers open flat entries, nothing below them.
 INDEX_FILENAMES = {"ideas": "idea-status.md", "issues": "issue-status.md"}
 INDEX_TITLES = {"ideas": "Idea Status", "issues": "Issue Status"}
-# Subdirectories under a kind directory that hold non-index entries (archived,
-# resolved, or failed) and are therefore excluded from the derived index.
-_INDEX_EXCLUDED_SUBDIRS = {"archives", "done", "failed"}
 _SLUG_TS_RE = re.compile(r"^(\d{14})")
 
 
@@ -385,7 +384,7 @@ def _cell(text: str) -> str:
 
 def _first_heading(text: str) -> str:
     for line in text.splitlines():
-        if line.startswith("# ") and not line.startswith("## "):
+        if line.startswith("# "):
             return line[2:].strip()
     return ""
 
@@ -446,7 +445,7 @@ def _parse_issue_entry(slug: str, text: str) -> dict:
 
 
 def _collect_index_entries(kind_dir: Path, kind: str) -> list:
-    """Parse top-level entries only; archived / done / failed subtrees are excluded."""
+    """Parse top-level entries only; every subdirectory is excluded (see contract)."""
     if not kind_dir.is_dir():
         return []
     index_name = INDEX_FILENAMES[kind]
@@ -457,7 +456,13 @@ def _collect_index_entries(kind_dir: Path, kind: str) -> list:
             continue
         if path.name == index_name:
             continue
-        entries.append(parse(path.stem, path.read_text(encoding="utf-8")))
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:
+            raise ArtifactStoreError(
+                f"entry is not valid utf-8: {path.name} ({exc.reason})"
+            ) from exc
+        entries.append(parse(path.stem, text))
     return sorted(entries, key=lambda entry: entry["slug"])
 
 
@@ -468,8 +473,9 @@ def _render_index(kind: str, entries: list) -> str:
         lines.append("| Idea | Tags | Created | Status | Summary |")
         lines.append("|------|------|---------|--------|---------|")
         for entry in entries:
+            # slug はファイル名由来だがテーブル入力としては信用しない（| を含みうる）
             lines.append(
-                f"| [{_cell(entry['title'])}]({entry['slug']}.md) "
+                f"| [{_cell(entry['title'])}]({_cell(entry['slug'])}.md) "
                 f"| {_cell(entry['tags'])} | {_cell(entry['created'])} "
                 f"| {_cell(entry['status'])} | {_cell(entry['summary'])} |"
             )
@@ -478,7 +484,7 @@ def _render_index(kind: str, entries: list) -> str:
         lines.append("|-------|------|---------|---------|")
         for entry in entries:
             lines.append(
-                f"| [{_cell(entry['slug'])}]({entry['slug']}.md) "
+                f"| [{_cell(entry['slug'])}]({_cell(entry['slug'])}.md) "
                 f"| `{_cell(entry['tags'])}` | {_cell(entry['created'])} "
                 f"| {_cell(entry['summary'])} |"
             )

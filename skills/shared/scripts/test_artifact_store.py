@@ -316,6 +316,30 @@ class RebuildIndexTest(unittest.TestCase):
         # テーブル構造: 5 列（区切り 6 本の `|`）を維持
         self.assertEqual(6, row.count("|") - row.count("\\|"))
 
+    def test_pipe_in_slug_filename_is_escaped(self):
+        root = self.repo()
+        directory = root / ".agents/artifacts/ideas"
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "20260701100000_a|b.md").write_text(
+            "# a|b\n\n**Created:** 2026-07-01 10:00:00\n**Status:** 💡 Idea\n"
+            "**Tags:** `x`\n\n---\n\n## Summary\n\nok\n", encoding="utf-8")
+        rebuild_index(root, "ideas")
+        header = (root / ".agents/artifacts/ideas/idea-status.md").read_text(
+            encoding="utf-8")
+        row = [l for l in header.splitlines() if "20260701100000_a" in l][0]
+        # ファイル名由来の | もエスケープされ、5 列構造（生の | は 6 本）を維持
+        self.assertEqual(6, row.count("|") - row.count("\\|"))
+
+    def test_non_utf8_entry_raises_store_error(self):
+        root = self.repo()
+        directory = root / ".agents/artifacts/ideas"
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "20260701100000_bin.md").write_bytes(b"\xff\xfe\x00bad")
+        with self.assertRaisesRegex(ArtifactStoreError, "utf-8"):
+            rebuild_index(root, "ideas")
+        self.assertFalse(
+            (root / ".agents/artifacts/ideas/idea-status.md").exists())
+
     def test_legacy_store_refuses_to_write(self):
         root = self.repo()
         (root / "docs/ideas").mkdir(parents=True)

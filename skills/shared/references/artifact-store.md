@@ -131,10 +131,13 @@ Rules for a derived index:
   summarizes, the entries win: rebuild the index from scratch rather than hand-reconciling
   rows. Two rebuilds over identical entries produce byte-identical output (the timestamp
   in the index is derived from the newest entry, not from wall-clock time).
-- **Top-level entries only.** `archives/` (and, for issues, `done/` and `failed/`) hold
-  resolved or retired entries and are excluded from the index. Regenerating an index that
-  was previously hand-maintained may therefore drop rows that pointed at archived entries —
-  that is the intended correction, not data loss.
+- **Top-level entries only.** The index covers the flat `*.md` entry files directly under
+  the kind directory. **Every** subdirectory is excluded — `archives/` (and, for issues,
+  `done/` and `failed/`) because they hold resolved or retired entries, but also
+  queue-state directories such as `ready/` and `running/`: an issue inside the polling
+  queue is owned by the queue's state machine, not by this index. Regenerating an index
+  that was previously hand-maintained may therefore drop rows that pointed at entries in
+  subdirectories — that is the intended correction, not data loss.
 - **Per-kind schema.** The ideas index is `Idea | Tags | Created | Status | Summary`; the
   issues index is `Issue | Tags | Created | Summary` (no Status column). Ideas entries carry
   their fields as bold labels (`**Created:**` / `**Status:**` / `**Tags:**`) under a `#`

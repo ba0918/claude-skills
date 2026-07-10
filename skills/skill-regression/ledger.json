@@ -23,7 +23,7 @@
       "skills/context-audit/scripts/apply_fixes.py": "d37bc3064138bf2c8325157edfd2aeb38a14ad70a637835f0616658f77b02231",
       "skills/context-audit/scripts/collect_targets.py": "aa6a60a70f3c7c3b4c161c0ca080d428fe4b3fa9ff4169af7707f74b2fe5957e",
       "skills/context-audit/scripts/static_checks.py": "87d54d880ddfe445e4872378b0024893a848efc6592cef19255afde7179b9216",
-      "skills/shared/references/artifact-store.md": "a7453c8f762f52ee5f738356e9bc12af8b396e43f70753a8334367a218f452b0",
+      "skills/shared/references/artifact-store.md": "c5481b13b40197e13f5a4ffd76155f272400e083f6b5b70558ed622d493ae0d3",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
       "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
@@ -44,7 +44,7 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "441f6eaf46ba3d3431e49ce69b2a99428ddcb0d2547a5235773639043dadd91d",
+    "surface_sha256": "7a2071ae3f5b2fea852efb797b902e8d8ab1da298e561d78a3c7acbb0552f5ce",
     "verified": "2026-07-10"
   },
   "github-issue": {
@@ -64,7 +64,7 @@
       "skills/github-issue/references/label-spec.md": "1f37a70d4e827aef55912f61eeefde9d4030424bca495232b2fcc545ef55fe59",
       "skills/github-issue/references/polling-adapter.md": "f017a604ea7a5b8d98307ae1be4fc650cc3fc840b9faacd308749bc37159b376",
       "skills/github-issue/references/secret-scanner.md": "5e1df48668b3c11183e46e9c18a15a3622c579292394df5125a740805472f62b",
-      "skills/shared/references/artifact-store.md": "a7453c8f762f52ee5f738356e9bc12af8b396e43f70753a8334367a218f452b0",
+      "skills/shared/references/artifact-store.md": "c5481b13b40197e13f5a4ffd76155f272400e083f6b5b70558ed622d493ae0d3",
       "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
       "skills/shared/references/loop-engineering.md": "160fb3165cb56653e4ab08d9fd316651a25458827004911c4170fe437002bac0",
@@ -86,7 +86,7 @@
       "skills/trigger-eval/references/metrics-spec.md": "057f52767928caa8d5317597f8f15f6308442c6e56b8ec0f467fbdf52fbb10a0",
       "skills/trigger-eval/references/testcase-design.md": "ab6dadbc8d6a5bd209d6fb71b2c31a280c5f6733aef32c75d4adccf41cfa5231"
     },
-    "result": "pass",
+    "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/references/baseline-format.md",
       "skills/empirical-prompt-tuning/SKILL.md",
@@ -125,14 +125,14 @@
       "skills/trigger-eval/references/metrics-spec.md",
       "skills/trigger-eval/references/testcase-design.md"
     ],
-    "surface_sha256": "be110543884bd76557fcbd91c29e3a12235f0f08670ad5436e88f332f4641caf",
+    "surface_sha256": "8d5e63df3f7de5cca113cececa5f37251a115cd34690f131fdb15e5a23652a0f",
     "verified": "2026-07-10"
   },
   "handoff": {
     "file_sha256": {
       "skills/handoff/SKILL.md": "2eb67c781ccb78f4fc647bb446fbf2a2d2df7e4d1add29e0c36129a138bfdc19",
       "skills/handoff/fixtures.json": "6327290afed0781e72c46068caf885a97951d976b74f12851648a894be71aec3",
-      "skills/shared/references/artifact-store.md": "a7453c8f762f52ee5f738356e9bc12af8b396e43f70753a8334367a218f452b0",
+      "skills/shared/references/artifact-store.md": "c5481b13b40197e13f5a4ffd76155f272400e083f6b5b70558ed622d493ae0d3",
       "skills/shared/references/checkpoint-pattern.md": "b5f2b546695b32fa8284ee578836fd8d52097b7a363d86b8433b97c13f42c95a"
     },
     "result": "accepted-without-run",
@@ -142,7 +142,7 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "df6ad5c2b51988223aac1b3bc6439a6a68298f66feb984535347e40588ec2e0a",
+    "surface_sha256": "29166391a5844a6b24f3baea43deb27397d40c651859f9952eaa726024ce0f96",
     "verified": "2026-07-10"
   },
   "issue": {
@@ -158,7 +158,7 @@
       "skills/issue/references/issue-template.md": "9ba616322895f24ee0f277c4fc13cfa44b382a834dabe36b426939b131ec0eb0",
       "skills/issue/references/polling-state-machine.md": "438c727257fe038f431d1fdd16a32169d50f241835e669e4dc42b300e55b5193",
       "skills/issue/references/polling-state.md": "01e1df3652a8de304af6d22a23e513405fc52faf6dead2adf9426170a5f075e6",
-      "skills/shared/references/artifact-store.md": "a7453c8f762f52ee5f738356e9bc12af8b396e43f70753a8334367a218f452b0",
+      "skills/shared/references/artifact-store.md": "c5481b13b40197e13f5a4ffd76155f272400e083f6b5b70558ed622d493ae0d3",
       "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
       "skills/shared/references/loop-engineering.md": "160fb3165cb56653e4ab08d9fd316651a25458827004911c4170fe437002bac0",
@@ -180,7 +180,7 @@
       "skills/trigger-eval/references/metrics-spec.md": "057f52767928caa8d5317597f8f15f6308442c6e56b8ec0f467fbdf52fbb10a0",
       "skills/trigger-eval/references/testcase-design.md": "ab6dadbc8d6a5bd209d6fb71b2c31a280c5f6733aef32c75d4adccf41cfa5231"
     },
-    "result": "pass",
+    "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/references/baseline-format.md",
       "skills/empirical-prompt-tuning/SKILL.md",
@@ -215,7 +215,7 @@
       "skills/trigger-eval/references/metrics-spec.md",
       "skills/trigger-eval/references/testcase-design.md"
     ],
-    "surface_sha256": "191be766038ba730dfbc89b56c75558af9594c12b1a80e98cc8bae4e29e1910e",
+    "surface_sha256": "53eb840b99e6641151644428b61e4f9f6eb8917fcb451be61cdd58da63e41dad",
     "verified": "2026-07-10"
   },
   "plan": {
@@ -225,7 +225,7 @@
       "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "9ecc38dc8ce515c16859d204f00cf4f32340c1f4b24c222bd3a9e6bd059179fb",
-      "skills/shared/references/artifact-store.md": "a7453c8f762f52ee5f738356e9bc12af8b396e43f70753a8334367a218f452b0",
+      "skills/shared/references/artifact-store.md": "c5481b13b40197e13f5a4ffd76155f272400e083f6b5b70558ed622d493ae0d3",
       "skills/shared/references/checkpoint-pattern.md": "b5f2b546695b32fa8284ee578836fd8d52097b7a363d86b8433b97c13f42c95a"
     },
     "result": "accepted-without-run",
@@ -238,7 +238,7 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "bfcdb474e74f060d142c36e0c3769c5c681765b8a7672093c9692c1415b00ffc",
+    "surface_sha256": "c98e89ff2dd420a752774791205efc5e38bf23628b241f52547cf4b61235b239",
     "verified": "2026-07-10"
   }
 }
