@@ -11,26 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # test_*.py を含む全 scripts ディレクトリを自動発見して実行する。
-      # ディレクトリをハードコードすると新スキルのテストが黙って CI から漏れる
-      # （実際に context-audit の 96 テストが漏れていた）ため、列挙はしない。
-      - name: Unit tests (all script dirs)
-        run: |
-          set -eu
-          found=0
-          for dir in scripts skills/*/scripts; do
-            if ls "$dir"/test_*.py >/dev/null 2>&1; then
-              echo "=== $dir"
-              python3 -m unittest discover -s "$dir" -t "$dir" -p 'test_*.py'
-              found=1
-            fi
-          done
-          test "$found" -eq 1  # 1 件も見つからないのは発見ロジック側の壊れ
-
-      - name: Repo consistency checks
-        run: python3 scripts/validate_repo.py
-
-      # fixture を持つスキルの挙動面（共有契約含む）が前回検証時から変わったのに
-      # 回帰評価が未実施なら fail する（skills/skill-regression/SKILL.md 参照）
-      - name: Regression ledger check
-        run: python3 skills/skill-regression/scripts/ledger.py --check .
+      # チェックの正本は scripts/run_checks.sh。pre-push hook (githooks/pre-push)
+      # も同じスクリプトを呼ぶため、ローカルと CI の検証内容は常に一致する。
+      - name: Run all checks (shared with pre-push hook)
+        run: sh scripts/run_checks.sh

@@ -41,7 +41,13 @@ This file is the shared project instruction source for Claude Code, Codex CLI, a
 編集後は次を実行する。
 
 ```bash
-python3 scripts/validate_repo.py
+sh scripts/run_checks.sh
 ```
 
-この validator は symlink、frontmatter、相対リンク、README のスキル名カバレッジ、plugin version 同期、description 品質、共有契約語彙、dossier lint を検証する。CI でも同じチェックが走る。
+このスクリプトが検証の正本で、ユニットテスト（全 scripts ディレクトリを自動発見）、`scripts/validate_repo.py`（symlink、frontmatter、相対リンク、README のスキル名カバレッジ、plugin version 同期、description 品質、共有契約語彙、dossier lint）、regression ledger check を順に実行する。CI と pre-push hook（`githooks/pre-push`）も同じスクリプトを呼ぶ。
+
+pre-push hook は clone ごとに 1 回、次で有効化する。
+
+```bash
+git config core.hooksPath githooks
+```
