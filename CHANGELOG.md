@@ -4,6 +4,16 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.44.0
+
+Artifact Store v1.1 布石。CI ゲート後退の追認とインデックス導出化・runtime 分離。
+
+- 品質ゲートの所在を明文化（store 内容ゲートは CI では no-op、正のゲートは pre-push/writer 環境。契約に Quality gates 節を追加）
+- `artifact_store.py` に `rebuild-index` サブコマンドを追加（idea-status / issue-status をエントリ群から決定論的に再生成。インデックスは「merge しない・再生成する」導出キャッシュに格下げ）
+- マシン固有 runtime 状態を `.agents/runtime/{polling,loop}/` へ店内分離（polling 制御ファイル・events.jsonl。契約に Runtime area 節を追加、polling-pattern.md に `runtime_root` を導入）
+- migration inventory が runtime 分類ファイルに `suggested_action: skip` を付与
+- pre-push 検査ゲートを導入（`githooks/pre-push` + 検証正本 `scripts/run_checks.sh`、CI と同一チェック）
+
 ## 1.43.0
 
 Agent Artifact Store を導入し、作業成果物を公開文書の `docs/` から分離。
