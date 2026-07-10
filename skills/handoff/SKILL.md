@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: セッション間でコンテキストを引き継ぐためのスキル。コンテキストが圧迫されてきた時に save で現在の会話状態をLLMファーストな構造化テキストとして docs/handoff/ に保存し、次セッションで restore で読み込んで作業を継続する。引数で動作モードを切り替え: `save`（デフォルト）/ `restore [path]` / `list`。「handoff」「引き継ぎ」「次セッションに移動」「コンテキスト圧迫」「セッション切り替え」「/clear 前に保存」で起動。
+description: セッション間でコンテキストを引き継ぐためのスキル。コンテキストが圧迫されてきた時に save で現在の会話状態をLLMファーストな構造化テキストとして .agents/artifacts/handoff/ に保存し、次セッションで restore で読み込んで作業を継続する。引数で動作モードを切り替え: `save`（デフォルト）/ `restore [path]` / `list`。「handoff」「引き継ぎ」「次セッションに移動」「コンテキスト圧迫」「セッション切り替え」「/clear 前に保存」で起動。
 ---
 
 # Handoff — Session Context Relay
@@ -13,7 +13,7 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
 
 引数で動作モードが決まる：
 
-- `save` (デフォルト) — 現在のコンテキストをダンプして `docs/handoff/` に保存
+- `save` (デフォルト) — 現在のコンテキストをダンプして `.agents/artifacts/handoff/` に保存
 - `restore` — 最新の handoff ファイルを読み込み、読み終わったら削除
 - `restore <path>` — パス指定で復元
 - `list` — 既存の handoff ファイル一覧
@@ -22,7 +22,7 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
 
 ### Phase 1: Sanity Check
 
-1. `docs/handoff/` が存在しなければ作成する
+1. `.agents/artifacts/handoff/` が存在しなければ作成する
 2. 現在のブランチ・git status をサッと把握（`git status --short`, `git branch --show-current`）
    - git リポジトリでない / ブランチ取得に失敗した場合は frontmatter の `branch` に `(none)` を設定。エラーで中断しない
 
@@ -65,7 +65,7 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
 
 ### Phase 3: File Write
 
-ファイル名: `docs/handoff/{YYYYMMDD_HHMMSS}_{slug}.md`
+ファイル名: `.agents/artifacts/handoff/{YYYYMMDD_HHMMSS}_{slug}.md`
 
 - slug は作業内容を表す 3-5 単語の kebab-case（例: `handoff-skill-creation`, `auth-refactor-debug`）
 - タイムスタンプは `date +%Y%m%d_%H%M%S` で取得
@@ -128,7 +128,7 @@ status: {in-progress | blocked | reviewing}
 保存先パスをユーザーに表示し、次セッションでの復元方法を案内：
 
 ```
-保存したよ: docs/handoff/{filename}
+保存したよ: .agents/artifacts/handoff/{filename}
 次セッションで `/handoff-restore` 叩けばそのまま続きからいけるよ！
 ```
 
@@ -137,7 +137,7 @@ status: {in-progress | blocked | reviewing}
 ### Phase 1: File Discovery
 
 - 引数でパスが指定されていればそれを使う
-- なければ `docs/handoff/` 配下で最新（mtime 降順）のファイルを選ぶ
+- なければ `.agents/artifacts/handoff/` 配下で最新（mtime 降順）のファイルを選ぶ
   - mtime が同一で順序が決まらない場合は、ファイル名先頭のタイムスタンプ（`YYYYMMDD_HHMMSS`）の降順をタイブレークとして使う
 - 該当ファイルがなければ、**終了する前に execution-state checkpoint fallback を試みる**（下記）
 
@@ -191,7 +191,7 @@ handoff ファイルが 1 件でも在る場合の挙動は**不変**（この f
 
 ## List Workflow
 
-`docs/handoff/` 配下のファイルを mtime 降順（最新が上）で一覧表示する。mtime が同一で順序が決まらない場合は、ファイル名先頭のタイムスタンプ（`YYYYMMDD_HHMMSS`）の降順をタイブレークとして使う。フォーマットは以下の番号付き Markdown リスト固定:
+`.agents/artifacts/handoff/` 配下のファイルを mtime 降順（最新が上）で一覧表示する。mtime が同一で順序が決まらない場合は、ファイル名先頭のタイムスタンプ（`YYYYMMDD_HHMMSS`）の降順をタイブレークとして使う。フォーマットは以下の番号付き Markdown リスト固定:
 
 ```markdown
 ## Handoff 一覧（{件数} 件）
@@ -213,5 +213,5 @@ handoff ファイルが 1 件でも在る場合の挙動は**不変**（この f
 
 - **LLM ファースト**: 人間向けのナラティブより、次 Claude が最小読解で作業再開できる構造化情報を優先
 - **自律抽出**: save 時にユーザーに質問しない。会話履歴から書き起こす
-- **使い捨て**: restore したら即削除。docs/handoff/ にゴミを残さない
+- **使い捨て**: restore したら即削除。.agents/artifacts/handoff/ にゴミを残さない
 - **絶対パス**: ファイル参照は絶対パスで。次セッションの CWD を仮定しない

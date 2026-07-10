@@ -4,6 +4,15 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.45.0
+
+handoff を Agent Artifact Store に編入（Artifact Store 移行の handoff 漏れを修正）。
+
+- `artifact_store.py` の `LEGACY_RELS` に `docs/handoff` を追加（migrate-check の inventory・legacy 検出・split-brain 判定の対象に）
+- `ARTIFACT_KINDS` に `handoff` を追加（init が `.agents/artifacts/handoff/` を作成）
+- handoff スキルの生成先パスを `docs/handoff/` から `.agents/artifacts/handoff/` に更新（SKILL.md・fixtures.json・handoff-save コマンド）
+- 回帰評価（全 4 シナリオ実 run）合格を確認し ledger を更新
+
 ## 1.44.0
 
 Artifact Store v1.1 布石。CI ゲート後退の追認とインデックス導出化・runtime 分離。

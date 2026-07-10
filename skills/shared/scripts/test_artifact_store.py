@@ -132,6 +132,41 @@ class ArtifactStoreTest(unittest.TestCase):
         with self.assertRaisesRegex(ArtifactStoreError, "migration"):
             initialize(legacy)
 
+    def test_init_creates_handoff_kind_directory(self):
+        root = self.repo()
+        initialize(root)
+        self.assertTrue((root / ".agents/artifacts/handoff").is_dir())
+
+    def test_handoff_is_legacy_source_and_maps_to_handoff_kind(self):
+        root = self.repo()
+        (root / "docs/handoff").mkdir(parents=True)
+        (root / "docs/handoff/20260701_100000_example.md").write_text(
+            "handoff", encoding="utf-8"
+        )
+        result = inspect(root)
+        self.assertEqual("legacy", result["state"])
+        self.assertIn("docs/handoff", result["legacy_roots"])
+        inventory = migration_inventory(root)
+        entry = inventory["entries"][0]
+        self.assertEqual("docs/handoff/20260701_100000_example.md", entry["source"])
+        self.assertEqual(
+            ".agents/artifacts/handoff/20260701_100000_example.md",
+            entry["destination"],
+        )
+
+    def test_handoff_and_canonical_both_present_is_split_brain(self):
+        root = self.repo()
+        self.write_policy(root)
+        (root / "docs/handoff").mkdir(parents=True)
+        (root / "docs/handoff/a.md").write_text("old handoff", encoding="utf-8")
+        (root / ".agents/artifacts/handoff").mkdir(parents=True)
+        (root / ".agents/artifacts/handoff/b.md").write_text(
+            "new handoff", encoding="utf-8"
+        )
+        result = inspect(root)
+        self.assertEqual("split-brain", result["state"])
+        self.assertFalse(result["writable"])
+
     def test_migration_requires_decisions_and_is_two_phase(self):
         root = self.repo()
         (root / "docs/plans").mkdir(parents=True)

@@ -24,6 +24,7 @@ LEGACY_RELS = (
     Path("docs/issues"),
     Path("docs/ideas"),
     Path("docs/loop"),
+    Path("docs/handoff"),
 )
 LEGACY_FILES = {
     Path("docs/status.md"): DEFAULT_ROOT_REL / "status.md",
@@ -37,7 +38,7 @@ DEFAULT_POLICY = {
     "worktree_scope": "worktree",
 }
 IGNORE_RULE = "/.agents/artifacts/"
-ARTIFACT_KINDS = ("plans", "issues", "ideas", "loop")
+ARTIFACT_KINDS = ("plans", "issues", "ideas", "loop", "handoff")
 
 # Runtime area (machine-specific, never shared, never migrated). See the
 # "Runtime area" section of skills/shared/references/artifact-store.md. Files
