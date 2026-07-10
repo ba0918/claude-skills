@@ -109,8 +109,10 @@ Rules for the runtime area:
 - **Not a derived index.** Runtime files are live state, never regenerated from artifacts.
 
 Polling adapters bind their control/session files to a `<runtime_root>`; see the "Roots"
-section of [polling-pattern.md](polling-pattern.md). The loop event log path is defined by
-[measurement-identity.md](measurement-identity.md).
+section of `polling-pattern.md`. The loop event log path is defined by
+`measurement-identity.md`. (Those files link here; this contract stays a closure leaf so
+that referencing the artifact store never drags polling internals into a skill's behavior
+surface.)
 
 ## Derived indexes
 

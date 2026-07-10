@@ -31,9 +31,9 @@
       "isolation": "worktree",
       "setup": {
         "files": {
-          ".agents/artifacts/issues/.polling-initialized": "",
-          ".agents/artifacts/issues/.STOP": "",
-          ".agents/artifacts/issues/.STOP.hard": "",
+          ".agents/runtime/polling/.polling-initialized": "",
+          ".agents/runtime/polling/.STOP": "",
+          ".agents/runtime/polling/.STOP.hard": "",
           ".agents/artifacts/issues/ready/20260601100000_dangling-task.md": "---\ntitle: Dangling task\nstatus: open\ncreated: 2026-06-01 10:00:00\ntags:\nsource:\n---\n\n## 概要\n\n停止確認用のダミー issue。\n\n## 備考\n\n(Add supplementary information here if available)\n"
         }
       },
@@ -44,7 +44,7 @@
         { "text": "kill file チェックが tick の他ステップ（orphan recovery / archive / list_ready）より先に実行されている", "critical": false },
         { "text": "TickResult が構造化カウンタで出力されている", "critical": false }
       ],
-      "notes": "契約 §6.1 の kill file 優先順位（hard → graceful の順でチェック、戻り順 = チェック順）を固定する edge。"
+      "notes": "契約 §6.1 の kill file 優先順位（hard → graceful の順でチェック、戻り順 = チェック順）を固定する edge。kill file は runtime_root（.agents/runtime/polling/）配下（契約 §1 Roots の runtime 分離）。"
     },
     {
       "id": "is-003",
@@ -54,7 +54,7 @@
       "isolation": "worktree",
       "setup": {
         "files": {
-          ".agents/artifacts/issues/.polling-initialized": "",
+          ".agents/runtime/polling/.polling-initialized": "",
           ".agents/artifacts/issues/running/20260601110000_crashed-task/issue.md": "---\ntitle: Crashed task\nstatus: open\ncreated: 2026-06-01 11:00:00\ntags:\nsource:\n---\n\n## 概要\n\n前回 tick 中にプロセスがクラッシュして running に残った issue。\n\n## 備考\n\n(Add supplementary information here if available)\n",
           ".agents/artifacts/issues/running/20260601110000_crashed-task/.claim": "pid: 9999999\nstarted_at: 2026-07-06T12:00:00Z\n",
           ".agents/artifacts/issues/running/20260601110100_alive-task/issue.md": "---\ntitle: Alive task\nstatus: open\ncreated: 2026-06-01 11:01:00\ntags:\nsource:\n---\n\n## 概要\n\n別プロセスが現在も実行中の issue（rollback してはいけない）。\n\n## 備考\n\n(Add supplementary information here if available)\n",
@@ -68,7 +68,7 @@
         { "text": "回復した issue が同 tick の list_ready / claim 対象になり、--dry-run のため release で ready/ に戻っている", "critical": false },
         { "text": "TickResult に halt_reason=\"dry_run\" と claimed 数が構造化出力されている", "critical": false }
       ],
-      "notes": "契約 §6.4 / FS adapter §6 の orphan recovery を固定する edge。pid 9999999 は pid_max（Linux デフォルト 4194304）超過で ESRCH（確実に dead）、pid 1 は非 root からの kill(1,0) が EPERM（alive 扱いの fail-safe 分岐）。transient→permanent 昇格は実 cycle 失敗が必要なため fixture 対象外。"
+      "notes": "契約 §6.4 / FS adapter §6 の orphan recovery を固定する edge。pid 9999999 は pid_max（Linux デフォルト 4194304）超過で ESRCH（確実に dead）、pid 1 は非 root からの kill(1,0) が EPERM（alive 扱いの fail-safe 分岐）。transient→permanent 昇格は実 cycle 失敗が必要なため fixture 対象外。.polling-initialized は runtime_root（.agents/runtime/polling/）配下、.claim は running/ に co-located（契約 §1 Roots）。"
     }
   ]
 }

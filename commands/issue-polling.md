@@ -19,13 +19,13 @@ Artifact paths follow the [Agent Artifact Store contract](../skills/shared/refer
 
 ## Initial Run Policy
 
-`.agents/artifacts/issues/.polling-initialized` が存在しない場合、このコマンドは **`--dry-run` を強制**する。初回ユーザーが 1 度挙動を確認してから実運用に入るためのセーフティ。
+`.agents/runtime/polling/.polling-initialized`（runtime_root 配下）が存在しない場合、このコマンドは **`--dry-run` を強制**する。初回ユーザーが 1 度挙動を確認してから実運用に入るためのセーフティ。runtime_root と state_root の分離は共通契約 §1「Roots」を参照。
 
 ## Safety Brakes
 
 詳細は共通契約 `skills/shared/references/polling-pattern.md` §6 を参照。要点:
 
-- Kill file 2 系統: `.agents/artifacts/issues/.STOP` (graceful) / `.agents/artifacts/issues/.STOP.hard` (hard)
+- Kill file 2 系統（runtime_root 配下）: `.agents/runtime/polling/.STOP` (graceful) / `.agents/runtime/polling/.STOP.hard` (hard)
 - 3 重ガード: `max_iter` / `max_wallclock` / `failed_streak`
 - SIGINT trap と orphan recovery による claim rollback 保証
 - `bypass-permissions` 実行時でも上記 3 重ガード（kill file / bounded execution / orphan recovery）が暴走を止める安全網として機能する

@@ -23,12 +23,12 @@
       "skills/context-audit/scripts/apply_fixes.py": "d37bc3064138bf2c8325157edfd2aeb38a14ad70a637835f0616658f77b02231",
       "skills/context-audit/scripts/collect_targets.py": "aa6a60a70f3c7c3b4c161c0ca080d428fe4b3fa9ff4169af7707f74b2fe5957e",
       "skills/context-audit/scripts/static_checks.py": "87d54d880ddfe445e4872378b0024893a848efc6592cef19255afde7179b9216",
-      "skills/shared/references/artifact-store.md": "24b9ad8d0109db6773505fb688debcf7541bf61c82d34fb8ca57dbdfd6f1f2c8",
+      "skills/shared/references/artifact-store.md": "a7453c8f762f52ee5f738356e9bc12af8b396e43f70753a8334367a218f452b0",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
       "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
-    "result": "pass",
+    "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/SKILL.md",
       "skills/context-audit/fixtures.json",
@@ -44,7 +44,7 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "d458e6f0490204665ff04a01c5f4d8686577f2b5c0b11e9201811a85f90dd610",
+    "surface_sha256": "441f6eaf46ba3d3431e49ce69b2a99428ddcb0d2547a5235773639043dadd91d",
     "verified": "2026-07-10"
   },
   "github-issue": {
@@ -62,15 +62,15 @@
       "skills/github-issue/references/config-defaults.md": "c1ec30f3dacc15715d0f1863a20f8382c458126a5ae5c6c924f5408a0c71b079",
       "skills/github-issue/references/gh-commands.md": "b78291b2c1bf34b866084fd1b79e86de8e3a720b14e0af7b33ac03198e186206",
       "skills/github-issue/references/label-spec.md": "1f37a70d4e827aef55912f61eeefde9d4030424bca495232b2fcc545ef55fe59",
-      "skills/github-issue/references/polling-adapter.md": "7b72b7c17ed97b790011f6c026a34bce5abd9bc0ded52de91473104e70109702",
+      "skills/github-issue/references/polling-adapter.md": "f017a604ea7a5b8d98307ae1be4fc650cc3fc840b9faacd308749bc37159b376",
       "skills/github-issue/references/secret-scanner.md": "5e1df48668b3c11183e46e9c18a15a3622c579292394df5125a740805472f62b",
-      "skills/shared/references/artifact-store.md": "24b9ad8d0109db6773505fb688debcf7541bf61c82d34fb8ca57dbdfd6f1f2c8",
+      "skills/shared/references/artifact-store.md": "a7453c8f762f52ee5f738356e9bc12af8b396e43f70753a8334367a218f452b0",
       "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
       "skills/shared/references/loop-engineering.md": "160fb3165cb56653e4ab08d9fd316651a25458827004911c4170fe437002bac0",
-      "skills/shared/references/measurement-identity.md": "eba8da377c0a80e042591bbbf4dab23f27c8f28c978b656c598c0ce64c81e946",
+      "skills/shared/references/measurement-identity.md": "fa0afacac0d12c6de689768cc7c29fe997b79523661f9bc7a181262d53893151",
       "skills/shared/references/orchestration-patterns.md": "9d471e34c145f52a7da2fd625ba8c5b4692e5c0b6f34de473c6c9901fa192b45",
-      "skills/shared/references/polling-pattern.md": "3b4a46525e64daf941d736d91934492886aa62818863028ebb05040af1eaefa0",
+      "skills/shared/references/polling-pattern.md": "98f623552d4c6ec957e07b20a90c389b8513ecc3572b73ccaa80cfa9bab8c25f",
       "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
       "skills/shared/references/team-config.md": "d130a6d12c1598ee3e51649013ed1d538e5f2afcfcfeada079748bb00d657ace",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
@@ -125,24 +125,24 @@
       "skills/trigger-eval/references/metrics-spec.md",
       "skills/trigger-eval/references/testcase-design.md"
     ],
-    "surface_sha256": "5a96f8c762613b681cbcc5ad57be0807c1f5a00294832ade30a20f090cfc5a75",
+    "surface_sha256": "be110543884bd76557fcbd91c29e3a12235f0f08670ad5436e88f332f4641caf",
     "verified": "2026-07-10"
   },
   "handoff": {
     "file_sha256": {
       "skills/handoff/SKILL.md": "2eb67c781ccb78f4fc647bb446fbf2a2d2df7e4d1add29e0c36129a138bfdc19",
       "skills/handoff/fixtures.json": "6327290afed0781e72c46068caf885a97951d976b74f12851648a894be71aec3",
-      "skills/shared/references/artifact-store.md": "24b9ad8d0109db6773505fb688debcf7541bf61c82d34fb8ca57dbdfd6f1f2c8",
+      "skills/shared/references/artifact-store.md": "a7453c8f762f52ee5f738356e9bc12af8b396e43f70753a8334367a218f452b0",
       "skills/shared/references/checkpoint-pattern.md": "b5f2b546695b32fa8284ee578836fd8d52097b7a363d86b8433b97c13f42c95a"
     },
-    "result": "pass",
+    "result": "accepted-without-run",
     "surface": [
       "skills/handoff/SKILL.md",
       "skills/handoff/fixtures.json",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "784b3e621bf406694dca177e7938a4c9e41e775a2a0609f9422e610e1a5c2201",
+    "surface_sha256": "df6ad5c2b51988223aac1b3bc6439a6a68298f66feb984535347e40588ec2e0a",
     "verified": "2026-07-10"
   },
   "issue": {
@@ -153,18 +153,18 @@
       "skills/empirical-prompt-tuning/references/compliance-probe.md": "5f18929a29a98c4ac8f90007ac10227b28ee6685ae8315f764b84198e68e05ea",
       "skills/empirical-prompt-tuning/references/friction-taxonomy.md": "611fd010850aaddbbd55b39357f19b93d0f19b7c255c9d220b7142e5f944790d",
       "skills/empirical-prompt-tuning/references/iteration-schema.md": "df7472d348517a50954c1f3c361faf152315b1d1927f8924b2ba58c1ab841e94",
-      "skills/issue/SKILL.md": "9932fb7a5c13fb8b43d3929944598432d783a48edf338abbd89c2d990d807d76",
-      "skills/issue/fixtures.json": "ca61e82841d9967b1f46fe9d07f09af44c251f4cac9eb7796dc67ee0385f974e",
+      "skills/issue/SKILL.md": "03e663d695d690af357fc9448703f5c08320d012d4efaf2f80db127eeb4d257f",
+      "skills/issue/fixtures.json": "ac050d54f951a2def64a99d845f88afbd01337457a430fb6a4cd9b6eb31e2aab",
       "skills/issue/references/issue-template.md": "9ba616322895f24ee0f277c4fc13cfa44b382a834dabe36b426939b131ec0eb0",
       "skills/issue/references/polling-state-machine.md": "438c727257fe038f431d1fdd16a32169d50f241835e669e4dc42b300e55b5193",
-      "skills/issue/references/polling-state.md": "a9ae7974cae14cc7587121e90b0765ff1d97d35b447b4f3597c6f3f31fa84efc",
-      "skills/shared/references/artifact-store.md": "24b9ad8d0109db6773505fb688debcf7541bf61c82d34fb8ca57dbdfd6f1f2c8",
+      "skills/issue/references/polling-state.md": "01e1df3652a8de304af6d22a23e513405fc52faf6dead2adf9426170a5f075e6",
+      "skills/shared/references/artifact-store.md": "a7453c8f762f52ee5f738356e9bc12af8b396e43f70753a8334367a218f452b0",
       "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
       "skills/shared/references/loop-engineering.md": "160fb3165cb56653e4ab08d9fd316651a25458827004911c4170fe437002bac0",
-      "skills/shared/references/measurement-identity.md": "eba8da377c0a80e042591bbbf4dab23f27c8f28c978b656c598c0ce64c81e946",
+      "skills/shared/references/measurement-identity.md": "fa0afacac0d12c6de689768cc7c29fe997b79523661f9bc7a181262d53893151",
       "skills/shared/references/orchestration-patterns.md": "9d471e34c145f52a7da2fd625ba8c5b4692e5c0b6f34de473c6c9901fa192b45",
-      "skills/shared/references/polling-pattern.md": "3b4a46525e64daf941d736d91934492886aa62818863028ebb05040af1eaefa0",
+      "skills/shared/references/polling-pattern.md": "98f623552d4c6ec957e07b20a90c389b8513ecc3572b73ccaa80cfa9bab8c25f",
       "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
       "skills/shared/references/team-config.md": "d130a6d12c1598ee3e51649013ed1d538e5f2afcfcfeada079748bb00d657ace",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
@@ -215,7 +215,7 @@
       "skills/trigger-eval/references/metrics-spec.md",
       "skills/trigger-eval/references/testcase-design.md"
     ],
-    "surface_sha256": "17bb31f75d69452c40ed3192e5e2e45fdeb7552e1a6ed5d3a09ef1e61d4f9e1f",
+    "surface_sha256": "191be766038ba730dfbc89b56c75558af9594c12b1a80e98cc8bae4e29e1910e",
     "verified": "2026-07-10"
   },
   "plan": {
@@ -225,10 +225,10 @@
       "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "9ecc38dc8ce515c16859d204f00cf4f32340c1f4b24c222bd3a9e6bd059179fb",
-      "skills/shared/references/artifact-store.md": "24b9ad8d0109db6773505fb688debcf7541bf61c82d34fb8ca57dbdfd6f1f2c8",
+      "skills/shared/references/artifact-store.md": "a7453c8f762f52ee5f738356e9bc12af8b396e43f70753a8334367a218f452b0",
       "skills/shared/references/checkpoint-pattern.md": "b5f2b546695b32fa8284ee578836fd8d52097b7a363d86b8433b97c13f42c95a"
     },
-    "result": "pass",
+    "result": "accepted-without-run",
     "surface": [
       "skills/plan/SKILL.md",
       "skills/plan/fixtures.json",
@@ -238,7 +238,7 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "83fc496c040d685f70f5dc9099aa1981253d281bdd3fd4e4b8aa7ec34311ab15",
+    "surface_sha256": "bfcdb474e74f060d142c36e0c3769c5c681765b8a7672093c9692c1415b00ffc",
     "verified": "2026-07-10"
   }
 }
