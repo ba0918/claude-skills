@@ -23,7 +23,7 @@
 
 - 配線の**実行**（goal-loop 起動 / sensor adapter 生成 / inbox 自動起票）はしない。dossier は「型検査結果」であり
   実行権限を与えない（§6）。特に inbox は loop-triage の route 結果であり、writer を増やさない
-- dossier をイベント化して `.agents/artifacts/loop/events.jsonl` に載せることはしない（measurement-identity 契約の
+- dossier をイベント化して `.agents/runtime/loop/events.jsonl` に載せることはしない（measurement-identity 契約の
   閉 enum 改訂が必要なため v1 スコープ外）
 
 ---

@@ -80,6 +80,38 @@ Repository scripts use `skills/shared/scripts/artifact_store.py`. Skill prose sh
 "resolve the artifact store using this contract" and link here rather than duplicating
 the schema or validation rules.
 
+## Runtime area
+
+Not everything an agent writes is an artifact. Machine-specific control and session state —
+the files that coordinate a single host's running processes — are **runtime**, not project
+state, and live in a separate tree:
+
+```text
+.agents/runtime/
+├── polling/   (.STOP, .STOP.hard, .polling-initialized, .last_archive_month, session.json)
+└── loop/      (events.jsonl, archives/YYYY-MM.jsonl)
+```
+
+Rules for the runtime area:
+
+- **Always machine-local.** `.agents/runtime/` is always ignored by Git and is **never
+  shared and never migrated, regardless of the store's `visibility`.** Even a `public`
+  store keeps its runtime tree local — visibility governs artifacts, not runtime.
+- **Separate tree from the store.** Runtime lives beside `.agents/artifacts/`, not inside
+  it, so it is excluded from the migration inventory. When the migration inventory
+  encounters a legacy file that matches a runtime pattern (polling kill/session files, the
+  loop event log and its monthly archives), it tags the entry `suggested_action: skip`
+  while leaving the fail-closed default `action: review` untouched.
+- **Co-located runtime is the one exception.** A runtime file whose semantics are
+  inseparable from an artifact's on-disk layout stays with that artifact. The polling FS
+  adapter's `running/{slug}/.claim` is part of the atomic-rename claim design and therefore
+  stays under the queue body (`state_root`), not in `.agents/runtime/`.
+- **Not a derived index.** Runtime files are live state, never regenerated from artifacts.
+
+Polling adapters bind their control/session files to a `<runtime_root>`; see the "Roots"
+section of [polling-pattern.md](polling-pattern.md). The loop event log path is defined by
+[measurement-identity.md](measurement-identity.md).
+
 ## Derived indexes
 
 `ideas/idea-status.md` and `issues/issue-status.md` are **derived caches**, not

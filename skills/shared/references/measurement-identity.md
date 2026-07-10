@@ -40,8 +40,9 @@
 
 ## 3. Event Record Schema
 
-`.agents/artifacts/loop/events.jsonl` に 1 行 1 イベントで append する（commit 対象。単一ホスト前提は
-polling と同じ）。**構造化フィールドのみ・自由文禁止・secret 禁止**（TickResult §7 の哲学を継承）。
+`.agents/runtime/loop/events.jsonl` に 1 行 1 イベントで append する（runtime 領域 =
+gitignore・commit 対象外・migration 対象外。単一ホスト前提は polling と同じ。runtime の定義は
+[artifact-store.md「Runtime area」](artifact-store.md#runtime-area)）。**構造化フィールドのみ・自由文禁止・secret 禁止**（TickResult §7 の哲学を継承）。
 
 ```
 Event {
@@ -83,7 +84,7 @@ Event {
 
 ```bash
 python3 skills/shared/scripts/measurement_identity.py report --skill issue \
-  [--events .agents/artifacts/loop/events.jsonl]
+  [--events .agents/runtime/loop/events.jsonl]
 ```
 
 - surface_sha256 別に `{ticks, done, failed, success_rate, first_ts, last_ts}` を集計し、
@@ -95,8 +96,11 @@ python3 skills/shared/scripts/measurement_identity.py report --skill issue \
 
 ## 6. 運用
 
-- `.agents/artifacts/loop/events.jsonl` は肥大化したら `.agents/artifacts/loop/archives/YYYY-MM.jsonl` へ月次で移動してよい
+- `.agents/runtime/loop/events.jsonl` は肥大化したら `.agents/runtime/loop/archives/YYYY-MM.jsonl` へ月次で移動してよい
   （polling の archive パターンと同じ。report は `--events` 複数指定で跨げる）
+- 旧既定パス `.agents/artifacts/loop/events.jsonl`（runtime 分離前）に events が残っている場合、
+  `report` / `emit` を既定パスで実行すると actionable な警告を出す（新パスへの `mv` コマンド提示）。
+  `--events` を明示指定すればそのパスを最優先で使う（後方互換）
 - イベントの**削除・書き換えは禁止**（append-only。誤記録はそのまま残し、次の正しいイベントで上書きせず補正もしない — 計測の改竄可能性を構造的に排除する）
 - writer の追加・変更は本契約の写像表（§4）の更新とセットで行う
 

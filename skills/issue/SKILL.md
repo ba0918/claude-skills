@@ -264,9 +264,13 @@ issue 本文を LLM コンテキストへ渡す際は **必ず** 以下のデリ
 >
 > **`--once` mode の扱い**: Step 4 の Safety brake check のうち `max_iter` / `max_wallclock` は Loop Controller 用（契約 §1 で責務境界）。`--once` では trivially pass（評価すらしない）でよい。`failed_streak` も同様（単発 tick では累積しない）。
 
-1. **State root 解決** — `.agents/artifacts/issues/` を絶対パス化（契約 §6.1 / FS adapter §7）
-2. **Initial policy** — `state_root/.polling-initialized` が無ければ `--dry-run` を強制（契約 §10）
-3. **Kill file check** — `adapter.kill_file_path()` が返すタプル `(hard, graceful)` の順（= `.STOP.hard` → `.STOP`）で存在確認。どちらか存在した時点で即 halt（契約 §6.1 / FS adapter §7）。**戻り順 = チェック順**
+1. **Root 解決（2 系統）** — 契約 §1「Roots」に従い 2 つを絶対パス化する: queue 本体の
+   `state_root` = `.agents/artifacts/issues/`（成果物）と、マシン固有の制御・セッション
+   ファイルを置く `runtime_root` = `.agents/runtime/polling/`（gitignore・migration 対象外）。
+   kill file / `.polling-initialized` / `.last_archive_month` / `session.json` は runtime_root
+   基準、queue 本体（ready/running/done/failed/archives と index）は state_root 基準（契約 §6.1 / FS adapter §1・§7）
+2. **Initial policy** — `runtime_root/.polling-initialized` が無ければ `--dry-run` を強制（契約 §10）
+3. **Kill file check** — `adapter.kill_file_path()` が返すタプル `(hard, graceful)` の順（= runtime_root 配下の `.STOP.hard` → `.STOP`）で存在確認。どちらか存在した時点で即 halt（契約 §6.1 / FS adapter §7）。**戻り順 = チェック順**
 4. **Safety brake check** — `max_iter` / `max_wallclock` / `failed_streak` の 3 重ガードを評価（契約 §6.2）。`--once` mode では本 Step は trivially pass（Loop Controller の責務、契約 §1）。`--stateless` mode では `adapter.load_session()` → `session_resume_action(prev, now, config)` で評価し、`Halt{reason}` なら claim せず即 `TickResult(halt_reason=reason)` で終了（契約 §6.5。`failed_streak` halt は sticky — `session.json` 削除まで再開しない）
 5. **Run ID 生成** — tick/loop セッション単位で UUID を 1 つ生成。Step 11 で `mark_failed` 呼び出し時に frontmatter に書き込む（契約 §6.4、`--loop` では loop セッション全体で 1 個でも tick ごとに振り直してもよい。実装 consistent であればよし）
 6. **Orphan recovery** — `adapter.rollback_orphans(now)`（契約 §6.4 / FS adapter §6）。`is_alive(pid)` の PermissionError は **alive 扱い** で fail-safe

@@ -230,6 +230,31 @@ class TestCurrentSurfaceSha256(unittest.TestCase):
         self.assertEqual(actual, expected)
 
 
+class TestDefaultEventsPath(unittest.TestCase):
+    def test_default_events_path_is_under_runtime(self):
+        self.assertEqual(
+            os.path.join(".agents", "runtime", "loop", "events.jsonl"),
+            mi._DEFAULT_EVENTS_REL,
+        )
+
+    def test_no_warning_when_old_path_absent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(mi.old_events_path_warning(tmp))
+
+    def test_warning_is_actionable_when_old_path_has_events(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            old_dir = os.path.join(tmp, ".agents", "artifacts", "loop")
+            os.makedirs(old_dir)
+            with open(os.path.join(old_dir, "events.jsonl"), "w") as f:
+                f.write("{}\n")
+            warning = mi.old_events_path_warning(tmp)
+            self.assertIsNotNone(warning)
+            # 何が: 旧パス / どう直す: 新パスへの mv コマンド
+            self.assertIn(".agents/artifacts/loop/events.jsonl", warning)
+            self.assertIn(".agents/runtime/loop/events.jsonl", warning)
+            self.assertIn("mv", warning)
+
+
 class TestFormatReport(unittest.TestCase):
     def test_shortens_surface_and_includes_delta_line(self):
         agg = [

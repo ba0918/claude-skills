@@ -25,7 +25,30 @@ EVENTS = {"tick", "verification", "eval", "tuning"}
 _SURFACE_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 _RUN_ID_RE = re.compile(r"^[0-9a-f-]{36}$")
 
-_DEFAULT_EVENTS_REL = os.path.join(".agents", "artifacts", "loop", "events.jsonl")
+_DEFAULT_EVENTS_REL = os.path.join(".agents", "runtime", "loop", "events.jsonl")
+# 旧既定パス（Artifact Store の店内。runtime 分離前）。既定を runtime へ移した後も
+# 旧パスに events が残っていれば actionable な警告を出すために保持する。
+_LEGACY_EVENTS_REL = os.path.join(".agents", "artifacts", "loop", "events.jsonl")
+
+
+def old_events_path_warning(repo_root):
+    """旧既定パスに events.jsonl が残っていれば actionable な警告文字列を返す。
+
+    既定イベントパスが `.agents/runtime/loop/events.jsonl` へ移動したため、旧パス
+    （`.agents/artifacts/loop/events.jsonl`）に取り残された履歴は report/emit の
+    既定集計から漏れる。何が / なぜ / どう直すを 1 文で提示する（残っていなければ None）。
+    """
+    legacy = os.path.join(repo_root, _LEGACY_EVENTS_REL)
+    if not os.path.isfile(legacy):
+        return None
+    legacy_posix = _LEGACY_EVENTS_REL.replace(os.sep, "/")
+    new_posix = _DEFAULT_EVENTS_REL.replace(os.sep, "/")
+    return (
+        f"⚠ 旧パス {legacy_posix} に events.jsonl が残存しています。"
+        f"既定イベントパスは {new_posix} へ移動したため、このままでは旧履歴が既定集計から漏れます。"
+        f"次で移設してください: mkdir -p {os.path.dirname(new_posix)} && "
+        f"mv {legacy_posix} {new_posix}"
+    )
 
 
 def validate_event(d):
@@ -283,9 +306,14 @@ def _cmd_report(rest):
         print("✗ --skill is required", file=sys.stderr)
         return 2
     repo_root = flags["--repo-root"] or os.getcwd()
+    explicit_events = bool(flags["--events"])
     events_paths = flags["--events"] or [
         os.path.join(repo_root, _DEFAULT_EVENTS_REL)
     ]
+    if not explicit_events:
+        warning = old_events_path_warning(repo_root)
+        if warning:
+            print(warning, file=sys.stderr)
 
     events = []
     broken_total = 0
@@ -340,6 +368,10 @@ def _cmd_emit(rest):
         return 1
 
     events_path = flags["--events"] or os.path.join(repo_root, _DEFAULT_EVENTS_REL)
+    if not flags["--events"]:
+        warning = old_events_path_warning(repo_root)
+        if warning:
+            print(warning, file=sys.stderr)
     parent = os.path.dirname(events_path)
     if parent:
         os.makedirs(parent, exist_ok=True)

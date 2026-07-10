@@ -23,13 +23,7 @@ Thumbs.db
 # Agent Artifact Store (policy is tracked at .agents/artifacts.yml)
 /.agents/artifacts/
 
-# issue polling FS adapter のランタイム状態（ホスト固有・揮発物。ready/done/failed は
-# キュー内容＝正当な issue なので ignore しない）
-docs/issues/.polling-initialized
-docs/issues/.last_archive_month
-docs/issues/session.json
-docs/issues/session.json.tmp.*
-docs/issues/session.json.corrupt.*
-docs/issues/.STOP
-docs/issues/.STOP.hard
-docs/issues/running/
+# Agent runtime area（マシン固有の制御・セッション状態。polling の kill/session ファイル、
+# loop の events ログ等。いかなる visibility でも共有・migration 対象外 —
+# skills/shared/references/artifact-store.md「Runtime area」参照）
+/.agents/runtime/

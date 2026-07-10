@@ -8,20 +8,19 @@
 
 ## 1. Directory Layout
 
-`state_root` = `.agents/artifacts/issues/`
+本 adapter は共通契約 §1「Roots」に従い、**queue 本体（成果物）** と **マシン固有の制御・
+セッションファイル（runtime）** を別木に分離する。queue 本体は Artifact Store 配下の成果物
+なので共有・migration の対象になりうるが、runtime は常にマシン固有で共有・migration 対象外。
+
+`state_root` = `.agents/artifacts/issues/`（queue 本体 = 成果物）
 
 ```
 .agents/artifacts/issues/
-  .STOP                          # graceful kill file (契約 §6.1)
-  .STOP.hard                     # hard kill file (契約 §6.1)
-  .polling-initialized           # 初回起動ポリシー用マーカー (契約 §10、作成責務は本節 Note)
-  .last_archive_month            # month boundary cache (契約 §9)
-  session.json                   # tick session (契約 §6.5、--stateless 時のみ)
-  issue-status.md                # 既存 index (create workflow 互換)
+  issue-status.md                # 導出インデックス (create workflow 互換、rebuild-index で再生成)
   ready/{slug}.md                # claim 可能
   running/{slug}/
     issue.md                     # 本体
-    .claim                       # pid + started_at (orphan recovery 用)
+    .claim                       # pid + started_at (orphan recovery 用)。§Note 参照で co-located
   done/{slug}.md
   failed/
     transient/{slug}.md          # frontmatter に retry_count
@@ -31,7 +30,24 @@
     {legacy-flat-files}          # 既存の close workflow 由来
 ```
 
+`runtime_root` = `.agents/runtime/polling/`（マシン固有・常に gitignore・migration 対象外）
+
+```
+.agents/runtime/polling/
+  .STOP                          # graceful kill file (契約 §6.1)
+  .STOP.hard                     # hard kill file (契約 §6.1)
+  .polling-initialized           # 初回起動ポリシー用マーカー (契約 §10、作成責務は本節 Note)
+  .last_archive_month            # month boundary cache (契約 §9)
+  session.json                   # tick session (契約 §6.5、--stateless 時のみ)
+```
+
 既存 `close workflow` の `archives/` フラット配置と共存する（同名衝突は FS 上で発生しえない前提）。
+
+> **`.claim` が state_root に co-located である理由:** `.claim` は `claim()` の atomic rename
+> 設計（`mkdir running/{slug}` → `rename ready/{slug}.md running/{slug}/issue.md` →
+> `write running/{slug}/.claim`）と不可分であり、running/ ディレクトリと同一 FS 木になければ
+> ならない。したがって runtime 分類のファイルだが runtime_root へは移さず、queue 本体
+> （`running/{slug}/`）配下に置く。migration inventory 上も queue 本体の一部として扱う。
 
 > **`.polling-initialized` の作成責務（Label adapter と同一規約）:** adapter が**初回 tick 成功後**に自動作成する。
 > tick 成功の定義は「`halt_reason` が `None` または `"dry_run"` で完了した時点」。一度作成したら更新しない。
@@ -54,12 +70,12 @@
 | `mark_failed(slug, kind)` | `rename running/{slug}/issue.md failed/{kind}/{slug}.md` → `rm running/{slug}/.claim` → `rmdir running/{slug}` |
 | `retry_count(slug)` | frontmatter `retry_count` 読み取り（未定義は 0） |
 | `increment_retry(slug)` | frontmatter `retry_count` を +1 して書き戻し、新値を返す |
-| `kill_file_path()` | `(abspath(state_root/.STOP.hard), abspath(state_root/.STOP))` — 戻り順 = チェック順（§7） |
+| `kill_file_path()` | `(abspath(runtime_root/.STOP.hard), abspath(runtime_root/.STOP))` — 戻り順 = チェック順（§7） |
 | `archive_month_boundary()` | §5 参照 |
 | `rollback_orphans(now)` | §6 参照 |
 | `sanitize_slug(raw)` | §3 参照 |
-| `load_session()` | `session.json` を read + JSON parse。無ければ `None`、parse 失敗は warn + `{basename}.corrupt.{ts}` に隔離リネームして `None`（新 session 開始） |
-| `save_session(session)` | `session.json.tmp.{pid}` に書き込み → `rename` で atomic 置換（契約 §6.5） |
+| `load_session()` | `runtime_root/session.json` を read + JSON parse。無ければ `None`、parse 失敗は warn + `{basename}.corrupt.{ts}` に隔離リネームして `None`（新 session 開始） |
+| `save_session(session)` | `runtime_root/session.json.tmp.{pid}` に書き込み → `rename` で atomic 置換（契約 §6.5） |
 
 ---
 
@@ -109,14 +125,14 @@
 ```
 archive_month_boundary():
   cur_month = now.strftime("%Y-%m")
-  cached = read(state_root/.last_archive_month)   # 無ければ ""
+  cached = read(runtime_root/.last_archive_month) # 無ければ ""（キャッシュは runtime）
   if cached == cur_month: return 0                # ← O(1) early return
   if cached == "":                                # 初回起動: 過去月が特定できない
-    write(state_root/.last_archive_month, cur_month)
+    write(runtime_root/.last_archive_month, cur_month)
     return 0                                      # 移動しない (契約 §9。archives/{空文字}/ 防止)
-  # 境界跨ぎ: done/ をスキャンして archives/{cached}/ に移動
-  moved = move_all(done/*, archives/{cached}/)
-  write(state_root/.last_archive_month, cur_month)
+  # 境界跨ぎ: done/ をスキャンして archives/{cached}/ に移動（移動先は state_root 側）
+  moved = move_all(state_root/done/*, state_root/archives/{cached}/)
+  write(runtime_root/.last_archive_month, cur_month)
   return moved
 ```
 
@@ -149,12 +165,13 @@ rollback_orphans(now):
 
 ```
 kill_file_path():
-  root = realpath(state_root)                     # cwd 非依存
+  root = realpath(runtime_root)                   # cwd 非依存。制御ファイルは runtime_root 側
   # 戻り順 = チェック順 (.STOP.hard 優先、graceful .STOP は後)
   return (f"{root}/.STOP.hard", f"{root}/.STOP")
 ```
 
-**必ず絶対パスで解決**。相対パスは禁止（cwd 変動で検出漏れの原因となる）。
+**必ず絶対パスで解決**。相対パスは禁止（cwd 変動で検出漏れの原因となる）。`runtime_root` は
+`.agents/runtime/polling/`（§1、queue 本体の `state_root` とは別木）。
 
 **戻り順の契約**: タプルの `[0]` が `.STOP.hard`（hard kill、最優先）、`[1]` が `.STOP`（graceful、次点）。呼び出し側は `[0]` → `[1]` の順に existence チェックし、どちらかが存在した時点で halt する。**戻り順とチェック順は一致させる**（以前は戻り順 `(.STOP, .STOP.hard)` / チェック順 `.STOP.hard → .STOP` で逆転していたため、誤読による hard kill 検出漏れリスクがあった）。
 

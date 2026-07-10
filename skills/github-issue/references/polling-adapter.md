@@ -330,6 +330,13 @@ def normalize_git_url(url: str) -> str:
 
 ### `state_root/` 配下の構造と permission 契約
 
+> **Roots（共通契約 §1）:** 本 Label adapter の `state_root` は XDG ベースのマシン固有 FS
+> ディレクトリであり、queue 本体（GitHub 上のラベル）とは別に、制御・セッションファイル
+> （`.STOP` / `.STOP.hard` / `.polling-initialized` / `.last_archive_month` / `session.json`）を
+> ここに置く。すなわち本 adapter では **`runtime_root == state_root`**（state_root 自体が
+> 非共有・マシン固有なので分離不要）。共通契約が `<runtime_root>` と記す制御・セッション
+> ファイルは、本 adapter では下記 `<state_root>` 配下と読み替える。
+
 ```
 <state_root>/                           dir mode 0700
   .clone_url                            file mode 0600  # URL 衝突検知用
