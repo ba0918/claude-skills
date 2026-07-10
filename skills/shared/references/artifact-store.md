@@ -79,3 +79,27 @@ caches. Never describe that operation as retroactive secrecy.
 Repository scripts use `skills/shared/scripts/artifact_store.py`. Skill prose should say
 "resolve the artifact store using this contract" and link here rather than duplicating
 the schema or validation rules.
+
+## Quality gates
+
+A `local` (or `shared-private`) store is ignored by the containing repository, so its
+contents never travel with a clone, a pull request, or a Continuous Integration checkout.
+This is a deliberate consequence of safety invariant 3, not an oversight:
+
+- **Store-content checks run in the writer's environment.** Any gate that inspects the
+  bytes of an artifact — dossier lint, index consistency, migration state — is only
+  meaningful where the store physically exists. Run these in the environment that produced
+  the artifacts (for example a pre-push hook, or an operator running the validator
+  locally), where the ignored directory is present.
+- **Continuous Integration is structurally blind to a local store.** On a fresh checkout
+  the ignored directory is empty, so store-content checks find nothing to inspect and pass
+  as a no-op. Do not read a green Continuous Integration run as evidence that the store's
+  contents were validated. The gate that matters is the pre-push (writer) side.
+- **A `public` store is the only visibility whose contents are gated by Continuous
+  Integration**, because a public store is tracked and therefore present on checkout. When
+  a repository needs Continuous-Integration-visible artifact checks, it must opt into
+  `public` visibility with an explicit tracked policy.
+
+This split is intentional: the writer environment owns content correctness; the tracked
+policy (`.agents/artifacts.yml`) and Git-safety invariants are what Continuous Integration
+can and does verify on every checkout regardless of store contents.

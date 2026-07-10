@@ -13,5 +13,12 @@ jobs:
 
       # チェックの正本は scripts/run_checks.sh。pre-push hook (githooks/pre-push)
       # も同じスクリプトを呼ぶため、ローカルと CI の検証内容は常に一致する。
+      #
+      # 注意: Agent Artifact Store が local visibility の場合、その中身（dossier / index
+      # 等）は .gitignore され fresh checkout には存在しない。したがって store 内容を検査
+      # する validate_repo.py のチェック 10（dossier lint）はここ（CI）では対象ファイル
+      # ゼロで no-op pass になる。store 内容ゲートは store が実在する pre-push（writer 環境）
+      # 側にある。CI の green を「store 内容も検証済み」と解釈しないこと。
+      # 詳細は skills/shared/references/artifact-store.md「Quality gates」節。
       - name: Run all checks (shared with pre-push hook)
         run: sh scripts/run_checks.sh

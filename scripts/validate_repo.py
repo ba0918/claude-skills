@@ -20,6 +20,15 @@
   9. 共有契約語彙の適合（契約の識別語彙を使う skill / command は契約を md リンクする）
   10. .agents/artifacts/loop/dossiers/*.json の dossier lint（error 級のみ CI fail）
   11. .agents/artifacts.yml と local store の Git 安全性
+
+チェック 10・11 と store 実在性:
+  チェック 10（dossier lint）は local store が ignore されている環境では対象ファイルが
+  存在せず no-op で pass する。すなわち CI（fresh checkout）では store 内容を検査できない
+  ため、dossier の内容ゲートは store が実在する writer 環境（pre-push hook / ローカル実行）
+  で担保する。CI の green を「dossier 内容も検証済み」と読んではならない
+  （artifact-store.md「Quality gates」節が正本）。
+  チェック 11 は store 内容ではなく tracked policy（.agents/artifacts.yml）と Git 安全性を
+  検証するため、store が空の CI でも有効に機能する（policy が無ければ skip）。
 """
 import json
 import os
