@@ -14,6 +14,7 @@ from artifact_store import (  # noqa: E402
     load_policy,
     migration_inventory,
     parse_policy,
+    rebuild_index,
     require_writable,
     stage_migration,
 )
@@ -156,6 +157,217 @@ class ArtifactStoreTest(unittest.TestCase):
         )
         self.assertTrue(finalized["verified"])
         self.assertFalse(source.exists())
+
+
+class RebuildIndexTest(unittest.TestCase):
+    def repo(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        (root / ".gitignore").write_text("/.agents/artifacts/\n", encoding="utf-8")
+        return root
+
+    def write_idea(self, repo, slug, *, title=None, created="2026-07-01 10:00:00",
+                   status="💡 Idea", tags="`a`, `b`", summary="Short summary.",
+                   include_tags=True):
+        title = title if title is not None else slug.split("_", 1)[-1]
+        directory = repo / ".agents/artifacts/ideas"
+        directory.mkdir(parents=True, exist_ok=True)
+        tags_line = f"**Tags:** {tags}\n" if include_tags else ""
+        (directory / f"{slug}.md").write_text(
+            f"# {title}\n\n"
+            f"**Created:** {created}\n"
+            f"**Status:** {status}\n"
+            f"{tags_line}"
+            "\n---\n\n"
+            f"## Summary\n\n{summary}\n\n"
+            "## Key Discussion Points\n\n- point\n",
+            encoding="utf-8",
+        )
+
+    def write_issue(self, repo, slug, *, title="An issue", status="open",
+                    created="2026-07-01 10:00:00", tags="auth,bug",
+                    source="", summary="Issue summary.", subdir=""):
+        base = repo / ".agents/artifacts/issues"
+        directory = base / subdir if subdir else base
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / f"{slug}.md").write_text(
+            "---\n"
+            f"title: {title}\n"
+            f"status: {status}\n"
+            f"created: {created}\n"
+            f"tags: {tags}\n"
+            f"source: {source}\n"
+            "---\n\n"
+            f"## 概要\n\n{summary}\n\n"
+            "## 備考\n\n(none)\n",
+            encoding="utf-8",
+        )
+
+    def test_ideas_index_has_five_columns_and_is_deterministic(self):
+        root = self.repo()
+        self.write_idea(root, "20260701100000_alpha", title="alpha",
+                        summary="First idea.")
+        self.write_idea(root, "20260702100000_beta", title="beta",
+                        summary="Second idea.")
+        first = rebuild_index(root, "ideas")
+        index_path = root / ".agents/artifacts/ideas/idea-status.md"
+        self.assertEqual("ideas", first["kind"])
+        self.assertEqual(2, first["entries"])
+        content = index_path.read_bytes()
+        header = index_path.read_text(encoding="utf-8")
+        self.assertIn("# Idea Status", header)
+        self.assertIn("| Idea | Tags | Created | Status | Summary |", header)
+        self.assertIn("[alpha](20260701100000_alpha.md)", header)
+        self.assertIn("First idea.", header)
+        self.assertIn("💡 Idea", header)
+        # 決定論性: 同一入力 → バイト同一
+        rebuild_index(root, "ideas")
+        self.assertEqual(content, index_path.read_bytes())
+
+    def test_issues_index_has_four_columns_without_status(self):
+        root = self.repo()
+        self.write_issue(root, "20260701100000_login", title="Login bug",
+                         tags="auth,bug", summary="Login times out.")
+        result = rebuild_index(root, "issues")
+        index_path = root / ".agents/artifacts/issues/issue-status.md"
+        header = index_path.read_text(encoding="utf-8")
+        self.assertEqual("issues", result["kind"])
+        self.assertIn("# Issue Status", header)
+        self.assertIn("| Issue | Tags | Created | Summary |", header)
+        self.assertNotIn("Status |", header.splitlines()[4])  # header row has no Status col
+        self.assertIn("[20260701100000_login](20260701100000_login.md)", header)
+        self.assertIn("`auth,bug`", header)
+        self.assertIn("Login times out.", header)
+
+    def test_kind_column_schema_diverges(self):
+        root = self.repo()
+        self.write_idea(root, "20260701100000_i", title="i")
+        self.write_issue(root, "20260701100000_j", title="j")
+        rebuild_index(root, "ideas")
+        rebuild_index(root, "issues")
+        idea_header = (root / ".agents/artifacts/ideas/idea-status.md").read_text(
+            encoding="utf-8")
+        issue_header = (root / ".agents/artifacts/issues/issue-status.md").read_text(
+            encoding="utf-8")
+        self.assertIn("| Idea | Tags | Created | Status | Summary |", idea_header)
+        self.assertIn("| Issue | Tags | Created | Summary |", issue_header)
+        # issue index の列定義行には Status 列がない（title の "Issue Status" は別物）
+        issue_col_row = [l for l in issue_header.splitlines()
+                         if l.startswith("| Issue |")][0]
+        self.assertNotIn("Status", issue_col_row)
+
+    def test_archives_and_done_failed_are_excluded(self):
+        root = self.repo()
+        self.write_idea(root, "20260701100000_live", title="live")
+        # ideas archive エントリは対象外
+        arch = root / ".agents/artifacts/ideas/archives"
+        arch.mkdir(parents=True, exist_ok=True)
+        (arch / "20260601100000_gone.md").write_text(
+            "# gone\n\n**Created:** 2026-06-01 10:00:00\n**Status:** 📋 Planned\n"
+            "**Tags:** `x`\n\n---\n\n## Summary\n\narchived.\n", encoding="utf-8")
+        rebuild_index(root, "ideas")
+        idea_header = (root / ".agents/artifacts/ideas/idea-status.md").read_text(
+            encoding="utf-8")
+        self.assertIn("[live]", idea_header)
+        self.assertNotIn("gone", idea_header)
+
+        self.write_issue(root, "20260701100000_open_one", title="open one")
+        self.write_issue(root, "20260601100000_done_one", title="done one",
+                         status="closed", subdir="done")
+        self.write_issue(root, "20260601100000_failed_one", title="failed one",
+                         subdir="failed/permanent")
+        self.write_issue(root, "20260601100000_arch_one", title="arch one",
+                         subdir="archives")
+        rebuild_index(root, "issues")
+        issue_header = (root / ".agents/artifacts/issues/issue-status.md").read_text(
+            encoding="utf-8")
+        self.assertIn("open_one", issue_header)
+        self.assertNotIn("done_one", issue_header)
+        self.assertNotIn("failed_one", issue_header)
+        self.assertNotIn("arch_one", issue_header)
+
+    def test_missing_fields_do_not_crash(self):
+        root = self.repo()
+        self.write_idea(root, "20260701100000_notags", title="notags",
+                        include_tags=False)
+        result = rebuild_index(root, "ideas")
+        self.assertEqual(1, result["entries"])
+        header = (root / ".agents/artifacts/ideas/idea-status.md").read_text(
+            encoding="utf-8")
+        # Tags 欠損でも行は生成され、Tags セルは空
+        row = [l for l in header.splitlines() if "[notags]" in l][0]
+        cells = [c.strip() for c in row.strip().strip("|").split("|")]
+        self.assertEqual("notags", cells[0].split("]")[0].lstrip("["))
+        self.assertEqual("", cells[1])  # Tags empty
+
+    def test_pipe_and_newline_in_body_are_escaped(self):
+        root = self.repo()
+        self.write_idea(root, "20260701100000_evil", title="evil",
+                        summary="a | b\nsecond line")
+        rebuild_index(root, "ideas")
+        header = (root / ".agents/artifacts/ideas/idea-status.md").read_text(
+            encoding="utf-8")
+        row = [l for l in header.splitlines() if "[evil]" in l][0]
+        # 生の `|` はエスケープされ、改行はセル内に残らない（1 行に収まる）
+        self.assertIn("a \\| b", row)
+        self.assertIn("second line", row)
+        # テーブル構造: 5 列（区切り 6 本の `|`）を維持
+        self.assertEqual(6, row.count("|") - row.count("\\|"))
+
+    def test_legacy_store_refuses_to_write(self):
+        root = self.repo()
+        (root / "docs/ideas").mkdir(parents=True)
+        (root / "docs/ideas/legacy.md").write_text("# legacy\n", encoding="utf-8")
+        with self.assertRaisesRegex(ArtifactStoreError, "migration"):
+            rebuild_index(root, "ideas")
+        self.assertFalse(
+            (root / ".agents/artifacts/ideas/idea-status.md").exists())
+
+    def test_split_brain_refuses_to_write(self):
+        root = self.repo()
+        (root / "docs/ideas").mkdir(parents=True)
+        (root / "docs/ideas/legacy.md").write_text("# legacy\n", encoding="utf-8")
+        self.write_idea(root, "20260701100000_canon", title="canon")
+        with self.assertRaises(ArtifactStoreError):
+            rebuild_index(root, "ideas")
+        self.assertFalse(
+            (root / ".agents/artifacts/ideas/idea-status.md").exists())
+
+    def test_unknown_kind_is_rejected(self):
+        root = self.repo()
+        with self.assertRaisesRegex(ArtifactStoreError, "kind"):
+            rebuild_index(root, "plans")
+
+
+class RuntimeInventoryTest(unittest.TestCase):
+    def repo(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        (root / ".gitignore").write_text("/.agents/artifacts/\n", encoding="utf-8")
+        return root
+
+    def test_runtime_files_get_skip_suggestion(self):
+        root = self.repo()
+        (root / "docs/issues").mkdir(parents=True)
+        (root / "docs/issues/.STOP").write_text("", encoding="utf-8")
+        (root / "docs/issues/session.json").write_text("{}", encoding="utf-8")
+        (root / "docs/issues/real-issue.md").write_text("# issue\n", encoding="utf-8")
+        inventory = migration_inventory(root)
+        by_source = {e["source"]: e for e in inventory["entries"]}
+        # runtime 分類ファイルには suggested_action=skip が付く
+        self.assertEqual("skip", by_source["docs/issues/.STOP"]["suggested_action"])
+        self.assertEqual(
+            "skip", by_source["docs/issues/session.json"]["suggested_action"])
+        # action は依然 review（fail-closed 維持）
+        self.assertEqual("review", by_source["docs/issues/.STOP"]["action"])
+        # 成果物 (issue 本文) には skip 提案を付けない
+        self.assertNotEqual(
+            "skip",
+            by_source["docs/issues/real-issue.md"].get("suggested_action"))
 
 
 if __name__ == "__main__":

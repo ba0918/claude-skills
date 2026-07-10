@@ -7,10 +7,14 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+import re
 import shutil
 import subprocess
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from frontmatter import parse_frontmatter_fields  # noqa: E402
 
 
 CONFIG_REL = Path(".agents/artifacts.yml")
@@ -34,6 +38,46 @@ DEFAULT_POLICY = {
 }
 IGNORE_RULE = "/.agents/artifacts/"
 ARTIFACT_KINDS = ("plans", "issues", "ideas", "loop")
+
+# Runtime area (machine-specific, never shared, never migrated). See the
+# "Runtime area" section of skills/shared/references/artifact-store.md. Files
+# matching these patterns are runtime state, not artifacts; migration classifies
+# them as suggested_action "skip".
+RUNTIME_ROOT_REL = Path(".agents/runtime")
+RUNTIME_BASENAMES = frozenset({
+    ".STOP",
+    ".STOP.hard",
+    ".polling-initialized",
+    ".last_archive_month",
+    "session.json",
+})
+_RUNTIME_TMP_PREFIXES = ("session.json.tmp.", "session.json.corrupt.")
+
+# Derived indexes: regenerated deterministically from the entries, never merged.
+# See the "Derived indexes" section of the Artifact Store contract.
+INDEX_FILENAMES = {"ideas": "idea-status.md", "issues": "issue-status.md"}
+INDEX_TITLES = {"ideas": "Idea Status", "issues": "Issue Status"}
+# Subdirectories under a kind directory that hold non-index entries (archived,
+# resolved, or failed) and are therefore excluded from the derived index.
+_INDEX_EXCLUDED_SUBDIRS = {"archives", "done", "failed"}
+_SLUG_TS_RE = re.compile(r"^(\d{14})")
+
+
+def _is_runtime_source(source_rel: str) -> bool:
+    """True if a legacy path is machine-specific runtime state, not an artifact."""
+    parts = PurePosixPath(source_rel).parts
+    name = parts[-1] if parts else ""
+    if name in RUNTIME_BASENAMES:
+        return True
+    if any(name.startswith(prefix) for prefix in _RUNTIME_TMP_PREFIXES):
+        return True
+    # loop event log and its monthly archives are runtime; loop dossiers are not.
+    if "loop" in parts:
+        if name == "events.jsonl":
+            return True
+        if name.endswith(".jsonl") and "archives" in parts:
+            return True
+    return False
 
 
 class ArtifactStoreError(ValueError):
@@ -225,11 +269,13 @@ def migration_inventory(repo_path: str | os.PathLike = ".") -> dict:
         for path in sorted(base.rglob("*")):
             if not path.is_file() or path.is_symlink():
                 continue
+            source_rel = path.relative_to(repo).as_posix()
             entries.append({
-                "source": path.relative_to(repo).as_posix(),
+                "source": source_rel,
                 "destination": (DEFAULT_ROOT_REL / kind / path.relative_to(base)).as_posix(),
                 "sha256": _sha256(path),
                 "action": "review",
+                "suggested_action": "skip" if _is_runtime_source(source_rel) else "review",
             })
     for source_rel, destination_rel in LEGACY_FILES.items():
         path = repo / source_rel
@@ -239,6 +285,9 @@ def migration_inventory(repo_path: str | os.PathLike = ".") -> dict:
                 "destination": destination_rel.as_posix(),
                 "sha256": _sha256(path),
                 "action": "review",
+                "suggested_action": (
+                    "skip" if _is_runtime_source(source_rel.as_posix()) else "review"
+                ),
             })
     return {
         "schema_version": 1,
@@ -325,14 +374,155 @@ def finalize_migration(
     return {"removed": removed, "verified": True}
 
 
+def _cell(text: str) -> str:
+    """Make arbitrary entry text safe inside a Markdown table cell.
+
+    Escapes literal pipes and collapses any whitespace (including newlines) so a
+    single entry can never break the table's row/column structure.
+    """
+    return " ".join(text.replace("|", "\\|").split())
+
+
+def _first_heading(text: str) -> str:
+    for line in text.splitlines():
+        if line.startswith("# ") and not line.startswith("## "):
+            return line[2:].strip()
+    return ""
+
+
+def _bold_label(text: str, label: str) -> str:
+    pattern = re.compile(r"^\*\*" + re.escape(label) + r":\*\*\s*(.*)$")
+    for raw in text.splitlines():
+        match = pattern.match(raw.strip())
+        if match:
+            return match.group(1).strip()
+    return ""
+
+
+def _section_body(text: str, heading: str) -> str:
+    collecting = False
+    body = []
+    for line in text.splitlines():
+        if line.strip() == heading:
+            collecting = True
+            continue
+        if collecting and line.startswith("## "):
+            break
+        if collecting:
+            body.append(line)
+    return "\n".join(body).strip()
+
+
+def _slug_timestamp(slug: str) -> str:
+    match = _SLUG_TS_RE.match(slug)
+    if not match:
+        return ""
+    digits = match.group(1)
+    return (
+        f"{digits[0:4]}-{digits[4:6]}-{digits[6:8]} "
+        f"{digits[8:10]}:{digits[10:12]}:{digits[12:14]}"
+    )
+
+
+def _parse_idea_entry(slug: str, text: str) -> dict:
+    return {
+        "slug": slug,
+        "title": _first_heading(text) or slug,
+        "created": _bold_label(text, "Created"),
+        "status": _bold_label(text, "Status"),
+        "tags": _bold_label(text, "Tags"),
+        "summary": _section_body(text, "## Summary"),
+    }
+
+
+def _parse_issue_entry(slug: str, text: str) -> dict:
+    fields = parse_frontmatter_fields(text)
+    return {
+        "slug": slug,
+        "created": fields.get("created", ""),
+        "tags": fields.get("tags", ""),
+        "summary": _section_body(text, "## 概要"),
+    }
+
+
+def _collect_index_entries(kind_dir: Path, kind: str) -> list:
+    """Parse top-level entries only; archived / done / failed subtrees are excluded."""
+    if not kind_dir.is_dir():
+        return []
+    index_name = INDEX_FILENAMES[kind]
+    parse = _parse_idea_entry if kind == "ideas" else _parse_issue_entry
+    entries = []
+    for path in sorted(kind_dir.glob("*.md")):
+        if not path.is_file() or path.is_symlink():
+            continue
+        if path.name == index_name:
+            continue
+        entries.append(parse(path.stem, path.read_text(encoding="utf-8")))
+    return sorted(entries, key=lambda entry: entry["slug"])
+
+
+def _render_index(kind: str, entries: list) -> str:
+    last_updated = max((_slug_timestamp(e["slug"]) for e in entries), default="")
+    lines = [f"# {INDEX_TITLES[kind]}", "", f"**Last Updated:** {last_updated}", ""]
+    if kind == "ideas":
+        lines.append("| Idea | Tags | Created | Status | Summary |")
+        lines.append("|------|------|---------|--------|---------|")
+        for entry in entries:
+            lines.append(
+                f"| [{_cell(entry['title'])}]({entry['slug']}.md) "
+                f"| {_cell(entry['tags'])} | {_cell(entry['created'])} "
+                f"| {_cell(entry['status'])} | {_cell(entry['summary'])} |"
+            )
+    else:
+        lines.append("| Issue | Tags | Created | Summary |")
+        lines.append("|-------|------|---------|---------|")
+        for entry in entries:
+            lines.append(
+                f"| [{_cell(entry['slug'])}]({entry['slug']}.md) "
+                f"| `{_cell(entry['tags'])}` | {_cell(entry['created'])} "
+                f"| {_cell(entry['summary'])} |"
+            )
+    return "\n".join(lines) + "\n"
+
+
+def rebuild_index(repo_path: str | os.PathLike = ".", kind: str = "ideas") -> dict:
+    """Deterministically regenerate a derived index from its entries.
+
+    The index is a derived cache: the output is a pure function of the top-level
+    entry files (byte-identical for identical input) and is never merged with the
+    previous index. Refuses to write when the store is not writable
+    (legacy / split-brain), so it never resurrects state in a broken store.
+    """
+    if kind not in INDEX_FILENAMES:
+        raise ArtifactStoreError(f"unknown index kind: {kind}")
+    result = require_writable(repo_path)
+    repo = Path(repo_path).resolve()
+    root = Path(result["root"])
+    kind_dir = root / kind
+    index_path = kind_dir / INDEX_FILENAMES[kind]
+    _validate_containment(repo, index_path)
+    entries = _collect_index_entries(kind_dir, kind)
+    kind_dir.mkdir(parents=True, exist_ok=True)
+    index_path.write_text(_render_index(kind, entries), encoding="utf-8")
+    return {
+        "kind": kind,
+        "index": index_path.relative_to(repo).as_posix(),
+        "entries": len(entries),
+    }
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "command",
-        choices=("resolve", "status", "init", "migrate-check", "migrate-stage", "migrate-finalize"),
+        choices=(
+            "resolve", "status", "init", "rebuild-index",
+            "migrate-check", "migrate-stage", "migrate-finalize",
+        ),
     )
     parser.add_argument("--repo", default=".")
     parser.add_argument("--require-writable", action="store_true")
+    parser.add_argument("--kind", choices=tuple(INDEX_FILENAMES))
     parser.add_argument("--decisions")
     parser.add_argument("--output")
     parser.add_argument("--confirm-remove-source", action="store_true")
@@ -341,6 +531,10 @@ def main(argv=None) -> int:
     try:
         if args.command == "init":
             result = initialize(args.repo)
+        elif args.command == "rebuild-index":
+            if not args.kind:
+                raise ArtifactStoreError("rebuild-index requires --kind (ideas|issues)")
+            result = rebuild_index(args.repo, args.kind)
         elif args.command == "migrate-check":
             result = migration_inventory(args.repo)
         elif args.command == "migrate-stage":

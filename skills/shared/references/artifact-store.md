@@ -80,6 +80,45 @@ Repository scripts use `skills/shared/scripts/artifact_store.py`. Skill prose sh
 "resolve the artifact store using this contract" and link here rather than duplicating
 the schema or validation rules.
 
+## Derived indexes
+
+`ideas/idea-status.md` and `issues/issue-status.md` are **derived caches**, not
+authoritative state. Each is a pure function of the top-level entry files in its kind
+directory and can be regenerated at any time:
+
+```bash
+python3 skills/shared/scripts/artifact_store.py rebuild-index --kind ideas
+python3 skills/shared/scripts/artifact_store.py rebuild-index --kind issues
+```
+
+Rules for a derived index:
+
+- **Regenerate, never merge.** On any inconsistency between an index and the entries it
+  summarizes, the entries win: rebuild the index from scratch rather than hand-reconciling
+  rows. Two rebuilds over identical entries produce byte-identical output (the timestamp
+  in the index is derived from the newest entry, not from wall-clock time).
+- **Top-level entries only.** `archives/` (and, for issues, `done/` and `failed/`) hold
+  resolved or retired entries and are excluded from the index. Regenerating an index that
+  was previously hand-maintained may therefore drop rows that pointed at archived entries —
+  that is the intended correction, not data loss.
+- **Per-kind schema.** The ideas index is `Idea | Tags | Created | Status | Summary`; the
+  issues index is `Issue | Tags | Created | Summary` (no Status column). Ideas entries carry
+  their fields as bold labels (`**Created:**` / `**Status:**` / `**Tags:**`) under a `#`
+  title with a `## Summary` body; issues entries carry them in YAML frontmatter
+  (`title` / `status` / `created` / `tags` / `source`) with a `## 概要` body. The frontmatter
+  is read with the repository's minimal flat-scalar parser — no external YAML engine is
+  introduced, so an entry file can never trigger arbitrary YAML execution.
+- **Entry text is escaped, never trusted for structure.** Pipes and newlines from an entry
+  body are escaped/collapsed so a single entry cannot break the table's rows or columns.
+- **Fail-closed.** Regeneration writes only when the store is writable. In a `legacy` or
+  `split-brain` state it refuses and writes nothing, so it never resurrects an index in a
+  broken store. Because it is an explicit, on-demand command (never run by an unattended
+  loop) it does not race the polling adapter that also reads `issue-status.md`; do not run
+  the two concurrently.
+
+`status.md` and `session-history.md` are **not** derived indexes: they hold session state
+that cannot be reconstructed from entries, so they are never targets of regeneration.
+
 ## Quality gates
 
 A `local` (or `shared-private`) store is ignored by the containing repository, so its
