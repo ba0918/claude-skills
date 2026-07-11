@@ -24,8 +24,9 @@
       "skills/context-audit/scripts/collect_targets.py": "aa6a60a70f3c7c3b4c161c0ca080d428fe4b3fa9ff4169af7707f74b2fe5957e",
       "skills/context-audit/scripts/static_checks.py": "87d54d880ddfe445e4872378b0024893a848efc6592cef19255afde7179b9216",
       "skills/shared/references/artifact-store.md": "fa32b1e36a8aff979962f346631508abf3b601c05d8cf4ca327e311b51f6fd76",
+      "skills/shared/references/coverage-ledger.md": "e75e405498e15ef15a3964aa3deb15123b1142acab078d87a5ad71a9d1af4c97",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
-      "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
+      "skills/shared/references/severity-and-verdicts.md": "0d0f17ab67f9ab075c726f94d797f675bef6ecd236349c3370080fdf9f146133",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
     "result": "accepted-without-run",
@@ -40,12 +41,13 @@
       "skills/context-audit/scripts/collect_targets.py",
       "skills/context-audit/scripts/static_checks.py",
       "skills/shared/references/artifact-store.md",
+      "skills/shared/references/coverage-ledger.md",
       "skills/shared/references/fix-action-taxonomy.md",
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "100a3166ec96c34ba1cfb4523c146263e6ec0c19aa63cefc70167bf0f62049d1",
-    "verified": "2026-07-10"
+    "surface_sha256": "efb0846f751c5f46bb7565938045255ceaf300a699312d2381ffcbd1b98cad77",
+    "verified": "2026-07-12"
   },
   "github-issue": {
     "file_sha256": {
@@ -66,12 +68,13 @@
       "skills/github-issue/references/secret-scanner.md": "5e1df48668b3c11183e46e9c18a15a3622c579292394df5125a740805472f62b",
       "skills/shared/references/artifact-store.md": "fa32b1e36a8aff979962f346631508abf3b601c05d8cf4ca327e311b51f6fd76",
       "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
+      "skills/shared/references/coverage-ledger.md": "e75e405498e15ef15a3964aa3deb15123b1142acab078d87a5ad71a9d1af4c97",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
       "skills/shared/references/loop-engineering.md": "160fb3165cb56653e4ab08d9fd316651a25458827004911c4170fe437002bac0",
       "skills/shared/references/measurement-identity.md": "fa0afacac0d12c6de689768cc7c29fe997b79523661f9bc7a181262d53893151",
       "skills/shared/references/orchestration-patterns.md": "9d471e34c145f52a7da2fd625ba8c5b4692e5c0b6f34de473c6c9901fa192b45",
       "skills/shared/references/polling-pattern.md": "98f623552d4c6ec957e07b20a90c389b8513ecc3572b73ccaa80cfa9bab8c25f",
-      "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
+      "skills/shared/references/severity-and-verdicts.md": "0d0f17ab67f9ab075c726f94d797f675bef6ecd236349c3370080fdf9f146133",
       "skills/shared/references/team-config.md": "d130a6d12c1598ee3e51649013ed1d538e5f2afcfcfeada079748bb00d657ace",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
       "skills/skill-improve/SKILL.md": "dd651e1ad57e4e7554d6f0c98b290e640db14790f8f91bc821e9338ad6fe30d6",
@@ -105,6 +108,7 @@
       "skills/github-issue/references/secret-scanner.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/codex-integration.md",
+      "skills/shared/references/coverage-ledger.md",
       "skills/shared/references/fix-action-taxonomy.md",
       "skills/shared/references/loop-engineering.md",
       "skills/shared/references/measurement-identity.md",
@@ -125,8 +129,8 @@
       "skills/trigger-eval/references/metrics-spec.md",
       "skills/trigger-eval/references/testcase-design.md"
     ],
-    "surface_sha256": "7ca3aaa417ebed297dc55edf3ca47c627be5b67777414c2d738db16ca37d1d9d",
-    "verified": "2026-07-10"
+    "surface_sha256": "a8e0068a70a57be0fda0f373c049aaa7a9fcd8f1bd0f253229827afc0ffc40f4",
+    "verified": "2026-07-12"
   },
   "handoff": {
     "file_sha256": {
@@ -160,12 +164,13 @@
       "skills/issue/references/polling-state.md": "01e1df3652a8de304af6d22a23e513405fc52faf6dead2adf9426170a5f075e6",
       "skills/shared/references/artifact-store.md": "fa32b1e36a8aff979962f346631508abf3b601c05d8cf4ca327e311b51f6fd76",
       "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
+      "skills/shared/references/coverage-ledger.md": "e75e405498e15ef15a3964aa3deb15123b1142acab078d87a5ad71a9d1af4c97",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
       "skills/shared/references/loop-engineering.md": "160fb3165cb56653e4ab08d9fd316651a25458827004911c4170fe437002bac0",
       "skills/shared/references/measurement-identity.md": "fa0afacac0d12c6de689768cc7c29fe997b79523661f9bc7a181262d53893151",
       "skills/shared/references/orchestration-patterns.md": "9d471e34c145f52a7da2fd625ba8c5b4692e5c0b6f34de473c6c9901fa192b45",
       "skills/shared/references/polling-pattern.md": "98f623552d4c6ec957e07b20a90c389b8513ecc3572b73ccaa80cfa9bab8c25f",
-      "skills/shared/references/severity-and-verdicts.md": "f50e044c28fc229054ad25fa2f0ec78c1f21e93e5b18ecdb7250079bfe1559ef",
+      "skills/shared/references/severity-and-verdicts.md": "0d0f17ab67f9ab075c726f94d797f675bef6ecd236349c3370080fdf9f146133",
       "skills/shared/references/team-config.md": "d130a6d12c1598ee3e51649013ed1d538e5f2afcfcfeada079748bb00d657ace",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
       "skills/skill-improve/SKILL.md": "dd651e1ad57e4e7554d6f0c98b290e640db14790f8f91bc821e9338ad6fe30d6",
@@ -195,6 +200,7 @@
       "skills/issue/references/polling-state.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/codex-integration.md",
+      "skills/shared/references/coverage-ledger.md",
       "skills/shared/references/fix-action-taxonomy.md",
       "skills/shared/references/loop-engineering.md",
       "skills/shared/references/measurement-identity.md",
@@ -215,8 +221,8 @@
       "skills/trigger-eval/references/metrics-spec.md",
       "skills/trigger-eval/references/testcase-design.md"
     ],
-    "surface_sha256": "e697d2a45d6d9c262b48f50c8f8f991f93b3eb706d806704067cbfbc66bfd221",
-    "verified": "2026-07-10"
+    "surface_sha256": "e594172a5dff8e0048f81de23f864e2166cec451f5e1699f6aae6230465ae334",
+    "verified": "2026-07-12"
   },
   "plan": {
     "file_sha256": {
