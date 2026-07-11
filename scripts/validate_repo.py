@@ -115,6 +115,10 @@ CONTRACT_VOCAB = [
      ("ci_gate", "resident_sensor", "dissolve"), 2),
     ("skills/shared/references/artifact-store.md",
      (".agents/artifacts",), 1),
+    # coverage ledger（評価範囲台帳）。reviewed/skipped は汎用語で偽陽性を招くため、
+    # 4 値中 3 値の共起でのみ契約リンクを要求する（min_distinct=3）。
+    ("skills/shared/references/coverage-ledger.md",
+     ("reviewed", "skipped", "unsupported", "inconclusive"), 3),
 ]
 
 # チェック9の免除リスト。免除はスキル側ではなくここに置く（迂回防止）。理由必須。

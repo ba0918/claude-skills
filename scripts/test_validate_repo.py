@@ -20,6 +20,7 @@ from validate_repo import (
     mentions_name,
     check_dossiers,
     check_artifact_store,
+    CONTRACT_VOCAB,
 )
 
 
@@ -379,6 +380,62 @@ class TestCheckContractConformance(unittest.TestCase):
     def test_shared_contract_files_are_not_units(self):
         with tempfile.TemporaryDirectory() as root:
             self._base(root)  # 契約自身が語彙を全部含むが unit ではない
+            self.assertEqual(
+                check_contract_conformance(root, vocab=self.VOCAB, exempt={}), [])
+
+
+class TestCoverageLedgerContractVocab(unittest.TestCase):
+    """coverage ledger 契約（4値・min_distinct=3）の登録と執行を検証する。
+
+    reviewed/skipped/unsupported は汎用語で偽陽性を招きやすいため、
+    4値中3値の共起でのみ契約リンクを要求する（min_distinct=3）。
+    """
+
+    # 本物の CONTRACT_VOCAB エントリと同形の fixture。
+    VOCAB = [
+        ("skills/shared/references/coverage-ledger.md",
+         ("reviewed", "skipped", "unsupported", "inconclusive"), 3),
+    ]
+
+    def _write(self, root, rel, content):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def _base(self, root):
+        self._write(root, "skills/shared/references/coverage-ledger.md",
+                    "reviewed / skipped / unsupported / inconclusive の定義。")
+
+    def test_entry_is_registered_in_real_vocab(self):
+        entry = ("skills/shared/references/coverage-ledger.md",
+                 ("reviewed", "skipped", "unsupported", "inconclusive"), 3)
+        self.assertIn(entry, CONTRACT_VOCAB)
+
+    def test_three_values_without_link_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, "skills/review-x/SKILL.md",
+                        "評価範囲を reviewed / skipped / inconclusive に分類する。")
+            errors = check_contract_conformance(root, vocab=self.VOCAB, exempt={})
+            self.assertEqual(len(errors), 1)
+            self.assertIn("skills/review-x", errors[0])
+            self.assertIn("coverage-ledger.md", errors[0])
+
+    def test_three_values_with_link_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, "skills/review-x/SKILL.md",
+                        "評価範囲を reviewed / skipped / inconclusive に分類する。"
+                        "[台帳](../shared/references/coverage-ledger.md) 参照。")
+            self.assertEqual(
+                check_contract_conformance(root, vocab=self.VOCAB, exempt={}), [])
+
+    def test_two_values_are_not_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, "skills/review-x/SKILL.md",
+                        "reviewed と skipped のみ言及する（2値なので非対象）。")
             self.assertEqual(
                 check_contract_conformance(root, vocab=self.VOCAB, exempt={}), [])
 
