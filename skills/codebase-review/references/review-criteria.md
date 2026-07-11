@@ -175,7 +175,7 @@ Private keys: -----BEGIN (RSA |EC )?PRIVATE KEY-----
 #### Checklist
 
 - **Architecture**: Layer violations, dependency direction, module splitting
-- **Testing**: Coverage gaps, test quality, insufficient edge case tests
+- **Testing (delegated — do NOT score test-code quality here)**: Test *code* quality — coverage gaps, weak assertions, test anti-patterns, flaky safety nets — is out of this review's scope and is owned by the `review-testing` skill (`../../review-testing/SKILL.md`). This 4-agent review is a poor fit for it anyway, since it excludes `*.test.*` from its target files. Assess only *testable production design* here (see 3-A Testability: dependency injection, mock-friendliness, pure functions). Do not open findings about missing/weak tests, and do not let them affect the 4-B score.
 - **Documentation**: README, API docs, architecture docs
 - **CI/CD**: Build config, lint config, automated test config
 - **Developer experience (DX)**: Script setup, environment setup procedures, debug support
@@ -187,7 +187,7 @@ Private keys: -----BEGIN (RSA |EC )?PRIVATE KEY-----
 | Severity | Example |
 |----------|---------|
 | critical | Layer violations (architecture breakdown) |
-| major | Significant test coverage gaps, documentation deficiencies |
+| major | Significant documentation deficiencies, missing CI/lint configuration |
 | minor | DX improvements, CI/CD optimization |
 | info | Best practice recommendations |
 
