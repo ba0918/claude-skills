@@ -1,0 +1,13 @@
+{
+  "_comment": "SIGNAL-1 POSITIVE — should be detected (CONFIRMED).",
+  "_why": "Same version (3.0.0) but the integrity hash changed AND resolved points off-registry (raw github). Machine fact: version unchanged, hash changed.",
+  "name": "ui-lib",
+  "version": "3.0.0",
+  "resolved": "https://raw.githubusercontent.com/attacker/ui-lib/main/pkg.tgz",
+  "integrity": "sha512-TAMPEREDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx==",
+  "_previous_lock_entry": {
+    "version": "3.0.0",
+    "resolved": "https://registry.npmjs.org/ui-lib/-/ui-lib-3.0.0.tgz",
+    "integrity": "sha512-ORIGINALxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=="
+  }
+}

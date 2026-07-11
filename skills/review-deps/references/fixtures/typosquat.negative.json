@@ -1,0 +1,10 @@
+{
+  "_comment": "SIGNAL-3 NEGATIVE — must NOT be detected.",
+  "_why": "'@types/node' is the legitimate scoped package; superficially close names are its real, well-known scope.",
+  "dependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "_registry_metadata": {
+    "@types/node": { "author": "DefinitelyTyped", "weekly_downloads": 90000000 }
+  }
+}

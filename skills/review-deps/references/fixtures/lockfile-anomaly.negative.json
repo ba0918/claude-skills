@@ -1,0 +1,13 @@
+{
+  "_comment": "SIGNAL-1 NEGATIVE — must NOT be detected.",
+  "_why": "Version bumped 3.0.0 -> 3.1.0, so a changed integrity hash and resolved tarball are expected and legitimate.",
+  "name": "ui-lib",
+  "version": "3.1.0",
+  "resolved": "https://registry.npmjs.org/ui-lib/-/ui-lib-3.1.0.tgz",
+  "integrity": "sha512-NEWVERSIONxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx==",
+  "_previous_lock_entry": {
+    "version": "3.0.0",
+    "resolved": "https://registry.npmjs.org/ui-lib/-/ui-lib-3.0.0.tgz",
+    "integrity": "sha512-ORIGINALxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=="
+  }
+}

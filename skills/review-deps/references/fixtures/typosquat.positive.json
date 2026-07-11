@@ -1,0 +1,10 @@
+{
+  "_comment": "SIGNAL-3 POSITIVE — should be detected (CONFIRMED with registry metadata / else UNCERTAIN).",
+  "_why": "Name 'lodahs' is edit-distance 1 from the popular 'lodash', published recently by an unrelated maintainer.",
+  "dependencies": {
+    "lodahs": "^4.17.0"
+  },
+  "_registry_metadata": {
+    "lodahs": { "author": "unknown-2026", "first_published": "2026-06-30", "weekly_downloads": 12 }
+  }
+}

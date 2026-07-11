@@ -1,0 +1,9 @@
+{
+  "_comment": "SIGNAL-2 NEGATIVE — must NOT be detected.",
+  "_why": "postinstall compiles a native addon locally (legitimate build). No network exfiltration or arbitrary code fetch.",
+  "name": "fast-hash",
+  "version": "2.0.1",
+  "scripts": {
+    "postinstall": "node-gyp rebuild"
+  }
+}
