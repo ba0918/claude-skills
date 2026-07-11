@@ -220,7 +220,7 @@
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "f431d1c748e75c475c26d2bf7f264e410e255f7df184f8163a8065fac3559aa0",
+      "skills/plan/SKILL.md": "7c3b076959575579b71d8bcdf63a43c86cab8526c7fa72aa85edba26d9994e83",
       "skills/plan/fixtures.json": "9fff248e6fc108e63305e7885db309201f87703e9d44186092c84c341ecef233",
       "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
@@ -228,7 +228,7 @@
       "skills/shared/references/artifact-store.md": "fa32b1e36a8aff979962f346631508abf3b601c05d8cf4ca327e311b51f6fd76",
       "skills/shared/references/checkpoint-pattern.md": "b5f2b546695b32fa8284ee578836fd8d52097b7a363d86b8433b97c13f42c95a"
     },
-    "result": "accepted-without-run",
+    "result": "pass",
     "surface": [
       "skills/plan/SKILL.md",
       "skills/plan/fixtures.json",
@@ -238,7 +238,7 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "8d1f0a38fe3173407d2d55301ed279b7efbbbac3d71bc7e46c6104870e6bd5be",
-    "verified": "2026-07-10"
+    "surface_sha256": "322a40ea9c3c735234d335ae17a2f8cfca78dec5531d27b3b25ea91eb33c0649",
+    "verified": "2026-07-11"
   }
 }

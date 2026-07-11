@@ -283,7 +283,7 @@ No heavy review processes. Keep the tempo fast and development flow smooth.
 ## File Organization
 
 ```
-docs/
+.agents/artifacts/
 ├── status.md                           # Auto-managed status tracker
 ├── session-history.md                  # Completed sessions archive (auto-managed)
 └── plans/                              # All implementation plans
