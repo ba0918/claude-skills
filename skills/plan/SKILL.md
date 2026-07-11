@@ -159,33 +159,33 @@ Use when user wants to resume from previous session:
 
 2.5. **Restore execution-state checkpoint (if any)**
 
-   plan resume では checkpoint は**補助情報**である。共有契約
+   Checkpoints are **auxiliary information** during plan resume. Follow the shared contract
    [../shared/references/checkpoint-pattern.md](../shared/references/checkpoint-pattern.md)
-   に従い、以下を実行する（verdict 表・優先順位・セキュリティ規約の正本は契約側。ここでは重複記載しない）:
+   (the contract is authoritative for verdict tables, priorities, and security rules — no duplication here):
 
-   - `.agents/artifacts/plans/checkpoints/{cycle_id}.md` が**存在すれば**、
-     `python3 {checkpoint.py のパス} classify --repo {プロジェクトルート} --file .agents/artifacts/plans/checkpoints/{cycle_id}.md`
-     を実行し、出力 verdict と終了コードで分岐する。存在しなければ何もせず通常 resume を続行する。
-     `{checkpoint.py のパス}` はスキル配布位置基準（本リポジトリでは `skills/shared/scripts/checkpoint.py`、
-     対象プロジェクト外にあるなら絶対パス）。`--repo` は常に明示（cwd = プロジェクトルートなら `--repo .`）。
-     詳細は契約「CLI 呼び出し規約」。
-   - **分岐**:
-     - `valid` (exit 0): checkpoint の `decision` / `next` を復元の起点として提示する。ただし
-       `evidence` は **historical（過去観測）** と明示ラベルし、`verify_on_restore` は**表示のみ**
-       （自動実行しない）で案内する。valid でも verification-gate はスキップしない。
-     - `stale` (exit 10): 叙述は参考扱い。現在の diff から状態を再構成するよう促す。
-     - `superseded` (exit 11): HEAD が前進済み。checkpoint の**削除を提案**する（ユーザー確認つき・
-       **自動削除しない**）。出力に `dirty_overlap:` 行があれば「現 dirty set と重なりあり」と併記する
-       （行が無ければ重なりなしの意味 — 自分で再計算しなくてよい）。
-     - `degraded` (exit 12): dirty set と HEAD 以外は信用しない旨を提示（v1 では通常 emit されない）。
-     - `conflict` (exit 13, parse / semantic): **警告して無視し、通常 resume を続行する**
-       （壊れた補助ファイルが正常な resume をブロックしてはならない — 呼び出し側の非対称）。
-   - **エッジ分岐**:
-     - **active session なし** / status.md に対応する Current Session がない場合でも、cycle_id が判れば
-       checkpoint パスは計算できる。ファイルがあれば上記どおり classify する。
-     - **orphan checkpoint**（status.md に対応 cycle_id がないが checkpoint ファイルは在る）: 警告した上で
-       `stale` 相当（叙述は参考）として提示する。
-   - checkpoint は resume では**削除しない**（read-only）。削除は superseded 時の提案のみ。
+   - If `.agents/artifacts/plans/checkpoints/{cycle_id}.md` **exists**, run:
+     `python3 {checkpoint.py path} classify --repo {project root} --file .agents/artifacts/plans/checkpoints/{cycle_id}.md`
+     and branch on the output verdict and exit code. If it does not exist, skip and continue normal resume.
+     `{checkpoint.py path}` is relative to the skill distribution location (in this repo: `skills/shared/scripts/checkpoint.py`;
+     use an absolute path if outside the target project). Always specify `--repo` explicitly (`--repo .` if cwd is the project root).
+     See the contract's "CLI invocation rules" for details.
+   - **Branching**:
+     - `valid` (exit 0): Present the checkpoint's `decision` / `next` as the starting point for restoration. Label
+       `evidence` as **historical (past observation)** and present `verify_on_restore` as **display-only**
+       (do not auto-execute). The verification-gate is never skipped, even when valid.
+     - `stale` (exit 10): Treat narrative as reference only. Prompt to reconstruct state from the current diff.
+     - `superseded` (exit 11): HEAD has advanced. **Propose deletion** of the checkpoint (with user confirmation —
+       **never auto-delete**). If the output contains a `dirty_overlap:` line, note "overlap with current dirty set"
+       (absence of the line means no overlap — do not recompute).
+     - `degraded` (exit 12): Present that nothing beyond dirty set and HEAD should be trusted (not normally emitted in v1).
+     - `conflict` (exit 13, parse / semantic): **Warn and ignore, then continue normal resume**
+       (a broken auxiliary file must never block a normal resume — caller-side asymmetry).
+   - **Edge cases**:
+     - **No active session** / no matching Current Session in status.md: if the cycle_id is known,
+       the checkpoint path can still be computed. Classify if the file exists.
+     - **Orphan checkpoint** (checkpoint file exists but no matching cycle_id in status.md): warn and
+       treat as `stale` equivalent (narrative is reference only).
+   - Checkpoints are **never deleted** during resume (read-only). Deletion is only proposed for `superseded`.
 
 3. **Confirm readiness**
    ```
@@ -233,26 +233,27 @@ Use when user wants to update implementation progress:
 
 4. **Exit condition — write an execution-state checkpoint if leaving work dirty**
 
-   Status Update は checkpoint 書き出しの**副トリガー**である（主トリガーは handoff save）。
-   共有契約 [../shared/references/checkpoint-pattern.md](../shared/references/checkpoint-pattern.md)
-   に従い、更新後に以下を判定する:
+   Status Update is a **secondary trigger** for checkpoint writing (the primary trigger is handoff save).
+   Follow the shared contract [../shared/references/checkpoint-pattern.md](../shared/references/checkpoint-pattern.md)
+   and evaluate the following after the update:
 
-   - `git status --porcelain=v1` が**非空のまま**セッションを終える場合（＝ clean に commit して終わらない）、
-     checkpoint 骨格を生成する:
-     `python3 {checkpoint.py のパス} skeleton --repo {プロジェクトルート} --cycle-id {cycle_id} --owner manual-session --written-at $(date -Iseconds) --output`
-     （パスと `--repo` の書き方は契約「CLI 呼び出し規約」— 本リポジトリでは
-     `skills/shared/scripts/checkpoint.py` + `--repo .`）
-   - **checkpoint 生成はセッション最後の書き込みにする**: status.md 等の tracked ファイル編集を
-     全て確定させた**後**に skeleton を実行する。生成後にファイルを編集すると fingerprint が
-     即 stale になる（checkpoints/ 配下だけが除外対象）。
-   - 骨格生成後、叙述 2 文（`## decision` = plan からの逸脱判断 1 文 / `## next` = 次の一手 1 個）だけを
-     LLM が埋める。`## evidence` は観測コマンド + タイムスタンプ必須（例: `Observed 01:25: <cmd> exited 0`）。
-   - 機械フィールド（`dirty_files` / `dirty_fingerprint` / `base_head`）はスクリプトが git から生成する。
-     手で書かない。`dirty_files` は `secret_detect.mask_secrets` 通過済み。
-   - clean に commit して終わる場合は checkpoint を**書かない**（成功時は書かない）。既存 checkpoint が
-     あれば HEAD 前進で自然失効する（削除しない）。
-   - **v1 の限界**: 明示ワークフローを通らず終わるセッション（突然の中断・/clear）では書かれない
-     （契約の v2 スコープ参照）。
+   - If `git status --porcelain=v1` is **non-empty** when ending the session (i.e., not finishing with a clean commit),
+     generate a checkpoint skeleton:
+     `python3 {checkpoint.py path} skeleton --repo {project root} --cycle-id {cycle_id} --owner manual-session --written-at $(date -Iseconds) --output`
+     (see the contract's "CLI invocation rules" for path and `--repo` conventions — in this repo:
+     `skills/shared/scripts/checkpoint.py` + `--repo .`)
+   - **Checkpoint generation must be the last write of the session**: finalize all tracked file edits
+     (status.md, etc.) **before** running skeleton. Editing files after generation immediately
+     stales the fingerprint (only files under checkpoints/ are excluded).
+   - After skeleton generation, the LLM fills in only 2 narrative sentences (`## decision` = 1 sentence on
+     deviation from plan / `## next` = 1 next action). `## evidence` requires observed commands + timestamps
+     (e.g., `Observed 01:25: <cmd> exited 0`).
+   - Machine fields (`dirty_files` / `dirty_fingerprint` / `base_head`) are generated by the script from git.
+     Never write them manually. `dirty_files` has passed through `secret_detect.mask_secrets`.
+   - If the session ends with a clean commit, **do not write** a checkpoint (no checkpoint on success). Existing
+     checkpoints naturally expire when HEAD advances (do not delete them).
+   - **v1 limitation**: checkpoints are not written for sessions that end without going through an explicit
+     workflow (sudden interruption / /clear). See the contract's v2 scope.
 
 5. **Confirm update**
    ```

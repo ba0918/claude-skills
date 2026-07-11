@@ -12,7 +12,7 @@ The file is in **legacy format** if ALL of the following are true:
 
 1. A `## 📜 Session History` or `## Session History` section exists
 2. That section does NOT contain a link to `[session-history.md]`
-3. That section contains table data rows (`|` で始まる行で、ヘッダー行 `| Cycle ID |` や区切り行 `|---` を除く行)
+3. That section contains table data rows (lines starting with `|`, excluding header rows like `| Cycle ID |` and separator rows like `|---`)
 
 If the section already contains a link to `session-history.md`, the file is already in the new format — skip migration.
 
@@ -215,15 +215,15 @@ Ready for next cycle!
 
 ## Execution-State Checkpoint (derivative, existence-only)
 
-長生きセッションで dirty のまま終わる場合の実行状態復元は
-[../../shared/references/checkpoint-pattern.md](../../shared/references/checkpoint-pattern.md)
-が所有する。status.md に checkpoint の状態フィールドを**持たせない**:
+Execution-state restoration for long-lived sessions ending dirty is owned by
+[../../shared/references/checkpoint-pattern.md](../../shared/references/checkpoint-pattern.md).
+**Do not add** checkpoint state fields to status.md:
 
-- checkpoint リンクは status.md 上の**維持義務のある状態フィールドにしない**。存在時に触れるとしても
-  「存在するときだけの派生的 1 行」に留める（`.agents/artifacts/plans/checkpoints/{cycle_id}.md` が在れば言及する程度）。
-- resume 側は `cycle_id` から checkpoint パスを機械的に計算できる（status.md に保存する必要がない）。
-- checkpoint の書き出しは Status Update Workflow の出口条件（SKILL.md § Status Update Workflow の
-  「Exit condition」）で行い、`git status --porcelain=v1` 非空のまま終わるときだけ生成する。
+- Checkpoint links must **not become mandatory state fields** in status.md. If mentioned at all, keep it to
+  a single derived line that only appears when the file exists (e.g., noting `.agents/artifacts/plans/checkpoints/{cycle_id}.md` if present).
+- The resume side can mechanically compute the checkpoint path from `cycle_id` (no need to store it in status.md).
+- Checkpoint writing is handled by the exit condition of the Status Update Workflow (SKILL.md § Status Update Workflow,
+  "Exit condition"), generating only when `git status --porcelain=v1` is non-empty at session end.
 
 ## Example: Full Update Flow
 
