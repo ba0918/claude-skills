@@ -97,7 +97,25 @@ plan（計画）→ cycle（自動実装）→ commit（コミット）が基本
 |--------|------|
 | `codebase-review` | コードベース全体の並行レビュー（100 点満点） |
 | `attack-review` | 攻撃者視点のセキュリティレビュー |
+| `review-testing` | テスト品質の三層 focused レビュー（総合点なし） |
+| `review-deps` | 依存ヘルスの focused レビュー（scanner 統合 + 相関分析） |
 | `generate-review-rules` | プロジェクト固有のレビュールール自動生成 |
+
+#### Composite と Focused の使い分け
+
+レビュー系は 2 群に分かれる。**Composite** は総合スコアで全体像を俯瞰し、**Focused** は
+オンデマンドで特定観点を深掘りして findings + coverage ledger を返す（総合点は出さない）。
+
+| 群 | スキル | 対象 | 観点 | 成果物 | コスト |
+|----|--------|------|------|--------|--------|
+| Composite | `codebase-review` | src/ 全体（`*.test.*`・lockfile は除外） | セキュリティ/性能/品質/衛生の 8 小観点 | 100 点満点スコア + レポート | 高（4+1 エージェント並行） |
+| Composite | `attack-review` | 攻撃対象コード | 6 攻撃領域（server/client モード） | リスクマトリクス | 高（6+1 エージェント並行） |
+| Focused | `review-testing` | テストコード + 対応 production | 欠陥検出力・契約検証・安全網の安定性 | findings + coverage ledger | 低〜中（必要時のみ） |
+| Focused | `review-deps` | manifest / lockfile / 依存 diff | 既知脆弱性（scanner 正本）+ サプライチェーン相関 | findings + coverage ledger | 低〜中（必要時のみ） |
+
+Focused レビューは [coverage ledger](skills/shared/references/coverage-ledger.md) を必ず出力し、
+「問題なし（reviewed）」と「見ていない（skipped / unsupported / inconclusive）」を構造的に区別する。
+Composite が構造的に除外する領域（テストコード・lockfile）を Focused が第一級入力として埋める関係にある。
 
 ### Issue 管理と自走ループ
 
