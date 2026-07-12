@@ -1,6 +1,6 @@
 ---
 name: review-deps
-description: 依存ライブラリの健全性をレビューする focused スキル。既知脆弱性の照合は ecosystem scanner（npm audit / cargo audit / osv-scanner 等）を正本とし、エージェントは相関分析（dev/prod・到達可能性による優先順位付け、install script の意味づけ、lockfile diff の異常検知、typosquat・メンテナ交代等のサプライチェーン信号）を担う。manifest / lockfile / 依存 diff を第一級入力として扱う（codebase-review が除外する lockfile が主対象）。scanner 不在・ネットワーク不可は unsupported として台帳化する read-only レビュー。「依存レビュー」「依存関係の脆弱性を見て」「lockfile をチェック」「サプライチェーンリスク」「npm audit の結果を整理して」「typosquat 検出」「依存の健全性」「review-deps」で起動。テスト品質やコード品質ではなく依存の健全性が対象。
+description: manifest・lockfile・依存差分を第一級入力として、既知脆弱性とサプライチェーン信号を評価する focused read-only レビュー。「依存レビュー」「依存関係の脆弱性を見て」「lockfile をチェック」「サプライチェーンリスク」「npm audit の結果を整理して」「typosquat 検出」「依存の健全性」「review-deps」で起動。テスト品質やコード品質ではなく依存の健全性が対象。
 ---
 
 # Review: Dependency Health

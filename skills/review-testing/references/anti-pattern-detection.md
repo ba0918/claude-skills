@@ -9,7 +9,8 @@ CONFIRMED は UNCERTAIN に降格する**。判定できなかった領域は
 [coverage-ledger.md](../../shared/references/coverage-ledger.md) の `inconclusive` に載せる。
 
 各述語には positive（検出すべき）/ negative（誤検出してはならない）の
-[fixtures](fixtures/) が対応する。レビュー時の回帰確認に使う。
+[fixtures](fixtures/) が対応する。**検出述語または fixture 自体を変更したときの回帰確認**に使う。
+通常のプロジェクトレビューでは対象コードへ述語を直接適用し、同梱 fixture の再評価は必須ではない。
 
 ## 共通手順
 
@@ -17,7 +18,7 @@ CONFIRMED は UNCERTAIN に降格する**。判定できなかった領域は
 1. 候補抽出: 述語ごとの grep / AST パターンでテストファイルから候補を集める
 2. 文脈検証: データフロー・call site 全列挙で「本当に該当するか」を確認する
 3. 三値判定: 根拠付きで CONFIRMED / 字面一致だが非該当なら FALSE_POSITIVE / 根拠不足なら UNCERTAIN
-4. 回帰確認: fixtures の positive を検出し negative を検出しないことを述語が満たすか照合する
+4. 保守ゲート（述語 / fixture 変更時のみ）: fixtures の positive を検出し negative を検出しないことを照合する
 ```
 
 ## AP1: モックの振る舞いをテストしている
@@ -41,6 +42,7 @@ CONFIRMED は UNCERTAIN に降格する**。判定できなかった領域は
 - **三値**: call site 全列挙で production 呼び出しゼロを示せた → CONFIRMED /
   production からも使われている → FALSE_POSITIVE /
   ライブラリの公開 API で外部呼び出しが観測範囲外 → UNCERTAIN（公開 API は罰しない）。
+  **export された class / method は、対象内 call site がテストだけでも外部利用を否定できないため UNCERTAIN**。
 - **fixtures**: [positive](fixtures/ap2-test-only-method.positive.ts) / [negative](fixtures/ap2-test-only-method.negative.ts)
 
 ## AP3: 理解していない依存をモックしている

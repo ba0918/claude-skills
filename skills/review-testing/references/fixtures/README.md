@@ -1,8 +1,9 @@
 # review-testing fixtures
 
-各アンチパターンの positive（検出すべき）/ negative（誤検出してはならない）の対。
+各アンチパターンの positive（候補抽出すべき）/ negative（誤検出してはならない）の対。
 検出述語は [../anti-pattern-detection.md](../anti-pattern-detection.md) が所有し、各述語からここへリンクしている。
-レビュー実行時の回帰確認に使う（positive を検出し negative を検出しなければ述語は健全）。
+レビュー実行時の回帰確認に使う。positive の最終 verdict は各 fixture の期待値に従う。
+AP1〜AP4 は CONFIRMED、履歴だけを持つ AP5 は候補抽出後 UNCERTAIN が正解である。
 
 | Anti-Pattern | positive | negative |
 |--------------|----------|----------|

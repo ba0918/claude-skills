@@ -5,6 +5,7 @@
     "lodahs": "^4.17.0"
   },
   "_registry_metadata": {
-    "lodahs": { "author": "unknown-2026", "first_published": "2026-06-30", "weekly_downloads": 12 }
+    "lodahs": { "author": "unknown-2026", "first_published": "2026-06-30", "weekly_downloads": 12 },
+    "lodash": { "author": "John-David Dalton", "first_published": "2012-04-23", "weekly_downloads": 70000000 }
   }
 }

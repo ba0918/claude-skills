@@ -10,6 +10,7 @@ finding の重大度・三値判定は
     Scope: {ディレクトリ / glob / 差分}
     Date: {YYYY-MM-DD HH:MM}
     Contract: read-only / 総合点なし / findings + coverage ledger
+    Target integrity: {実行前後の機械確認結果、または動的評価未実行}
 
 ## Findings
 
@@ -34,10 +35,13 @@ finding の重大度・三値判定は
 | 対象 | 判定 | 理由 / 昇格条件 |
 |------|------|----------------|
 | src/**/*.test.ts (N files) | reviewed | 全ファイルに 5 述語 + 三層を適用 |
+| テストファイル探索範囲（0 files の場合） | reviewed | glob と探索結果を確認。テスト不在を層2の契約対応と照合 |
 | e2e/ | skipped | 本レビューは単体テスト品質に限定（利用者指定） |
 | mutation sensitivity | unsupported | mutation runner 未導入。導入すれば層1を reviewed に昇格 |
 | 非同期順序依存 | inconclusive | flaky 再現に実行トレースが必要。ログがあれば結論可 |
 | TDD 順守 | inconclusive | git 履歴のみ。RED/GREEN ログがあれば CONFIRMED 可 |
+
+Fixture regression（検出述語 / fixture を変更したレビューでのみ記載）: {AP1〜AP4 positive=CONFIRMED / negative=FALSE_POSITIVE、AP5 positive=UNCERTAIN / negative=FALSE_POSITIVE}
 
 ## Notes
 

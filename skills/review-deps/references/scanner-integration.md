@@ -22,7 +22,7 @@
 ```
 1. 存在検出: scanner バイナリと advisory DB / ネットワークが利用可能か確認する
      └ 無い → その照合を coverage ledger の `unsupported` に載せる（何があれば昇格するか併記）。エージェントは代替判定しない
-2. 実行: install script を無効化した隔離環境で scanner を実行する（下記「隔離実行」）
+2. 実行: scanner の動作種別を判定し、下記「隔離実行」の条件を満たす環境で実行する
 3. 構造化出力の解釈: JSON を読み、advisory ID・深刻度・影響バージョン・修正版を抽出する
 4. 相関へ受け渡し: 抽出した事実に、依存経路・dev/prod・到達可能性を重ねて優先順位付けする
      （優先順位付けはエージェント、脆弱性の存在判定は scanner が正本）
@@ -35,11 +35,18 @@
 
 ## 隔離実行（install script を走らせない）
 
-依存の再解決・スキャンは postinstall 等の install script を実行し得る。これはレビュー中の
-任意コード実行に等しいため、次を前提とする。
+scanner をまず次の 2 種に分類する。コマンド名だけで決めず、help / 公式仕様または隔離観測で確認する。
 
-- **script 無効化**: `--ignore-scripts` 相当のオプションで lifecycle script を止めて実行する。
-- **隔離**: ネットワーク・書き込みを制限したサンドボックスで実行する。
+- **audit-only**: 既存 manifest / lockfile を読み、advisory DB と照合するだけで依存解決・hook 実行をしない。
+- **再解決型**: パッケージ取得・依存解決・build / lifecycle hook を起動し得る。
+
+共通して次を前提とする。
+
+- **script 無効化**: 再解決型は `--ignore-scripts` 相当で lifecycle script を止める。audit-only は、
+  hook を実行しないことを仕様または隔離観測で確認できれば当該オプションを要求しない。
+- **隔離**: 書き込みを対象外へ閉じ込める。ネットワークは advisory DB / registry metadata の読取先だけを
+  許可し、package の install script や取得物を実行しない。必要な接続先を限定できなければオフラインの
+  cache / DB を使い、その鮮度を注記する。どちらも成立しなければ `unsupported`。
 - **出力先を対象ツリー外にする**: scanner の stdout/stderr・JSON 出力・ログは、レビュー対象ディレクトリの
   **外**（作業用スクラッチ領域）へ書く。対象ツリー内へのリダイレクト（`> audit.json` 等を対象ディレクトリで
   実行する、`--output` を対象配下に向ける）は read-only 契約違反になる。カレントディレクトリを対象ツリーに
