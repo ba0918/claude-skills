@@ -2,47 +2,6 @@
 description: "実装計画を review → fix ループで改善する"
 ---
 
-Artifact paths follow the [Agent Artifact Store contract](../skills/shared/references/artifact-store.md).
+スキル `claude-skills:plan-refine` を実行する。引数: `$ARGUMENTS`
 
-実装計画を `claude-skills:plan-reviewer` スキルでレビューし、検出された問題に対して
-計画ファイルを直接編集して改善する。これを WARN 以上の警告がなくなるか、
-最大イテレーション数に達するまでループする。
-
-## パラメータ
-
-- `$ARGUMENTS` の最初の数値: 最大イテレーション数（デフォルト: 3）
-- `$ARGUMENTS` のファイルパス: 対象計画ファイル（省略時は `.agents/artifacts/plans/` 内の最新を自動選択）
-
-## フロー
-
-### Iteration 1（フルレビュー）
-
-1. Skillツールで `claude-skills:plan-reviewer` を起動（7観点フルレビュー、UI/UX は条件付き）
-   - 対象ファイルは引数で指定。省略時は `.agents/artifacts/plans/` 内の最新を自動選択
-   - 対象ファイルのパスを記憶しておく（以降のイテレーションで再利用）
-2. 結果が全て PASS → 終了（完了報告へ）
-3. WARN/BLOCK がある場合:
-   a. 各指摘を検討し、計画ファイルを直接編集して改善
-   b. 改善した箇所の diff を表示
-   c. 次のイテレーションへ
-
-### Iteration 2+（差分レビュー）
-
-1. 前回 WARN/BLOCK だった観点のみ `claude-skills:plan-reviewer` スキルで再レビュー
-   - 同じ対象ファイルを引数で明示的に渡す（自動選択に頼らない）
-   - PASS だった観点はスキップ（コンテキスト消費を抑える）
-2. 結果が全て PASS → 終了
-3. まだ WARN/BLOCK がある場合 → 改善して次へ
-
-### 終了条件
-
-- 全観点 PASS
-- 最大イテレーション数に到達 → 残りの WARN/BLOCK を一覧表示して終了
-
-### 完了報告
-
-ユーザーに以下を提示:
-- 実行したイテレーション数
-- 各イテレーションで改善した項目のサマリー
-- 最終的な各観点のスコアと判定
-- 残存する WARN/BLOCK があればその一覧
+引数の意味（最大イテレーション数・対象計画ファイル）はスキル側の定義に従う。

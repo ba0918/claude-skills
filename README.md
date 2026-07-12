@@ -78,6 +78,8 @@ plan（計画）→ cycle（自動実装）→ commit（コミット）が基本
 |--------|------|
 | `plan` | 計画ファイルの作成とステータス管理 |
 | `plan-reviewer` | 7 観点での計画レビュー |
+| `plan-refine` | 計画の review → fix ループ改善（cycle の Phase 1） |
+| `plan-implement` | 計画の TDD 自動実装ループ（cycle の Phase 2） |
 | `cycle` | レビューから実装までの全自動サイクル |
 | `iterate` | cycle 後の軽量な追加修正 |
 | `commit` | 変更の論理単位での自動コミット |
