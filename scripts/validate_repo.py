@@ -127,6 +127,32 @@ CONTRACT_VOCAB_EXEMPT = {
 }
 
 
+def check_description_quality(root, trigger_exempt=None):
+    """チェック8: SKILL.md description のトリガー語含有と長さを検証する。"""
+    if trigger_exempt is None:
+        trigger_exempt = DESCRIPTION_TRIGGER_EXEMPT
+    errors = []
+    for skill in _skill_dirs(root, "skills"):
+        skill_md = os.path.join(root, "skills", skill, "SKILL.md")
+        if not os.path.isfile(skill_md):
+            continue
+        desc = extract_description(_read(skill_md))
+        if not desc:
+            continue
+        rel = f"skills/{skill}"
+        if len(desc) > DESCRIPTION_MAX_LEN:
+            errors.append(
+                f"[description] {DESCRIPTION_MAX_LEN} 字を超過（{len(desc)} 字）: "
+                f"{rel}/SKILL.md"
+            )
+        if rel not in trigger_exempt and not DESCRIPTION_TRIGGER.search(desc):
+            errors.append(
+                f"[description] トリガー語がない（「〜で起動」/ \"Use when\" 等）: "
+                f"{rel}/SKILL.md"
+            )
+    return errors
+
+
 def _conformance_units(root):
     """チェック9の unit（識別子 → md ファイル一覧）を返す。"""
     units = {}
@@ -379,24 +405,7 @@ def run_checks(root):
                 )
 
     # 8. description の品質（トリガー語 / 長さ上限）
-    for skill in _skill_dirs(root, "skills"):
-        skill_md = os.path.join(root, "skills", skill, "SKILL.md")
-        if not os.path.isfile(skill_md):
-            continue
-        desc = extract_description(_read(skill_md))
-        if not desc:
-            continue
-        rel = f"skills/{skill}"
-        if len(desc) > DESCRIPTION_MAX_LEN:
-            errors.append(
-                f"[description] {DESCRIPTION_MAX_LEN} 字を超過（{len(desc)} 字）: "
-                f"{rel}/SKILL.md"
-            )
-        if rel not in DESCRIPTION_TRIGGER_EXEMPT and not DESCRIPTION_TRIGGER.search(desc):
-            errors.append(
-                f"[description] トリガー語がない（「〜で起動」/ \"Use when\" 等）: "
-                f"{rel}/SKILL.md"
-            )
+    errors += check_description_quality(root)
 
     # 9. 共有契約語彙の適合
     errors += check_contract_conformance(root)

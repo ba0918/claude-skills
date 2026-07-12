@@ -15,6 +15,7 @@ from validate_repo import (
     parse_frontmatter_fields,
     find_broken_symlinks,
     check_contract_conformance,
+    check_description_quality,
     collect_link_sources,
     check_relative_links,
     mentions_name,
@@ -100,6 +101,27 @@ class TestCheckDossiers(unittest.TestCase):
 
 
 class TestCheckArtifactStore(unittest.TestCase):
+    def setUp(self):
+        self._orig_env = {}
+        git_env = {
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_CONFIG_GLOBAL": "/dev/null",
+            "GIT_AUTHOR_NAME": "test",
+            "GIT_AUTHOR_EMAIL": "test@test",
+            "GIT_COMMITTER_NAME": "test",
+            "GIT_COMMITTER_EMAIL": "test@test",
+        }
+        for key, val in git_env.items():
+            self._orig_env[key] = os.environ.get(key)
+            os.environ[key] = val
+
+    def tearDown(self):
+        for key, val in self._orig_env.items():
+            if val is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = val
+
     def _repo(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
@@ -438,6 +460,71 @@ class TestCoverageLedgerContractVocab(unittest.TestCase):
                         "reviewed と skipped のみ言及する（2値なので非対象）。")
             self.assertEqual(
                 check_contract_conformance(root, vocab=self.VOCAB, exempt={}), [])
+
+
+class TestCheckDescriptionQuality(unittest.TestCase):
+    """check 8: SKILL.md description のトリガー語・長さ・免除を検証する。"""
+
+    def _write(self, root, rel, content):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def _skill(self, root, name, description):
+        self._write(root, f"skills/{name}/SKILL.md",
+                    f"---\nname: {name}\ndescription: {description}\n---\n\n# {name}\n")
+
+    def test_valid_trigger_japanese_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "my-skill", "コードを分析して問題を検出する。「my-skill」で起動。")
+            self.assertEqual(check_description_quality(root), [])
+
+    def test_valid_trigger_english_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "my-skill", "Analyze code. Use when you need linting.")
+            self.assertEqual(check_description_quality(root), [])
+
+    def test_valid_trigger_use_suffix_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "my-skill", "コード分析スキル。コード検証時に使用する。「my-skill」で使用。")
+            self.assertEqual(check_description_quality(root), [])
+
+    def test_missing_trigger_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "no-trigger", "コードを分析して問題を検出する。")
+            errors = check_description_quality(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("[description]", errors[0])
+            self.assertIn("トリガー語", errors[0])
+            self.assertIn("no-trigger", errors[0])
+
+    def test_exceeds_max_length_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            long_desc = "あ" * 1025 + "。「long」で起動。"
+            self._skill(root, "long", long_desc)
+            errors = check_description_quality(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("[description]", errors[0])
+            self.assertIn("超過", errors[0])
+
+    def test_exempt_skill_is_not_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "exempt-one", "トリガー語なしの説明。")
+            errors = check_description_quality(
+                root, trigger_exempt={"skills/exempt-one": "テスト用免除"})
+            self.assertEqual(errors, [])
+
+    def test_missing_description_is_not_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/no-desc/SKILL.md",
+                        "---\nname: no-desc\n---\n\n# no-desc\n")
+            self.assertEqual(check_description_quality(root), [])
+
+    def test_shared_dir_is_excluded(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "shared", "トリガー語なしだが shared は対象外。")
+            self.assertEqual(check_description_quality(root), [])
 
 
 if __name__ == "__main__":
