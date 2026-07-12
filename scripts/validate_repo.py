@@ -20,6 +20,7 @@
   9. 共有契約語彙の適合（契約の識別語彙を使う skill / command は契約を md リンクする）
   10. .agents/artifacts/loop/dossiers/*.json の dossier lint（error 級のみ CI fail）
   11. .agents/artifacts.yml と local store の Git 安全性
+  12. plugin.json の version に対応するエントリが CHANGELOG.md に存在する
 
 チェック 10・11 と store 実在性:
   チェック 10（dossier lint）は local store が ignore されている環境では対象ファイルが
@@ -331,6 +332,35 @@ def check_artifact_store(root):
         return [f"[artifact-store] {exc}"]
 
 
+def check_changelog_sync(root):
+    """チェック12: plugin.json の version に対応する `## <version>` 見出しが CHANGELOG.md にあるか。
+
+    マーケットプレイスがスキル変更を認識するのは version bump 時のみで、
+    CHANGELOG はその bump の唯一の変更記録。bump だけして起票を忘れると
+    履歴が永久に欠落する（実例: 1.45.1〜1.46.1）ため機械検証する。
+    """
+    plugin_path = os.path.join(root, ".claude-plugin", "plugin.json")
+    if not os.path.isfile(plugin_path):
+        return []
+    version = json.loads(_read(plugin_path)).get("version")
+    if not version:
+        return []
+    changelog_path = os.path.join(root, "CHANGELOG.md")
+    if not os.path.isfile(changelog_path):
+        return [
+            f"[changelog] CHANGELOG.md がない"
+            f"（plugin version {version} のエントリを起票できない）"
+        ]
+    # 見出し直後は空白か行末のみ許可（1.46.1 が 1.46.10 に誤マッチしないように）
+    heading = re.compile(rf"^##\s+{re.escape(version)}(?:\s.*)?$", re.M)
+    if not heading.search(_read(changelog_path)):
+        return [
+            f"[changelog] plugin.json の version {version} に対応する "
+            f"「## {version}」エントリが CHANGELOG.md にない"
+        ]
+    return []
+
+
 def check_relative_links(root, sources=None, exempt=None):
     """各ソース内の相対 .md リンクの実在を検証し、違反メッセージを返す。"""
     if sources is None:
@@ -415,6 +445,9 @@ def run_checks(root):
 
     # 11. Agent Artifact Store policy / Git safety
     errors += check_artifact_store(root)
+
+    # 12. plugin.json version ⇔ CHANGELOG.md エントリ同期
+    errors += check_changelog_sync(root)
 
     return errors
 

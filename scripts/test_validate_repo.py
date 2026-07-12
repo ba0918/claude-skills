@@ -15,6 +15,7 @@ from validate_repo import (
     parse_frontmatter_fields,
     find_broken_symlinks,
     check_contract_conformance,
+    check_changelog_sync,
     check_description_quality,
     collect_link_sources,
     check_relative_links,
@@ -460,6 +461,72 @@ class TestCoverageLedgerContractVocab(unittest.TestCase):
                         "reviewed と skipped のみ言及する（2値なので非対象）。")
             self.assertEqual(
                 check_contract_conformance(root, vocab=self.VOCAB, exempt={}), [])
+
+
+class TestCheckChangelogSync(unittest.TestCase):
+    """チェック12: plugin.json の version に対応するエントリが CHANGELOG.md にあること。
+
+    version bump だけして CHANGELOG への起票を忘れるドリフト
+    （実例: 1.45.1〜1.46.1 の 4 エントリ欠落）を機械的に止める。
+    """
+
+    def _write(self, root, rel, content):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path) or root, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def _plugin(self, root, version="1.47.0"):
+        self._write(root, ".claude-plugin/plugin.json",
+                    json.dumps({"name": "x", "version": version}))
+
+    def test_matching_entry_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._plugin(root, "1.47.0")
+            self._write(root, "CHANGELOG.md", "# Changelog\n\n## 1.47.0\n\n変更内容。\n")
+            self.assertEqual(check_changelog_sync(root), [])
+
+    def test_missing_entry_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._plugin(root, "1.47.0")
+            self._write(root, "CHANGELOG.md", "# Changelog\n\n## 1.46.0\n\n古い内容。\n")
+            errors = check_changelog_sync(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("[changelog]", errors[0])
+            self.assertIn("1.47.0", errors[0])
+
+    def test_longer_version_heading_does_not_match_shorter(self):
+        # 「## 1.46.10」は version 1.46.1 のエントリではない
+        with tempfile.TemporaryDirectory() as root:
+            self._plugin(root, "1.46.1")
+            self._write(root, "CHANGELOG.md", "## 1.46.10\n")
+            self.assertEqual(len(check_changelog_sync(root)), 1)
+
+    def test_heading_with_trailing_note_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._plugin(root, "1.47.0")
+            self._write(root, "CHANGELOG.md", "## 1.47.0 (2026-07-12)\n")
+            self.assertEqual(check_changelog_sync(root), [])
+
+    def test_version_inside_body_text_does_not_count(self):
+        # 本文中の言及では見出しにならない（エントリ起票を要求する）
+        with tempfile.TemporaryDirectory() as root:
+            self._plugin(root, "1.47.0")
+            self._write(root, "CHANGELOG.md",
+                        "# Changelog\n\n## 1.46.0\n\n1.47.0 で対応予定。\n")
+            self.assertEqual(len(check_changelog_sync(root)), 1)
+
+    def test_missing_changelog_file_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._plugin(root, "1.47.0")
+            errors = check_changelog_sync(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("[changelog]", errors[0])
+
+    def test_repo_without_plugin_manifest_is_noop(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "CHANGELOG.md", "# Changelog\n")
+            self.assertEqual(check_changelog_sync(root), [])
 
 
 class TestCheckDescriptionQuality(unittest.TestCase):

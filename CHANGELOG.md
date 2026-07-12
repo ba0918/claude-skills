@@ -4,6 +4,41 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.47.0
+
+cycle / plan-refine / plan-implement のスキル化と、CHANGELOG 起票漏れの機械検証。
+
+- `skills/cycle/` `skills/plan-refine/` `skills/plan-implement/` を新設し、commands に直書きされていたロジックをスキル側へ正本化（AGENTS.md「command は薄い入口」原則への追従。3 つの commands は呼び出しのみに縮小、README のスキル一覧に 2 スキルを追加）
+- `validate_repo.py` にチェック12を追加: plugin.json の version に対応する `## <version>` エントリが CHANGELOG.md に存在することを検証（bump だけして起票を忘れるドリフトの再発防止。ユニットテスト付き）
+- 欠落していた 1.45.1〜1.46.1 の CHANGELOG エントリを git 履歴から遡って補完
+- description 品質検証を関数抽出してテストを追加し、git 依存テストの環境耐性を強化
+
+## 1.46.1
+
+review 系スキルの指示品質改善（empirical-prompt-tuning の適用結果）。
+
+- review-testing の「三層評価」見出しと 4 項目リストの矛盾を解消
+- review-deps で見つかった 3 つの指示の穴を修正
+- review スキル群の指示契約を強化
+
+## 1.46.0
+
+テスト品質と依存ヘルスの focused レビュースキルを追加。
+
+- `review-testing` を新設（テストスイート自体の欠陥検出力・契約検証・安定性を三層評価）
+- `review-deps` を新設（manifest / lockfile / 依存差分の既知脆弱性・サプライチェーン信号を評価）
+- coverage ledger 契約（評価範囲台帳）を shared に追加し機械執行
+- codebase-review のテスト品質評価を review-testing へ委譲
+- README に Composite / Focused レビューの整理を反映
+
+## 1.45.2
+
+- plan スキルの SKILL.md と references の日英混在を英語に統一
+
+## 1.45.1
+
+- plan スキルの File Organization 図の旧パス docs/ を .agents/artifacts/ に修正
+
 ## 1.45.0
 
 handoff を Agent Artifact Store に編入（Artifact Store 移行の handoff 漏れを修正）。
