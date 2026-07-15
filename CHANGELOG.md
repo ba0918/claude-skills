@@ -4,6 +4,16 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.47.1
+
+attack-review スキルの日英混在を英語に統一。
+
+- `SKILL.md` 本文の日本語を英語化（description のトリガーフレーズは機能的に必要なため維持）
+- `references/agent-prompts.md` のプレースホルダ説明・抽出ルール・エージェント紹介文を英語化
+- `references/attack-criteria.md` の全チェック項目（WHAT/WHERE/HOW TO EXPLOIT/WHY DANGEROUS/SEVERITY）を英語化（825行の全面書き換え）
+- `references/report-template.md` のフィールド説明・表示ルールを英語化
+- `references/lang-profiles.md` のヘッダー説明文を英語化
+
 ## 1.47.0
 
 cycle / plan-refine / plan-implement のスキル化と、CHANGELOG 起票漏れの機械検証。

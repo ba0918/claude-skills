@@ -1,7 +1,7 @@
 # Language-Specific Attack Profiles
 
-attack-review エージェントが言語固有の攻撃ベクターを調査するためのプロファイル。
-`context.json` の `detected_languages` に基づき、該当セクションのみをエージェントプロンプトに注入する。
+Attack profiles for language-specific attack vectors used by attack-review agents.
+Based on `detected_languages` in `context.json`, only the relevant sections are injected into agent prompts.
 
 ---
 

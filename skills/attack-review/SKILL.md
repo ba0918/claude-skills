@@ -1,6 +1,6 @@
 ---
 name: attack-review
-description: コードベースを攻撃者視点で6つの専門エージェント（Injection/AuthN・AuthZ/Client Attack/Data・Secrets/Infra・Supply Chain/Business Logic）+ Codex セカンドオピニオンで並行レビューし、リスクマトリクスで脅威を分類する。「attack review」「ペネトレーションレビュー」「攻撃レビュー」「attack-review」「脆弱性レビュー」「セキュリティ攻撃」「pentest review」で起動。モードは `full` / `server` / `client` の 3 種（引数 `server`/`client` で明示、`full` または任意キーワードで 6 エージェント全起動、引数なしはテックスタックから自動検出）。言語固有の攻撃ベクターにも対応。
+description: Review the codebase from an attacker's perspective with 6 specialized agents (Injection/AuthN-AuthZ/Client Attack/Data-Secrets/Infra-Supply Chain/Business Logic) + Codex second opinion in parallel, classifying threats via a risk matrix. Triggers: "attack review", "ペネトレーションレビュー", "攻撃レビュー", "attack-review", "脆弱性レビュー", "セキュリティ攻撃", "pentest review". Three modes: `full` / `server` / `client` (specify `server`/`client` as argument, `full` or any keyword launches all 6 agents, no argument auto-detects from tech stack). Supports language-specific attack vectors.
 ---
 
 # Attack Review
@@ -63,7 +63,7 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
 
 1. Read CLAUDE.md (project root + under `.claude/`) to understand project-specific rules
 2. **Language detection** per the shared contract:
-   - ファイル一覧取得でマーカーファイルを検索 (Cargo.toml, package.json, go.mod, pyproject.toml, pubspec.yaml, composer.json, etc.)
+   - Search for marker files via file listing (Cargo.toml, package.json, go.mod, pyproject.toml, pubspec.yaml, composer.json, etc.)
    - Read dependency sections to detect frameworks
    - Assign roles (server / client / both) per the contract's role determination rules
 3. **Auto-detect mode resolution** (if mode was not explicitly set in Step 1):
@@ -72,7 +72,7 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
    - Only client-role languages → `client`
    - Cannot determine → `full` (safe default)
 4. Understand directory structure
-5. **日時をシェルで取得**（以下の正確なコマンドを使用 — コンテキストから推測しない）:
+5. **Get datetime via shell** (use the exact commands below — do not infer from context):
    ```bash
    date +'%Y%m%d-%H%M'   # → e.g. 20260421-1840, used for {YYYYMMDD-HHMM} in work_dir
    date +'%Y-%m-%d %H:%M' # → e.g. 2026-04-21 18:40, used for the datetime field
@@ -92,7 +92,7 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
    Path: .claude/tmp/attack-review-{YYYYMMDD-HHMM}/
    Ensure the directory exists and is writable.
    ```
-8. **context.json を作成する**。
+8. **Create context.json**.
 
    **Schema** — every field is required unless marked optional. Use the exact types/values shown:
 
@@ -179,20 +179,20 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
 
 ### Step 3: Launch Agents in Parallel
 
-決定されたモードに基づいてエージェントを選択し起動する。すべてのサブエージェント起動を**単一メッセージで**行う — 複数メッセージに分割しない。
+Select and launch agents based on the determined mode. Launch all subagents in a **single message** — do not split across multiple messages.
 
-**モデル階層**: コアエージェントと統合エージェントは高性能モデルで実行する — 攻撃発見には機械的検証ゲートがないため、見落とした脆弱性はそのまま通過する。セキュリティ分類器がリフューザルを返す可能性のあるモデルは使用しない。
+**Model hierarchy**: Run core agents and the integration agent on a high-capability model — there is no mechanical verification gate for attack discovery, so missed vulnerabilities pass through undetected. Do not use models whose safety classifiers may refuse security-related prompts.
 
-プロンプトテンプレート・攻撃基準・言語プロファイル:
+Prompt templates, attack criteria, and language profiles:
 - [references/agent-prompts.md](references/agent-prompts.md)
 - [references/attack-criteria.md](references/attack-criteria.md)
 - [references/lang-profiles.md](references/lang-profiles.md)
 
 #### Agent Selection by Mode
 
-**full mode** — 7 エージェント全起動（すべて自動実行モード・高性能モデル）:
+**full mode** — launch all 7 agents (all in autonomous mode, high-capability model):
 ```
-起動するサブエージェント:
+Subagents to launch:
 
 1. injection-hunter        — Injection Attack → {work_dir}/agent-1-injection.json
                              criteria: § Agent 1 from attack-criteria.md
@@ -218,7 +218,7 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
                              criteria: § Agent 6 from attack-criteria.md
                              lang_profile: All detected language sections
 
-7. codex-review            — Codex セカンドオピニオン → {work_dir}/agent-7-codex.json
+7. codex-review            — Codex Second Opinion → {work_dir}/agent-7-codex.json
 ```
 
 **server mode** — skip Agent 3 (Client Attack Specialist):
@@ -241,7 +241,7 @@ Each agent receives language-specific attack profiles based on the detected tech
 | 6 (Business Logic Abuser) | All detected languages |
 | 7 (Codex) | All detected languages (via context.json) |
 
-Codex セキュリティ制約・フォールバックの共通パターン: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
+Codex security constraints and fallback patterns: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
 
 ### Step 3.5: Wait for Agents & Handle Failures
 
@@ -282,7 +282,7 @@ After all agents complete, verify results:
 
 **After confirming sufficient agents have completed**, launch the integration agent.
 
-統合エージェント: 汎用サブエージェント、高性能モデル、自動実行モード
+Integration agent: general-purpose subagent, high-capability model, autonomous mode
 
 Use the integration agent prompt template from [references/agent-prompts.md](references/agent-prompts.md) § Integration Agent Prompt Template.
 

