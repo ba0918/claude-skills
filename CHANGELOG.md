@@ -4,6 +4,16 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.47.2
+
+スキルが参照する設計・テスト原則を、Claude Code 専用の常駐ルールからクロスツール対応の共有契約へ移行。
+
+- `design-principles.md` と `testing-anti-patterns.md` の正本を `skills/shared/references/` へ移動
+- plan-implement / plan-reviewer / iterate / test-driven-development / review-testing の参照を可搬な相対 Markdown link に修正
+- 対象プロジェクト固有の `AGENTS.md` / `CLAUDE.md` と共有 Design Principles を併用する契約を明確化
+- `rules/` への旧参照を検出するリポジトリ検証とユニットテストを追加
+- Claude Code の常駐ルールとして共有原則を配置する手順を README に追加
+
 ## 1.47.1
 
 attack-review スキルの日英混在を英語に統一。
