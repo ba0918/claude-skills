@@ -50,7 +50,7 @@ Remaining arguments after the mode keyword are treated as scope hints:
 
 **Target files** (two categories, both included in `target_files`):
 
-1. **Source code**: `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.py`, `*.go`, `*.rs`, `*.java`, `*.php`, `*.dart`, `*.rb`, `*.cs`, `*.html`, `*.css` and other source code.
+1. **Source code**: `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.py`, `*.go`, `*.rs`, `*.java`, `*.php`, `*.dart`, `*.rb`, `*.cs`, `*.html`, `*.css`, `*.vue`, `*.svelte`, `*.swift`, `*.kt`, `*.scala`, `*.erl`, `*.ex`. Only files matching these extensions are included — do not add unlisted extensions.
 2. **Manifest / dependency files** (required for Agent 5 Supply Chain): `package.json`, `composer.json`, `go.mod`, `Cargo.toml`, `requirements.txt`, `Pipfile`, `pubspec.yaml`, `Gemfile`, `pom.xml`, `build.gradle`, `*.csproj`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/*.yml`, `.gitlab-ci.yml`, `Jenkinsfile`.
 
 **Exclude**: `node_modules/`, `dist/`, `build/`, `.git/`, `vendor/`, `*.test.*`, `*.spec.*`, `*.d.ts`, lock files (`package-lock.json`, `yarn.lock`, `Pipfile.lock`, `go.sum`, `Cargo.lock`, `composer.lock`, `Gemfile.lock`), generated files, minified bundles (`*.min.js`, `*.min.css`).
@@ -106,7 +106,7 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
    | `detected_languages[].role` | string enum | `"server"` / `"client"` / `"both"` | Per lang-detect.md role determination. |
    | `detected_languages[].framework` | string \| null | `"Express"`, `"React"`, `"none"` | Use `"none"` (literal string) when no framework detected. Never `null`. |
    | `detected_languages[].marker_file` | string \| null | `"package.json"` / `null` | `null` is legal (e.g., legacy PHP without composer.json — detection by `.php` file globbing). |
-   | `detected_languages[].variant` | string \| null (optional) | `"legacy"`, `"modern"`, `"python2"`, `null` | **Optional field.** Include for PHP (`"legacy"` when no composer.json + `.php` files detected, else `"modern"`) or Python 2.x. Omit for languages without variant distinction. Downstream agents use this to select Legacy vs Modern language profile sections. |
+   | `detected_languages[].variant` | string \| null (optional) | `"legacy"`, `"modern"`, `"python2"`, `null` | **Optional field.** Include for PHP (`"legacy"` when `.php` files exist but no `composer.json` is found; `"modern"` otherwise) or Python 2.x. Omit for languages without variant distinction. Downstream agents use this to select Legacy vs Modern language profile sections. |
    | `is_monorepo` | boolean | `true` / `false` | `true` when marker files exist in 2+ sibling subdirectories under the repo root (per lang-detect.md). A root-level marker alone does not count. |
    | `primary_language` | string | `"go"` | Server-role language wins over client-role. If multiple server-role languages exist, use the first one detected (file-glob order). |
    | `target_files` | array<string> | `["client/package.json", "client/src/App.tsx", "package.json", "server/package.json", "server/src/app.js"]` | See **Target files** definition in Step 1. Include manifest files (`package.json`, `composer.json`, `go.mod`, `Cargo.toml`, `requirements.txt`, `Pipfile`, `pubspec.yaml`, `Gemfile`, `pom.xml`) **in addition to** the source-code extensions — they are required for Agent 5 (Supply Chain) analysis. **Sort order: alphabetical by path string** (stable across runs, deterministic). |
