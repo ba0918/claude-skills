@@ -1,6 +1,6 @@
 # Anti-Pattern Detection — 5 鉄則の執行仕様
 
-`rules/testing-anti-patterns.md` の 5 鉄則を、検出述語・証拠要件・三値判定に変換した執行仕様。
+[testing-anti-patterns.md](../../shared/references/testing-anti-patterns.md) の 5 鉄則を、検出述語・証拠要件・三値判定に変換した執行仕様。
 ルール本文の複製ではなく「テストコードから機械的に候補を拾い、文脈で確定する」ための手順を定義する。
 
 各述語の判定は [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) の

@@ -52,6 +52,7 @@ EXCLUDED_DIRS = {".git", ".claude", ".codex", "node_modules", "__pycache__"}
 # タイムスタンプ始まりのファイル名（docs 生成物の例示）
 _TIMESTAMP_EXAMPLE = re.compile(r"^\d{8,}")
 _LINK_RE = re.compile(r"\]\(([^)\s]+)\)")
+_ROOT_RULE_REF_RE = re.compile(r"(?<![.\w/])rules/([A-Za-z0-9._-]+\.md)")
 
 
 
@@ -383,6 +384,22 @@ def check_relative_links(root, sources=None, exempt=None):
     return errors
 
 
+def check_portable_resource_refs(root, sources=None):
+    """skill 文書が常駐専用の root rules/ をリソース参照しないことを検証する。"""
+    if sources is None:
+        sources = collect_link_sources(root)
+    errors = []
+    for src in sources:
+        text = _read(src)
+        for match in _ROOT_RULE_REF_RE.finditer(text):
+            legacy = f"rules/{match.group(1)}"
+            errors.append(
+                f"[resource] rules/ への非可搬参照: "
+                f"{os.path.relpath(src, root)} -> {legacy}"
+            )
+    return errors
+
+
 def run_checks(root):
     """全チェックを実行し、違反メッセージの一覧を返す（空なら合格）。"""
     errors = []
@@ -412,8 +429,10 @@ def run_checks(root):
         if not fields.get("description"):
             errors.append(f"[frontmatter] description がない: commands/{name}")
 
-    # 5. 相対 .md リンクの実在（SKILL.md / commands / references）
+    # 5. 相対 .md リンクの実在（SKILL.md / commands / references）と
+    #    rules/ から shared へ移した共有契約の非可搬参照
     errors += check_relative_links(root)
+    errors += check_portable_resource_refs(root)
 
     # 6. README.md のスキル名カバレッジ（ドリフト検出）
     readme = _read(os.path.join(root, "README.md")) if os.path.isfile(os.path.join(root, "README.md")) else ""

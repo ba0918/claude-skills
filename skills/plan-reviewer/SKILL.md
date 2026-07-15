@@ -75,7 +75,7 @@ If no signals detected and no override, skip Review 7.
 
 Each review applies perspectives in the following priority order:
 1. Project-specific rules from `.claude/review-rules.md` (highest priority)
-2. Design Principles from `CLAUDE.md`
+2. Project-specific instructions from `AGENTS.md` / `CLAUDE.md`, plus the shared [Design Principles](../shared/references/design-principles.md)
 3. Generic checklists from [review-dimensions.md](references/review-dimensions.md)
 
 #### Review 1: Feasibility

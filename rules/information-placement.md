@@ -9,8 +9,8 @@ Commit logs tell you Why
 Code comments tell you Why not
 ```
 
-**Relation to design-principles.md**: When code cannot express How, that is a design problem (insufficient decomposition, poor naming) — an early warning of degraded testability.
-**Relation to testing-anti-patterns.md**: Because tests express What, they verify actual behavior instead of asserting the existence of mocks.
+**Relation to Design Principles**: When code cannot express How, that is a design problem (insufficient decomposition, poor naming) — an early warning of degraded testability.
+**Relation to Testing Anti-Patterns**: Because tests express What, they verify actual behavior instead of asserting the existence of mocks.
 
 ## The Iron Laws
 

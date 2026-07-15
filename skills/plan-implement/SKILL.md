@@ -43,8 +43,8 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
 #### Red（テスト先行）
 1. 計画の該当ステップの要件からテストを**先に**書く
    - 期待する入出力、エッジケース、エラーパスをテストで表現する
-   - CLAUDE.md の Design Principles を遵守する
-   - `rules/testing-anti-patterns.md` のアンチパターンを避ける
+   - 対象プロジェクトの `AGENTS.md` / `CLAUDE.md` と、共有の [design-principles.md](../shared/references/design-principles.md) を遵守する
+   - [testing-anti-patterns.md](../shared/references/testing-anti-patterns.md) のアンチパターンを避ける
 2. テストを実行し、**失敗することを確認する**
    - コンパイルエラーは許容（未実装の型・関数への参照）
    - 既存テストが壊れていないことも確認する
@@ -71,7 +71,7 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
    - **厳しめの評価基準**を与える。批判的な立場を取らせる
    - **`.claude/review-rules.md` が存在する場合、必ず読み込んでレビュー基準として使用する**
    - `.claude/review-rules.md` がない場合は以下のデフォルト観点を使用:
-     - CLAUDE.md の Design Principles 違反がないか
+     - 対象プロジェクト固有の指示と [design-principles.md](../shared/references/design-principles.md) への違反がないか
      - 責務の混在がないか
      - テストが十分か（カバレッジ、エッジケース）
      - パフォーマンス・メモリ効率に問題がないか
@@ -129,4 +129,4 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
 - **テストなしの実装は禁止。テストが書けない場合は設計を見直す。**
 - **BLOCK 指摘は必ず解消してから次に進む。**
 - **最大イテレーション数を超えた場合は、残存する指摘を一覧表示してユーザーに判断を仰ぐ。**
-- 各エージェントには CLAUDE.md の内容（特に Design Principles）を必ず伝達する。
+- 各エージェントには対象プロジェクトの `AGENTS.md` / `CLAUDE.md` と [design-principles.md](../shared/references/design-principles.md) の内容を必ず伝達する。

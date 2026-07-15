@@ -3,7 +3,7 @@
 Tests verify actual behavior — never the behavior of mocks.
 Following TDD (Red → Green → Refactor) prevents most of these anti-patterns before they happen.
 
-**Relation to design-principles.md**: Since testability is the supreme principle, the quality of the tests themselves must be held to the same standard. A broken test is a broken safety net.
+**Relation to [design-principles.md](design-principles.md)**: Since testability is the supreme principle, the quality of the tests themselves must be held to the same standard. A broken test is a broken safety net.
 
 ## The Iron Laws
 

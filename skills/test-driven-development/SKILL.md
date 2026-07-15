@@ -61,7 +61,7 @@ Test command: {TEST_CMD}
    - 1 つの振る舞いに対して 1 つのテスト
    - 明確なテスト名（何をテストしているかが名前でわかる）
    - 可能な限り実コードを使う（モックは最小限）
-   - testing-anti-patterns ルール（rules/testing-anti-patterns.md）に準拠
+   - [testing-anti-patterns.md](../shared/references/testing-anti-patterns.md) に準拠
 3. **シェルでテストを実行する**:
    ```bash
    {TEST_CMD}
@@ -177,4 +177,4 @@ Result: ALL PASS ✅
 
 - [../shared/references/tdd-contract.md](../shared/references/tdd-contract.md) — TDD 共通契約
 - [../shared/references/verification-gate.md](../shared/references/verification-gate.md) — 完了前検証ゲート
-- testing-anti-patterns ルール (rules/testing-anti-patterns.md) — テストアンチパターン集
+- [testing-anti-patterns.md](../shared/references/testing-anti-patterns.md) — テストアンチパターン集

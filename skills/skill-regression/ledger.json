@@ -137,17 +137,19 @@
       "skills/handoff/SKILL.md": "208c162bd9d9d741e92cd6c3cb9f742ef21454f10f2ac91ef8cf08372b1dfba4",
       "skills/handoff/fixtures.json": "2188b97ff2b492ce20eeca17e6ac0a7b2aa296d160d13225293b6258dc55ab16",
       "skills/shared/references/artifact-store.md": "fa32b1e36a8aff979962f346631508abf3b601c05d8cf4ca327e311b51f6fd76",
-      "skills/shared/references/checkpoint-pattern.md": "b5f2b546695b32fa8284ee578836fd8d52097b7a363d86b8433b97c13f42c95a"
+      "skills/shared/references/checkpoint-pattern.md": "256a18a6102775940c4e801d776aeb916f353a58874ce35e65418e2a0b6b4276",
+      "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265"
     },
-    "result": "accepted-without-run",
+    "result": "pass",
     "surface": [
       "skills/handoff/SKILL.md",
       "skills/handoff/fixtures.json",
       "skills/shared/references/artifact-store.md",
-      "skills/shared/references/checkpoint-pattern.md"
+      "skills/shared/references/checkpoint-pattern.md",
+      "skills/shared/references/design-principles.md"
     ],
-    "surface_sha256": "bcd075ed55d9811d26756d1fb64790a007f63085429078f6e1933ec6a3344c8e",
-    "verified": "2026-07-10"
+    "surface_sha256": "26908f5afd9bb7f7c1496fc2774d354c382483f8d923a7784c464c2e54c07144",
+    "verified": "2026-07-15"
   },
   "issue": {
     "file_sha256": {
@@ -232,7 +234,8 @@
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "fa32b1e36a8aff979962f346631508abf3b601c05d8cf4ca327e311b51f6fd76",
-      "skills/shared/references/checkpoint-pattern.md": "b5f2b546695b32fa8284ee578836fd8d52097b7a363d86b8433b97c13f42c95a"
+      "skills/shared/references/checkpoint-pattern.md": "256a18a6102775940c4e801d776aeb916f353a58874ce35e65418e2a0b6b4276",
+      "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265"
     },
     "result": "pass",
     "surface": [
@@ -242,9 +245,10 @@
       "skills/plan/references/status-template.md",
       "skills/plan/references/status-update-guide.md",
       "skills/shared/references/artifact-store.md",
-      "skills/shared/references/checkpoint-pattern.md"
+      "skills/shared/references/checkpoint-pattern.md",
+      "skills/shared/references/design-principles.md"
     ],
-    "surface_sha256": "264a51b7b9921e02f6cbc934247de8c18b124cb196a45bf7e3056671499a6012",
-    "verified": "2026-07-11"
+    "surface_sha256": "27147fd94f337a824d86bc502b19df77d43caf93f8f70e31a85290c39ca67ae5",
+    "verified": "2026-07-15"
   }
 }

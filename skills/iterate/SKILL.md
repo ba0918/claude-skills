@@ -127,7 +127,7 @@ Instructions to the agent:
 - Follow `skills/shared/references/tdd-contract.md`: write tests FIRST (RED), then minimal implementation (GREEN), then refactor (REFACTOR)
   - **Exception — non-executable changes** (documentation only: README/CHANGELOG/comments/markdown with no behavior change): TDD does not apply. Instead, the implementation agent must (a) state explicitly that TDD is skipped because the change has no executable behavior, and (b) still run the existing test suite to confirm nothing breaks.
     - **Config files are NOT automatically non-executable**: `tsconfig.json` strict-mode flips, `package.json` dep/script changes, linter rule changes, CI workflow edits all affect runtime or build behavior → TDD applies (write a test proving the new behavior, or at minimum a regression test confirming build/test pipeline still passes). Only pure content edits (e.g., `description` field in `package.json`) qualify as non-executable.
-- Avoid testing anti-patterns defined in `rules/testing-anti-patterns.md`
+- Avoid testing anti-patterns defined in [testing-anti-patterns.md](../shared/references/testing-anti-patterns.md)
 - Run existing tests after implementation and confirm all pass
 
 ## Phase 4: Review + Codex セカンドオピニオン

@@ -19,6 +19,7 @@ from validate_repo import (
     check_description_quality,
     collect_link_sources,
     check_relative_links,
+    check_portable_resource_refs,
     mentions_name,
     check_dossiers,
     check_artifact_store,
@@ -332,6 +333,43 @@ class TestCheckRelativeLinks(unittest.TestCase):
             exempt = {"skills/a/references/template.md": "テンプレの例示リンク"}
             self.assertEqual(check_relative_links(root, exempt=exempt), [])
             self.assertEqual(len(check_relative_links(root, exempt={})), 1)
+
+
+class TestCheckPortableResourceRefs(unittest.TestCase):
+    def _write(self, root, rel, content="x"):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def test_legacy_rules_reference_is_reported(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                "skills/a/SKILL.md",
+                "Read `rules/testing-anti-patterns.md`.",
+            )
+            errors = check_portable_resource_refs(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("rules/testing-anti-patterns.md", errors[0])
+
+    def test_shared_reference_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                "skills/a/SKILL.md",
+                "[rules](../shared/references/testing-anti-patterns.md)",
+            )
+            self.assertEqual(check_portable_resource_refs(root), [])
+
+    def test_claude_rules_path_and_glob_are_not_resource_dependencies(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(
+                root,
+                "skills/a/SKILL.md",
+                "Inspect `.claude/rules/example.md` and `rules/*.md`.",
+            )
+            self.assertEqual(check_portable_resource_refs(root), [])
 
 
 class TestCheckContractConformance(unittest.TestCase):

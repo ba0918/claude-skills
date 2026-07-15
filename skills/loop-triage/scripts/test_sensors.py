@@ -134,17 +134,20 @@ class MapContextAuditTest(unittest.TestCase):
             "id": "CA-D002",
             "severity": "INFO",
             "fix_action": "REPORT_ONLY",
-            "where": "rules/testing-anti-patterns.md",
+            "where": "skills/shared/references/testing-anti-patterns.md",
             "what": "matched secret-like pattern",
         }]
         findings = map_context_audit(raw)
         self.assertEqual(len(findings), 1)
         finding = findings[0]
         self.assertEqual(
-            finding["where"], {"path": "rules/testing-anti-patterns.md"},
+            finding["where"], {"path": "skills/shared/references/testing-anti-patterns.md"},
         )
         self.assertNotIn("line", finding["where"])
-        self.assertEqual(finding["affected_paths"], ["rules/testing-anti-patterns.md"])
+        self.assertEqual(
+            finding["affected_paths"],
+            ["skills/shared/references/testing-anti-patterns.md"],
+        )
 
     def test_pass_severity_is_excluded(self):
         raw = [

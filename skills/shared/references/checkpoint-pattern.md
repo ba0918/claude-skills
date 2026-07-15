@@ -172,7 +172,7 @@ plan Progress / status.md / result と**重複させない**。
 
 ## セキュリティ規約（コードで強制、テストで証明）
 
-design-principles §9（single canonical validator, reused everywhere）に従い、以下は `checkpoint.py`
+[design-principles.md](design-principles.md) §9（single canonical validator, reused everywhere）に従い、以下は `checkpoint.py`
 内で強制し `test_checkpoint.py` で証明する:
 
 - **実行面**: `verify_on_restore` は `{cmd, args}` 構造化のみ・自由文シェル禁止（parse で拒否）。
