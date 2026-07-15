@@ -149,6 +149,7 @@ Whether all necessary items are included in the plan.
 - [ ] Error handling: Appropriate fallbacks for all failure paths
 - [ ] Edge cases: Empty input, large input, invalid input, Unicode, multibyte characters
 - [ ] Backward compatibility: Compatibility with existing config/data/APIs is maintained
+- [ ] **Bidirectional purpose trace**: Does the plan state both the higher purpose ("what is this for?") and the success criteria ("what is true when it's done?")? A plan that only traces upward (abstract justification) or only downward (task list) is incomplete.
 - [ ] Test plan: Tests are planned for each change
 - [ ] Rollback capability: Can be safely reverted if issues arise
 - [ ] Resource cleanup: Release of acquired resources is guaranteed
@@ -170,6 +171,7 @@ Whether better alternative approaches exist compared to the proposed implementat
 
 ### Checklist
 
+- [ ] **Technical gravity check**: Can the problem the plan solves be explained without naming the chosen technology? If removing the technology name makes the problem statement empty, the plan may be solving for a tool rather than a user need.
 - [ ] Is there a simpler way to achieve the same goal?
 - [ ] Can standard library alternatives be used (avoid reinventing the wheel)?
 - [ ] Can existing libraries/utilities be leveraged?
@@ -180,8 +182,8 @@ Whether better alternative approaches exist compared to the proposed implementat
 
 | Score | Condition |
 |-------|-----------|
-| 80-100 | Planning a complex implementation when standard library can solve it concisely |
-| 50-79 | A better approach exists, but the planned approach would also work |
+| 80-100 | Planning a complex implementation when standard library can solve it concisely, OR the problem cannot be stated at all without the chosen technology (technical gravity — the plan has no user-facing problem definition) |
+| 50-79 | A better approach exists, but the planned approach would also work. Includes plans where the problem is stated but the technology choice drives the framing |
 | 0-49 | Optimal approach |
 
 ---
