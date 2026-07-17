@@ -10,13 +10,19 @@ required / enum / pattern / payload 必須キー、の三者を突合する**
 （表 ⇔ 定数、定数 ⇔ schema.json の 2 辺で 3 者が閉じる）。
 
 **表のパース契約**: 同期テストは見出し（節名）で表を特定する。パース対象の節:
-「ファイル構造」「共通 envelope」「kind 別 discriminated payload」「ID・revision 規則」。
+「ファイル構造」「共通 envelope」「kind 別 discriminated payload」「ID・revision 規則」
+「exit code 契約（spec_lint / trace_matrix 共通）」。
 **節名を変更する場合は同期テストも同時に更新する**こと。
 データ行の判定は「行頭が `|` で、先頭セル（または第 2 セル）が
 バッククォート付きトークンである行」。
 各表の**列順を変更する場合も同期テストを同時に更新する**こと。
 型トークンは `string` / `integer` / `object` / `array[string]` / `array[object]`、
 必須トークンは `required` / `optional` に固定する。
+「kind 別 discriminated payload」の `transitions` / `forbidden` の説明セルにある
+「`from` / `event` / `to`（必須、string）と `guard`（任意、string）」という prose 形式も
+同期テストの突合対象である（ネスト規則のフィールド名と必須/任意をこの形式から読み取る）。
+「exit code 契約」節では、入力上限表（第 2 セルが値、第 3 セルが破損カテゴリ）と、
+破損カテゴリの箇条書き（`- ` + バッククォート付きスラッグで始まる行）を突合対象とする。
 
 ## ファイル構造
 
@@ -185,6 +191,33 @@ draft を正本ツリーに置かないのは、無承認の条項が lint / ト
   フィールドで分離して表現する。CI は exit code で、ツールは JSON で判定できる。
 - exit 2 のとき、保証レベル算出とマトリクスの publish は行わない
   （診断専用出力のみ。部分結果を正本として消費させない）。
+
+### 入力上限と破損カテゴリ（exit 2 の内訳）
+
+入力上限は次のとおり。超過は入力破損（exit 2）として扱い、条項単位の検証
+（exit 1 相当の違反検出）には進まない。値は lint 実装のコード内定数と
+同期テストで突合される:
+
+| 上限項目 | 値 | 破損カテゴリ |
+|---------|-----|-------------|
+| ファイルサイズ（1 ファイル） | `1000000` バイト | `file-too-large` |
+| 条項数（1 ファイル） | `10000` 件 | `too-many-clauses` |
+| ネスト深さ | `16` 段 | `too-deep` |
+
+exit 2 の破損カテゴリ（機械出力 `diagnostics[].category` のスラッグ）は
+次の一覧が正本である（同期テストが lint 実装の raise 箇所と突合する）:
+
+- `invalid-json` — JSON として parse できない（空ファイル・エンコーディング破損を含む）
+- `duplicate-json-key` — 同一 object 内の JSON key 重複
+- `not-an-object` — トップレベルが object でない
+- `missing-toplevel-key` — トップレベル必須キーの欠落
+- `clauses-not-array` — `clauses` が配列でない
+- `unknown-schema-version` — `schema_version` が未知（v1 は `1` 固定）
+- `file-too-large` — ファイルサイズ上限超過
+- `too-many-clauses` — 条項数上限超過
+- `too-deep` — ネスト深さ上限超過
+- `unreadable` — ファイルが読み取り不能
+- `path-escape` — 対象が root 外（symlink 経由の脱出を含む）
 
 ## 機密情報の規約
 
