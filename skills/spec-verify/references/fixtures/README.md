@@ -60,6 +60,40 @@ fixture 集。ハンドロール検証（`spec_lint`）と
   パース後に消えるため、fixture ファイルとして期待判定を固定できない
   （validator 実装によって読み取り結果が変わる）。
 
+## manifest corpus（証拠マニフェスト）
+
+[evidence-manifest.md](../evidence-manifest.md)（証拠マニフェスト形式の正本）に対する
+valid / invalid の fixture 集。`trace_matrix` のマニフェスト構造検証に CI で機械適用する。
+
+本 corpus が検証するのは**マニフェスト単体の構造**のみである。条項ファイルとの突合が
+必要な検出（dangling / stale / revision 食い違い / 保証レベル算出）は fixture では
+期待判定を固定できないため、`trace_matrix` のユニットテスト内で条項ファイルと
+組にして検証する。
+
+### manifest/valid/
+
+| fixture | 期待判定 | 網羅する要素 |
+|---------|----------|--------------|
+| `manifest/valid/empty.json` | valid | 空の bindings / observations（graceful 対象） |
+| `manifest/valid/bound_with_observation.json` | valid | 多対多 binding（1 テスト複数条項・1 条項複数テスト）+ property / example の observation + 任意フィールド（cases_discarded / skipped / xfail） |
+
+### manifest/invalid/
+
+| fixture | 期待判定 | 違反種別 |
+|---------|----------|----------|
+| `manifest/invalid/bad_test_id.json` | invalid | `invalid-test-id`（test_id の文字集合違反。空白・シェルメタ文字） |
+| `manifest/invalid/missing_observation_key.json` | invalid | `missing-required`（observation の必須キー payload_digest 欠落） |
+| `manifest/invalid/unknown_binding_key.json` | invalid | `unknown-key`（binding の未知キー。fail-closed） |
+| `manifest/invalid/bad_digest.json` | invalid | `invalid-digest`（payload_digest の形式違反） |
+| `manifest/invalid/unknown_schema_version.json` | invalid | `unknown-schema-version`（入力破損として exit 2） |
+| `manifest/invalid/bindings_not_array.json` | invalid | `manifest-key-not-array`（入力破損として exit 2） |
+
+補足:
+
+- `unknown-schema-version` / `manifest-key-not-array` は他の invalid
+  （exit 1 相当のエントリ違反）と異なり、**入力破損（exit 2）**に分類される
+  （[evidence-manifest.md](../evidence-manifest.md) の入力破損節参照）。
+
 ## 外部 JSON Schema validator による検証手順
 
 spec-clause.schema.json と本コーパスの等価性は、draft-07 対応の任意の

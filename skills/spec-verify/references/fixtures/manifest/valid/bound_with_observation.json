@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "bindings": [
+    {
+      "clause_id": "LIB-INV-001",
+      "clause_revision": 1,
+      "test_id": "tests/test_loans.py::test_loan_limit_holds"
+    },
+    {
+      "clause_id": "LIB-INV-001",
+      "clause_revision": 1,
+      "test_id": "tests/test_loans.py::test_loan_limit_examples"
+    },
+    {
+      "clause_id": "LIB-OP-001",
+      "clause_revision": 1,
+      "test_id": "tests/test_loans.py::test_loan_limit_holds"
+    }
+  ],
+  "observations": [
+    {
+      "clause_id": "LIB-INV-001",
+      "test_id": "tests/test_loans.py::test_loan_limit_holds",
+      "evidence_kind": "property",
+      "command": "pytest tests/test_loans.py::test_loan_limit_holds",
+      "exit_status": 0,
+      "cases_valid": 200,
+      "failures": 0,
+      "cases_discarded": 4,
+      "payload_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "recorded_at": "2026-07-17T04:10:34Z"
+    },
+    {
+      "clause_id": "LIB-INV-001",
+      "test_id": "tests/test_loans.py::test_loan_limit_examples",
+      "evidence_kind": "example",
+      "command": "pytest tests/test_loans.py::test_loan_limit_examples",
+      "exit_status": 0,
+      "cases_valid": 3,
+      "failures": 0,
+      "skipped": false,
+      "xfail": false,
+      "payload_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "recorded_at": "2026-07-17T04:12:00Z"
+    }
+  ]
+}

@@ -203,7 +203,7 @@ def validate_toplevel(data, name):
             "too-many-clauses", f"条項数が上限 {MAX_CLAUSES} を超過")
     findings = []
     for key in sorted(set(data) - set(TOPLEVEL_FIELDS)):
-        findings.append(_finding(
+        findings.append(make_finding(
             f"{name}#(file)", "unknown-key",
             f"トップレベルに未知キー {key!r}",
             "未知キーは fail-closed（typo がサイレントに無視される事故防止）",
@@ -215,12 +215,12 @@ def validate_toplevel(data, name):
 # Findings
 # ---------------------------------------------------------------------------
 
-def _finding(where, check, what, why, how):
+def make_finding(where, check, what, why, how):
     return {"where": where, "check": check, "what": what, "why": why,
             "how": how}
 
 
-def _finalize(findings):
+def finalize_findings(findings):
     """Mask secrets in free-text diagnostic fields (never in where — it holds
     file paths and clause IDs that masking would destroy), strip control
     characters everywhere, and sort deterministically."""
@@ -242,7 +242,7 @@ def _finalize(findings):
 
 def _check_string(findings, where, field, value, required):
     if not isinstance(value, str):
-        findings.append(_finding(
+        findings.append(make_finding(
             where, "invalid-type",
             f"{field} が string でない（{type(value).__name__}）",
             "型が契約と異なると生成テストと digest が壊れる",
@@ -250,7 +250,7 @@ def _check_string(findings, where, field, value, required):
         return
     if not value:
         check = "empty-required-string" if required else "empty-string"
-        findings.append(_finding(
+        findings.append(make_finding(
             where, check, f"{field} が空文字列",
             "「値なし」は空文字列でなくキー省略で表現する規則（任意フィールドのみ可）",
             f"{field} に内容を書くか、任意フィールドならキーごと削除する"))
@@ -258,7 +258,7 @@ def _check_string(findings, where, field, value, required):
 
 def _check_string_array(findings, where, field, value):
     if not isinstance(value, list):
-        findings.append(_finding(
+        findings.append(make_finding(
             where, "invalid-type",
             f"{field} が配列でない（{type(value).__name__}）",
             "型が契約と異なると機械検証が成立しない",
@@ -266,13 +266,13 @@ def _check_string_array(findings, where, field, value):
         return False
     for i, item in enumerate(value):
         if not isinstance(item, str):
-            findings.append(_finding(
+            findings.append(make_finding(
                 where, "invalid-type",
                 f"{field}[{i}] が string でない（{type(item).__name__}）",
                 "array[string] の要素は非空 string のみ",
                 f"{field}[{i}] を string にする"))
         elif not item:
-            findings.append(_finding(
+            findings.append(make_finding(
                 where, "empty-string", f"{field}[{i}] が空文字列",
                 "array[string] の要素は非空が必須（検証の共通規則）",
                 f"{field}[{i}] に内容を書くか要素を削除する"))
@@ -281,7 +281,7 @@ def _check_string_array(findings, where, field, value):
 
 def _check_revision(findings, where, value):
     if isinstance(value, bool) or not isinstance(value, int) or value < 1:
-        findings.append(_finding(
+        findings.append(make_finding(
             where, "invalid-revision",
             f"revision が正整数でない: {value!r}",
             "revision は 1 以上の単調増加カウンタ（意味変更ごとに +1）",
@@ -290,14 +290,14 @@ def _check_revision(findings, where, value):
 
 def _check_rule_object(findings, where, field, index, rule, rule_fields):
     if not isinstance(rule, dict):
-        findings.append(_finding(
+        findings.append(make_finding(
             where, "invalid-type",
             f"{field}[{index}] が object でない（{type(rule).__name__}）",
             f"{field} の各要素は from/event 等を持つ object",
             f"{field}[{index}] を object にする"))
         return
     for key in sorted(set(rule) - set(rule_fields)):
-        findings.append(_finding(
+        findings.append(make_finding(
             where, "unknown-key",
             f"{field}[{index}] に未知キー {key!r}",
             "未知キーは fail-closed（書いたつもりの契約が消える事故防止）",
@@ -305,7 +305,7 @@ def _check_rule_object(findings, where, field, index, rule, rule_fields):
     for name, (_token, required) in rule_fields.items():
         if name not in rule:
             if required:
-                findings.append(_finding(
+                findings.append(make_finding(
                     where, "missing-required",
                     f"{field}[{index}] に必須キー {name} が欠落",
                     "遷移規則は from/event（/to）が揃って初めて検証可能になる",
@@ -318,7 +318,7 @@ def _check_rule_object(findings, where, field, index, rule, rule_fields):
 def _check_payload(findings, where, kind, payload):
     spec = PAYLOAD_FIELDS[kind]
     for key in sorted(set(payload) - set(spec)):
-        findings.append(_finding(
+        findings.append(make_finding(
             where, "unknown-key",
             f"payload に未知キー {key!r}（kind: {kind}）",
             "未知キーは fail-closed（typo がサイレントに無視される事故防止）",
@@ -326,7 +326,7 @@ def _check_payload(findings, where, kind, payload):
     for field, (token, required) in spec.items():
         if field not in payload:
             if required:
-                findings.append(_finding(
+                findings.append(make_finding(
                     where, "payload-missing-required",
                     f"payload に必須キー {field} が欠落（kind: {kind}）",
                     "kind 別 payload が揃わないとテスト生成と digest 算出ができない",
@@ -337,7 +337,7 @@ def _check_payload(findings, where, kind, payload):
             _check_string(findings, where, f"payload.{field}", value, required)
             if field == "effect" and isinstance(value, str) and value \
                     and value not in EFFECT_VALUES:
-                findings.append(_finding(
+                findings.append(make_finding(
                     where, "invalid-enum",
                     f"effect が enum 外: {value!r}",
                     f"effect は {'/'.join(EFFECT_VALUES)} のみ（deny 優先の意味論）",
@@ -345,14 +345,14 @@ def _check_payload(findings, where, kind, payload):
         elif token == "array[string]":
             ok = _check_string_array(findings, where, f"payload.{field}", value)
             if ok and field in MIN_ITEMS and len(value) < MIN_ITEMS[field]:
-                findings.append(_finding(
+                findings.append(make_finding(
                     where, "min-items",
                     f"payload.{field} が空（{MIN_ITEMS[field]} 要素以上が必須）",
                     "状態機械は状態・イベント集合が空だと定義できない",
                     f"payload.{field} に {MIN_ITEMS[field]} 要素以上を列挙する"))
         elif token == "array[object]":
             if not isinstance(value, list):
-                findings.append(_finding(
+                findings.append(make_finding(
                     where, "invalid-type",
                     f"payload.{field} が配列でない（{type(value).__name__}）",
                     "型が契約と異なると機械検証が成立しない",
@@ -378,7 +378,7 @@ def _scan_secrets(findings, where, clause):
     for field in hits:
         # 検出のみ（値は再掲しない）。黙って書き換えない — 仕様正本の
         # 無断改変はドリフトそのものだから（clause-schema.md 機密情報の規約）。
-        findings.append(_finding(
+        findings.append(make_finding(
             where, "secret-in-free-text",
             f"{field} に credential らしき文字列を検出",
             "自由文フィールドは合成・匿名データ限定（機密情報の規約）",
@@ -390,7 +390,7 @@ def _check_clause(findings, name, index, clause):
     id is None unless it matches ID_PATTERN (invalid ids never become where
     labels or known ids — see the cid_valid comment below)."""
     if not isinstance(clause, dict):
-        findings.append(_finding(
+        findings.append(make_finding(
             f"{name}#clauses[{index}]", "invalid-type",
             f"条項が object でない（{type(clause).__name__}）",
             "条項は envelope フィールドを持つ object",
@@ -406,7 +406,7 @@ def _check_clause(findings, name, index, clause):
     where = f"{name}#{label}"
 
     for key in sorted(set(clause) - set(ENVELOPE_FIELDS)):
-        findings.append(_finding(
+        findings.append(make_finding(
             where, "unknown-key",
             f"envelope に未知キー {key!r}",
             "未知キーは fail-closed（typo がサイレントに無視される事故防止）",
@@ -415,7 +415,7 @@ def _check_clause(findings, name, index, clause):
     for field, (token, required) in ENVELOPE_FIELDS.items():
         if field not in clause:
             if required:
-                findings.append(_finding(
+                findings.append(make_finding(
                     where, "missing-required",
                     f"必須フィールド {field} が欠落",
                     "envelope 必須フィールドが揃わない条項は契約として不完全",
@@ -428,7 +428,7 @@ def _check_clause(findings, name, index, clause):
             _check_string(findings, where, field, value, required)
         elif token == "object":
             if not isinstance(value, dict):
-                findings.append(_finding(
+                findings.append(make_finding(
                     where, "invalid-type",
                     f"{field} が object でない（{type(value).__name__}）",
                     "payload は kind 別の必須キーを持つ object",
@@ -437,7 +437,7 @@ def _check_clause(findings, name, index, clause):
             _check_string_array(findings, where, field, value)
 
     if isinstance(cid, str) and cid and not cid_valid:
-        findings.append(_finding(
+        findings.append(make_finding(
             where, "invalid-id",
             f"id がパターン {ID_PATTERN} に合わない: {cid!r}",
             "ID は namespace 付き ASCII 識別子（例: LIB-INV-001）に固定されている",
@@ -445,7 +445,7 @@ def _check_clause(findings, name, index, clause):
 
     kind = clause.get("kind")
     if isinstance(kind, str) and kind and kind not in KINDS:
-        findings.append(_finding(
+        findings.append(make_finding(
             where, "unknown-kind",
             f"kind が enum 外: {kind!r}",
             f"v1 の検証意味論は {'/'.join(KINDS)} の 4 種のみ",
@@ -459,7 +459,7 @@ def _check_clause(findings, name, index, clause):
     if isinstance(successors, list):
         for i, succ in enumerate(successors):
             if isinstance(succ, str) and succ and not _ID_RE.fullmatch(succ):
-                findings.append(_finding(
+                findings.append(make_finding(
                     where, "invalid-id",
                     f"superseded_by[{i}] が ID パターンに合わない: {succ!r}",
                     "後継参照も条項 ID パターンに従う",
@@ -528,13 +528,13 @@ def _check_references(findings, tombstones, known_ids, file_of):
         where = f"{name}#{cid}"
         for succ in successors:
             if succ == cid:
-                findings.append(_finding(
+                findings.append(make_finding(
                     where, "self-superseded-by",
                     "superseded_by が自分自身を参照",
                     "自己参照はライフサイクル（分割・統合・廃止）を表現しない",
                     "後継 ID を実在する別条項にするか、後継なし廃止は空配列にする"))
             elif succ not in known_ids:
-                findings.append(_finding(
+                findings.append(make_finding(
                     where, "dangling-superseded-by",
                     f"superseded_by が存在しない条項 ID を参照: {succ}",
                     "実在しない後継への参照は履歴の断絶（tombstone 削除の兆候）",
@@ -546,7 +546,7 @@ def _check_references(findings, tombstones, known_ids, file_of):
             graph.setdefault(succ, set())
     for component in _nontrivial_sccs(graph):
         head = component[0]
-        findings.append(_finding(
+        findings.append(make_finding(
             f"{file_of[head]}#{head}", "cycle-superseded-by",
             f"superseded_by が循環: {' -> '.join(component)}",
             "循環する後継参照はどれが現役条項か決定できない",
@@ -596,7 +596,7 @@ def lint_data(named_files):
     for name, ids_here in per_file_ids:
         for cid, count in sorted(ids_here.items()):
             if count > 1:
-                findings.append(_finding(
+                findings.append(make_finding(
                     f"{name}#{cid}", "duplicate-id",
                     f"id がファイル内で重複（{count} 回出現）",
                     "同一ファイル内の ID 重複は禁止（どちらが正か決定できない）",
@@ -604,7 +604,7 @@ def lint_data(named_files):
 
     _check_references(findings, tombstones, known_ids, file_of)
 
-    findings = _finalize(findings)
+    findings = finalize_findings(findings)
     by_check = {}
     for f in findings:
         by_check[f["check"]] = by_check.get(f["check"], 0) + 1
@@ -686,7 +686,7 @@ def check_containment(path, root):
 # Output (summary-first, stable order; JSON is json.dumps only)
 # ---------------------------------------------------------------------------
 
-def _sanitize_line(line):
+def sanitize_line(line):
     return _CTRL_RE.sub("", line)
 
 
@@ -707,7 +707,7 @@ def render_text(result):
                      f"why: {f['why']} | fix: {f['how']}")
     if not result["diagnostics"] and not result["findings"] and s["files"]:
         lines.append("違反なし: 全条項ファイルが schema v1 に適合")
-    return "\n".join(_sanitize_line(line) for line in lines)
+    return "\n".join(sanitize_line(line) for line in lines)
 
 
 def render_json(result):

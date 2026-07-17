@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "bindings": [
+    {
+      "clause_id": "LIB-INV-001",
+      "clause_revision": 1,
+      "test_id": "tests/test loans.py::has whitespace; rm -rf"
+    }
+  ],
+  "observations": []
+}

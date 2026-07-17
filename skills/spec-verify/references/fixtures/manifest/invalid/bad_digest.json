@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "bindings": [
+    {
+      "clause_id": "LIB-INV-001",
+      "clause_revision": 1,
+      "test_id": "tests/test_loans.py::test_loan_limit_holds"
+    }
+  ],
+  "observations": [
+    {
+      "clause_id": "LIB-INV-001",
+      "test_id": "tests/test_loans.py::test_loan_limit_holds",
+      "evidence_kind": "property",
+      "command": "pytest tests/test_loans.py::test_loan_limit_holds",
+      "exit_status": 0,
+      "cases_valid": 200,
+      "failures": 0,
+      "payload_digest": "md5:not-a-sha256-digest",
+      "recorded_at": "2026-07-17T04:10:34Z"
+    }
+  ]
+}
