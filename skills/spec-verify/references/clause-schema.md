@@ -72,6 +72,10 @@ required / enum / pattern / payload 必須キー、の三者を突合する**
 | `superseded_by` | `array[string]` | `optional` | 後継条項 ID の配列。**このキーが存在する条項は tombstone**（ライフサイクル節参照）。空配列は「後継なしの廃止」 |
 | `predicates` | `array[string]` | `optional` | escape hatch: ホスト言語述語への参照。**不透明文字列**であり、スクリプトは import・eval・実行・存在確認をしない。述語参照そのものは証拠に寄与せず、保証レベルは通常どおり observation からのみ算出される |
 
+`examples` / `counterexamples` の各要素は「入力 → 期待出力」形式を推奨する
+（counterexample は「入力 → 誤出力（違反理由）」）。書式は機械検証しないが、
+逆生成レビューで人間が読み比べる前提のため、条項内で形式を揃えること。
+
 ## kind 別 discriminated payload
 
 `payload` の必須キーは `kind` で決まる。bind ワークフローはこの payload から

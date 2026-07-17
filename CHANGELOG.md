@@ -12,6 +12,7 @@ claude-skills プラグインのバージョン履歴。
 - spec_lint / trace_matrix スクリプト（stdlib のみ、fail-closed、report-only/strict の exit code 契約。--baseline diff / --output は trace_matrix のみ、spec_lint は stdout 専用）
 - 正本 ⇔ コード定数 ⇔ JSON Schema の三者同期テストと conformance corpus（valid/invalid 26 fixtures）
 - formalize / bind / drift-check / self-test の 4 ワークフロー（逆生成レビュー、headless draft 隔離、使い捨て worktree での mutation 自己検証）
+- empirical-prompt-tuning による実測チューニング 3 イテレーション（3 役分離 × 3 シナリオ × 9 実行、precision 全 9 run 100%）を反映 — headless draft の検証手順・slug 規則・observation 記録の実務指針（cases_valid 導出・evidence_kind 帰属・ランナー別 test_id の渡し方）等、実行者が詰まった未規定点を確定
 
 ## 1.47.2
 
