@@ -4,6 +4,15 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.48.0
+
+軽量形式仕様スキル `spec-verify` を新規追加。自然言語仕様に埋もれた検証可能な契約を機械可読な正本（specs/clauses/）へ昇格させ、property-based テストと証拠台帳でドリフトを機械検知する。
+
+- 条項スキーマ v1（invariant / pre_post / transition / authorization の 4 検証意味論、ID/revision ライフサイクル、保証レベルの証拠ベース算出）
+- spec_lint / trace_matrix スクリプト（stdlib のみ、fail-closed、report-only/strict の exit code 契約。--baseline diff / --output は trace_matrix のみ、spec_lint は stdout 専用）
+- 正本 ⇔ コード定数 ⇔ JSON Schema の三者同期テストと conformance corpus（valid/invalid 26 fixtures）
+- formalize / bind / drift-check / self-test の 4 ワークフロー（逆生成レビュー、headless draft 隔離、使い捨て worktree での mutation 自己検証）
+
 ## 1.47.2
 
 スキルが参照する設計・テスト原則を、Claude Code 専用の常駐ルールからクロスツール対応の共有契約へ移行。
