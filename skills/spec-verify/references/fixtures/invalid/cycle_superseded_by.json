@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "clauses": [
+    {
+      "id": "LIB-INV-070",
+      "revision": 1,
+      "kind": "invariant",
+      "statement": "循環の片側: LIB-INV-071 を後継として参照する",
+      "superseded_by": ["LIB-INV-071"],
+      "payload": {
+        "target": "会員ごとの貸出状態",
+        "condition": "貸出中アイテム数 <= 貸出上限"
+      }
+    },
+    {
+      "id": "LIB-INV-071",
+      "revision": 1,
+      "kind": "invariant",
+      "statement": "循環のもう片側: LIB-INV-070 を後継として参照し、A→B→A の循環を作る",
+      "superseded_by": ["LIB-INV-070"],
+      "payload": {
+        "target": "貸出台帳",
+        "condition": "任意のアイテムの貸出先会員は高々 1 名"
+      }
+    }
+  ]
+}

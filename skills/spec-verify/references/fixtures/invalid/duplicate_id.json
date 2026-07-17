@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "clauses": [
+    {
+      "id": "LIB-INV-040",
+      "revision": 1,
+      "kind": "invariant",
+      "statement": "会員の貸出中冊数は貸出上限を超えない",
+      "payload": {
+        "target": "会員ごとの貸出状態",
+        "condition": "貸出中アイテム数 <= 貸出上限"
+      }
+    },
+    {
+      "id": "LIB-INV-040",
+      "revision": 2,
+      "kind": "invariant",
+      "statement": "同一 ID LIB-INV-040 がファイル内で重複している",
+      "payload": {
+        "target": "貸出台帳",
+        "condition": "任意のアイテムの貸出先会員は高々 1 名"
+      }
+    }
+  ]
+}

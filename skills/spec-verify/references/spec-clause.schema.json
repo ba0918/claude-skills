@@ -1,0 +1,191 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "spec-clause.schema.json",
+  "$comment": "正本は clause-schema.md。スクリプトは実行時にこのファイルを読まない。外部エディタ・対象プロジェクト向けの射影である。参照整合（重複 ID / superseded_by の実在・自己参照・循環）は JSON Schema では表現できず、spec_lint のみが検証する。",
+  "title": "spec-verify clause file (schema v1)",
+  "type": "object",
+  "required": ["schema_version", "clauses"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "$comment": "ファイルレベルの版数。v1 は 1 固定"
+    },
+    "clauses": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/clause" }
+    }
+  },
+  "definitions": {
+    "clauseId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*-[0-9]{3,}$"
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "$comment": "正本「検証の共通規則」: string 型フィールドと array[string] の要素は必須・任意を問わずすべて非空"
+    },
+    "clause": {
+      "type": "object",
+      "required": ["id", "revision", "kind", "statement", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/clauseId" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "kind": {
+          "enum": ["invariant", "pre_post", "transition", "authorization"]
+        },
+        "statement": { "$ref": "#/definitions/nonEmptyString" },
+        "payload": { "type": "object" },
+        "rationale": { "$ref": "#/definitions/nonEmptyString" },
+        "examples": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/nonEmptyString" }
+        },
+        "counterexamples": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/nonEmptyString" }
+        },
+        "refs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/nonEmptyString" },
+          "$comment": "不透明な識別子/URI。validator も spec_lint も dereference しない"
+        },
+        "superseded_by": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/clauseId" },
+          "$comment": "このキーが存在する条項は tombstone。空配列は後継なしの廃止"
+        },
+        "predicates": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/nonEmptyString" },
+          "$comment": "escape hatch。不透明文字列であり実行・存在確認をしない"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "invariant" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/definitions/invariantPayload" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "pre_post" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/definitions/prePostPayload" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "transition" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/definitions/transitionPayload" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "authorization" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "payload": { "$ref": "#/definitions/authorizationPayload" }
+            }
+          }
+        }
+      ]
+    },
+    "invariantPayload": {
+      "type": "object",
+      "required": ["target", "condition"],
+      "additionalProperties": false,
+      "properties": {
+        "target": { "$ref": "#/definitions/nonEmptyString" },
+        "condition": { "$ref": "#/definitions/nonEmptyString" }
+      }
+    },
+    "prePostPayload": {
+      "type": "object",
+      "required": ["input_domain", "precondition", "operation", "postcondition"],
+      "additionalProperties": false,
+      "properties": {
+        "input_domain": { "$ref": "#/definitions/nonEmptyString" },
+        "precondition": { "$ref": "#/definitions/nonEmptyString" },
+        "operation": { "$ref": "#/definitions/nonEmptyString" },
+        "postcondition": { "$ref": "#/definitions/nonEmptyString" }
+      }
+    },
+    "transitionPayload": {
+      "type": "object",
+      "required": ["states", "events", "transitions"],
+      "additionalProperties": false,
+      "properties": {
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/nonEmptyString" }
+        },
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/nonEmptyString" }
+        },
+        "transitions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/transitionRule" }
+        },
+        "forbidden": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/forbiddenRule" }
+        }
+      }
+    },
+    "transitionRule": {
+      "type": "object",
+      "required": ["from", "event", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "$ref": "#/definitions/nonEmptyString" },
+        "event": { "$ref": "#/definitions/nonEmptyString" },
+        "to": { "$ref": "#/definitions/nonEmptyString" },
+        "guard": { "$ref": "#/definitions/nonEmptyString" }
+      }
+    },
+    "forbiddenRule": {
+      "type": "object",
+      "required": ["from", "event"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "$ref": "#/definitions/nonEmptyString" },
+        "event": { "$ref": "#/definitions/nonEmptyString" }
+      }
+    },
+    "authorizationPayload": {
+      "type": "object",
+      "required": ["subject", "action", "resource", "effect"],
+      "additionalProperties": false,
+      "properties": {
+        "subject": { "$ref": "#/definitions/nonEmptyString" },
+        "action": { "$ref": "#/definitions/nonEmptyString" },
+        "resource": { "$ref": "#/definitions/nonEmptyString" },
+        "context": { "$ref": "#/definitions/nonEmptyString" },
+        "effect": { "enum": ["allow", "deny"] }
+      }
+    }
+  }
+}

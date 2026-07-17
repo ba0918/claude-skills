@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "clauses": [
+    {
+      "id": "LIB-OP-100",
+      "revision": 3,
+      "kind": "pre_post",
+      "statement": "（tombstone・分割）返却操作の旧一体条項。状態遷移の側面は LIB-OP-101 へ、延滞判定の側面は LIB-OP-102 へ分割した",
+      "superseded_by": ["LIB-OP-101", "LIB-OP-102"],
+      "payload": {
+        "input_domain": "貸出中の貸出レコードの集合",
+        "precondition": "対象アイテムが貸出中である",
+        "operation": "return_item(loan_id)",
+        "postcondition": "アイテムが在庫あり状態に戻り、延滞していれば延滞料金が確定する"
+      }
+    },
+    {
+      "id": "LIB-OP-101",
+      "revision": 1,
+      "kind": "pre_post",
+      "statement": "返却操作はアイテムを在庫あり状態に戻す",
+      "payload": {
+        "input_domain": "貸出中の貸出レコードの集合",
+        "precondition": "対象アイテムが貸出中である",
+        "operation": "return_item(loan_id)",
+        "postcondition": "アイテムが在庫あり状態になり、会員の貸出一覧から取り除かれる"
+      }
+    },
+    {
+      "id": "LIB-OP-102",
+      "revision": 1,
+      "kind": "pre_post",
+      "statement": "返却操作は返却期限を過ぎていた場合にのみ延滞料金を確定させる",
+      "payload": {
+        "input_domain": "貸出中の貸出レコードの集合",
+        "precondition": "対象アイテムが貸出中である",
+        "operation": "return_item(loan_id)",
+        "postcondition": "返却日が期限より後の場合に限り延滞料金が確定し、期限内なら料金は発生しない"
+      }
+    },
+    {
+      "id": "LIB-INV-900",
+      "revision": 2,
+      "kind": "invariant",
+      "statement": "（tombstone・後継なしの廃止）紙の貸出カード枚数の上限。カード制度の廃止に伴い契約自体を廃止した",
+      "superseded_by": [],
+      "payload": {
+        "target": "会員ごとの貸出カード発行状態",
+        "condition": "任意の会員について、有効な貸出カードは高々 1 枚"
+      }
+    }
+  ]
+}

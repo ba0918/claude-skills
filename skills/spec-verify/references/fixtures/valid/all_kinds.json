@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "clauses": [
+    {
+      "id": "LIB-INV-010",
+      "revision": 2,
+      "kind": "invariant",
+      "statement": "同一の蔵書アイテムが同時に複数の会員へ貸し出されることはない",
+      "rationale": "貸出台帳の二重貸出は在庫整合の根本破壊であり、返却処理でも修復できない",
+      "examples": [
+        "アイテム BOOK-0001 が会員 M-100 に貸出中のとき、他会員の貸出一覧に BOOK-0001 は現れない"
+      ],
+      "counterexamples": [
+        "アイテム BOOK-0001 が会員 M-100 と M-200 の両方の貸出一覧に現れる"
+      ],
+      "payload": {
+        "target": "貸出台帳（アイテム ID と貸出先会員 ID の対応）",
+        "condition": "任意のアイテム ID について、貸出中の貸出先会員は高々 1 名"
+      }
+    },
+    {
+      "id": "LIB-OP-001",
+      "revision": 1,
+      "kind": "pre_post",
+      "statement": "貸出操作は、在庫ありのアイテムを貸出中に変え、会員の貸出一覧に追加する",
+      "refs": ["openapi:library-api#/paths/~1loans/post"],
+      "payload": {
+        "input_domain": "会員 ID（登録済み会員の集合）とアイテム ID（蔵書アイテムの集合）の組",
+        "precondition": "アイテムが在庫あり状態で、会員の貸出中冊数が上限未満である",
+        "operation": "checkout(member_id, item_id)",
+        "postcondition": "アイテムが貸出中状態になり、会員の貸出一覧にアイテムが追加され、貸出中冊数がちょうど 1 増える"
+      }
+    },
+    {
+      "id": "LIB-FSM-001",
+      "revision": 1,
+      "kind": "transition",
+      "statement": "蔵書アイテムの状態は 在庫あり・貸出中・取置き・除籍 の 4 状態で遷移し、除籍からは復帰しない",
+      "payload": {
+        "states": ["available", "on_loan", "on_hold", "retired"],
+        "events": ["checkout", "return", "hold", "release_hold", "retire"],
+        "transitions": [
+          { "from": "available", "event": "checkout", "to": "on_loan" },
+          { "from": "on_loan", "event": "return", "to": "available" },
+          { "from": "available", "event": "hold", "to": "on_hold" },
+          { "from": "on_hold", "event": "release_hold", "to": "available" },
+          { "from": "on_hold", "event": "checkout", "to": "on_loan", "guard": "取置きの予約者本人による貸出であること" },
+          { "from": "available", "event": "retire", "to": "retired" }
+        ],
+        "forbidden": [
+          { "from": "retired", "event": "checkout" },
+          { "from": "on_loan", "event": "retire" }
+        ]
+      }
+    },
+    {
+      "id": "LIB-AUTH-001",
+      "revision": 1,
+      "kind": "authorization",
+      "statement": "除籍操作を実行できるのは司書ロールのみで、一般会員には拒否される",
+      "counterexamples": [
+        "一般会員ロールの利用者が retire を実行できてしまう"
+      ],
+      "payload": {
+        "subject": "一般会員ロールの利用者",
+        "action": "retire",
+        "resource": "蔵書アイテム",
+        "effect": "deny"
+      }
+    }
+  ]
+}

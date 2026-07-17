@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "clauses": [
+    {
+      "id": "LIB-INV-060",
+      "revision": 1,
+      "kind": "invariant",
+      "statement": "superseded_by が自分自身 LIB-INV-060 を参照している",
+      "superseded_by": ["LIB-INV-060"],
+      "payload": {
+        "target": "会員ごとの貸出状態",
+        "condition": "貸出中アイテム数 <= 貸出上限"
+      }
+    }
+  ]
+}

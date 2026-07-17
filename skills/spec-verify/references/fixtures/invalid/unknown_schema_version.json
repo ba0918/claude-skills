@@ -1,0 +1,15 @@
+{
+  "schema_version": 99,
+  "clauses": [
+    {
+      "id": "LIB-INV-095",
+      "revision": 1,
+      "kind": "invariant",
+      "statement": "schema_version 99 は未知であり、入力破損（exit 2）として扱われる",
+      "payload": {
+        "target": "会員ごとの貸出状態",
+        "condition": "貸出中アイテム数 <= 貸出上限"
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "clauses": [
+    {
+      "id": "LIB-OP-030",
+      "revision": 1,
+      "kind": "pre_post",
+      "statement": "貸出操作の条項だが payload に postcondition が欠落している",
+      "payload": {
+        "input_domain": "会員 ID とアイテム ID の組",
+        "precondition": "アイテムが在庫あり状態である",
+        "operation": "checkout(member_id, item_id)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "clauses": [
+    {
+      "id": "LIB-INV-001",
+      "revision": 1,
+      "kind": "invariant",
+      "statement": "会員の貸出中冊数は、その会員区分の貸出上限を超えない",
+      "payload": {
+        "target": "会員ごとの貸出状態（会員 ID と貸出中アイテム集合の対応）",
+        "condition": "任意の会員について、貸出中アイテム数 <= 会員区分ごとの貸出上限"
+      }
+    }
+  ]
+}

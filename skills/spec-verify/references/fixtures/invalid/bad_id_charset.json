@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "clauses": [
+    {
+      "id": "lib-inv-090",
+      "revision": 1,
+      "kind": "invariant",
+      "statement": "ID が小文字で、ID パターン ^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*-[0-9]{3,}$ に反する",
+      "payload": {
+        "target": "会員ごとの貸出状態",
+        "condition": "貸出中アイテム数 <= 貸出上限"
+      }
+    }
+  ]
+}

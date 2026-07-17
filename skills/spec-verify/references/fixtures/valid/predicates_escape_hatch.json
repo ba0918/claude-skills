@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "clauses": [
+    {
+      "id": "LIB-INV-020",
+      "revision": 1,
+      "kind": "invariant",
+      "statement": "延滞料金の計算結果は常に 0 以上で、料金表の日額と延滞日数から導出される",
+      "rationale": "料金計算の丸め規則が複雑で、宣言的記述だけでは境界（うるう日跨ぎ）を表しきれないため、ホスト言語述語を escape hatch として参照する",
+      "predicates": [
+        "tests/predicates/late_fee.is_consistent_with_fee_table"
+      ],
+      "payload": {
+        "target": "延滞料金の計算結果（延滞日数と会員区分の組に対する金額）",
+        "condition": "計算結果 >= 0 かつ、延滞日数 0 のとき計算結果 = 0"
+      }
+    },
+    {
+      "id": "LIB-AUTH-010",
+      "revision": 1,
+      "kind": "authorization",
+      "statement": "司書ロールは開館時間内に限り蔵書アイテムを除籍できる",
+      "payload": {
+        "subject": "司書ロールの利用者",
+        "action": "retire",
+        "resource": "蔵書アイテム",
+        "context": "開館時間内であること",
+        "effect": "allow"
+      }
+    }
+  ]
+}

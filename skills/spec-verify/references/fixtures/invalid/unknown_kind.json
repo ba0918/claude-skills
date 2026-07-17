@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "clauses": [
+    {
+      "id": "LIB-PERF-001",
+      "revision": 1,
+      "kind": "performance",
+      "statement": "検索応答は 200ms 以内に返る（kind 'performance' は v1 に存在しない）",
+      "payload": {
+        "target": "検索 API の応答時間",
+        "condition": "p95 応答時間 <= 200ms"
+      }
+    }
+  ]
+}
