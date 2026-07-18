@@ -11,6 +11,8 @@ Review the entire codebase with 4 specialized agents + Codex second opinion in p
 
 **Headless execution**: Do not prompt the user for confirmation. All agents run autonomously. If a review agent fails, continue with the remaining agents (graceful degradation).
 
+**Report placement**: Review reports contain internal vulnerability details and must never be committed. The final report goes to `.agents/artifacts/reviews/` per the [Agent Artifact Store contract](../shared/references/artifact-store.md) (Git-ignored local store), never under `docs/`.
+
 ## Progress Checklist
 
 ```
@@ -251,7 +253,7 @@ Output in the following format exactly:
   {If available: top 3 Codex findings summary}
   {If unavailable: "⚠️ Codex second opinion was not available"}
 
-  Full report: docs/reviews/review-{YYYYMMDD-HHMM}.md
+  Full report: .agents/artifacts/reviews/review-{YYYYMMDD-HHMM}.md
 ════════════════════════════════════════════════════════════════════════
 ```
 
@@ -283,9 +285,10 @@ Do not include any other text in your final response.
 After confirming the integration agent has completed:
 
 1. `{work_dir}/summary.txt` を読み取り、コンソールにそのまま表示する
-2. シェルでコピー（ターゲットディレクトリの存在を事前に確認）:
+2. シェルでコピー（store 未初期化の場合は ignore ルールを先に保証する — [artifact-store contract](../shared/references/artifact-store.md) の lazy initialization）:
    ```bash
-   mkdir -p docs/reviews && cp {work_dir}/report.md docs/reviews/review-{YYYYMMDD-HHMM}.md
+   grep -qxF '/.agents/artifacts/' .gitignore 2>/dev/null || printf '\n# Agent Artifact Store\n/.agents/artifacts/\n' >> .gitignore
+   mkdir -p .agents/artifacts/reviews && cp {work_dir}/report.md .agents/artifacts/reviews/review-{YYYYMMDD-HHMM}.md
    ```
 3. Display completion message (including report file path)
 
@@ -304,7 +307,7 @@ After confirming the integration agent has completed:
 ### Integration agent failure (Step 4)
 - **Integration agent fails** (no `summary.txt` was produced): Read available agent JSON files directly and generate a minimal summary in the main context (inline fallback).
   - **Skip the Step 5 `cp` step** — there is no `report.md` to place.
-  - Tell the user explicitly: `⚠️ Integration agent failed. No docs/reviews/review-*.md was generated. Raw JSON is in {work_dir}/ for manual inspection.`
+  - Tell the user explicitly: `⚠️ Integration agent failed. No .agents/artifacts/reviews/review-*.md was generated. Raw JSON is in {work_dir}/ for manual inspection.`
   - **Inline fallback summary template** (keep it compact — top 3 critical + top 3 major is sufficient; do not expand full issue lists to preserve main context):
     ```
     ⚠️ Integration agent failed — inline fallback summary.

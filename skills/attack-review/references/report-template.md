@@ -105,7 +105,7 @@ ASCII art summary displayed in the console. The integration agent generates `sum
 
 ## report.md Template
 
-Full attack review report saved to `docs/reviews/`. The integration agent generates `report.md` following this format.
+Full attack review report saved to `.agents/artifacts/reviews/` (Git-ignored local store). The integration agent generates `report.md` following this format.
 
 ````markdown
 # Attack Review Report
