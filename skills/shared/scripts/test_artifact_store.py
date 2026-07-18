@@ -154,6 +154,28 @@ class ArtifactStoreTest(unittest.TestCase):
             entry["destination"],
         )
 
+    def test_init_creates_reviews_kind_directory(self):
+        root = self.repo()
+        initialize(root)
+        self.assertTrue((root / ".agents/artifacts/reviews").is_dir())
+
+    def test_reviews_is_legacy_source_and_maps_to_reviews_kind(self):
+        root = self.repo()
+        (root / "docs/reviews").mkdir(parents=True)
+        (root / "docs/reviews/review-20260719-1200.md").write_text(
+            "review", encoding="utf-8"
+        )
+        result = inspect(root)
+        self.assertEqual("legacy", result["state"])
+        self.assertIn("docs/reviews", result["legacy_roots"])
+        inventory = migration_inventory(root)
+        entry = inventory["entries"][0]
+        self.assertEqual("docs/reviews/review-20260719-1200.md", entry["source"])
+        self.assertEqual(
+            ".agents/artifacts/reviews/review-20260719-1200.md",
+            entry["destination"],
+        )
+
     def test_handoff_and_canonical_both_present_is_split_brain(self):
         root = self.repo()
         self.write_policy(root)

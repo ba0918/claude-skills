@@ -1,7 +1,7 @@
 # Agent Artifact Store Contract
 
 Agent-generated working artifacts are project state, not reader-facing documentation. All
-skills that create or consume plans, issues, ideas, handoff, or loop state MUST resolve
+skills that create or consume plans, issues, ideas, handoff, loop, or review state MUST resolve
 their paths through this contract instead of embedding a `docs/` path.
 
 ## Canonical namespace
@@ -14,7 +14,8 @@ The repository policy lives at `.agents/artifacts.yml`. The default logical stor
 ├── issues/
 ├── ideas/
 ├── handoff/
-└── loop/
+├── loop/
+└── reviews/
 ```
 
 The namespace is provider-independent. Do not add model, vendor, or agent names to the
@@ -54,7 +55,7 @@ back to a more public location.
 ## Initialization
 
 When no legacy artifacts exist, a writer may lazily initialize the safe local policy and
-ignored canonical directory. When any legacy `docs/{plans,issues,ideas,handoff,loop}` root exists,
+ignored canonical directory. When any legacy `docs/{plans,issues,ideas,handoff,loop,reviews}` root exists,
 initialization stops and
 directs the operator to migration. This prevents an empty canonical store from splitting
 state from an active legacy store.
