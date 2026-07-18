@@ -4,6 +4,14 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.50.0
+
+レビュー出力先を Git 管理外の Agent Artifact Store へ移設。docs/reviews/ 配下への出力はレビュー内容（脆弱性・PoC・再現手順）がコミットに紛れて意図せず公開されるリスクがあった。
+
+- artifact-store 契約に `reviews` kind を追加（canonical namespace / ARTIFACT_KINDS / legacy root `docs/reviews`。既存の docs/reviews/ は artifacts スキルの migrate 導線で回収可能）
+- codebase-review / attack-review のレポート出力先を `.agents/artifacts/reviews/` に変更。store 未初期化のプロジェクトでもコピー前に `.gitignore` へ ignore ルールを保証する lazy init をコピー手順に組み込み
+- 契約変更に伴い影響 5 スキル（context-audit / github-issue / handoff / issue / plan）の fixture 全 16 シナリオを skill-regression run で実測評価し全合格、ledger を実 run の pass で更新
+
 ## 1.49.0
 
 spec-verify に docgen ワークフローを追加し、実地試運転（TypeScript / Vitest プロジェクトでの全ワークフロー完走、mutation score 8/8）のフィードバックを反映。
