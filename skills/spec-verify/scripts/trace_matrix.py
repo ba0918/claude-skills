@@ -500,13 +500,14 @@ def trace(named_clause_files, manifest_data, manifest_name="manifest.json",
             continue
         if entry.get("skipped") or entry.get("xfail"):
             continue
-        effective.setdefault(cid, []).append(kind)
+        effective.setdefault(cid, []).append(entry)
 
     matrix = []
     levels = {"property": 0, "example_only": 0, "unverified": 0}
     for cid in sorted(active):
         info = active[cid]
-        kinds = effective.get(cid, [])
+        entries = effective.get(cid, [])
+        kinds = [e["evidence_kind"] for e in entries]
         if "property" in kinds:
             level = "property"
         elif "example" in kinds:
@@ -525,7 +526,12 @@ def trace(named_clause_files, manifest_data, manifest_name="manifest.json",
             "revision": info["revision"],
             "level": level,
             "tests": sorted(bound_tests.get(cid, ())),
-            "effective_observations": len(kinds),
+            "effective_observations": len(entries),
+            "cases_valid_total": sum(e["cases_valid"] for e in entries),
+            # recorded_at は表示専用の自由文であり、辞書順 max は ISO 8601
+            # UTC 前提の表示値にすぎない（stale 判定には使わない）。
+            "last_recorded_at": max(
+                (e["recorded_at"] for e in entries), default=None),
             "digest": info["digest"],
         })
 

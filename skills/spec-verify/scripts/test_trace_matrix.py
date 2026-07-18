@@ -321,6 +321,47 @@ class TestAssuranceLevels(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# Matrix row evidence detail (docgen が転記する集計値)
+# ---------------------------------------------------------------------------
+
+class TestMatrixRowEvidenceDetail(unittest.TestCase):
+    def _row(self, obs, bindings=None):
+        m = manifest(bindings=bindings or [binding()], observations=obs)
+        return row_for(run_trace([make_clause()], m), CLAUSE_ID)
+
+    def test_valid_cases_are_summed_across_effective_observations(self):
+        row = self._row([
+            observation(cases_valid=100,
+                        recorded_at="2026-07-16T00:00:00Z"),
+            observation(cases_valid=50,
+                        recorded_at="2026-07-17T04:10:34Z"),
+        ])
+        self.assertEqual(row["cases_valid_total"], 150)
+        self.assertEqual(row["effective_observations"], 2)
+
+    def test_last_recorded_at_is_the_latest_effective_observation(self):
+        row = self._row([
+            observation(recorded_at="2026-07-17T04:10:34Z"),
+            observation(recorded_at="2026-07-16T00:00:00Z"),
+        ])
+        self.assertEqual(row["last_recorded_at"], "2026-07-17T04:10:34Z")
+
+    def test_row_without_effective_observations_has_zero_and_null(self):
+        row = self._row([])
+        self.assertEqual(row["cases_valid_total"], 0)
+        self.assertIsNone(row["last_recorded_at"])
+
+    def test_ineffective_observation_joins_no_totals(self):
+        row = self._row([
+            observation(cases_valid=100),
+            observation(cases_valid=999, failures=1,
+                        recorded_at="2027-01-01T00:00:00Z"),
+        ])
+        self.assertEqual(row["cases_valid_total"], 100)
+        self.assertEqual(row["last_recorded_at"], "2026-07-17T04:10:34Z")
+
+
+# ---------------------------------------------------------------------------
 # Undigestable clauses (exist in the index; assurance derivation is skipped)
 # ---------------------------------------------------------------------------
 
@@ -811,6 +852,14 @@ class TestManifestSchemaSyncMdToCode(unittest.TestCase):
         self.assertEqual(
             {slug for slug, sev in md.items() if sev == "warning"},
             set(tm.WARNING_CHECKS))
+
+    def test_matrix_row_schema_table_matches_actual_row_keys(self):
+        rows = tsl._table_rows(self.sections["マトリクス行スキーマ"])
+        documented = {tsl._BACKTICK_TOKEN.match(cells[0]).group(1)
+                      for cells in rows}
+        result = run_trace([make_clause()], manifest())
+        self.assertEqual(documented,
+                         set(row_for(result, CLAUSE_ID).keys()))
 
     def test_corruption_slugs_raised_in_code_are_documented(self):
         with open(TRACE_MATRIX, encoding="utf-8") as f:
