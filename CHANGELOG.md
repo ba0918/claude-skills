@@ -4,6 +4,14 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.49.0
+
+spec-verify に docgen ワークフローを追加し、実地試運転（TypeScript / Vitest プロジェクトでの全ワークフロー完走、mutation score 8/8）のフィードバックを反映。
+
+- docgen: 条項正本 + 証拠マニフェストから読み取り専用 Markdown 仕様ビューを決定論的に生成する spec_docgen スクリプト（stdlib のみ・LLM 不使用・CI 搭載可）。保証レベル・valid ケース数・最終検証日を各条項に併記し、「どの行が実証済みか」が読める台帳にする。自動生成マーカーによる上書きゲートと正本ツリー（specs/clauses/・specs/evidence/）保護、自由文の HTML/リンク注入無効化 + field-aware secret マスキング付き
+- trace_matrix: matrix 行に cases_valid_total / last_recorded_at を追加し、行スキーマを evidence-manifest.md「マトリクス行スキーマ」節として正本化（同期テストで行キー集合を突合）
+- self-test: 未コミット変更があるときの worktree 手順（生成テスト・依存マニフェストのコピー）を SKILL.md に明文化
+
 ## 1.48.0
 
 軽量形式仕様スキル `spec-verify` を新規追加。自然言語仕様に埋もれた検証可能な契約を機械可読な正本（specs/clauses/）へ昇格させ、property-based テストと証拠台帳でドリフトを機械検知する。
