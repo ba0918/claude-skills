@@ -162,6 +162,7 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 | `doc-check` | ドキュメントとコードの整合性検証 |
 | `doc-write` | 調査結果を構造化ドキュメントに昇華 |
 | `doc-audit` | docs 内のアーティファクト横断スキャン |
+| `decision-journal` | 技術選定の意思決定を判例集方式で記録・聞き取り（着手前 1 行プロトコル / 選定会話の固化 / 判例聞き取り） |
 | `handoff` | セッション間のコンテキスト引き継ぎ（揮発型） |
 
 #### デザインシステム
