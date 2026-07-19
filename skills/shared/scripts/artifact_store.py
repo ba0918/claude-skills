@@ -39,7 +39,7 @@ DEFAULT_POLICY = {
     "worktree_scope": "worktree",
 }
 IGNORE_RULE = "/.agents/artifacts/"
-ARTIFACT_KINDS = ("plans", "issues", "ideas", "loop", "handoff", "reviews")
+ARTIFACT_KINDS = ("plans", "issues", "ideas", "loop", "handoff", "reviews", "decisions")
 
 # Runtime area (machine-specific, never shared, never migrated). See the
 # "Runtime area" section of skills/shared/references/artifact-store.md. Files

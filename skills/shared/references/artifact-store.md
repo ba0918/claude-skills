@@ -1,7 +1,7 @@
 # Agent Artifact Store Contract
 
 Agent-generated working artifacts are project state, not reader-facing documentation. All
-skills that create or consume plans, issues, ideas, handoff, loop, or review state MUST resolve
+skills that create or consume plans, issues, ideas, handoff, loop, review, or decision state MUST resolve
 their paths through this contract instead of embedding a `docs/` path.
 
 ## Canonical namespace
@@ -15,11 +15,20 @@ The repository policy lives at `.agents/artifacts.yml`. The default logical stor
 ├── ideas/
 ├── handoff/
 ├── loop/
-└── reviews/
+├── reviews/
+└── decisions/
 ```
 
 The namespace is provider-independent. Do not add model, vendor, or agent names to the
 path. Format differences belong in artifact schema metadata.
+
+The `decisions` kind (the `decisions/` directory) holds decision and case-law records —
+the durable rationale of architecture and technology bets. It is a fresh kind with no
+legacy `docs/decisions` predecessor, so it participates in initialization but not in
+migration. Do not confuse this kind with the migration classification manifest (the
+`--decisions` input that labels each migration entry `move` / `copy` / `keep` / `skip`):
+that is an internal migration term at a different layer and shares no on-disk directory
+with this kind.
 
 ## Policy schema v1
 

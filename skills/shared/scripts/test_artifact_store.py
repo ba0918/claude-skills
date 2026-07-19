@@ -176,6 +176,11 @@ class ArtifactStoreTest(unittest.TestCase):
             entry["destination"],
         )
 
+    def test_init_creates_decisions_kind_directory(self):
+        root = self.repo()
+        initialize(root)
+        self.assertTrue((root / ".agents/artifacts/decisions").is_dir())
+
     def test_handoff_and_canonical_both_present_is_split_brain(self):
         root = self.repo()
         self.write_policy(root)
