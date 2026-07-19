@@ -21,6 +21,7 @@
   10. .agents/artifacts/loop/dossiers/*.json の dossier lint（error 級のみ CI fail）
   11. .agents/artifacts.yml と local store の Git 安全性
   12. plugin.json の version に対応するエントリが CHANGELOG.md に存在する
+  13. frontmatter のクォートなし値が strict YAML と互換（`: ` / 末尾コロン / ` #` 禁止）
 
 チェック 10・11 と store 実在性:
   チェック 10（dossier lint）は local store が ignore されている環境では対象ファイルが
@@ -43,7 +44,11 @@ sys.path.insert(
         "..", "skills", "shared", "scripts",
     ),
 )
-from frontmatter import extract_description, parse_frontmatter_fields  # noqa: E402,F401
+from frontmatter import (  # noqa: E402,F401
+    extract_description,
+    parse_frontmatter_fields,
+    parse_frontmatter_lines,
+)
 from artifact_store import ArtifactStoreError, inspect as inspect_artifact_store  # noqa: E402
 
 EXCLUDED_DIRS = {".git", ".claude", ".codex", "node_modules", "__pycache__"}
@@ -152,6 +157,47 @@ def check_description_quality(root, trigger_exempt=None):
                 f"[description] トリガー語がない（「〜で起動」/ \"Use when\" 等）: "
                 f"{rel}/SKILL.md"
             )
+    return errors
+
+
+# チェック13: 本リポジトリや一部エージェント実装の行ベースパーサは寛容に読めるが、
+# strict YAML 実装（PyYAML / Go yaml 等を使う他プラットフォームのツール）では
+# クォートなしのプレーンスカラーが別の意味になるパターン。マルチプラットフォーム
+# 配布でスキルが読めなくなる互換事故を機械的に止める。
+_YAML_PLAIN_UNSAFE = (
+    ("mapping と誤認される ': '（parse error になる）", lambda v: ": " in v),
+    ("mapping と誤認される末尾コロン（parse error になる）", lambda v: v.endswith(":")),
+    ("コメント開始と解釈される ' #'（以降が黙って捨てられる）", lambda v: " #" in v),
+)
+
+
+def check_frontmatter_yaml_compat(root):
+    """チェック13: frontmatter のクォートなし値が strict YAML でも同じ意味で読めるか検証する。"""
+    errors = []
+    targets = [
+        os.path.join(root, "skills", skill, "SKILL.md")
+        for skill in _skill_dirs(root, "skills")
+    ]
+    commands_dir = os.path.join(root, "commands")
+    if os.path.isdir(commands_dir):
+        targets += [
+            os.path.join(commands_dir, name)
+            for name in sorted(os.listdir(commands_dir))
+            if name.endswith(".md")
+        ]
+    for path in targets:
+        if not os.path.isfile(path):
+            continue
+        fm = parse_frontmatter_lines(_read(path))
+        if not fm:
+            continue
+        rel = os.path.relpath(path, root).replace(os.sep, "/")
+        for key, value, _ in fm:
+            if not value or value[0] in "\"'>|[{":
+                continue
+            for reason, hits in _YAML_PLAIN_UNSAFE:
+                if hits(value):
+                    errors.append(f"[frontmatter-yaml] {reason}: {rel} ({key})")
     return errors
 
 
@@ -467,6 +513,9 @@ def run_checks(root):
 
     # 12. plugin.json version ⇔ CHANGELOG.md エントリ同期
     errors += check_changelog_sync(root)
+
+    # 13. frontmatter 値の strict YAML 互換
+    errors += check_frontmatter_yaml_compat(root)
 
     return errors
 

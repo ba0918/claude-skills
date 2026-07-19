@@ -17,6 +17,7 @@ from validate_repo import (
     check_contract_conformance,
     check_changelog_sync,
     check_description_quality,
+    check_frontmatter_yaml_compat,
     collect_link_sources,
     check_relative_links,
     check_portable_resource_refs,
@@ -630,6 +631,69 @@ class TestCheckDescriptionQuality(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             self._skill(root, "shared", "トリガー語なしだが shared は対象外。")
             self.assertEqual(check_description_quality(root), [])
+
+
+class TestCheckFrontmatterYamlCompat(unittest.TestCase):
+    """チェック13: frontmatter のクォートなし値が strict YAML でも同じ意味で読めること。
+
+    寛容な行ベースパーサでは動くが strict YAML 実装（PyYAML / Go yaml 等）が
+    parse error や黙殺を起こすパターン（実例: description 内の生の `: ` で
+    3 スキルが他プラットフォームのツールから読めなかった）を機械的に止める。
+    """
+
+    def _write(self, root, rel, content):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def _skill(self, root, name, description_line):
+        self._write(root, f"skills/{name}/SKILL.md",
+                    f"---\nname: {name}\ndescription: {description_line}\n---\n\n# {name}\n")
+
+    def test_plain_value_with_colon_space_is_reported(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "my-skill", "モードを切り替え: save / restore。「my-skill」で起動。")
+            errors = check_frontmatter_yaml_compat(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("[frontmatter-yaml]", errors[0])
+            self.assertIn("skills/my-skill/SKILL.md (description)", errors[0])
+
+    def test_plain_value_with_trailing_colon_is_reported(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "my-skill", "以下のいずれかで起動:")
+            self.assertEqual(len(check_frontmatter_yaml_compat(root)), 1)
+
+    def test_plain_value_with_hash_comment_is_reported(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "my-skill", "チャンネル #general に投稿する。「my-skill」で起動。")
+            self.assertEqual(len(check_frontmatter_yaml_compat(root)), 1)
+
+    def test_quoted_value_with_colon_space_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "my-skill",
+                        '"Migrate files. Triggers: \\"migrate\\", \\"rename\\"."')
+            self.assertEqual(check_frontmatter_yaml_compat(root), [])
+
+    def test_block_scalar_with_colon_space_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/my-skill/SKILL.md",
+                        "---\nname: my-skill\ndescription: >-\n"
+                        "  モードを切り替え: save / restore。\n---\n")
+            self.assertEqual(check_frontmatter_yaml_compat(root), [])
+
+    def test_clean_plain_value_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "my-skill", "全角コロンは対象外：save / restore。「my-skill」で起動。")
+            self.assertEqual(check_frontmatter_yaml_compat(root), [])
+
+    def test_commands_frontmatter_is_checked(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "commands/my-cmd.md",
+                        "---\ndescription: 実行モード: run / check\n---\n\n本文。\n")
+            errors = check_frontmatter_yaml_compat(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("commands/my-cmd.md (description)", errors[0])
 
 
 if __name__ == "__main__":
