@@ -4,6 +4,14 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.51.2
+
+frontmatter description の strict YAML 非互換を解消。attack-review / goal-decomposition / handoff の description はクォートなし値に生の `: `（コロン + スペース）を含み、本リポジトリや Claude Code の寛容な行ベースパーサでは読めるが、strict YAML 実装（PyYAML / Go yaml 等）を使う他プラットフォームのツールでは frontmatter 全体が parse error になりスキル自体が読めなかった（Agent Skills 評価ツール waza の check + PyYAML で実測確認）。マルチプラットフォーム対応方針に反するため文言側を修正する。
+
+- 3 スキルの description から生の `: ` を除去（トリガー語は維持。attack-review は英語スキル定番の "Use when the user says" 形式へ、goal-decomposition は `status=draft`、handoff は句点区切りに変更）
+- validate_repo.py にチェック13を追加: frontmatter のクォートなし値に `: ` / 末尾コロン / ` #`（strict YAML でコメント扱いになり黙って切り捨てられる）があれば CI で落とし、同種の互換事故の再発を機械的に止める
+- handoff は description の文言のみの変更のため、regression ledger を accepted-without-run で再検証記録
+
 ## 1.51.1
 
 decision-journal を empirical-prompt-tuning の実測（3 イテレーション・実行者/採点者各 9 体の 3 役分離）で検出した摩擦に基づき堅牢化。critical 要件は全 pass だったが、実行者の裁量補完に頼って成立していた箇所を指示側で確定させた。
