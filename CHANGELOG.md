@@ -4,6 +4,14 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.51.0
+
+意思決定の記録・聞き取りスキル `decision-journal` を新規追加。LLM 自動実装時代は cycle 型ワークフローが Why の欠落を加速し、技術選定の来歴（誰が・何を根拠に・どの確信度で裁可したか）が失われる。情報配置 4 象限（How/What/Why/Why not）に収まらない architectural rationale の第 5 のホームを「憲法より判例集」方式で埋める。
+
+- artifact-store 契約に `decisions` kind を追加（canonical namespace / ARTIFACT_KINDS。決定記録は plans/ideas とは検索軸・ライフサイクルが独立するため独立 kind とする）。reviews と異なり `docs/decisions` の旧ストアは存在しないため LEGACY_RELS には加えず、init 対象のみに追加（不要な移行導線を生まない）。migration 分類マニフェスト（`--decisions`）とは層が異なる語であり contract に呼び分けを明記
+- 意思決定プロトコル v1 を共有契約 `decision-protocol.md` として正本化（3 通過条件＝生存可能性・検証可能性・退出可能性 / 非対称設計＝選定理由は感覚でよいが棄却条件は反証可能に / 二択にしないクローズ手順 / 個人 Pj・企業 Pj の射程分離）。全条項を規範でなく「プロセス仮説 v1」として明記し、design-principles / testing-anti-patterns / information-placement の上位でなく並置の契約に位置づけ。本文の常駐は他指示を希釈するためルータ 1〜2 行のみ推奨
+- `decision-journal` は 3 ワークフロー（start=着手前 1 行プロトコル / capture=LLM 選定会話の固化 / interview=判例の考古学的聞き取り）+ list を $ARGUMENTS 分岐で提供（skills-first、command なし）。5 判例の実測から型化した決定記録テンプレート・聞き取りガイドを references に分離。機密検出時の中断/除外/中止分岐と秘密情報の自動除外を組み込み
+
 ## 1.50.0
 
 レビュー出力先を Git 管理外の Agent Artifact Store へ移設。docs/reviews/ 配下への出力はレビュー内容（脆弱性・PoC・再現手順）がコミットに紛れて意図せず公開されるリスクがあった。
