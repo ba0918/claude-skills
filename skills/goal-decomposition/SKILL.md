@@ -1,6 +1,6 @@
 ---
 name: goal-decomposition
-description: 大枠ゴール（例「コードベース全体を精査してリファクタリング完遂」）を Loop Readiness Dossier（自走可能性の型検査結果）にコンパイルし、既存の閉ループ基盤（goal-loop / loop-triage / issue polling / measurement spine）への配線先を機械的に決める入口スキル。主成果は「自走してはいけない断片を機械的に説明して止めること」。「goal-decomposition」「大枠ゴール」「ループに乗せたい」「自走できる状態にして」「dossier」「ゴールを分解して配線」「loop readiness」「このゴールを自動化できるか」で起動。compile（自然言語ゴール → dossier draft 生成）と validate（dossier を dossier_lint で検査）の 2 ワークフロー。出力は常に status: draft で、承認は人間が dossier を直接編集する。配線の実行はしない（型検査のみ）。本リポジトリ専用。
+description: 大枠ゴール（例「コードベース全体を精査してリファクタリング完遂」）を Loop Readiness Dossier（自走可能性の型検査結果）にコンパイルし、既存の閉ループ基盤（goal-loop / loop-triage / issue polling / measurement spine）への配線先を機械的に決める入口スキル。主成果は「自走してはいけない断片を機械的に説明して止めること」。「goal-decomposition」「大枠ゴール」「ループに乗せたい」「自走できる状態にして」「dossier」「ゴールを分解して配線」「loop readiness」「このゴールを自動化できるか」で起動。compile（自然言語ゴール → dossier draft 生成）と validate（dossier を dossier_lint で検査）の 2 ワークフロー。出力は常に status=draft で、承認は人間が dossier を直接編集する。配線の実行はしない（型検査のみ）。本リポジトリ専用。
 ---
 
 # Goal Decomposition

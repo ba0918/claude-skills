@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: セッション間でコンテキストを引き継ぐためのスキル。コンテキストが圧迫されてきた時に save で現在の会話状態をLLMファーストな構造化テキストとして .agents/artifacts/handoff/ に保存し、次セッションで restore で読み込んで作業を継続する。引数で動作モードを切り替え: `save`（デフォルト）/ `restore [path]` / `list`。「handoff」「引き継ぎ」「次セッションに移動」「コンテキスト圧迫」「セッション切り替え」「/clear 前に保存」で起動。
+description: セッション間でコンテキストを引き継ぐためのスキル。コンテキストが圧迫されてきた時に save で現在の会話状態をLLMファーストな構造化テキストとして .agents/artifacts/handoff/ に保存し、次セッションで restore で読み込んで作業を継続する。引数で動作モードを切り替え。`save`（デフォルト）/ `restore [path]` / `list`。「handoff」「引き継ぎ」「次セッションに移動」「コンテキスト圧迫」「セッション切り替え」「/clear 前に保存」で起動。
 ---
 
 # Handoff — Session Context Relay
