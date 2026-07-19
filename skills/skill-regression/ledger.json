@@ -134,7 +134,7 @@
   },
   "handoff": {
     "file_sha256": {
-      "skills/handoff/SKILL.md": "208c162bd9d9d741e92cd6c3cb9f742ef21454f10f2ac91ef8cf08372b1dfba4",
+      "skills/handoff/SKILL.md": "2e1ecddc758566a2d698a6b67228fb8431dac96675078036f931ddf95eda7af5",
       "skills/handoff/fixtures.json": "2188b97ff2b492ce20eeca17e6ac0a7b2aa296d160d13225293b6258dc55ab16",
       "skills/shared/references/artifact-store.md": "b7c2807731596a58cb9bdf4990b9b4ee7e7ad100c3061f10e2428a056395f4d9",
       "skills/shared/references/checkpoint-pattern.md": "256a18a6102775940c4e801d776aeb916f353a58874ce35e65418e2a0b6b4276",
@@ -148,8 +148,8 @@
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/design-principles.md"
     ],
-    "surface_sha256": "a213051c4b34f5ffb4c2e0455f6018699aaa6a84a0dd9a08a091295e0953b7f0",
-    "verified": "2026-07-19"
+    "surface_sha256": "cee68a01ee3b6ee4776f9da087a0e58f397d9b682a9465c05b9d3efb5f33f4c2",
+    "verified": "2026-07-20"
   },
   "issue": {
     "file_sha256": {
