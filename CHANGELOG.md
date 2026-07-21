@@ -4,6 +4,15 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.53.0
+
+レポート生成系スキルの完了報告に「発話サイズのヒューマンリーダブル要約」を必須化する横展開。完了報告が「✅ + ファイルパス + 定型 Next Steps」のみで生成物の中身が人間に伝わらず、承認・把握が儀式化していた問題への構造的対策。認知負荷を下げるのは行数の圧縮ではなく説明の平易さ、という設計原則（ユーザー裁定 2026-07-21）を共有契約として正本化する。
+
+- `skills/shared/references/human-readable-summary.md`（新規）: 完了報告要約の共通契約。読者分離の原則（正本 = LLM 向け / 完了報告 = 人間向け）・必須要素・上限 10 行前後・summary-first 配置（固定ラベル「📝 つまり:」を完了表示最上部に置く）・縮退規定（欠損は捏造せず明示、秘密値は省略）・アンチパターン・before/after ワークト例を定義。agreement-ledger Phase B2（plan/plan-implement/cycle への組み込み）が後から本契約を参照する依存逆転のアンカーを内蔵
+- 対象 6 スキルの完了表示に契約リンク付き要約を組み込み: brainstorm / team-brainstorm（アイデアの核 + 未決定点）、issue（タイトル + 課題要旨のエコー）、handoff save（ゴール / 現在地 / 次の一手）、doc-write（文書要旨 1 行）、design-guide（色調 / フォント / トーンの 3 行）
+- `validate_repo.py` にチェック14 `check_human_readable_summary` を追加: 契約の before/after 例の存在と、6 スキルの完了表示が契約リンク + 固定要約ラベルを持つことを run_checks で常時強制する統一テキストガード。fixtures を持たない 4 スキル（brainstorm / doc-write / team-brainstorm / design-guide）の要約"挙動"はこのテキストガードが最低ガードになる
+- `skills/issue/fixtures.json`: Create 完了報告の要約を要求する is-004 を追加し、skill-regression 白紙実行者で 5/5 要件 green を確認。ledger を issue=pass / handoff=accepted-without-run（save はライブ会話履歴が必要で fixture 化不可・restore 系 fixtures は挙動不変）で再検証記録
+
 ## 1.52.0
 
 合意台帳ワークフロー（agreement-ledger）の Phase A（最小スライス）を追加。greenfield 案件で LLM が仕様の空白を暗黙補完し「思っていたのと違う」が多発する問題への構造的対策として、現在有効な合意を状態付きで正本化する台帳と、中心命題「LLM は提案者になれるが承認者になれない」の機械検証を導入する。
