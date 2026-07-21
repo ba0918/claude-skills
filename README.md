@@ -184,7 +184,7 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 | `refactor` | 動作を保持したままリファクタリング |
 | `test-driven-development` | TDD サイクルのガイド |
 | `spec-verify` | 検証可能な契約の正本化・PBT 生成・証拠ベースのドリフト機械検知 |
-| `ledger` | 現在形の合意を状態付きで正本化する合意台帳（extract / session / status・承認真正性の機械検証） |
+| `ledger` | 現在形の合意を状態付きで正本化する合意台帳（extract / session 対話ハイブリッド / status / orient・承認真正性 + batch + pending-vocabulary の機械検証） |
 
 ### Personal / Experimental（葉）— 本リポジトリ開発用・実験的
 

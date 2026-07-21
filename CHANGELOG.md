@@ -4,6 +4,40 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.54.0
+
+ledger パイロット第 1 号で裁定セッション（4 択一問一答）が「儀式化を回避するための
+スキルがそれ自体儀式化した」失敗を起こした。原因は 3 つ — claim が How 語彙で裁定不能・
+共有文脈ゼロの考古学モードに文脈回復工程がない・語彙層（CONTEXT.md）の生成フローが
+未配線。壁打ち + Codex 3 往復で収束した設計「対話を入口・台帳を出口」を claude-skills 側へ
+配線する。superpowers 型の対話フロントエンドを状態付き台帳のバックエンドに接続し、
+沈黙時の失敗モードだけを fail-closed に反転させる（黙っていると合意 → 黙っていると未裁定）。
+
+- `skills/shared/references/agreement-ledger.md`: (1) 用途 2 モード（その場記録 =
+  リスク順 / 考古学 = 物語順・考古学は文脈回復工程を必須化）(2) claim の語彙規範
+  （What で書く・How は demote-but-reachable・What 投影不能な純アーキ決定は
+  decision-journal 送りの discriminator）(3) batch 承認の真正性規約とトップレベル
+  任意キー `batch_manifests` の schema（高リスク・異論行は batch 不可）(4)
+  pending-vocabulary を派生検出として定義（5 状態 enum 不変・(a) AGREED 限定
+  エスカレートは確定 / (b) 競合中・廃語依存は advisory）。`risk` フィールドを共通 row に追加
+- `skills/shared/references/context-vocabulary.md`: 語彙生成フローの正本化（extract の
+  副産物・1 パス 2 ストリーム・cold-start batch / 定常 streaming・admission フィルタ・
+  セッション外自動育成は候補と鮮度まで自動で確定は人間）
+- `skills/ledger/scripts/ledger_lint.py` + `test_ledger_lint.py`: batch_digest 整合・
+  高リスク行の batch 混入・pending-vocabulary 派生検出（(a) finding /(b) advisory）を
+  実装。`load_context_terms` を `{id: state}` 返却へ拡張。advisories を report-only
+  ストリームとして分離（--strict でゲートしない）。schema 追加ゼロ or 任意キー/任意
+  フィールドのみで後方互換（既存 schema_version 1 台帳は無改変で valid）。TDD で
+  107 tests green、doc⇔code スキーマ同期テストを併せて更新
+- `skills/ledger/SKILL.md` + `references/ledger-templates.md`: session を対話ハイブリッド化
+  （モード判定・テーマ単位対話・判断スロット・解釈確認ゲート・沈黙 = UNDECIDED・まとめ
+  確認）。extract v2（2 ストリーム・What 規範・term_refs 必須・受け入れ --context 必須）。
+  orient 新設（plan 履歴を物語順に翻訳した ADR 風オリエンテーション文書・使い捨て・非権威・
+  secret ゲート付き）。oracle 計測（理解修復イベント数）を完了報告へ追加。文章規範は
+  japanese-tech-writing を名前参照（別プラグインのため相対リンクは張らない）
+- 生成フローは「契約 + detector」までに留め、候補の自動昇格ロジック・admission 閾値の
+  チューニングは pilot 第 2 号の実測後に iterate へ回す（作り込まない）
+
 ## 1.53.1
 
 ledger 裁定ビューを実プロジェクトでパイロット実行したところ、「[ENG-006] 同一の排他キーを持つ
