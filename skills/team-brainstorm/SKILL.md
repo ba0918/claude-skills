@@ -256,8 +256,13 @@ Total ideas explored: {total_count}
    | [{kebab-title}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | 💡 Idea | {summary} |
    ```
 8. **Last Updated** を今日の日付に更新
-9. 完了メッセージ表示:
+9. 完了メッセージ表示。冒頭に [ヒューマンリーダブル要約契約](../shared/references/human-readable-summary.md) に従う
+   要約ブロックを置く（summary-first）。チーム議論で保存したアイデアの核を 1〜2 行のかみ砕いた言葉で述べ、
+   残った未決定点を明示する（なければ「未決定点: なし」）。逐語再掲・網羅列挙はしない:
    ```
+   📝 つまり: {保存したアイデアが「つまり何なのか」を、議論を見ていない人にも
+      伝わる平易な 1〜2 行で}。未決定点: {残った論点、なければ「なし」}
+
    ✅ アイデアを保存しました!
    📄 File: .agents/artifacts/ideas/{slug}.md
    📋 Index: .agents/artifacts/ideas/idea-status.md
@@ -266,6 +271,7 @@ Total ideas explored: {total_count}
 ### セキュリティ
 
 壁打ち内容に機密情報が含まれる場合、メモファイルに書き出す前にユーザーに確認する。
+要約ブロックにも機密値（トークン・鍵・個人情報）を含めない（契約の縮退規定に従い省略またはカテゴリ名に置換）。
 
 ---
 

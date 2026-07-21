@@ -566,6 +566,9 @@ def run_checks(root):
     # 13. frontmatter 値の strict YAML 互換
     errors += check_frontmatter_yaml_compat(root)
 
+    # 14. ヒューマンリーダブル要約契約の横展開ガード
+    errors += check_human_readable_summary(root)
+
     return errors
 
 
