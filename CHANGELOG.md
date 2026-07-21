@@ -4,6 +4,32 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.56.0
+
+pilot 第 2 号（automation-visualize・65 行裁定）で実測された、承認バッチごとに digest
+計算・approval オブジェクト・batch manifest を Python ヒアドキュメントで毎回 50 行前後 ×
+計 8 回手書きするコストと digest 手計算ミスのリスクへの構造的対策。ledger_lint が read-only
+なのは正しい設計だが、書き込み側の支援が無いため摩擦が人間側に残っていた。読み（lint）と
+書き（write）を分離し、digest 込みの書き込み CLI を新設する。
+
+- `skills/ledger/scripts/ledger_write.py`: 書き込み CLI を新設。add-row / approve /
+  reject / batch-approve のサブコマンドで行追加・状態遷移・batch manifest 生成を機械化する。
+  digest・構造検証は `ledger_lint.compute_digest` / `compute_batch_digest` / `lint_data` を
+  import して再利用し write 側に規則を複製しない。自己検証は verify-before-swap 方式
+  （in-memory で lint → hard findings 無しのときだけ tempfile + os.replace でアトミック置換・
+  不正内容を一瞬もディスクへ永続化しない）。approve/reject/batch はセッション成果物の人間
+  回答を consume する経路に構造的結合し、任意 session-id だけの standalone 承認入口を持たない。
+  actor_kind は human 内部固定。exit code 0/1/2 を ledger_lint と整合。containment（--root
+  必須・symlink/root 外拒否）と secret pre-flight で fail-closed
+- `skills/ledger/scripts/test_ledger_write.py`: 36 件のテストを sibling 配置で追加。add-row/
+  approve/reject/batch-approve の契約・verify-before-swap・exit code・containment・secret・
+  diff 不変条件・session 構造的結合・高リスク batch 拒否を固定
+- `skills/shared/references/agreement-ledger.md`: 「書き込みの正本（記録の道具）と read-only
+  検証の分担」節を追加（SyncTests の機械パースを避けた純散文）
+- `skills/ledger/SKILL.md`: 「書き込み実行（ledger_write CLI）」節を追加し session §5 の記録を
+  CLI 経由に案内。書き込み境界表に ledger_write 行を追加。手書きフォールバックは維持
+- `README.md`: ledger の説明に書き込み CLI を反映
+
 ## 1.55.0
 
 サブエージェント委譲の結果・完了報告がオーケストレーターへ戻らない到達性問題

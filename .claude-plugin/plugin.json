@@ -1,6 +1,6 @@
 {
   "name": "claude-skills",
-  "version": "1.55.0",
+  "version": "1.56.0",
   "description": "Implementation planning, review, and automation workflow skills for Claude Code",
   "author": {
     "name": "mizumi"
