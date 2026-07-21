@@ -277,6 +277,15 @@ class ApprovalAuthenticityTests(unittest.TestCase):
         self.assertIn("invalid-prior-state",
                       checks(lint_obj(make_file([row]))))
 
+    def test_invalid_revision_row_suppresses_double_mismatch(self):
+        # An invalid row.revision already yields invalid-revision; comparing a
+        # differing approval.revision against it must NOT add noise (I3 guard).
+        row = make_agreed_row(revision=0)   # invalid row revision
+        row["approval"]["revision"] = 1     # differs from the (invalid) 0
+        cs = checks(lint_obj(make_file([row])))
+        self.assertIn("invalid-revision", cs)
+        self.assertNotIn("approval-revision-mismatch", cs)
+
 
 class EpistemicSeparationTests(unittest.TestCase):
     def test_observation_assumption_conflation_detected(self):
@@ -604,8 +613,15 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(pat, ll.ID_PATTERN)
 
     def test_actor_kinds_match(self):
-        self.assertEqual(ll.ACTOR_KINDS, ("human",))
-        self.assertIn("`human`", self.md)
+        # Parse the actor_kind enum out of the 承認イベント table so md/code
+        # drift is caught if the enum ever changes (not a tautological assert).
+        md_actors = set()
+        for cells in _tables_under(self.md, "承認イベント"):
+            if _first_token(cells[0]) == "actor_kind" and len(cells) >= 4:
+                m = re.search(r"enum:\s*((?:`[^`]+`(?:\s*/\s*)?)+)", cells[3])
+                if m:
+                    md_actors = set(re.findall(r"`([^`]+)`", m.group(1)))
+        self.assertEqual(md_actors, set(ll.ACTOR_KINDS))
 
 
 class ContextLoadTests(unittest.TestCase):
