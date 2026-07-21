@@ -106,6 +106,35 @@ class DigestTests(unittest.TestCase):
         self.assertEqual(a, b)
 
 
+class DigestRobustnessTests(unittest.TestCase):
+    """compute_digest must be total: malformed rows get type findings, never
+    an uncaught TypeError that crashes the linter (fail-closed break)."""
+
+    def test_digest_total_on_non_list_term_refs(self):
+        self.assertIsInstance(
+            ll.compute_digest({"claim": "x", "term_refs": 5}), str)
+
+    def test_digest_total_on_non_string_claim(self):
+        self.assertIsInstance(
+            ll.compute_digest({"claim": 5, "term_refs": ["a"]}), str)
+
+    def test_digest_total_on_bool_term_refs(self):
+        self.assertIsInstance(
+            ll.compute_digest({"claim": "x", "term_refs": True}), str)
+
+    def test_agreed_row_with_malformed_term_refs_does_not_crash(self):
+        row = {
+            "id": "NAV-001", "revision": 1, "state": "AGREED",
+            "claim": "x", "term_refs": 5,
+            "approval": {
+                "row_id": "NAV-001", "revision": 1, "digest": "z",
+                "session_id": "S-1", "actor_kind": "human",
+                "prior_state": "UNDECIDED"},
+        }
+        result = lint_obj(make_file([row]))  # must not raise
+        self.assertIn("invalid-type", checks(result))
+
+
 class ValidLedgerTests(unittest.TestCase):
     def test_valid_ledger_no_findings(self):
         result = lint_obj(make_file([

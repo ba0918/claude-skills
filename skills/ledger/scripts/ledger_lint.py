@@ -128,10 +128,23 @@ def compute_digest(row):
     """Deterministic digest over the meaning-bearing claim body. If claim or
     term_refs change after approval, this digest changes and the recorded
     approval no longer matches — the machine-checkable core of "LLM cannot be
-    the approver"."""
+    the approver".
+
+    Total by construction: malformed rows (non-string claim, non-list or
+    non-string term_refs) get their own invalid-type findings elsewhere, so
+    here they are coerced to the empty/valid case rather than raising — a lint
+    over untrusted input must never crash instead of fail-closing. For a
+    well-formed row (claim: string, term_refs: string array) this coercion is
+    a no-op, so the documented algorithm still holds."""
+    claim = row.get("claim", "")
+    if not isinstance(claim, str):
+        claim = ""
+    refs = row.get("term_refs")
+    if not isinstance(refs, list):
+        refs = []
     core = {
-        "claim": row.get("claim", ""),
-        "term_refs": sorted(row.get("term_refs") or []),
+        "claim": claim,
+        "term_refs": sorted(r for r in refs if isinstance(r, str)),
     }
     blob = json.dumps(core, ensure_ascii=False, sort_keys=True,
                       separators=(",", ":"))
