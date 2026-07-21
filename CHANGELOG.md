@@ -4,6 +4,15 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.52.0
+
+合意台帳ワークフロー（agreement-ledger）の Phase A（最小スライス）を追加。greenfield 案件で LLM が仕様の空白を暗黙補完し「思っていたのと違う」が多発する問題への構造的対策として、現在有効な合意を状態付きで正本化する台帳と、中心命題「LLM は提案者になれるが承認者になれない」の機械検証を導入する。
+
+- `skills/shared/references/agreement-ledger.md`（新規）: 台帳スキーマ v1 の正本。5 状態（AGREED/DELEGATED/PROVISIONAL/UNDECIDED/REJECTED）と、AGREED 遷移を「人間が提示 revision へ明示回答した承認イベント + 主張 digest 一致」からのみ生成可能にする承認真正性規則を定義。機械検証の正本形式は JSON を採用（CI/pre-push の最小環境に標準 YAML パーサがなく外部依存ゼロ方針と両立しないため。spec_lint の fail-closed 機構を再利用）
+- `skills/shared/references/context-vocabulary.md`（新規）: 語彙層 CONTEXT.md 契約と、ledger_lint が読む機械可読語彙ファイル形式
+- `skills/ledger/`（新規スキル）: `ledger_lint.py`（構造 lint・承認真正性の機械照合・secret redaction・path containment・read-only・57 テスト）+ SKILL.md（extract / session / status の 3 ワークフローを第 1 引数でディスパッチ）+ ledger-templates.md
+- Phase B（context-vocabulary.md 二重状態整合・plan/plan-implement/cycle の条件発動ゲート・Extra 検出・CONTRACT_VOCAB）と Phase A4（automation-visualize での対話裁定パイロット）は、plan の pilot-first 設計に従い pilot 結果を受けて確定する（PROVISIONAL）
+
 ## 1.51.2
 
 frontmatter description の strict YAML 非互換を解消。attack-review / goal-decomposition / handoff の description はクォートなし値に生の `: `（コロン + スペース）を含み、本リポジトリや Claude Code の寛容な行ベースパーサでは読めるが、strict YAML 実装（PyYAML / Go yaml 等）を使う他プラットフォームのツールでは frontmatter 全体が parse error になりスキル自体が読めなかった（Agent Skills 評価ツール waza の check + PyYAML で実測確認）。マルチプラットフォーム対応方針に反するため文言側を修正する。
