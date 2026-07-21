@@ -1,0 +1,532 @@
+#!/usr/bin/env python3
+"""Unit tests for ledger_lint (TDD — written before the implementation).
+
+Covers: hand-rolled row validation (envelope / state-attachments / approval
+authenticity), fail-closed parsing (exit-2 corruption paths), path
+containment, the where/what/why/how finding contract, CLI exit-code contract,
+the diff invariant (UNDECIDED must not vanish silently), term_refs membership
+against a CONTEXT vocabulary file, and the agreement-ledger.md <-> code
+constants sync.
+"""
+
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import ledger_lint as ll  # noqa: E402
+
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+LEDGER_LINT = os.path.join(SCRIPTS_DIR, "ledger_lint.py")
+LEDGER_MD = os.path.join(
+    SCRIPTS_DIR, "..", "..", "shared", "references", "agreement-ledger.md")
+
+# Built at runtime so no literal credential ever appears in this source file
+# (the repo's secret-detection hook would otherwise flag it).
+FAKE_AWS = "AKIA" + "IOSFODNN7" + "EXAMPLE"
+
+
+def digest_of(claim, term_refs=None):
+    core = {"claim": claim, "term_refs": sorted(term_refs or [])}
+    blob = json.dumps(core, ensure_ascii=False, sort_keys=True,
+                      separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def make_approval(claim, term_refs=None, revision=1, **over):
+    ev = {
+        "row_id": "NAV-001",
+        "revision": revision,
+        "digest": digest_of(claim, term_refs),
+        "session_id": "S-20260721-01",
+        "actor_kind": "human",
+        "prior_state": "UNDECIDED",
+    }
+    ev.update(over)
+    return ev
+
+
+def make_row(**over):
+    claim = over.get("claim", "トップナビはグローバル固定で全画面共通とする")
+    term_refs = over.get("term_refs")
+    row = {
+        "id": "NAV-001",
+        "revision": 1,
+        "state": "UNDECIDED",
+        "claim": claim,
+    }
+    row.update(over)
+    return row
+
+
+def make_agreed_row(**over):
+    rid = over.pop("id", "NAV-001")
+    rev = over.pop("revision", 1)
+    claim = over.pop("claim", "トップナビはグローバル固定で全画面共通とする")
+    term_refs = over.pop("term_refs", None)
+    row = {
+        "id": rid,
+        "revision": rev,
+        "state": "AGREED",
+        "claim": claim,
+        "approval": make_approval(claim, term_refs, revision=rev, row_id=rid),
+    }
+    if term_refs is not None:
+        row["term_refs"] = term_refs
+    row.update(over)
+    return row
+
+
+def make_file(rows):
+    return {"schema_version": 1, "rows": rows}
+
+
+def lint_obj(data, name="ledger.json", **kw):
+    return ll.lint_data([(name, data)], **kw)
+
+
+def checks(result):
+    return sorted(f["check"] for f in result["findings"])
+
+
+class DigestTests(unittest.TestCase):
+    def test_compute_digest_matches_documented_algorithm(self):
+        row = make_row(claim="X", term_refs=["T-2", "T-1"])
+        self.assertEqual(ll.compute_digest(row), digest_of("X", ["T-2", "T-1"]))
+
+    def test_digest_ignores_term_ref_order(self):
+        a = ll.compute_digest(make_row(claim="X", term_refs=["T-1", "T-2"]))
+        b = ll.compute_digest(make_row(claim="X", term_refs=["T-2", "T-1"]))
+        self.assertEqual(a, b)
+
+
+class ValidLedgerTests(unittest.TestCase):
+    def test_valid_ledger_no_findings(self):
+        result = lint_obj(make_file([
+            make_row(),
+            make_agreed_row(id="NAV-002", claim="フッタは表示しない"),
+        ]))
+        self.assertEqual(result["findings"], [])
+        self.assertFalse(result["corrupt"])
+        self.assertFalse(result["findings_present"])
+
+    def test_empty_ledger_is_clean(self):
+        result = lint_obj(make_file([]))
+        self.assertEqual(result["findings"], [])
+        self.assertFalse(result["corrupt"])
+
+    def test_unicode_claim_and_id_ok(self):
+        result = lint_obj(make_file([
+            make_row(claim="全角スペース　を含む多バイト主張 🎌"),
+        ]))
+        self.assertEqual(result["findings"], [])
+
+    def test_finding_contract_has_all_keys(self):
+        result = lint_obj(make_file([make_row(state="BOGUS")]))
+        self.assertTrue(result["findings"])
+        for f in result["findings"]:
+            self.assertEqual(set(f), {"where", "check", "what", "why", "how"})
+
+
+class EnvelopeTests(unittest.TestCase):
+    def test_missing_id_and_revision_detected(self):
+        row = make_row()
+        del row["id"]
+        del row["revision"]
+        self.assertIn("missing-required", checks(lint_obj(make_file([row]))))
+
+    def test_invalid_id_pattern_detected(self):
+        self.assertIn("invalid-id", checks(lint_obj(make_file([
+            make_row(id="nav_1")]))))
+
+    def test_duplicate_id_detected(self):
+        result = lint_obj(make_file([make_row(), make_row()]))
+        self.assertIn("duplicate-id", checks(result))
+
+    def test_nonpositive_revision_detected(self):
+        self.assertIn("invalid-revision", checks(lint_obj(make_file([
+            make_row(revision=0)]))))
+        self.assertIn("invalid-revision", checks(lint_obj(make_file([
+            make_row(revision=True)]))))
+
+    def test_unknown_state_detected(self):
+        self.assertIn("unknown-state", checks(lint_obj(make_file([
+            make_row(state="MAYBE")]))))
+
+    def test_unknown_envelope_key_detected(self):
+        self.assertIn("unknown-key", checks(lint_obj(make_file([
+            make_row(bogus="x")]))))
+
+    def test_empty_required_string_detected(self):
+        self.assertIn("empty-required-string", checks(lint_obj(make_file([
+            make_row(claim="")]))))
+
+
+class StateAttachmentTests(unittest.TestCase):
+    def test_agreed_without_approval_detected(self):
+        row = make_agreed_row()
+        del row["approval"]
+        self.assertIn("approval-missing", checks(lint_obj(make_file([row]))))
+
+    def test_delegated_requires_capability_fields(self):
+        row = make_row(state="DELEGATED", delegation={"subject": "実装エージェント"})
+        result = lint_obj(make_file([row]))
+        # operation / scope / expiry / revocation missing
+        self.assertIn("missing-required", checks(result))
+
+    def test_delegated_complete_capability_ok(self):
+        row = make_row(state="DELEGATED", delegation={
+            "subject": "実装エージェント",
+            "operation": "NAV コンポーネント実装",
+            "scope": "現 plan のみ",
+            "expiry": "本 plan 完了時",
+            "revocation": "台帳行を UNDECIDED へ戻す",
+        })
+        self.assertEqual(lint_obj(make_file([row]))["findings"], [])
+
+    def test_provisional_requires_reeval_condition(self):
+        self.assertIn("reeval-condition-missing", checks(lint_obj(make_file([
+            make_row(state="PROVISIONAL")]))))
+
+    def test_provisional_with_reeval_condition_ok(self):
+        row = make_row(state="PROVISIONAL",
+                       reeval_condition="pilot の裁定時間実測後に再評価")
+        self.assertEqual(lint_obj(make_file([row]))["findings"], [])
+
+    def test_undecided_with_approval_is_forbidden(self):
+        row = make_row(state="UNDECIDED",
+                       approval=make_approval("トップナビはグローバル固定で全画面共通とする"))
+        self.assertIn("attachment-not-allowed", checks(lint_obj(make_file([row]))))
+
+    def test_rejected_with_delegation_is_forbidden(self):
+        row = make_row(state="REJECTED", delegation={
+            "subject": "x", "operation": "y", "scope": "z",
+            "expiry": "w", "revocation": "v"})
+        self.assertIn("attachment-not-allowed", checks(lint_obj(make_file([row]))))
+
+
+class ApprovalAuthenticityTests(unittest.TestCase):
+    def test_revision_mismatch_is_stale_approval(self):
+        # row revised to 2 after approval captured at revision 1
+        row = make_agreed_row(revision=2)
+        row["approval"] = make_approval(row["claim"], revision=1)
+        self.assertIn("approval-revision-mismatch",
+                      checks(lint_obj(make_file([row]))))
+
+    def test_digest_mismatch_means_claim_changed(self):
+        row = make_agreed_row()
+        row["claim"] = "主張が承認後に書き換わった"  # digest no longer matches
+        self.assertIn("approval-digest-mismatch",
+                      checks(lint_obj(make_file([row]))))
+
+    def test_non_human_actor_rejected(self):
+        row = make_agreed_row()
+        row["approval"]["actor_kind"] = "llm"
+        self.assertIn("approval-actor-not-human",
+                      checks(lint_obj(make_file([row]))))
+
+    def test_approval_row_id_mismatch_detected(self):
+        row = make_agreed_row()
+        row["approval"]["row_id"] = "NAV-999"
+        self.assertIn("approval-row-id-mismatch",
+                      checks(lint_obj(make_file([row]))))
+
+    def test_approval_missing_required_field(self):
+        row = make_agreed_row()
+        del row["approval"]["session_id"]
+        self.assertIn("missing-required", checks(lint_obj(make_file([row]))))
+
+    def test_invalid_prior_state_detected(self):
+        row = make_agreed_row()
+        row["approval"]["prior_state"] = "NOPE"
+        self.assertIn("invalid-prior-state",
+                      checks(lint_obj(make_file([row]))))
+
+
+class EpistemicSeparationTests(unittest.TestCase):
+    def test_observation_assumption_conflation_detected(self):
+        row = make_row(
+            observations=["ログイン画面が存在する", "同じ文言"],
+            assumptions=["同じ文言"],
+        )
+        self.assertIn("observation-assumption-conflation",
+                      checks(lint_obj(make_file([row]))))
+
+    def test_disjoint_observation_assumption_ok(self):
+        row = make_row(
+            observations=["ログイン画面が存在する"],
+            assumptions=["SSO を使うと仮定"],
+        )
+        self.assertEqual(lint_obj(make_file([row]))["findings"], [])
+
+
+class TermRefsTests(unittest.TestCase):
+    def test_undefined_term_detected_with_context(self):
+        row = make_row(term_refs=["T-UNKNOWN"])
+        result = lint_obj(make_file([row]), context_terms={"T-1", "T-2"})
+        self.assertIn("undefined-term", checks(result))
+
+    def test_defined_term_ok_with_context(self):
+        row = make_row(term_refs=["T-1"])
+        result = lint_obj(make_file([row]), context_terms={"T-1", "T-2"})
+        self.assertEqual(result["findings"], [])
+
+    def test_term_refs_skipped_without_context(self):
+        row = make_row(term_refs=["T-ANYTHING"])
+        result = lint_obj(make_file([row]), context_terms=None)
+        self.assertEqual(result["findings"], [])
+
+
+class DiffInvariantTests(unittest.TestCase):
+    def test_undecided_vanished_detected(self):
+        baseline = {"NAV-001", "NAV-050"}
+        row = make_row(id="NAV-001")  # NAV-050 gone
+        result = lint_obj(make_file([row]), baseline_undecided_ids=baseline)
+        self.assertIn("undecided-vanished", checks(result))
+
+    def test_undecided_transitioned_is_not_vanished(self):
+        baseline = {"NAV-001"}
+        row = make_agreed_row(id="NAV-001")  # transitioned to AGREED
+        result = lint_obj(make_file([row]), baseline_undecided_ids=baseline)
+        self.assertNotIn("undecided-vanished", checks(result))
+
+
+class SecretTests(unittest.TestCase):
+    def test_secret_in_claim_detected(self):
+        row = make_row(claim=f"接続キーは {FAKE_AWS} を使う")
+        self.assertIn("secret-in-free-text", checks(lint_obj(make_file([row]))))
+
+    def test_secret_masked_in_finding_output(self):
+        row = make_row(observations=[f"token {FAKE_AWS} を観測"])
+        result = lint_obj(make_file([row]))
+        blob = json.dumps(result["findings"], ensure_ascii=False)
+        self.assertNotIn(FAKE_AWS, blob)
+
+
+class CorruptionTests(unittest.TestCase):
+    def _write(self, tmp, text):
+        path = os.path.join(tmp, "ledger.json")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(text)
+        return path
+
+    def test_toplevel_not_object(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, "[]")
+            result = ll.lint_paths([p])
+            self.assertTrue(result["corrupt"])
+            self.assertEqual(result["diagnostics"][0]["category"], "not-an-object")
+
+    def test_missing_toplevel_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, '{"schema_version": 1}')
+            result = ll.lint_paths([p])
+            self.assertEqual(result["diagnostics"][0]["category"],
+                             "missing-toplevel-key")
+
+    def test_rows_not_array(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, '{"schema_version": 1, "rows": {}}')
+            self.assertEqual(ll.lint_paths([p])["diagnostics"][0]["category"],
+                             "rows-not-array")
+
+    def test_unknown_schema_version(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, '{"schema_version": 2, "rows": []}')
+            self.assertEqual(ll.lint_paths([p])["diagnostics"][0]["category"],
+                             "unknown-schema-version")
+
+    def test_invalid_json(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, "{not json")
+            self.assertEqual(ll.lint_paths([p])["diagnostics"][0]["category"],
+                             "invalid-json")
+
+    def test_empty_file_is_invalid_json(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, "")
+            self.assertEqual(ll.lint_paths([p])["diagnostics"][0]["category"],
+                             "invalid-json")
+
+    def test_duplicate_json_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(
+                tmp, '{"schema_version": 1, "rows": [], "rows": []}')
+            self.assertEqual(ll.lint_paths([p])["diagnostics"][0]["category"],
+                             "duplicate-json-key")
+
+    def test_too_deep_nesting(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            deep = "[" * 40 + "]" * 40
+            p = self._write(tmp, deep)
+            self.assertEqual(ll.lint_paths([p])["diagnostics"][0]["category"],
+                             "too-deep")
+
+    def test_file_too_large(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, '{"schema_version":1,"rows":[]}')
+            # patch stat via oversized real file
+            big = os.path.join(tmp, "big.json")
+            with open(big, "w") as f:
+                f.write(" " * (ll.MAX_SIZE + 1))
+            self.assertEqual(ll.lint_paths([big])["diagnostics"][0]["category"],
+                             "file-too-large")
+
+
+class ContainmentTests(unittest.TestCase):
+    def test_path_escape_rejected(self):
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(ll.LedgerLintError):
+                ll.check_containment("/etc/passwd", root)
+
+    def test_symlink_rejected(self):
+        with tempfile.TemporaryDirectory() as root:
+            target = os.path.join(root, "real.json")
+            with open(target, "w") as f:
+                f.write("{}")
+            link = os.path.join(root, "link.json")
+            os.symlink(target, link)
+            with self.assertRaises(ll.LedgerLintError):
+                ll.check_containment(link, root)
+
+
+class ReadOnlyTests(unittest.TestCase):
+    def test_lint_does_not_modify_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "ledger.json")
+            content = json.dumps(make_file([make_row()]))
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(content)
+            before = os.stat(path).st_mtime_ns
+            snapshot = os.listdir(tmp)
+            ll.lint_paths([path])
+            self.assertEqual(os.stat(path).st_mtime_ns, before)
+            self.assertEqual(sorted(os.listdir(tmp)), sorted(snapshot))
+            with open(path, encoding="utf-8") as f:
+                self.assertEqual(f.read(), content)
+
+
+class CliTests(unittest.TestCase):
+    def _run(self, args, tmp):
+        return subprocess.run(
+            [sys.executable, LEDGER_LINT, "--root", tmp, *args],
+            capture_output=True, text=True)
+
+    def _write(self, tmp, data, name="ledger.json"):
+        path = os.path.join(tmp, name)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(json.dumps(data))
+        return path
+
+    def test_clean_report_only_exit_0(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, make_file([make_row()]))
+            self.assertEqual(self._run([p], tmp).returncode, 0)
+
+    def test_findings_report_only_exit_0(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, make_file([make_row(state="BOGUS")]))
+            self.assertEqual(self._run([p], tmp).returncode, 0)
+
+    def test_findings_strict_exit_1(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, make_file([make_row(state="BOGUS")]))
+            self.assertEqual(self._run([p, "--strict"], tmp).returncode, 1)
+
+    def test_corruption_exit_2_mode_independent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, [])
+            self.assertEqual(self._run([p], tmp).returncode, 2)
+            self.assertEqual(self._run([p, "--strict"], tmp).returncode, 2)
+
+    def test_json_output_shape(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, make_file([make_row(state="BOGUS")]))
+            out = self._run([p, "--json"], tmp)
+            payload = json.loads(out.stdout)
+            self.assertIn("valid", payload)
+            self.assertIn("findings_present", payload)
+            self.assertTrue(payload["findings_present"])
+
+    def test_root_not_a_dir_usage_error(self):
+        out = subprocess.run(
+            [sys.executable, LEDGER_LINT, "--root", "/no/such/dir"],
+            capture_output=True, text=True)
+        self.assertEqual(out.returncode, 2)
+
+
+# ---------------------------------------------------------------------------
+# Sync: agreement-ledger.md tables <-> code constants
+# ---------------------------------------------------------------------------
+
+def _tables_under(md_text, heading):
+    """Return the markdown table data rows (list of cell lists) that appear
+    under the given heading, up to the next heading of same-or-higher level."""
+    lines = md_text.splitlines()
+    out = []
+    collecting = False
+    for line in lines:
+        if line.startswith("#"):
+            collecting = heading in line
+            continue
+        if not collecting:
+            continue
+        s = line.strip()
+        if s.startswith("|") and "---" not in s:
+            cells = [c.strip() for c in s.strip("|").split("|")]
+            out.append(cells)
+    return out
+
+
+def _first_token(cell):
+    m = re.search(r"`([^`]+)`", cell)
+    return m.group(1) if m else None
+
+
+class SyncTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        with open(LEDGER_MD, encoding="utf-8") as f:
+            cls.md = f.read()
+
+    def test_states_match(self):
+        rows = _tables_under(self.md, "状態と必須随伴フィールド")
+        md_states = {_first_token(r[0]) for r in rows if _first_token(r[0])}
+        self.assertEqual(md_states, set(ll.STATES))
+
+    def test_corruption_slugs_match(self):
+        md_slugs = set(re.findall(r"^- `([a-z-]+)` —", self.md, re.MULTILINE))
+        self.assertTrue(md_slugs)
+        self.assertEqual(md_slugs, set(ll.CORRUPTION_CATEGORIES))
+
+    def test_input_limits_match(self):
+        rows = _tables_under(self.md, "入力上限と破損カテゴリ")
+        values = {}
+        for r in rows:
+            slug = _first_token(r[2]) if len(r) >= 3 else None
+            num = re.search(r"`(\d+)`", r[1]) if len(r) >= 2 else None
+            if slug and num:
+                values[slug] = int(num.group(1))
+        self.assertEqual(values.get("file-too-large"), ll.MAX_SIZE)
+        self.assertEqual(values.get("too-many-rows"), ll.MAX_ROWS)
+        self.assertEqual(values.get("too-deep"), ll.MAX_DEPTH)
+
+    def test_row_required_fields_match(self):
+        rows = _tables_under(self.md, "共通 row（行）")
+        md_required = set()
+        for r in rows:
+            field = _first_token(r[0])
+            if field and len(r) >= 3 and "required" in r[2]:
+                md_required.add(field)
+        code_required = {k for k, (_t, req) in ll.ROW_FIELDS.items() if req}
+        self.assertEqual(md_required, code_required)
+
+
+if __name__ == "__main__":
+    unittest.main()
