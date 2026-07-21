@@ -48,15 +48,51 @@
 | `state` | `string` | `required` | 語彙固有状態。enum: `確定` / `暫定` / `競合中` / `廃語` |
 
 `ledger_lint` は語彙ファイルを与えられたとき、台帳行の `term_refs` が語彙 `id` 集合に含まれるかを
-O(1) membership で検証する（`--context PATH` 未指定時は `term_refs` 検証を skip する）。
+O(1) membership で検証する（`--context PATH` 未指定時は `term_refs` 検証を skip する）。lint は語彙 `id` に
+加えて `state`（語彙固有状態）も読み、`AGREED` 行が `競合中` / `廃語` の語に依存する場合を pending-vocabulary の
+派生検出として扱う（[agreement-ledger.md](agreement-ledger.md) の pending-vocabulary 節・二重状態整合規則）。
 
-## 二重状態の整合規則（Phase B で確定・PROVISIONAL）
+## 語彙の生成フロー（extract の副産物・1 パス 2 ストリーム）
+
+語彙は「人が事前に埋める静的入力」ではなく、**extract 考古学の副産物**として生成する。extract は 1 回のパスで
+2 つのストリームを出力する: **合意候補**（台帳行）と**語彙候補**（CONTEXT 項目）。語は合意の前提レイヤであり、
+未知語を含む合意は語彙が確定するまで安心して依存できない。
+
+生成は 2 モードで、同一の検出器の batch 適用 / streaming 適用として扱う:
+
+- **cold-start（batch）**: 既存コーパス（ドキュメント・コード・会話ログ）へ語彙抽出を batch で走らせ、
+  **高頻度かつ load-bearing（知らないと誤った前提で動く）な上位 N 語**を機械的に選ぶ。手で選び出すのではなく、
+  頻度と load-bearing 性で機械抽出する。LLM が各語の定義案を提示し、**人は confirm / edit のみ**を行う
+  （LLM は定義を確定させない）。
+- **定常（streaming）**: 運用中の**理解修復イベント**で語彙を育てる。完全な語彙検出器は人と LLM のペアである —
+  人の「何それ」（人の欠落を捕捉）と、LLM の「この語を X の意味で扱っているが合っているか」
+  （LLM の欠落 = 沈黙側を捕捉）。正規表現ではなく理解修復イベントのクラスを拾う。
+
+**admission フィルタ**: 拾った語をすべて語彙へ昇格させると膨張する。**再出現する語**か **load-bearing な語**だけを
+候補として通す。
+
+### セッション外の自動育成（候補と鮮度まで自動・確定は人間）
+
+ドメイン知識はいつでも更新されうるため、語彙の**収穫と鮮度管理は自動化**する:
+
+- extract batch の**差分再実行**で新語を検出し、候補 queue へ積む。
+- `ledger_lint --context` の未定義語検出を**候補収穫に転用**する（未定義参照は「まだ語彙化されていない
+  load-bearing 語」の信号）。
+- **参照実績による廃語候補**（どの台帳行からも `term_refs` されなくなった語）と、**定義と実態の乖離による
+  競合中候補**を自動マークする。
+
+ただし**自動でよいのは「候補（暫定）と鮮度」まで**である。語彙の**確定は必ず人間**が行う（LLM は語彙でも
+提案者であって承認者になれない）。候補の消化（confirm / edit）は裁定セッションの冒頭、または plan 作成ゲートで行う。
+候補の自動昇格ロジックや admission 閾値のチューニングは作り込まず、pilot の実測後に iterate で調整する
+（[agreement-ledger.md](agreement-ledger.md) §E と整合）。
+
+## 二重状態の整合規則（PROVISIONAL）
 
 `競合中` / `廃語` の語を参照する `AGREED` 行は、相互参照だけではドリフトを防げないため
-**再裁定候補として lint / status が検出する**。この検出規則は本 v1 では PROVISIONAL とし、
-automation-visualize でのパイロット結果を受けて確定する（[agreement-ledger.md](agreement-ledger.md) の
-段階導入方針に従う）。Phase A の `ledger_lint` は `term_refs` の未定義語検出までを実装し、
-二重状態整合はここに追記する。
+**再裁定候補として lint / status が検出する**（pending-vocabulary の派生検出 (b)・[agreement-ledger.md](agreement-ledger.md)
+の pending-vocabulary 節）。この検出規則は本 v1 では PROVISIONAL とし、**advisory（report-only）に留める**。
+automation-visualize でのパイロット結果を受けて確定する。一方、`AGREED` 行の `term_refs` が CONTEXT 未定義を
+参照する場合の検出（派生検出 (a)）は**確定実装**とする。
 
 ## 境界の問い（CONTEXT.md か台帳か）
 
