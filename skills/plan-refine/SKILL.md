@@ -15,9 +15,23 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
 （最も重い指摘の重さ）を持ち、0-49 = PASS / 50-79 = WARN / 80-100 = BLOCK。
 本スキルでの終了条件「全観点 PASS」は「WARN / BLOCK が 1 件も残っていない」ことと同義。
 
-plan-reviewer をスキルとして起動できない環境では、plan-reviewer の **SKILL.md 本体と references の両方**
+## plan-reviewer 呼び出し境界（委譲結果の受渡し）
+
+`claude-skills:plan-reviewer` を（サブエージェント委譲として）起動する場合、その結果は
+[delegation result relay](../shared/references/orchestration-patterns.md) に従ってファイル経由で受け取る。
+配下で並行起動したレビューの判定が集約側へ戻らず停滞する到達性問題が実測されているため、
+報告メッセージの配達に結果を依存させない。plan-reviewer は各観点の判定を
+`.agents/runtime/delegation/{run_id}_review-{dim}.md` へ書き、それを集約する。refine 役は
+plan-reviewer の完了報告または停止・待機通知のどちらでも結果を回収し、報告が届かなくても次の順で
+成果物検分にフォールバックする: (1) plan-reviewer の集約結果 → (2) 各観点のレビュー結果ファイル群
+`{run_id}_review-{dim}.md` → (3) 計画ファイル本文（refine 自身が編集する対象）。
+`{run_id}` は計画ファイル冒頭の Cycle ID（なければファイル名のタイムスタンプ）を使う。
+
+plan-reviewer をスキルとして起動できない環境では、以下のインラインレビュー代行をフォールバックとして使う。
+このとき plan-reviewer の **SKILL.md 本体と references の両方**
 （観点定義・UI/UX の条件付きトリガー判定・フォールバック規定・出力形式を含む）を読み、
 同じ観点・同じ判定基準で自分がインラインでレビューを実施する。
+インライン代行では結果はすべて同一コンテキストに集約されるため、ファイル受渡しは不要である。
 インライン代行ではレビュアーと修正者が同一になるため、次の 2 点でバイアスを抑える:
 - レビュー時は自分の直前の編集を前提とせず、計画本文だけを読み直して採点する
 - 修正後の再レビューで判定を引き上げる場合、解消の根拠（該当する変更箇所の引用）を添える。根拠なく PASS にしない

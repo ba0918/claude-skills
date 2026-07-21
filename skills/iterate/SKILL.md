@@ -119,6 +119,8 @@ Options:
 
 実装サブエージェントを起動する。Phase 2 のサイズ判定に応じてモデルを選択: **Small** なら軽量モデル（スコープが小さく検証ゲートがあるため安全）、**Large** なら高性能モデル。See [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering.
 
+**委譲結果の受渡し**: Phase 3 / Phase 4 の委譲は [delegation result relay](../shared/references/orchestration-patterns.md) に従う。完了報告メッセージの配達は非決定的で、作業完遂 + 報告なし + 待機通知のみ、という停滞が実測されているため、結果の正本はファイル・報告は通知として扱う。`{run_id}` は Phase 0 で読み込んだ計画ファイルのタイムスタンプ（プランがない fallback 経路では現在時刻 `YYYYMMDDHHMMSS`）を使う。
+
 Instructions to the agent:
 - Implement the additional instructions
 - Follow existing code style and conventions
@@ -129,6 +131,9 @@ Instructions to the agent:
     - **Config files are NOT automatically non-executable**: `tsconfig.json` strict-mode flips, `package.json` dep/script changes, linter rule changes, CI workflow edits all affect runtime or build behavior → TDD applies (write a test proving the new behavior, or at minimum a regression test confirming build/test pipeline still passes). Only pure content edits (e.g., `description` field in `package.json`) qualify as non-executable.
 - Avoid testing anti-patterns defined in [testing-anti-patterns.md](../shared/references/testing-anti-patterns.md)
 - Run existing tests after implementation and confirm all pass
+- **Before sending the completion report**, write the full result to `.agents/runtime/delegation/{run_id}_iterate-impl.md`. The report message is only a notification that the file was written. The result MUST include a **per-instruction-item completion status** (one line per instruction item, marked done / not-done with evidence) so that a partial omission cannot slip through silently — in a measured incident, 1 of 4 instructed items was silently dropped. Include the test-run evidence in the same file.
+
+After the agent finishes, read `.agents/runtime/delegation/{run_id}_iterate-impl.md` on either the completion report or a stop / wait notification. If the file is missing or incomplete, inspect the artifacts directly (`git diff HEAD` / `git status` / changed files) and reconcile each instruction item against the actual change to detect partial omissions before proceeding to Phase 4.
 
 ## Phase 4: Review + Codex セカンドオピニオン
 
@@ -141,6 +146,8 @@ git diff HEAD           # uncommitted changes, to be committed shortly
 git diff <base>..HEAD   # if the implementation agent already committed
 ```
 Store the diff output and inline it into both agent prompts. If the diff exceeds ~50KB, substitute `git diff --stat` + a list of changed files + selected critical hunks instead. Never hand raw source files to Codex — diff only.
+
+**結果ファイルの受渡し（Phase 4）**: 並行起動する両エージェントには、[delegation result relay](../shared/references/orchestration-patterns.md) に従い、**完了報告を送る前に**結果をファイルへ書かせる — レビューエージェントは findings（BLOCK / WARN / PASS 分類つき）を `.agents/runtime/delegation/{run_id}_iterate-review.md` へ、Codex エージェントは指摘を `.agents/runtime/delegation/{run_id}_iterate-codex.md` へ。iterate のメインコンテキストは、各エージェントの完了報告または停止・待機通知のどちらでも該当ファイルを読む。ファイルが欠落・不完全なときは、既に取得済みの diff を安全網として自分でレビュー観点を適用し、Codex 分は unavailable 扱いにフォールバックする。読了後、結果ファイルは削除する。
 
 ### If Small
 
