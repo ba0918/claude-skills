@@ -92,13 +92,6 @@ _MISSING_SLUG = {
     "reeval_condition": "reeval-condition-missing",
 }
 
-CORRUPTION_CATEGORIES = (
-    "invalid-json", "duplicate-json-key", "not-an-object",
-    "missing-toplevel-key", "rows-not-array", "unknown-schema-version",
-    "file-too-large", "too-many-rows", "too-deep", "unreadable",
-    "path-escape",
-)
-
 TOPLEVEL_FIELDS = {
     "schema_version": ("integer", True),
     "rows": ("array[object]", True),
@@ -348,11 +341,16 @@ def _check_approval_authenticity(findings, where, row, approval):
             "承認イベントは所属する行を指していなければ真正でない",
             "approval.row_id を所属行の id に一致させる"))
     a_rev = approval.get("revision")
+    row_rev = row.get("revision")
+    # Compare only when both revisions are valid positive ints — a malformed
+    # row.revision already gets its own invalid-revision finding, and comparing
+    # against it would double-report noise, not a real mismatch.
     if isinstance(a_rev, int) and not isinstance(a_rev, bool) \
-            and a_rev != row.get("revision"):
+            and isinstance(row_rev, int) and not isinstance(row_rev, bool) \
+            and row_rev >= 1 and a_rev != row_rev:
         findings.append(make_finding(
             where, "approval-revision-mismatch",
-            f"approval.revision が行 revision と不一致（{a_rev} != {row.get('revision')}）",
+            f"approval.revision が行 revision と不一致（{a_rev} != {row_rev}）",
             "主張が承認後に改訂された（提示 revision と現 revision がずれた）= 再裁定必須",
             "主張を再提示して裁定し直し、承認を取り直す（承認を手で書き換えない）"))
     digest = approval.get("digest")
@@ -547,11 +545,21 @@ def lint_data(named_files, context_terms=None, baseline_undecided_ids=None):
         row_total += len(rows)
         ids_here = {}
         for index, row in enumerate(rows):
-            cid, _state = _check_row(findings, name, index, row, context_terms)
             if isinstance(row, dict):
                 rid = row.get("id")
                 if isinstance(rid, str) and rid:
                     present_ids.add(rid)
+            try:
+                cid, _state = _check_row(findings, name, index, row,
+                                         context_terms)
+            except Exception:
+                # fail-closed safety net: a lint over untrusted input must never
+                # crash. Any unforeseen row-processing error becomes an exit-2
+                # diagnostic (internal-error), never a leaked traceback.
+                diagnostics.append({
+                    "file": name, "category": "internal-error",
+                    "message": f"行 {index} の処理中に予期しない例外"})
+                continue
             if cid is None:
                 continue
             ids_here[cid] = ids_here.get(cid, 0) + 1
@@ -628,27 +636,41 @@ def lint_paths(paths, names=None, context_terms=None,
 
 def load_context_terms(path):
     """Return the set of term IDs defined in a CONTEXT vocabulary file
-    (context-vocabulary.md 機械可読形式). Raise LedgerLintError fail-closed on
-    corruption — a broken vocabulary must not silently disable term checks."""
+    (context-vocabulary.md 機械可読形式). Fail-closed on corruption — a broken
+    vocabulary must not silently disable term checks. schema_version is
+    validated for consistency with the main loader (unknown version rejected)."""
     data = load_ledger_file(path)  # reuses the fail-closed JSON loader
-    if not isinstance(data, dict) or not isinstance(data.get("terms"), list):
-        raise LedgerLintError("not-an-object", "CONTEXT 語彙ファイルの構造が不正")
+    if not isinstance(data, dict):
+        raise LedgerLintError(
+            "not-an-object", "CONTEXT 語彙ファイルのトップレベルが object でない")
+    version = data.get("schema_version")
+    if isinstance(version, bool) or not isinstance(version, int) \
+            or version != SCHEMA_VERSION:
+        raise LedgerLintError(
+            "unknown-schema-version",
+            f"CONTEXT schema_version が未知（v1 は {SCHEMA_VERSION} 固定）")
+    if not isinstance(data.get("terms"), list):
+        raise LedgerLintError("not-an-object", "CONTEXT terms が配列でない")
     terms = set()
     for item in data["terms"]:
-        if isinstance(item, dict) and isinstance(item.get("id"), str):
+        if isinstance(item, dict) and isinstance(item.get("id"), str) \
+                and item["id"]:
             terms.add(item["id"])
     return terms
 
 
 def load_baseline_undecided_ids(path):
-    """Return the set of row IDs that were UNDECIDED in a baseline ledger."""
+    """Return the set of row IDs that were UNDECIDED in a baseline ledger.
+    Fail-closed: structural corruption raises (validate_toplevel) so the CLI
+    exits 2 rather than silently no-op'ing the diff invariant — symmetric with
+    the main ledger loader."""
     data = load_ledger_file(path)
+    rows, _findings = validate_toplevel(data, path)
     ids = set()
-    if isinstance(data, dict) and isinstance(data.get("rows"), list):
-        for row in data["rows"]:
-            if isinstance(row, dict) and row.get("state") == "UNDECIDED" \
-                    and isinstance(row.get("id"), str) and row["id"]:
-                ids.add(row["id"])
+    for row in rows:
+        if isinstance(row, dict) and row.get("state") == "UNDECIDED" \
+                and isinstance(row.get("id"), str) and row["id"]:
+            ids.add(row["id"])
     return ids
 
 

@@ -518,26 +518,59 @@ def _first_token(cell):
     return m.group(1) if m else None
 
 
+def _field_table(md_text, heading):
+    """Parse a field table (フィールド | 型 | 必須 | ...) into
+    {field: (type_token, required_bool)}. 必須 cell == `required` -> True;
+    `optional` / 条件付き -> False."""
+    out = {}
+    for cells in _tables_under(md_text, heading):
+        if len(cells) < 3:
+            continue
+        field = _first_token(cells[0])
+        typ = _first_token(cells[1])
+        if not field or not typ:
+            continue
+        out[field] = (typ, _first_token(cells[2]) == "required")
+    return out
+
+
 class SyncTests(unittest.TestCase):
+    """agreement-ledger.md tables <-> code constants (md:3-6 drift guard)."""
+
     @classmethod
     def setUpClass(cls):
         with open(LEDGER_MD, encoding="utf-8") as f:
             cls.md = f.read()
+        with open(LEDGER_LINT, encoding="utf-8") as f:
+            cls.src = f.read()
 
     def test_states_match(self):
         rows = _tables_under(self.md, "状態と必須随伴フィールド")
         md_states = {_first_token(r[0]) for r in rows if _first_token(r[0])}
         self.assertEqual(md_states, set(ll.STATES))
 
-    def test_corruption_slugs_match(self):
+    def test_state_attachment_match(self):
+        md_map = {}
+        for cells in _tables_under(self.md, "状態と必須随伴フィールド"):
+            st = _first_token(cells[0])
+            att = _first_token(cells[1]) if len(cells) >= 2 else None
+            if st and att:
+                md_map[st] = att
+        self.assertEqual(md_map, dict(ll.STATE_ATTACHMENT))
+
+    def test_corruption_slugs_match_raise_sites(self):
+        # Compare md's slug list against the ACTUAL category-producing sites in
+        # the source (LedgerLintError raises + literal internal diagnostics),
+        # not a hand-maintained constant that could drift from the raises.
+        code_slugs = set(re.findall(r'LedgerLintError\(\s*"([a-z-]+)"', self.src))
+        code_slugs |= set(re.findall(r'"category":\s*"([a-z-]+)"', self.src))
         md_slugs = set(re.findall(r"^- `([a-z-]+)` —", self.md, re.MULTILINE))
         self.assertTrue(md_slugs)
-        self.assertEqual(md_slugs, set(ll.CORRUPTION_CATEGORIES))
+        self.assertEqual(code_slugs, md_slugs)
 
     def test_input_limits_match(self):
-        rows = _tables_under(self.md, "入力上限と破損カテゴリ")
         values = {}
-        for r in rows:
+        for r in _tables_under(self.md, "入力上限と破損カテゴリ"):
             slug = _first_token(r[2]) if len(r) >= 3 else None
             num = re.search(r"`(\d+)`", r[1]) if len(r) >= 2 else None
             if slug and num:
@@ -546,15 +579,160 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(values.get("too-many-rows"), ll.MAX_ROWS)
         self.assertEqual(values.get("too-deep"), ll.MAX_DEPTH)
 
-    def test_row_required_fields_match(self):
-        rows = _tables_under(self.md, "共通 row（行）")
-        md_required = set()
-        for r in rows:
-            field = _first_token(r[0])
-            if field and len(r) >= 3 and "required" in r[2]:
-                md_required.add(field)
-        code_required = {k for k, (_t, req) in ll.ROW_FIELDS.items() if req}
-        self.assertEqual(md_required, code_required)
+    def test_row_fields_full_match(self):
+        self.assertEqual(_field_table(self.md, "共通 row（行）"),
+                         dict(ll.ROW_FIELDS))
+
+    def test_approval_fields_match(self):
+        self.assertEqual(_field_table(self.md, "承認イベント"),
+                         dict(ll.APPROVAL_FIELDS))
+
+    def test_delegation_fields_match(self):
+        self.assertEqual(_field_table(self.md, "委任 capability"),
+                         dict(ll.DELEGATION_FIELDS))
+
+    def test_toplevel_fields_match(self):
+        self.assertEqual(_field_table(self.md, "ファイル構造"),
+                         dict(ll.TOPLEVEL_FIELDS))
+
+    def test_id_pattern_match(self):
+        pat = None
+        for cells in _tables_under(self.md, "ID・revision 規則"):
+            tok = _first_token(cells[1]) if len(cells) >= 2 else None
+            if tok and tok.startswith("^"):
+                pat = tok
+        self.assertEqual(pat, ll.ID_PATTERN)
+
+    def test_actor_kinds_match(self):
+        self.assertEqual(ll.ACTOR_KINDS, ("human",))
+        self.assertIn("`human`", self.md)
+
+
+class ContextLoadTests(unittest.TestCase):
+    def _write(self, tmp, text):
+        p = os.path.join(tmp, "ctx.json")
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(text)
+        return p
+
+    def test_unknown_schema_version_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, '{"schema_version": 99, "terms": []}')
+            with self.assertRaises(ll.LedgerLintError):
+                ll.load_context_terms(p)
+
+    def test_missing_schema_version_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, '{"terms": []}')
+            with self.assertRaises(ll.LedgerLintError):
+                ll.load_context_terms(p)
+
+    def test_terms_not_array_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, '{"schema_version": 1, "terms": {}}')
+            with self.assertRaises(ll.LedgerLintError):
+                ll.load_context_terms(p)
+
+    def test_valid_context_returns_ids(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(
+                tmp,
+                '{"schema_version":1,"terms":[{"id":"T-1","term":"a",'
+                '"state":"確定"}]}')
+            self.assertEqual(ll.load_context_terms(p), {"T-1"})
+
+
+class BaselineLoadTests(unittest.TestCase):
+    def _write(self, tmp, data):
+        p = os.path.join(tmp, "base.json")
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(data if isinstance(data, str) else json.dumps(data))
+        return p
+
+    def test_corrupt_baseline_raises_not_silent_noop(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, '{"schema_version": 1, "rows": {}}')
+            with self.assertRaises(ll.LedgerLintError):
+                ll.load_baseline_undecided_ids(p)
+
+    def test_valid_baseline_returns_undecided_ids(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(tmp, make_file([
+                make_row(id="NAV-001"),
+                make_agreed_row(id="NAV-002", claim="x"),
+            ]))
+            self.assertEqual(
+                ll.load_baseline_undecided_ids(p), {"NAV-001"})
+
+
+class LintNeverRaisesTests(unittest.TestCase):
+    """The lint over untrusted input must never crash — fail-closed instead."""
+
+    def test_reviewer_mixed_type_examples_do_not_crash(self):
+        for refs in (["T-1", 5], [None, None]):
+            row = {
+                "id": "NAV-001", "revision": 1, "state": "AGREED",
+                "claim": "x", "term_refs": refs,
+                "approval": {
+                    "row_id": "NAV-001", "revision": 1, "digest": "z",
+                    "session_id": "S-1", "actor_kind": "human",
+                    "prior_state": "UNDECIDED"},
+            }
+            result = lint_obj(make_file([row]))  # must not raise
+            self.assertTrue(result["findings"] or result["diagnostics"])
+
+    def test_unexpected_row_error_becomes_internal_error_diagnostic(self):
+        def boom(*_a, **_k):
+            raise RuntimeError("unexpected")
+        original = ll._check_row
+        ll._check_row = boom
+        try:
+            result = ll.lint_data([("ledger.json", make_file([make_row()]))])
+        finally:
+            ll._check_row = original
+        self.assertTrue(result["corrupt"])
+        self.assertEqual(result["diagnostics"][0]["category"], "internal-error")
+
+    def test_healthy_and_corrupt_file_mix(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            good = os.path.join(tmp, "good.json")
+            bad = os.path.join(tmp, "bad.json")
+            with open(good, "w", encoding="utf-8") as f:
+                f.write(json.dumps(make_file([make_row(state="BOGUS")])))
+            with open(bad, "w", encoding="utf-8") as f:
+                f.write("[]")
+            result = ll.lint_paths([good, bad])
+            self.assertTrue(result["corrupt"])       # bad -> diagnostic
+            self.assertTrue(result["findings"])       # good -> findings kept
+
+
+class SecretLeakTests(unittest.TestCase):
+    def test_credential_shaped_invalid_id_not_leaked(self):
+        row = make_row(id=f"X{FAKE_AWS}")  # invalid id pattern
+        result = lint_obj(make_file([row]))
+        blob = json.dumps(result["findings"], ensure_ascii=False)
+        self.assertNotIn(FAKE_AWS, blob)  # masked in what, and never in where
+        for f in result["findings"]:
+            self.assertNotIn(FAKE_AWS, f["where"])
+
+    def test_cli_no_traceback_on_mixed_type_term_refs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "ledger.json")
+            row = {
+                "id": "NAV-001", "revision": 1, "state": "AGREED",
+                "claim": "x", "term_refs": ["T-1", 5],
+                "approval": {
+                    "row_id": "NAV-001", "revision": 1, "digest": "z",
+                    "session_id": "S-1", "actor_kind": "human",
+                    "prior_state": "UNDECIDED"},
+            }
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump({"schema_version": 1, "rows": [row]}, f)
+            out = subprocess.run(
+                [sys.executable, LEDGER_LINT, "--root", tmp, p],
+                capture_output=True, text=True)
+            self.assertIn(out.returncode, (0, 1, 2))
+            self.assertNotIn("Traceback", out.stderr)
 
 
 if __name__ == "__main__":
