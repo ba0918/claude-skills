@@ -163,6 +163,10 @@ OK すると / 影響下流）は [ledger-templates.md](references/ledger-templa
 - **横断矛盾チェック**: そのテーマで新しく `AGREED` にした行同士、および既存 `AGREED` 行との間に矛盾がないかを確認する。
   構造化フィールドで機械検出できる範囲（同一対象への相反する主張など）は lint / 提示で拾い、残りは人へ提示して確認する。
 
+裁定結果の**記録は書き込み CLI `ledger_write` 経由で行う**（[書き込み実行](#書き込み実行ledger_write-cli)節）。digest 算出・
+approval オブジェクト・batch manifest を手書きせず、`approve` / `reject` / `batch-approve` に人間の 4 択回答を記録した
+セッション成果物を渡して記録する。CLI が使えない環境では手書きし `ledger_lint` で検証する（フォールバック）。
+
 ### 6. 疲労検知
 
 一定件数・時間で強制終了する。強制終了時は中断メッセージ + 再開導線を出し、残件は `UNDECIDED` のまま
@@ -229,6 +233,50 @@ python3 {skill_dir}/scripts/ledger_lint.py --root {project_root} --json \
 - **advisories** は report-only の助言ストリームで、`--strict` でもゲートしない（pending-vocabulary の `競合中`/`廃語` 依存は PROVISIONAL のため advisory 止まり）。
 - exit 2 は入力破損・使用法エラー（モード非依存）。破損時は部分結果を正本にしない。
 
+## 書き込み実行（ledger_write CLI）
+
+台帳への書き込み（行追加・状態遷移・batch manifest）は `ledger_write.py` が行う。lint（`ledger_lint.py`）が
+read-only 検証を担うのに対し、ledger_write は**記録の道具**であり、digest 算出・approval オブジェクト生成・
+batch manifest 生成を機械化する。責務分担の正本は
+[agreement-ledger.md](../shared/references/agreement-ledger.md#書き込みの正本記録の道具と-read-only-検証の分担)。
+**CLI は承認の代行ではない** — 状態遷移の判断は人間の明示確認が済んでいる前提で、CLI はその記録を正確・検証済みに
+書くだけである（中心命題の書き込み版）。
+
+```bash
+python3 {skill_dir}/scripts/ledger_write.py <subcommand> --root {project_root} --ledger {台帳パス} [...]
+```
+
+| サブコマンド | 用途 | 主な引数 |
+|-------------|------|---------|
+| `add-row` | 新規行を `UNDECIDED` で追加 | `--id` / `--claim` / `--revision` / `--term-refs` / `--observations` / `--assumptions` / `--risk` |
+| `approve` | 人間の `OK` 回答を `AGREED` として記録 | `--row-id` / `--session` |
+| `reject` | 人間の `違う` 回答を `REJECTED` として記録 | `--row-id` / `--session` |
+| `batch-approve` | 複数行を一括承認し manifest を記録 | `--session` |
+
+- **承認の人間入力への構造的結合**: `approve` / `reject` / `batch-approve` は `--session` に**セッション成果物**
+  （人間の 4 択回答を記録した JSON）を渡す。CLI はその成果物に記録された回答（`OK` / `違う`）を consume して遷移を
+  書く。任意のセッション ID 文字列だけで任意行を承認できる standalone 入口は持たない。`actor_kind` は `human`
+  内部固定で引数に露出しない。セッション成果物の形式は `{schema_version, session_id, responses:[{row_id,
+  revision, answer}], batch_summary}`（`answer` は裁定ビューの 4 択、`batch_summary` は batch-approve が
+  要約 digest を作る元テキスト。`answer=違う` の `reason` は `reject` が `observations` へ任意保存する）。
+- **verify-before-swap 自己検証**: すべての書き込みは in-memory で新台帳を lint し、hard findings が無いときだけ
+  tempfile + アトミック置換で書く。finding があればファイルに一切触れず非 0 exit。生成台帳は常に lint PASS。
+- **exit code**: `0` 成功 / `1` 検証・業務ルール拒否（revision 不一致・確定済み行への再遷移・高リスク batch 混入・
+  自己検証 finding・secret 検出・許容外 prior_state）/ `2` 使用法エラー・入力破損（台帳・セッション破損・
+  containment 違反）。ledger_lint の 0/1/2 契約と整合し、失敗時は finding を stderr に surface する。
+- **containment + secret**: `--root` 必須で書き込み先を root 内包検証し、symlink・root 外解決を書き込み前に拒否する。
+  新規自由文（`claim` / `observations` / `assumptions`）は書き込み前に secret 検出を pre-flight で適用する。
+- **保証範囲**: ledger_write が保証するのは構造妥当性であり語彙整合ではない（`--context` 無しで自己検証するため
+  undefined-term / pending-vocabulary は検査されない。語彙検証は責務外）。
+- **`reject` の監査**: `違う` の理由は `observations` の自由文へ任意保存され、承認随伴物には書かない。行の状態遷移
+  自体の監査（誰がいつ却下したか）は git 履歴 + セッションログ側になる。
+- **スコープ外**: `DELEGATED`（delegation object）/ `PROVISIONAL`（reeval_condition）への遷移サブコマンドは
+  pilot 第 2 号で未実測のため今回は持たない（`approve` は `PROVISIONAL` 行を `AGREED` へ昇格できる）。
+
+**手書きフォールバック**: ledger_write が使えない環境（Python 実行不可など）では、
+[ledger-templates.md](references/ledger-templates.md) のテンプレートに従って手書きし、`ledger_lint.py` で
+受け入れ検証する（プラットフォーム非依存の維持）。
+
 ## 失敗パスとユーザー向け回復導線
 
 | 失敗 | 症状 | 回復導線 |
@@ -243,8 +291,9 @@ python3 {skill_dir}/scripts/ledger_lint.py --root {project_root} --json \
 | ワークフロー / スクリプト | 書き込み先 | 条件 |
 |--------------------------|-----------|------|
 | `ledger_lint.py` | なし（stdout） | 対象リポジトリに対して読み取り専用 |
+| `ledger_write.py`（add-row / approve / reject / batch-approve） | 台帳ファイル（行 + `batch_manifests`） | verify-before-swap で lint PASS 時のみアトミック書き込み。approve/reject/batch はセッション成果物の人間回答を consume。containment + secret pre-flight で fail-closed |
 | extract | 台帳ファイル（+ draft 領域）・語彙候補 | preview → apply の 2 段 + 承認必須。合意候補は全行 `UNDECIDED` / `PROVISIONAL`・secret 済み。語彙は候補提示まで（確定は人間） |
-| session | 台帳ファイルのみ（行 + `batch_manifests`） | preview → apply。承認イベント・batch manifest は人間の明示回答からのみ生成 |
+| session | 台帳ファイルのみ（行 + `batch_manifests`） | preview → apply。承認イベント・batch manifest は人間の明示回答からのみ生成し、記録は `ledger_write` 経由 |
 | status | なし（stdout） | 読み取り専用 |
 | orient | オリエンテーション文書（使い捨て・非権威） | 読み取り専用（plan / 台帳）。ディスク書き出し前に secret scan 必須。権威は台帳のみ |
 
@@ -287,7 +336,7 @@ python3 {skill_dir}/scripts/ledger_lint.py --root {project_root} --json \
 
 ## References
 
-- [合意台帳スキーマ v1（語彙の正本）](../shared/references/agreement-ledger.md) — 5 状態 / 承認真正性 / exit code 契約
+- [合意台帳スキーマ v1（語彙の正本）](../shared/references/agreement-ledger.md) — 5 状態 / 承認真正性 / exit code 契約 / 書き込みと read-only 検証の分担
 - [CONTEXT.md 契約（語彙層）](../shared/references/context-vocabulary.md) — 語彙項目 / 語彙固有状態 / 機械可読語彙ファイル
 - [提示テンプレート集](references/ledger-templates.md) — 台帳 / CONTEXT / 裁定行 / status 裁定ビュー / 状態語ラベル表
 - [tdd-contract](../shared/references/tdd-contract.md) / [verification-gate](../shared/references/verification-gate.md)
