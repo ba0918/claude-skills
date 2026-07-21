@@ -201,6 +201,55 @@ def check_frontmatter_yaml_compat(root):
     return errors
 
 
+# チェック14: ヒューマンリーダブル要約契約の横展開ガード。
+# 対象 6 スキルの完了表示が「契約への md リンク + 固定要約ラベル」を持つことを
+# テキストレベルで機械検証し、「要約が出力される」ことを grep レベルで担保する。
+# fixtures を持たない 4 スキル（brainstorm / doc-write / team-brainstorm / design-guide）
+# の要約"挙動"は behavior テストできないため、この統一テキストガードが最低ガードになる。
+# 要約"内容の質"はいずれのスキルも機械検証不能であることを受容した上での設計。
+HUMAN_READABLE_SUMMARY_CONTRACT = "skills/shared/references/human-readable-summary.md"
+HUMAN_READABLE_SUMMARY_LABEL = "📝 つまり:"
+HUMAN_READABLE_SUMMARY_SKILLS = (
+    "brainstorm",
+    "issue",
+    "handoff",
+    "doc-write",
+    "team-brainstorm",
+    "design-guide",
+)
+
+
+def check_human_readable_summary(root):
+    """チェック14を実行し、違反メッセージ一覧を返す。"""
+    errors = []
+    contract_path = os.path.join(root, HUMAN_READABLE_SUMMARY_CONTRACT)
+    if not os.path.isfile(contract_path):
+        errors.append(f"[summary] 契約ファイルがない: {HUMAN_READABLE_SUMMARY_CONTRACT}")
+        return errors
+    contract_low = _read(contract_path).lower()
+    if "before" not in contract_low or "after" not in contract_low:
+        errors.append(
+            f"[summary] 契約に before/after ワークト例がない: "
+            f"{HUMAN_READABLE_SUMMARY_CONTRACT}"
+        )
+    for skill in HUMAN_READABLE_SUMMARY_SKILLS:
+        skill_md = os.path.join(root, "skills", skill, "SKILL.md")
+        if not os.path.isfile(skill_md):
+            errors.append(f"[summary] SKILL.md がない: skills/{skill}/SKILL.md")
+            continue
+        text = _read(skill_md)
+        if "human-readable-summary.md" not in text:
+            errors.append(
+                f"[summary] {skill}: 契約への md リンクがない: skills/{skill}/SKILL.md"
+            )
+        if HUMAN_READABLE_SUMMARY_LABEL not in text:
+            errors.append(
+                f"[summary] {skill}: 要約ラベル「{HUMAN_READABLE_SUMMARY_LABEL}」が"
+                f"ない: skills/{skill}/SKILL.md"
+            )
+    return errors
+
+
 def _conformance_units(root):
     """チェック9の unit（識別子 → md ファイル一覧）を返す。"""
     units = {}
