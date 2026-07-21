@@ -4,6 +4,36 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.55.0
+
+サブエージェント委譲の結果・完了報告がオーケストレーターへ戻らない到達性問題
+（作業完遂 + 報告なし + 待機通知のみ／配下で並行起動したレビューの結果が委譲元に
+戻らない、が実測されている）への構造的対策。完了報告メッセージの配達は非決定的だが、
+ファイル書き込みは委譲先自身の作業として確実に完了検証できる。この非対称性を使い
+「結果の正本はファイル、報告メッセージは通知」に置き換える委譲結果のファイル受渡し
+（delegation result relay）を共通契約として正本化し、影響スキルへ横展開する。
+
+- `skills/shared/references/orchestration-patterns.md`: 「委譲結果のファイル受渡し
+  （delegation result relay）」節を追加。パス規約 `.agents/runtime/delegation/{run_id}_{role}.md`・
+  書き手/読み手の義務・待機通知を検分トリガーに格上げする受信手順・成果物直接検分の
+  フォールバック・掃除・適用範囲・セキュリティを規定。支配原則2 の `.claude/tmp/` 中間結果
+  （コンテキスト劣化回避が目的）と本節の委譲結果の正本（配達失敗耐久性が目的）を相互
+  リンクで棲み分け、契約の自己矛盾を防ぐ
+- `skills/cycle/SKILL.md`: Phase 1/1.5/2 の委譲プロンプトに結果ファイルパスを指定し、
+  受信手順を「報告 or 待機通知トリガーで結果ファイルを読む→欠落時は成果物検分」に改修。
+  エラーハンドリングに「報告なしで停止した場合」の分岐を新設。Phase 2 の既存『結果ファイル』
+  言及をパス規約 `{run_id}_implement.md` に統一
+- `skills/plan-reviewer/SKILL.md`: Step 3 ファンアウト（issue パターン①の本丸）で各観点/
+  Codex に判定を `{run_id}_review-{dim}.md` へ書かせ、Step 4 集約側が全観点ファイルを待って
+  読む。逐次実行フォールバックは保持
+- `skills/iterate/SKILL.md`: Phase 3 実装エージェントに指示項目ごとの完了状況を結果ファイルへ
+  書かせ部分欠落の黙過を防止。Phase 4 レビュー/Codex も結果ファイル経由に
+- `skills/plan-refine/SKILL.md`: plan-reviewer 呼び出し境界を結果ファイル方式前提にし、
+  報告未達でも集約結果→観点別ファイル群→計画本文の順で成果物検分に落とせるようにする。
+  インラインレビュー代行はフォールバックとして保持
+- `skills/skill-regression/ledger.json`: orchestration-patterns.md の純追加変更に対し
+  github-issue / issue を `--accept`（依存する polling パターン6 に触れないため影響なしを明示記録）
+
 ## 1.54.1
 
 automation-visualize での pilot 第 2 号（65 行裁定 + 語彙 15 語を約 2 日・理解修復
