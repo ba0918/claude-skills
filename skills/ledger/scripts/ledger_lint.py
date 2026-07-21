@@ -515,6 +515,7 @@ def _check_row(findings, advisories, name, index, row, context_terms):
     _check_term_refs(findings, where, row, context_terms)
     _check_pending_vocabulary(findings, advisories, where, state, row,
                               context_terms)
+    _check_term_refs_empty(advisories, where, row)
     _scan_secrets(findings, where, row)
     return (cid if cid_valid else None), state
 
@@ -612,6 +613,25 @@ def _check_pending_vocabulary(findings, advisories, where, state, row,
                 f"AGREED 行が不安定な語彙（{term_state}）に依存: {t}",
                 "競合中・廃語の語に依存する合意は再裁定候補（advisory・二重状態整合は PROVISIONAL）",
                 f"{t} の語彙状態を確定させるか AGREED 行を再裁定する（本検出は report-only）"))
+
+
+def _check_term_refs_empty(advisories, where, row):
+    """Report-only advisory for rows whose term_refs is missing or empty.
+    Applies to all rows regardless of state: appending term_refs after
+    approval changes the digest and invalidates the approval, so the point
+    of this advisory is to prompt filling term_refs before ratification.
+    Rows that genuinely depend on no vocabulary may ignore it (report-only,
+    never gates). Invalid types (non-array, non-string elements) are the
+    schema validation's responsibility (invalid-type / empty-string hard
+    findings), not this detector's."""
+    refs = row.get("term_refs")
+    # term_refs is missing or is an empty array
+    if refs is None or (isinstance(refs, list) and len(refs) == 0):
+        advisories.append(make_finding(
+            where, "term-refs-empty",
+            "term_refs が省略されているか空配列",
+            "term_refs を後付けすると digest が変わり承認が失効する（裁定前の記入が必須）",
+            "この行が依存する load-bearing な語彙を term_refs に列挙する"))
 
 
 def _check_batch_manifests(findings, name, data, highrisk_digests):

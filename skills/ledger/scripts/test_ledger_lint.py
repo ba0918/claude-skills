@@ -914,8 +914,68 @@ class PendingVocabularyTests(unittest.TestCase):
         self.assertEqual(result["advisories"], [])
 
     def test_advisories_key_present_on_clean_ledger(self):
-        result = lint_obj(make_file([make_row()]))
+        row = make_row(term_refs=["T-1"])  # clean row with term_refs
+        result = lint_obj(make_file([row]))
         self.assertEqual(result["advisories"], [])
+
+
+class TermRefsEmptyTests(unittest.TestCase):
+    """Detect empty or missing term_refs as advisory (report-only)."""
+
+    def test_term_refs_omitted_fires_advisory(self):
+        row = make_row()  # term_refs キー省略
+        result = lint_obj(make_file([row]))
+        self.assertIn("term-refs-empty", advisory_checks(result))
+
+    def test_term_refs_empty_array_fires_advisory(self):
+        row = make_row(term_refs=[])  # 空配列
+        result = lint_obj(make_file([row]))
+        self.assertIn("term-refs-empty", advisory_checks(result))
+
+    def test_term_refs_nonempty_no_advisory(self):
+        row = make_row(term_refs=["T-1"])
+        result = lint_obj(make_file([row]))
+        self.assertNotIn("term-refs-empty", advisory_checks(result))
+
+    def test_term_refs_empty_advisory_does_not_gate(self):
+        row = make_row(term_refs=[])
+        result = lint_obj(make_file([row]))
+        self.assertEqual(result["findings"], [])
+        self.assertIn("term-refs-empty", advisory_checks(result))
+
+    def test_term_refs_empty_works_without_context(self):
+        row = make_row(term_refs=[])
+        result = lint_obj(make_file([row]), context_terms=None)
+        self.assertIn("term-refs-empty", advisory_checks(result))
+
+    def test_term_refs_empty_works_with_context(self):
+        row = make_row(term_refs=[])
+        result = lint_obj(make_file([row]), context_terms={"T-1": "確定"})
+        self.assertIn("term-refs-empty", advisory_checks(result))
+
+    def test_invalid_type_is_schema_validations_responsibility(self):
+        # 非配列型は invalid-type の hard finding（gate 対象）が捕捉し、
+        # 本 advisory の管轄外（境界の固定）
+        for bad in ("", {}, 0, False):
+            with self.subTest(bad=bad):
+                result = lint_obj(make_file([make_row(term_refs=bad)]))
+                self.assertIn("invalid-type", checks(result))
+                self.assertNotIn("term-refs-empty", advisory_checks(result))
+
+    def test_invalid_elements_are_schema_validations_responsibility(self):
+        # 非空だが要素が不正な配列も既存 finding の管轄（advisory は出ない）
+        result = lint_obj(make_file([make_row(term_refs=[None])]))
+        self.assertIn("invalid-type", checks(result))
+        self.assertNotIn("term-refs-empty", advisory_checks(result))
+        result = lint_obj(make_file([make_row(term_refs=[""])]))
+        self.assertIn("empty-string", checks(result))
+        self.assertNotIn("term-refs-empty", advisory_checks(result))
+
+    def test_explicit_null_gates_and_advises(self):
+        # 明示 null は invalid-type（gate）と本 advisory が両方出る（重複は無害）
+        result = lint_obj(make_file([make_row(term_refs=None)]))
+        self.assertIn("invalid-type", checks(result))
+        self.assertIn("term-refs-empty", advisory_checks(result))
 
 
 class SyncTestsV2(unittest.TestCase):

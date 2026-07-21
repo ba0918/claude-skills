@@ -4,6 +4,25 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.54.1
+
+automation-visualize での pilot 第 2 号（65 行裁定 + 語彙 15 語を約 2 日・理解修復
+イベント 0 で完走）の実測フィードバックのうち、設計変更を伴わない軽量級 4 項目を反映する。
+重量級（extract 第 3 ストリーム「現状仕様リファレンス」・ledger_write CLI）は issue 管理で後続。
+
+- `skills/ledger/scripts/ledger_lint.py` + `test_ledger_lint.py`: term_refs が省略 or
+  空配列の行に report-only の advisory `term-refs-empty` を追加（全行対象）。承認後の
+  後付けは digest を変えて承認を失効させるため、裁定前の記入を促す。型違反は既存の
+  invalid-type / empty-string（gate 対象）の管轄で、責務分担をテストで固定（+9 テスト、計 116）
+- `skills/ledger/SKILL.md`: 解釈確認ゲートの適用基準を明文化 — 対象行が名指しで一意な
+  直接回答は即記録 + 事後訂正可、曖昧・複合・指示語つきの自由文のみゲートを通す
+  （迷ったらゲート側 = fail-closed 維持。pilot 実測で「全自由文ゲート」はテンポを殺すと判明）。
+  oracle 計測に「疑問が実装の空白を言い当てた件数」（要件発見の検出力指標）を追加
+- `skills/ledger/references/ledger-templates.md`: 行 ID prefix・session_id の採番目安を
+  追記（契約は形式を規定しない・人間向け慣習）
+- `skills/shared/references/agreement-ledger.md`: (c) term_refs 空白検出 advisory を契約に
+  追記（語彙非依存の行は無視してよい・型違反は型検証の管轄、の責務分担込み）
+
 ## 1.54.0
 
 ledger パイロット第 1 号で裁定セッション（4 択一問一答）が「儀式化を回避するための
