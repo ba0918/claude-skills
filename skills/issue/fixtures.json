@@ -69,6 +69,27 @@
         { "text": "TickResult に halt_reason=\"dry_run\" と claimed 数が構造化出力されている", "critical": false }
       ],
       "notes": "契約 §6.4 / FS adapter §6 の orphan recovery を固定する edge。pid 9999999 は pid_max（Linux デフォルト 4194304）超過で ESRCH（確実に dead）、pid 1 は非 root からの kill(1,0) が EPERM（alive 扱いの fail-safe 分岐）。transient→permanent 昇格は実 cycle 失敗が必要なため fixture 対象外。.polling-initialized は runtime_root（.agents/runtime/polling/）配下、.claim は running/ に co-located（契約 §1 Roots）。"
+    },
+    {
+      "id": "is-004",
+      "title": "Create 完了報告のヒューマンリーダブル要約（summary-first）",
+      "source": ".agents/artifacts/plans/20260721163701_report-skills-human-readable-summary.md",
+      "executor_model": "sonnet",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".agents/artifacts/issues/issue-status.md": "# Issue Status\n\n**Last Updated:** 2026-06-01 08:00:00\n\n| Issue | Tags | Created | Summary |\n|-------|------|---------|---------|\n"
+        }
+      },
+      "prompt": "ログイン画面でセッションが 30 分で強制ログアウトされるバグを見つけた。あとで対応したいから課題として記録しておいて。",
+      "requirements": [
+        { "text": "完了表示の冒頭（ファイルパス・Index 行より前）に「📝 つまり:」で始まる要約ブロックがある（summary-first の配置）", "critical": true },
+        { "text": "要約が登録した issue のタイトルと「つまり何の課題か」を、本文を読んでいない人にも伝わる平易な言葉でエコーしている（本文の逐語再掲・網羅列挙ではない）", "critical": true },
+        { "text": "issue ファイル（.agents/artifacts/issues/{slug}.md）と issue-status.md インデックスが生成・更新されている（要約を出すために本来の Create 挙動を欠落させていない）", "critical": true },
+        { "text": "要約ブロックが上限 10 行前後に収まり、定型文の水増しがない", "critical": false },
+        { "text": "要約に機密らしい値（トークン・鍵・個人情報）を新規転記していない", "critical": false }
+      ],
+      "notes": "human-readable-summary.md 契約の横展開（plan 20260721163701）の Create 完了表示挙動を固定する。is-001〜003 は polling 専用のため、Create はライブ会話不要の独立系統として追加。契約の summary-first 配置（要約ブロックを完了表示最上部に置く）と読者分離（人間向けの平易なエコー）を守っているかを測る。"
     }
   ]
 }

@@ -87,8 +87,16 @@ If arguments are given as free-form text without flags, extract title from the f
    ```
    - **Escape rules for the Summary column**: Replace every literal pipe `|` with `\|`, and replace every newline with a single space. Do NOT truncate. Apply the same escape to tags if they ever contain `|` (unlikely).
 8. Update **Last Updated** to the current timestamp in `YYYY-MM-DD HH:MM:SS` format (same format as Step 4's template — time component required, not date-only).
-9. Display the creation result:
+9. Display the creation result. Prepend a summary block per the
+   [human-readable summary contract](../shared/references/human-readable-summary.md)
+   (summary-first): echo the issue title and a plain-language one-line gist of what
+   the issue is about, so a reader who has not opened the file grasps "つまり何なのか".
+   Do not re-transcribe the full body; do not include secret values (per the contract's
+   degradation rule, omit or replace with a category name):
    ```
+   📝 つまり: 「{title}」— {issue が「つまり何の課題か」を、本文を読んでいない人にも
+      伝わる平易な 1 行で}
+
    ✅ Issue created!
    📄 File: .agents/artifacts/issues/{slug}.md
    📋 Index: .agents/artifacts/issues/issue-status.md
