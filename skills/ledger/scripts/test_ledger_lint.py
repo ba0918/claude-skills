@@ -83,8 +83,10 @@ def make_agreed_row(**over):
     return row
 
 
-def make_file(rows):
-    return {"schema_version": 1, "rows": rows}
+def make_file(rows, **top):
+    data = {"schema_version": 1, "rows": rows}
+    data.update(top)
+    return data
 
 
 def lint_obj(data, name="ledger.json", **kw):
@@ -93,6 +95,27 @@ def lint_obj(data, name="ledger.json", **kw):
 
 def checks(result):
     return sorted(f["check"] for f in result["findings"])
+
+
+def advisory_checks(result):
+    return sorted(a["check"] for a in result["advisories"])
+
+
+def batch_digest_of(row_digests, summary_digest):
+    core = {"row_digests": sorted(row_digests), "summary_digest": summary_digest}
+    blob = json.dumps(core, ensure_ascii=False, sort_keys=True,
+                      separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def make_batch_manifest(row_digests, summary_digest="SUM-DIGEST-01", **over):
+    manifest = {
+        "batch_digest": batch_digest_of(row_digests, summary_digest),
+        "row_digests": list(row_digests),
+        "summary_digest": summary_digest,
+    }
+    manifest.update(over)
+    return manifest
 
 
 class DigestTests(unittest.TestCase):
@@ -649,13 +672,27 @@ class ContextLoadTests(unittest.TestCase):
             with self.assertRaises(ll.LedgerLintError):
                 ll.load_context_terms(p)
 
-    def test_valid_context_returns_ids(self):
+    def test_valid_context_returns_ids_with_states(self):
+        # load_context_terms now returns {id: state} so pending-vocabulary can
+        # read the vocabulary-specific state (§C), not just membership.
         with tempfile.TemporaryDirectory() as tmp:
             p = self._write(
                 tmp,
                 '{"schema_version":1,"terms":[{"id":"T-1","term":"a",'
                 '"state":"確定"}]}')
-            self.assertEqual(ll.load_context_terms(p), {"T-1"})
+            self.assertEqual(ll.load_context_terms(p), {"T-1": "確定"})
+
+    def test_context_membership_survives_dict_form(self):
+        # term_refs membership (undefined-term) must still work when the
+        # loader returns a dict keyed by term id.
+        with tempfile.TemporaryDirectory() as tmp:
+            p = self._write(
+                tmp,
+                '{"schema_version":1,"terms":[{"id":"T-1","term":"a",'
+                '"state":"競合中"}]}')
+            terms = ll.load_context_terms(p)
+            self.assertIn("T-1", terms)
+            self.assertEqual(terms["T-1"], "競合中")
 
 
 class BaselineLoadTests(unittest.TestCase):
@@ -749,6 +786,201 @@ class SecretLeakTests(unittest.TestCase):
                 capture_output=True, text=True)
             self.assertIn(out.returncode, (0, 1, 2))
             self.assertNotIn("Traceback", out.stderr)
+
+
+class RiskFieldTests(unittest.TestCase):
+    def test_valid_high_risk_row_alone_ok(self):
+        # A high-risk row on its own is valid; the batch prohibition only
+        # applies when it appears inside a batch manifest.
+        self.assertEqual(
+            lint_obj(make_file([make_row(risk="high")]))["findings"], [])
+
+    def test_valid_normal_risk_row_ok(self):
+        self.assertEqual(
+            lint_obj(make_file([make_row(risk="normal")]))["findings"], [])
+
+    def test_unknown_risk_value_detected(self):
+        self.assertIn("unknown-risk", checks(lint_obj(make_file([
+            make_row(risk="critical")]))))
+
+    def test_row_without_risk_is_backward_compatible(self):
+        # Existing ledgers have no risk field; they must stay valid (optional).
+        self.assertEqual(lint_obj(make_file([make_row()]))["findings"], [])
+
+
+class BatchManifestTests(unittest.TestCase):
+    def test_valid_batch_manifest_no_findings(self):
+        rows = [make_row(id="NAV-001"), make_row(id="NAV-002")]
+        digests = [ll.compute_digest(r) for r in rows]
+        result = lint_obj(make_file(
+            rows, batch_manifests=[make_batch_manifest(digests)]))
+        self.assertEqual(result["findings"], [])
+
+    def test_ledger_without_batch_manifests_is_backward_compatible(self):
+        # schema_version 1 ledgers predating batch_manifests stay valid — the
+        # key is optional at the top level (§B backward compatibility).
+        result = lint_obj(make_file([make_row()]))
+        self.assertEqual(result["findings"], [])
+        self.assertFalse(result["corrupt"])
+
+    def test_batch_digest_mismatch_detected(self):
+        rows = [make_row(id="NAV-001")]
+        digests = [ll.compute_digest(r) for r in rows]
+        manifest = make_batch_manifest(digests)
+        manifest["batch_digest"] = "0" * 64  # no longer matches constituents
+        result = lint_obj(make_file(rows, batch_manifests=[manifest]))
+        self.assertIn("batch-digest-mismatch", checks(result))
+
+    def test_high_risk_row_in_batch_detected(self):
+        high = make_row(id="RISK-001", risk="high")
+        digests = [ll.compute_digest(high)]
+        result = lint_obj(make_file(
+            [high], batch_manifests=[make_batch_manifest(digests)]))
+        self.assertIn("high-risk-in-batch", checks(result))
+
+    def test_batch_manifest_missing_required_field_detected(self):
+        manifest = make_batch_manifest([ll.compute_digest(make_row())])
+        del manifest["summary_digest"]
+        result = lint_obj(make_file([make_row()], batch_manifests=[manifest]))
+        self.assertIn("missing-required", checks(result))
+
+    def test_batch_manifest_unknown_key_detected(self):
+        manifest = make_batch_manifest([ll.compute_digest(make_row())])
+        manifest["bogus"] = "x"
+        result = lint_obj(make_file([make_row()], batch_manifests=[manifest]))
+        self.assertIn("unknown-key", checks(result))
+
+    def test_batch_manifests_not_array_detected(self):
+        result = lint_obj(make_file([make_row()], batch_manifests={}))
+        self.assertIn("invalid-type", checks(result))
+
+    def test_batch_manifest_not_object_detected(self):
+        result = lint_obj(make_file([make_row()], batch_manifests=["x"]))
+        self.assertIn("invalid-type", checks(result))
+
+    def test_batch_manifest_optional_fields_ok(self):
+        rows = [make_row(id="NAV-001")]
+        digests = [ll.compute_digest(r) for r in rows]
+        manifest = make_batch_manifest(
+            digests, excluded_rows=["NAV-009"], dependencies=["NAV-000"])
+        self.assertEqual(
+            lint_obj(make_file(rows, batch_manifests=[manifest]))["findings"],
+            [])
+
+
+class ComputeBatchDigestTests(unittest.TestCase):
+    def test_batch_digest_ignores_row_digest_order(self):
+        a = ll.compute_batch_digest(["d1", "d2"], "sum")
+        b = ll.compute_batch_digest(["d2", "d1"], "sum")
+        self.assertEqual(a, b)
+
+    def test_batch_digest_total_on_malformed_input(self):
+        # Must be total: malformed manifests get type findings elsewhere, the
+        # digest helper must never crash the linter (fail-closed).
+        self.assertIsInstance(ll.compute_batch_digest(5, None), str)
+
+
+class PendingVocabularyTests(unittest.TestCase):
+    def test_agreed_undefined_term_escalated_to_pending_vocabulary(self):
+        row = make_agreed_row(term_refs=["T-UNKNOWN"])
+        result = lint_obj(make_file([row]), context_terms={"T-1": "確定"})
+        cs = checks(result)
+        self.assertIn("pending-vocabulary", cs)   # (a) confirmed escalation
+        self.assertIn("undefined-term", cs)       # all-state check still fires
+
+    def test_undecided_undefined_term_not_escalated(self):
+        row = make_row(term_refs=["T-UNKNOWN"])   # UNDECIDED
+        result = lint_obj(make_file([row]), context_terms={"T-1": "確定"})
+        cs = checks(result)
+        self.assertIn("undefined-term", cs)
+        self.assertNotIn("pending-vocabulary", cs)
+
+    def test_agreed_conflicting_term_is_advisory_only(self):
+        row = make_agreed_row(term_refs=["T-C"])
+        result = lint_obj(make_file([row]), context_terms={"T-C": "競合中"})
+        self.assertIn("unstable-term-dependency", advisory_checks(result))
+        self.assertEqual(result["findings"], [])   # (b) does not gate
+
+    def test_agreed_deprecated_term_is_advisory_only(self):
+        row = make_agreed_row(term_refs=["T-D"])
+        result = lint_obj(make_file([row]), context_terms={"T-D": "廃語"})
+        self.assertIn("unstable-term-dependency", advisory_checks(result))
+        self.assertEqual(result["findings"], [])
+
+    def test_agreed_confirmed_term_no_finding_no_advisory(self):
+        row = make_agreed_row(term_refs=["T-OK"])
+        result = lint_obj(make_file([row]), context_terms={"T-OK": "確定"})
+        self.assertEqual(result["findings"], [])
+        self.assertEqual(result["advisories"], [])
+
+    def test_advisories_key_present_on_clean_ledger(self):
+        result = lint_obj(make_file([make_row()]))
+        self.assertEqual(result["advisories"], [])
+
+
+class SyncTestsV2(unittest.TestCase):
+    """New schema tables (§B) <-> code constants (§D lockstep)."""
+
+    @classmethod
+    def setUpClass(cls):
+        with open(LEDGER_MD, encoding="utf-8") as f:
+            cls.md = f.read()
+
+    def test_batch_manifest_fields_match(self):
+        self.assertEqual(_field_table(self.md, "batch 承認 manifest"),
+                         dict(ll.BATCH_MANIFEST_FIELDS))
+
+    def test_toplevel_includes_batch_manifests(self):
+        self.assertEqual(_field_table(self.md, "ファイル構造"),
+                         dict(ll.TOPLEVEL_FIELDS))
+        self.assertIn("batch_manifests", ll.TOPLEVEL_FIELDS)
+
+    def test_row_fields_include_risk(self):
+        self.assertEqual(_field_table(self.md, "共通 row（行）"),
+                         dict(ll.ROW_FIELDS))
+        self.assertIn("risk", ll.ROW_FIELDS)
+
+    def test_risk_levels_match(self):
+        md_risks = set()
+        for cells in _tables_under(self.md, "共通 row（行）"):
+            if _first_token(cells[0]) == "risk" and len(cells) >= 4:
+                m = re.search(r"enum:\s*((?:`[^`]+`(?:\s*/\s*)?)+)", cells[3])
+                if m:
+                    md_risks = set(re.findall(r"`([^`]+)`", m.group(1)))
+        self.assertEqual(md_risks, set(ll.RISK_LEVELS))
+
+
+class AdvisoryGateTests(unittest.TestCase):
+    def _run(self, args, tmp):
+        return subprocess.run(
+            [sys.executable, LEDGER_LINT, "--root", tmp, *args],
+            capture_output=True, text=True)
+
+    def test_advisory_does_not_gate_under_strict(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = os.path.join(tmp, "ctx.json")
+            with open(ctx, "w", encoding="utf-8") as f:
+                json.dump({"schema_version": 1, "terms": [
+                    {"id": "T-C", "term": "x", "state": "競合中"}]}, f)
+            ledger = os.path.join(tmp, "ledger.json")
+            with open(ledger, "w", encoding="utf-8") as f:
+                json.dump(make_file([make_agreed_row(term_refs=["T-C"])]), f)
+            out = self._run([ledger, "--strict", "--context", ctx], tmp)
+            self.assertEqual(out.returncode, 0)   # advisory-only: no gate
+
+    def test_json_output_includes_advisories(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = os.path.join(tmp, "ctx.json")
+            with open(ctx, "w", encoding="utf-8") as f:
+                json.dump({"schema_version": 1, "terms": [
+                    {"id": "T-C", "term": "x", "state": "廃語"}]}, f)
+            ledger = os.path.join(tmp, "ledger.json")
+            with open(ledger, "w", encoding="utf-8") as f:
+                json.dump(make_file([make_agreed_row(term_refs=["T-C"])]), f)
+            out = self._run([ledger, "--json", "--context", ctx], tmp)
+            payload = json.loads(out.stdout)
+            self.assertIn("advisories", payload)
+            self.assertTrue(payload["advisories"])
 
 
 if __name__ == "__main__":

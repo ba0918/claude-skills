@@ -12,6 +12,11 @@ Finding schema (every finding): {where, what, why, how, check}
   where = "<file>#<row id>" / what = violation / why = rationale /
   how = fix instruction / check = machine slug.
 
+Advisories share the finding schema but are report-only: they never set
+findings_present and never gate under --strict (pending-vocabulary part b —
+AGREED rows depending on 競合中/廃語 vocabulary — stays PROVISIONAL until the
+pilot confirms it, per agreement-ledger.md §C).
+
 Exit codes (contract table in agreement-ledger.md):
   0 = run succeeded (report-only default: even with findings; zero targets too)
   1 = findings present, --strict only
@@ -46,6 +51,10 @@ _ID_RE = re.compile(ID_PATTERN)
 
 STATES = ("AGREED", "DELEGATED", "PROVISIONAL", "UNDECIDED", "REJECTED")
 ACTOR_KINDS = ("human",)
+# Risk band. Absent == not high-risk. Only `high` rows are barred from batches.
+RISK_LEVELS = ("high", "normal")
+# Vocabulary states that make an AGREED dependency unstable (§C part b).
+UNSTABLE_TERM_STATES = ("競合中", "廃語")
 
 # {field: (type token, required)} — tokens fixed by the md parse contract.
 ROW_FIELDS = {
@@ -60,6 +69,7 @@ ROW_FIELDS = {
     "approval": ("object", False),
     "delegation": ("object", False),
     "reeval_condition": ("string", False),
+    "risk": ("string", False),
 }
 
 APPROVAL_FIELDS = {
@@ -79,6 +89,17 @@ DELEGATION_FIELDS = {
     "revocation": ("string", True),
 }
 
+# Batch approval manifest (agreement-ledger.md「batch 承認 manifest」節). Persisted
+# as the top-level optional key `batch_manifests` so the linter can verify the
+# batch_digest and the high-risk-in-batch prohibition (§B).
+BATCH_MANIFEST_FIELDS = {
+    "batch_digest": ("string", True),
+    "row_digests": ("array[string]", True),
+    "summary_digest": ("string", True),
+    "excluded_rows": ("array[string]", False),
+    "dependencies": ("array[string]", False),
+}
+
 # The single attachment each state permits. UNDECIDED / REJECTED permit none.
 STATE_ATTACHMENT = {
     "AGREED": "approval",
@@ -95,6 +116,7 @@ _MISSING_SLUG = {
 TOPLEVEL_FIELDS = {
     "schema_version": ("integer", True),
     "rows": ("array[object]", True),
+    "batch_manifests": ("array[object]", False),
 }
 
 # Free-text fields under the 機密情報の規約 (synthetic/anonymous data only).
@@ -138,6 +160,26 @@ def compute_digest(row):
     core = {
         "claim": claim,
         "term_refs": sorted(r for r in refs if isinstance(r, str)),
+    }
+    blob = json.dumps(core, ensure_ascii=False, sort_keys=True,
+                      separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def compute_batch_digest(row_digests, summary_digest):
+    """Deterministic digest binding a batch's constituent row digests to the
+    displayed summary (agreement-ledger.md「batch 承認 manifest」節). If any
+    constituent digest or the summary changes, this digest changes and the
+    recorded batch approval no longer matches — the tamper-evidence for a batch.
+
+    Total by construction: a malformed manifest gets its own type findings
+    elsewhere, so non-list row_digests / non-string summary coerce to the empty
+    case rather than raising (a lint over untrusted input must never crash)."""
+    refs = row_digests if isinstance(row_digests, list) else []
+    core = {
+        "row_digests": sorted(r for r in refs if isinstance(r, str)),
+        "summary_digest": summary_digest if isinstance(summary_digest, str)
+        else "",
     }
     blob = json.dumps(core, ensure_ascii=False, sort_keys=True,
                       separators=(",", ":"))
@@ -326,6 +368,8 @@ def _check_object_fields(findings, where, prefix, obj, spec):
         value = obj[field]
         if token == "integer":
             _check_revision(findings, where, f"{prefix}.{field}", value)
+        elif token == "array[string]":
+            _check_string_array(findings, where, f"{prefix}.{field}", value)
         else:
             _check_string(findings, where, f"{prefix}.{field}", value, required)
 
@@ -396,7 +440,7 @@ def _scan_secrets(findings, where, row):
             f"{field} から実在の credential・個人情報を除去し合成データに差し替える"))
 
 
-def _check_row(findings, name, index, row, context_terms):
+def _check_row(findings, advisories, name, index, row, context_terms):
     """Validate one ledger row. Return (id, state); id is None unless it
     matches ID_PATTERN (invalid ids never become where labels or known ids)."""
     if not isinstance(row, dict):
@@ -458,9 +502,19 @@ def _check_row(findings, name, index, row, context_terms):
             f"合意状態は {'/'.join(STATES)} の 5 値のみ",
             f"state を {'/'.join(STATES)} のいずれかにする"))
 
+    risk = row.get("risk")
+    if isinstance(risk, str) and risk and risk not in RISK_LEVELS:
+        findings.append(make_finding(
+            where, "unknown-risk",
+            f"risk が enum 外: {risk!r}",
+            f"risk は {'/'.join(RISK_LEVELS)} のいずれか（省略時は非高リスク扱い）",
+            f"risk を {'/'.join(RISK_LEVELS)} のいずれかにするかキーごと削除する"))
+
     _check_attachments(findings, where, state, row)
     _check_epistemic_separation(findings, where, row)
     _check_term_refs(findings, where, row, context_terms)
+    _check_pending_vocabulary(findings, advisories, where, state, row,
+                              context_terms)
     _scan_secrets(findings, where, row)
     return (cid if cid_valid else None), state
 
@@ -520,6 +574,102 @@ def _check_term_refs(findings, where, row, context_terms):
                 f"CONTEXT.md に {t} を定義するか、term_refs を実在 ID に直す"))
 
 
+def _term_state(context_terms, term):
+    """Vocabulary-specific state of a term, or None. Tolerates the legacy set
+    form of context_terms (membership only, no state) so callers that pass a
+    plain id set still work for the membership-based checks."""
+    if isinstance(context_terms, dict):
+        return context_terms.get(term)
+    return None
+
+
+def _check_pending_vocabulary(findings, advisories, where, state, row,
+                              context_terms):
+    """pending-vocabulary derived detection (§C). Only AGREED rows escalate —
+    an agreed claim standing on unsettled vocabulary is the dangerous side.
+      (a) AGREED row referencing an undefined term -> finding (confirmed).
+      (b) AGREED row referencing a 競合中/廃語 term -> advisory (report-only,
+          PROVISIONAL; does not gate CI until the pilot confirms it)."""
+    if context_terms is None or state != "AGREED":
+        return
+    refs = row.get("term_refs")
+    if not isinstance(refs, list):
+        return
+    for t in refs:
+        if not (isinstance(t, str) and t):
+            continue
+        if t not in context_terms:
+            findings.append(make_finding(
+                where, "pending-vocabulary",
+                f"AGREED 行が CONTEXT 未定義の語彙に依存: {t}",
+                "裁定済みの合意が未確定の語の上に立っている（語彙の揺れで合意が揺れる危険側）",
+                f"CONTEXT.md に {t} を定義してから AGREED にするか、term_refs を実在 ID に直す"))
+            continue
+        term_state = _term_state(context_terms, t)
+        if term_state in UNSTABLE_TERM_STATES:
+            advisories.append(make_finding(
+                where, "unstable-term-dependency",
+                f"AGREED 行が不安定な語彙（{term_state}）に依存: {t}",
+                "競合中・廃語の語に依存する合意は再裁定候補（advisory・二重状態整合は PROVISIONAL）",
+                f"{t} の語彙状態を確定させるか AGREED 行を再裁定する（本検出は report-only）"))
+
+
+def _check_batch_manifests(findings, name, data, highrisk_digests):
+    """Validate the optional top-level batch_manifests (§B): structure, the
+    batch_digest tamper-evidence, and the high-risk-in-batch prohibition."""
+    manifests = data.get("batch_manifests")
+    if manifests is None:
+        return
+    if not isinstance(manifests, list):
+        findings.append(make_finding(
+            f"{name}#batch_manifests", "invalid-type",
+            f"batch_manifests が配列でない（{type(manifests).__name__}）",
+            "batch_manifests は manifest object の配列",
+            "batch_manifests を object の配列にするか、キーごと削除する"))
+        return
+    for i, manifest in enumerate(manifests):
+        where = f"{name}#batch_manifests[{i}]"
+        if not isinstance(manifest, dict):
+            findings.append(make_finding(
+                where, "invalid-type",
+                f"batch manifest が object でない（{type(manifest).__name__}）",
+                "各 batch manifest は必須キーを持つ object",
+                "batch manifest を object にする"))
+            continue
+        _check_object_fields(findings, where, "batch_manifests", manifest,
+                             BATCH_MANIFEST_FIELDS)
+        _check_batch_digest(findings, where, manifest)
+        _check_high_risk_in_batch(findings, where, manifest, highrisk_digests)
+
+
+def _check_batch_digest(findings, where, manifest):
+    bd = manifest.get("batch_digest")
+    rds = manifest.get("row_digests")
+    sd = manifest.get("summary_digest")
+    if isinstance(bd, str) and bd and isinstance(rds, list) \
+            and isinstance(sd, str) and sd:
+        if bd != compute_batch_digest(rds, sd):
+            findings.append(make_finding(
+                where, "batch-digest-mismatch",
+                "batch_digest が row_digests + summary_digest からの再算出と不一致",
+                "一括承認の束が改竄・欠落した = batch の真正性が崩れている",
+                "batch を提示し直して裁定し、batch_digest を取り直す（手で書き換えない）"))
+
+
+def _check_high_risk_in_batch(findings, where, manifest, highrisk_digests):
+    rds = manifest.get("row_digests")
+    if not isinstance(rds, list):
+        return
+    for d in rds:
+        if isinstance(d, str) and d in highrisk_digests:
+            findings.append(make_finding(
+                where, "high-risk-in-batch",
+                "高リスク行の digest が batch に混入している",
+                "高リスク・異論行は同調圧力・埋没効果を避けるため 1 行ずつ明示裁定する規約",
+                "該当行を batch から外し、単独で明示裁定する（batch 不可）"))
+            return  # one finding per manifest is enough signal
+
+
 # ---------------------------------------------------------------------------
 # Core lint
 # ---------------------------------------------------------------------------
@@ -529,6 +679,7 @@ def lint_data(named_files, context_terms=None, baseline_undecided_ids=None):
     structure corruption becomes a diagnostic (exit-2 class), row-level
     violations become findings (exit-1 class under --strict)."""
     findings = []
+    advisories = []
     diagnostics = []
     row_total = 0
     present_ids = set()
@@ -544,13 +695,16 @@ def lint_data(named_files, context_terms=None, baseline_undecided_ids=None):
         findings.extend(top_findings)
         row_total += len(rows)
         ids_here = {}
+        highrisk_digests = set()
         for index, row in enumerate(rows):
             if isinstance(row, dict):
                 rid = row.get("id")
                 if isinstance(rid, str) and rid:
                     present_ids.add(rid)
+                if row.get("risk") == "high":
+                    highrisk_digests.add(compute_digest(row))
             try:
-                cid, _state = _check_row(findings, name, index, row,
+                cid, _state = _check_row(findings, advisories, name, index, row,
                                          context_terms)
             except Exception:
                 # fail-closed safety net: a lint over untrusted input must never
@@ -564,6 +718,7 @@ def lint_data(named_files, context_terms=None, baseline_undecided_ids=None):
                 continue
             ids_here[cid] = ids_here.get(cid, 0) + 1
         per_file_ids.append((name, ids_here))
+        _check_batch_manifests(findings, name, data, highrisk_digests)
 
     for name, ids_here in per_file_ids:
         for cid, count in sorted(ids_here.items()):
@@ -583,11 +738,13 @@ def lint_data(named_files, context_terms=None, baseline_undecided_ids=None):
                 f"{missing} を現版に残すか、状態遷移（AGREED/REJECTED 等）として明示する"))
 
     findings = finalize_findings(findings)
+    advisories = finalize_findings(advisories)
     by_check = {}
     for f in findings:
         by_check[f["check"]] = by_check.get(f["check"], 0) + 1
     return {
         "findings": findings,
+        "advisories": advisories,
         "diagnostics": diagnostics,
         "corrupt": bool(diagnostics),
         "findings_present": bool(findings),
@@ -596,6 +753,7 @@ def lint_data(named_files, context_terms=None, baseline_undecided_ids=None):
             "corrupt_files": len(diagnostics),
             "rows": row_total,
             "findings": len(findings),
+            "advisories": len(advisories),
             "by_check": by_check,
             "truncated": False,
         },
@@ -635,10 +793,12 @@ def lint_paths(paths, names=None, context_terms=None,
 # ---------------------------------------------------------------------------
 
 def load_context_terms(path):
-    """Return the set of term IDs defined in a CONTEXT vocabulary file
-    (context-vocabulary.md 機械可読形式). Fail-closed on corruption — a broken
-    vocabulary must not silently disable term checks. schema_version is
-    validated for consistency with the main loader (unknown version rejected)."""
+    """Return {term_id: vocabulary_state} for a CONTEXT vocabulary file
+    (context-vocabulary.md 機械可読形式). Membership over the keys drives the
+    undefined-term check; the state value drives pending-vocabulary's unstable
+    dependency detection (§C). Fail-closed on corruption — a broken vocabulary
+    must not silently disable term checks. schema_version is validated for
+    consistency with the main loader (unknown version rejected)."""
     data = load_ledger_file(path)  # reuses the fail-closed JSON loader
     if not isinstance(data, dict):
         raise LedgerLintError(
@@ -651,11 +811,12 @@ def load_context_terms(path):
             f"CONTEXT schema_version が未知（v1 は {SCHEMA_VERSION} 固定）")
     if not isinstance(data.get("terms"), list):
         raise LedgerLintError("not-an-object", "CONTEXT terms が配列でない")
-    terms = set()
+    terms = {}
     for item in data["terms"]:
         if isinstance(item, dict) and isinstance(item.get("id"), str) \
                 and item["id"]:
-            terms.add(item["id"])
+            state = item.get("state")
+            terms[item["id"]] = state if isinstance(state, str) else None
     return terms
 
 
@@ -725,8 +886,12 @@ def render_text(result):
     for f in result["findings"]:
         lines.append(f"[{f['where']}] {f['check']}: {f['what']} | "
                      f"why: {f['why']} | fix: {f['how']}")
+    for a in result.get("advisories", []):
+        lines.append(f"[{a['where']}] advisory({a['check']}): {a['what']} | "
+                     f"why: {a['why']} | fix: {a['how']}")
     if not result["diagnostics"] and not result["findings"] and s["files"]:
-        lines.append("違反なし: 全台帳ファイルが schema v1 に適合")
+        lines.append("違反なし: 全台帳ファイルが schema v1 に適合"
+                     + ("（advisory あり）" if result.get("advisories") else ""))
     return "\n".join(sanitize_line(line) for line in lines)
 
 
@@ -737,6 +902,7 @@ def render_json(result):
         "summary": result["summary"],
         "diagnostics": result["diagnostics"],
         "findings": result["findings"],
+        "advisories": result.get("advisories", []),
     }, indent=2, ensure_ascii=False)
 
 
