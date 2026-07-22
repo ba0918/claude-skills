@@ -4,6 +4,30 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.57.0
+
+delegation result relay（1.55.0）は「結果の正本はファイル・報告メッセージは通知」という
+書き手/読み手の義務を定めたが、**待つ側の待ち方**（待ち時間の上限・通知に依存しない再検分・
+上位からの停滞検知）に規範がなかった。ledger_write CLI の cycle で 2 種類の停滞が実測された:
+無応答の 1 観点（Codex）を約 47 分待ち続けた片翼欠けの無限待ちと、4 観点全部の結果ファイルが
+書き込み済みなのに完了通知が届かず約 24 分集約に入らなかった揃い済みの気づき損ね。どちらも
+作業と結果ファイルは健全で、欠けていたのは待つ側の規範だけだった。共有契約に待機規範を追加し、
+参照スキルへ役割固有パラメータだけを配線する。
+
+- `skills/shared/references/orchestration-patterns.md`: delegation result relay の (3) 直後に
+  「(3b) 待機規範（wait discipline）」を正本として追加。3 本柱（通知非依存の再検分／待ち時間
+  上限 既定 10 分 + degraded 続行／上位 watchdog の対称化）を規定し、自己タイマーが完全無音の
+  末尾で発火しない問題は watchdog を最終 backstop に・親を持たない最上位は bounded re-check を
+  発火経路に、という補完関係を棄却理由込みで明記。リトライ予算の非乗算（再委譲は観点あたり 1 回・
+  watchdog の催促は別枠）も規範本文で固定
+- `skills/plan-reviewer/SKILL.md`: Step 3（実行・結果受渡し）と Step 4（集約）の「揃うのを待って
+  読む」を両方とも待機規範参照に更新し drift を防止。役割固有パラメータ（10 分／任意 = Codex／
+  必須 = 起動した Claude 観点で 1 回再委譲、トリガーされた UI/UX は必須扱い、standalone は
+  bounded re-check）を配線
+- `skills/cycle/SKILL.md`: 委譲結果受渡し共通節に上位 watchdog 手順を追記し、既存 Troubleshooting の
+  無音停滞行にも契約参照を張って同一手順であることを明示（重複記述を作らない）
+- `skills/plan-refine/SKILL.md`: relay 節に中間オーケストレーターとしての待機義務参照を追加
+
 ## 1.56.0
 
 pilot 第 2 号（automation-visualize・65 行裁定）で実測された、承認バッチごとに digest
