@@ -111,6 +111,37 @@ Amend the previous commit **only** when **all** of the following are true:
 - **body**: Only when background explanation is needed. Omit if unnecessary
 - **footer**: Do not include by default
 
+### Commit Message Content
+
+A commit message is a standalone historical record of the repository change. Describe the resulting behavior, capability, or repository artifact—not the workflow used to produce it.
+
+- **Subject**: State the concrete change. It must remain understandable without the current conversation, implementation plan, or agent session
+- **Body**: Explain why the change was needed, important constraints, or non-obvious consequences. Do not repeat what the subject already says
+- Prefer stable context such as an issue number, specification name, or architectural concept when it helps explain the change
+- Match the existing history only for language and tone. Standalone clarity and the Conventional Commits format take precedence over imitating low-quality historical messages
+
+Do not include:
+
+- Temporary workflow labels or plan positions such as phase names, step numbers, or "remaining work"
+- Agent actions, investigation chronology, review rounds, or implementation progress
+- References that require the current conversation or a temporary plan to interpret
+- Generic subjects such as "implement next step", "address feedback", or "update files"
+
+When the change itself introduces these message rules, describe the resulting rule (for example, message self-containment) instead of quoting the prohibited workflow labels.
+
+Examples:
+
+```text
+Bad:  feat: Implement the next plan step
+Good: feat: Analyze untracked files before committing
+
+Bad:  fix: Address review feedback
+Good: fix: Re-stage files formatted by the pre-commit hook
+
+Bad:  chore: Apply remaining changes
+Good: docs: Define standalone commit message requirements
+```
+
 ### Execution Steps
 
 1. Stage necessary files with `git add` according to the strategy

@@ -22,7 +22,7 @@
   },
   "commit": {
     "file_sha256": {
-      "skills/commit/SKILL.md": "409e379f90eb387cbc680a72746859badcaf521d2e2165728bb95d1a266abf5f",
+      "skills/commit/SKILL.md": "8a3c4ce0d6b38b19ac25b7f96ca6514ec6f328121ff3407cddf12df8aacd6d28",
       "skills/commit/fixtures.json": "710da57415bc87d5128794ac2c0d12f6f9abd95abe9e66005a30abbf0932ff94",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
@@ -32,7 +32,7 @@
       "skills/commit/fixtures.json",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "0695c8ec400fefba2e78fd0b6b584c0e186ce8a798880be96e7f91370efee13c",
+    "surface_sha256": "7fa7276db6ce9c4d134e0d88e24554425d5d962b6ef7962cc60869c3d2105798",
     "verified": "2026-07-22"
   },
   "context-audit": {
