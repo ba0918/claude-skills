@@ -72,6 +72,35 @@
     "surface_sha256": "a20dab220515041d0d0643fb3bff0f4facc8f27dc46d9f3a42a179823eae2857",
     "verified": "2026-07-22"
   },
+  "cycle": {
+    "file_sha256": {
+      "skills/cycle/SKILL.md": "c8694e8d88907fcc31ab9b3e572b578784b02855c3f675baa0f49671b7ed9f42",
+      "skills/cycle/fixtures.json": "7b0fb70950478ecfc59727503d766888f62a40411ff0377b26d229372b53aa77",
+      "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/checkpoint-pattern.md": "b120f3562565c4cda0febd645f086b2d25b988c3e718078b0398a1a97f8059b9",
+      "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
+      "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
+      "skills/shared/references/orchestration-patterns.md": "73d7e30c6a00866a3a9ec7f1e4b79195e34e401cd1bc3a6c35396b47779d5ee3",
+      "skills/shared/references/polling-pattern.md": "98f623552d4c6ec957e07b20a90c389b8513ecc3572b73ccaa80cfa9bab8c25f",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
+    },
+    "result": "pass",
+    "surface": [
+      "skills/cycle/SKILL.md",
+      "skills/cycle/fixtures.json",
+      "skills/plan/references/status-update-guide.md",
+      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/checkpoint-pattern.md",
+      "skills/shared/references/codex-integration.md",
+      "skills/shared/references/design-principles.md",
+      "skills/shared/references/orchestration-patterns.md",
+      "skills/shared/references/polling-pattern.md",
+      "skills/shared/references/verification-gate.md"
+    ],
+    "surface_sha256": "af54391e0bf1b9ccac3b6f524c8b83e8c8ce53667b26e7a5ec7580b335fa5114",
+    "verified": "2026-07-22"
+  },
   "github-issue": {
     "file_sha256": {
       "skills/context-audit/references/baseline-format.md": "ed998a2c7fbe69f81b54e28e84e57d51e84d3251bbf3293d7335d86c3126ac81",
@@ -155,14 +184,14 @@
   },
   "handoff": {
     "file_sha256": {
-      "skills/handoff/SKILL.md": "e93fcd7f9054874ccece5beba6678e643a3791d682979f87b848bdfa5073c2eb",
+      "skills/handoff/SKILL.md": "aa2c61a4f384affd45069a71dff1686e3cf6b64848a6df8596f7a4d450a4a3d8",
       "skills/handoff/fixtures.json": "2188b97ff2b492ce20eeca17e6ac0a7b2aa296d160d13225293b6258dc55ab16",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/checkpoint-pattern.md": "b120f3562565c4cda0febd645f086b2d25b988c3e718078b0398a1a97f8059b9",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
       "skills/shared/references/human-readable-summary.md": "f3dba0207381c14d9d73c0e72c1ed249843b48596c38edcb8de3c90f4e1ecc26"
     },
-    "result": "accepted-without-run",
+    "result": "pass",
     "surface": [
       "skills/handoff/SKILL.md",
       "skills/handoff/fixtures.json",
@@ -171,7 +200,7 @@
       "skills/shared/references/design-principles.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "b5953f0dea9d793bb28cbb4400637e8a1772f2563fe30461f767e6ad512b4dda",
+    "surface_sha256": "47840b722673ce4c725b39b6aa245cafd810f23da95edc5bdc561ce074f3e5f4",
     "verified": "2026-07-22"
   },
   "issue": {
