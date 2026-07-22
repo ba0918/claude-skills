@@ -4,7 +4,25 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
-## 1.60.0
+## 1.61.0
+
+プロンプト圧縮の横展開バッチ2（issue）。バッチ1 で確立した言語ポリシー（本文英語統一）と
+明示化アプローチを issue スキルへ適用した。計測は empirical-prompt-tuning の 3 役分離を
+Opus（本番同等モデル）で実施し、fixtures.json の全 4 シナリオ（polling 3 + create 1）を
+事前固定のまま流用して 2 iteration とも precision 100% を維持。instruction 起因の摩擦 8 件が
+明示化で消滅した（friction 総数 17→14、残存はシナリオ文言・契約参照設計・本質的判断領域のみ）。
+Codex セカンドオピニオンの important 指摘 1 件も反映済み。
+
+- issue: 本文を英語に統一（非 ASCII 1,520→213 文字、トークン近似 -9%。ユーザー向け出力
+  テンプレートと日本語契約見出しの引用は機能要件として維持）。Early halt 注記（kill file halt と
+  初回 dry-run 強制の優先順位、halt 時は Step 15 まで実行しない）、.polling-initialized 事前作成
+  による dry-run バイパス禁止、title frontmatter の原語維持（英訳は slug のみ）、free-form 時の
+  tags 推論既定値、dry-run tick の Step 13–15 実行を明文化。重複していた末尾の
+  issue-status.md Format セクションを削除（333→316 行）
+- issue/references/polling-state.md: 宛先ディレクトリ不変条件を §1 に一元化（Codex 指摘 —
+  orphan rollback だけの mkdir では release / mark_done / mark_failed に同じ穴が残る）。
+  is_alive の 3 分岐（エラーなし = alive / ESRCH = dead / EPERM = alive fail-safe）を明文化
+- skill-regression ledger を issue で更新（iter2 全合格 + checker の実地検証エビデンス）
 
 プロンプト圧縮の横展開バッチ1（commit / plan-reviewer）。1.58.1 で確立した「プロンプト圧縮の
 効果条件」プレイブックを、skill-improve の使用頻度実測（30日・141セッション・455起動）で
