@@ -92,9 +92,15 @@ Fable 5 世代モデルでも「短くすれば良くなる」わけではない
 
 `ambiguous_term` / `missing_premise` / `self_containment_gap` は削減方向ではなく **明示化・例示追加** で解く。テンプレ書式の曖昧さ、プロジェクト情報の欠落、template chase 構造そのものが原因のため、Fable 論調とは逆方向のアプローチが必要になる。
 
+### 横展開バッチ1（commit / plan-reviewer、2026-07-22）での追加知見
+
+- **既にリーンなスキル（~150-200 行級）はサイズ削減より摩擦削減が主効果**: commit は行数 -9% に対し摩擦 -83%（6→1、precision 100% 維持）。明示化の追記でバイト数はむしろ増えうるが、それで良い（「高信号トークンの選別」が正）
+- **圧縮テーマと明示化テーマは iteration を分けて回す**: 圧縮で消える摩擦（二重説明由来）と、明示化でしか消えない摩擦（既定値欠落・未定義分岐）が分離して観測できる
+- **`is_diverged` はカテゴリ単位の粗い判定**: 詳細レベルで毎回別項目・総数漸減でも ambiguous_term が 3 回連続すると diverged になる。残存が (a) 本質的判断領域 (b) 契約参照設計そのもの (c) 評価ハーネス起因なら、prose 追加は over-specification に転ぶため打ち切りが正しい
+
 ### 収束履歴の資産化
 
-`empirical-prompt-tuning` の fixture として plan スキルの 4 iteration 収束履歴が `.claude/tmp/empirical/plan-*/fixture.json` に記録される。カテゴリ推移・削減量・学びの全文はそこを参照。再チューニング時のベースライン比較・回帰検出資産として使う。
+`empirical-prompt-tuning` の fixture として plan スキルの 4 iteration 収束履歴が `.claude/tmp/empirical/plan-*/fixture.json` に記録される。横展開バッチ1 の計測は `.claude/tmp/empirical/20260722-lean-rollout/`（summary.md + iterations.jsonl）。カテゴリ推移・削減量・学びの全文はそこを参照。再チューニング時のベースライン比較・回帰検出資産として使う。
 
 ## クロスツール互換性の注意
 

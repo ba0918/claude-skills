@@ -16,7 +16,7 @@ Skill that analyzes changes and automatically commits them in logical units with
 
 ## Phase 1: Information Gathering
 
-Execute the following **in parallel**:
+Execute the following (a single batched shell call is fine):
 
 ```bash
 git status
@@ -29,20 +29,11 @@ git branch -vv
 
 ## Phase 1.5: Best-Effort Test Verification
 
-**Verification Gate** (best-effort): `skills/shared/references/verification-gate.md` をベストエフォートで適用する。commit の Core Principle「No confirmation」を遵守し、テスト失敗でブロックしない。
+[Verification Gate 契約](../shared/references/verification-gate.md)の「commit への統合」節をベストエフォートで適用する。テストフレームワークを検出できた場合のみテストスイートを実行し（タイムアウト 120 秒、超過はスキップして続行）、失敗時はコミットメッセージ body に `⚠️ Tests failing: {failure_summary}` を追記して続行する。検出できなければスキップ。テスト失敗でブロックしない（Core Principle「No confirmation」を遵守）。
 
-1. テストフレームワークを自動検出する:
-   - `package.json` (scripts.test) → `npm test`
-   - `Cargo.toml` → `cargo test`
-   - `go.mod` → `go test ./...`
-   - `pyproject.toml` / `pytest.ini` → `pytest`
-   - `Makefile` (test ターゲット) → `make test`
-2. テストフレームワークが検出できた場合、テストスイートを実行する（タイムアウト: 120秒）
-3. 結果に応じた処理:
-   - **全パス**: 通常通りコミットに進む
-   - **テスト失敗**: コミットメッセージ body に `⚠️ Tests failing: {failure_summary}` を追記してコミット続行
-   - **テストフレームワーク不明**: スキップ（従来通り即コミット）
-   - **タイムアウト**: スキップしてコミット続行
+検出マップ: `package.json` (scripts.test) → `npm test` / `Cargo.toml` → `cargo test` / `go.mod` → `go test ./...` / `pyproject.toml`・`pytest.ini` → `pytest` / `Makefile` (test ターゲット) → `make test`
+
+検出マップに該当がなければスキップして次フェーズへ進む（マーカーファイル以外の探索はしない — 検出はここまでで打ち切る設計判断）。
 
 ## Phase 2: Sanity Check
 
@@ -69,29 +60,22 @@ Classify each file's changes along the following axes, **including untracked fil
 - **Nature of change**: feat / fix / refactor / docs / test / chore / style / perf
 - **Relatedness**: Whether they belong to the same feature/purpose
 
-**Untracked file exclusion**: If an untracked file is clearly not a user work product (e.g. a verification-harness byproduct or a temporary/scratch file), exclude it from the commit. When excluding, state the excluded file(s) and the reason in the Phase 5 report.
+**Exclusion rules** (applies to untracked and modified files alike):
+- **Sensitive files** (`.env`, credentials, private keys, etc.): always exclude. Judge by file name/kind, not contents — exclude even if the contents look like dummy values
+- **Non-work-products** (verification-harness byproducts, temporary/scratch files): exclude when clearly not a user work product
+- When excluding, state the excluded file(s) and the reason in the Phase 5 report
+
+**Type selection**: When multiple types are defensible (e.g. a new utility could be feat or chore), pick by the change's primary purpose: user-facing capability → feat, dev support/config → chore. If both remain defensible, default to feat.
 
 ### 3.2 Commit Strategy
 
 #### A. Single Commit
 
-When all changes belong to the same purpose/theme.
-
-```
-Example: src/auth.ts, src/auth.test.ts, src/types/auth.ts
-→ All related to auth feature → 1 commit
-```
+When all changes belong to the same purpose/theme (e.g. implementation + its tests + its type definitions).
 
 #### B. Split into Multiple Commits
 
 When independent changes are mixed, split by logical unit.
-
-```
-Example:
-  Change 1: src/user.ts (new feature)
-  Change 2: README.md (documentation update)
-→ Split into feat: ... and docs: ... as 2 commits
-```
 
 **Criteria for splitting:**
 - Different Conventional Commits types are mixed (feat + docs, etc.)
@@ -123,7 +107,7 @@ Amend the previous commit **only** when **all** of the following are true:
 ```
 
 - **type**: Conventional Commits (feat / fix / docs / style / refactor / perf / test / chore)
-- **subject**: Japanese or English (match the style of the project's existing commit history)
+- **subject**: Japanese or English (match the style of the project's existing commit history; if the history is empty or mixed, use the language of the conversation with the user)
 - **body**: Only when background explanation is needed. Omit if unnecessary
 - **footer**: Do not include by default
 
@@ -131,9 +115,9 @@ Amend the previous commit **only** when **all** of the following are true:
 
 1. Stage necessary files with `git add` according to the strategy
    - Do not use `git add -A` or `git add .`. Specify files individually
-   - Exclude sensitive files such as `.env`, credentials, private keys, etc.
+   - Files excluded in Phase 3.1 (sensitive files / non-work-products) must not be staged
 2. Execute `git commit` (pass message via HEREDOC format)
-3. For multiple commits, repeat in order
+3. For multiple commits, repeat in order (commit order among independent units is free — dependency order only matters when one change builds on another)
 4. For amend, use `git commit --amend`
 
 ### Pre-commit Hook Failure
