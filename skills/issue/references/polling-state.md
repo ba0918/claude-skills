@@ -43,6 +43,13 @@
 
 既存 `close workflow` の `archives/` フラット配置と共存する（同名衝突は FS 上で発生しえない前提）。
 
+**宛先ディレクトリ不変条件 (destination-directory invariant):** adapter は tick 冒頭（root 解決直後）に
+`ready/` `running/` `done/` `failed/transient/` `failed/permanent/` `archives/` を `mkdir -p` で保証する。
+以後の全遷移（`claim` / `release` / `mark_done` / `mark_failed` / Partial Claim Rollback §4 /
+orphan rollback §6）は宛先ディレクトリの存在を前提としてよい（rename 直前の個別 mkdir は不要）。
+クラッシュや部分初期化の直後は queue の一部ディレクトリだけが残ることがあるため、この保証は毎 tick 行う。
+`archives/YYYY-MM/` の月次サブディレクトリのみ、archive 実行時にオンデマンドで作成する。
+
 > **`.claim` が state_root に co-located である理由:** `.claim` は `claim()` の atomic rename
 > 設計（`mkdir running/{slug}` → `rename ready/{slug}.md running/{slug}/issue.md` →
 > `write running/{slug}/.claim`）と不可分であり、running/ ディレクトリと同一 FS 木になければ
@@ -150,14 +157,14 @@ rollback_orphans(now):
     if not exists(claim_file): continue
     (pid, started_at) = parse(claim_file)
     if is_alive(pid): continue                    # 正常実行中
-    # 死亡 pid: rollback
+    # 死亡 pid: rollback（ready/ の存在は §1 の宛先ディレクトリ不変条件で tick 冒頭に保証済み）
     rename(running/{slug}/issue.md, ready/{slug}.md)
     rm(claim_file); rmdir(running/{slug})
     recovered.append(slug)
   return recovered
 ```
 
-`is_alive(pid)` は `kill(pid, 0)` 相当。`started_at` は監査ログ用（将来の timeout-based recovery に拡張可能）。
+`is_alive(pid)` は `kill(pid, 0)` 相当（エラーなし = alive、`ESRCH` = dead、`EPERM` = alive 扱いの fail-safe）。`started_at` は監査ログ用（将来の timeout-based recovery に拡張可能）。
 
 ---
 
