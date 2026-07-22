@@ -27,6 +27,13 @@ plan-reviewer の完了報告または停止・待機通知のどちらでも結
 `{run_id}_review-{dim}.md` → (3) 計画ファイル本文（refine 自身が編集する対象）。
 `{run_id}` は計画ファイル冒頭の Cycle ID（なければファイル名のタイムスタンプ）を使う。
 
+refine は plan-reviewer を起動しつつ cycle からは委譲先でもある**中間オーケストレーター**として
+待機し、この位置で報告未達の停滞が実測されている。待つ間は
+[待機規範（wait discipline）](../shared/references/orchestration-patterns.md)に従う: 通知非依存で
+結果ファイルディレクトリを再検分し、最後の到着から一定時間（既定 10 分）無到着なら上記フォールバック
+検分に切り替える。自分自身が cycle 配下で停滞した場合の回収は、親（cycle）が張る柱 3 の watchdog に
+委ねる。
+
 plan-reviewer をスキルとして起動できない環境では、以下のインラインレビュー代行をフォールバックとして使う。
 このとき plan-reviewer の **SKILL.md 本体と references の両方**
 （観点定義・UI/UX の条件付きトリガー判定・フォールバック規定・出力形式を含む）を読み、
