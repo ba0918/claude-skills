@@ -34,19 +34,9 @@ mkdir -p .agents/artifacts/plans
 
 ### Phase 2: Gather Requirements
 
-Required information:
+Feature 名 / 概要 / type（新機能 / 改修 / bug fix / refactor）が必要。ユーザー入力から明確に取れるなら聞かずに進む。不足があれば interactive では簡潔に聞く、Auto mode（`cycle` / `issue-cycle` 等の headless 呼び出し）ではブロックせず文脈から推論する。
 
-1. **Feature name** - What are we implementing?
-2. **Brief description** - What is the goal?
-3. **Type** - New feature / Enhancement / Bug fix / Refactoring
-
-**When to skip asking:**
-
-- If the user's initial request already contains all three (explicitly or unambiguously inferable), extract them and skip asking.
-- Under Auto mode / headless invocation (e.g. called from `issue-cycle`, `cycle`), never block on questions — infer from available context and proceed.
-- Otherwise, ask the user. Keep questions concise; avoid overwhelming with too many at once.
-
-Record what was inferred vs. what was asked so the user can correct it.
+推論した項目は最終応答で明示し、ユーザーが訂正できる形にする。
 
 ### Phase 3: Create Plan Document
 
@@ -54,25 +44,7 @@ Record what was inferred vs. what was asked so the user can correct it.
 
 **CRITICAL**: Plan files MUST be created under `.agents/artifacts/plans/` directory. Do NOT use `docs/cycles/` or any other directory. This constraint applies regardless of how this skill is invoked (directly, via issue-cycle, or any other caller).
 
-**Feature slug rules:**
-- Convert spaces to hyphens
-- Lowercase
-- Remove non-alphanumeric characters except hyphens
-- Collapse repeated hyphens; trim leading/trailing hyphens
-- Example: "Markdown Hot Reload" → "markdown-hot-reload"
-
-**Non-ASCII input (Japanese, Chinese, Korean, etc.):**
-
-The slug MUST end up as `[a-z0-9-]+` only. For non-ASCII feature names, convert to English before applying the rules above:
-
-1. **Translate by meaning** (preferred): extract the core concept from the feature name and user's description. Align with existing naming in the project if there is a related term.
-   - Example: 「モックアップ比較ツール」 → `mockup-diff-tool` (aligned with existing `mockup-diff` skill)
-   - Example: 「ユーザー認証機能」 → `user-authentication`
-2. **Romanize** (fallback): if the term is a proper noun or brand with no English equivalent, use Hepburn-style romanization.
-   - Example: 「あずき餡」 → `azuki-an`
-3. **Ask the user** (last resort): if neither translation nor romanization yields a clear slug (ambiguous meaning, multiple valid translations), ask the user for a preferred English slug. Do NOT fall through to an empty or garbled slug.
-
-Apply the ASCII rules above to the converted string. Record the original name verbatim in the plan document's `# {Feature Name}` header and the status.md `Feature` column so meaning is preserved.
+**Feature slug**: `[a-z0-9-]+` のみ（標準的な URL slug 化）。非 ASCII 入力（日本語等）は意味翻訳を優先し、プロジェクト内の既存関連命名（skills や既存 plan）と揃える。翻訳が困難な固有名詞のみ Hepburn 式ローマ字化、意味が曖昧なら user に確認する（空 / garbled slug に落ちるのは禁止）。原文の feature 名は plan header `# {Feature Name}` と status.md `Feature` 列に verbatim で保持する。
 
 **Template:** See [references/plan-template.md](references/plan-template.md) for the full plan document structure.
 
@@ -157,35 +129,13 @@ Use when user wants to resume from previous session:
    - Show current focus description
    - Guide user on next steps based on phase
 
-2.5. **Restore execution-state checkpoint (if any)**
+2.5. **Restore execution-state checkpoint (if any)** — auxiliary during resume; follow the shared contract [../shared/references/checkpoint-pattern.md](../shared/references/checkpoint-pattern.md).
 
-   Checkpoints are **auxiliary information** during plan resume. Follow the shared contract
-   [../shared/references/checkpoint-pattern.md](../shared/references/checkpoint-pattern.md)
-   (the contract is authoritative for verdict tables, priorities, and security rules — no duplication here):
-
-   - If `.agents/artifacts/plans/checkpoints/{cycle_id}.md` **exists**, run:
-     `python3 {checkpoint.py path} classify --repo {project root} --file .agents/artifacts/plans/checkpoints/{cycle_id}.md`
-     and branch on the output verdict and exit code. If it does not exist, skip and continue normal resume.
-     `{checkpoint.py path}` is relative to the skill distribution location (in this repo: `skills/shared/scripts/checkpoint.py`;
-     use an absolute path if outside the target project). Always specify `--repo` explicitly (`--repo .` if cwd is the project root).
-     See the contract's "CLI invocation rules" for details.
-   - **Branching**:
-     - `valid` (exit 0): Present the checkpoint's `decision` / `next` as the starting point for restoration. Label
-       `evidence` as **historical (past observation)** and present `verify_on_restore` as **display-only**
-       (do not auto-execute). The verification-gate is never skipped, even when valid.
-     - `stale` (exit 10): Treat narrative as reference only. Prompt to reconstruct state from the current diff.
-     - `superseded` (exit 11): HEAD has advanced. **Propose deletion** of the checkpoint (with user confirmation —
-       **never auto-delete**). If the output contains a `dirty_overlap:` line, note "overlap with current dirty set"
-       (absence of the line means no overlap — do not recompute).
-     - `degraded` (exit 12): Present that nothing beyond dirty set and HEAD should be trusted (not normally emitted in v1).
-     - `conflict` (exit 13, parse / semantic): **Warn and ignore, then continue normal resume**
-       (a broken auxiliary file must never block a normal resume — caller-side asymmetry).
-   - **Edge cases**:
-     - **No active session** / no matching Current Session in status.md: if the cycle_id is known,
-       the checkpoint path can still be computed. Classify if the file exists.
-     - **Orphan checkpoint** (checkpoint file exists but no matching cycle_id in status.md): warn and
-       treat as `stale` equivalent (narrative is reference only).
-   - Checkpoints are **never deleted** during resume (read-only). Deletion is only proposed for `superseded`.
+   - If `.agents/artifacts/plans/checkpoints/{cycle_id}.md` exists, classify:
+     `python3 skills/shared/scripts/checkpoint.py classify --repo . --file <path>`
+     (contract §CLI invocation for path / `--repo` conventions). If it does not exist, skip.
+   - Branch on verdict per contract §restore 判定. **plan resume caller-side asymmetry**: `conflict` は警告して無視し通常 resume を続行（壊れた補助ファイルが正常 resume を止めない）。Orphan checkpoint（status.md に cycle_id 一致なし）は `stale` 相当扱い。
+   - Resume は read-only — checkpoint は削除しない。`superseded` のみ user 確認付きで削除**提案**する（auto-delete は禁止）。
 
 3. **Confirm readiness**
    ```
@@ -231,29 +181,12 @@ Use when user wants to update implementation progress:
    - Update "Last Updated" timestamp
    - The "Completed" timestamp is the current time at the moment this update is executed (obtained via the `date` command) — never estimate or backdate it to when the user believes they finished
 
-4. **Exit condition — write an execution-state checkpoint if leaving work dirty**
+4. **Exit condition — checkpoint if leaving work dirty** (secondary trigger; primary is handoff save). Per shared contract [../shared/references/checkpoint-pattern.md](../shared/references/checkpoint-pattern.md).
 
-   Status Update is a **secondary trigger** for checkpoint writing (the primary trigger is handoff save).
-   Follow the shared contract [../shared/references/checkpoint-pattern.md](../shared/references/checkpoint-pattern.md)
-   and evaluate the following after the update:
-
-   - If `git status --porcelain=v1` is **non-empty** when ending the session (i.e., not finishing with a clean commit),
-     generate a checkpoint skeleton:
-     `python3 {checkpoint.py path} skeleton --repo {project root} --cycle-id {cycle_id} --owner manual-session --written-at $(date -Iseconds) --output`
-     (see the contract's "CLI invocation rules" for path and `--repo` conventions — in this repo:
-     `skills/shared/scripts/checkpoint.py` + `--repo .`)
-   - **Checkpoint generation must be the last write of the session**: finalize all tracked file edits
-     (status.md, etc.) **before** running skeleton. Editing files after generation immediately
-     stales the fingerprint (only files under checkpoints/ are excluded).
-   - After skeleton generation, the LLM fills in only 2 narrative sentences (`## decision` = 1 sentence on
-     deviation from plan / `## next` = 1 next action). `## evidence` requires observed commands + timestamps
-     (e.g., `Observed 01:25: <cmd> exited 0`).
-   - Machine fields (`dirty_files` / `dirty_fingerprint` / `base_head`) are generated by the script from git.
-     Never write them manually. `dirty_files` has passed through `secret_detect.mask_secrets`.
-   - If the session ends with a clean commit, **do not write** a checkpoint (no checkpoint on success). Existing
-     checkpoints naturally expire when HEAD advances (do not delete them).
-   - **v1 limitation**: checkpoints are not written for sessions that end without going through an explicit
-     workflow (sudden interruption / /clear). See the contract's v2 scope.
+   - Clean commit で終わるなら書かない。
+   - `git status --porcelain=v1` が non-empty で終わるなら、**セッション最後の書き込み**として skeleton を生成する（他の tracked file 編集を全部確定させた後 — 生成後の編集は fingerprint を stale にする）:
+     `python3 skills/shared/scripts/checkpoint.py skeleton --repo . --cycle-id {cycle_id} --owner manual-session --written-at $(date -Iseconds) --output`
+   - 生成後、LLM が `## decision`（plan からの逸脱 1 文, なければ "none"）と `## next`（次の一手 1 個）を埋める。`## evidence` は観測コマンド + タイムスタンプ必須。機械フィールドと詳細は契約側。
 
 5. **Confirm update**
    ```

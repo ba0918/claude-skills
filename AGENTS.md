@@ -35,6 +35,7 @@ This file is the shared project instruction source for Claude Code, Codex CLI, a
 - スキル内リンクは相対 md リンクを使い、ファイル移動時は参照も更新する。
 - スキルを追加・削除・改名したら `README.md` と必要な plugin manifest を更新する。常時指示の詳細化で解決せず、機械検証やスキル本文を正本にする。
 - `CLAUDE.md` へ直接プロジェクト指示を追加しない。共通指示が必要ならこの `AGENTS.md` を更新する。
+- スキルの新規作成や大幅改訂時は [skills/shared/references/skill-authoring.md](skills/shared/references/skill-authoring.md) を参照する。特に既存 SKILL.md の圧縮・スリム化を検討する際は同ファイルの「プロンプト圧縮の効果条件」節（empirical-prompt-tuning 実測に基づく効くパターン / 効かないパターン / 削るべきでない項目）を先に読む。
 
 ## 検証
 

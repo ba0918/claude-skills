@@ -201,6 +201,19 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 | `skill-interface-audit` | SKILL.md の API 契約完備性を静的監査 |
 | `migrate-cycles-to-plans` | 旧 docs/cycles/ から .agents/artifacts/plans/ への移行（一回限りの移行専用） |
 
+## プロンプト設計方針
+
+Fable 5 世代モデルに沿って「短く柔らかい」を志向するが、無条件の削減は行わない。`empirical-prompt-tuning` による実測（plan / cycle スキルで 6 iteration 検証）に基づく判断基準を [skill-authoring.md § プロンプト圧縮の効果条件](skills/shared/references/skill-authoring.md) に集約している。
+
+要約:
+
+- **効くパターン**: inline 二重説明を契約参照に集約（3 条件下で friction -37%）／例示削減／禁止語削減（`over_specified` と `rationalization_hook` は完全消滅可能）
+- **効かないパターン**: 契約側の rationale 削除／常時関与する情報の集約
+- **削ってはいけない**: パス制約や auto mode 判別等の「規約」（compliance が破綻）
+- **構造由来の摩擦** (テンプレ書式曖昧, プロジェクト情報欠落, template chase) は削減ではなく明示化で解く
+
+スキル改訂時の指針として、上記条件を満たす箇所を優先的に対象にする。実測は `empirical-prompt-tuning` スキルで再現可能。
+
 ## 構成
 
 ```

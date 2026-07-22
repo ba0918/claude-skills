@@ -23,7 +23,7 @@
       "skills/context-audit/scripts/apply_fixes.py": "d37bc3064138bf2c8325157edfd2aeb38a14ad70a637835f0616658f77b02231",
       "skills/context-audit/scripts/collect_targets.py": "aa6a60a70f3c7c3b4c161c0ca080d428fe4b3fa9ff4169af7707f74b2fe5957e",
       "skills/context-audit/scripts/static_checks.py": "87d54d880ddfe445e4872378b0024893a848efc6592cef19255afde7179b9216",
-      "skills/shared/references/artifact-store.md": "b7c2807731596a58cb9bdf4990b9b4ee7e7ad100c3061f10e2428a056395f4d9",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/coverage-ledger.md": "e75e405498e15ef15a3964aa3deb15123b1142acab078d87a5ad71a9d1af4c97",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
       "skills/shared/references/severity-and-verdicts.md": "0d0f17ab67f9ab075c726f94d797f675bef6ecd236349c3370080fdf9f146133",
@@ -46,8 +46,8 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "e3c099eecc61d59fa5475557d9f2bffb91b5b7a1a8afd5e77a111150930b4ca6",
-    "verified": "2026-07-19"
+    "surface_sha256": "34a3e18b4c97ece93b72872209e1590b96e225c381fd9357b9749bd59f3dd520",
+    "verified": "2026-07-22"
   },
   "github-issue": {
     "file_sha256": {
@@ -66,7 +66,7 @@
       "skills/github-issue/references/label-spec.md": "1f37a70d4e827aef55912f61eeefde9d4030424bca495232b2fcc545ef55fe59",
       "skills/github-issue/references/polling-adapter.md": "f017a604ea7a5b8d98307ae1be4fc650cc3fc840b9faacd308749bc37159b376",
       "skills/github-issue/references/secret-scanner.md": "5e1df48668b3c11183e46e9c18a15a3622c579292394df5125a740805472f62b",
-      "skills/shared/references/artifact-store.md": "b7c2807731596a58cb9bdf4990b9b4ee7e7ad100c3061f10e2428a056395f4d9",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
       "skills/shared/references/coverage-ledger.md": "e75e405498e15ef15a3964aa3deb15123b1142acab078d87a5ad71a9d1af4c97",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
@@ -89,7 +89,7 @@
       "skills/trigger-eval/references/metrics-spec.md": "057f52767928caa8d5317597f8f15f6308442c6e56b8ec0f467fbdf52fbb10a0",
       "skills/trigger-eval/references/testcase-design.md": "ab6dadbc8d6a5bd209d6fb71b2c31a280c5f6733aef32c75d4adccf41cfa5231"
     },
-    "result": "pass",
+    "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/references/baseline-format.md",
       "skills/empirical-prompt-tuning/SKILL.md",
@@ -129,15 +129,15 @@
       "skills/trigger-eval/references/metrics-spec.md",
       "skills/trigger-eval/references/testcase-design.md"
     ],
-    "surface_sha256": "c909bad3df0c280c1f8120d0498d5244e249efde4271efc97e27b34759d352f0",
+    "surface_sha256": "fc07ea75370e4a9d3402872b14a5240331f626399ca2b4b5c6fe6147295109c0",
     "verified": "2026-07-22"
   },
   "handoff": {
     "file_sha256": {
       "skills/handoff/SKILL.md": "e93fcd7f9054874ccece5beba6678e643a3791d682979f87b848bdfa5073c2eb",
       "skills/handoff/fixtures.json": "2188b97ff2b492ce20eeca17e6ac0a7b2aa296d160d13225293b6258dc55ab16",
-      "skills/shared/references/artifact-store.md": "b7c2807731596a58cb9bdf4990b9b4ee7e7ad100c3061f10e2428a056395f4d9",
-      "skills/shared/references/checkpoint-pattern.md": "256a18a6102775940c4e801d776aeb916f353a58874ce35e65418e2a0b6b4276",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/checkpoint-pattern.md": "b120f3562565c4cda0febd645f086b2d25b988c3e718078b0398a1a97f8059b9",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
       "skills/shared/references/human-readable-summary.md": "8380ca61dfa16263c89c31f4b150e4e7562173991cb4e702703516e5460dc55c"
     },
@@ -150,8 +150,8 @@
       "skills/shared/references/design-principles.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "ed03441fb84ad0281664ea02ce31ec55ebbf0143bb8918e8359c6b7d0e97c162",
-    "verified": "2026-07-21"
+    "surface_sha256": "c53f0591125000435b2821977cb50f5f7500915ca4146adcfc4bad45e0922bd8",
+    "verified": "2026-07-22"
   },
   "issue": {
     "file_sha256": {
@@ -166,7 +166,7 @@
       "skills/issue/references/issue-template.md": "9ba616322895f24ee0f277c4fc13cfa44b382a834dabe36b426939b131ec0eb0",
       "skills/issue/references/polling-state-machine.md": "438c727257fe038f431d1fdd16a32169d50f241835e669e4dc42b300e55b5193",
       "skills/issue/references/polling-state.md": "01e1df3652a8de304af6d22a23e513405fc52faf6dead2adf9426170a5f075e6",
-      "skills/shared/references/artifact-store.md": "b7c2807731596a58cb9bdf4990b9b4ee7e7ad100c3061f10e2428a056395f4d9",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
       "skills/shared/references/coverage-ledger.md": "e75e405498e15ef15a3964aa3deb15123b1142acab078d87a5ad71a9d1af4c97",
       "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
@@ -190,7 +190,7 @@
       "skills/trigger-eval/references/metrics-spec.md": "057f52767928caa8d5317597f8f15f6308442c6e56b8ec0f467fbdf52fbb10a0",
       "skills/trigger-eval/references/testcase-design.md": "ab6dadbc8d6a5bd209d6fb71b2c31a280c5f6733aef32c75d4adccf41cfa5231"
     },
-    "result": "pass",
+    "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/references/baseline-format.md",
       "skills/empirical-prompt-tuning/SKILL.md",
@@ -227,18 +227,18 @@
       "skills/trigger-eval/references/metrics-spec.md",
       "skills/trigger-eval/references/testcase-design.md"
     ],
-    "surface_sha256": "f8114a947223ee52275f8e64dc63e1d7664c8571ffc7d2b85ef8bea53096cf97",
+    "surface_sha256": "03aac8b00c2bed5ddf80251de62d1854e9e706ec77c4dc10aa4e267e272db56f",
     "verified": "2026-07-22"
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "c33f0d569d6c551b04282095cb193156b508ffc4ef56c65bb26a90bd2f0ad545",
+      "skills/plan/SKILL.md": "1dfef8514afbe7e939fd50bb4b2543f5cff0c94559b371de98f1af7ec2f43a86",
       "skills/plan/fixtures.json": "9fff248e6fc108e63305e7885db309201f87703e9d44186092c84c341ecef233",
       "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
-      "skills/shared/references/artifact-store.md": "b7c2807731596a58cb9bdf4990b9b4ee7e7ad100c3061f10e2428a056395f4d9",
-      "skills/shared/references/checkpoint-pattern.md": "256a18a6102775940c4e801d776aeb916f353a58874ce35e65418e2a0b6b4276",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/checkpoint-pattern.md": "b120f3562565c4cda0febd645f086b2d25b988c3e718078b0398a1a97f8059b9",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265"
     },
     "result": "accepted-without-run",
@@ -252,7 +252,7 @@
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/design-principles.md"
     ],
-    "surface_sha256": "4fb2bb94304287c05a88c0f9c7ccd307f9623fdc87470587f36c6bc7485e4538",
-    "verified": "2026-07-19"
+    "surface_sha256": "63004cedb0e207f9c8406f5908fd6d1f3c4bba6fee2b00f4cdcb7eebed0eaf02",
+    "verified": "2026-07-22"
   }
 }
