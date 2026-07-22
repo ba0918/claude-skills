@@ -4,6 +4,20 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.57.1
+
+brainstorm SKILL.md の idea-status 行仕様が導出インデックス契約とドリフトしていた問題の修正
+（issue 20260710191406、plan 20260710182348 最終レビュー WARN-6 起源）。idea-status.md は
+rebuild-index が各エントリの `#` 見出しから再生成する導出キャッシュであり、実データも実装
+（artifact_store.py の `_render_index`）も人間可読タイトルをリンクテキストに使うのに、SKILL.md
+だけが kebab-title と記述していた — rebuild 実行のたびに Plan workflow の Title 出典記述が
+成り立たなくなる。
+
+- `skills/brainstorm/SKILL.md`: Wrap Step 7 の行テンプレートのリンクテキストを
+  `{kebab-title}` から `{アイデアの # 見出しタイトル}` へ訂正し、導出インデックス契約に
+  従う理由（rebuild-index が `#` 見出しから再生成する）を明記。Plan Step 3 の Title 出典の
+  括弧書きを「= アイデアファイルの `#` 見出しタイトル」へ訂正
+
 ## 1.57.0
 
 delegation result relay（1.55.0）は「結果の正本はファイル・報告メッセージは通知」という

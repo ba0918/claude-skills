@@ -131,9 +131,9 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
    | Idea | Tags | Created | Status | Summary |
    |------|------|---------|--------|---------|
    ```
-7. テーブルの末尾に行を追加:
+7. テーブルの末尾に行を追加。リンクテキストはメモファイルの `#` 見出しタイトル（Step 2 で確認した人間可読タイトル）を使う — idea-status.md は導出インデックスであり、rebuild-index が各エントリの `#` 見出しから行を再生成するため、kebab-title を使うと再生成のたびに表記が変わってしまう:
    ```
-   | [{kebab-title}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | 💡 Idea | {summary} |
+   | [{アイデアの # 見出しタイトル}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | 💡 Idea | {summary} |
    ```
 8. **Last Updated** を今日の日付に更新
 9. 完了メッセージ表示。冒頭に [ヒューマンリーダブル要約契約](../shared/references/human-readable-summary.md) に従う
@@ -177,7 +177,7 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
    - なければ「まだアイデアがありません」と表示して終了
 2. ユーザーに対象アイデアを選択してもらう（エントリが 1 件のみでも省略せず明示的に選択プロセスを実行する）
 3. アイデアファイルを読み込む
-   - **Title の出典**: `idea-status.md` のテーブルの最初のカラムのリンクテキスト（= Wrap Workflow で保存した `kebab-title`）を使用する
+   - **Title の出典**: `idea-status.md` のテーブルの最初のカラムのリンクテキスト（= アイデアファイルの `#` 見出しタイトル。Wrap Workflow が保存し、rebuild-index も同じ値で再生成する）を使用する
    - **Summary の出典**: アイデアファイル本文の `## Summary` セクションの内容
 4. `claude-skills:plan-create` スキルを実行（引数フォーマット: `{Title}: {Summary from idea file}` — plan-create は $ARGUMENTS をそのまま What & Why の種として使う）
    - **plan-create の出力**: 実行後、plan-create は `.agents/artifacts/plans/{new_timestamp}_{kebab-title}.md` を新規生成する（`new_timestamp` は plan-create 起動時の `date +%Y%m%d%H%M%S`）。このパスを「生成された plan ファイルパス」として保持し、Step 4.5 の引数に渡す
