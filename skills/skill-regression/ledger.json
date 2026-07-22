@@ -1,7 +1,7 @@
 {
   "commit": {
     "file_sha256": {
-      "skills/commit/SKILL.md": "eb2cae59d88c0f47b6bec1c5cd1a5d88de08820fc62b473a3a8460c0b3273de1",
+      "skills/commit/SKILL.md": "409e379f90eb387cbc680a72746859badcaf521d2e2165728bb95d1a266abf5f",
       "skills/commit/fixtures.json": "710da57415bc87d5128794ac2c0d12f6f9abd95abe9e66005a30abbf0932ff94",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
@@ -11,7 +11,7 @@
       "skills/commit/fixtures.json",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "95e3ed2d52ac9ab5446e89457124cdb5bfcf49510229b938991509c88f183d1b",
+    "surface_sha256": "0695c8ec400fefba2e78fd0b6b584c0e186ce8a798880be96e7f91370efee13c",
     "verified": "2026-07-22"
   },
   "context-audit": {
@@ -255,7 +255,7 @@
   },
   "plan-reviewer": {
     "file_sha256": {
-      "skills/plan-reviewer/SKILL.md": "6f952e77229187e33b95ab01d31e90acb692b02c042ff0bbb66dbb343a80948a",
+      "skills/plan-reviewer/SKILL.md": "73a6cc3c1e65c04ad6b57a2f413835e3f475ea033f8fef2defcadda68f55a7db",
       "skills/plan-reviewer/fixtures.json": "551e9f86884b8913ac0c80f9daf1f0621d9cd6b5888b86be5f38da4a21278773",
       "skills/plan-reviewer/references/output-format.md": "3140912a79e485dc23545b99335b1e581863a3d28df2694b8b4ed8e22f1d0230",
       "skills/plan-reviewer/references/review-dimensions.md": "e80876dfc62783f0e629064eada35b157a7b6babffa58cafd77714ff5e64ed89",
@@ -285,7 +285,7 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "9dfc5e46dfb0053d6d01c606ded1ac53053424bd9cf4a5f02ab061941476f73a",
+    "surface_sha256": "36e805a4bb0121f253a9fc3aa458cdc4e7c8e2d665ec94001ae39f783605effc",
     "verified": "2026-07-22"
   }
 }

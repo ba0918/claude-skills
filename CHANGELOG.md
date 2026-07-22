@@ -22,6 +22,14 @@ missing_premise 系は消滅）。Codex セカンドオピニオンの important
   非起動・報告文言を明文化、Step 2.5 キーワードの意味照合（日英対応語）を明記（245→202 行）
 - fixture 資産化: skills/plan-reviewer/fixtures.json を新規追加（empirical-tuning 由来の
   2 シナリオ）、skill-regression ledger を commit / plan-reviewer とも全合格エビデンスで更新
+- 本文の言語統一（英語）: 圧縮時に追加した日本語節が英日混在を悪化させていたため、
+  ユーザー裁定で commit / plan-reviewer の本文を英語に統一した。tiktoken o200k 実測で
+  同内容の日本語版は約 +30%（commit: 英 1,607 vs 日 2,091 tokens）、混在だった
+  plan-reviewer は英語統一だけで 3,758→3,025 tokens（-19.5%）。Codex も第一級の読者の
+  ため o200k の効率が直接効く。日本語トリガー語彙を含む frontmatter description、
+  日本語契約見出しの引用、照合語彙の例示は機能要件として日本語のまま。言語ポリシーは
+  skill-authoring.md「クロスツール互換性の注意」に正本化。統一後も全 5 シナリオを
+  Opus で再計測し precision 100% を確認
 - 計測記録は .claude/tmp/empirical/20260722-lean-rollout/（ローカル）の summary.md と
   iterations.jsonl を参照
 

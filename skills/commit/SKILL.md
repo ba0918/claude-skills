@@ -29,11 +29,11 @@ git branch -vv
 
 ## Phase 1.5: Best-Effort Test Verification
 
-[Verification Gate 契約](../shared/references/verification-gate.md)の「commit への統合」節をベストエフォートで適用する。テストフレームワークを検出できた場合のみテストスイートを実行し（タイムアウト 120 秒、超過はスキップして続行）、失敗時はコミットメッセージ body に `⚠️ Tests failing: {failure_summary}` を追記して続行する。検出できなければスキップ。テスト失敗でブロックしない（Core Principle「No confirmation」を遵守）。
+Apply the "commit への統合" section of the [Verification Gate contract](../shared/references/verification-gate.md) on a best-effort basis. Run the test suite only when a test framework is detected (timeout 120s; on timeout, skip and continue). On test failure, append `⚠️ Tests failing: {failure_summary}` to the commit message body and continue. If no framework is detected, skip. Never block on test failure (Core Principle "No confirmation").
 
-検出マップ: `package.json` (scripts.test) → `npm test` / `Cargo.toml` → `cargo test` / `go.mod` → `go test ./...` / `pyproject.toml`・`pytest.ini` → `pytest` / `Makefile` (test ターゲット) → `make test`
+Detection map: `package.json` (scripts.test) → `npm test` / `Cargo.toml` → `cargo test` / `go.mod` → `go test ./...` / `pyproject.toml`, `pytest.ini` → `pytest` / `Makefile` (test target) → `make test`
 
-検出マップに該当がなければスキップして次フェーズへ進む（マーカーファイル以外の探索はしない — 検出はここまでで打ち切る設計判断）。
+If nothing in the detection map matches, skip and move on — do not search beyond these marker files (detection deliberately stops here).
 
 ## Phase 2: Sanity Check
 

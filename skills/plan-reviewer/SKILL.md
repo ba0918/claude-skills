@@ -52,7 +52,7 @@ Sources to collect:
 
 Scan the plan content for UI/UX signals. If ANY of the following are detected, include Review 7 (UI/UX) in the parallel review:
 
-キーワードは表記ではなく意味で照合する（計画が日本語等の場合、対応語・訳語 — 例: "component"⇔「コンポーネント」、"button"⇔「ボタン」— を同一シグナルとして扱う）。
+Match keywords by meaning, not by surface form: when the plan is written in Japanese or another language, treat equivalent terms and translations (e.g. "component" ⇔ 「コンポーネント」, "button" ⇔ 「ボタン」) as the same signal.
 
 **Strong signals (any one triggers):**
 - Keywords: "UI", "UX", "component", "screen", "page", "button", "form", "modal", "frontend", "ユーザー確認", "accessibility", "a11y"
@@ -71,85 +71,86 @@ If no signals detected and no override, skip Review 7.
 
 ### Step 3: Execute 7-Dimension Parallel Review + Codex Second Opinion
 
-最大 **7 レビュー + 1 Codex エージェントを並行起動**する（Review 7: UI/UX は条件付き — Step 2.5 参照）。各レビューは探索型または汎用のサブエージェントとして起動する — レビューには機械的検証ゲートがなく（見落とした指摘はそのまま通過する）、高性能モデルで実行する。Codex エージェントは Codex セカンドオピニオンとして並行起動する。
+Launch up to **7 reviews + 1 Codex agent in parallel** (Review 7: UI/UX is conditional — see Step 2.5). Launch each review as an exploratory or general-purpose subagent — reviews have no mechanical verification gate (a missed finding passes through silently), so run them on a high-capability model. Launch the Codex agent in parallel as the Codex second opinion.
 
-**結果ファイルの受渡し**: 並行起動する各レビューエージェント（および Codex エージェント）の結果は、会話返信ではなく[委譲結果のファイル受渡し（delegation result relay）](../shared/references/orchestration-patterns.md)に従ってファイルへ書かせる。配下で並行起動したレビューの判定が集約側へ届かず停滞する到達性問題が実測されているためである。
+**Result file relay**: Each parallel review agent (and the Codex agent) must write its result to a file per the [delegation result relay](../shared/references/orchestration-patterns.md), not return it in a conversational reply. This is because a measured reachability problem exists where verdicts from reviews launched downstream never reach the aggregator and the flow stalls.
 
-- **`{run_id}`**: 対象計画の識別子。計画ファイル冒頭の Cycle ID（なければ計画ファイル名のタイムスタンプ）を使う
-- **`{dim}`**: 観点の短縮名（`feasibility` / `security` / `performance` / `architecture` / `completeness` / `alternatives` / `uiux` / `codex`）
-- 各レビューエージェントの委譲プロンプトに、**完了報告を送る前に**判定（スコア・verdict・指摘の JSON または構造化テキスト）を `.agents/runtime/delegation/{run_id}_review-{dim}.md` へ書き出す指示を含める。報告メッセージは「書いた」ことの通知にすぎない
-- 集約側（本スキル本体、Step 4）は、起動した全観点の結果ファイルが揃うのを[待機規範（wait discipline）](../shared/references/orchestration-patterns.md)に従って待つ。ある観点の報告・待機通知を受信したら該当ファイルを読む。**役割固有パラメータ**: 最後の結果ファイル到着から 10 分新規到着がなければ待ち切り、欠落分は任意/必須で分岐する — **任意 = Codex**（`review-codex`）は利用不可扱いで揃った分を続行、**必須 = 起動した Claude 観点**（Step 2.5 でトリガーされた UI/UX を含む。トリガーされた観点はコアレビューの一部として必須扱い）は 1 観点あたり 1 回だけ再委譲し、それでも欠落なら記録して続行する。standalone 起動（cycle 配下でなく watchdog を張る親がいない）では、待機規範の bounded re-check を発火経路として使う
-- 読了後、結果ファイルは削除する（使い捨てセマンティクス）
+- **`{run_id}`**: identifier of the target plan. Use the Cycle ID at the top of the plan file (or the timestamp in the plan file name if absent)
+- **`{dim}`**: short dimension name (`feasibility` / `security` / `performance` / `architecture` / `completeness` / `alternatives` / `uiux` / `codex`)
+- Each review agent's delegation prompt must instruct it to write its verdict (score, verdict, findings as JSON or structured text) to `.agents/runtime/delegation/{run_id}_review-{dim}.md` **before sending its completion report**. The report message is merely a notification that the file was written
+- The aggregator (this skill itself, Step 4) waits for all launched dimensions' result files per the [wait discipline](../shared/references/orchestration-patterns.md). On receiving a dimension's report or a wait notification, read that file. **Role-specific parameters**: if no new file arrives for 10 minutes after the last arrival, stop waiting and branch by optional/required — **optional = Codex** (`review-codex`): treat as unavailable and continue with what arrived; **required = launched Claude dimensions** (including UI/UX when triggered by Step 2.5; a triggered dimension counts as part of the core review): re-delegate once per dimension, and if still missing, record the gap and continue. In standalone launches (not under cycle, no parent watchdog), use the wait discipline's bounded re-check as the trigger path
+- Delete result files after reading (single-use semantics)
 
-**Execution fallback**: サブエージェントの並行起動が推奨モード。次のいずれかに該当する場合は逐次モードを選ぶ: (a) 自身がサブエージェントとして起動されている（技術的に子エージェントを生成できるかは問わない）、(b) サブエージェントの並行起動が環境的に利用できない。逐次モードでは各次元のチェックリストを**同一セッション内で逐次実行**し、結果ファイルの受渡しと待機規範は適用せず（Step 3・Step 4 の relay 関連指示は並行モード専用）、各観点の判定を同一セッションのコンテキストで直接集約する。Codex セカンドオピニオンも起動せず、Step 3 の Codex フォールバックと同じ警告を記載して unavailable 扱いで続行する。逐次実行でも並行実行と同じ出力フォーマットを生成すること。フォールバックをレポートに 1 度記載する（`Execution mode: sequential (<理由>)` — 理由は (a) なら `nested execution context`、(b) なら `subagent unavailable`）。
+**Execution fallback**: Parallel subagent launch is the recommended mode. Choose sequential mode when either holds: (a) you are running as a subagent yourself (regardless of whether you technically can spawn children), or (b) parallel subagent launch is unavailable in the environment. In sequential mode, run each dimension's checklist **inline in the same session**; the result file relay and wait discipline do not apply (the relay instructions in Step 3 and Step 4 are parallel-mode only); aggregate each dimension's verdict directly from the session context. Do not launch the Codex second opinion either — note the exact warning `⚠️ Codex second opinion unavailable — proceeding with existing review only.` (same as the Codex fallback in Step 3) and continue. Sequential execution must produce the same output format as parallel execution. Note the fallback once in the report (`Execution mode: sequential (<reason>)` — reason is `nested execution context` for (a), `subagent unavailable` for (b)).
 
 Each review applies perspectives in the following priority order:
 1. Project-specific rules from `.claude/review-rules.md` (highest priority)
 2. Project-specific instructions from `AGENTS.md` / `CLAUDE.md`, plus the shared [Design Principles](../shared/references/design-principles.md)
 3. Generic checklists from [review-dimensions.md](references/review-dimensions.md)
 
-#### Reviews 1-7: 観点定義
+#### Reviews 1-7: Dimension Definitions
 
-チェックリスト全文とスコア基準は [review-dimensions.md](references/review-dimensions.md) が正本。各観点の委譲プロンプトには該当セクション（チェックリスト + Confidence Score Criteria）を渡す。インライン代行時も同セクションを観点ごとに参照する。
+[review-dimensions.md](references/review-dimensions.md) is the canonical source for the full checklists and scoring criteria. Pass the relevant section (checklist + Confidence Score Criteria) into each dimension's delegation prompt. When reviewing inline, consult the same section per dimension.
 
-| # | Dimension | 焦点 |
-|---|-----------|------|
-| 1 | Feasibility | 対象ファイル・行番号・API の実在、環境制約、見積り妥当性、実装順序 |
-| 2 | Security | 入力検証、機微データの扱い、インジェクション、SSRF・情報漏えい |
-| 3 | Performance & Memory | 計算量、リソースリーク、メモリ保持期間、並列化余地 |
-| 4 | Architecture & Design | レイヤ・依存方向ルール違反、DRY・単一責任・型安全、エラー処理一貫性 |
-| 5 | Completeness | 失敗パス網羅、エッジケース、後方互換、テスト計画、後片付け |
-| 6 | Alternatives | より単純な代替、標準ライブラリ・既存資産の活用、複雑さとのトレードオフ |
-| 7 | UI/UX（条件付き — Step 2.5 参照） | エラーメッセージの実用性、進捗表示、確認 UI 設計、出力一貫性、情報階層、視覚的グルーピング、用語漏れ |
+| # | Dimension | Focus |
+|---|-----------|-------|
+| 1 | Feasibility | Existence of target files, line numbers, and APIs; environment constraints; estimate validity; implementation order |
+| 2 | Security | Input validation, sensitive data handling, injection, SSRF and information leakage |
+| 3 | Performance & Memory | Algorithmic complexity, resource leaks, memory retention, parallelization opportunities |
+| 4 | Architecture & Design | Layer/dependency-direction rule violations; DRY, single responsibility, type safety; error-handling consistency |
+| 5 | Completeness | Failure-path coverage, edge cases, backward compatibility, test plan, cleanup |
+| 6 | Alternatives | Simpler alternatives, standard library / existing assets, complexity tradeoffs |
+| 7 | UI/UX (conditional — see Step 2.5) | Actionable error messages, progress feedback, confirmation UI design, output consistency, information hierarchy, visual grouping, jargon leaks |
 
-#### Review 8: Codex Second Opinion (並行モードでは常に起動)
+#### Review 8: Codex Second Opinion (always runs in parallel mode)
 
-並行モードでは、Codex セカンドオピニオン・エージェントを Reviews 1-7 と**並行で**起動する（逐次モードでは起動しない — Execution fallback 参照）。
+In parallel mode, launch the Codex second-opinion agent **in parallel** with Reviews 1-7 (do not launch it in sequential mode — see Execution fallback).
 
 **Prompt to Codex agent:**
 ```
-以下の実装計画を包括的にレビューしてください。
+Review the following implementation plan comprehensively.
 
-計画ファイル内容:
+Plan file contents:
 {plan file contents}
 
-以下の観点で問題点・見落とし・代替案を指摘してください:
-1. 設計上の問題点（アーキテクチャ、依存関係、拡張性）
-2. 実装の見落とし（エッジケース、エラーハンドリング、セキュリティ）
-3. より良い代替アプローチ
+Point out problems, oversights, and alternatives from these angles:
+1. Design issues (architecture, dependencies, extensibility)
+2. Implementation oversights (edge cases, error handling, security)
+3. Better alternative approaches
 
-出力フォーマット:
-各指摘を以下の形式で列挙してください:
+Output format — list each finding as:
 - severity: critical / important / minor
-- task: 関連するタスク番号（不明なら "general"）
-- title: 指摘の要約
-- description: 詳細説明
-- suggestion: 改善提案
+- task: related task number ("general" if unclear)
+- title: one-line summary
+- description: details
+- suggestion: proposed fix
+
+Respond in the language the plan is written in.
 ```
 
-Codex エージェントも他観点と同様、**完了報告を送る前に**上記の指摘一覧を `.agents/runtime/delegation/{run_id}_review-codex.md` へ書き出す（報告はその通知にすぎない）。
+Like the other dimensions, the Codex agent must write the findings list to `.agents/runtime/delegation/{run_id}_review-codex.md` **before sending its completion report** (the report is merely the notification).
 
-**Codex セキュリティ制約**: 計画ファイルの内容のみを渡す。ソースコードは渡さない。
+**Codex security constraint**: Pass only the plan file contents. Never pass source code.
 
-**フォールバック**: Codex エージェントがエラーまたはタイムアウトの場合:
+**Fallback**: If the Codex agent errors or times out:
 ```
 ⚠️ Codex second opinion unavailable — proceeding with existing review only.
 ```
-既存 7 次元の結果のみで続行する。
+Continue with the existing 7-dimension results only.
 
-共通パターンの詳細: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
+Common patterns: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
 
 ### Step 4: Integrate Results and Score
 
-並行起動モードでは、Step 3 で定めた待機規範・役割固有パラメータ（10 分待ち切り・任意/必須分岐・1 回だけ再委譲）に従って全観点の結果ファイル `.agents/runtime/delegation/{run_id}_review-{dim}.md` を回収して読み込む。逐次実行モードでは各観点の判定を同一コンテキストから直接集約する。
+In parallel mode, collect and read every dimension's result file `.agents/runtime/delegation/{run_id}_review-{dim}.md` following the wait discipline and role-specific parameters defined in Step 3 (10-minute cutoff, optional/required branching, single re-delegation). In sequential mode, aggregate each dimension's verdict directly from the session context.
 
 Aggregate confidence scores (0-100) from each review and determine the overall verdict.
 
-**Codex 結果の統合:**
-- Codex エージェントが成功した場合、Codex の指摘を既存 7 次元の結果に追加する
-- 重複排除: 既存レビューと同じタスク・同じ問題を指摘している場合はスキップ
-- Codex 固有の指摘には `[Codex]` プレフィックスを付与し、severity に応じて WARN/BLOCK 判定に含める
-- Codex の指摘は既存 7 次元のスコア計算には影響しない（独立セクションとして表示）
+**Integrating Codex results:**
+- If the Codex agent succeeded, add its findings to the 7-dimension results
+- Deduplicate: skip findings that point at the same task and same problem as an existing review
+- Prefix Codex-specific findings with `[Codex]` and include them in WARN/BLOCK decisions according to severity
+- Codex findings do not affect the 7 dimensions' score calculation (display as an independent section)
 
 Output format: [output-format.md](references/output-format.md)
 
