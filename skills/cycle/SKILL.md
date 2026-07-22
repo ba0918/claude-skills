@@ -51,21 +51,12 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
 
 ## 委譲結果の受渡し（Phase 1 / 1.5 / 2 共通）
 
-Phase 1 / 1.5 / 2 のサブエージェント委譲は [orchestration-patterns.md](../shared/references/orchestration-patterns.md) の
-「委譲結果のファイル受渡し（delegation result relay）」に従う。完了報告メッセージの配達は非決定的で、
-委譲先が作業を完遂したのに報告が届かず待機通知だけが来る停滞が実測されているため、**結果の正本は
-ファイル、報告メッセージは通知**として扱う。要点:
+Phase 1 / 1.5 / 2 のサブエージェント委譲は [orchestration-patterns.md § delegation result relay](../shared/references/orchestration-patterns.md) に従う。**cycle 固有の 2 点**:
 
-- **`{run_id}`**: 本サイクルの識別子。計画ファイル冒頭の Cycle ID（なければ計画ファイル名の
-  タイムスタンプ）を使う。オーケストレーターと委譲先が同じパスを導出できることが要件
-- **委譲プロンプトに結果ファイルパスを必ず含める**: 委譲先は完了報告を送る**前に**結果全文を
-  `.agents/runtime/delegation/{run_id}_{role}.md` へ書く（`{role}` は各 Phase で指定）。報告は
-  「書いた」ことの通知にすぎない
-- **受信手順**: (a) 委譲先の完了報告 (b) 委譲先の停止・待機通知 のどちらをトリガーにしても結果
-  ファイルを読む。待機通知だけが来て報告が来ない場合も、即座に結果ファイルを検分する
-- **フォールバック（必須）**: 結果ファイルが欠落・不完全なときは成果物（コミット履歴・変更ファイル・
-  テスト結果・計画の Progress）を直接検分して完了・欠落を判定する。判定不能のときに限りリトライする
-- **掃除**: 読了後に結果ファイルを削除する
+- **`{run_id}`**: 計画ファイル冒頭の Cycle ID（なければ計画ファイル名のタイムスタンプ）。オーケストレーターと委譲先で同一パスを導出できることが要件。
+- **`{role}`**: 各 Phase で `refine` / `refine-fix` / `implement` を指定。委譲プロンプトに `.agents/runtime/delegation/{run_id}_{role}.md` パスを含める。
+
+パス規約 / 書き手義務 / 読み手義務（完了報告 or 停止通知でファイル検分、欠落時は成果物検分にフォールバック、判定不能のみリトライ）/ 掃除は契約側が正本。
 
 ## Phase 1: Refine（計画品質ゲート）
 
