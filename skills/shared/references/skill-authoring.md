@@ -69,6 +69,33 @@ description: <何をするか>。<いつ使うか（トリガー語）>。
 - 書き方の実例: [verification-gate.md](verification-gate.md) の合理化防止、[tdd-contract.md](tdd-contract.md) の合理化テーブル
 - **Red Flags** は「スキルが守られていない兆候」の観測可能なリスト。レビュー時・自己監視に使う。判定可能な形で書く（「テスト実行せずに GREEN を宣言している」）
 
+## プロンプト圧縮の効果条件（empirical-prompt-tuning 実測に基づく）
+
+Fable 5 世代モデルでも「短くすれば良くなる」わけではない。`empirical-prompt-tuning` で plan / cycle スキルを 6 iteration 計測した結果、以下が観測された。
+
+### 効くパターン
+
+- **inline 二重説明を契約参照に集約**: SKILL.md 内に inline された共通契約（checkpoint 復元手順 / delegation relay 等）を、契約側正本への短い参照に置き換える。次 3 条件が揃うと顕著に効く（実測で friction -37%）:
+  1. inline 節が長い（数十行以上）
+  2. inline 節が全シナリオに関係するわけではない（例: 新規 plan 作成では checkpoint 節は不要）
+  3. 契約側で完全にカバー済み
+- **例示・enum の削減**: 有能モデルには「URL slug の作り方」等の一般定義は不要。1 例のみ残すか完全に削る
+- **禁止語（`絶対に` / `してはならない`）を減らす**: `over_specified` と `rationalization_hook` の主原因。柔らかい表現でも compliance は落ちない（実測: 4 iter で両カテゴリ完全消滅）
+
+### 効かない / 削るべきでないパターン
+
+- **契約側の rationale / 却下記録 / v2 ロードマップ削除**: 保守負債軽減にはなるが実行時信号は弱い（friction ほぼ変化なし）
+- **パス制約や auto mode 判別等の「規約」の緩和**: compliance が破綻する
+- **常時関与する情報の集約**: inline 節が全シナリオで必要な場合、集約しても執行者が読む情報量は同じで効果が薄い（cycle の delegation relay 圧縮で実証）
+
+### 構造由来の摩擦は prose 削減では解けない
+
+`ambiguous_term` / `missing_premise` / `self_containment_gap` は削減方向ではなく **明示化・例示追加** で解く。テンプレ書式の曖昧さ、プロジェクト情報の欠落、template chase 構造そのものが原因のため、Fable 論調とは逆方向のアプローチが必要になる。
+
+### 収束履歴の資産化
+
+`empirical-prompt-tuning` の fixture として plan スキルの 4 iteration 収束履歴が `.claude/tmp/empirical/plan-*/fixture.json` に記録される。カテゴリ推移・削減量・学びの全文はそこを参照。再チューニング時のベースライン比較・回帰検出資産として使う。
+
 ## クロスツール互換性の注意
 
 - スキル本文は `skills/` を単一の正本とし、Claude Code / Codex CLI / Cursor / Gemini CLI などで読める自然言語に保つ
