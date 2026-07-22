@@ -1,0 +1,55 @@
+{
+  "skill": "plan-reviewer",
+  "scenarios": [
+    {
+      "id": "pr-001",
+      "title": "CLI 計画のフルレビュー（UI/UX シグナルなし・seeded 欠陥 3 件）",
+      "source": "empirical-tuning:20260722-lean-rollout",
+      "executor_tier": "high",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# logtool\n\nログ集計 CLI ツール。\n\n- 依存追加は最小限にする（標準ライブラリ優先）\n- src/ 配下は型ヒント必須\n",
+          "src/parser.py": "\"\"\"ログ行パーサ。\"\"\"\nimport re\n\nLINE_RE = re.compile(r\"^(?P<ts>\\S+) (?P<level>\\w+) (?P<msg>.*)$\")\n\n\ndef parse_line(line: str) -> dict | None:\n    m = LINE_RE.match(line.strip())\n    if not m:\n        return None\n    return m.groupdict()\n\n\ndef parse_lines(lines: list[str]) -> list[dict]:\n    out = []\n    for line in lines:\n        rec = parse_line(line)\n        if rec is not None:\n            out.append(rec)\n    return out\n",
+          "src/report.py": "\"\"\"集計レポート出力。\"\"\"\nfrom collections import Counter\n\n\ndef summarize(records: list[dict]) -> dict:\n    levels = Counter(r[\"level\"] for r in records)\n    return {\"total\": len(records), \"by_level\": dict(levels)}\n",
+          ".agents/artifacts/plans/20260722100000_add-csv-export.md": "# 実装計画: CSV エクスポート機能の追加\n\n- **Status**: Planning\n- **作成日**: 2026-07-22\n\n## 背景\n\nsummarize の結果を CSV でエクスポートしたいという要望がある。\n\n## タスク\n\n### Task 1: parser の拡張\n\n`src/parser.py` の `parse_line` 関数（120行目）に、フィールド分割済み dict へ\n`raw` キーを追加する変更を行う。\n\n### Task 2: CSV エクスポータの新規作成\n\n`src/export.py` を新規作成し、`summarize()` の結果を CSV 文字列へ変換する\n`to_csv(summary: dict) -> str` を実装する。外部ライブラリ `fastcsv` を利用する。\n\n### Task 3: report との接続\n\n`src/report.py` の `summarize` の直後に CSV 出力の分岐を追加する。\n\n## リスク\n\n特になし。\n"
+        }
+      },
+      "prompt": "この計画をレビューして。",
+      "requirements": [
+        { "text": "最終レポートの観点表に Feasibility / Security / Performance / Architecture / Completeness / Alternatives の 6 観点すべてのスコア(0-100)と判定が揃っており、UI/UX 行が表に存在しない", "critical": true },
+        { "text": "UI/UX レビューをスキップした旨がレポート冒頭付近に 1 回記載されている（`UI/UX Review: SKIPPED` 相当）", "critical": true },
+        { "text": "Feasibility が Task 1 の行番号不整合（parse_line が 120 行目という計画記述 vs 実ファイルは約 22 行）を指摘している", "critical": true },
+        { "text": "実在しない外部ライブラリ fastcsv への依存が問題として指摘されている（CLAUDE.md の標準ライブラリ優先方針との矛盾指摘でも可）", "critical": true },
+        { "text": "各観点のスコアが判定バンド（0-49 PASS / 50-79 WARN / 80-100 BLOCK）と整合している", "critical": false },
+        { "text": "テスト計画の欠如が Completeness で指摘されている", "critical": false },
+        { "text": "計画ファイル本文を編集していない（レビュー結果の提示のみ）", "critical": false }
+      ],
+      "notes": "中央値シナリオ。サブエージェント実行文脈では Execution fallback (a) により逐次モードになる（並行 relay は検証対象外）。executor_tier: high — レビュー品質ゲートは opus サブエージェントが読む本文のため本番同等モデルで検証する（2026-07-22 ユーザー裁定）。計測では 3 iteration とも precision 1.0"
+    },
+    {
+      "id": "pr-002",
+      "title": "フロントエンド計画のレビュー（UI/UX トリガー・存在しないファイルへの修正計画）",
+      "source": "empirical-tuning:20260722-lean-rollout",
+      "executor_tier": "high",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# todo-web\n\nシンプルな TODO 管理 Web アプリ（React + TypeScript）。\n\n- コンポーネントは関数コンポーネントで書く\n- 状態管理ライブラリは導入しない（useState のみ）\n",
+          "src/components/TodoList.tsx": "import React from \"react\";\n\ntype Todo = { id: number; title: string; done: boolean };\n\nexport function TodoList({ todos }: { todos: Todo[] }) {\n  return (\n    <ul>\n      {todos.map((t) => (\n        <li key={t.id}>{t.done ? \"✓ \" : \"\"}{t.title}</li>\n      ))}\n    </ul>\n  );\n}\n",
+          ".agents/artifacts/plans/20260722110000_todo-filter-buttons.md": "# 実装計画: TODO フィルタボタンの追加\n\n- **Status**: Planning\n- **作成日**: 2026-07-22\n\n## 背景\n\nTODO 一覧画面に「すべて / 未完了 / 完了」のフィルタボタンを追加したい。\n\n## タスク\n\n### Task 1: フィルタ状態の追加\n\n既存の `src/components/TodoFilter.tsx` を修正し、フィルタ選択状態\n（all / active / done）の切り替えボタン UI を追加する。\n\n### Task 2: TodoList との接続\n\n`src/components/TodoList.tsx` にフィルタ済み todos を渡すよう、\n親コンポーネントでフィルタ適用ロジックを実装する。\n\n### Task 3: スタイル調整\n\n選択中のフィルタボタンを強調表示する CSS を追加する。\n\n## テスト計画\n\nフィルタ切り替えごとの表示件数を手動確認する。\n\n## リスク\n\n特になし。\n"
+        }
+      },
+      "prompt": "この計画をレビューして。",
+      "requirements": [
+        { "text": "UI/UX Review が TRIGGERED である旨が冒頭付近に記載され、検出シグナルの列挙が 4 件以下である", "critical": true },
+        { "text": "最終レポートの観点表に UI/UX を含む 7 観点すべてのスコアと判定が揃っている", "critical": true },
+        { "text": "Feasibility が「既存の src/components/TodoFilter.tsx を修正」という計画記述に対し、当該ファイルが存在しないことを指摘している", "critical": true },
+        { "text": "各観点のスコアが判定バンド（0-49 PASS / 50-79 WARN / 80-100 BLOCK）と整合している", "critical": false },
+        { "text": "Codex セカンドオピニオンが利用不可の場合に警告つきフォールバック記載（⚠️ Codex second opinion unavailable 相当）がある。利用可の場合は Codex 指摘が独立セクションで表示されている", "critical": false },
+        { "text": "計画ファイル本文を編集していない", "critical": false }
+      ],
+      "notes": "edge シナリオ。日本語計画の UI キーワード（ボタン/コンポーネント等）は意味照合で strong signal と判定される（Step 2.5 の照合規則を固定）。executor_tier: high の理由は pr-001 と同じ"
+    }
+  ]
+}

@@ -1,16 +1,18 @@
 {
   "commit": {
     "file_sha256": {
-      "skills/commit/SKILL.md": "32357107539f47d286eedef4dd1a7ad9b86227067f8042186218bb9cd2e97689",
-      "skills/commit/fixtures.json": "710da57415bc87d5128794ac2c0d12f6f9abd95abe9e66005a30abbf0932ff94"
+      "skills/commit/SKILL.md": "eb2cae59d88c0f47b6bec1c5cd1a5d88de08820fc62b473a3a8460c0b3273de1",
+      "skills/commit/fixtures.json": "710da57415bc87d5128794ac2c0d12f6f9abd95abe9e66005a30abbf0932ff94",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
-    "result": "accepted-without-run",
+    "result": "pass",
     "surface": [
       "skills/commit/SKILL.md",
-      "skills/commit/fixtures.json"
+      "skills/commit/fixtures.json",
+      "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "a235ff460545fda23c697b2d0df5c306432aaa80ffc8798b96693b49d755b740",
-    "verified": "2026-07-10"
+    "surface_sha256": "95e3ed2d52ac9ab5446e89457124cdb5bfcf49510229b938991509c88f183d1b",
+    "verified": "2026-07-22"
   },
   "context-audit": {
     "file_sha256": {
@@ -249,6 +251,41 @@
       "skills/shared/references/design-principles.md"
     ],
     "surface_sha256": "63004cedb0e207f9c8406f5908fd6d1f3c4bba6fee2b00f4cdcb7eebed0eaf02",
+    "verified": "2026-07-22"
+  },
+  "plan-reviewer": {
+    "file_sha256": {
+      "skills/plan-reviewer/SKILL.md": "6f952e77229187e33b95ab01d31e90acb692b02c042ff0bbb66dbb343a80948a",
+      "skills/plan-reviewer/fixtures.json": "551e9f86884b8913ac0c80f9daf1f0621d9cd6b5888b86be5f38da4a21278773",
+      "skills/plan-reviewer/references/output-format.md": "3140912a79e485dc23545b99335b1e581863a3d28df2694b8b4ed8e22f1d0230",
+      "skills/plan-reviewer/references/review-dimensions.md": "e80876dfc62783f0e629064eada35b157a7b6babffa58cafd77714ff5e64ed89",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
+      "skills/shared/references/coverage-ledger.md": "e75e405498e15ef15a3964aa3deb15123b1142acab078d87a5ad71a9d1af4c97",
+      "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
+      "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
+      "skills/shared/references/orchestration-patterns.md": "73d7e30c6a00866a3a9ec7f1e4b79195e34e401cd1bc3a6c35396b47779d5ee3",
+      "skills/shared/references/polling-pattern.md": "98f623552d4c6ec957e07b20a90c389b8513ecc3572b73ccaa80cfa9bab8c25f",
+      "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
+    },
+    "result": "pass",
+    "surface": [
+      "skills/plan-reviewer/SKILL.md",
+      "skills/plan-reviewer/fixtures.json",
+      "skills/plan-reviewer/references/output-format.md",
+      "skills/plan-reviewer/references/review-dimensions.md",
+      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/codex-integration.md",
+      "skills/shared/references/coverage-ledger.md",
+      "skills/shared/references/design-principles.md",
+      "skills/shared/references/fix-action-taxonomy.md",
+      "skills/shared/references/orchestration-patterns.md",
+      "skills/shared/references/polling-pattern.md",
+      "skills/shared/references/severity-and-verdicts.md",
+      "skills/shared/references/verification-gate.md"
+    ],
+    "surface_sha256": "9dfc5e46dfb0053d6d01c606ded1ac53053424bd9cf4a5f02ab061941476f73a",
     "verified": "2026-07-22"
   }
 }
