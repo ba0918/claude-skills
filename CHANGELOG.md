@@ -4,6 +4,18 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.64.0
+
+commit スキルに、コミットメッセージを単体で理解可能な履歴として残すための内容契約を追加。
+変更後の成果を記述し、実装計画の工程ラベル・エージェントの作業経緯・一時的な会話文脈を
+メッセージへ含めないことを明文化した。既存履歴への追従は言語と語調に限定し、自己完結性と
+Conventional Commits を優先する。安定した issue・仕様・アーキテクチャ参照は許容する。
+
+- gpt-5.5 の 3 役分離 empirical evaluation: 工程文脈を含まないメッセージが変更前 1/3 から
+  変更後 9/9（3 シナリオ × 3 iteration）へ改善。独立 checker の最終 precision は 96.7%
+- skill-regression: 既存 3 fixtures（無関係変更の分割 / `.env` 除外 / 変更なし abort）を
+  gpt-5.5 の隔離 worktree 実行で全件再検証し、ledger を更新
+
 ## 1.63.0
 
 プロンプト圧縮の横展開バッチ4（cycle + handoff）。cycle は fixture 非保有だったためシナリオ 3 本
