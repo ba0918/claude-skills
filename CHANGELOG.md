@@ -4,6 +4,27 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.60.0
+
+プロンプト圧縮の横展開バッチ1（commit / plan-reviewer）。1.58.1 で確立した「プロンプト圧縮の
+効果条件」プレイブックを、skill-improve の使用頻度実測（30日・141セッション・455起動）で
+裏取りした優先順位に従って適用した。計測は empirical-prompt-tuning の 3 役分離を Opus
+（本番同等モデル）で実施し、commit 4 iteration / plan-reviewer 3 iteration とも
+全シナリオ precision 100% を維持。摩擦は commit 6→1、plan-reviewer 9→7（contradictory /
+missing_premise 系は消滅）。Codex セカンドオピニオンの important 指摘 2 件
+（逐次モード入口条件の未定義ケース / Review 8「always runs」と逐次モードの矛盾）も反映済み。
+
+- commit: Phase 1.5 を verification-gate 契約参照に集約、Phase 3.2 の例示コード削減、
+  機微ファイル除外を Phase 3.1 に一本化（ダミー値でも除外を明文化）、type 選択・subject
+  言語・コミット順序の既定値を付与（176→160 行）
+- plan-reviewer: Reviews 1-7 の inline 観点一覧 58 行を review-dimensions.md 正本参照の
+  14 行テーブルに集約、Step 4 の待機規範二重記述を解消、逐次モードの入口条件・Codex
+  非起動・報告文言を明文化、Step 2.5 キーワードの意味照合（日英対応語）を明記（245→202 行）
+- fixture 資産化: skills/plan-reviewer/fixtures.json を新規追加（empirical-tuning 由来の
+  2 シナリオ）、skill-regression ledger を commit / plan-reviewer とも全合格エビデンスで更新
+- 計測記録は .claude/tmp/empirical/20260722-lean-rollout/（ローカル）の summary.md と
+  iterations.jsonl を参照
+
 ## 1.59.0
 
 AgenticTeam 実験用に作った team-* 系スキルを廃止する。実験目的（AgenticTeam の検証）は
