@@ -1,0 +1,118 @@
+{
+  "skill": "brainstorm",
+  "scenarios": [
+    {
+      "id": "bs-001",
+      "title": "Wrap — 壁打ち履歴からのメモ永続化と summary-first 完了報告",
+      "source": "empirical-tuning:20260722-lean-rollout",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "README.md": "# conftool\n\nINI ベースの設定管理 CLI。\n",
+          "CLAUDE.md": "# conftool\n\n設定管理 CLI ツール。\n"
+        }
+      },
+      "prompt": "これまでの会話で以下の壁打ちセッションを行った:\n\n---\n【テーマ】CLI ツールの設定ファイルを INI から TOML に移行するか\n【ユーザー】今 INI でやってる設定、ネスト構造が表現できなくて限界。TOML に移行したい\n【Claude】移行コストは? 既存ユーザーの設定ファイルはどうする?\n【ユーザー】自動変換スクリプトを配って 2 バージョンは両対応にする案を考えてる\n【Claude】両対応期間のパーサ二重管理が負債になる懸念。変換スクリプトの信頼性検証は?\n【ユーザー】確かに。両対応は 1 マイナーバージョンに限定して、変換は roundtrip テストで担保する方向で\n【Claude】TOML ライブラリは標準の tomllib（読み取り専用）が有力。書き込みが要るなら別ライブラリが必要\n【ユーザー】書き込みが必要かはまだ決めてない。設定ウィザード機能を作るかどうか次第\n---\n\nこの壁打ちを wrap してメモに整理して。タイトルは「設定ファイルの TOML 移行」で確定でいい。サマリーは会話から適切にまとめて。",
+      "requirements": [
+        {
+          "text": "メモファイルが .agents/artifacts/ideas/{14桁タイムスタンプ}_{kebab-slug}.md に生成され、idea-template の構造（**Status:** 💡 Idea と Summary / Key Discussion Points / Decisions & Conclusions / Open Questions / Next Steps セクション）を持つ",
+          "critical": true
+        },
+        {
+          "text": "idea-status.md が作成され、テーブル行のリンクテキストがメモの # 見出しタイトル「設定ファイルの TOML 移行」になっている（kebab スラグをリンクテキストに使っていない）",
+          "critical": true
+        },
+        {
+          "text": "完了メッセージが summary-first: 「📝 つまり:」で始まる要約ブロックがファイルパス表示（✅ / 📄 / 📋 行）より前に置かれ、未決定点（TOML 書き込みライブラリの要否 / 設定ウィザードの是非に相当する内容）が明示されている",
+          "critical": true
+        },
+        {
+          "text": "メモの Open Questions に「TOML の書き込みが必要か（設定ウィザード機能次第）」に相当する未決定点が反映されている",
+          "critical": false
+        },
+        {
+          "text": "アイデア成果物（.agents/ 配下）と artifact-store 契約が要求するストア初期化（.agents/artifacts.yml 作成・.gitignore への .agents/ 追加）以外に、既存ファイルを変更していない",
+          "critical": false
+        }
+      ],
+      "notes": "現実の使用場面の中央値（wrap による永続化）。要件 5 は計測時の文言「ideas/ 配下以外を変更していない」だと artifact-store 契約の安全不変条件（local store の Git 管理外化）と衝突して checker が揺れた（iter1 partial / iter2 fail、いずれも critical 影響なし）ため、資産化時に契約準拠の初期化を明示的に許容する形へ補正した。"
+    },
+    {
+      "id": "bs-002",
+      "title": "Plan — 単一エントリでの明示的選択とアーカイブ choreography",
+      "source": "empirical-tuning:20260722-lean-rollout",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# logtool\n\nログ集計 CLI ツール。\n\n- 依存追加は最小限にする（標準ライブラリ優先）\n",
+          "src/parser.py": "\"\"\"ログ行パーサ。\"\"\"\nimport re\n\nLINE_RE = re.compile(r\"^(?P<ts>\\S+) (?P<level>\\w+) (?P<msg>.*)$\")\n\n\ndef parse_line(line: str) -> dict | None:\n    m = LINE_RE.match(line.strip())\n    if not m:\n        return None\n    return m.groupdict()\n",
+          ".agents/artifacts/ideas/20260720093000_log-search-command.md": "# ログ検索コマンドの追加\n\n**Created:** 2026-07-20 09:30:00\n**Status:** 💡 Idea\n**Tags:** cli,search\n\n---\n\n## Summary\n\nlogtool CLI に、集計前のログ行を条件で絞り込む `search` サブコマンドを追加する。レベル・時間帯・正規表現での絞り込みを段階的にサポートし、まずレベルフィルタのみの最小版から始める。\n\n## Key Discussion Points\n\n- grep との差別化はパース済みフィールドでの構造化フィルタにある\n- 出力フォーマットは既存の summarize と揃える\n\n## Decisions & Conclusions\n\n- 第 1 弾はレベルフィルタのみ（--level ERROR）に絞る\n- 正規表現サポートは需要を見てから\n\n## Open Questions\n\n- 時間帯フィルタのタイムゾーン扱い\n\n## Next Steps\n\n- plan 化して実装に進む\n",
+          ".agents/artifacts/ideas/idea-status.md": "# Idea Status\n\n**Last Updated:** 2026-07-20 09:30:00\n\n| Idea | Tags | Created | Status | Summary |\n|------|------|---------|--------|---------|\n| [ログ検索コマンドの追加](20260720093000_log-search-command.md) | `cli,search` | 2026-07-20 09:30:00 | 💡 Idea | logtool に search サブコマンドを追加する構想 |\n"
+        }
+      },
+      "prompt": "アイデアが 1 件たまってる。brainstorm の plan ワークフローでアイデアを plan に変換して。",
+      "requirements": [
+        {
+          "text": "対象アイデアの選択プロセスが省略されずに実行されている（エントリが 1 件でもテーブル内容を提示して対象を明示的に選択しており、黙って変換処理に入っていない）",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルが .agents/artifacts/plans/{14桁タイムスタンプ}_{kebab-title}.md に生成され、その種として idea-status.md のリンクテキスト由来の Title「ログ検索コマンドの追加」とアイデアファイル ## Summary セクションの内容が使われている",
+          "critical": true
+        },
+        {
+          "text": "アーカイブ choreography が完了している: アイデアファイルが .agents/artifacts/ideas/archives/ に移動され、idea-status.md から該当行が削除され Last Updated が更新され、アーカイブ後ファイル内の Status が 📋 Planned に書き換わっている",
+          "critical": true
+        },
+        {
+          "text": "完了メッセージに ✅ / 📄 Plan / 📦 Archived と Next Steps（plan-review・cycle への導線）が含まれている",
+          "critical": false
+        },
+        {
+          "text": ".agents/artifacts/ideas/ 直下に元のメモファイルが残っていない（コピーではなく移動になっている）",
+          "critical": false
+        }
+      ],
+      "notes": "edge シナリオ。単一エントリでも選択プロセスを省略しない規定と、Plan Step 5-6 のアーカイブ choreography（移動 → 行削除 → Status 書換）を固定する。plan-create チェーンに依存するため、実行環境に skills/plan 一式が必要。"
+    },
+    {
+      "id": "bs-003",
+      "title": "Session 初回ターン — 行き詰まり検出・Codex フォールバック・編集ゼロ",
+      "source": "empirical-tuning:20260722-lean-rollout",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# webapi\n\n小さな Web API サーバー。\n",
+          "src/cache.py": "\"\"\"素朴な in-process キャッシュ。あちこちから直接触られている。\"\"\"\n_cache: dict = {}\n\n\ndef get(key):\n    return _cache.get(key)\n\n\ndef put(key, value):\n    _cache[key] = value\n\n\ndef invalidate(key=None):\n    # 呼び出し側ごとに key 指定だったり全消しだったりで一貫性がない\n    if key is None:\n        _cache.clear()\n    else:\n        _cache.pop(key, None)\n"
+        }
+      },
+      "prompt": "brainstorm でテーマ「キャッシュ層の invalidation 再設計」の壁打ちを開始して。ユーザーの最初の発言はこれ:\n\n「今の実装、キャッシュの invalidation がぐちゃぐちゃで、どこから手を付ければいいか行き詰まってる。」\n\nこの発言への 1 ターン分の応答を生成するところまで実行して。生成した応答の全文を成果物レポートに含めること。",
+      "requirements": [
+        {
+          "text": "ファイルの作成・編集・上書きが一切発生していない（作業リポジトリの git status が clean のまま）",
+          "critical": true
+        },
+        {
+          "text": "行き詰まりキーワード検出により、problem-solving への誘導ブロック（💡 + simplify / invert / collide / scale / pattern の 5 ツール）が応答本文の冒頭（通常応答より前）に配置されている",
+          "critical": true
+        },
+        {
+          "text": "Codex 連携が利用不可の環境で「⚠️ Codex unavailable — proceeding with Claude only」の初回警告が表示され、かつ Codex の意見を捏造した「💡 Codex の視点:」セクションを出力していない",
+          "critical": true
+        },
+        {
+          "text": "応答が壁打ちの振る舞い（質問による深掘り・懸念の提示・別アプローチの提案のいずれか）を含み、実装着手の宣言やコード生成を行っていない（擬似コードでの概念説明・既存コードの引用は可）",
+          "critical": false
+        },
+        {
+          "text": "コードベース調査を行った場合、読み取り専用操作に限定されている",
+          "critical": false
+        }
+      ],
+      "notes": "edge シナリオ。Session Workflow は対話型のため単一ターンをシナリオ化。編集ゼロ制約・stuck 検出の出力順（誘導ブロック → ⚠️ 通知 → 本文）・Codex 不在フォールバックの非捏造を固定する。実行時は環境ノートで「Codex 用ヘルパー不在」を与えること（実試行での失敗確定が不可能なため）。"
+    }
+  ]
+}
