@@ -4,6 +4,32 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.63.0
+
+プロンプト圧縮の横展開バッチ4（cycle + handoff）。cycle は fixture 非保有だったためシナリオ 3 本
+（フルサイクル正常系 / パス検証中断 / 完了済みスキップ + status.md 不在の部分失敗許容）を新規
+設計・事前ロックし、委譲チェーン一式（plan-refine / plan-implement / plan-reviewer / commit +
+共有契約）を同梱した scratch でインライン fallback 経路ごと計測。handoff は既存 fixtures
+（ho-001〜004）を事前固定のまま流用。いずれも Opus 3 役分離 2 iteration で全シナリオ全 iteration
+precision 1.0。Codex セカンドオピニオン「修正後反映可」の important 4 件 + minor 1 件を全反映。
+
+- cycle: 本文を英語に統一し非 ASCII 4,555→510、トークン近似 -39%。ユーザー向け固定出力
+  （CYCLE ブロック・「実装対象の計画がない」）は Codex 指摘に従い旧版から逐語維持。
+  明示化: インライン実行時は委譲 relay / 待機規範 / リトライ節が不適用という signpost
+  （他スキル起動不可時のインライン代替も含む）/ Step 1.5 の中断は CYCLE START 表示前 /
+  status 完了処理の Case 2 は Phase ラベル非依存 / 計画 Status ヘッダ検証を guard 非依存の
+  Step 3d に独立（失敗名 "plan status update"）/ Steps の出典 = Progress 表 /
+  {plan_basename} = 拡張子なし / mv 案内は新規誤配置向けで legacy 配置は migration 対象
+- handoff: 本文を英語に統一し非 ASCII 2,768→609、トークン近似 -29%。日本語の固定出力
+  テンプレート（引き継ぎ内容 / Handoff 一覧 / 📝 つまり / 完了報告）と handoff ファイル書式は維持。
+  明示化: restore と list で共有する ordering rule を一元化（真の mtime 同一時のみファイル名
+  タイムスタンプで tie-break、ls の粗い表示一致を tie と扱わないことを Codex 指摘で厳密化）/
+  Restore サマリの branch・現在地の出所（frontmatter / TL;DR + 現在の状態）/ status.md 不在 =
+  active plan なし / checkpoint fallback の superseded 削除提案はユーザー確認つき（契約準拠を
+  Codex 指摘で復元）/ restore・list は reader でディレクトリを作らない
+- cycle/fixtures.json 新規（cy-001〜003、skill-regression 台帳登録済み）。handoff は既存
+  fixtures のまま台帳更新。計測記録: .claude/tmp/empirical/20260722-lean-rollout/ バッチ4 節
+
 ## 1.62.0
 
 プロンプト圧縮の横展開バッチ3（brainstorm + 長文 description トリム）。brainstorm は fixture
