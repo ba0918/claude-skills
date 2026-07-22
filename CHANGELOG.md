@@ -4,6 +4,21 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.65.0
+
+ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の
+手順をworkflow別参照へ分離した。選択したworkflowだけを読む構造にして、`status` は参照を
+追加読込しない fast path として維持。重複していたテンプレート集を廃止し、実行に必要な規約と
+出力形式を各workflowへ局所化した。description も一覧の冒頭だけで用途が伝わる形へ短縮した。
+
+- GPT-5.5 の3役分離 empirical evaluationで、extract / session / status / orient の4シナリオを
+  独立checkerで検証し、圧縮で失われた契約を反復補完
+- trigger-eval: ledgerと近接6スキルの固定24ケースを短縮前後・selection / autonomousでA/B判定。
+  4系列すべて24/24、ledgerは recall / precisionとも1.0で非劣化
+- `skills/ledger/SKILL.md`: 不変条件・workflow router・status fast pathだけを常時ロード
+- `skills/ledger/references/`: extract / session / orient を独立参照化し、旧
+  `ledger-templates.md`を削除
+
 ## 1.64.0
 
 commit スキルに、コミットメッセージを単体で理解可能な履歴として残すための内容契約を追加。
