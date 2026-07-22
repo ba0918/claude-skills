@@ -34,19 +34,9 @@ mkdir -p .agents/artifacts/plans
 
 ### Phase 2: Gather Requirements
 
-Required information:
+Feature 名 / 概要 / type（新機能 / 改修 / bug fix / refactor）が必要。ユーザー入力から明確に取れるなら聞かずに進む。不足があれば interactive では簡潔に聞く、Auto mode（`cycle` / `issue-cycle` 等の headless 呼び出し）ではブロックせず文脈から推論する。
 
-1. **Feature name** - What are we implementing?
-2. **Brief description** - What is the goal?
-3. **Type** - New feature / Enhancement / Bug fix / Refactoring
-
-**When to skip asking:**
-
-- If the user's initial request already contains all three (explicitly or unambiguously inferable), extract them and skip asking.
-- Under Auto mode / headless invocation (e.g. called from `issue-cycle`, `cycle`), never block on questions — infer from available context and proceed.
-- Otherwise, ask the user. Keep questions concise; avoid overwhelming with too many at once.
-
-Record what was inferred vs. what was asked so the user can correct it.
+推論した項目は最終応答で明示し、ユーザーが訂正できる形にする。
 
 ### Phase 3: Create Plan Document
 
@@ -54,25 +44,7 @@ Record what was inferred vs. what was asked so the user can correct it.
 
 **CRITICAL**: Plan files MUST be created under `.agents/artifacts/plans/` directory. Do NOT use `docs/cycles/` or any other directory. This constraint applies regardless of how this skill is invoked (directly, via issue-cycle, or any other caller).
 
-**Feature slug rules:**
-- Convert spaces to hyphens
-- Lowercase
-- Remove non-alphanumeric characters except hyphens
-- Collapse repeated hyphens; trim leading/trailing hyphens
-- Example: "Markdown Hot Reload" → "markdown-hot-reload"
-
-**Non-ASCII input (Japanese, Chinese, Korean, etc.):**
-
-The slug MUST end up as `[a-z0-9-]+` only. For non-ASCII feature names, convert to English before applying the rules above:
-
-1. **Translate by meaning** (preferred): extract the core concept from the feature name and user's description. Align with existing naming in the project if there is a related term.
-   - Example: 「モックアップ比較ツール」 → `mockup-diff-tool` (aligned with existing `mockup-diff` skill)
-   - Example: 「ユーザー認証機能」 → `user-authentication`
-2. **Romanize** (fallback): if the term is a proper noun or brand with no English equivalent, use Hepburn-style romanization.
-   - Example: 「あずき餡」 → `azuki-an`
-3. **Ask the user** (last resort): if neither translation nor romanization yields a clear slug (ambiguous meaning, multiple valid translations), ask the user for a preferred English slug. Do NOT fall through to an empty or garbled slug.
-
-Apply the ASCII rules above to the converted string. Record the original name verbatim in the plan document's `# {Feature Name}` header and the status.md `Feature` column so meaning is preserved.
+**Feature slug**: `[a-z0-9-]+` のみ（標準的な URL slug 化）。非 ASCII 入力（日本語等）は意味翻訳を優先し、プロジェクト内の既存関連命名（skills や既存 plan）と揃える。翻訳が困難な固有名詞のみ Hepburn 式ローマ字化、意味が曖昧なら user に確認する（空 / garbled slug に落ちるのは禁止）。原文の feature 名は plan header `# {Feature Name}` と status.md `Feature` 列に verbatim で保持する。
 
 **Template:** See [references/plan-template.md](references/plan-template.md) for the full plan document structure.
 
