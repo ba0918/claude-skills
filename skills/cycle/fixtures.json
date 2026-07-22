@@ -1,0 +1,126 @@
+{
+  "skill": "cycle",
+  "scenarios": [
+    {
+      "id": "cy-001",
+      "title": "フルサイクル — refine → implement → Phase 3 完了処理（status.md あり）",
+      "source": "empirical-tuning:20260722-lean-rollout",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# logtool\n\nログ集計 CLI ツール。\n\n- 依存追加は最小限にする（標準ライブラリのみ）\n- テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "logtool/__init__.py": "",
+          "logtool/parser.py": "\"\"\"ログ行パーサ。\"\"\"\nimport re\n\nLINE_RE = re.compile(r\"^(?P<ts>\\S+) (?P<level>\\w+) (?P<msg>.*)$\")\n\n\ndef parse_line(line: str) -> dict | None:\n    m = LINE_RE.match(line.strip())\n    if not m:\n        return None\n    return m.groupdict()\n",
+          "tests/__init__.py": "",
+          "tests/test_parser.py": "import unittest\n\nfrom logtool.parser import parse_line\n\n\nclass ParseLineTest(unittest.TestCase):\n    def test_parses_valid_line(self):\n        row = parse_line(\"2026-07-21T09:00:00 ERROR disk full\")\n        self.assertEqual(\n            row, {\"ts\": \"2026-07-21T09:00:00\", \"level\": \"ERROR\", \"msg\": \"disk full\"}\n        )\n\n    def test_returns_none_for_garbage(self):\n        self.assertIsNone(parse_line(\"###\"))\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260721100000_level-count-summary.md": "# レベル別集計サマリー\n\n**Cycle ID:** `20260721100000`\n**Started:** 2026-07-21 10:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nlogtool にログレベル別の件数集計と整形サマリー出力を追加する。運用時にエラー傾向を一目で把握できるようにするため。\n\n## 🎯 Goals\n\n- パース済みログ行をレベル別に集計できる\n- 集計結果を人が読めるサマリー文字列に整形できる\n\n## 📐 Design\n\n### Files to Change\n\n```\nlogtool/\n  stats.py - 新規。count_by_level / format_summary を実装\ntests/\n  test_stats.py - 新規。両関数のユニットテスト\n```\n\n### Key Points\n\n- **count_by_level(lines)**: `parse_line` でパースできた行だけをレベル別に数え、`{level: count}` の dict を返す。パース不能行は黙って無視する\n- **format_summary(counts)**: 件数降順で `\"LEVEL: N\"` を改行連結して返す。同数はレベル名の昇順。空 dict は `\"(no entries)\"` を返す\n\n## ✅ Tests\n\n- [ ] count_by_level が複数レベル混在の行リストを正しく集計する\n- [ ] count_by_level がパース不能行を無視する\n- [ ] format_summary が件数降順・同数レベル名昇順で整形する\n- [ ] format_summary が空 dict で \"(no entries)\" を返す\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| Step 1: count_by_level 実装（TDD） | ⚪ |\n| Step 2: format_summary 実装（TDD） | ⚪ |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n",
+          ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-07-21 10:00:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260721100000` |\n| **Feature** | レベル別集計サマリー |\n| **Started** | 2026-07-21 10:00:00 |\n| **Phase** | 🟡 Planning |\n| **Plan** | [.agents/artifacts/plans/20260721100000_level-count-summary.md](./plans/20260721100000_level-count-summary.md) |\n\n**Current Focus:**\nログレベル別集計とサマリー整形の追加。計画作成済み、実装待ち。\n\n---\n\n## 📜 Session History\n\n_Archived sessions can be found in [session-history.md](./session-history.md)._\n\n<!-- Note: Completed sessions are automatically archived to .agents/artifacts/session-history.md.\n     Only active sessions remain in this section. -->\n\n---\n\n## 🔗 Quick Links\n\n- [All Plans](./plans/)\n- [Project Root](../)\n\n---\n\n**Note:** This file is auto-managed by the `plan` skill.\n"
+        }
+      },
+      "prompt": "cycle 回して。",
+      "requirements": [
+        {
+          "text": "Phase 1 の refine が実行され（サブエージェント不可環境のためインライン代行可）、観点ごとのスコアまたは判定を含む refine 結果が成果物レポートに含まれている。BLOCK が残ったまま Phase 2 に進んでいない",
+          "critical": true
+        },
+        {
+          "text": "Phase 2 で計画の全 2 ステップ（count_by_level / format_summary）が実装され、テスト追加 + 全テストパスのエビデンス（テスト実行コマンドと結果出力）が成果物レポートに含まれ、実装コミットが git log に存在する",
+          "critical": true
+        },
+        {
+          "text": "result ファイルが .agents/artifacts/plans/results/20260721100000_level-count-summary_result.md に生成され、Refine / Implementation / Commits のセクションを含む",
+          "critical": true
+        },
+        {
+          "text": "status.md の Current Session が完了処理されている（session-history.md へアーカイブされ、Current Session がクリアされている）",
+          "critical": true
+        },
+        {
+          "text": "最終表示が CYCLE COMPLETE フォーマット（Feature / Refine / Implement / Commits / Result 行を含む）で提示され、Issue 行が (none) 扱いになっている（計画に **Issue:** 行がないため issue close を試みていない）",
+          "critical": false
+        },
+        {
+          "text": "Phase 3 の成果物（result ファイル・status.md / session-history.md 更新）がコミットされ、最終的に作業ツリーが clean になっている",
+          "critical": false
+        }
+      ],
+      "notes": "フルサイクルの中央値。refine 全 PASS → TDD 2 ステップ実装 → Phase 3 完了処理（status.md Case 2 アーカイブ + result ファイル + 成果物コミット）を固定する。サブエージェント不可環境ではインライン fallback 経路を通る（それ自体が仕様）。実行には plan-refine / plan-implement / plan-reviewer(+references) / plan(references) / commit の各スキルと共有契約（artifact-store / orchestration-patterns / tdd-contract / verification-gate / design-principles / testing-anti-patterns / severity-and-verdicts / codex-integration / status-update-guide）の同梱が必要。"
+    },
+    {
+      "id": "cy-002",
+      "title": "パス検証 — plans ディレクトリ外の計画指定で中断（ファイルを動かさない）",
+      "source": "empirical-tuning:20260722-lean-rollout",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# webhook-relay\n\n受信 Webhook を転送する小さなリレーサーバー。\n\n- テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "src/relay.py": "\"\"\"Webhook 転送のコア。\"\"\"\n\n\ndef build_forward_headers(headers: dict) -> dict:\n    \"\"\"hop-by-hop ヘッダを除いた転送用ヘッダを作る。\"\"\"\n    hop_by_hop = {\"connection\", \"keep-alive\", \"transfer-encoding\", \"upgrade\"}\n    return {k: v for k, v in headers.items() if k.lower() not in hop_by_hop}\n",
+          "docs/plans/20260710090000_legacy-feature.md": "# リトライキューの追加\n\n**Cycle ID:** `20260710090000`\n**Started:** 2026-07-10 09:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n転送失敗した Webhook を指数バックオフで再送するリトライキューを追加する。\n\n## 🎯 Goals\n\n- 転送失敗時に最大 3 回まで再送する\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| Step 1: リトライキュー実装（TDD） | ⚪ |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n"
+        }
+      },
+      "prompt": "cycle を docs/plans/20260710090000_legacy-feature.md で実行して。",
+      "requirements": [
+        {
+          "text": "⛔ CYCLE ABORTED の中断メッセージが Found（指定された実際のパス）と Expected（.agents/artifacts/plans/*.md）を含む形で提示され、サイクルが中断されている",
+          "critical": true
+        },
+        {
+          "text": "docs/plans/20260710090000_legacy-feature.md が移動・コピー・編集されていない（mv はユーザーへの復旧案内としてのみ提示され、実行者自身はファイルを動かして続行していない）",
+          "critical": true
+        },
+        {
+          "text": "refine / implement のフェーズが一切実行されず、リポジトリに新規コミット・ファイル変更がない（git status が clean のまま）",
+          "critical": true
+        },
+        {
+          "text": "レガシー配置からの移行は artifact store 契約の migration 手順の対象になりうる旨（単純 mv は新規作成ファイルの置き場違い向けの簡易復旧であること）が案内に添えられている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 0 Step 1.5 のパス検証 edge。CYCLE START 前の中断・mv 非実行（案内のみ）・migration 注記を固定する。"
+    },
+    {
+      "id": "cy-003",
+      "title": "自動選択 — 完了済み計画のスキップと status.md 不在の部分失敗許容",
+      "source": "empirical-tuning:20260722-lean-rollout",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# timeutil\n\n時間表記の変換ユーティリティライブラリ。\n\n- 依存追加は最小限にする（標準ライブラリのみ）\n- テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "timeutil.py": "\"\"\"時間ユーティリティ。\"\"\"\nimport re\n\n_DURATION_RE = re.compile(r\"(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?\")\n\n\ndef parse_duration(text: str) -> int:\n    \"\"\"\"1h2m3s\" 形式の文字列を秒数に変換する。\"\"\"\n    m = _DURATION_RE.fullmatch(text.strip())\n    if not m or not any(m.groups()):\n        raise ValueError(f\"invalid duration: {text!r}\")\n    h, mi, s = (int(g) if g else 0 for g in m.groups())\n    return h * 3600 + mi * 60 + s\n",
+          "tests/__init__.py": "",
+          "tests/test_timeutil.py": "import unittest\n\nfrom timeutil import parse_duration\n\n\nclass ParseDurationTest(unittest.TestCase):\n    def test_full_form(self):\n        self.assertEqual(parse_duration(\"1h2m3s\"), 3723)\n\n    def test_partial_form(self):\n        self.assertEqual(parse_duration(\"90s\"), 90)\n\n    def test_rejects_garbage(self):\n        with self.assertRaises(ValueError):\n            parse_duration(\"abc\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260722080000_parse-duration.md": "# parse_duration の実装\n\n**Cycle ID:** `20260722080000`\n**Started:** 2026-07-22 08:00:00\n**Status:** ✅ Completed\n\n---\n\n## 📝 What & Why\n\n\"1h2m3s\" 形式の文字列を秒数へ変換する parse_duration を実装する。\n\n## 🎯 Goals\n\n- 時間・分・秒の任意の組み合わせをパースできる\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| Step 1: parse_duration 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n",
+          ".agents/artifacts/plans/20260720150000_format-duration.md": "# format_duration の実装\n\n**Cycle ID:** `20260720150000`\n**Started:** 2026-07-20 15:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n秒数を \"1h 2m 3s\" 形式の人が読める文字列へ変換する format_duration を追加する。parse_duration の逆方向で、ログ表示・レポート出力に使う。\n\n## 🎯 Goals\n\n- 秒数から時間・分・秒の表記を生成できる\n- ゼロの単位は省略する\n\n## 📐 Design\n\n### Files to Change\n\n```\ntimeutil.py - format_duration(seconds: int) -> str を追加\ntests/test_timeutil.py - format_duration のテストを追加\n```\n\n### Key Points\n\n- **format_duration(seconds)**: `3723 -> \"1h 2m 3s\"`。ゼロの単位は省略（`90 -> \"1m 30s\"`）。0 は `\"0s\"` を返す。負数は ValueError\n\n## ✅ Tests\n\n- [ ] 3723 が \"1h 2m 3s\" になる\n- [ ] 90 が \"1m 30s\" になる（ゼロ単位省略）\n- [ ] 0 が \"0s\" になる\n- [ ] 負数で ValueError\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| Step 1: format_duration 実装（TDD） | ⚪ |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n"
+        }
+      },
+      "prompt": "cycle 回して。",
+      "requirements": [
+        {
+          "text": "計画の自動選択で、ファイル名タイムスタンプが最新の完了済み計画（20260722080000_parse-duration.md）をスキップし、未完了の 20260720150000_format-duration.md を選択している（完了済み計画を再実装せず、「実装対象の計画がない」の no-op 中断もしていない）",
+          "critical": true
+        },
+        {
+          "text": "選択した計画のステップ（format_duration）がテスト追加 + 全テストパスのエビデンス（テスト実行コマンドと結果出力）付きで実装され、実装コミットが git log に存在する",
+          "critical": true
+        },
+        {
+          "text": "status.md が存在しないため Phase 3 の status 更新は失敗として記録され（phase3_failures 相当の扱い）、cycle 全体は中断せず最終表示まで完走し、最終表示に ⚠️ Phase 3 partial failures の警告が含まれている",
+          "critical": true
+        },
+        {
+          "text": "result ファイルが .agents/artifacts/plans/results/ 配下に生成されている",
+          "critical": false
+        },
+        {
+          "text": "完了済み計画ファイル 20260722080000_parse-duration.md が変更されていない",
+          "critical": false
+        }
+      ],
+      "notes": "自動選択（完了済みスキップ）+ Phase 3 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase3_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。"
+    }
+  ]
+}

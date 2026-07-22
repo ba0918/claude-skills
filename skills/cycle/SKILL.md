@@ -7,26 +7,39 @@ description: 実装計画に対して refine（計画品質ゲート）と imple
 
 Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
-実装計画に対して refine → auto-implement の全サイクルを自律実行する。
-各フェーズはサブエージェントに委譲し、メインコンテキストには進捗サマリーのみ保持する。
+Run the full refine → auto-implement cycle for an implementation plan autonomously.
+Each phase is delegated to a subagent; the main context keeps only progress summaries.
 
-サブエージェントや他スキルを起動できない環境では、各フェーズの内容を自分がインラインで実行してよい。
-その場合、refine は plan-refine の手順に、実装は plan-implement の手順に従う（それぞれのフォールバック規定を含む）。
+In environments where subagents or other skills cannot be launched, you may execute each
+phase's content inline yourself: follow the plan-refine procedure for refine and the
+plan-implement procedure for implementation (including their own fallback provisions).
+**Inline mode signpost:** when running inline, the delegation machinery in this file — the
+"Delegation result relay" section, its wait discipline / watchdog duties, and the
+delegation-retry rules — does not apply. Results stay in your own context; no relay files
+are needed. The phase logic itself (gates, verdicts, displays) applies unchanged. The same
+fallback covers skill invocations (e.g. `claude-skills:commit`): when a skill cannot be
+launched, perform its core action yourself following that skill's documented procedure.
 
-## パラメータ
+## Parameters
 
-- 引数の最初のパス: 計画ファイルパス（省略時は `.agents/artifacts/plans/` 内の最新を自動選択）
-- 引数に数値があれば refine の最大イテレーション数（デフォルト: 4）
+- First path in the arguments: plan file path (when omitted, auto-select from `.agents/artifacts/plans/`)
+- A number in the arguments: max refine iterations (default: 4)
 
-## Phase 0: 準備
+## Phase 0: Preparation
 
-1. 計画ファイルを特定する
-   - 引数にパスがあればそれを使用
-   - なければ自動選択する: `.agents/artifacts/plans/` 直下の `*.md` をファイル名のタイムスタンプ降順で並べ、先頭から順に見て **未完了の計画**（Status が ✅/Completed でないもの）を選ぶ。mtime（`ls -t`）は使わない — ファイル名タイムスタンプが正で、mtime は編集で入れ替わるため
-   - 未完了の計画が 1 つもない場合: 「実装対象の計画がない」と表示してサイクルを中断する（完了済み計画で no-op サイクルを回さない）
-1.5. パスを検証する
-   - 計画ファイルが `.agents/artifacts/plans/` **直下**の `.md` ファイルであることを確認する（サブディレクトリは対象外）
-   - 一致しない場合:
+1. Identify the plan file
+   - If the arguments contain a path, use it
+   - Otherwise auto-select: list the `*.md` files directly under `.agents/artifacts/plans/`
+     in filename-timestamp descending order and pick the first **incomplete** plan (one whose
+     Status is not ✅/Completed). Do not use mtime (`ls -t`) — the filename timestamp is
+     authoritative; mtime gets reshuffled by edits
+   - If there is no incomplete plan: display 「実装対象の計画がない」 and abort the cycle
+     (never run a no-op cycle on completed plans)
+1.5. Validate the path
+   - Confirm the plan file is a `.md` file **directly under** `.agents/artifacts/plans/`
+     (subdirectories do not count)
+   - If it is not, abort here — this happens before the CYCLE START display, so no CYCLE
+     START block is shown:
      ```
      ⛔ CYCLE ABORTED: Plan file is not in .agents/artifacts/plans/
      Found: {actual_path}
@@ -36,10 +49,16 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
      If the file was created in the wrong location, move it first:
        mv {actual_path} .agents/artifacts/plans/
      ```
-     サイクルを中断する。mv はユーザーに提示する案内であり、**実行者自身がファイルを移動して続行してはならない**。
-     なお `docs/plans/` 等のレガシー配置からの移行は [Agent Artifact Store contract](../shared/references/artifact-store.md) の migration 手順の対象になりうるため、単純 mv の案内は「新規作成ファイルの置き場違い」を想定した簡易復旧である旨を添えてよい
-2. 計画ファイルを読み込み、概要を把握する（Feature名、ステップ数、現在の進捗）
-3. サイクル開始を表示:
+     The `mv` above is guidance presented to the user; the executor must not move the file
+     itself and continue. Note that migration from legacy layouts such as `docs/plans/` can
+     fall under the migration procedure of the
+     [Agent Artifact Store contract](../shared/references/artifact-store.md), so you may add
+     a note that the simple `mv` hint targets misplaced newly-created files. Rule of thumb:
+     a file under a legacy root (e.g. `docs/plans/`) that already has plan structure and a
+     Cycle ID is a migration case, not an mv case
+2. Read the plan file and grasp the overview (feature name, step count = the rows of the
+   plan's Progress table, current progress)
+3. Display the cycle start:
    ```
    ══════════════════════════════════════
    CYCLE START
@@ -49,54 +68,83 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
    ══════════════════════════════════════
    ```
 
-## 委譲結果の受渡し（Phase 1 / 1.5 / 2 共通）
+## Delegation result relay (shared by Phases 1 / 1.5 / 2 — delegation mode only)
 
-Phase 1 / 1.5 / 2 のサブエージェント委譲は [orchestration-patterns.md § delegation result relay](../shared/references/orchestration-patterns.md) に従う。**cycle 固有の 2 点**:
+Subagent delegation in Phases 1 / 1.5 / 2 follows
+[orchestration-patterns.md § delegation result relay](../shared/references/orchestration-patterns.md).
+**Two cycle-specific points:**
 
-- **`{run_id}`**: 計画ファイル冒頭の Cycle ID（なければ計画ファイル名のタイムスタンプ）。オーケストレーターと委譲先で同一パスを導出できることが要件。
-- **`{role}`**: 各 Phase で `refine` / `refine-fix` / `implement` を指定。委譲プロンプトに `.agents/runtime/delegation/{run_id}_{role}.md` パスを含める。
-- **待機規範**: cycle は各委譲先の**親オーケストレーター**なので契約 [§ 待機規範 柱 3（上位 watchdog）](../shared/references/orchestration-patterns.md) を張る側になる。`.agents/runtime/delegation/` を一覧し結果ファイル群の mtime と最終成果物の有無を突き合わせて「揃っている／入ってこない」を判定してから状態確認（催促）を送る。具体手順は後述「エラーハンドリング」の無音停滞行と同一を指す（重複記述を作らない）。催促は状態確認であって再委譲ではなく、下記フォールバックのリトライ予算とは別枠で乗算しない。
+- **`{run_id}`**: the Cycle ID at the top of the plan file (or the plan filename's timestamp
+  if absent). Requirement: the orchestrator and the delegate must derive the same path.
+- **`{role}`**: `refine` / `refine-fix` / `implement` per phase. Include the
+  `.agents/runtime/delegation/{run_id}_{role}.md` path in the delegation prompt.
+- **Wait discipline**: cycle is the **parent orchestrator** of each delegate, so it holds
+  [§ wait discipline pillar 3 (upper watchdog)](../shared/references/orchestration-patterns.md).
+  List `.agents/runtime/delegation/`, cross-check result-file mtimes against final artifacts
+  to judge "all arrived / stalled" before sending a status inquiry (a nudge). The concrete
+  procedure is the silent-stall row in "Error handling" below (single source, not repeated
+  here). A nudge is a status check, not a re-delegation; it does not multiply the retry
+  budget of the fallbacks below.
 
-パス規約 / 書き手義務 / 読み手義務（完了報告 or 停止通知でファイル検分、欠落時は成果物検分にフォールバック、判定不能のみリトライ）/ 掃除は契約側が正本。
+Path conventions / writer duties / reader duties (inspect the result file on completion or
+stall notice; fall back to artifact inspection when missing; retry only when undecidable) /
+cleanup are owned by the contract.
 
-## Phase 1: Refine（計画品質ゲート）
+## Phase 1: Refine (plan quality gate)
 
-1. サブエージェント（高性能モデル）で refine エージェントを起動する:
-   - プロンプト: 「スキル `claude-skills:plan-refine` を実行してください。対象: {plan_file_path}。最大イテレーション: {max_iterations}。全観点 PASS になるまでループしてください。**完了報告を送る前に**、最終的な各観点のスコアと判定・各イテレーションの総合スコア（累積停滞検知に使用）を含む結果全文を `.agents/runtime/delegation/{run_id}_refine.md` へ書き出してください。報告メッセージはそのファイルを書いた通知にすぎません。」
-2. 結果を受け取る（上記「委譲結果の受渡し」に従う）
-   - refine の完了報告 **または** 停止・待機通知のどちらかを受信したら、`.agents/runtime/delegation/{run_id}_refine.md` を読んで各観点のスコア・判定・累積スコアを取得する
-   - 結果ファイルが欠落・不完全な場合: 計画ファイル本文（refine が編集する対象）と Git 差分を直接検分し、PASS/WARN/BLOCK を判定する
-   - **サブエージェントがエラーを返した、または結果ファイルも成果物検分も判定不能な場合**: 1回だけ自動リトライする。リトライも失敗した場合はサイクルを中断する
+1. Launch a refine agent on a subagent (high-performance model):
+   - Prompt: "Execute the skill `claude-skills:plan-refine`. Target: {plan_file_path}. Max
+     iterations: {max_iterations}. Loop until every dimension is PASS. **Before sending your
+     completion report**, write the full result — each dimension's final score and verdict,
+     and every iteration's total score (used for cumulative-stall detection) — to
+     `.agents/runtime/delegation/{run_id}_refine.md`. The report message is merely a
+     notification that the file was written."
+2. Receive the result (per "Delegation result relay" above)
+   - On receiving either refine's completion report **or** a stop/wait notice, read
+     `.agents/runtime/delegation/{run_id}_refine.md` for per-dimension scores, verdicts, and
+     cumulative scores
+   - If the result file is missing or incomplete: inspect the plan file body (the artifact
+     refine edits) and the Git diff directly, and judge PASS/WARN/BLOCK yourself
+   - **If the subagent errored, or neither the result file nor artifact inspection is
+     decidable**: retry once automatically. If the retry also fails, abort the cycle
      ```
      ⚠️ Phase 1 agent failed — retrying (1/1)...
      ```
-3. **判定**:
-   - 全 PASS → Phase 2 へ
-   - BLOCK が残存 → **Phase 1.5（フォールバック）** へ
-   - WARN のみ残存 → 警告を表示し Phase 2 へ進む
+3. **Verdict**:
+   - All PASS → Phase 2
+   - BLOCKs remain → **Phase 1.5 (fallback)**
+   - Only WARNs remain → display the warnings and proceed to Phase 2
 
-表示:
+Display:
 ```
 ── Phase 1: Refine ── {PASS|WARN|BLOCK}
 Iterations: {N}
 {各観点のスコアサマリー（1行ずつ）}
 ```
 
-## Phase 1.5: BLOCK フォールバック（自動修正）
+## Phase 1.5: BLOCK fallback (auto-fix)
 
-**Phase 1 で BLOCK が残存した場合のみ実行する。このフェーズは最大1回のみ。**
+**Runs only when BLOCKs remain after Phase 1. At most once.**
 
-1. 残存 BLOCK の内容を分析する
-2. サブエージェント（高性能モデル）で修正エージェントを起動する:
-   - プロンプト: 「計画ファイル {plan_file_path} に対するレビューで以下の BLOCK が指摘されました。計画ファイルを修正して BLOCK を解消してください。**修正内容のサマリーは、完了報告を送る前に `.agents/runtime/delegation/{run_id}_refine-fix.md` へ書き出してください**（報告はそのファイルを書いた通知にすぎません）。\n\n残存 BLOCK:\n{block_list}」
-3. 修正結果を受け取る（上記「委譲結果の受渡し」に従う）
-   - 完了報告 **または** 停止・待機通知を受信したら `.agents/runtime/delegation/{run_id}_refine-fix.md` を読む。欠落・不完全なら計画ファイルの当該 BLOCK 箇所と Git 差分を直接検分して修正の有無を確認する
-4. **再 refine**: Phase 1 と同じ手順で refine エージェントを再起動する（イテレーション数は残り回数 or 2 の小さい方）
-5. **再判定**:
-   - 全 PASS or WARN のみ → Phase 2 へ
-   - BLOCK が依然として残存 → サイクル中断。残存 BLOCK 一覧を表示して終了
+1. Analyze the remaining BLOCKs
+2. Launch a fix agent on a subagent (high-performance model):
+   - Prompt: "The review of plan file {plan_file_path} raised the BLOCKs below. Edit the
+     plan file to resolve them. **Write a summary of your fixes to
+     `.agents/runtime/delegation/{run_id}_refine-fix.md` before sending your completion
+     report** (the report is merely a notification that the file was written).\n\nRemaining
+     BLOCKs:\n{block_list}"
+3. Receive the fix result (per "Delegation result relay" above)
+   - On completion report **or** stop/wait notice, read
+     `.agents/runtime/delegation/{run_id}_refine-fix.md`. If missing or incomplete, inspect
+     the BLOCK-related parts of the plan file and the Git diff directly to confirm whether
+     fixes landed
+4. **Re-refine**: relaunch the refine agent as in Phase 1 (iterations = the smaller of the
+   remaining budget or 2)
+5. **Re-verdict**:
+   - All PASS or WARN only → Phase 2
+   - BLOCKs still remain → abort the cycle; list the remaining BLOCKs and stop
 
-表示:
+Display:
 ```
 ── Phase 1.5: Fallback ── {RESOLVED|UNRESOLVED}
 BLOCKs addressed: {N}/{total}
@@ -104,19 +152,31 @@ BLOCKs addressed: {N}/{total}
 {UNRESOLVED の場合: Cycle aborted — remaining BLOCKs listed above}
 ```
 
-## Phase 2: Implement（自動実装）
+## Phase 2: Implement (auto-implementation)
 
-1. サブエージェント（高性能モデル）で実装エージェントを起動する:
-   - プロンプト: 「スキル `claude-skills:plan-implement` を実行してください。計画ファイル {plan_file_path} の全ステップを実装してください。実装時は `skills/shared/references/tdd-contract.md` に従いテストファースト（RED → GREEN → REFACTOR）で進めること。完了前は `skills/shared/references/verification-gate.md` の Gate Function を適用すること。**完了報告を送る前に**、実装サマリー（変更ファイル数、テスト数、コミット数、ステップごとの完了状況）とテスト実行結果のエビデンスを含む結果全文を結果ファイル `.agents/runtime/delegation/{run_id}_implement.md` へ書き出してください（報告はそのファイルを書いた通知にすぎません）。各ステップ完了ごとにコミットし、ステータスを更新してください。」
-2. 結果を受け取る（上記「委譲結果の受渡し」に従う）
-   - 完了報告 **または** 停止・待機通知のどちらかを受信したら、`.agents/runtime/delegation/{run_id}_implement.md` を読んで実装サマリー・テストエビデンス・ステップ完了状況を取得する
-   - 結果ファイルが欠落・不完全な場合: `git log` のコミット履歴・変更ファイル・計画ファイルの Progress を直接検分し、どのステップまで完了したかを判定する
-   - **サブエージェントがエラーを返した、または結果ファイルも成果物検分も判定不能な場合**: 1回だけ自動リトライする。リトライも失敗した場合はエラー内容を表示し、どのステップまで完了したかを記録してサイクルを中断する
+1. Launch an implement agent on a subagent (high-performance model):
+   - Prompt: "Execute the skill `claude-skills:plan-implement`. Implement every step of plan
+     file {plan_file_path}. Follow `skills/shared/references/tdd-contract.md`: test-first
+     (RED → GREEN → REFACTOR). Before finishing, apply the Gate Function of
+     `skills/shared/references/verification-gate.md`. **Before sending your completion
+     report**, write the full result — an implementation summary (files changed, tests,
+     commits, per-step completion) and test-run evidence — to the result file
+     `.agents/runtime/delegation/{run_id}_implement.md` (the report is merely a notification
+     that the file was written). Commit after each completed step and update the status."
+2. Receive the result (per "Delegation result relay" above)
+   - On completion report **or** stop/wait notice, read
+     `.agents/runtime/delegation/{run_id}_implement.md` for the implementation summary, test
+     evidence, and per-step completion
+   - If the result file is missing or incomplete: inspect `git log` commits, changed files,
+     and the plan's Progress directly to judge how far the steps got
+   - **If the subagent errored, or neither the result file nor artifact inspection is
+     decidable**: retry once automatically. If the retry also fails, display the error,
+     record how far the steps got, and abort the cycle
      ```
      ⚠️ Phase 2 agent failed — retrying (1/1)...
      ```
 
-表示:
+Display:
 ```
 ── Phase 2: Implement ── DONE
 Files changed: {N}
@@ -124,21 +184,29 @@ Tests added: {N}
 Commits: {N}
 ```
 
-`Files changed` はプロダクションコードとテストの変更ファイル数（計画・status 等のメタ更新は含めない）。
+`Files changed` counts production-code and test files (not plan/status meta updates).
 
-## Phase 3: サマリー生成
+## Phase 3: Summary generation
 
-**Phase 3 の実行主体**: メインコンテキストで直接実行する。Phase 1 / 1.5 / 2 と異なり **サブエージェントには委譲しない**（成果物生成・status 管理・commit はメインが一貫して責任を持つため）。
+**Execution context**: run Phase 3 directly in the main context. Unlike Phases 1 / 1.5 / 2,
+**do not delegate it** (the main context owns artifact generation, status management, and
+commits end to end).
 
-**Phase 3 の各ステップは独立して実行し、個別のステップが失敗しても残りのステップを続行する。** 失敗したステップは `phase3_failures` リストに記録し、最終表示に含める。
+**Run each Phase 3 step independently; if one step fails, continue with the rest.** Record
+failed steps in a `phase3_failures` list and include it in the final display.
 
-**Failure 判定の一般ルール**: ガード条件（スキップ許容）に該当せず、かつステップが完遂できない状態（例: 必要なファイル / セクションが見つからない、parse 不能、ツールが予期せぬエラーを返した）は全て failure として `phase3_failures` に記録する。ユーザーへの確認や cycle 全体の中断は行わない。
+**General failure rule**: anything that does not match a guard condition (allowed skip) and
+cannot be completed — required file/section missing, unparsable content, unexpected tool
+error — is a failure recorded in `phase3_failures`. Do not ask the user and do not abort the
+whole cycle for it.
 
-1. `git log` で Phase 2 のコミット一覧を取得する
-2. サマリーファイルを生成: `.agents/artifacts/plans/results/{plan_basename}_result.md` に出力（ディレクトリがなければ `mkdir -p` で作成）
-   - **失敗時**: `phase3_failures` に `"result file generation"` を追加し、次のステップへ進む
+1. Get the Phase 2 commit list with `git log`
+2. Generate the summary file at `.agents/artifacts/plans/results/{plan_basename}_result.md`,
+   where `{plan_basename}` is the plan filename without its `.md` extension
+   (`mkdir -p` the directory if missing)
+   - **On failure**: append `"result file generation"` to `phase3_failures` and move on
 
-サマリーファイルの内容:
+Summary file content:
 ```markdown
 # Cycle Result: {feature_name}
 
@@ -165,35 +233,54 @@ Artifact paths follow the Agent Artifact Store contract.
 {特記事項があれば}
 ```
 
-3. status.md を完了状態に更新する:
-   - **Step 3a: Pre-check（failure 判定の先行チェック）**: `.agents/artifacts/status.md` を Read し、Current Session セクションが存在するかを確認する
-     - Current Session 見出し自体が存在しない、またはテーブル構造が parse 不能
-       → `phase3_failures` に `"status.md update"` を追加して次のステップへ進む（**ガードではなく失敗として扱う**。セッション管理をしていない旧フォーマットの status.md もここに含む — 修復や書き換えはせず、記録だけして続行する）
-     - Current Session セクションが存在する → Step 3b へ
-   - **Step 3b: ガード条件（いずれかに該当すればスキップ）**:
-     - Current Session 本文が `_No active session` で始まる（セクションはあるが未初期化）
-     - Current Session テーブルの Status が `Completed`
-     - 上記いずれかに該当すれば、何もせず次のステップへ進む（失敗ではない）
-   - **Step 3c: 通常処理（ガードに該当しない場合）**: [status-update-guide.md](../plan/references/status-update-guide.md) の **Case 2（In Progress → Completed）** の手順に従う:
-     - Step 2a: session-history.md にアーカイブ
-     - Step 2b: Session History セクションをクリア
-     - Step 2c: Current Session をクリア
-   - **Step 3c 実行中の失敗時**（Edit 失敗、ファイル書き込み失敗など）: `phase3_failures` に `"status.md update"` を追加し、次のステップへ進む
+3. Mark status.md as completed:
+   - **Step 3a: Pre-check (failure detection first)**: Read `.agents/artifacts/status.md`
+     and confirm the Current Session section exists
+     - If the Current Session heading itself is absent, or the table is unparsable
+       → append `"status.md update"` to `phase3_failures` and move on (**treat as a
+       failure, not a guard** — this includes old-format status.md files without session
+       management: do not repair or rewrite them, just record and continue)
+     - Current Session section exists → Step 3b
+   - **Step 3b: Guard conditions (skip when any applies)**:
+     - The Current Session body starts with `_No active session` (section exists but
+       uninitialized)
+     - The Current Session table's Status is `Completed`
+     - When either applies, do nothing and move on (not a failure)
+   - **Step 3c: Normal processing (no guard applies)**: follow **Case 2 (In Progress →
+     Completed)** of [status-update-guide.md](../plan/references/status-update-guide.md).
+     Case 2 applies to any still-active session regardless of its Phase label — a session
+     still in 🟡 Planning also completes via Case 2 (the cycle has just implemented it):
+     - Step 2a: archive to session-history.md
+     - Step 2b: clear the Session History section
+     - Step 2c: clear Current Session
+   - **On failure during Step 3c** (Edit failure, write failure, ...): append
+     `"status.md update"` to `phase3_failures` and move on
+   - **Step 3d (runs regardless of the Step 3a/3b outcomes):** verify the plan file's own
+     **Status:** header is marked completed (implement normally does this; update it here
+     if it is stale) — otherwise the next cycle's Phase 0 would reselect this plan. On
+     failure, append `"plan status update"` to `phase3_failures` and move on
 
-4. **サイクル成果物をコミット**: Phase 2 完了後に作業ディレクトリへ残っている全ての uncommitted changes をまとめてコミットする
-   - 典型的な対象: Step 2 で新規作成した result ファイル / Step 3 で更新した `.agents/artifacts/status.md` / `.agents/artifacts/session-history.md` / Phase 2 agent が commit し損ねた計画ファイルの更新など
-   - スキル `claude-skills:commit` を **引数なし** で実行する（commit skill が `git status` / `git diff` から対象を自動検出してコミット単位を分割する）
-   - Step 3 が失敗した場合、status.md / session-history.md は更新されていないため自然と commit 対象には入らない（result ファイルだけがコミットされる想定）
-   - 対象なしの場合、commit skill 側でスキップ判定する
-   - **失敗時**: `phase3_failures` に `"commit"` を追加し、次のステップへ進む
+4. **Commit the cycle artifacts**: commit all uncommitted changes left in the working tree
+   after Phase 2
+   - Typical targets: the result file from step 2 / `.agents/artifacts/status.md` /
+     `.agents/artifacts/session-history.md` updated in step 3 / plan-file updates the
+     Phase 2 agent failed to commit
+   - Execute the skill `claude-skills:commit` **with no arguments** (the commit skill
+     auto-detects targets from `git status` / `git diff` and splits commit units)
+   - If step 3 failed, status.md / session-history.md were not updated and naturally stay
+     out of the commit (only the result file gets committed)
+   - If there is nothing to commit, the commit skill handles the skip
+   - **On failure**: append `"commit"` to `phase3_failures` and move on
 
-5. **Issue 自動 close**: 計画ファイルを読み、`**Issue:**` 行が存在するか確認する
-   - `**Issue:**` 行がある場合: issue slug を抽出し、スキル `claude-skills:issue` を `close {slug}` 引数で実行する
-     - close が失敗した場合は警告メッセージを表示するのみで、cycle 自体は成功扱いとする（close 失敗で実装結果を巻き戻さない）
-     - **close の成否を記録しておき、Step 6 の最終表示に含める**
-   - `**Issue:**` 行がない場合: このステップをスキップする
+5. **Auto-close the issue**: read the plan file and check for an `**Issue:**` line
+   - If present: extract the issue slug and execute the skill `claude-skills:issue` with
+     `close {slug}`
+     - If close fails, display a warning only; the cycle itself still counts as a success
+       (do not roll back the implementation)
+     - **Record the close outcome and include it in the final display of step 6**
+   - If absent: skip this step
 
-6. 最終表示:
+6. Final display:
 ```
 ══════════════════════════════════════
 CYCLE COMPLETE
@@ -210,25 +297,43 @@ Issue: {closed ✅ / ⚠️ close failed: {slug} — manual close required / (no
 ══════════════════════════════════════
 ```
 
-## エラーハンドリング
+## Error handling
 
-- **Phase 1 で BLOCK 残存**: Phase 1.5（フォールバック）を1回試行する。フォールバック後もBLOCK残存ならサイクルを中断し、BLOCK 一覧を表示して終了。
-- **Phase 1/Phase 2 でサブエージェントがエラー**: 1回自動リトライする。リトライも失敗した場合はサイクルを中断する。
-- **Phase 1/Phase 2 で委譲先が報告なしで停止した場合**（作業完遂 + 完了報告なし + 待機通知のみ、が最頻の停滞パターン）: エラー扱いで即リトライせず、[待機規範（wait discipline）](../shared/references/orchestration-patterns.md) の柱 3（上位 watchdog）に従う。まず `.agents/runtime/delegation/{run_id}_{role}.md` を読む → 欠落・不完全なら成果物（コミット履歴・変更ファイル・テスト結果・計画の Progress）を直接検分してフェーズの完了・欠落を判定する → 判定不能のときに限りリトライ（1回）する。結果ファイルまたは成果物で完了が確認できれば、報告未達でもそのまま次フェーズへ進む。
-- **Phase 3 の各ステップでエラー**: 失敗ステップを `phase3_failures` リストに記録し、残りのステップを続行する。Phase 3 のエラーで cycle 全体を失敗にしない。
+- **BLOCKs remain after Phase 1**: try Phase 1.5 (fallback) once. If BLOCKs still remain,
+  abort the cycle and list them.
+- **Subagent error in Phase 1/Phase 2**: retry once automatically. If the retry also fails,
+  abort the cycle.
+- **Delegate stops without reporting in Phase 1/Phase 2** (work done + no completion report
+  + only a wait notice — the most common stall): do not treat as an error and re-delegate
+  immediately; follow pillar 3 (upper watchdog) of the
+  [wait discipline](../shared/references/orchestration-patterns.md). First read
+  `.agents/runtime/delegation/{run_id}_{role}.md` → if missing/incomplete, inspect the
+  artifacts directly (commit history, changed files, test results, plan Progress) to judge
+  phase completion → retry (once) only when undecidable. If the result file or artifacts
+  confirm completion, proceed to the next phase even without a delivered report.
+- **Error in a Phase 3 step**: record the step in `phase3_failures` and continue with the
+  rest. Phase 3 errors never fail the whole cycle.
 
-## Codex セカンドオピニオン
+## Codex second opinion
 
-Phase 1（Refine）で使用される plan-reviewer には Codex セカンドオピニオンが自動的に含まれます。
-Claude の 7 次元レビューに加え、Codex による包括的な第三者視点が並行で取得されます。
-Codex が利用不可能な場合は既存の 7 次元レビューのみで続行します（graceful degradation）。
+The plan-reviewer used in Phase 1 (Refine) automatically includes a Codex second opinion:
+alongside Claude's 7-dimension review, a comprehensive third-party perspective from Codex is
+obtained in parallel. When Codex is unavailable, continue with the 7-dimension review only
+(graceful degradation).
 
-## 重要なルール
+## Key rules
 
-- **各フェーズはサブエージェントに委譲する**。メインコンテキストにはサマリーのみ保持する。
-- **サブエージェント起動時は高性能モデルを明示する**。セッションが最上位モデルでも配下は高性能モデルで実行し、コスト暴発を防ぐ（[orchestration-patterns.md](../shared/references/orchestration-patterns.md) のモデル階層に準拠）。
-- **Phase 1 の BLOCK は絶対に無視しない**。BLOCK が残っていたら Phase 1.5 でフォールバックを試み、それでも解消しなければ実装に進まない。
-- **ユーザーへの確認プロンプトは出さない**（ヘッドレス実行対応）。
-- **サブエージェントエラー時は1回リトライする**。リトライ後も失敗なら中断する。2回以上のリトライは行わない。
-- **Phase 3 は部分成功を許容する**。個別ステップの失敗がcycle全体を巻き戻さない。
-- 問題の根本原因が不明な場合は、cycle 実行前に `/claude-skills:investigate` で読み取り専用の事前調査を推奨する。
+- **Delegate each phase to a subagent** (when delegation is available). Keep only summaries
+  in the main context.
+- **Specify a high-performance model when launching subagents.** Even if the session runs on
+  a top-tier model, run delegates on a high-performance model to avoid cost blowups
+  (per the model hierarchy in
+  [orchestration-patterns.md](../shared/references/orchestration-patterns.md)).
+- **Never ignore Phase 1 BLOCKs.** If BLOCKs remain, try the Phase 1.5 fallback; if they
+  still remain, do not proceed to implementation.
+- **No user confirmation prompts** (headless execution).
+- **Retry once on subagent errors.** Abort after a failed retry; do not retry twice.
+- **Phase 3 tolerates partial success.** Individual step failures do not roll back the
+  cycle.
+- When the root cause of a problem is unknown, recommend a read-only pre-investigation with
+  `/claude-skills:investigate` before running the cycle.
