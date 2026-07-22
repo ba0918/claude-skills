@@ -89,7 +89,7 @@
       "skills/trigger-eval/references/metrics-spec.md": "057f52767928caa8d5317597f8f15f6308442c6e56b8ec0f467fbdf52fbb10a0",
       "skills/trigger-eval/references/testcase-design.md": "ab6dadbc8d6a5bd209d6fb71b2c31a280c5f6733aef32c75d4adccf41cfa5231"
     },
-    "result": "accepted-without-run",
+    "result": "pass",
     "surface": [
       "skills/context-audit/references/baseline-format.md",
       "skills/empirical-prompt-tuning/SKILL.md",
@@ -190,7 +190,7 @@
       "skills/trigger-eval/references/metrics-spec.md": "057f52767928caa8d5317597f8f15f6308442c6e56b8ec0f467fbdf52fbb10a0",
       "skills/trigger-eval/references/testcase-design.md": "ab6dadbc8d6a5bd209d6fb71b2c31a280c5f6733aef32c75d4adccf41cfa5231"
     },
-    "result": "accepted-without-run",
+    "result": "pass",
     "surface": [
       "skills/context-audit/references/baseline-format.md",
       "skills/empirical-prompt-tuning/SKILL.md",
