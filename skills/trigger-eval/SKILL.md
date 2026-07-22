@@ -1,6 +1,6 @@
 ---
 name: trigger-eval
-description: スキルセットの description 発火精度（recall / precision / stability / 80-way confusion matrix）を、description-only の判定 subagent で機械的に実測し、衝突ペアを特定して description 改稿→再評価ループを収束まで回すメタスキル。実測エビデンス（メトリクス差分・holdout ゲート・Tier1↔Tier2 乖離率）で改善を証明する。「trigger-eval」「発火精度」「スキル発火の計測」「トリガー評価」「description 改稿」「confusion matrix でスキル衝突を見たい」で起動。`empirical-prompt-tuning`（本文実行の質）に対し選択層（description→発火）を測る姉妹スキル。対象は本リポジトリの `skills/`、`--dir PATH`、`--user-scope`（~/.claude/skills）。`--no-e2e` で Tier 2 実発火検証をスキップ。Tier 1 は selection / autonomous の 2 モードで計測し `--selection-only` で selection のみに絞れる。v1 はプラグインキャッシュのハッシュ付きネスト構造を対象外とする。
+description: スキルセットの description 発火精度（recall / precision / stability / confusion matrix）を、description-only の判定 subagent で機械的に実測し、衝突ペアを特定して description 改稿→再評価ループを収束まで回すメタスキル。実測エビデンス（メトリクス差分・holdout ゲート・Tier1↔Tier2 乖離率）で改善を証明する。対象は本リポジトリの skills/ のほか、任意のスキルディレクトリやユーザースコープも指定できる。「trigger-eval」「発火精度」「スキル発火の計測」「トリガー評価」「description 改稿」「confusion matrix でスキル衝突を見たい」で起動。`empirical-prompt-tuning`（本文実行の質）に対し選択層（description→発火）を測る姉妹スキル。
 ---
 
 # trigger-eval
