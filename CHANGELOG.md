@@ -4,6 +4,27 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.62.0
+
+プロンプト圧縮の横展開バッチ3（brainstorm + 長文 description トリム）。brainstorm は fixture
+非保有だったためシナリオ 3 本（Wrap 永続化 / Plan 単一エントリ選択 + アーカイブ choreography /
+Session 単一ターンの stuck 検出・Codex フォールバック・編集ゼロ）を新規設計・事前ロックし、
+Opus 3 役分離で 2 iteration 計測。critical 要件は全シナリオ全 iteration pass、instruction 起因の
+摩擦 5 件が明示化で消滅した。Codex セカンドオピニオン「修正後反映可」の important 4 件を全反映。
+
+- brainstorm: 本文を英語に統一し 281→223 行（-21%）、非 ASCII 3,573→691、トークン近似 -40%。
+  ユーザー向け出力テンプレート・日本語トリガーキーワード・日本語問いかけ例は機能要件として維持。
+  明示化: kebab-title の ASCII 訳定義 / 非対話実行時の分岐（Wrap Step 2・Plan Step 2）/
+  ⚠️ Codex unavailable 通知を含む固定出力順 / plan-create 完了メッセージの抑制 / Plan Step 7 の
+  slug 範囲。Codex 指摘反映: 実装提案禁止の明示復元、Resume ループの状態変数初期化、slug 同秒
+  衝突時の上書き防止、非対話 Wrap で機密検出時は書き込まず停止、技術の引力の問いかけ例復元、
+  plan ファイル存在確認後にのみアーカイブ
+- brainstorm/fixtures.json 新規（bs-001〜003、skill-regression 台帳登録済み）
+- description トリム（issue 20260717202712 項目 (2)）: trigger-eval 585→415 字 /
+  context-audit 450→332 字 / goal-decomposition 458→311 字。CLI フラグ説明・ワークフロー要約を
+  本文へ委譲しトリガー語は全維持。選択層回帰（事前ロック 20 ケース × before/after × 2 独立判定）
+  で 4 系列すべて 20/20 — 発火の非劣化を実測確認
+
 ## 1.61.0
 
 プロンプト圧縮の横展開バッチ2（issue）。バッチ1 で確立した言語ポリシー（本文英語統一）と
