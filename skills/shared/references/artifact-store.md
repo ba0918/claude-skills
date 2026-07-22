@@ -22,13 +22,7 @@ The repository policy lives at `.agents/artifacts.yml`. The default logical stor
 The namespace is provider-independent. Do not add model, vendor, or agent names to the
 path. Format differences belong in artifact schema metadata.
 
-The `decisions` kind (the `decisions/` directory) holds decision and case-law records —
-the durable rationale of architecture and technology bets. It is a fresh kind with no
-legacy `docs/decisions` predecessor, so it participates in initialization but not in
-migration. Do not confuse this kind with the migration classification manifest (the
-`--decisions` input that labels each migration entry `move` / `copy` / `keep` / `skip`):
-that is an internal migration term at a different layer and shares no on-disk directory
-with this kind.
+The `decisions` kind holds decision and case-law records — durable rationale of architecture and technology bets. No legacy `docs/decisions` predecessor, so it participates in initialization but not migration.
 
 ## Policy schema v1
 
@@ -105,25 +99,12 @@ state, and live in a separate tree:
 
 Rules for the runtime area:
 
-- **Always machine-local.** `.agents/runtime/` is always ignored by Git and is **never
-  shared and never migrated, regardless of the store's `visibility`.** Even a `public`
-  store keeps its runtime tree local — visibility governs artifacts, not runtime.
-- **Separate tree from the store.** Runtime lives beside `.agents/artifacts/`, not inside
-  it, so it is excluded from the migration inventory. When the migration inventory
-  encounters a legacy file that matches a runtime pattern (polling kill/session files, the
-  loop event log and its monthly archives), it tags the entry `suggested_action: skip`
-  while leaving the fail-closed default `action: review` untouched.
-- **Co-located runtime is the one exception.** A runtime file whose semantics are
-  inseparable from an artifact's on-disk layout stays with that artifact. The polling FS
-  adapter's `running/{slug}/.claim` is part of the atomic-rename claim design and therefore
-  stays under the queue body (`state_root`), not in `.agents/runtime/`.
-- **Not a derived index.** Runtime files are live state, never regenerated from artifacts.
+- **Always machine-local.** Ignored by Git; never shared, never migrated, regardless of `visibility`. Visibility governs artifacts, not runtime.
+- **Separate tree from the store.** Excluded from the migration inventory. Legacy files matching runtime patterns (polling kill/session files, loop event log + archives) are tagged `suggested_action: skip` with the fail-closed default `action: review` untouched.
+- **Co-located runtime is the one exception.** Runtime files whose semantics are inseparable from an artifact's on-disk layout stay with that artifact — e.g. polling FS adapter's `running/{slug}/.claim` stays under `state_root` (part of the atomic-rename claim design).
+- **Not a derived index.** Live state, never regenerated from artifacts.
 
-Polling adapters bind their control/session files to a `<runtime_root>`; see the "Roots"
-section of `polling-pattern.md`. The loop event log path is defined by
-`measurement-identity.md`. (Those files link here; this contract stays a closure leaf so
-that referencing the artifact store never drags polling internals into a skill's behavior
-surface.)
+Polling adapters bind control/session files to a `<runtime_root>` (see `polling-pattern.md` §Roots). Loop event log path is defined by `measurement-identity.md`.
 
 ## Derived indexes
 
@@ -142,13 +123,7 @@ Rules for a derived index:
   summarizes, the entries win: rebuild the index from scratch rather than hand-reconciling
   rows. Two rebuilds over identical entries produce byte-identical output (the timestamp
   in the index is derived from the newest entry, not from wall-clock time).
-- **Top-level entries only.** The index covers the flat `*.md` entry files directly under
-  the kind directory. **Every** subdirectory is excluded — `archives/` (and, for issues,
-  `done/` and `failed/`) because they hold resolved or retired entries, but also
-  queue-state directories such as `ready/` and `running/`: an issue inside the polling
-  queue is owned by the queue's state machine, not by this index. Regenerating an index
-  that was previously hand-maintained may therefore drop rows that pointed at entries in
-  subdirectories — that is the intended correction, not data loss.
+- **Top-level entries only.** Index covers flat `*.md` entry files directly under the kind directory. **Every** subdirectory is excluded — `archives/` (and for issues, `done/` / `failed/`) hold resolved/retired entries, and queue-state directories (`ready/` / `running/`) are owned by the queue's state machine.
 - **Per-kind schema.** The ideas index is `Idea | Tags | Created | Status | Summary`; the
   issues index is `Issue | Tags | Created | Summary` (no Status column). Ideas entries carry
   their fields as bold labels (`**Created:**` / `**Status:**` / `**Tags:**`) under a `#`
@@ -178,10 +153,7 @@ This is a deliberate consequence of safety invariant 3, not an oversight:
   meaningful where the store physically exists. Run these in the environment that produced
   the artifacts (for example a pre-push hook, or an operator running the validator
   locally), where the ignored directory is present.
-- **Continuous Integration is structurally blind to a local store.** On a fresh checkout
-  the ignored directory is empty, so store-content checks find nothing to inspect and pass
-  as a no-op. Do not read a green Continuous Integration run as evidence that the store's
-  contents were validated. The gate that matters is the pre-push (writer) side.
+- **Continuous Integration is structurally blind to a local store.** On a fresh checkout the ignored directory is empty; store-content checks pass as no-op. The gate that matters is pre-push (writer) side.
 - **A `public` store is the only visibility whose contents are gated by Continuous
   Integration**, because a public store is tracked and therefore present on checkout. When
   a repository needs Continuous-Integration-visible artifact checks, it must opt into

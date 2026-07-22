@@ -1,16 +1,6 @@
 # Checkpoint Pattern — 共通契約
 
-> ⚠️ **DRIFT WARNING**: この契約は plan resume / handoff restore の両スキルと `checkpoint.py`
-> が共有する正本である。純関数シグネチャ・verdict 優先順位・parse ゲート・所有境界を変更したら、
-> 参照スキル（plan / handoff）の再検証（skill-regression）とテスト（`test_checkpoint.py`）を必ず回すこと。
-> セキュリティ規約（path containment / secret マスク / 実行禁止 / strict parse）は**文書ではなくコード + テストで強制**する。
-
-## 冒頭宣言（最重要）
-
-**checkpoint は worktree 内容のバックアップではない。現在の git 状態と照合して使う restore ガイドである。**
-
-checkpoint が復元するのは「plan 再読込では埋まらない実行状態の細部」— 未コミット dirty 状態の意味、
-plan からの逸脱判断、次の一手。dirty なファイル本文そのものは worktree に既にある（checkpoint は複製しない）。
+checkpoint は worktree 内容のバックアップではなく、現在の git 状態と照合して使う restore ガイド。復元するのは「plan 再読込では埋まらない実行状態の細部」— 未コミット dirty の意味、plan からの逸脱判断、次の一手。dirty ファイル本文は worktree に既にあるので checkpoint は複製しない。
 
 ## スコープと前提
 
@@ -204,31 +194,3 @@ plan Progress / status.md / result と**重複させない**。
 - `cycle-phase2` は書き手と verdict 挙動が同時に入る v2 で追加（bare token の先行予約はしない）。
 - 未知 owner は parse 段階で conflict。`mode: degraded` ⇔ `owner: precompact` は一致必須、不一致は parse conflict。
 
-## 語彙強制の意図的不採用（契約）
-
-verdict 語彙（`superseded` 等）を validate_repo チェック11の CONTRACT_VOCAB に登録すると
-goal-decomposition の dossier status 使用箇所に対する false positive を誘発するため、**契約語彙の
-機械強制は行わない**。checkpoint 契約の遵守は fixture（skill-regression）で守る。この判断と
-「verdict 語彙は意図的に未強制」をここに明記する。
-
-## 代替案の却下記録
-
-- `git stash`（pop 型）: dirty を worktree から**動かしてしまう**ため不適 — 目的は dirty をそのまま残して文脈だけ足すこと。
-- `git notes` / WIP commit: dirty 時点ではコミットが存在しない / 履歴汚染が base_head 失効モデルと衝突するため v1 不採用
-  （WIP commit は長時間リスク作業向けの optional 拡張として v2 検討に記録）。
-- `git stash create`（tree を動かさない dangling commit）: content-exact fingerprint の代替候補として将来検討可。
-
-## v1 カバレッジ限界と v2 スコープ
-
-- **runtime 強制は v2**: 明示ワークフローを通らず終わるセッションでは書かれない。v1 の強制は規律 + fixture
-  （出口条件文言の存在を凍結）、runtime 強制は v2 hook（PreCompact / PostToolUse）。
-  hook 系は owner enum 予約で **additive**（契約改訂不要）。
-- **PreCompact / PostToolUse hook** — v2。
-- **plan 不在の `_workspace` fallback** — v2。
-- **parallel-cycle 対応（多重 writer）** — v2、**契約改訂級**（単一 writer 前提を緩める）。
-  `checkpoint_id` 文法は予約済み。
-- **measurement-identity への `checkpoint_written` イベント** — v2、**契約改訂級**
-  （measurement-identity の EVENTS は closed set で契約改訂が必要）。additive でない。
-- **runtime hook 展開** — v2。v1 は plan / handoff の明示ワークフローでのみ checkpoint を書く。
-
-拡張コストの区別: **enum 予約 = additive**（hook 系）、**多重 writer / measurement イベント = 契約改訂級**。
