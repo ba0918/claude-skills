@@ -182,10 +182,8 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 4. `claude-skills:plan-create` スキルを実行（引数フォーマット: `{Title}: {Summary from idea file}` — plan-create は $ARGUMENTS をそのまま What & Why の種として使う）
    - **plan-create の出力**: 実行後、plan-create は `.agents/artifacts/plans/{new_timestamp}_{kebab-title}.md` を新規生成する（`new_timestamp` は plan-create 起動時の `date +%Y%m%d%H%M%S`）。このパスを「生成された plan ファイルパス」として保持し、Step 4.5 の引数に渡す
 4.5. Optional cycle execution:
-   - If `--team-cycle` is present in the original `$ARGUMENTS`: Remove the flag, then execute `claude-skills:team-cycle` via the Skill tool with the created plan file path (from Step 4) as the argument. Skip Step 7 entirely (do not output any completion message — team-cycle produces its own completion log).
-   - Else if `--cycle` is present in the original `$ARGUMENTS`: Remove the flag, then execute `claude-skills:cycle` via the Skill tool with the created plan file path (from Step 4) as the argument. Skip Step 7 entirely (do not output any completion message — cycle produces its own completion log).
+   - If `--cycle` is present in the original `$ARGUMENTS`: Remove the flag, then execute `claude-skills:cycle` via the Skill tool with the created plan file path (from Step 4) as the argument. Skip Step 7 entirely (do not output any completion message — cycle produces its own completion log).
    - Otherwise: Continue to Step 5 (no cycle execution, show the completion message with Next Steps in Step 7 as usual).
-   - Note: If both `--team-cycle` and `--cycle` are specified, `--team-cycle` takes priority.
 5. アーカイブ処理を実行（Status 更新前にファイルを移動する）:
    - `.agents/artifacts/ideas/archives/` ディレクトリを作成（なければ `mkdir -p`）
    - `.agents/artifacts/ideas/{slug}.md` を `.agents/artifacts/ideas/archives/{slug}.md` に移動
@@ -201,7 +199,6 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
    ## Next Steps
    1. `/plan-review` で計画をレビュー
    2. `/claude-skills:cycle` でサイクル実行
-   3. `/claude-skills:team-cycle` でチームレビュー付きサイクル実行
    ```
 
 ---

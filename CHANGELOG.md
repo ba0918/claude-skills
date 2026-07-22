@@ -4,6 +4,25 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.59.0
+
+AgenticTeam 実験用に作った team-* 系スキルを廃止する。実験目的（AgenticTeam の検証）は
+達成済みで実利用がほぼ無く、フロンティアモデルでの実行はコストが高すぎる一方、安価モデルへ
+逃がすとプロンプト圧縮実験（1.58.1 の効果条件）の前提が崩れて逆効果になりうるため、
+安価化存続ではなく廃止を選択した。使わなくても 4 スキル分の description が毎セッション
+常駐コストを払い続ける点も廃止理由の一つ。通常の cycle には plan-reviewer の 7 観点 +
+Codex セカンドオピニオンが既に入っており、品質ゲートはそちらが正本。
+
+- 削除: `skills/team-brainstorm/` / `skills/team-cycle/` / `skills/team-plan/`、
+  共有ロール定義 `skills/shared/references/team-config.md`、入口 command 6 個
+  （team-plan / team-cycle / team-brainstorm / team-brainstorm-wrap /
+  brainstorm-team-cycle / issue-team-cycle）
+- 参照整理: brainstorm（--team-cycle 分岐削除）/ issue（--team 分岐・issue-team-cycle
+  推奨導線削除）/ investigate / skill-improve（Large 委譲先を cycle へ変更）/
+  orchestration-patterns（チーム議論パターン節を削除しパターン番号を振り直し）/
+  severity-and-verdicts / human-readable-summary / tool-mapping / README /
+  codex-plugin manifest（team-discussion capability 削除）
+
 ## 1.58.1
 
 PR #3（empirical-prompt-tuning 実測に基づくプロンプト圧縮）が plan / cycle スキルと共有契約

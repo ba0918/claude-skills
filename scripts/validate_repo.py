@@ -202,9 +202,9 @@ def check_frontmatter_yaml_compat(root):
 
 
 # チェック14: ヒューマンリーダブル要約契約の横展開ガード。
-# 対象 6 スキルの完了表示が「契約への md リンク + 固定要約ラベル」を持つことを
+# 対象 5 スキルの完了表示が「契約への md リンク + 固定要約ラベル」を持つことを
 # テキストレベルで機械検証し、「要約が出力される」ことを grep レベルで担保する。
-# fixtures を持たない 4 スキル（brainstorm / doc-write / team-brainstorm / design-guide）
+# fixtures を持たない 3 スキル（brainstorm / doc-write / design-guide）
 # の要約"挙動"は behavior テストできないため、この統一テキストガードが最低ガードになる。
 # 要約"内容の質"はいずれのスキルも機械検証不能であることを受容した上での設計。
 HUMAN_READABLE_SUMMARY_CONTRACT = "skills/shared/references/human-readable-summary.md"
@@ -214,7 +214,6 @@ HUMAN_READABLE_SUMMARY_SKILLS = (
     "issue",
     "handoff",
     "doc-write",
-    "team-brainstorm",
     "design-guide",
 )
 

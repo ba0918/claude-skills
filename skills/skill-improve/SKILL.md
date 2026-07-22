@@ -26,7 +26,7 @@ skill-improve コマンド
   │
   └─ Phase 4: 改善実装（improve モード時のみ）
        ├─ Small → iterate
-       └─ Large → team-cycle に委譲
+       └─ Large → plan 作成 → cycle に委譲
 ```
 
 ## パラメータ
@@ -163,7 +163,7 @@ Report: .claude/tmp/skill-improve-{datetime}/friction-report.md
 |-----------|------|-----------|
 | 0-2 | レポートのみ | friction-report.md を表示して終了 |
 | 3-5 | Small | iterate で SKILL.md を直接修正 |
-| 6+ | Large | team-cycle に委譲 |
+| 6+ | Large | plan 作成 → cycle に委譲 |
 
 ### Step 3.3: 改善仮説のカテゴリ分類
 
@@ -184,7 +184,7 @@ Report: .claude/tmp/skill-improve-{datetime}/friction-report.md
 ```
 ── Phase 3: Improvement Hypotheses ──
 Hypotheses: {N} (UX: {n}, Logic: {n}, Guardrail: {n}, Perf: {n}, Docs: {n})
-Recommended action: {Report only / iterate / team-cycle}
+Recommended action: {Report only / iterate / cycle}
 Top hypothesis: {title} (target: {skill}, size: {size})
 ```
 
@@ -212,7 +212,7 @@ Proceeding with implementation...
 | サイズ | 委譲先 | 方法 |
 |--------|--------|------|
 | Small | iterate | `claude-skills:iterate` スキルを実行。friction-report の改善仮説を引数として渡す |
-| Large | team-cycle | 改善仮説から plan を作成し、`claude-skills:team-cycle` に委譲 |
+| Large | cycle | 改善仮説から plan を作成し、`claude-skills:cycle` に委譲 |
 
 ### Step 4.3: 完了表示
 
@@ -246,7 +246,7 @@ Phase 完了時（正常終了・エラー問わず）に `.claude/tmp/skill-imp
 
 ### Phase 4 のエラー
 
-- **iterate/team-cycle 失敗**: エラー内容を表示。friction-report.md は保持
+- **iterate/cycle 失敗**: エラー内容を表示。friction-report.md は保持
 
 ## References
 

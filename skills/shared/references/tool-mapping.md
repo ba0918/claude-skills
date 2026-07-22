@@ -38,7 +38,6 @@
 | `/claude-skills:issue-create` | `$issue create` |
 | `/claude-skills:issue-list` | `$issue list` |
 | `/claude-skills:issue-close` | `$issue close` |
-| `/claude-skills:team-cycle` | `$team-cycle` |
 
 ## Codex Second Opinion の扱い
 

@@ -1,7 +1,7 @@
 # Severity & Verdicts
 
-チームレビュー・コードレビューで使用する重大度定義と判定基準、および
-find-then-verify 型スキルの文脈検証3値判定。team-plan / team-cycle のほか、
+コードレビューで使用する重大度定義と判定基準、および
+find-then-verify 型スキルの文脈検証3値判定。
 sweep-fix / refactor / iterate / context-audit 等が参照する共通リソース。
 finding の「修正の自動化可否」は直交する別軸
 [fix-action-taxonomy.md](fix-action-taxonomy.md) が定義する。

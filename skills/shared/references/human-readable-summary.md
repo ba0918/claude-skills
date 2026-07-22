@@ -1,7 +1,7 @@
 # ヒューマンリーダブル要約 共通契約
 
 レポート生成系スキル（brainstorm wrap / issue create / handoff save / doc-write /
-team-brainstorm wrap / design-guide 等）の**完了報告**が備えるべき「発話サイズの
+design-guide 等）の**完了報告**が備えるべき「発話サイズの
 ヒューマンリーダブル要約」の共通契約。
 
 完了表示に要約ブロックを組み込むスキルは、この契約へ相対 md リンクを張り、下記の

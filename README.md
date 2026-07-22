@@ -147,14 +147,6 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 | `goal-decomposition` | 大枠ゴールを自走可能な単位に分解 |
 | `loop-triage` | センサーの検出結果を issue キューに自動供給 |
 
-#### チーム議論型
-
-| スキル | 用途 |
-|--------|------|
-| `team-brainstorm` | 4 思考スタイルによるチーム議論型の壁打ち |
-| `team-plan` | 4 専門家による議論型の計画作成 |
-| `team-cycle` | チーム議論型レビュー付きの自動実装 |
-
 #### ドキュメント
 
 | スキル | 用途 |

@@ -162,9 +162,8 @@ Create a plan from an issue without running cycle. Use when you want to review/d
 
    ## Next Steps
    1. Review and discuss the plan
-   2. Run `/claude-skills:issue-team-cycle` for team-reviewed implementation (recommended)
-   3. Run `/claude-skills:issue-cycle` for lightweight implementation
-   4. Issue will be auto-closed when cycle completes 🚀
+   2. Run `/claude-skills:issue-cycle` to implement
+   3. Issue will be auto-closed when cycle completes 🚀
    ```
 
 ---
@@ -173,23 +172,13 @@ Create a plan from an issue without running cycle. Use when you want to review/d
 
 Connect an issue to plan → cycle for resolution.
 
-> **Tip:** チームレビュー付きの `/claude-skills:issue-team-cycle` が推奨経路です。軽量な実装のみ必要な場合に issue-cycle を使用してください。
-
 ### Steps
 
 1. Execute the **Issue → Plan Conversion** procedure above
 2. **Preflight check** — Read the selected issue file and verify the「備考」(Notes) section has meaningful content (not just the placeholder text):
    - If the section is empty or contains only the default placeholder: ユーザーに選択肢を提示して確認 to prompt the user for acceptance criteria or additional context. Update the issue file with the provided information before proceeding.
    - Options: provide text input, or "Skip" to proceed without additional context
-3. Execute cycle:
-   - If `--team` is present in the arguments:
-     1. **Intake** — ユーザーに選択肢を提示して確認 to collect discussion focus before starting team-cycle:
-        - 期待する議論の焦点（スコープ）
-        - 優先的に検討すべき観点（e.g., セキュリティ、パフォーマンス、アーキテクチャ）
-        - 禁止事項や制約（任意）
-        - Options: provide text input, or "Skip" to use defaults
-     2. Remove `--team` from arguments, then execute `claude-skills:team-cycle` via the skill invocation with the created plan. Include the intake information in the arguments if provided.
-   - Otherwise: Execute `claude-skills:cycle` via the skill invocation with the created plan
+3. Execute cycle: Execute `claude-skills:cycle` via the skill invocation with the created plan
 4. Error handling:
    - If plan creation fails: Display the error and exit. The issue remains open.
    - If cycle fails or is interrupted: Display the error and the path to the created plan file. The issue remains open. Inform the user they can retry with `/claude-skills:cycle` using the existing plan — no need to re-run issue-cycle.
@@ -201,7 +190,7 @@ Connect an issue to plan → cycle for resolution.
 
 Close (archive) an issue.
 
-> **Note:** 通常、cycle/team-cycle 完了時に `**Issue:**` フィールド経由で自動クローズされるため手動クローズは不要です。手動クローズが必要なケース: cycle を経由しない解決、誤登録の取り消し、重複 issue の整理など。
+> **Note:** 通常、cycle 完了時に `**Issue:**` フィールド経由で自動クローズされるため手動クローズは不要です。手動クローズが必要なケース: cycle を経由しない解決、誤登録の取り消し、重複 issue の整理など。
 
 ### Arguments
 
