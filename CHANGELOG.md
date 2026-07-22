@@ -4,6 +4,23 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.58.1
+
+PR #3（empirical-prompt-tuning 実測に基づくプロンプト圧縮）が plan / cycle スキルと共有契約
+（artifact-store.md / checkpoint-pattern.md / skill-authoring.md）を変更したが version bump を
+含んでいなかったため、配布反映用の patch bump を追う。スキル本文の変更は bump が無いと
+マーケットプレイス経由の利用者に届かない。
+
+- `skills/plan/SKILL.md`: checkpoint 二重説明の契約参照への集約・Phase 2 Required info と
+  スラグ規則の圧縮（315→248 行、friction 19→12 / precision 100% 維持の実測に基づく）
+- `skills/cycle/SKILL.md`: 委譲結果受渡し節を orchestration-patterns.md の契約参照に集約
+- `skills/shared/references/skill-authoring.md`: 「プロンプト圧縮の効果条件」節を新設
+  （効くパターン / 効かないパターン / 削ってはいけない規約の判断基準を実測から正本化）
+- `skills/shared/references/artifact-store.md` / `checkpoint-pattern.md`: rationale・
+  v2 ロードマップ等のメタ情報を削減
+- `README.md`: 「プロンプト設計方針」節を追加（skill-authoring.md への導線）
+- 本エントリは bump のみで、上記変更自体は PR #3（1b9b7ba）に含まれる
+
 ## 1.58.0
 
 ledger の考古学モードに「現在形の静的リファレンス（フィールド表 + `⚠️未規定` マーカー）」を
