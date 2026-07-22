@@ -285,6 +285,8 @@ status 裁定ビューには**生の状態語を出さない**。次の対応で
 ADR 風に**文脈 → 決定 → 帰結**で書き、読者モデルは「一般的なエンジニア」。空句（「本仕様では〜を定義します」の類）・
 構造崇拝（均質な見出し羅列）・重み付けの欠如を避ける（`japanese-tech-writing` の規範に従う。別プラグインのため
 名前で参照しリンクは張らない）。かみ砕き基準は [human-readable-summary.md](../../shared/references/human-readable-summary.md)。
+共通 regime（非権威・使い捨て・未署名・書き出し前 secret scan・injection 防御）と、対になる静的リファレンス
+（extract 第 3 ストリーム）の正本は [agreement-ledger.md の共通 regime](../../shared/references/agreement-ledger.md#考古学モードの文脈回復-2-点セットと共通-regime)。
 
 ```
 # {機能・領域名} オリエンテーション（使い捨て・未署名）
