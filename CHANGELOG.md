@@ -4,6 +4,23 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.67.0
+
+プロンプト圧縮の横展開バッチ6として、高頻度consumerから参照される共有契約
+`orchestration-patterns.md` を英語へ統一した。30日間の起動頻度で重み付けした参照コストを
+比較し、直接起動0回のrefactorより、cycle / plan-refine / plan-reviewer / iterate等から
+実効82回参照される本契約を優先。規約・閾値・パス・リンク・却下理由を維持しながら
+21,612→20,120 bytes（-6.9%）へ削減した。
+
+- GPT-5.5 proxy: silent delegation recovery / 並行writeの直交性 / nested delegation境界の
+  3 compliance probeを独立executor・checkerで評価。最終的に全12要件pass、摩擦0
+- GPT-5.6 sentinel: ユーザー承認後、最もリスクの高いnested delegationシナリオだけを
+  executor 1回 + checker 1回で検証。4/4要件pass、precision 1.0、摩擦0
+- 翻訳時の信号低下を実測で補正し、要求項目ごとの成果物照合、mainによる同一層peer起動、
+  詳細出力のfile relay、main contextにはdigestのみ残す境界を明示
+- 純prose翻訳として、影響fixture保有consumer（cycle / github-issue / issue /
+  plan-reviewer）をskill-regression台帳へ`accepted-without-run`で明示記録
+
 ## 1.66.0
 
 プロンプト圧縮の横展開バッチ5として、使用頻度が実測済みの残候補から investigate
