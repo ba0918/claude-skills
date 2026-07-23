@@ -4,6 +4,24 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.66.0
+
+プロンプト圧縮の横展開バッチ5として、使用頻度が実測済みの残候補から investigate
+（30日間で直接起動18回）を選び、本文を英語へ統一した。日本語の description trigger と
+ユーザー向けレポート見出し・判定語彙を維持しながら、13,018→8,508 bytes（-34.6%）へ削減。
+共有ファイル変更時の参照列挙と1階層の詳細調査境界、未テストと観測済み機能差分の区別を
+明示した。
+
+- GPT-5.5 proxy: 読み取り専用の原因調査 / 修正不要の仕様確認 / 共有ファイルを含む
+  事後検証の3シナリオを独立checkerで評価し、最終precision 1.0・critical全件pass
+- GPT-5.6 sentinel: ユーザー承認後、最もリスクの高い事後検証シナリオだけをexecutor 1回 +
+  checker 1回で検証。4/4要件pass、precision 1.0、retry 0
+- GPT-5.5敵対レビューで、テスト不足を観測済み副作用の重大度へ混入する翻訳時semantic driftを
+  検出。原契約へ差し戻し、baseline reset後に再検証
+- `skills/investigate/fixtures.json` を新規追加し、skill-regression台帳へ登録
+- `skill-authoring.md` に、代理モデルの合格と本番モデル保証を区別する証拠範囲、および
+  本番sentinelのユーザー承認ゲートを追加
+
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の
