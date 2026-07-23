@@ -4,41 +4,6 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
-## 1.67.0
-
-プロンプト圧縮の横展開バッチ6として、高頻度consumerから参照される共有契約
-`orchestration-patterns.md` を英語へ統一した。30日間の起動頻度で重み付けした参照コストを
-比較し、直接起動0回のrefactorより、cycle / plan-refine / plan-reviewer / iterate等から
-実効82回参照される本契約を優先。規約・閾値・パス・リンク・却下理由を維持しながら
-21,612→20,120 bytes（-6.9%）へ削減した。
-
-- GPT-5.5 proxy: silent delegation recovery / 並行writeの直交性 / nested delegation境界の
-  3 compliance probeを独立executor・checkerで評価。最終的に全12要件pass、摩擦0
-- GPT-5.6 sentinel: ユーザー承認後、最もリスクの高いnested delegationシナリオだけを
-  executor 1回 + checker 1回で検証。4/4要件pass、precision 1.0、摩擦0
-- 翻訳時の信号低下を実測で補正し、要求項目ごとの成果物照合、mainによる同一層peer起動、
-  詳細出力のfile relay、main contextにはdigestのみ残す境界を明示
-- 純prose翻訳として、影響fixture保有consumer（cycle / github-issue / issue /
-  plan-reviewer）をskill-regression台帳へ`accepted-without-run`で明示記録
-
-## 1.66.0
-
-プロンプト圧縮の横展開バッチ5として、使用頻度が実測済みの残候補から investigate
-（30日間で直接起動18回）を選び、本文を英語へ統一した。日本語の description trigger と
-ユーザー向けレポート見出し・判定語彙を維持しながら、13,018→8,508 bytes（-34.6%）へ削減。
-共有ファイル変更時の参照列挙と1階層の詳細調査境界、未テストと観測済み機能差分の区別を
-明示した。
-
-- GPT-5.5 proxy: 読み取り専用の原因調査 / 修正不要の仕様確認 / 共有ファイルを含む
-  事後検証の3シナリオを独立checkerで評価し、最終precision 1.0・critical全件pass
-- GPT-5.6 sentinel: ユーザー承認後、最もリスクの高い事後検証シナリオだけをexecutor 1回 +
-  checker 1回で検証。4/4要件pass、precision 1.0、retry 0
-- GPT-5.5敵対レビューで、テスト不足を観測済み副作用の重大度へ混入する翻訳時semantic driftを
-  検出。原契約へ差し戻し、baseline reset後に再検証
-- `skills/investigate/fixtures.json` を新規追加し、skill-regression台帳へ登録
-- `skill-authoring.md` に、代理モデルの合格と本番モデル保証を区別する証拠範囲、および
-  本番sentinelのユーザー承認ゲートを追加
-
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の

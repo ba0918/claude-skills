@@ -102,6 +102,14 @@ Fable 5 世代モデルでも「短くすれば良くなる」わけではない
 
 `empirical-prompt-tuning` の fixture として plan スキルの 4 iteration 収束履歴が `.claude/tmp/empirical/plan-*/fixture.json` に記録される。横展開バッチ1 の計測は `.claude/tmp/empirical/20260722-lean-rollout/`（summary.md + iterations.jsonl）。カテゴリ推移・削減量・学びの全文はそこを参照。再チューニング時のベースライン比較・回帰検出資産として使う。
 
+### 横断最適化のリリース単位
+
+- 複数スキルへ段階的に横展開する最適化は、実装・検証・コミットをバッチ単位で分離する一方、
+  plugin version は各バッチで bump しない
+- rollout の親issueで対象一覧と完了条件を管理し、全対象の検証完了時に一度だけversionをbumpする
+- CHANGELOGは完了時にrollout全体の体感可能な変化、総削減量、検証範囲を1エントリへ集約する。
+  バッチ固有の測定履歴はissueとローカル empirical artifactを正本にし、暫定release entryを作らない
+
 ## クロスツール互換性の注意
 
 - **SKILL.md 本文の言語は 1 スキル内で統一する（本文は英語を推奨）**: 英日混在は可読性を損なう（2026-07-22 ユーザー裁定）。トークン効率も英語が有利 — o200k 実測で同内容の日本語版は約 +30%（commit: 英 1,607 vs 日 2,091 tokens）、英日混在だった plan-reviewer は英語統一だけで 3,758→3,025 tokens（-19.5%）。frontmatter `description` はユーザーの発話語彙（日本語トリガー）を含める必要があるため日本語のままでよい。日本語契約ファイルの見出し名や照合語彙（例: "ユーザー確認"）の引用は混在に数えない
