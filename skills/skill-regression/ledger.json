@@ -203,6 +203,19 @@
     "surface_sha256": "47840b722673ce4c725b39b6aa245cafd810f23da95edc5bdc561ce074f3e5f4",
     "verified": "2026-07-22"
   },
+  "investigate": {
+    "file_sha256": {
+      "skills/investigate/SKILL.md": "e3fb76a032c9f614d9ad3993096f55a362b4cf9a64e3e88d2bcd1be4ebcd9160",
+      "skills/investigate/fixtures.json": "a396e3af7b7d59485cc54e7a973e200dbaf64c33e71f98c7f256f045d7d86e11"
+    },
+    "result": "pass",
+    "surface": [
+      "skills/investigate/SKILL.md",
+      "skills/investigate/fixtures.json"
+    ],
+    "surface_sha256": "87192da9273aa104f97215615c2a6e03a545acfefd914647f0f8701f7f321f41",
+    "verified": "2026-07-23"
+  },
   "issue": {
     "file_sha256": {
       "skills/context-audit/references/baseline-format.md": "ed998a2c7fbe69f81b54e28e84e57d51e84d3251bbf3293d7335d86c3126ac81",

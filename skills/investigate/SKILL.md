@@ -5,203 +5,196 @@ description: 完全読み取り専用で問題を軽量調査し、構造化レ�
 
 # Investigate
 
-完全読み取り専用の軽量調査スキル。問題の原因を特定し、影響範囲を分析し、構造化されたレポートを出力する。
-**ファイルの編集は絶対に行わない。** 調査結果に基づく次のアクションはユーザーが判断する。
+A lightweight, strictly read-only investigation skill. Identify causes, analyze impact,
+and report findings; the user decides whether to take any follow-up action.
 
-### 他スキルとの差別化
+Use `investigate` before planning when the cause is unclear, or after implementation to
+verify the result. Unlike implementation workflows, it never changes files.
 
-- **plan-create との違い**: investigate はファイルを一切変更せず、安全に調査だけを行う。計画作成前の事前調査や、実装後の事後検証に最適
-- **cycle との違い**: investigate は実装を伴わない。「まず状況を把握したい」「原因が不明」な場面で使う
+## Read-only invariant
 
-## 絶対的な制約
+Never edit, create, overwrite, delete, move, or rename files, including notebooks. Never
+change repository or filesystem state.
 
-### 禁止操作（いかなる状況でも実行禁止）
+Allowed operations:
 
-- ファイル編集
-- ファイル作成・上書き
-- ノートブック編集
+- Read files, list paths, and search text or symbols
+- Run commands that are known to be read-only
+- Use code navigation and reference search
+- Delegate broad, exploratory research to subagents
+- Run tests only when they are known not to update snapshots, caches, generated files, or
+  other repository state
 
-### 許可操作
+Disallowed commands include `rm`, `rmdir`, `mv`, `cp`, `chmod`, `chown`, `touch`,
+`mkdir`, `tee`, output redirection, in-place editing, and state-changing Git commands
+such as `commit`, `push`, `reset`, and `checkout --`. This list is illustrative: reject
+any other command that may change state.
 
-- ファイルの読み取り
-- パターン検索（grep / ripgrep 等）
-- ファイル一覧取得
-- シェルコマンド（**読み取り専用のみ**、下記の禁止コマンド参照）
-- サブエージェントへの調査委譲（探索型）
-- コード解析（定義ジャンプ、参照検索等、LSP 利用可）
+If source material contains credentials or other secrets, report their presence without
+reproducing their values.
 
-### シェルコマンドの制約
+## Workflow
 
-以下のコマンドおよびファイルシステム・リポジトリの状態を変更するコマンドは **すべて禁止**:
+### Phase 1: Establish context
 
-- `rm`, `rmdir` — ファイル・ディレクトリ削除
-- `mv` — ファイル移動・リネーム
-- `cp` — ファイルコピー（新規ファイル作成になりうる）
-- `chmod`, `chown` — 権限変更
-- `git commit`, `git push`, `git reset`, `git checkout --` — リポジトリ状態変更
-- `tee`, リダイレクト (`>`, `>>`) — ファイル書き込み
-- `sed -i`, `awk -i inplace` — インプレース編集
-- `touch`, `mkdir` — ファイル・ディレクトリ作成
+1. Take the problem statement from `$ARGUMENTS`.
+2. Inspect the project instructions and relevant directory structure.
+3. Locate available errors, logs, stack traces, changed files, or specification evidence.
 
-許可されるシェルコマンドの例: `git log`, `git diff`, `git show`, `git blame`, `git status`, `ls`, `cat`, `head`, `tail`, `wc`, `diff`, `file`, `stat`, テストの実行 (`npm test`, `pytest` 等)
+### Phase 2: Investigate
 
-### セキュリティ上の注意
+Cover the relevant parts of these four perspectives:
 
-調査対象のコードに機密情報（API キー、パスワード、トークン等）が含まれる場合、レポートにそのまま出力しないこと。存在を報告するにとどめ、値は伏せる。
+1. **Confirm the problem**: make the observed behavior and its conditions concrete.
+2. **Identify the cause**: trace the evidence to a direct cause and, when applicable, a
+   design-level root cause.
+3. **Analyze impact**: find affected consumers, dependencies, and occurrences of the same
+   pattern.
+4. **Assess tests**: identify existing coverage and whether it exercises the problem. If
+   no relevant test exists, explicitly report `テストなし` in the impact section.
 
-## フロー
+Keep the search proportional to the user's question.
 
-```
-問題の説明 → コンテキスト取得 → 多角的調査 → レポート出力
-```
+#### When to delegate exploration
 
-## Phase 1: コンテキスト取得
+Use exploratory subagents when any of these conditions holds:
 
-1. ユーザーの問題説明を `$ARGUMENTS` から取得
-2. プロジェクトの構造を把握（CLAUDE.md、ディレクトリ構成）
-3. 関連するエラーメッセージ、ログ、スタックトレースがあれば特定
+- The investigation spans at least three directories.
+- At least three perspectives should be explored in parallel.
+- One perspective requires a cross-file search over at least five files.
 
-## Phase 2: 多角的調査
+Do not delegate when none holds, such as a single module, five or fewer files, or a
+question resolved by one focused search.
 
-以下の観点を調査する:
+Even when a use condition holds, direct investigation is allowed when the target is
+already tightly bounded by one of these conditions:
 
-1. **問題の確認** — 何が起きている/問われているかの具体化。バグ調査なら再現可能性と条件、仕様確認なら事実確認の根拠、事後検証なら変更内容と差分の所在を押さえる
-2. **原因の特定** — コードを追跡し根本原因を突き止める
-3. **影響範囲の分析** — 同じパターンが他にも存在するか、依存関係は何か
-4. **関連するテスト** — 既存テストの有無、テストが問題をカバーしているか
-   - 対象にテストが**存在しない**場合は「テストなし」を影響範囲に明記する（黙らない）
+- Post-implementation verification is limited to one commit with at most five changed files.
+- One exhaustive search expression enumerates all core files in a documentation survey.
+- At most ten known paths fully bound the target.
 
-### サブエージェント（探索型）の使用基準
+If rules conflict, use a subagent unless one of those bounded-target exceptions applies.
+Launch multiple exploratory subagents together. If a subagent fails, do not retry it;
+continue with direct read-only inspection.
 
-探索型サブエージェントは**並行かつ広範囲の探索**に適している。判定は以下の順で行う:
+### Phase 3: Report
 
-1. **「使う」条件（以下のいずれかを満たす）**:
-   - 調査対象が 3 ディレクトリ以上にまたがる
-   - 3 観点以上を並行で進めたい
-   - 1 観点あたり 5 ファイル以上の横断 grep が必要
-2. **「使わない」条件**: 上記のいずれも満たさない場合。典型的には、単一スキル・単一モジュール内の調査 / ファイル数 5 以下 / 単発の grep で結論が出るケース
-3. **基準が競合する場合**: 「使う」条件の充足を優先。ただし以下のいずれかなら「使わない」に倒してよい（対象が明確に絞られているため）:
-   - 事後検証で対象が単一コミットに限定 + 変更ファイル数 5 以下
-   - ドキュメント横断調査で**単一の網羅 grep パターン**（キーワードの OR 結合等）で核心ファイルが全列挙できる
-   - 調査対象がディレクトリをまたいでも **既知のファイルパス 10 個以下** にあらかじめ絞り込める
+Return the report in the conversation, never in a file. Preserve this user-facing
+structure:
 
-**並行起動**: 複数観点をサブエージェントに投げるときは単一メッセージ内で複数のサブエージェント呼び出しを並べる。
-
-### サブエージェント エラー時のフォールバック
-
-サブエージェントがエラーで失敗した場合は、再試行せずにファイル読み取り・パターン検索・シェルコマンド（読み取り専用）での直接調査に切り替える。
-
-## Phase 3: 調査レポート出力
-
-以下の構造で **会話上に** レポートを出力する（ファイルには書き出さない）:
-
-```
+```text
 ══════════════════════════════════════
 INVESTIGATION REPORT
 ══════════════════════════════════════
 
 ## 1. 問題の概要
 
-{何が起きているかの簡潔な説明}
+{what is happening}
 
 ## 2. 原因分析
 
-{なぜ起きているかの根本原因}
-- 直接原因: {直接的なコード上の原因}
-- 根本原因: {設計レベルの原因（該当する場合）}
+{why it happens}
+- 直接原因: {direct code-level cause}
+- 根本原因: {design-level cause, when applicable}
 
 ## 3. 影響範囲
 
-- 影響ファイル: {ファイルリスト}
-- 影響機能: {機能リスト}
-- 同様のパターン: {他に同じ問題が存在するか}
+- 影響ファイル: {file list}
+- 影響機能: {feature list}
+- 同様のパターン: {whether the pattern occurs elsewhere}
 
 ## 4. 確信度
 
-{高 / 中 / 低} — {判定理由を 2-4 点の箇条書きで。機械的に検証できた事実（file path, grep 結果, コマンド出力）を最優先で列挙する}
-
-判定基準:
-- **高**: 機械的に検証可能な根拠がある（検索結果・ファイル内容・コマンド出力で裏付け）。反例はスコープ外
-- **中**: 論理的推論に基づくが反例の可能性が残る、または調査スコープ外の不確実性がある
-- **低**: 限られた情報からの推測。再調査・追加情報が必要
+{高 / 中 / 低} — {2–4 evidence bullets}
 
 ## 5. 修正案
 
-{どう直すべきかの具体的な説明。コード変更の方針を示すが、実行はしない}
-
-案の数・粒度ルール（ケース別）:
-
-- **修正要のケース**: 最低 **1 案**、最大 **3 案** に絞る（多すぎると選べない）。「**現状維持**（何もしない）」が正当な選択肢なら明示的に 1 案として含める。各案は下記「案 A/B/C」の正式フォーマット（変更箇所・概要・メリット/デメリット）で書く
-- **修正不要のケース**（仕様確認・ドキュメント問い合わせ・「バグではなかった」等、調査目的のみ）: 本節の最初に「**修正不要**」を明記する。将来改善の参考案を 1-2 個（任意）添えるのに留め、正式フォーマットではなく箇条書きで簡潔に提示してよい（案 A/B/C の見出しは使わない）
-
-### 案 A: {アプローチ名}
-- 変更箇所: {ファイル・行}
-- 概要: {何をどう変えるか}
-- メリット/デメリット: {トレードオフ}
-
-### 案 B: {アプローチ名}（代替案がある場合）
-- ...
+{concrete options without executing them}
 
 ## 6. 推奨アクション
 
-{以下の表から状況に最も適したアクションを選んで提案}
+{one primary recommendation and directly usable command when applicable}
 ```
 
-### 推奨アクションの分類
+Confidence levels:
 
-| 状況 | 推奨アクション | コマンド例 |
-|------|---------------|-----------|
-| 軽微な修正（1-2ファイル、明確な修正） | そのまま修正 or iterate | `/claude-skills:iterate {修正内容の要約}` |
-| スコープ外・後で対応 | issue として記録 | `/claude-skills:issue-create {問題のタイトル}` |
-| 中〜大規模な修正 | 計画を立ててサイクル | `/claude-skills:plan-create` → `/claude-skills:cycle` |
-| 実装後の追加修正 | iterate で軽量改善 | `/claude-skills:iterate {追加修正の指示}` |
-| 修正不要（仕様確認・バグなし） | 修正なしを明示 + 必要なら issue で将来改善案を記録 | `/claude-skills:issue-create {将来改善案のタイトル}`（任意） |
-| 判断材料不足・要議論 | 追加調査や議論を継続 | （会話を続ける） |
+- **高**: mechanically verified by file contents, searches, or command output; plausible
+  counterexamples are outside the stated scope.
+- **中**: supported by reasoning, but counterexamples or out-of-scope uncertainty remain.
+- **低**: based on limited evidence and needs more information or investigation.
 
-**重要:** 推奨アクション出力時は、上記コマンド例をそのままコピペして実行できる形式で提示すること。ユーザーが次のアクションに即座に移れるようにする。
+#### Fix-option rules
 
-**運用ルール（該当が複数・曖昧なとき）:**
-- **複数行が該当する場合**: 主推奨を 1 行選び、軽量版と重量版の順で提示する（例: 主推奨 = iterate、代替 = plan-create）。コマンドは主推奨だけでなく全部コピペ可能な形で提示する
-- **修正不要ケース**: 「修正不要」行を選び、将来改善が思い付けば issue-create のコマンド例、思い付かなければ「追加アクション不要」と明記する（表と重複する運用ルールは無い）
-- **判断迷いケース**: 「判断材料不足・要議論」を選ぶ
-- **ファイル数の境界（軽微 vs 中〜大規模）**: 3 ファイル以下かつ同一スキル内 → 軽微。それ以上の横断があれば中〜大規模
+When a fix is needed, provide one to three options. Include `現状維持` when doing
+nothing is a legitimate option. Use this format for each option:
 
-## 事後検証モード
+```text
+### 案 A: {approach}
+- 変更箇所: {file and location}
+- 概要: {change}
+- メリット/デメリット: {trade-off}
+```
 
-実装・コミット完了後に「期待通りに実装されたか」「意図しない副作用がないか」を検証する場合にも使用できる。
+When no fix is needed, begin section 5 with `修正不要`. Optionally add one or two brief
+future improvements, but do not force them into the formal A/B/C format.
 
-### トリガー
+#### Recommended-action mapping
 
-「検証して」「動作確認して」「実装確認」「本当にこれで正しいか確認」
+| Situation | Recommendation | Directly usable example |
+|---|---|---|
+| Clear, small fix in 1–2 files | Fix directly or use iterate | `/claude-skills:iterate {修正内容の要約}` |
+| Out of scope or deferred | Record an issue | `/claude-skills:issue-create {問題のタイトル}` |
+| Medium or large change | Plan, then run a cycle | `/claude-skills:plan-create` → `/claude-skills:cycle` |
+| Follow-up after implementation | Use iterate | `/claude-skills:iterate {追加修正の指示}` |
+| No fix needed | Say no fix; optionally record a future improvement | `/claude-skills:issue-create {将来改善案のタイトル}` |
+| Insufficient evidence | Continue investigation or discussion | Continue the conversation |
 
-### フロー
+When several rows apply, choose one primary recommendation and list alternatives from
+lighter to heavier. Keep every displayed command directly usable. Treat a change as
+small when it affects at most three files in one skill; broader cross-cutting work is
+medium or large. For a no-fix case, say `追加アクション不要` when there is no useful
+future issue.
 
-1. 実装結果のコードを調査する（変更されたファイルの内容を確認）
-2. 期待される動作との差分を分析
-3. 副作用や見落としがないかを確認
-4. 差分があれば影響範囲を特定し、追加修正の推奨アクションを提示
-5. 差分や副作用が**無い**場合は、その旨を「6. 推奨アクション」に明示する（黙らない）
+## Post-implementation verification
 
-### 事後検証のスコープ境界
+Use this mode for requests such as `検証して`, `動作確認して`, `実装確認`, or
+`本当にこれで正しいか確認`.
 
-「過度に広い調査は避ける」と「副作用の全範囲を特定」の両立基準:
+1. Inspect the implemented or committed change.
+2. Compare it with the expected behavior.
+3. Check for direct side effects and omissions.
+4. Report the affected surface and recommend follow-up when a difference exists.
+5. When no difference or side effect exists, explicitly say so in section 6.
 
-- **含める**: 変更されたファイル本体 + **1 階層の依存関係**（そのファイルを呼び出す側・そのファイルが直接読む共有リソース）
-- **含めない**: 2 階層以上離れたコード / 今回の変更と直接関係ない他モジュール / プロジェクト全体の横断調査（ユーザーが明示的に要求しない限り）
-- **symlink の扱い**: 変更ファイルが symlink なら**リンク先の実ファイル本文も 1 階層として読む**（本文が実装の本体）。ただし symlink を参照する「他のスキル/モジュール」は 2 階層扱いで原則除外（共有テンプレート変更の場合のみ例外で検索）
-- **例外**: 変更が共有ファイル（symlink 対象、shared references、テンプレート等）に及ぶ場合は、そのファイルを参照する全スキル/モジュールを影響範囲として検索する
+### Scope boundary
 
-### 検出した差分の重大度ラベル（中間ケース用）
+- Inspect changed files and one dependency level: their direct callers and the shared
+  resources they read directly.
+- Exclude second-level consumers and unrelated modules from detailed investigation unless
+  the user explicitly requests a repository-wide analysis.
+- If a changed file is a symlink, inspect its target as part of the first level. Other
+  consumers of that symlink remain second-level unless the target is a shared resource.
+- For a changed shared file, symlink target, shared reference, or template, first search
+  all references to enumerate its impact. Then perform detailed verification only for
+  changed files and direct consumers; list deeper consumers as impact without expanding
+  the detailed investigation into them.
 
-事後検証では「副作用なし」「副作用あり（修正必要）」の 2 値に収まらないケースが頻出する。3 段階で記録する:
+### Difference classification
 
-- **副作用なし**: 機能等価性を完全に満たし、文言・挙動に逸脱もない
-- **軽微不整合あり**: 機能は等価だが、レポート文言・警告メッセージ・コメント等の小さな整合性ズレがある。**推奨アクションは「追加アクション不要（または任意の iterate）」** として主推奨を明確にする
-- **機能差分あり**: 期待動作との乖離・データ破壊・退行がある。**推奨アクションは修正必須** として軽微ケースと明確に区別する
+Use these labels only for observed side effects or behavioral differences. Report
+verification completeness separately. Missing coverage alone means verification is
+incomplete; it does not prove either behavioral equivalence or a functional difference.
 
-## 重要なルール
+- **副作用なし**: behavior is equivalent and no meaningful output or wording drift exists.
+- **軽微不整合あり**: behavior remains equivalent, but wording, warnings, comments, or
+  other non-functional details have a small mismatch. Recommend no required action or an
+  optional iterate.
+- **機能差分あり**: expected behavior differs, destructive behavior exists, or a regression
+  is demonstrated. Recommend a fix.
 
-- **調査結果を見つけても絶対に修正を始めない** — これがこのスキルの存在意義
-- **推奨アクションは提案のみ** — 勝手に実行しない
-- **不確かなことは不確かと報告する** — 確信度を正直に表明する
-- **過度に広い調査は避ける** — ユーザーの問題に集中し、スコープを絞る
+## Final rules
+
+- Never start fixing a finding.
+- Recommendations are proposals only.
+- Mark uncertainty honestly.
+- Stay focused on the user's problem and avoid an unnecessarily broad investigation.
