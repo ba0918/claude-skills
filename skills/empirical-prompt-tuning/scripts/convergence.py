@@ -30,7 +30,9 @@ PROTOCOL_FAILURE_TYPES = frozenset({
     "malformed_output",       # checker output not parseable / schema-invalid
     "missing_grade",          # checker did not grade every requirement
     "extra_grade",            # checker returned grades for non-existent requirements
+    "duplicate_grade",        # same requirement graded multiple times
     "invalid_result_value",   # result not in {pass, fail, partial}
+    "empty_checklist",        # caller passed a zero-length checklist (fixture load bug)
     "isolation_violation",    # checker inspected sources beyond the artifact
     "input_range_violation",  # candidate given only a subset of a multi-artifact fixture
 })
@@ -176,6 +178,11 @@ def validate_checker_output(raw_output, checklist: list[dict]) -> tuple[bool, st
     This isolates checker/harness-side deviations from candidate failures
     so that a malformed checker never counts as a fail against the prompt.
     """
+    if not checklist:
+        # zero-length checklist would make an empty grades list trivially
+        # "complete" — surface as protocol failure instead of silent pass.
+        return False, "empty_checklist"
+
     if isinstance(raw_output, str):
         try:
             parsed = json.loads(raw_output)
@@ -202,6 +209,8 @@ def validate_checker_output(raw_output, checklist: list[dict]) -> tuple[bool, st
             return False, "malformed_output"
         if idx not in expected_indices:
             return False, "extra_grade"
+        if idx in seen_indices:
+            return False, "duplicate_grade"
         if result not in _VALID_RESULT_VALUES:
             return False, "invalid_result_value"
         seen_indices.add(idx)
@@ -235,8 +244,14 @@ def resolve_exit_verdict(
     elapsed_s: float = 0.0,
     max_wallclock: float = 3600.0,
     kill_file_exists: bool = False,
+    checklist_tampered: bool = False,
 ) -> str:
-    if kill_file_exists or len(history) >= max_iter or elapsed_s >= max_wallclock:
+    if (
+        kill_file_exists
+        or checklist_tampered
+        or len(history) >= max_iter
+        or elapsed_s >= max_wallclock
+    ):
         return "halt"
     if history and has_protocol_failure(history[-1]):
         return "halt"
@@ -260,7 +275,8 @@ def resolve_halt_reason(
 ) -> str | None:
     """Return the halt_reason to record when exit_verdict == 'halt', or None
     when the verdict is not halt. Priority mirrors resolve_exit_verdict so
-    the reason and the verdict never disagree.
+    the reason and the verdict never disagree — callers pass the same kwargs
+    to both.
     """
     if kill_file_exists:
         return "kill_file"

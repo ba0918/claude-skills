@@ -381,8 +381,35 @@ class TestValidateCheckerOutput(unittest.TestCase):
         # every failure type validate_checker_output can emit must be in the
         # public taxonomy so downstream code can enumerate them.
         emitted = {"malformed_output", "missing_grade",
-                   "extra_grade", "invalid_result_value"}
+                   "extra_grade", "duplicate_grade",
+                   "invalid_result_value", "empty_checklist"}
         self.assertTrue(emitted.issubset(PROTOCOL_FAILURE_TYPES))
+
+    def test_duplicate_requirement_index(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass"},
+            {"requirement_index": 0, "result": "fail"},
+            {"requirement_index": 1, "result": "pass"},
+        ]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "duplicate_grade")
+
+    def test_duplicate_index_on_single_item_checklist(self):
+        # regression: on a 1-item checklist, seen_indices == expected even
+        # with a duplicate, so the missing_grade branch would silently pass.
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass"},
+            {"requirement_index": 0, "result": "fail"},
+        ]}
+        ok, failure = validate_checker_output(raw, [{"text": "x", "critical": True}])
+        self.assertFalse(ok)
+        self.assertEqual(failure, "duplicate_grade")
+
+    def test_empty_checklist_is_rejected(self):
+        ok, failure = validate_checker_output({"grades": []}, [])
+        self.assertFalse(ok)
+        self.assertEqual(failure, "empty_checklist")
 
 
 # ===========================================================================
@@ -457,9 +484,19 @@ class TestExitVerdictHaltOnProtocolFailure(unittest.TestCase):
 
     def test_checklist_tampered_beats_protocol_failure(self):
         h = [_iter_with_harness_error(1, "malformed_output")]
+        v = resolve_exit_verdict(h, max_iter=100, checklist_tampered=True)
         reason = resolve_halt_reason(
             h, max_iter=100, checklist_tampered=True,
         )
+        self.assertEqual(v, "halt")
+        self.assertEqual(reason, "checklist_tampered")
+
+    def test_checklist_tampered_halts_without_history(self):
+        # verdict and reason must agree even when the only halt signal is
+        # checklist_tampered (no protocol failure, no max_iter).
+        v = resolve_exit_verdict([], max_iter=100, checklist_tampered=True)
+        reason = resolve_halt_reason([], max_iter=100, checklist_tampered=True)
+        self.assertEqual(v, "halt")
         self.assertEqual(reason, "checklist_tampered")
 
     def test_max_iter_still_halts_reason_is_max_iter(self):

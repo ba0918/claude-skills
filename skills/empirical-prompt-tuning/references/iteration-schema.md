@@ -47,7 +47,7 @@ checker / harness 側の逸脱を candidate failure と分離して記録する�
 
 ```json
 {
-  "type": "malformed_output | missing_grade | extra_grade | invalid_result_value | isolation_violation | input_range_violation",
+  "type": "malformed_output | missing_grade | extra_grade | duplicate_grade | invalid_result_value | empty_checklist | isolation_violation | input_range_violation",
   "detail": "自由記述（補足）"
 }
 ```
