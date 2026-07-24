@@ -15,6 +15,7 @@ from convergence import (
     resolve_exit_verdict,
     resolve_halt_reason,
     validate_checker_output,
+    validate_input_range,
     verify_checklist_integrity,
 )
 
@@ -296,6 +297,47 @@ class TestResolveExitVerdict(unittest.TestCase):
 
 
 # ===========================================================================
+# validate_input_range
+# ===========================================================================
+
+class TestValidateInputRange(unittest.TestCase):
+
+    def test_all_required_present(self):
+        ok, failure = validate_input_range(
+            {"consumer", "reference"}, ["consumer", "reference"],
+        )
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
+
+    def test_missing_key_returns_violation(self):
+        ok, failure = validate_input_range(
+            {"consumer"}, ["consumer", "reference"],
+        )
+        self.assertFalse(ok)
+        self.assertEqual(failure, "input_range_violation")
+
+    def test_empty_required_always_passes(self):
+        ok, failure = validate_input_range(set(), [])
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
+
+    def test_empty_dispatch_with_required_fails(self):
+        ok, failure = validate_input_range(set(), ["consumer"])
+        self.assertFalse(ok)
+        self.assertEqual(failure, "input_range_violation")
+
+    def test_superset_dispatch_passes(self):
+        ok, failure = validate_input_range(
+            {"consumer", "reference", "extra"}, ["consumer", "reference"],
+        )
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
+
+    def test_failure_type_is_registered(self):
+        self.assertIn("input_range_violation", PROTOCOL_FAILURE_TYPES)
+
+
+# ===========================================================================
 # validate_checker_output
 # ===========================================================================
 
@@ -410,6 +452,108 @@ class TestValidateCheckerOutput(unittest.TestCase):
         ok, failure = validate_checker_output({"grades": []}, [])
         self.assertFalse(ok)
         self.assertEqual(failure, "empty_checklist")
+
+    # --- evidence validation ---
+
+    def test_missing_evidence_is_malformed(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass"},
+            {"requirement_index": 1, "result": "pass", "evidence": "e1"},
+        ]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "malformed_output")
+
+    def test_empty_evidence_is_malformed(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass", "evidence": ""},
+            {"requirement_index": 1, "result": "pass", "evidence": "e1"},
+        ]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "malformed_output")
+
+    def test_whitespace_only_evidence_is_malformed(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass", "evidence": "   "},
+            {"requirement_index": 1, "result": "pass", "evidence": "e1"},
+        ]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "malformed_output")
+
+    def test_non_string_evidence_is_malformed(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass", "evidence": 42},
+            {"requirement_index": 1, "result": "pass", "evidence": "e1"},
+        ]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "malformed_output")
+
+    def test_structural_error_reported_before_evidence(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "MAYBE"},
+            {"requirement_index": 1, "result": "pass", "evidence": "e1"},
+        ]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "invalid_result_value")
+
+    # --- isolation_note validation ---
+
+    def test_integration_fixture_missing_isolation_note(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass", "evidence": "e0"},
+            {"requirement_index": 1, "result": "pass", "evidence": "e1"},
+        ]}
+        ok, failure = validate_checker_output(
+            raw, CHECKLIST_TWO, fixture_kind="integration",
+        )
+        self.assertFalse(ok)
+        self.assertEqual(failure, "malformed_output")
+
+    def test_integration_fixture_isolation_note_null_is_valid(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass", "evidence": "e0"},
+            {"requirement_index": 1, "result": "pass", "evidence": "e1"},
+        ], "isolation_note": None}
+        ok, failure = validate_checker_output(
+            raw, CHECKLIST_TWO, fixture_kind="integration",
+        )
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
+
+    def test_integration_fixture_isolation_note_string_is_valid(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass", "evidence": "e0"},
+            {"requirement_index": 1, "result": "pass", "evidence": "e1"},
+        ], "isolation_note": "opened no external sources"}
+        ok, failure = validate_checker_output(
+            raw, CHECKLIST_TWO, fixture_kind="integration",
+        )
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
+
+    def test_unit_fixture_no_isolation_note_required(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass", "evidence": "e0"},
+            {"requirement_index": 1, "result": "pass", "evidence": "e1"},
+        ]}
+        ok, failure = validate_checker_output(
+            raw, CHECKLIST_TWO, fixture_kind="unit",
+        )
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
+
+    def test_default_fixture_kind_no_isolation_note_required(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass", "evidence": "e0"},
+            {"requirement_index": 1, "result": "pass", "evidence": "e1"},
+        ]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
 
 
 # ===========================================================================
