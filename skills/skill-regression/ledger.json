@@ -104,11 +104,11 @@
   "github-issue": {
     "file_sha256": {
       "skills/context-audit/references/baseline-format.md": "ed998a2c7fbe69f81b54e28e84e57d51e84d3251bbf3293d7335d86c3126ac81",
-      "skills/empirical-prompt-tuning/SKILL.md": "b20cbe4ab99b5644db795b8dbd5323a35dcc9f9419996ad6d5e678b14809b099",
-      "skills/empirical-prompt-tuning/references/checker-protocol.md": "785feae450fa7c2df9c8362f7a260c023d877ff513f76877c233f5737f3bd9b9",
+      "skills/empirical-prompt-tuning/SKILL.md": "d4ff2dae73697d4975216291794d7700a4c7af888ca9fae484d5866aec48b50c",
+      "skills/empirical-prompt-tuning/references/checker-protocol.md": "d202426477209579bbe4a97ff32a30aaa1694eb32d8c951a2a8d066326c2d1a7",
       "skills/empirical-prompt-tuning/references/compliance-probe.md": "5f18929a29a98c4ac8f90007ac10227b28ee6685ae8315f764b84198e68e05ea",
       "skills/empirical-prompt-tuning/references/friction-taxonomy.md": "611fd010850aaddbbd55b39357f19b93d0f19b7c255c9d220b7142e5f944790d",
-      "skills/empirical-prompt-tuning/references/iteration-schema.md": "df7472d348517a50954c1f3c361faf152315b1d1927f8924b2ba58c1ab841e94",
+      "skills/empirical-prompt-tuning/references/iteration-schema.md": "2ef5765cb8c4d7d520e05a3650db1450308a1060d35ad9e95ab4bed990fe8b18",
       "skills/github-issue/SKILL.md": "ced4e6b0bb499db3013d4cd53efd7b8939687691621738ea48e96629e7725043",
       "skills/github-issue/fixtures.json": "d3018eb6e283bb8df58aa5b139c0ce9e334f25b58d7c516ce1e6b5490960ecea",
       "skills/github-issue/references/cleanup-spec.md": "95125e8c661ac6d9b20dffaaaf8c12afc6d777aa29bde234a82b4267e86ef095",
@@ -179,8 +179,8 @@
       "skills/trigger-eval/references/metrics-spec.md",
       "skills/trigger-eval/references/testcase-design.md"
     ],
-    "surface_sha256": "034303be878a194fa33e21b409fa794101c53a4f2774fda22dd3e48ca1d9513a",
-    "verified": "2026-07-22"
+    "surface_sha256": "9ec1eb22dde005882031b5adf3b3d86c3709374abfb582af504ebfb2db529999",
+    "verified": "2026-07-24"
   },
   "handoff": {
     "file_sha256": {
@@ -206,11 +206,11 @@
   "issue": {
     "file_sha256": {
       "skills/context-audit/references/baseline-format.md": "ed998a2c7fbe69f81b54e28e84e57d51e84d3251bbf3293d7335d86c3126ac81",
-      "skills/empirical-prompt-tuning/SKILL.md": "b20cbe4ab99b5644db795b8dbd5323a35dcc9f9419996ad6d5e678b14809b099",
-      "skills/empirical-prompt-tuning/references/checker-protocol.md": "785feae450fa7c2df9c8362f7a260c023d877ff513f76877c233f5737f3bd9b9",
+      "skills/empirical-prompt-tuning/SKILL.md": "d4ff2dae73697d4975216291794d7700a4c7af888ca9fae484d5866aec48b50c",
+      "skills/empirical-prompt-tuning/references/checker-protocol.md": "d202426477209579bbe4a97ff32a30aaa1694eb32d8c951a2a8d066326c2d1a7",
       "skills/empirical-prompt-tuning/references/compliance-probe.md": "5f18929a29a98c4ac8f90007ac10227b28ee6685ae8315f764b84198e68e05ea",
       "skills/empirical-prompt-tuning/references/friction-taxonomy.md": "611fd010850aaddbbd55b39357f19b93d0f19b7c255c9d220b7142e5f944790d",
-      "skills/empirical-prompt-tuning/references/iteration-schema.md": "df7472d348517a50954c1f3c361faf152315b1d1927f8924b2ba58c1ab841e94",
+      "skills/empirical-prompt-tuning/references/iteration-schema.md": "2ef5765cb8c4d7d520e05a3650db1450308a1060d35ad9e95ab4bed990fe8b18",
       "skills/issue/SKILL.md": "338b3b102234260218b1a919c1ced562398b89039f15241acd8c12508714210a",
       "skills/issue/fixtures.json": "b3ae312b8dd72f373005545c971e5d385d676cce67f44ffeeac628bc7c618d5b",
       "skills/issue/references/issue-template.md": "9ba616322895f24ee0f277c4fc13cfa44b382a834dabe36b426939b131ec0eb0",
@@ -275,8 +275,8 @@
       "skills/trigger-eval/references/metrics-spec.md",
       "skills/trigger-eval/references/testcase-design.md"
     ],
-    "surface_sha256": "4d42840b88818df156a99c2eb156ce717b965f9d5b75c45d1394912b715bf6cb",
-    "verified": "2026-07-22"
+    "surface_sha256": "bee3e570e862d18418fcb5fd7f89079e175e13280a9c23fc264ff6f25001a87e",
+    "verified": "2026-07-24"
   },
   "plan": {
     "file_sha256": {
