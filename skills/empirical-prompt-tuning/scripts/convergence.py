@@ -23,6 +23,18 @@ FRICTION_CATEGORIES = frozenset({
     "self_containment_gap",
 })
 
+# Protocol failures are checker/harness-side deviations, NOT candidate failures.
+# They mean the current iteration is unevaluable and must halt safely instead of
+# being recorded as a fail against the candidate prompt.
+PROTOCOL_FAILURE_TYPES = frozenset({
+    "malformed_output",       # checker output not parseable / schema-invalid
+    "missing_grade",          # checker did not grade every requirement
+    "extra_grade",            # checker returned grades for non-existent requirements
+    "invalid_result_value",   # result not in {pass, fail, partial}
+    "isolation_violation",    # checker inspected sources beyond the artifact
+    "input_range_violation",  # candidate given only a subset of a multi-artifact fixture
+})
+
 # ---------------------------------------------------------------------------
 # Convergence
 # ---------------------------------------------------------------------------
@@ -148,6 +160,71 @@ def classify_friction(raw_points: list[dict]) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Checker protocol validation
+# ---------------------------------------------------------------------------
+
+_VALID_RESULT_VALUES = frozenset({"pass", "fail", "partial"})
+
+
+def validate_checker_output(raw_output, checklist: list[dict]) -> tuple[bool, str | None]:
+    """Validate a checker's raw output against the iteration-schema contract.
+
+    Returns (ok, protocol_failure_type). When ok is False the caller MUST
+    treat this iteration as unevaluable — the returned protocol_failure_type
+    is a member of PROTOCOL_FAILURE_TYPES.
+
+    This isolates checker/harness-side deviations from candidate failures
+    so that a malformed checker never counts as a fail against the prompt.
+    """
+    if isinstance(raw_output, str):
+        try:
+            parsed = json.loads(raw_output)
+        except (ValueError, TypeError):
+            return False, "malformed_output"
+    elif isinstance(raw_output, dict):
+        parsed = raw_output
+    else:
+        return False, "malformed_output"
+
+    grades = parsed.get("grades") if isinstance(parsed, dict) else None
+    if not isinstance(grades, list):
+        return False, "malformed_output"
+
+    expected_indices = set(range(len(checklist)))
+    seen_indices: set[int] = set()
+
+    for g in grades:
+        if not isinstance(g, dict):
+            return False, "malformed_output"
+        idx = g.get("requirement_index")
+        result = g.get("result")
+        if not isinstance(idx, int):
+            return False, "malformed_output"
+        if idx not in expected_indices:
+            return False, "extra_grade"
+        if result not in _VALID_RESULT_VALUES:
+            return False, "invalid_result_value"
+        seen_indices.add(idx)
+
+    if seen_indices != expected_indices:
+        return False, "missing_grade"
+
+    return True, None
+
+
+def has_protocol_failure(iteration_record: dict) -> bool:
+    """True if any scenario in the record carries a harness_error whose
+    type is a known protocol failure. Candidate `success=False` does NOT
+    count — a protocol failure is strictly a checker/harness-side defect.
+    """
+    for sc in iteration_record.get("scenarios", []):
+        err = sc.get("harness_error")
+        if isinstance(err, dict) and err.get("type") in PROTOCOL_FAILURE_TYPES:
+            return True
+    return False
+
+
+# ---------------------------------------------------------------------------
 # Exit verdict
 # ---------------------------------------------------------------------------
 
@@ -161,6 +238,8 @@ def resolve_exit_verdict(
 ) -> str:
     if kill_file_exists or len(history) >= max_iter or elapsed_s >= max_wallclock:
         return "halt"
+    if history and has_protocol_failure(history[-1]):
+        return "halt"
     if is_diverged(history):
         return "diverged"
     if detect_bloat(history):
@@ -168,3 +247,29 @@ def resolve_exit_verdict(
     if is_converged(history):
         return "converged"
     return "continue"
+
+
+def resolve_halt_reason(
+    history: list[dict],
+    *,
+    max_iter: int = 10,
+    elapsed_s: float = 0.0,
+    max_wallclock: float = 3600.0,
+    kill_file_exists: bool = False,
+    checklist_tampered: bool = False,
+) -> str | None:
+    """Return the halt_reason to record when exit_verdict == 'halt', or None
+    when the verdict is not halt. Priority mirrors resolve_exit_verdict so
+    the reason and the verdict never disagree.
+    """
+    if kill_file_exists:
+        return "kill_file"
+    if checklist_tampered:
+        return "checklist_tampered"
+    if len(history) >= max_iter:
+        return "max_iter"
+    if elapsed_s >= max_wallclock:
+        return "max_wallclock"
+    if history and has_protocol_failure(history[-1]):
+        return "checker_protocol_failure"
+    return None

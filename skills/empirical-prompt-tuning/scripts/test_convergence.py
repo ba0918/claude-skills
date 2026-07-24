@@ -5,12 +5,16 @@ import json
 import unittest
 
 from convergence import (
+    PROTOCOL_FAILURE_TYPES,
     classify_friction,
     compute_instruction_fingerprint,
     detect_bloat,
+    has_protocol_failure,
     is_converged,
     is_diverged,
     resolve_exit_verdict,
+    resolve_halt_reason,
+    validate_checker_output,
     verify_checklist_integrity,
 )
 
@@ -289,6 +293,193 @@ class TestResolveExitVerdict(unittest.TestCase):
         h = [_make_iter(1, prompt_bytes=1000), _make_iter(2, prompt_bytes=1500)]
         v = resolve_exit_verdict(h, max_iter=100)
         self.assertEqual(v, "bloat_advisory")
+
+
+# ===========================================================================
+# validate_checker_output
+# ===========================================================================
+
+CHECKLIST_TWO = [
+    {"text": "req0", "critical": True},
+    {"text": "req1", "critical": False},
+]
+
+
+class TestValidateCheckerOutput(unittest.TestCase):
+
+    def test_valid_json_string(self):
+        raw = json.dumps({
+            "grades": [
+                {"requirement_index": 0, "result": "pass", "evidence": "e0"},
+                {"requirement_index": 1, "result": "fail", "evidence": "e1"},
+            ]
+        })
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
+
+    def test_valid_dict(self):
+        raw = {
+            "grades": [
+                {"requirement_index": 0, "result": "partial", "evidence": "e0"},
+                {"requirement_index": 1, "result": "pass", "evidence": "e1"},
+            ]
+        }
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertTrue(ok)
+
+    def test_malformed_string_returns_malformed(self):
+        ok, failure = validate_checker_output("{not json", CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "malformed_output")
+
+    def test_none_input_is_malformed(self):
+        ok, failure = validate_checker_output(None, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "malformed_output")
+
+    def test_missing_grades_key_is_malformed(self):
+        ok, failure = validate_checker_output({"result": "pass"}, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "malformed_output")
+
+    def test_missing_grade_for_a_requirement(self):
+        raw = {"grades": [{"requirement_index": 0, "result": "pass"}]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "missing_grade")
+
+    def test_extra_grade_beyond_checklist(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass"},
+            {"requirement_index": 1, "result": "pass"},
+            {"requirement_index": 7, "result": "pass"},
+        ]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "extra_grade")
+
+    def test_invalid_result_value(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "MAYBE"},
+            {"requirement_index": 1, "result": "pass"},
+        ]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "invalid_result_value")
+
+    def test_non_int_requirement_index_is_malformed(self):
+        raw = {"grades": [
+            {"requirement_index": "0", "result": "pass"},
+            {"requirement_index": 1, "result": "pass"},
+        ]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "malformed_output")
+
+    def test_all_failure_types_are_registered(self):
+        # every failure type validate_checker_output can emit must be in the
+        # public taxonomy so downstream code can enumerate them.
+        emitted = {"malformed_output", "missing_grade",
+                   "extra_grade", "invalid_result_value"}
+        self.assertTrue(emitted.issubset(PROTOCOL_FAILURE_TYPES))
+
+
+# ===========================================================================
+# has_protocol_failure / halt on protocol failure
+# ===========================================================================
+
+def _iter_with_harness_error(iteration, error_type):
+    return {
+        "iteration": iteration,
+        "prompt_bytes": 1000,
+        "scenarios": [
+            {
+                "id": "A",
+                "success": False,
+                "precision": 0.0,
+                "steps": 3,
+                "duration_ms": 5000,
+                "retries": 0,
+                "friction": [],
+                "harness_error": {"type": error_type, "detail": "..."},
+            }
+        ],
+    }
+
+
+class TestHasProtocolFailure(unittest.TestCase):
+
+    def test_detects_isolation_violation(self):
+        rec = _iter_with_harness_error(1, "isolation_violation")
+        self.assertTrue(has_protocol_failure(rec))
+
+    def test_detects_input_range_violation(self):
+        rec = _iter_with_harness_error(1, "input_range_violation")
+        self.assertTrue(has_protocol_failure(rec))
+
+    def test_ignores_unknown_error_type(self):
+        rec = _iter_with_harness_error(1, "not_a_protocol_failure")
+        self.assertFalse(has_protocol_failure(rec))
+
+    def test_candidate_failure_alone_is_not_protocol_failure(self):
+        rec = _make_iter(1, precision=0.0,
+                         friction=[{"category": "missing_premise"}])
+        rec["scenarios"][0]["success"] = False
+        self.assertFalse(has_protocol_failure(rec))
+
+    def test_no_harness_error_field(self):
+        rec = _make_iter(1)
+        self.assertFalse(has_protocol_failure(rec))
+
+
+class TestExitVerdictHaltOnProtocolFailure(unittest.TestCase):
+
+    def test_halt_when_latest_iter_has_protocol_failure(self):
+        h = [
+            _make_iter(1, precision=0.85),
+            _iter_with_harness_error(2, "malformed_output"),
+        ]
+        v = resolve_exit_verdict(h, max_iter=100)
+        self.assertEqual(v, "halt")
+
+    def test_reason_reports_checker_protocol_failure(self):
+        h = [_iter_with_harness_error(1, "malformed_output")]
+        reason = resolve_halt_reason(h, max_iter=100)
+        self.assertEqual(reason, "checker_protocol_failure")
+
+    def test_kill_file_beats_protocol_failure(self):
+        h = [_iter_with_harness_error(1, "malformed_output")]
+        v = resolve_exit_verdict(h, max_iter=100, kill_file_exists=True)
+        reason = resolve_halt_reason(h, max_iter=100, kill_file_exists=True)
+        self.assertEqual(v, "halt")
+        self.assertEqual(reason, "kill_file")
+
+    def test_checklist_tampered_beats_protocol_failure(self):
+        h = [_iter_with_harness_error(1, "malformed_output")]
+        reason = resolve_halt_reason(
+            h, max_iter=100, checklist_tampered=True,
+        )
+        self.assertEqual(reason, "checklist_tampered")
+
+    def test_max_iter_still_halts_reason_is_max_iter(self):
+        h = [_make_iter(i) for i in range(1, 11)]
+        v = resolve_exit_verdict(h, max_iter=10)
+        reason = resolve_halt_reason(h, max_iter=10)
+        self.assertEqual(v, "halt")
+        self.assertEqual(reason, "max_iter")
+
+    def test_protocol_failure_only_checks_latest_iter(self):
+        # a stale protocol failure from an earlier iter must not halt the run
+        # forever — the halt fires only on the current iteration.
+        h = [
+            _iter_with_harness_error(1, "malformed_output"),
+            _make_iter(2, precision=0.9),
+            _make_iter(3, precision=0.91),
+        ]
+        v = resolve_exit_verdict(h, max_iter=100)
+        # last iter has no protocol failure — converge/continue path applies.
+        self.assertNotEqual(v, "halt")
 
 
 if __name__ == "__main__":

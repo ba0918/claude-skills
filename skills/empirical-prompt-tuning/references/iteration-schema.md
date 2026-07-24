@@ -31,13 +31,33 @@
       ],
       "checker_grades": [
         { "requirement_index": 0, "result": "pass | fail | partial", "evidence": "..." }
-      ]
+      ],
+      "harness_error": null
     }
   ],
   "exit_verdict": "continue | converged | diverged | bloat_advisory | halt",
   "halt_reason": null
 }
 ```
+
+## harness_error（scenarios[]）
+
+checker / harness 側の逸脱を candidate failure と分離して記録するフィールド。
+正常時は `null`。異常時は下記形式:
+
+```json
+{
+  "type": "malformed_output | missing_grade | extra_grade | invalid_result_value | isolation_violation | input_range_violation",
+  "detail": "自由記述（補足）"
+}
+```
+
+`type` は `scripts/convergence.py` の `PROTOCOL_FAILURE_TYPES` と同期。
+harness_error が入った scenario は precision 集計・収束/発散判定から除外し、
+`resolve_exit_verdict()` は halt を返す（`halt_reason == "checker_protocol_failure"`）。
+
+詳細は [checker-protocol.md](checker-protocol.md) の
+「Protocol failure と candidate failure の分離」節。
 
 ## フィールド定義
 
@@ -55,8 +75,9 @@
 | `scenarios[].duration_ms` | yes | 実行者の duration_ms |
 | `scenarios[].friction` | yes | 摩擦報告（空配列可）。category は固定タクソノミ |
 | `scenarios[].checker_grades` | yes | checker の採点結果 |
+| `scenarios[].harness_error` | yes | protocol failure（null 可）。詳細は下記 |
 | `exit_verdict` | yes | `convergence.py` の `resolve_exit_verdict()` が返す値 |
-| `halt_reason` | no | halt 時のみ: `max_iter` / `max_wallclock` / `kill_file` / `checklist_tampered` |
+| `halt_reason` | no | halt 時のみ: `max_iter` / `max_wallclock` / `kill_file` / `checklist_tampered` / `checker_protocol_failure` |
 
 ## 可搬 fixture への変換
 

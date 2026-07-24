@@ -12,12 +12,89 @@
 
 1. **実行者の成果物**（コード / 出力 / 生成物のテキスト）
 2. **要件チェックリスト**（`[critical]` タグ付き）
+3. **fixture の入力範囲宣言**（統合 fixture の場合、成果物として渡す artifact の集合を明示）
 
 ## Checker に渡さないもの
 
 - **対象プロンプト本文** — プロンプトへの「善意の解釈」を防ぐ
 - **実行者の摩擦報告** — 採点に実行者の言い訳が混じるのを防ぐ
 - **前回 iteration の結果** — 独立した判断を保証
+- **リポジトリ本体・ソースツリー全体** — 成果物ではなく実装を読みに行くと採点対象が反転する（`isolation_violation`）
+
+## 統合 fixture の入力範囲宣言
+
+skill 間 handoff や複数 artifact をまたぐ「統合 fixture」では、fixture 自身が
+「checker に渡さなければ評価不能な artifact 集合」を明示する必要がある。
+明示しない fixture は、たとえ動作しても再現性が壊れる（元 issue #4 の失敗モード）。
+
+各統合 fixture には次のフィールドを含める:
+
+```json
+{
+  "fixture_kind": "integration",
+  "input_range": {
+    "consumer": "<consumer artifact パス or 埋め込み>",
+    "reference": "<reference artifact パス or 埋め込み>"
+  },
+  "input_range_required": ["consumer", "reference"]
+}
+```
+
+- `input_range_required` に列挙された鍵は checker への入力に **必ず全て**含める
+- 一部だけを渡した状態で評価すると `input_range_violation` として harness error
+  にすること（candidate failure と混同しない）
+- 単一 artifact のみで評価可能な fixture では `fixture_kind: "unit"` とし、
+  `input_range_required` は省略してよい
+
+### 実装ガイド
+
+- harness は checker を dispatch する直前に「これから渡す artifact キー集合」と
+  `input_range_required` を突合し、欠落があれば dispatch を中止して
+  `harness_error.type = "input_range_violation"` で当該 iteration を記録する
+- checker 側テンプレートには "以下の artifact **のみ**を根拠にすること。ここに
+  無いソースを開いてはならない" と明記する（isolation の宣言）
+
+## Protocol failure と candidate failure の分離
+
+checker の返答は「候補プロンプトの失敗」と「checker/harness 側の逸脱」を必ず区別する。
+両者を混同すると、checker のバグが candidate の precision を下げ、iteration の
+学習信号が汚染される（元 issue #4 の主因）。
+
+| チャネル | 意味 | どこに記録するか |
+|---------|------|-----------------|
+| candidate failure | 要件が満たされなかった（`result: fail`） | `scenarios[].checker_grades` |
+| protocol failure | checker/harness 側の逸脱（下表参照） | `scenarios[].harness_error` |
+
+### Protocol failure 分類（`PROTOCOL_FAILURE_TYPES`）
+
+| type | トリガー |
+|------|---------|
+| `malformed_output` | checker 出力が JSON として parse 不能 / 期待 schema と不一致 |
+| `missing_grade` | checklist の全要件を採点していない |
+| `extra_grade` | 存在しない要件番号に対する grade が含まれる |
+| `invalid_result_value` | `result` が `pass` / `fail` / `partial` 以外 |
+| `isolation_violation` | 成果物ではなくリポジトリ本体を調査した（ログ・宣言・出力から検出） |
+| `input_range_violation` | 統合 fixture の `input_range_required` に対して欠落入力で dispatch した |
+
+これらは `scripts/convergence.py` の `validate_checker_output()` と
+`has_protocol_failure()` で検出する。
+
+### Safe-stop（評価不能時の安全停止）
+
+`resolve_exit_verdict()` は最新 iteration に protocol failure があると
+`halt` を返す。`resolve_halt_reason()` は `checker_protocol_failure` を返し、
+`iteration.halt_reason` に記録する。
+
+- protocol failure iteration は **precision 集計から除外**する（candidate の失敗ではない）
+- 収束判定 (`is_converged`) / 発散判定 (`is_diverged`) にも寄与させない
+- 再開手順:
+  1. harness_error の type に応じて harness / fixture / checker テンプレートを修正
+  2. baseline チェックリストの sha256 は保持したまま、当該 iteration を破棄
+  3. 次 iteration を新規サブエージェント で dispatch する
+
+> **NG**: protocol failure を「checker がそう言ったから fail」として precision を
+> 下げてしまうと、prompt 側を直しても改善しない偽の回帰として現れ、iteration
+> ループが空回りする。必ず harness error として分離する。
 
 ## Checker への指示テンプレート
 
@@ -27,23 +104,36 @@
 ## 成果物
 <実行者の成果物をここに貼る>
 
+## 統合 fixture の入力範囲（該当する場合）
+以下の artifact **のみ**を根拠にすること。ここに列挙されていないソース
+（リポジトリのファイル、ネット、他 iteration の成果物）を開いた場合は、
+その旨を "isolation_note" フィールドで自己申告してください。
+- consumer: <...>
+- reference: <...>
+
 ## 要件チェックリスト
-1. [critical] <要件テキスト>
-2. <要件テキスト>
+0. [critical] <要件テキスト>
+1. <要件テキスト>
 ...
 
 ## タスク
 各要件について以下を判定し、JSON で返答してください:
+- requirement_index: 0-origin の整数
 - result: "pass" | "fail" | "partial"
 - evidence: 成果物のどの部分が根拠か（1 行）
 
-## 出力形式
+## 出力形式（厳密。逸脱は harness error として扱われる）
 {
   "grades": [
-    { "requirement_index": 1, "result": "pass", "evidence": "..." },
-    ...
-  ]
+    { "requirement_index": 0, "result": "pass", "evidence": "..." },
+    { "requirement_index": 1, "result": "fail", "evidence": "..." }
+  ],
+  "isolation_note": null
 }
+
+- grades は checklist の全要件を過不足なく含めること
+- 追加のトップレベルキー（例: `--output` 用の値、コメント）は付けない
+- 迷った場合でも上記 3 値以外の result を返さない
 ```
 
 ## 精度の算出（チューナー側）
