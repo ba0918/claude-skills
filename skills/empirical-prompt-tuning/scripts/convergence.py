@@ -168,7 +168,28 @@ def classify_friction(raw_points: list[dict]) -> list[dict]:
 _VALID_RESULT_VALUES = frozenset({"pass", "fail", "partial"})
 
 
-def validate_checker_output(raw_output, checklist: list[dict]) -> tuple[bool, str | None]:
+def validate_input_range(
+    dispatch_keys: set[str],
+    input_range_required: list[str],
+) -> tuple[bool, str | None]:
+    """Check that all required input-range keys are present in the dispatch set.
+
+    Call before dispatching the checker for integration fixtures.  Returns
+    (False, "input_range_violation") when any required key is missing from
+    the set of artifact keys actually being dispatched.
+    """
+    missing = set(input_range_required) - dispatch_keys
+    if missing:
+        return False, "input_range_violation"
+    return True, None
+
+
+def validate_checker_output(
+    raw_output,
+    checklist: list[dict],
+    *,
+    fixture_kind: str | None = None,
+) -> tuple[bool, str | None]:
     """Validate a checker's raw output against the iteration-schema contract.
 
     Returns (ok, protocol_failure_type). When ok is False the caller MUST
@@ -179,8 +200,6 @@ def validate_checker_output(raw_output, checklist: list[dict]) -> tuple[bool, st
     so that a malformed checker never counts as a fail against the prompt.
     """
     if not checklist:
-        # zero-length checklist would make an empty grades list trivially
-        # "complete" — surface as protocol failure instead of silent pass.
         return False, "empty_checklist"
 
     if isinstance(raw_output, str):
@@ -217,6 +236,14 @@ def validate_checker_output(raw_output, checklist: list[dict]) -> tuple[bool, st
 
     if seen_indices != expected_indices:
         return False, "missing_grade"
+
+    for g in grades:
+        ev = g.get("evidence")
+        if not isinstance(ev, str) or not ev.strip():
+            return False, "malformed_output"
+
+    if fixture_kind == "integration" and "isolation_note" not in parsed:
+        return False, "malformed_output"
 
     return True, None
 
