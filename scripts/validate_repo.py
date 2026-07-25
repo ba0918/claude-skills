@@ -436,6 +436,39 @@ def check_artifact_store(root):
         return [f"[artifact-store] {exc}"]
 
 
+DESIGN_TOKEN_LAYERS = [
+    (
+        os.path.join(".design", "tokens.css"),
+        os.path.join("skills", "brief", "assets", "tokens.css"),
+    ),
+]
+
+
+def check_design_token_sync(root):
+    """チェック18: authoring 層のデザイントークンと配布層の同一性を照合する。
+
+    `.design/` は design-scaffold / design-lint がリポジトリルート固定で参照する
+    authoring 層だが、プラグインとして配布された先にルートの `.design/` は存在せず、
+    レンダラが実行時に解決できるのはスキルディレクトリ配下だけである。そのため
+    トークンの実体をスキルへ同梱する 2 層構造を採っている。
+
+    乖離すると「lint は通るのに配布物は古い配色」という、どちらの検査にも
+    引っかからない状態が生まれる。ここで両者のバイト同一性を要求して塞ぐ。
+    """
+    errors = []
+    for authored_rel, distributed_rel in DESIGN_TOKEN_LAYERS:
+        authored = os.path.join(root, authored_rel)
+        distributed = os.path.join(root, distributed_rel)
+        if not os.path.isfile(authored) or not os.path.isfile(distributed):
+            continue
+        if _read(authored) != _read(distributed):
+            errors.append(
+                f"[design-tokens] {authored_rel} と {distributed_rel} が乖離している。"
+                f"`cp {authored_rel} {distributed_rel}` で配布層を再生成する"
+            )
+    return errors
+
+
 _VERSION_HEADING_RE = re.compile(r"^##\s+(\d+(?:\.\d+)*)(?:\s.*)?$", re.M)
 
 
@@ -777,6 +810,9 @@ def run_checks(root):
 
     # 17. 回帰 fixture の契約適合
     errors += check_fixtures(root)
+
+    # 18. デザイントークンの authoring 層 ⇔ 配布層 同期
+    errors += check_design_token_sync(root)
 
     return errors
 
