@@ -156,6 +156,7 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 | `doc-audit` | docs 内のアーティファクト横断スキャン |
 | `decision-journal` | 技術選定の意思決定を判例集方式で記録・聞き取り（着手前 1 行プロトコル / 選定会話の固化 / 判例聞き取り） |
 | `handoff` | セッション間のコンテキスト引き継ぎ（揮発型） |
+| `brief` | 変更・計画・引き継ぎ・進行中の会話を人間の判断順に再構成した自己完結 HTML として可視化（手動起動のみ・4 view 単一レンダラ・帰属完全性の機械検査） |
 
 #### デザインシステム
 
