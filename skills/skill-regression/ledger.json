@@ -96,6 +96,28 @@
     "surface_sha256": "b82dd071782c475b53797b7befd059c3281d3e40592597f726b64b8a451dc9ef",
     "verified": "2026-07-25"
   },
+  "decision-journal": {
+    "file_sha256": {
+      "skills/decision-journal/SKILL.md": "ee34886577b0523a4065acd2cbeead928a23745d9dde87418ba36b439d44d56e",
+      "skills/decision-journal/fixtures.json": "f72c390c8ad36049282da249b32506f205e4ab17654d3df5a00ee425e0001a76",
+      "skills/decision-journal/references/decision-record-template.md": "80cf07e4d5d511905dd5cc8c9dc3a9feba5be316e88f6640823e246125e569de",
+      "skills/decision-journal/references/interview-guide.md": "e7f855049d051bba9500bbe45df5b83ca690c41d2411a07f3d7ea938b5e87207",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/decision-protocol.md": "9eff7d16008b37d7e45c16a07dfe85a7667aa1927f4e59057a3dd82e2db4ba05"
+    },
+    "note": "dj-003 baseline リセット後の計測: 4 シナリオを本番同等モデルの実行者 16 体 + 独立採点者 16 体で日英両版に実行（争点の dj-003 / dj-004 は k=3）。JA 平均 0.982 → EN 平均 1.000、全 16 run で critical failure ゼロ、封印セクション不改変は sha256 で機械検証済み。旧チェックリスト b9145a0b の dj-003 は Interview 全工程を 1 ターンで測っており、復元不能の確定・証拠強度ラベル・途中保存の 3 要件が構造的に到達不能だった。実行者への照会 0 回。",
+    "result": "pass",
+    "surface": [
+      "skills/decision-journal/SKILL.md",
+      "skills/decision-journal/fixtures.json",
+      "skills/decision-journal/references/decision-record-template.md",
+      "skills/decision-journal/references/interview-guide.md",
+      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/decision-protocol.md"
+    ],
+    "surface_sha256": "9e2cc291e400a3174f1f8cc752db735dea4f9cf5132a28306bf3a990ef36be07",
+    "verified": "2026-07-25"
+  },
   "doc-write": {
     "file_sha256": {
       "skills/doc-write/SKILL.md": "1f54131634a3fbb4b08b91008509f8a54cc23d6940a5d3afa96bb2021f1d9e25",
