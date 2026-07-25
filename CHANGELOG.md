@@ -23,6 +23,12 @@ bump は「配布の単位」であって「変更の単位」ではないので
 - `skill-authoring.md` の「横断最適化のリリース単位」を、横展開バッチ限定の規約から
   PR 全般の規約へ一般化した
 
+あわせて、worktree から push すると pre-push hook が必ず失敗するバグを修正した。git は hook へ
+`GIT_DIR` を渡すが、worktree ではこれが絶対パスになるため、検証中の `git init` / `git check-ignore`
+（cwd = 一時ディレクトリ）が一時リポジトリではなく本物のリポジトリを操作してしまっていた。
+通常 checkout では `GIT_DIR` が相対パス `.git` で cwd 基準に解決されるため偶然動いており、
+worktree でのみ露出していた。hook から GIT_* の継承を明示的に断ち切る。
+
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の
