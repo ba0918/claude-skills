@@ -289,7 +289,7 @@
   },
   "plan-implement": {
     "file_sha256": {
-      "skills/plan-implement/SKILL.md": "2f538f0efb9ef7f7f4e23d3347b0c713d367573f11c2aedceb9a7f6e07416463",
+      "skills/plan-implement/SKILL.md": "c644ca37e118f4b891b6994418439cac31ebdc1db3b08774d52d24359ed65392",
       "skills/plan-implement/fixtures.json": "9fd4a770127a9a768e1cae9b06b2afa1f1cc8e10dbf78b9c4e9d236e902da2e8",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
@@ -298,7 +298,7 @@
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
-    "note": "3 シナリオ実走 pass。初回実走では pi-002 / pi-003 が Step A を入れ子委譲し完了通知が親へ届かず Step B / D の手前で停止したため、実行者プロンプトへ環境例外条項（委譲せずインライン代行）を置いて新規実体化で再走し完走した（pi-001 は初回のまま。setup バイト同一を検算済みだが条項の与え方が他 2 本と異なる）。pi-003 は import レベルの RED では不十分と判断し NotImplementedError スタブで振る舞い単位の RED を取り直し、コミット前に .gitignore を整備して __pycache__ 混入 0 を達成。pi-002 は Phase 0-1 の再入を 3 根拠で正常系と判定。ハーネス制約: 並行 dispatch 時にエージェントの env cwd が指示した作業ディレクトリと食い違う事象が 2 件発生（いずれも実行者が baseline ハッシュ照合で切り分け、実害なし）",
+    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（pi-001 7/7 / pi-002 5/5 / pi-003 4/4、critical は 5+3+3 全 pass）。3 シナリオとも停止ゼロで完走し、日本語アームの初回実走で 3 件中 2 件が起こした入れ子委譲の停止は再発しなかった（実行者プロンプトの環境例外条項を今回は 3 本すべてへ均一に与えた。日本語アームは pi-001 のみ条項なしという非対称が残っていたので、アームとしては今回のほうが均質）。挙動も同等 — pi-001 は ModuleNotFoundError の RED を実出力で示し 3 要件を 5 テストで固定、レビューで limit == 0 の境界未固定を WARN として自力検出（limit < 0 を limit <= 0 に変異させると全通することを根拠に挙げている）。pi-002 は Step 1 の成果物をコミット差分に一切出さず再入を正常系として処理。pi-003 は .gitignore を実装コミットと同時に入れ、全コミット走査で __pycache__ / .pyc 混入 0。編集有無とコミット内容は baseline ハッシュと git で機械照合し、採点は実行者と別の白紙エージェントが担当。構造パリティ（見出し13/フェンス0/リンク8/番号22/箇条書き46/水平線0）・リンク先集合・識別子41種・ユーザー提示定型文1種・frontmatter の byte 不変を機械検証済み。日本語行比率 98.0% → 0.0%。sweep-fix sf-002 の教訓を反映し、実行者プロンプトからスキルの出力形式への言及を全廃した（計測器がスキルの規定を上書きするのを防ぐため）",
     "result": "pass",
     "surface": [
       "skills/plan-implement/SKILL.md",
@@ -310,7 +310,7 @@
       "skills/shared/references/testing-anti-patterns.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "614bed786548a639684ac8a05f8d7d19736cb9ce6a75ca2ee296a11b2e32bd02",
+    "surface_sha256": "77104c089737620fdde42a7db6a6413ef57228de1eb7e5211692562fb72e0dfc",
     "verified": "2026-07-26"
   },
   "plan-reviewer": {
