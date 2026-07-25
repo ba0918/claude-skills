@@ -9,6 +9,7 @@
       "isolation": "worktree",
       "setup": {
         "files": {
+          ".gitignore": "# 実行基盤が作るセッション残骸（プロジェクトの成果物ではない）\n__pycache__/\n*.pyc\n.claude/\n.mcp.json\n",
           "CLAUDE.md": "# logtool\n\nログ集計 CLI ツール。\n\n- 依存追加は最小限にする（標準ライブラリのみ）\n- テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "logtool/__init__.py": "",
           "logtool/parser.py": "\"\"\"ログ行パーサ。\"\"\"\nimport re\n\nLINE_RE = re.compile(r\"^(?P<ts>\\S+) (?P<level>\\w+) (?P<msg>.*)$\")\n\n\ndef parse_line(line: str) -> dict | None:\n    m = LINE_RE.match(line.strip())\n    if not m:\n        return None\n    return m.groupdict()\n",
@@ -56,6 +57,7 @@
       "isolation": "worktree",
       "setup": {
         "files": {
+          ".gitignore": "# 実行基盤が作るセッション残骸（プロジェクトの成果物ではない）\n__pycache__/\n*.pyc\n.claude/\n.mcp.json\n",
           "CLAUDE.md": "# webhook-relay\n\n受信 Webhook を転送する小さなリレーサーバー。\n\n- テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "src/relay.py": "\"\"\"Webhook 転送のコア。\"\"\"\n\n\ndef build_forward_headers(headers: dict) -> dict:\n    \"\"\"hop-by-hop ヘッダを除いた転送用ヘッダを作る。\"\"\"\n    hop_by_hop = {\"connection\", \"keep-alive\", \"transfer-encoding\", \"upgrade\"}\n    return {k: v for k, v in headers.items() if k.lower() not in hop_by_hop}\n",
           "docs/plans/20260710090000_legacy-feature.md": "# リトライキューの追加\n\n**Cycle ID:** `20260710090000`\n**Started:** 2026-07-10 09:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n転送失敗した Webhook を指数バックオフで再送するリトライキューを追加する。\n\n## 🎯 Goals\n\n- 転送失敗時に最大 3 回まで再送する\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| Step 1: リトライキュー実装（TDD） | ⚪ |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n"
@@ -91,6 +93,7 @@
       "isolation": "worktree",
       "setup": {
         "files": {
+          ".gitignore": "# 実行基盤が作るセッション残骸（プロジェクトの成果物ではない）\n__pycache__/\n*.pyc\n.claude/\n.mcp.json\n",
           "CLAUDE.md": "# timeutil\n\n時間表記の変換ユーティリティライブラリ。\n\n- 依存追加は最小限にする（標準ライブラリのみ）\n- テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "timeutil.py": "\"\"\"時間ユーティリティ。\"\"\"\nimport re\n\n_DURATION_RE = re.compile(r\"(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?\")\n\n\ndef parse_duration(text: str) -> int:\n    \"\"\"\"1h2m3s\" 形式の文字列を秒数に変換する。\"\"\"\n    m = _DURATION_RE.fullmatch(text.strip())\n    if not m or not any(m.groups()):\n        raise ValueError(f\"invalid duration: {text!r}\")\n    h, mi, s = (int(g) if g else 0 for g in m.groups())\n    return h * 3600 + mi * 60 + s\n",
           "tests/__init__.py": "",

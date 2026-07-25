@@ -23,22 +23,23 @@
   "commit": {
     "file_sha256": {
       "skills/commit/SKILL.md": "8a3c4ce0d6b38b19ac25b7f96ca6514ec6f328121ff3407cddf12df8aacd6d28",
-      "skills/commit/fixtures.json": "710da57415bc87d5128794ac2c0d12f6f9abd95abe9e66005a30abbf0932ff94",
+      "skills/commit/fixtures.json": "695f26893f3762173ca414166f83058d22e6d2d02164b738813f55efed74dbbd",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
+    "note": "3 シナリオ実走 pass。branch=fixture-work / ベースラインは .gitignore のみ追跡、という宣言で実体化。cm-002 の .env はサンドボックスが /dev/null を被せるため内容は未実体化（判定は名前・種別ベースで成立）。状況照会 0 回",
     "result": "pass",
     "surface": [
       "skills/commit/SKILL.md",
       "skills/commit/fixtures.json",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "7fa7276db6ce9c4d134e0d88e24554425d5d962b6ef7962cc60869c3d2105798",
-    "verified": "2026-07-22"
+    "surface_sha256": "fc58efb7a761c315b58ddb6e6988cbd56621b196b980acb742935be7cb323210",
+    "verified": "2026-07-25"
   },
   "context-audit": {
     "file_sha256": {
       "skills/context-audit/SKILL.md": "e311c1ebb7b0c22222dddfe1d676806d4b859b2d63e6cb99c15d431f47b781e0",
-      "skills/context-audit/fixtures.json": "8c5bea492178d0048be9e2c7f0c26099d68935dcfc8905cccb1c87d15fc2d218",
+      "skills/context-audit/fixtures.json": "d2888346fb7abe5d6e908fa0e8fe490d5597e2c860371095652c4af844866464",
       "skills/context-audit/references/baseline-format.md": "ed998a2c7fbe69f81b54e28e84e57d51e84d3251bbf3293d7335d86c3126ac81",
       "skills/context-audit/references/memory-audit.md": "40d5ed0808622c68751832f2ac3fb79ecaba2391a099de0ec7394cdcca9270dd",
       "skills/context-audit/references/rule-catalog.md": "31e3fa9890d457b0ea931f4c9fc6532b6f5445c6eeb412a10c778de81f365167",
@@ -51,6 +52,7 @@
       "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
+    "note": "3 シナリオ実走 pass。target-project は全件 sha256 一致で無改変、非対話フォールバックで baseline 未書き込み。状況照会 0 回",
     "result": "pass",
     "surface": [
       "skills/context-audit/SKILL.md",
@@ -67,19 +69,20 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "b43b23950671c137c024afbfb279cfd6d9d42c540283c0d113b655c5cc7dee15",
+    "surface_sha256": "18442c9a0f874e58562550dd06033dd07e4b0e10810c674718fdf675e3afbd89",
     "verified": "2026-07-25"
   },
   "cycle": {
     "file_sha256": {
       "skills/cycle/SKILL.md": "c8694e8d88907fcc31ab9b3e572b578784b02855c3f675baa0f49671b7ed9f42",
-      "skills/cycle/fixtures.json": "7d7c4e2c2a6f25b6307eb5ccdf8af8d9986a30a5c6d06fff834f2d544e0767fe",
+      "skills/cycle/fixtures.json": "a81c189e30b16bb0488c5d00c9a51f27400a3511d2a9b23d36f6a59ba5940d39",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
       "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
+    "note": "3 シナリオ実走 pass。3 件すべてインライン代行経路・状況照会 0 回。.gitignore 宣言により __pycache__ 混入でも作業ツリー clean を維持（前回 run では実行者が自作するかどうかでブレていた）",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -90,7 +93,7 @@
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "02084932438180a2242a77a7cd87a944e402551724463c82ee6128587d75d76d",
+    "surface_sha256": "b82dd071782c475b53797b7befd059c3281d3e40592597f726b64b8a451dc9ef",
     "verified": "2026-07-25"
   },
   "github-issue": {
@@ -131,11 +134,12 @@
   "handoff": {
     "file_sha256": {
       "skills/handoff/SKILL.md": "aa2c61a4f384affd45069a71dff1686e3cf6b64848a6df8596f7a4d450a4a3d8",
-      "skills/handoff/fixtures.json": "311807953bc24aae35551c40e6d6ffae92b75651df41e17e1b40bc68218fcb30",
+      "skills/handoff/fixtures.json": "784fe3a37d1a1a5417d6aa57ee2bd83febbf4792a0445bc60248909292a7a749",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/checkpoint-pattern.md": "b120f3562565c4cda0febd645f086b2d25b988c3e718078b0398a1a97f8059b9",
       "skills/shared/references/human-readable-summary.md": "f3dba0207381c14d9d73c0e72c1ed249843b48596c38edcb8de3c90f4e1ecc26"
     },
+    "note": "4 シナリオ実走 pass。ho-004 は隔離領域内の実 HEAD で superseded を判定（親リポジトリ HEAD 依存を解消）。インライン単段のため状況照会 0 回",
     "result": "pass",
     "surface": [
       "skills/handoff/SKILL.md",
@@ -144,7 +148,7 @@
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "16533442161dc5b93fec49d2eb0e855ceb8b70f506f7acd1bbb7d2997f3dca60",
+    "surface_sha256": "e6b51ff78ade2730556a24aa95e78191fe2e5e2012ba8f87b0d58cee8a88c6c5",
     "verified": "2026-07-25"
   },
   "investigate": {
@@ -163,7 +167,7 @@
   "issue": {
     "file_sha256": {
       "skills/issue/SKILL.md": "338b3b102234260218b1a919c1ced562398b89039f15241acd8c12508714210a",
-      "skills/issue/fixtures.json": "b3ae312b8dd72f373005545c971e5d385d676cce67f44ffeeac628bc7c618d5b",
+      "skills/issue/fixtures.json": "4d5bb5169db02f8c55ee1b41f6db9a2aea875c1b638282d74dbf4e362765d479",
       "skills/issue/references/issue-template.md": "9ba616322895f24ee0f277c4fc13cfa44b382a834dabe36b426939b131ec0eb0",
       "skills/issue/references/polling-state-machine.md": "438c727257fe038f431d1fdd16a32169d50f241835e669e4dc42b300e55b5193",
       "skills/issue/references/polling-state.md": "061cbac42bc4033bf1ba0f70a07e7fbc1d9e9e1d4d9092ef07335baaf6836715",
@@ -172,6 +176,7 @@
       "skills/shared/references/measurement-identity.md": "fa0afacac0d12c6de689768cc7c29fe997b79523661f9bc7a181262d53893151",
       "skills/shared/references/polling-pattern.md": "98f623552d4c6ec957e07b20a90c389b8513ecc3572b73ccaa80cfa9bab8c25f"
     },
+    "note": "4 シナリオ実走 pass。is-001 の max_parallel 早期打ち切りは ready 2 件のため発火せず未観測（R5 は非 critical）。measurement event は隔離領域に ledger.py がなく warn-only で継続。状況照会 0 回",
     "result": "pass",
     "surface": [
       "skills/issue/SKILL.md",
@@ -184,19 +189,20 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "c39886acd8534540b12af0a0994d6c89bda83009e191572a4828269865e10e57",
+    "surface_sha256": "6c2dd0c1d8e1ff89ae2d9fb98e2e9e559d747afa16cd26f917ea1979a960c92c",
     "verified": "2026-07-25"
   },
   "plan": {
     "file_sha256": {
       "skills/plan/SKILL.md": "1dfef8514afbe7e939fd50bb4b2543f5cff0c94559b371de98f1af7ec2f43a86",
-      "skills/plan/fixtures.json": "9fff248e6fc108e63305e7885db309201f87703e9d44186092c84c341ecef233",
+      "skills/plan/fixtures.json": "9b41a0bc8bf8a6d9bf01fc2b637790585425aba9afbdfeb9c10494514dee93fe",
       "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/checkpoint-pattern.md": "b120f3562565c4cda0febd645f086b2d25b988c3e718078b0398a1a97f8059b9"
     },
+    "note": "4 シナリオ実走 pass。pl-004 は隔離領域内の実 HEAD で superseded を判定。pl-003 は session-history 不在からの新規作成分岐を通った。状況照会 0 回",
     "result": "pass",
     "surface": [
       "skills/plan/SKILL.md",
@@ -207,7 +213,7 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "35045b32167c42497b61b8bdcdb7d3656492b567414409fbd53c5c1c4b24fd22",
+    "surface_sha256": "514617af809b8f88a9dd24dd7973fbe9708cf827ebbce1125b7712a9600e5a07",
     "verified": "2026-07-25"
   },
   "plan-reviewer": {

@@ -5,7 +5,7 @@
       "id": "is-001",
       "title": "初回 tick の dry-run 強制と claim/release rollback",
       "source": "manual",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {
@@ -27,7 +27,7 @@
       "id": "is-002",
       "title": "kill file 2 系統の優先順位と即時 halt",
       "source": "manual",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {
@@ -50,7 +50,7 @@
       "id": "is-003",
       "title": "orphan recovery — 死亡 pid の回収と PermissionError の fail-safe",
       "source": "manual",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {
@@ -74,7 +74,7 @@
       "id": "is-004",
       "title": "Create 完了報告のヒューマンリーダブル要約（summary-first）",
       "source": ".agents/artifacts/plans/20260721163701_report-skills-human-readable-summary.md",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {
