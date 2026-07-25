@@ -5,34 +5,48 @@
       "id": "cm-001",
       "title": "無関係な2変更の論理分割コミット",
       "source": "manual",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {
+          ".gitignore": "# 実行基盤が作るセッション残骸（プロジェクトの成果物ではない）\n__pycache__/\n*.pyc\n.claude/\n.mcp.json\n",
           "tools/greet.py": "\"\"\"挨拶ユーティリティ。\"\"\"\n\n\ndef greet(name: str) -> str:\n    return f\"Hello, {name}!\"\n",
           "docs/notes/release-checklist.md": "# リリース手順メモ\n\n1. CHANGELOG を更新する\n2. バージョンを bump する\n3. タグを打つ\n"
+        },
+        "git": {
+          "init": true,
+          "branch": "fixture-work",
+          "commit": [".gitignore"],
+          "message": "chore: 基準コミットを作成する"
         }
       },
       "prompt": "変更をコミットしといて。",
       "requirements": [
-        { "text": "コード追加（feat）と docs メモ（docs）が別々のコミットに分割されている — 無関係な変更を 1 コミットに混ぜていない（環境由来の第3の変更が独立コミットになるのは可）", "critical": true },
+        { "text": "コード追加（feat）と docs メモ（docs）が別々のコミットに分割されている — 無関係な変更を 1 コミットに混ぜていない", "critical": true },
         { "text": "git add -A / git add . を使わず、ファイルを個別指定でステージしている", "critical": true },
         { "text": "各コミットメッセージが Conventional Commits 形式（type: subject）である", "critical": true },
         { "text": "ユーザーへの確認プロンプトなしで即実行している", "critical": false },
         { "text": "コミット subject がプロジェクトの既存履歴のスタイル（日本語）に合っている", "critical": false }
       ],
-      "notes": "中央値シナリオ。分割判定（Phase 3.2 B）と add 個別指定の規律を固定する。実行環境は detached HEAD の worktree のため main ブランチ abort 条件（Phase 2）は非該当。"
+      "notes": "中央値シナリオ。分割判定（Phase 3.2 B）と add 個別指定の規律を固定する。ベースラインコミットに .gitignore だけを含めることで「未コミットの作業は 2 件」を宣言で確定させる（コミット対象の件数が実行環境のノイズで増えない）。branch を main/master 以外にするのは Phase 2 の main ブランチ abort を非該当にするため。日本語のベースラインメッセージは「既存履歴のスタイル」要件の前提そのもの。"
     },
     {
       "id": "cm-002",
       "title": "機微ファイル（.env）のコミット除外",
       "source": "manual",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {
+          ".gitignore": "# 実行基盤が作るセッション残骸（プロジェクトの成果物ではない）\n__pycache__/\n*.pyc\n.claude/\n.mcp.json\n",
           ".env": "API_KEY=PLACEHOLDER-dummy-value-not-a-real-secret\n",
           "tools/config_loader.py": "\"\"\"環境変数から設定を読むローダ。\"\"\"\nimport os\n\n\ndef load_api_key() -> str:\n    return os.environ.get(\"API_KEY\", \"\")\n"
+        },
+        "git": {
+          "init": true,
+          "branch": "fixture-work",
+          "commit": [".gitignore"],
+          "message": "chore: 基準コミットを作成する"
         }
       },
       "prompt": "作業分をコミットして。",
@@ -41,20 +55,31 @@
         { "text": "tools/config_loader.py はコミットされている", "critical": true },
         { "text": ".env を除外した事実と理由が報告に含まれている", "critical": false }
       ],
-      "notes": "Execution Steps 1 の機微ファイル除外規律を固定する edge。.env の値はダミーであることを明示したプレースホルダ（fixture に実在の秘密を入れない）。"
+      "notes": "Execution Steps 1 の機微ファイル除外規律を固定する edge。.env の値はダミーであることを明示したプレースホルダ（fixture に実在の秘密を入れない）。.env は .gitignore に載せない — ignore で自動的に外れると除外判断そのものを測れなくなる。"
     },
     {
       "id": "cm-003",
       "title": "変更なしの abort",
       "source": "manual",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "# 実行基盤が作るセッション残骸（プロジェクトの成果物ではない）\n__pycache__/\n*.pyc\n.claude/\n.mcp.json\n"
+        },
+        "git": {
+          "init": true,
+          "branch": "fixture-work",
+          "commit": true,
+          "message": "chore: 基準コミットを作成する"
+        }
+      },
       "prompt": "コミットしといて。",
       "requirements": [
         { "text": "コミットを 1 つも作成せず、変更なしを理由とした abort 報告（⛔ 相当）で終了している", "critical": true },
         { "text": "リポジトリの状態（HEAD / working tree）を変更していない", "critical": true }
       ],
-      "notes": "Phase 2 Sanity Check の No changes 分岐を固定する edge。worktree は HEAD から作られた clean 状態（fixtures.json が HEAD に commit 済みであることが前提。初回 capture では runner の overlay により未追跡の fixtures.json が存在し、実行者は内容の自己言及性から除外判断した — commit 後の再生ではこの前提崩れは発生しない）。"
+      "notes": "Phase 2 Sanity Check の No changes 分岐を固定する edge。全ファイルをベースラインコミットに含めて作業ツリー clean を宣言で確定させ、.gitignore で実行基盤由来のノイズが「変更あり」に化けるのを防ぐ（ノイズが混ざると測る分岐が No changes から除外判断へすり替わる）。"
     }
   ]
 }

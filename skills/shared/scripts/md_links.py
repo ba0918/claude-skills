@@ -7,6 +7,7 @@ scripts/validate_repo.py のリンク抽出と同じ判定規則を持つ:
 利用側は skills/shared/scripts/secret_detect.py と同様に
 `sys.path.insert` でこのディレクトリを追加して import する。
 """
+import collections
 import os
 import re
 
@@ -37,23 +38,32 @@ def is_checkable_link(link):
     return True
 
 
-def closure(root, start_rel):
-    """start_rel から相対 .md リンクで到達できる実在ファイルの推移的クロージャ。
+def closure(root, start_rel, max_depth=None):
+    """start から相対 .md リンクで到達できる実在ファイルのクロージャ。
 
+    start_rel は 1 パスでも、パスの iterable でもよい（複数 start は同時に深さ 0）。
+    max_depth は start から辿るホップ数の上限（None なら無制限、1 なら直接リンクまで）。
     root 外へ抜けるリンクと実在しないターゲットは辿らない。
-    戻り値は root 相対の POSIX パスをソートしたリスト。start が無ければ空。
+    戻り値は root 相対の POSIX パスをソートしたリスト。start が 1 つも無ければ空。
+
+    深さ制限が要るのは、無制限クロージャが「リンクで繋がってさえいれば挙動依存」
+    と見なすため。共有契約から他スキルへの関連リンク 1 本で、実行経路が交わらない
+    スキル同士が同じ面に載ってしまう（skill-authoring の「参照は 1 階層まで」原則と
+    実装が食い違っていた）。深さは幅優先で数えるので、初到達が最短ホップになる。
     """
     root = os.path.abspath(root)
-    start = os.path.normpath(os.path.join(root, start_rel))
-    if not os.path.isfile(start):
-        return []
+    starts = [start_rel] if isinstance(start_rel, str) else list(start_rel)
+    queue = collections.deque()
     seen = set()
-    queue = [start]
+    for rel in starts:
+        path = os.path.normpath(os.path.join(root, rel))
+        if os.path.isfile(path) and path not in seen:
+            seen.add(path)
+            queue.append((path, 0))
     while queue:
-        path = queue.pop()
-        if path in seen:
+        path, depth = queue.popleft()
+        if max_depth is not None and depth >= max_depth:
             continue
-        seen.add(path)
         with open(path, encoding="utf-8") as f:
             text = f.read()
         base = os.path.dirname(path)
@@ -64,7 +74,8 @@ def closure(root, start_rel):
             if os.path.commonpath([root, target]) != root:
                 continue  # root 外へのリンクは対象外
             if os.path.isfile(target) and target not in seen:
-                queue.append(target)
+                seen.add(target)
+                queue.append((target, depth + 1))
     return sorted(
         os.path.relpath(p, root).replace(os.sep, "/") for p in seen
     )

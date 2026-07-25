@@ -10,6 +10,7 @@ import unittest
 import json
 
 from validate_repo import (
+    _skill_dirs,
     extract_md_links,
     is_checkable_link,
     parse_frontmatter_fields,
@@ -25,6 +26,10 @@ from validate_repo import (
     check_dossiers,
     check_artifact_store,
     check_human_readable_summary,
+    check_manifests,
+    check_command_skill_mapping,
+    check_fixtures,
+    parse_version,
     HUMAN_READABLE_SUMMARY_LABEL,
     HUMAN_READABLE_SUMMARY_SKILLS,
     CONTRACT_VOCAB,
@@ -258,6 +263,31 @@ class TestMentionsName(unittest.TestCase):
     def test_hyphenated_skill_name_matches_exactly(self):
         self.assertTrue(mentions_name("github-issue polling", "github-issue"))
         self.assertFalse(mentions_name("github-issue2 という別物", "github-issue"))
+
+
+class TestSkillDirs(unittest.TestCase):
+    def _mkdir(self, root, rel):
+        os.makedirs(os.path.join(root, rel), exist_ok=True)
+
+    def test_lists_skill_directories(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._mkdir(root, "skills/a")
+            self._mkdir(root, "skills/b")
+            self.assertEqual(_skill_dirs(root, "skills"), ["a", "b"])
+
+    def test_dot_directories_are_not_skills(self):
+        # エージェントがリポジトリ本体を cwd にすると skills/.claude/ のような
+        # セッション用スキャフォールドが現れ、無関係な理由でチェックが落ちる
+        with tempfile.TemporaryDirectory() as root:
+            self._mkdir(root, "skills/a")
+            self._mkdir(root, "skills/.claude")
+            self.assertEqual(_skill_dirs(root, "skills"), ["a"])
+
+    def test_shared_is_excluded(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._mkdir(root, "skills/a")
+            self._mkdir(root, "skills/shared")
+            self.assertEqual(_skill_dirs(root, "skills"), ["a"])
 
 
 class TestCollectLinkSources(unittest.TestCase):
@@ -538,11 +568,15 @@ class TestCheckChangelogSync(unittest.TestCase):
             self.assertIn("1.47.0", errors[0])
 
     def test_longer_version_heading_does_not_match_shorter(self):
-        # 「## 1.46.10」は version 1.46.1 のエントリではない
+        # 「## 1.46.10」は version 1.46.1 のエントリではない。
+        # 逆方向の観点では 1.46.10 > 1.46.1 なので未配布エントリでもある（2 件とも上がる）
         with tempfile.TemporaryDirectory() as root:
             self._plugin(root, "1.46.1")
             self._write(root, "CHANGELOG.md", "## 1.46.10\n")
-            self.assertEqual(len(check_changelog_sync(root)), 1)
+            errors = check_changelog_sync(root)
+            self.assertEqual(len(errors), 2)
+            self.assertTrue(any("に対応する" in e for e in errors), errors)
+            self.assertTrue(any("未配布バージョン" in e for e in errors), errors)
 
     def test_heading_with_trailing_note_passes(self):
         with tempfile.TemporaryDirectory() as root:
@@ -569,6 +603,309 @@ class TestCheckChangelogSync(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, "CHANGELOG.md", "# Changelog\n")
             self.assertEqual(check_changelog_sync(root), [])
+
+    def test_entry_ahead_of_plugin_version_is_flagged(self):
+        # 起票済みだが bump 保留 = 配布されていない変更が配布済みに見える
+        with tempfile.TemporaryDirectory() as root:
+            self._plugin(root, "1.65.0")
+            self._write(root, "CHANGELOG.md",
+                        "## 1.67.0\n\n未配布。\n\n## 1.65.0\n\n配布済み。\n")
+            errors = check_changelog_sync(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("未配布バージョン", errors[0])
+            self.assertIn("1.67.0", errors[0])
+
+    def test_multiple_ahead_entries_are_each_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._plugin(root, "1.65.0")
+            self._write(root, "CHANGELOG.md",
+                        "## 1.67.0\n\nx\n\n## 1.66.0\n\ny\n\n## 1.65.0\n\nz\n")
+            errors = check_changelog_sync(root)
+            self.assertEqual(len(errors), 2)
+            self.assertIn("1.66.0", errors[0])
+            self.assertIn("1.67.0", errors[1])
+
+    def test_older_entries_are_not_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._plugin(root, "1.65.0")
+            self._write(root, "CHANGELOG.md",
+                        "## 1.65.0\n\nx\n\n## 1.64.0\n\ny\n\n## 1.9.0\n\nz\n")
+            self.assertEqual(check_changelog_sync(root), [])
+
+    def test_ahead_comparison_is_numeric_not_lexical(self):
+        # 文字列比較なら "1.9.0" > "1.10.0" と誤判定する
+        with tempfile.TemporaryDirectory() as root:
+            self._plugin(root, "1.10.0")
+            self._write(root, "CHANGELOG.md", "## 1.10.0\n\nx\n\n## 1.9.0\n\ny\n")
+            self.assertEqual(check_changelog_sync(root), [])
+
+    def test_non_numeric_heading_is_ignored(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._plugin(root, "1.65.0")
+            self._write(root, "CHANGELOG.md",
+                        "## Unreleased\n\nx\n\n## 1.65.0\n\ny\n")
+            self.assertEqual(check_changelog_sync(root), [])
+
+
+class TestCheckCommandSkillMapping(unittest.TestCase):
+    """チェック16: command 名がスキル名と対応しないとき description で名指しする。
+
+    `/debug` → systematic-debugging のように名前がずれると、利用者からは
+    command とスキルが別々の名前空間に見える。改名・削除はしない方針なので、
+    説明文で対応関係を可視化することを機械的に要求する。
+    """
+
+    def _write(self, root, rel, content):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def _command(self, root, name, description, target):
+        self._write(root, f"commands/{name}.md",
+                    f"---\ndescription: \"{description}\"\n---\n\n"
+                    f"スキル `claude-skills:{target}` を実行する。")
+
+    def _skill(self, root, name):
+        self._write(root, f"skills/{name}/SKILL.md",
+                    f"---\nname: {name}\ndescription: x で起動。\n---\n")
+
+    def test_command_named_after_skill_needs_no_mention(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "commit")
+            self._command(root, "commit", "変更をコミットする", "commit")
+            self.assertEqual(check_command_skill_mapping(root), [])
+
+    def test_workflow_suffix_needs_no_mention(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "issue")
+            self._command(root, "issue-list", "未解決 issue の一覧", "issue")
+            self.assertEqual(check_command_skill_mapping(root), [])
+
+    def test_mismatched_name_without_mention_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "systematic-debugging")
+            self._command(root, "debug", "4フェーズ構造化デバッグ",
+                          "systematic-debugging")
+            errors = check_command_skill_mapping(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("commands/debug.md", errors[0])
+            self.assertIn("systematic-debugging", errors[0])
+
+    def test_mismatched_name_with_mention_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "systematic-debugging")
+            self._command(root, "debug",
+                          "systematic-debugging スキルの入口。4フェーズ構造化デバッグ",
+                          "systematic-debugging")
+            self.assertEqual(check_command_skill_mapping(root), [])
+
+    def test_prefix_collision_still_requires_mention(self):
+        # plan-review は plan スキルではなく plan-reviewer を起動する。
+        # `plan-` 接尾辞として自明扱いされないこと
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "plan")
+            self._skill(root, "plan-reviewer")
+            self._command(root, "plan-review", "計画をレビューする", "plan-reviewer")
+            errors = check_command_skill_mapping(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("plan-reviewer", errors[0])
+
+    def test_command_invoking_unknown_skill_is_ignored(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._command(root, "foo", "説明", "not-a-skill")
+            self.assertEqual(check_command_skill_mapping(root), [])
+
+    def test_repo_without_commands_dir_is_noop(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._skill(root, "commit")
+            self.assertEqual(check_command_skill_mapping(root), [])
+
+
+class TestCheckFixtures(unittest.TestCase):
+    """チェック17: skills/*/fixtures.json の契約適合を CI で強制する。"""
+
+    def _write(self, root, rel, content):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def _valid(self):
+        return {
+            "skill": "demo",
+            "scenarios": [{
+                "id": "d-001", "title": "t", "source": "manual", "prompt": "p",
+                "requirements": [{"text": "r", "critical": True}],
+            }],
+        }
+
+    def test_valid_fixture_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/fixtures.json", json.dumps(self._valid()))
+            self.assertEqual(check_fixtures(root), [])
+
+    def test_fixture_without_critical_requirement_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            bad = self._valid()
+            bad["scenarios"][0]["requirements"] = [{"text": "r", "critical": False}]
+            self._write(root, "skills/demo/fixtures.json", json.dumps(bad))
+            errors = check_fixtures(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("critical", errors[0])
+
+    def test_unknown_setup_key_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            bad = self._valid()
+            bad["scenarios"][0]["setup"] = {"symlinks": {}}
+            self._write(root, "skills/demo/fixtures.json", json.dumps(bad))
+            self.assertTrue(any("未知の setup キー" in e for e in check_fixtures(root)))
+
+    def test_broken_json_is_flagged_without_crashing(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/fixtures.json", "{ not json")
+            errors = check_fixtures(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("JSON として読めない", errors[0])
+
+    def test_skill_without_fixtures_is_skipped(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/SKILL.md", "---\nname: demo\n---\n")
+            self.assertEqual(check_fixtures(root), [])
+
+    def test_repo_without_skills_dir_is_noop(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.assertEqual(check_fixtures(root), [])
+
+
+class TestParseVersion(unittest.TestCase):
+    """バージョン比較は数値タプルで行う（文字列比較は 1.9.0 > 1.10.0 と誤る）。"""
+
+    def test_dotted_numbers_become_tuple(self):
+        self.assertEqual(parse_version("1.65.0"), (1, 65, 0))
+
+    def test_ordering_is_numeric(self):
+        self.assertLess(parse_version("1.9.0"), parse_version("1.10.0"))
+
+    def test_non_numeric_component_is_uncomparable(self):
+        self.assertIsNone(parse_version("1.0.0-rc1"))
+
+    def test_empty_is_uncomparable(self):
+        self.assertIsNone(parse_version(""))
+
+
+class TestCheckManifests(unittest.TestCase):
+    """チェック15: 配布 manifest の name / version / リポジトリ slug / LICENSE の整合。
+
+    3 つの manifest が別々に手編集されるため、一致すべき項目が黙ってドリフトする。
+    実際に .claude-plugin/plugin.json の repository が実在しない owner を指していた。
+    """
+
+    def _write(self, root, rel, content):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path) or root, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def _base(self, root, *, repository="https://github.com/owner/claude-skills",
+              version="1.0.0", license_field="MIT", readme_owner="owner",
+              with_license_file=True):
+        plugin = {"name": "claude-skills", "version": version}
+        if repository:
+            plugin["repository"] = repository
+        if license_field:
+            plugin["license"] = license_field
+        self._write(root, ".claude-plugin/plugin.json", json.dumps(plugin))
+        self._write(root, ".claude-plugin/marketplace.json", json.dumps({
+            "name": "claude-skills",
+            "plugins": [{"name": "claude-skills", "version": version}],
+        }))
+        self._write(root, ".codex-plugin/plugin.json", json.dumps({
+            "name": "claude-skills", "version": version,
+        }))
+        if readme_owner:
+            self._write(root, "README.md",
+                        f"claude plugin marketplace add {readme_owner}/claude-skills\n")
+        if with_license_file:
+            self._write(root, "LICENSE", "MIT License\n")
+
+    def test_consistent_manifests_pass(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self.assertEqual(check_manifests(root), [])
+
+    def test_readme_pointing_at_other_owner_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root, repository="https://github.com/wrong/claude-skills",
+                       readme_owner="real")
+            errors = check_manifests(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("別 owner", errors[0])
+            self.assertIn("real/claude-skills", errors[0])
+
+    def test_version_drift_between_manifests_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root, version="1.0.0")
+            self._write(root, ".codex-plugin/plugin.json",
+                        json.dumps({"name": "claude-skills", "version": "0.9.0"}))
+            errors = check_manifests(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("version", errors[0])
+
+    def test_name_drift_between_manifests_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, ".codex-plugin/plugin.json",
+                        json.dumps({"name": "renamed", "version": "1.0.0"}))
+            errors = check_manifests(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("name", errors[0])
+
+    def test_declared_license_without_file_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root, with_license_file=False)
+            errors = check_manifests(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("LICENSE ファイルがない", errors[0])
+
+    def test_no_license_declaration_does_not_require_file(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root, license_field=None, with_license_file=False)
+            self.assertEqual(check_manifests(root), [])
+
+    def test_unparsable_repository_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root, repository="git@example.invalid:something")
+            errors = check_manifests(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("解釈できない", errors[0])
+
+    def test_ssh_style_repository_is_accepted(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root, repository="git@github.com:owner/claude-skills.git")
+            self.assertEqual(check_manifests(root), [])
+
+    def test_filesystem_path_is_not_treated_as_slug(self):
+        # README の `--plugin-dir /path/to/claude-skills` を install slug と誤読しない
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, "README.md",
+                        "claude plugin marketplace add owner/claude-skills\n"
+                        "claude --plugin-dir /path/to/claude-skills\n")
+            self.assertEqual(check_manifests(root), [])
+
+    def test_repo_without_manifests_is_noop(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "README.md", "# x\n")
+            self.assertEqual(check_manifests(root), [])
+
+    def test_invalid_json_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, ".codex-plugin/plugin.json", "{not json")
+            errors = check_manifests(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("JSON として読めない", errors[0])
 
 
 class TestCheckDescriptionQuality(unittest.TestCase):

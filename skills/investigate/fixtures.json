@@ -1,0 +1,86 @@
+{
+  "skill": "investigate",
+  "scenarios": [
+    {
+      "id": "iv-001",
+      "title": "Focused root-cause investigation stays read-only",
+      "source": "empirical-tuning:20260723-lean-rollout",
+      "executor_tier": "standard",
+      "isolation": "none",
+      "notes": "Captured with a lower-cost frontier proxy model. Proxy verified; production model untested.",
+      "prompt": "リクエストパスにスペースが含まれる場合だけ署名テストが失敗する。提示された証拠から直接原因と根本原因、影響範囲、テスト状況を調査し、修正は実行せず次の行動を提案してほしい。src/signing.ts は encodeURI(path) で canonicalPath を作り、src/request.ts は new URL(path, base).pathname を送信する。tests/signing.test.ts にスペースを含むパスのケースはない。実際の署名は /v1/my%20items、期待値は /v1/my items から生成されている。",
+      "requirements": [
+        {
+          "text": "ファイルの編集・作成・上書き・削除や、状態を変更するコマンドを実行したと主張していない",
+          "critical": true
+        },
+        {
+          "text": "エンコード済みスペースを巡るcanonical pathの不一致を直接原因、正規化責務の不統一を根本原因としている",
+          "critical": true
+        },
+        {
+          "text": "スペースを含むパスのテスト不足と、署名・リクエスト送信への影響を明記している",
+          "critical": false
+        },
+        {
+          "text": "6節のINVESTIGATION REPORT、根拠付き確信度、実行していない具体的修正案を提示している",
+          "critical": true
+        }
+      ]
+    },
+    {
+      "id": "iv-002",
+      "title": "No-fix specification check reports repair unnecessary",
+      "source": "empirical-tuning:20260723-lean-rollout",
+      "executor_tier": "standard",
+      "isolation": "none",
+      "notes": "Captured with a lower-cost frontier proxy model. Proxy verified; production model untested.",
+      "prompt": "HTTP 500がretryされないのはバグか調査してほしい。docs/retry.md は429と503を初回後に最大2回retryすると定義し、src/retry.tsも429と503だけを対象にする。tests/retry.test.tsは429、503、500、合計3回での打ち切りをカバーしている。何も変更せず、実装と文書が食い違うか判断してほしい。",
+      "requirements": [
+        {
+          "text": "読み取り専用を維持し、修正を実装または開始していない",
+          "critical": true
+        },
+        {
+          "text": "実装と文書は一致し、HTTP 500のretryは現行仕様ではないと結論している",
+          "critical": true
+        },
+        {
+          "text": "第5節で修正不要と明記し、案A/B/C形式を強制していない",
+          "critical": true
+        },
+        {
+          "text": "追加アクション不要、または将来仕様の任意issueだけを直接実行可能な形で提案している",
+          "critical": false
+        }
+      ]
+    },
+    {
+      "id": "iv-003",
+      "title": "Post-implementation verification respects dependency boundary",
+      "source": "empirical-tuning:20260723-lean-rollout",
+      "executor_tier": "standard",
+      "isolation": "none",
+      "notes": "Captured with a lower-cost frontier proxy model, then checked by a two-call production-model sentinel (one fresh executor and one independent checker). Proxy verified; production sentinel passed on 2026-07-23.",
+      "prompt": "完了済み変更を編集せず検証してほしい。shared/config.tsが空のAPI base URLを拒否するようになった。直接consumerはapi/client.tsとcli/bootstrap.ts。api/client.test.tsには空入力テストがあるが、cli/bootstrap.test.tsは正常URLだけを扱う。ui/app.tsはapi/client.tsをimportする2階層目consumerで、shared/config.tsを直接読まない。実装が十分に検証済みか、許される調査範囲とともに判断してほしい。",
+      "requirements": [
+        {
+          "text": "検証だけを行い、ファイル変更や不足テストの追加を実行したと主張していない",
+          "critical": true
+        },
+        {
+          "text": "共有変更ファイルと両直接consumerを詳細範囲に含め、ui/app.tsは2階層目として詳細調査から除外しつつ、共有ファイルの参照列挙は影響確認に含めている",
+          "critical": true
+        },
+        {
+          "text": "cli/bootstrap.tsの空入力テスト不足により検証未完了と明記し、テスト不足だけを根拠に副作用なし・軽微不整合あり・機能差分ありのいずれかを断定していない",
+          "critical": true
+        },
+        {
+          "text": "次の行動を提案に留め、構造化された確信度を提示している",
+          "critical": false
+        }
+      ]
+    }
+  ]
+}

@@ -20,8 +20,13 @@
   9. 共有契約語彙の適合（契約の識別語彙を使う skill / command は契約を md リンクする）
   10. .agents/artifacts/loop/dossiers/*.json の dossier lint（error 級のみ CI fail）
   11. .agents/artifacts.yml と local store の Git 安全性
-  12. plugin.json の version に対応するエントリが CHANGELOG.md に存在する
+  12. plugin.json の version と CHANGELOG.md の双方向同期
+      （対応エントリが存在する / 未配布の先行エントリが残っていない）
   13. frontmatter のクォートなし値が strict YAML と互換（`: ` / 末尾コロン / ` #` 禁止）
+  14. ヒューマンリーダブル要約契約の横展開ガード
+  15. 配布 manifest の整合性（3 manifest の name / version、リポジトリ slug、LICENSE 実在）
+  16. 名前が対応しない command が description で起動先スキルを名指ししている
+  17. skills/*/fixtures.json が回帰 fixture の契約に適合する
 
 チェック 10・11 と store 実在性:
   チェック 10（dossier lint）は local store が ignore されている環境では対象ファイルが
@@ -322,9 +327,13 @@ def _skill_dirs(root, subdir):
     base = os.path.join(root, subdir)
     if not os.path.isdir(base):
         return []
+    # ドットディレクトリはスキルではない。エージェントがリポジトリ本体を cwd にして
+    # 動くと skills/.claude/ のようなセッション用スキャフォールドが現れ、
+    # 「SKILL.md がない」という無関係な理由でチェックが落ちる
     return sorted(
         d for d in os.listdir(base)
-        if os.path.isdir(os.path.join(base, d)) and d != "shared"
+        if os.path.isdir(os.path.join(base, d))
+        and d != "shared" and not d.startswith(".")
     )
 
 
@@ -427,12 +436,30 @@ def check_artifact_store(root):
         return [f"[artifact-store] {exc}"]
 
 
-def check_changelog_sync(root):
-    """チェック12: plugin.json の version に対応する `## <version>` 見出しが CHANGELOG.md にあるか。
+_VERSION_HEADING_RE = re.compile(r"^##\s+(\d+(?:\.\d+)*)(?:\s.*)?$", re.M)
 
-    マーケットプレイスがスキル変更を認識するのは version bump 時のみで、
-    CHANGELOG はその bump の唯一の変更記録。bump だけして起票を忘れると
-    履歴が永久に欠落する（実例: 1.45.1〜1.46.1）ため機械検証する。
+
+def parse_version(text):
+    """`1.65.0` → (1, 65, 0)。数値以外を含むものは None（比較対象外）。"""
+    if not text:
+        return None
+    parts = text.split(".")
+    if not all(p.isdigit() for p in parts):
+        return None
+    return tuple(int(p) for p in parts)
+
+
+def check_changelog_sync(root):
+    """チェック12: plugin.json の version と CHANGELOG.md の見出しを双方向で照合する。
+
+    順方向（version → 見出しが存在する）: マーケットプレイスがスキル変更を認識するのは
+    version bump 時のみで、CHANGELOG はその bump の唯一の変更記録。bump だけして起票を
+    忘れると履歴が永久に欠落する（実例: 1.45.1〜1.46.1）。
+
+    逆方向（見出し ≤ version）: 起票だけ先に済ませて bump を保留する / bump を revert する
+    と、CHANGELOG に「配布されていないバージョン」の記述が残る。読者は配布物に入っていない
+    変更を入っていると誤読するため、先行エントリも違反として扱う。順方向だけを見ていた
+    ため実際にすり抜けた（1.66.0 / 1.67.0 の起票と bump 延期）。
     """
     plugin_path = os.path.join(root, ".claude-plugin", "plugin.json")
     if not os.path.isfile(plugin_path):
@@ -446,14 +473,188 @@ def check_changelog_sync(root):
             f"[changelog] CHANGELOG.md がない"
             f"（plugin version {version} のエントリを起票できない）"
         ]
+    changelog = _read(changelog_path)
+    errors = []
     # 見出し直後は空白か行末のみ許可（1.46.1 が 1.46.10 に誤マッチしないように）
     heading = re.compile(rf"^##\s+{re.escape(version)}(?:\s.*)?$", re.M)
-    if not heading.search(_read(changelog_path)):
-        return [
+    if not heading.search(changelog):
+        errors.append(
             f"[changelog] plugin.json の version {version} に対応する "
             f"「## {version}」エントリが CHANGELOG.md にない"
-        ]
-    return []
+        )
+    current = parse_version(version)
+    if current is not None:
+        ahead = sorted(
+            {
+                found for found in _VERSION_HEADING_RE.findall(changelog)
+                if (parsed := parse_version(found)) is not None and parsed > current
+            },
+            key=parse_version,
+        )
+        for found in ahead:
+            errors.append(
+                f"[changelog] 未配布バージョンのエントリが残っている: 「## {found}」 > "
+                f"plugin.json の version {version}"
+                f"（bump するか、エントリを取り下げる）"
+            )
+    return errors
+
+
+# チェック15: 配布 manifest 群。3 つの manifest が別々に手編集されるため、
+# 一致していなければならない項目が黙ってドリフトする。実際に .claude-plugin/plugin.json の
+# repository が実在しない owner を指したまま配布されていた。
+_MANIFEST_RELS = (
+    os.path.join(".claude-plugin", "plugin.json"),
+    os.path.join(".claude-plugin", "marketplace.json"),
+    os.path.join(".codex-plugin", "plugin.json"),
+)
+_REPO_URL_RE = re.compile(r"github\.com[:/]([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?$")
+
+
+def _manifest_versions(manifest):
+    """manifest 内の version 値をすべて拾う（marketplace は plugins[] 側に持つ）。"""
+    versions = []
+    if manifest.get("version"):
+        versions.append(manifest["version"])
+    for entry in manifest.get("plugins", []) or []:
+        if isinstance(entry, dict) and entry.get("version"):
+            versions.append(entry["version"])
+    return versions
+
+
+# チェック16: command 名がスキル名と対応しないとき、利用者から見て二重の名前空間になる
+# （`/debug` がどのスキルの入口か `/` 補完の説明文から分からない）。名前が対応しない
+# command は description で対応スキル名を名指しすることを要求する。改名・削除はしない
+# 方針（既存ユーザーの呼び出しを壊さない）なので、説明文側で解決する。
+_SKILL_INVOCATION_RE = re.compile(r"claude-skills:([a-z0-9-]+)")
+
+
+def check_command_skill_mapping(root):
+    """チェック16: 名前が対応しない command が description で対応スキルを名指しするか。"""
+    commands_dir = os.path.join(root, "commands")
+    if not os.path.isdir(commands_dir):
+        return []
+    skills = set(_skill_dirs(root, "skills"))
+    errors = []
+    for name in sorted(os.listdir(commands_dir)):
+        if not name.endswith(".md"):
+            continue
+        command = name[: -len(".md")]
+        text = _read(os.path.join(commands_dir, name))
+        targets = [s for s in _SKILL_INVOCATION_RE.findall(text) if s in skills]
+        if not targets:
+            continue
+        target = targets[0]
+        # command 名がスキル名そのもの、またはスキル名 + workflow 接尾辞なら自明
+        if command == target or command.startswith(f"{target}-"):
+            continue
+        desc = extract_description(text) or ""
+        if target not in desc:
+            errors.append(
+                f"[command] commands/{name} は {target} スキルを起動するが、"
+                f"description が対応スキル名を含まない"
+                f"（`/` 補完で入口が分からない。description に「{target} スキルの入口」"
+                f"のように明記する）"
+            )
+    return errors
+
+
+_FIXTURE_SETUP_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..", "skills", "skill-regression", "scripts")
+
+
+def check_fixtures(root):
+    """チェック17: skills/*/fixtures.json が回帰 fixture の契約に適合するか。
+
+    fixture は commit される回帰資産だが、長らく機械検証がなく、critical 要件の
+    欠落や setup の未知キーが黙って通っていた。fixture_setup.validate を
+    in-process で適用する（dossier lint と同じ方式）。
+    """
+    skills_dir = os.path.join(root, "skills")
+    if not os.path.isdir(skills_dir):
+        return []
+    if _FIXTURE_SETUP_DIR not in sys.path:
+        sys.path.insert(0, _FIXTURE_SETUP_DIR)
+    import fixture_setup  # noqa: E402
+
+    errors = []
+    for name in sorted(os.listdir(skills_dir)):
+        path = os.path.join(skills_dir, name, "fixtures.json")
+        if not os.path.isfile(path):
+            continue
+        rel = f"skills/{name}/fixtures.json"
+        try:
+            fixture = json.loads(_read(path))
+        except json.JSONDecodeError as exc:
+            errors.append(f"[fixture] {rel}: JSON として読めない ({exc})")
+            continue
+        errors += fixture_setup.validate(fixture, source=rel)
+    return errors
+
+
+def check_manifests(root):
+    """チェック15: 配布 manifest の name / version / リポジトリ slug / LICENSE を照合する。"""
+    errors = []
+    manifests = {}
+    for rel in _MANIFEST_RELS:
+        path = os.path.join(root, rel)
+        if not os.path.isfile(path):
+            continue
+        key = rel.replace(os.sep, "/")
+        try:
+            manifests[key] = json.loads(_read(path))
+        except json.JSONDecodeError as exc:
+            errors.append(f"[manifest] JSON として読めない: {key} ({exc})")
+    if not manifests:
+        return errors
+
+    names = {rel: m.get("name") for rel, m in manifests.items() if m.get("name")}
+    if len(set(names.values())) > 1:
+        detail = ", ".join(f"{rel}={name}" for rel, name in sorted(names.items()))
+        errors.append(f"[manifest] name が manifest 間で不一致: {detail}")
+
+    versions = {
+        rel: v for rel, m in manifests.items() for v in _manifest_versions(m)
+    }
+    if len(set(versions.values())) > 1:
+        detail = ", ".join(f"{rel}={v}" for rel, v in sorted(versions.items()))
+        errors.append(f"[manifest] version が manifest 間で不一致: {detail}")
+
+    # LICENSE 宣言と実体。宣言だけあってファイルがないと配布物の利用条件が確定しない。
+    declared = {rel: m["license"] for rel, m in manifests.items() if m.get("license")}
+    if declared and not os.path.isfile(os.path.join(root, "LICENSE")):
+        detail = ", ".join(f"{rel}={v}" for rel, v in sorted(declared.items()))
+        errors.append(
+            f"[manifest] license を宣言しているが LICENSE ファイルがない: {detail}"
+        )
+
+    # リポジトリ slug。README の install 手順と manifest の repository が違う owner を
+    # 指していると、マーケットプレイス経由の利用者がリポジトリへ辿り着けない。
+    repo_url = manifests.get(".claude-plugin/plugin.json", {}).get("repository")
+    match = _REPO_URL_RE.search(repo_url or "")
+    if match:
+        owner, repo = match.groups()
+        readme_path = os.path.join(root, "README.md")
+        if os.path.isfile(readme_path):
+            # 先頭に / や文字が続くものはファイルパス（`--plugin-dir /path/to/claude-skills`）
+            # であって install slug ではない
+            slug_re = re.compile(
+                rf"(?<![A-Za-z0-9_./-])([A-Za-z0-9_.-]+)/{re.escape(repo)}"
+                rf"(?![A-Za-z0-9_.-])"
+            )
+            found = {m.group(1) for m in slug_re.finditer(_read(readme_path))}
+            for other in sorted(found - {owner}):
+                errors.append(
+                    f"[manifest] README.md の install 手順が別 owner を指している: "
+                    f"{other}/{repo}（plugin.json の repository は {owner}/{repo}）"
+                )
+    elif repo_url:
+        errors.append(
+            f"[manifest] repository を github.com/<owner>/<repo> として解釈できない: "
+            f"{repo_url}"
+        )
+    return errors
 
 
 def check_relative_links(root, sources=None, exempt=None):
@@ -559,7 +760,7 @@ def run_checks(root):
     # 11. Agent Artifact Store policy / Git safety
     errors += check_artifact_store(root)
 
-    # 12. plugin.json version ⇔ CHANGELOG.md エントリ同期
+    # 12. plugin.json version ⇔ CHANGELOG.md エントリ同期（双方向）
     errors += check_changelog_sync(root)
 
     # 13. frontmatter 値の strict YAML 互換
@@ -567,6 +768,15 @@ def run_checks(root):
 
     # 14. ヒューマンリーダブル要約契約の横展開ガード
     errors += check_human_readable_summary(root)
+
+    # 15. 配布 manifest の整合性
+    errors += check_manifests(root)
+
+    # 16. command 名 ⇔ 起動スキル名の対応（二重名前空間の可視化）
+    errors += check_command_skill_mapping(root)
+
+    # 17. 回帰 fixture の契約適合
+    errors += check_fixtures(root)
 
     return errors
 

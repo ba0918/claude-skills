@@ -1,5 +1,5 @@
 ---
-description: "直近の実装計画を7観点（実現可能性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・代替手法・UI/UX条件付き）で徹底レビューする"
+description: "plan-reviewer スキルの入口（plan スキルのワークフローではない）。直近の実装計画を7観点（実現可能性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・代替手法・UI/UX条件付き）で徹底レビューする"
 ---
 
 Artifact paths follow the [Agent Artifact Store contract](../skills/shared/references/artifact-store.md).

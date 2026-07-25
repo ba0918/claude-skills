@@ -5,8 +5,12 @@
       "id": "gi-001",
       "title": "state_root 解決と graceful stop — GitHub 書き込みゼロで halt",
       "source": "manual",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "worktree",
+      "setup": {
+        "git": { "init": true, "commit": true, "remote": "https://github.com/claude-skills-fixture/gi-001.git" },
+        "env": { "XDG_STATE_HOME": "./xdg-state" }
+      },
       "prompt": "GitHub ラベル駆動の自動処理ループを一時停止したい。状態ディレクトリは環境変数 XDG_STATE_HOME=./xdg-state（このリポジトリ直下の相対パス）を使うこと。この環境では gh の認証が使えないが、停止の確認に GitHub アクセスは不要のはず — pre-check の認証失敗は記録した上で続行してよい。graceful stop を仕込んでから polling を 1 tick 実行し、GitHub への書き込みが一切発生せずに halt することを確認して。",
       "requirements": [
         { "text": "state_root を <XDG_STATE_HOME>/claude-skills/github-issue/{repo_slug}-{clone_id} 形式で解決している（clone_id は正規化した git remote URL の SHA-1 先頭 16 hex）", "critical": true },
@@ -21,7 +25,7 @@
       "id": "gi-002",
       "title": "Label Mapping の状態判定 — invalid state の fail-closed を含む",
       "source": "manual",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "none",
       "prompt": "GitHub の issue に claude 系ラベルが混在していて、自動処理ループがそれぞれをどう扱うのか分からなくなった。次の 4 つのラベル集合それぞれについて、polling がどの状態として扱うか・claim（list_ready）の対象になるかを根拠付きで教えて: (a) claude-auto のみ (b) claude-auto + claude-review (c) claude-auto + claude-failed-transient + claude-failed-permanent (d) claude-auto + claude-failed",
       "requirements": [
