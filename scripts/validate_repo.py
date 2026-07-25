@@ -327,9 +327,13 @@ def _skill_dirs(root, subdir):
     base = os.path.join(root, subdir)
     if not os.path.isdir(base):
         return []
+    # ドットディレクトリはスキルではない。エージェントがリポジトリ本体を cwd にして
+    # 動くと skills/.claude/ のようなセッション用スキャフォールドが現れ、
+    # 「SKILL.md がない」という無関係な理由でチェックが落ちる
     return sorted(
         d for d in os.listdir(base)
-        if os.path.isdir(os.path.join(base, d)) and d != "shared"
+        if os.path.isdir(os.path.join(base, d))
+        and d != "shared" and not d.startswith(".")
     )
 
 

@@ -10,6 +10,7 @@ import unittest
 import json
 
 from validate_repo import (
+    _skill_dirs,
     extract_md_links,
     is_checkable_link,
     parse_frontmatter_fields,
@@ -262,6 +263,31 @@ class TestMentionsName(unittest.TestCase):
     def test_hyphenated_skill_name_matches_exactly(self):
         self.assertTrue(mentions_name("github-issue polling", "github-issue"))
         self.assertFalse(mentions_name("github-issue2 という別物", "github-issue"))
+
+
+class TestSkillDirs(unittest.TestCase):
+    def _mkdir(self, root, rel):
+        os.makedirs(os.path.join(root, rel), exist_ok=True)
+
+    def test_lists_skill_directories(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._mkdir(root, "skills/a")
+            self._mkdir(root, "skills/b")
+            self.assertEqual(_skill_dirs(root, "skills"), ["a", "b"])
+
+    def test_dot_directories_are_not_skills(self):
+        # エージェントがリポジトリ本体を cwd にすると skills/.claude/ のような
+        # セッション用スキャフォールドが現れ、無関係な理由でチェックが落ちる
+        with tempfile.TemporaryDirectory() as root:
+            self._mkdir(root, "skills/a")
+            self._mkdir(root, "skills/.claude")
+            self.assertEqual(_skill_dirs(root, "skills"), ["a"])
+
+    def test_shared_is_excluded(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._mkdir(root, "skills/a")
+            self._mkdir(root, "skills/shared")
+            self.assertEqual(_skill_dirs(root, "skills"), ["a"])
 
 
 class TestCollectLinkSources(unittest.TestCase):
