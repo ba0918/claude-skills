@@ -9,7 +9,7 @@
       "isolation": "worktree",
       "setup": {
         "files": {
-          ".gitignore": "__pycache__/\n.claude/\n",
+          ".gitignore": "__pycache__/\n.claude/\n\n# Agent Artifact Store / runtime（local visibility は Git 無視が契約上の不変条件）\n/.agents/artifacts/\n/.agents/runtime/\n",
           "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
           "src/__init__.py": "",
           "src/normalize.py": "def normalize(text):\n    \"\"\"前後の空白を落とし、連続する空白を 1 個に潰した文字列を返す。\"\"\"\n    return \" \".join(text.split())\n",
@@ -43,7 +43,7 @@
       "isolation": "worktree",
       "setup": {
         "files": {
-          ".gitignore": "__pycache__/\n.claude/\n",
+          ".gitignore": "__pycache__/\n.claude/\n\n# Agent Artifact Store / runtime（local visibility は Git 無視が契約上の不変条件）\n/.agents/artifacts/\n/.agents/runtime/\n",
           "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
           "src/__init__.py": "",
           "src/normalize.py": "def normalize(text):\n    \"\"\"前後の空白を落とし、連続する空白を 1 個に潰した文字列を返す。\"\"\"\n    return \" \".join(text.split())\n",
@@ -75,6 +75,7 @@
       "isolation": "worktree",
       "setup": {
         "files": {
+          ".gitignore": "# Agent Artifact Store / runtime（local visibility は Git 無視が契約上の不変条件）\n/.agents/artifacts/\n/.agents/runtime/\n",
           "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
           "src/__init__.py": "",
           "src/normalize.py": "def normalize(text):\n    \"\"\"前後の空白を落とし、連続する空白を 1 個に潰した文字列を返す。\"\"\"\n    return \" \".join(text.split())\n",
