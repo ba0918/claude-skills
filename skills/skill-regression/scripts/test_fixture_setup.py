@@ -4,6 +4,7 @@
 実体化のテストは「fixture の宣言だけで前提が決まる」ことを守るためのもので、
 呼び出し側の手作業に前提が漏れると測定対象がぶれる。
 """
+import hashlib
 import json
 import os
 import subprocess
@@ -61,6 +62,21 @@ class TestValidate(unittest.TestCase):
         self.assertTrue(any("isolation" in e
                             for e in fixture_setup.validate(_fixture(isolation="sandbox"))))
 
+    def test_unknown_top_level_key_is_reported(self):
+        f = _fixture()
+        f["skil"] = "typo"
+        self.assertTrue(any("未知のトップレベルキー" in e for e in fixture_setup.validate(f)))
+
+    def test_unknown_scenario_key_is_reported(self):
+        # 宣言したつもりのキーが黙って無視されると、前提が実行者の裁量で埋まる
+        self.assertTrue(any("未知のシナリオキー" in e
+                            for e in fixture_setup.validate(_fixture(executor_model="sonnet"))))
+
+    def test_unknown_requirement_key_is_reported(self):
+        f = _fixture(requirements=[{"text": "満たす", "criticial": True}])
+        self.assertTrue(any("未知の requirements キー" in e
+                            for e in fixture_setup.validate(f)))
+
 
 class TestValidateSetup(unittest.TestCase):
     def test_known_setup_keys_pass(self):
@@ -93,6 +109,41 @@ class TestValidateSetup(unittest.TestCase):
     def test_git_commit_without_init_is_reported(self):
         f = _fixture(setup={"git": {"commit": True}})
         self.assertTrue(any("init: true を必要とする" in e
+                            for e in fixture_setup.validate(f)))
+
+    def test_git_branch_and_baseline_message_pass(self):
+        f = _fixture(setup={
+            "files": {"a.md": "x", "b.md": "y"},
+            "git": {"init": True, "branch": "work", "commit": ["a.md"],
+                    "message": "chore: 基準コミット"},
+        })
+        self.assertEqual(fixture_setup.validate(f), [])
+
+    def test_git_branch_without_init_is_reported(self):
+        f = _fixture(setup={"git": {"branch": "work"}})
+        self.assertTrue(any("setup.git.branch は init: true を必要とする" in e
+                            for e in fixture_setup.validate(f)))
+
+    def test_empty_git_branch_is_reported(self):
+        f = _fixture(setup={"git": {"init": True, "branch": "  "}})
+        self.assertTrue(any("setup.git.branch" in e for e in fixture_setup.validate(f)))
+
+    def test_git_commit_path_outside_files_is_reported(self):
+        f = _fixture(setup={"files": {"a.md": "x"}, "git": {"init": True, "commit": ["b.md"]}})
+        self.assertTrue(any("対応する setup.files がない" in e
+                            for e in fixture_setup.validate(f)))
+
+    def test_empty_git_commit_list_is_reported(self):
+        f = _fixture(setup={"files": {"a.md": "x"}, "git": {"init": True, "commit": []}})
+        self.assertTrue(any("意図が曖昧" in e for e in fixture_setup.validate(f)))
+
+    def test_non_list_non_bool_git_commit_is_reported(self):
+        f = _fixture(setup={"files": {"a.md": "x"}, "git": {"init": True, "commit": "a.md"}})
+        self.assertTrue(any("true / パス配列" in e for e in fixture_setup.validate(f)))
+
+    def test_git_message_without_commit_is_reported(self):
+        f = _fixture(setup={"git": {"init": True, "message": "chore: x"}})
+        self.assertTrue(any("message は commit を必要とする" in e
                             for e in fixture_setup.validate(f)))
 
     def test_path_escaping_isolation_is_reported(self):
@@ -173,6 +224,40 @@ class TestMaterialize(unittest.TestCase):
             env=dict(os.environ, **fixture_setup._GIT_ENV))
         self.assertEqual(url.stdout.strip(), "https://example.invalid/r.git")
 
+    def _git(self, dest, *args):
+        return subprocess.run(
+            ["git"] + list(args), cwd=dest, capture_output=True, text=True,
+            env=dict(os.environ, **fixture_setup._GIT_ENV)).stdout.strip()
+
+    def test_declared_branch_is_checked_out(self):
+        # commit スキルの fixture は main/master 上だと Phase 2 で abort する
+        dest, result = self._materialize({"git": {"init": True, "branch": "fixture-work"}})
+        self.assertEqual(self._git(dest, "branch", "--show-current"), "fixture-work")
+        self.assertEqual(result["git"]["branch"], "fixture-work")
+
+    def test_default_branch_does_not_depend_on_the_environment(self):
+        dest, _ = self._materialize({"git": {"init": True}})
+        self.assertEqual(
+            self._git(dest, "branch", "--show-current"), fixture_setup.DEFAULT_BRANCH)
+
+    def test_commit_path_list_leaves_remaining_files_untracked(self):
+        # 「ベースラインはある / 作業分は未コミット」という前提を宣言で作れること
+        dest, _ = self._materialize({
+            "files": {"base.md": "b", "work.md": "w"},
+            "git": {"init": True, "commit": ["base.md"]},
+        })
+        self.assertEqual(self._git(dest, "status", "--porcelain"), "?? work.md")
+        self.assertEqual(self._git(dest, "ls-files"), "base.md")
+
+    def test_declared_baseline_message_becomes_the_history(self):
+        # 「既存履歴のスタイルに合わせる」を測るシナリオは履歴の内容自体が前提
+        dest, _ = self._materialize({
+            "files": {"a.md": "x"},
+            "git": {"init": True, "commit": True, "message": "chore: 基準コミットを作る"},
+        })
+        self.assertEqual(
+            self._git(dest, "log", "-1", "--format=%s"), "chore: 基準コミットを作る")
+
     def test_git_commit_succeeds_with_no_files(self):
         _, result = self._materialize({"git": {"init": True, "commit": True}})
         self.assertTrue(result["git"]["commit"])
@@ -185,6 +270,24 @@ class TestMaterialize(unittest.TestCase):
         _, result = self._materialize({})
         self.assertEqual(result["baseline"], {})
         self.assertEqual(result["git"], {})
+        self.assertEqual(result["unmaterialized"], [])
+
+    def test_materialized_files_are_not_reported_as_unmaterialized(self):
+        _, result = self._materialize({"files": {"a.md": "x"}})
+        self.assertEqual(result["unmaterialized"], [])
+
+    def test_declaration_swallowed_by_the_environment_is_reported(self):
+        # 実行基盤が機微な名前のファイルに /dev/null を被せると書き込みが捨てられる。
+        # 宣言のハッシュを baseline にすると実体と食い違ったまま編集ゼロを判定してしまう
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        os.symlink("/dev/null", os.path.join(temp.name, ".env"))
+        result = fixture_setup.materialize(
+            {"id": "s", "setup": {"files": {".env": "API_KEY=dummy\n"}}}, temp.name)
+        self.assertEqual(result["unmaterialized"], [".env"])
+        self.assertNotEqual(
+            result["baseline"][".env"],
+            hashlib.sha256(b"API_KEY=dummy\n").hexdigest())
 
 
 class TestShippedFixtures(unittest.TestCase):

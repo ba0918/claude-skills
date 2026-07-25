@@ -22,8 +22,23 @@ import time
 
 TIERS = ("standard", "high")
 ISOLATIONS = ("worktree", "none")
+TOP_KEYS = ("skill", "scenarios")
+SCENARIO_KEYS = (
+    "id", "title", "source", "executor_tier", "isolation", "setup",
+    "prompt", "requirements", "notes",
+)
+REQUIREMENT_KEYS = ("text", "critical")
 SETUP_KEYS = ("files", "mtimes", "git", "env")
-GIT_KEYS = ("init", "commit", "remote")
+GIT_KEYS = ("init", "commit", "remote", "branch", "message")
+
+# 実体化した git リポジトリの既定値。git 本体の既定（init.defaultBranch 未設定時の
+# 分岐や実装バージョン）に委ねると実体化が環境依存になるため、ここで固定する。
+DEFAULT_BRANCH = "master"
+DEFAULT_MESSAGE = "fixture baseline"
+
+# baseline の番兵。宣言したパスが通常ファイルとして存在しない（実行基盤が
+# デバイスファイルを被せた等）ことを、ハッシュ欄で区別できる形にする
+NOT_A_REGULAR_FILE = "NOT-A-REGULAR-FILE"
 
 # 実体化した git リポジトリの著者情報。実行環境の gitconfig に依存すると
 # サンドボックスで読み取りを拒否されて実体化ごと失敗するため固定する。
@@ -39,6 +54,52 @@ _GIT_ENV = {
 
 def _err(where, message):
     return f"[fixture] {where}: {message}"
+
+
+def _validate_git(where, git, files):
+    errors = []
+    for key in git:
+        if key not in GIT_KEYS:
+            errors.append(
+                _err(where, f"未知の setup.git キー {key!r}（有効: {', '.join(GIT_KEYS)}）"))
+    if not git.get("init"):
+        for dependent in ("commit", "remote", "branch", "message"):
+            if git.get(dependent):
+                errors.append(
+                    _err(where, f"setup.git.{dependent} は init: true を必要とする"))
+    remote = git.get("remote")
+    if remote is not None and not isinstance(remote, str):
+        errors.append(_err(where, "setup.git.remote は文字列である必要がある"))
+
+    branch = git.get("branch")
+    if branch is not None and (not isinstance(branch, str) or not branch.strip()):
+        errors.append(_err(where, "setup.git.branch は空でない文字列である必要がある"))
+
+    commit = git.get("commit")
+    if isinstance(commit, list):
+        if not commit:
+            errors.append(_err(
+                where,
+                "setup.git.commit の空配列は意図が曖昧（全件は true、"
+                "ベースラインコミットを作らないならキー自体を省く）"))
+        for path in commit:
+            if not isinstance(path, str):
+                errors.append(_err(where, "setup.git.commit の各要素は文字列である必要がある"))
+            elif path not in files:
+                errors.append(_err(
+                    where, f"setup.git.commit[{path!r}] に対応する setup.files がない"))
+    elif commit is not None and not isinstance(commit, bool):
+        errors.append(_err(
+            where, "setup.git.commit は true / パス配列である必要がある"))
+
+    message = git.get("message")
+    if message is not None:
+        if not isinstance(message, str) or not message.strip():
+            errors.append(_err(where, "setup.git.message は空でない文字列である必要がある"))
+        if not commit:
+            errors.append(_err(
+                where, "setup.git.message は commit を必要とする（コミットしないなら message は無意味）"))
+    return errors
 
 
 def _validate_setup(where, setup):
@@ -77,18 +138,7 @@ def _validate_setup(where, setup):
         if not isinstance(git, dict):
             errors.append(_err(where, "setup.git はオブジェクトである必要がある"))
         else:
-            for key in git:
-                if key not in GIT_KEYS:
-                    errors.append(
-                        _err(where, f"未知の setup.git キー {key!r}（有効: {', '.join(GIT_KEYS)}）"))
-            if not git.get("init"):
-                for dependent in ("commit", "remote"):
-                    if git.get(dependent):
-                        errors.append(
-                            _err(where, f"setup.git.{dependent} は init: true を必要とする"))
-            remote = git.get("remote")
-            if remote is not None and not isinstance(remote, str):
-                errors.append(_err(where, "setup.git.remote は文字列である必要がある"))
+            errors += _validate_git(where, git, files)
 
     env = setup.get("env") or {}
     if not isinstance(env, dict):
@@ -105,6 +155,12 @@ def validate(fixture, source="fixtures.json"):
     errors = []
     if not isinstance(fixture, dict):
         return [_err(source, "トップレベルはオブジェクトである必要がある")]
+    # 未知キーは黙って無視されるのが最も危険な失敗の形（宣言したつもりの前提が
+    # 実体化されず、run のたびに実行者の裁量で埋まる）。タイポも含めて拒否する
+    for key in fixture:
+        if key not in TOP_KEYS:
+            errors.append(
+                _err(source, f"未知のトップレベルキー {key!r}（有効: {', '.join(TOP_KEYS)}）"))
     if not fixture.get("skill"):
         errors.append(_err(source, "skill がない"))
     scenarios = fixture.get("scenarios")
@@ -117,6 +173,10 @@ def validate(fixture, source="fixtures.json"):
         if not isinstance(scenario, dict):
             errors.append(_err(where, "シナリオはオブジェクトである必要がある"))
             continue
+        for key in scenario:
+            if key not in SCENARIO_KEYS:
+                errors.append(_err(
+                    where, f"未知のシナリオキー {key!r}（有効: {', '.join(SCENARIO_KEYS)}）"))
         for key in ("id", "title", "source", "prompt"):
             if not scenario.get(key):
                 errors.append(_err(where, f"{key} がない"))
@@ -146,6 +206,12 @@ def validate(fixture, source="fixtures.json"):
         for req in requirements:
             if not isinstance(req, dict) or not req.get("text"):
                 errors.append(_err(where, "requirements の各項目は text を持つ必要がある"))
+                continue
+            for key in req:
+                if key not in REQUIREMENT_KEYS:
+                    errors.append(_err(
+                        where,
+                        f"未知の requirements キー {key!r}（有効: {', '.join(REQUIREMENT_KEYS)}）"))
         # critical が 1 つも無い fixture は「落ちても合格」になり回帰を検出しない
         if not any(isinstance(r, dict) and r.get("critical") for r in requirements):
             errors.append(_err(where, "critical: true の要件が 1 つもない（回帰を検出できない）"))
@@ -174,12 +240,27 @@ def materialize(scenario, dest, base_time=None):
 
     os.makedirs(dest, exist_ok=True)
     baseline = {}
+    unmaterialized = []
     for path, content in files.items():
         full = os.path.join(dest, path)
         os.makedirs(os.path.dirname(full) or dest, exist_ok=True)
         with open(full, "w", encoding="utf-8") as handle:
             handle.write(content)
-        baseline[path] = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        # 書けたことを実体側で確認する。実行基盤が機微な名前のファイル（.env 等）に
+        # /dev/null を被せることがあり、書き込みが黙って捨てられる。宣言のハッシュを
+        # そのまま baseline にすると、実体と食い違ったまま「編集ゼロ」を判定してしまう
+        expected = content.encode("utf-8")
+        actual = None
+        if os.path.isfile(full):
+            with open(full, "rb") as handle:
+                actual = handle.read()
+        if actual == expected:
+            baseline[path] = hashlib.sha256(expected).hexdigest()
+        else:
+            unmaterialized.append(path)
+            baseline[path] = (
+                hashlib.sha256(actual).hexdigest() if actual is not None
+                else NOT_A_REGULAR_FILE)
 
     # mtime は全ファイル書き込み後にまとめて適用する。書き込みの合間に適用すると
     # 後続の書き込みが同一ディレクトリの mtime を巻き戻して順序が崩れる
@@ -191,17 +272,25 @@ def materialize(scenario, dest, base_time=None):
 
     git_state = {}
     if git.get("init"):
-        _run_git(["init", "-q"], dest)
+        branch = git.get("branch") or DEFAULT_BRANCH
+        _run_git(["init", "-q", "-b", branch], dest)
         git_state["init"] = True
+        git_state["branch"] = branch
         if git.get("remote"):
             _run_git(["remote", "add", "origin", git["remote"]], dest)
             git_state["remote"] = git["remote"]
-        if git.get("commit"):
-            _run_git(["add", "-A"], dest)
+        commit = git.get("commit")
+        if commit:
+            # パス配列は「ベースラインに含めるファイル」の宣言。残りは未追跡のまま
+            # 残り、「未コミットの作業がある」状態そのものが前提になるシナリオ
+            # （commit スキル等）を宣言で作れる
+            paths = ["-A"] if commit is True else list(commit)
+            _run_git(["add"] + paths, dest)
             # --allow-empty: setup.files が空でも基準コミットを作る
             # （「作業ツリーが clean」を要件にするシナリオの前提）
             result = _run_git(
-                ["commit", "-q", "-m", "fixture baseline", "--allow-empty"], dest)
+                ["commit", "-q", "-m", git.get("message") or DEFAULT_MESSAGE,
+                 "--allow-empty"], dest)
             git_state["commit"] = result.returncode == 0
             # commit 後に mtime が変わることはないが、checkout 系を足す場合は再適用が要る
 
@@ -210,6 +299,7 @@ def materialize(scenario, dest, base_time=None):
         "baseline": baseline,
         "env": dict(setup.get("env") or {}),
         "git": git_state,
+        "unmaterialized": unmaterialized,
     }
 
 

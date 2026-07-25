@@ -49,8 +49,25 @@
 | `scenarios[].isolation` | - | `worktree`（ファイル生成・編集を伴う）/ `none`（読み取り・対話のみ）。省略時 `worktree`（安全側） |
 | `scenarios[].setup.files` | - | シナリオ実行前に worktree 内へ配置するファイル（相対パス → 内容）。isolation が `worktree` の場合のみ有効 |
 | `scenarios[].setup.mtimes` | - | ファイルの mtime（`files` のパス → 基準時刻からの相対秒。負値が過去）。順序を判定材料にするスキルで必要。相対にするのは絶対時刻が時間経過で陳腐化するため |
-| `scenarios[].setup.git` | - | 隔離領域の git 状態。`init` / `commit`（基準コミットを作り作業ツリーを clean にする） / `remote`（origin の URL）。`commit` と `remote` は `init: true` を必要とする |
+| `scenarios[].setup.git` | - | 隔離領域の git 状態。キーは下表 |
 | `scenarios[].setup.env` | - | 実行者に前提として与える環境変数（名前 → 値）。実体化では設定されず、呼び出し側がプロンプトへ注入する |
+| `scenarios[].prompt` | ✓ | 実行者に渡す状況設定。ユーザー発話として自然な文にする（スキル名を直接指定しない — 発火判定は trigger-eval の領分、ここでは本文実行の質だけを測る） |
+| `scenarios[].requirements[]` | ✓ | 成果物が満たすべき要件。3〜7 項目、`critical: true` を最低 1 つ。キーは `text` / `critical` のみ |
+| `scenarios[].notes` | - | 設計判断のメモ（edge の意図・tier 変更理由など） |
+
+未知のキーは検証で拒否される（トップレベル / シナリオ / `requirements` / `setup` / `setup.git` の全階層）。
+黙って無視されると「宣言したつもりの前提が実体化されない」という最も気づきにくい形で
+測定対象がぶれるため、タイポも含めて違反として落とす。
+
+### `setup.git` のキー
+
+| キー | 意味 |
+|------|------|
+| `init` | 隔離領域を git リポジトリにする。他の git キーはすべてこれを必要とする |
+| `branch` | 初期ブランチ名。省略時 `master`（git 本体の既定に委ねると実体化が環境依存になるため固定値）。ブランチ名で分岐するスキル（例: commit の main/master 直コミット禁止）では必ず宣言する |
+| `commit` | `true` = 全ファイルを含む基準コミットを作り作業ツリーを clean にする / パス配列 = そのファイルだけをコミットし、残りは未追跡のまま置く（「ベースラインはあるが作業分は未コミット」の宣言） |
+| `message` | 基準コミットのメッセージ。省略時 `fixture baseline`。「既存履歴のスタイルに合わせる」を測るシナリオでは履歴の言語・形式そのものが前提なので宣言する |
+| `remote` | origin の URL |
 
 `setup` は [scripts/fixture_setup.py](../scripts/fixture_setup.py) が実体化する。
 run / capture で隔離領域を手作業で組み立てない — 手作業は前提が宣言の外に漏れる経路そのもので、
@@ -62,13 +79,16 @@ python3 {skill_dir}/scripts/fixture_setup.py --materialize \
 ```
 
 出力の `baseline`（相対パス → sha256）は「編集ゼロの裏取り」にそのまま使う。
-`env` は実行者プロンプトの環境セットアップ節へ転記する。
+ハッシュは宣言ではなく**書き込み後の実体**から取る。`env` は実行者プロンプトの
+環境セットアップ節へ転記する。
+
+出力の `unmaterialized` が非空なら、そのパスは宣言と実体が食い違っている
+（実行基盤が `.env` 等にデバイスファイルを被せると書き込みが黙って捨てられる）。
+内容に依存する要件はそのシナリオに書けない — run の報告に記録し、要件が内容前提なら
+fixture 側を直す。
 
 スキーマ適合は `--validate` で検査でき、`scripts/validate_repo.py` のチェック17が
 CI で全 `skills/*/fixtures.json` に対して同じ検証を強制する。
-| `scenarios[].prompt` | ✓ | 実行者に渡す状況設定。ユーザー発話として自然な文にする（スキル名を直接指定しない — 発火判定は trigger-eval の領分、ここでは本文実行の質だけを測る） |
-| `scenarios[].requirements[]` | ✓ | 成果物が満たすべき要件。3〜7 項目、`critical: true` を最低 1 つ |
-| `scenarios[].notes` | - | 設計判断のメモ（edge の意図・model 変更理由など） |
 
 ## 設計指針
 
@@ -100,6 +120,11 @@ CI で全 `skills/*/fixtures.json` に対して同じ検証を強制する。
 | mtime の表示値 | 一覧表示の日時欄がファイル名の日付と食い違い、要件が曖昧になる | 表示値は要件に入れない。順序だけを assert する |
 | 対象ファイルの件数 | 上限（例: `max_parallel=4`）による早期打ち切りが、件数不足で発火せず未検証のまま ○ になる | `setup.files`（上限を踏む件数を置く） |
 | git の状態（初期コミット / remote） | 「作業ツリーが clean」を要件にしても未追跡ファイルで最初から dirty になる。remote 前提のスキルでは実行者が架空 remote を自作する | `setup.git` |
+| ブランチ名 | `git init` の既定ブランチが main/master になり、ブランチ名で中断するスキル（commit）が本題に入る前に abort する | `setup.git.branch` |
+| 既存履歴の内容 | 「既存履歴のスタイルに合わせる」が測れない（履歴が空 or harness 既定の英語メッセージ 1 件） | `setup.git.message` |
+| 未コミットの作業がどれか | `commit: true` は全ファイルをコミットしてしまい「未コミットの変更が N 件ある」前提が作れない | `setup.git.commit` にパス配列 |
+| 機微な名前のファイルの内容 | 実行基盤が `.env` 等に `/dev/null` を被せ、宣言した内容が実体化されない（宣言のハッシュを baseline にすると実体と食い違ったまま「編集ゼロ」を判定する） | 宣言できない。`materialize` の `unmaterialized` で検出し、要件を名前・種別ベースにする |
+| 実行基盤が作るセッション残骸 | `.claude/` や `__pycache__` が作業ツリーを汚し、「clean」要件の成否が実行者の裁量（ignore を自作するか / スコープ外と判断するか）で決まる | `setup.files` に `.gitignore` |
 | 環境変数 | 実行者が値を推測して埋め、run ごとに違う前提で動く | `setup.env` |
 | 入れ子委譲が成立する実行環境 | 多段委譲スキルは委譲先の完了通知が親に届かず停止する | 宣言できない。[executor-contract.md](executor-contract.md) の環境制約に従い上位 watchdog を前提に組む |
 
