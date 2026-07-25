@@ -42,8 +42,8 @@ comprehension_questions[] required, exactly 3
 | `kind` | yes | See per-view vocabulary below |
 | `intent` | yes | Why this group exists as one unit |
 | `plain_explanation` | yes | The explanation a reader who has not opened the source can follow |
-| `risk` | yes | `low` / `medium` / `high` |
-| `confidence` | yes | `low` / `medium` / `high` |
+| `risk` | yes | `low` / `medium` / `high`. See the scales below |
+| `confidence` | yes | `low` / `medium` / `high`. See the scales below |
 | `evidence_refs` | yes | At least one. Ids from the collected input |
 | `items` | yes | One entry per line. Never a comma-joined paragraph |
 | `concerns` | no | Anything noticed but not established. Ungrounded claims land here |
@@ -89,6 +89,36 @@ the count stays visible and each entry is reachable.
 Exactly three strings. Not scored, no input field, never blocks anything. Their only job is to
 let a reader notice on their own that they cannot answer.
 
+## The two scales
+
+`risk` and `confidence` are required on every group, so leaving them to feel means the same
+material gets a different reading on every run. Both are decided by a question with an
+observable answer, not by impression. They measure different things and move independently: a
+change can be well understood and still dangerous.
+
+### risk — how costly it is for the reader to skim past this group
+
+| Level | The group qualifies when |
+|-------|--------------------------|
+| `high` | Behaviour visible outside the system changes; data, schema or configuration changes in a way that is not straightforward to undo; authentication, permissions, money or personal data are touched; or deciding later closes off options that are open now |
+| `medium` | Internal behaviour changes but is reversible, or the effect reaches beyond the files this group covers |
+| `low` | Behaviour does not change (wording, documentation, tests, pure restructuring), and the effect stays inside this group |
+
+Take the highest level any single item in the group reaches. A group is as risky as its worst
+element — averaging hides exactly the item the reader needed to see.
+
+### confidence — how far this explanation is carried by the input alone
+
+| Level | The group qualifies when |
+|-------|--------------------------|
+| `high` | Every claim in `intent` and `plain_explanation` is readable directly from what `evidence_refs` points at |
+| `medium` | The main claims are readable, but some part rests on material outside the input (a convention, a neighbouring file, general knowledge) |
+| `low` | A central claim has no support in the input. Move the unsupported part to `concerns` and keep the level at `low` — lowering confidence is not a substitute for that move |
+
+Confidence is about the explanation, not about the work being explained. A change you are sure
+you understand gets `high` even when it worries you; that worry belongs in `risk` or
+`concerns`.
+
 ## Evidence rules
 
 - `evidence_refs` entries must exist in the collected input. A dangling reference fails
@@ -123,6 +153,14 @@ the reader believing everything was decided.
 | `discussion` | `topic`, `decided`, `undecided`, `option` |
 
 ## Reader-facing language
+
+**Which language to write in.** Everything a reader sees — `summary`, group fields, `deferred`
+reasons, the questions — is written in the language of the material being explained and of the
+request that started the run. When those differ, follow the request; the reader is the one who
+asked. This document and `SKILL.md` are in English as an authoring convention for a
+multi-agent repository, and that convention says nothing about what language the page is in.
+Field names, `kind` values and `evidence_refs` identifiers are contract tokens and stay as
+specified regardless.
 
 - Lead with plain wording. Internal terms (`view`, `evidence`, `deferred`, `attribution`) never
   appear in initial labels.

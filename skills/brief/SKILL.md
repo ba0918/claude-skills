@@ -95,6 +95,14 @@ Writing rules, in priority order:
 - **Quote what matters.** When a claim rests on specific lines, put them in `excerpts` so the
   reader does not have to leave the page. Pass the source text verbatim — escaping is the
   renderer's job, and pre-escaping it corrupts the output.
+- **Rate risk and confidence from the scales, not from impression.** Both are required on every
+  group, so deciding them by feel gives the same material a different reading each run. The
+  scales in [references/brief-model.md](references/brief-model.md) turn each into a question
+  with an observable answer. They move independently — well understood and still dangerous is a
+  normal combination.
+- **Write in the reader's language.** Reader-facing text follows the language of the material
+  and of the request. This file being in English is an authoring convention for a multi-agent
+  repository; it is not the output language.
 - **Exactly three comprehension questions.** Not scored, no input field, they block nothing.
   Write questions that cannot be answered without having read the page.
 
@@ -105,9 +113,13 @@ Validation is deterministic and runs first. It enforces the schema, reference in
 page.
 
 ```
-python3 {skill_dir}/scripts/brief_render.py validate --model {model.json} [--inputs {inputs.json}]
-python3 {skill_dir}/scripts/brief_render.py render --model {model.json} --out {out.html} --open
+python3 {skill_dir}/scripts/brief_render.py validate --model {model.json} --inputs {inputs.json}
+python3 {skill_dir}/scripts/brief_render.py render --model {model.json} --inputs {inputs.json} --out {out.html} --open
 ```
+
+`--inputs` carries the collected identifiers and is required on **both** commands for every
+view except `discussion` — rendering validates first, so omitting it there fails the same way
+validation does. `discussion` has no mechanical input to check against and takes neither.
 
 Fix reported violations by fixing the model. **Never loosen the check** — an unassigned hunk
 is a hole in the page, and `deferred` is not an escape hatch for it.
