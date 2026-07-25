@@ -242,5 +242,19 @@
     ],
     "surface_sha256": "dace0e1993510d002730077f71a096b514e9b7ef5075e93adb65321a2728f995",
     "verified": "2026-07-25"
+  },
+  "problem-solving": {
+    "file_sha256": {
+      "skills/problem-solving/SKILL.md": "57f13bc8473e88fbfe86813e717a5d58f128f2bc9881088b29a2eb8e75275019",
+      "skills/problem-solving/fixtures.json": "805584fb1dacbf7e18fac4fd53cc323faa0db29317f7f814514cc7da1f4d645c"
+    },
+    "note": "batch5a 英語化 A/B: 本番同等モデルの実行者 3 体 + 独立採点者 3 体で 3 シナリオ全合格。ps-001 は日英両アーム k=3 で中央値 1.00。ps-003 の読み取り専用遵守は隔離領域のファイル改変ゼロを sha256 照合で裏取り（自己申告に依らず）。実行者への照会 0 回。",
+    "result": "pass",
+    "surface": [
+      "skills/problem-solving/SKILL.md",
+      "skills/problem-solving/fixtures.json"
+    ],
+    "surface_sha256": "bb32f0e0a5029ca3af748985ca4c0a1254e1edafdfd590f629405620819f43d3",
+    "verified": "2026-07-25"
   }
 }
