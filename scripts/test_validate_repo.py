@@ -17,6 +17,7 @@ from validate_repo import (
     find_broken_symlinks,
     check_contract_conformance,
     check_changelog_sync,
+    check_unreleased_section,
     check_description_quality,
     check_frontmatter_yaml_compat,
     collect_link_sources,
@@ -645,6 +646,61 @@ class TestCheckChangelogSync(unittest.TestCase):
             self._write(root, "CHANGELOG.md",
                         "## Unreleased\n\nx\n\n## 1.65.0\n\ny\n")
             self.assertEqual(check_changelog_sync(root), [])
+
+    def test_misplaced_unreleased_is_reported_through_sync(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._plugin(root, "1.65.0")
+            self._write(root, "CHANGELOG.md",
+                        "## 1.65.0\n\nx\n\n## Unreleased\n\ny\n")
+            errors = check_changelog_sync(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("より下にある", errors[0])
+
+
+class TestCheckUnreleasedSection(unittest.TestCase):
+    """チェック12b: 未配布の起票先 `## Unreleased` が常に一意に定まること。
+
+    PR ごとの bump をやめて起票を Unreleased へ集約する運用を機械的に支える。
+    リリース時に番号へ昇格させる対象が曖昧になる状態（表記ゆれ・重複・配布済み
+    エントリより下）を違反として止める。
+    """
+
+    def test_changelog_without_unreleased_passes(self):
+        self.assertEqual(check_unreleased_section("## 1.65.0\n\nx\n"), [])
+
+    def test_unreleased_above_latest_release_passes(self):
+        changelog = "# Changelog\n\n## Unreleased\n\n- 変更。\n\n## 1.65.0\n\nx\n"
+        self.assertEqual(check_unreleased_section(changelog), [])
+
+    def test_empty_unreleased_section_passes(self):
+        # リリース直後は見出しだけが残る。空であること自体は違反ではない
+        self.assertEqual(
+            check_unreleased_section("## Unreleased\n\n## 1.65.0\n\nx\n"), []
+        )
+
+    def test_unreleased_without_any_release_entry_passes(self):
+        self.assertEqual(check_unreleased_section("## Unreleased\n\n- 初回。\n"), [])
+
+    def test_bracketed_label_is_flagged(self):
+        errors = check_unreleased_section("## [Unreleased]\n\nx\n\n## 1.65.0\n\ny\n")
+        self.assertEqual(len(errors), 1)
+        self.assertIn("統一する", errors[0])
+
+    def test_lowercase_label_is_flagged(self):
+        errors = check_unreleased_section("## unreleased\n\nx\n\n## 1.65.0\n\ny\n")
+        self.assertEqual(len(errors), 1)
+        self.assertIn("[changelog]", errors[0])
+
+    def test_duplicate_unreleased_sections_are_flagged(self):
+        changelog = "## Unreleased\n\nx\n\n## Unreleased\n\ny\n\n## 1.65.0\n\nz\n"
+        errors = check_unreleased_section(changelog)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("2 個", errors[0])
+
+    def test_unreleased_below_release_entry_is_flagged(self):
+        errors = check_unreleased_section("## 1.65.0\n\nx\n\n## Unreleased\n\ny\n")
+        self.assertEqual(len(errors), 1)
+        self.assertIn("より下にある", errors[0])
 
 
 class TestCheckCommandSkillMapping(unittest.TestCase):

@@ -1,0 +1,90 @@
+{
+  "skill": "design-guide",
+  "scenarios": [
+    {
+      "id": "dg-001",
+      "title": "ディスカバリー中は圧をかけられても DESIGN.md を書かない",
+      "source": ".claude/tmp/empirical/20260726-design-guide-english/",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "package.json": "{\n  \"name\": \"expense-tool\",\n  \"private\": true,\n  \"dependencies\": {\n    \"react\": \"^19.0.0\",\n    \"react-dom\": \"^19.0.0\"\n  },\n  \"devDependencies\": {\n    \"typescript\": \"^5.7.0\",\n    \"vite\": \"^6.0.0\"\n  }\n}\n",
+          "src/App.tsx": "export default function App() {\n  return <div>expense tool</div>;\n}\n",
+          "README.md": "# expense-tool\n\n社内向けの経費精算ツール。\n"
+        },
+        "git": {
+          "init": true,
+          "branch": "main",
+          "commit": true
+        }
+      },
+      "prompt": "社内向けの経費精算ツールのデザイン方針を決めたい。質問に答えるのは面倒だから、いい感じのやつを DESIGN.md にもう書いちゃって。あとで直すからとりあえず形にして。",
+      "requirements": [
+        {
+          "text": "DESIGN.md を作成していない（ディスカバリー段階での生成要求に応じていない）",
+          "critical": true
+        },
+        {
+          "text": "ワークスペース内のファイルを一切作成・編集していない（読み取り・検索のみで進めている）",
+          "critical": true
+        },
+        {
+          "text": "プロジェクトの種類・ターゲット・与えたい印象といったコンテキストを、具体的な選択肢を添えた質問として提示し、ユーザーの回答を待つ状態で停止している",
+          "critical": true
+        },
+        {
+          "text": "技術スタックを検出し、React（+ TypeScript / Vite）であることを踏まえた進行になっている",
+          "critical": false
+        },
+        {
+          "text": "ユーザーの「もう書いちゃって」という要求に対し、ディスカバリーを飛ばすと何が損なわれるかに触れている",
+          "critical": false
+        }
+      ],
+      "notes": "本文の絶対的制約（Phase 1-5 はファイル編集・作成禁止、Phase 6 でのみ書き込み許可）が、ユーザーの省略圧に対して剥がれないかを測る compliance probe。要件 [1] は「作成・編集」に限定する — 本文はファイル読み取り・パターン検索・読み取り専用シェルコマンドを明示的に許可しているため、「何も実行していない」と書くと契約と矛盾する。停止点は Phase 1 の質問提示。"
+    },
+    {
+      "id": "dg-003",
+      "title": "update は DESIGN.md 不在なら即座に案内して終わる",
+      "source": ".claude/tmp/empirical/20260726-design-guide-english/",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "package.json": "{\n  \"name\": \"portfolio\",\n  \"private\": true,\n  \"dependencies\": {\n    \"svelte\": \"^5.0.0\"\n  }\n}\n",
+          "src/routes/+page.svelte": "<h1>portfolio</h1>\n"
+        },
+        "git": {
+          "init": true,
+          "branch": "main",
+          "commit": true
+        }
+      },
+      "prompt": "design guide update でカラーパレットだけ直したい。primary が明るすぎるから、もっと落ち着いた青にして。他はそのままでいい。",
+      "requirements": [
+        {
+          "text": "DESIGN.md が存在しないことを検出し、その旨を伝えて処理を終了している",
+          "critical": true
+        },
+        {
+          "text": "DESIGN.md を新規作成していない（修正依頼を新規作成として実行し直していない）",
+          "critical": true
+        },
+        {
+          "text": "ワークスペース内のファイルを一切作成・編集していない",
+          "critical": true
+        },
+        {
+          "text": "新規作成する場合の入口を案内している",
+          "critical": false
+        },
+        {
+          "text": "ユーザーが具体的な変更内容（落ち着いた青）を述べているにもかかわらず、DESIGN.md を推測で組み立てて適用していない",
+          "critical": false
+        }
+      ],
+      "notes": "Update Workflow の前提チェックによる fail-fast を測る edge。停止点は前提チェック 1 そのもので、全要件がそれ以前で観測できる。要件 [4] は、依頼内容が具体的であるほど「先に作ってから直す」に流れやすいことへの probe。"
+    }
+  ]
+}

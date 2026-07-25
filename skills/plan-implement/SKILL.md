@@ -7,126 +7,126 @@ description: 実装計画の全ステップを TDD（RED → GREEN → REFACTOR�
 
 Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
-実装計画の自動実装ループを実行する。
-オーケストレータとして振る舞い、実装 → レビュー → フィードバック反映を自走で繰り返す。
+Run the automatic implementation loop for an implementation plan.
+Act as the orchestrator and drive implementation → review → feedback incorporation autonomously and repeatedly.
 
-次のいずれかに該当する場合、委譲や他スキル起動の代わりに当該役割を自分がインラインで実行してよい:
-サブエージェントを起動できない / 他スキル（`claude-skills:plan` 等）が対象プロジェクトを正しく指せない /
-変更が数行規模の trivial なステップで委譲のオーバーヘッドが見合わない。
-インラインでステータス更新する場合は status.md と計画ファイルを直接編集する。
-インラインでもレビュー（Step B）は独立した批判的レビュワーの立場を取り、実装時の判断を前提とせず
-コードとテストだけを読み直して評価し、指摘の有無を BLOCK / WARN / INFO で明示すること。
+When any of the following applies, you may perform that role inline yourself instead of delegating or invoking another skill:
+you cannot launch a subagent / another skill (`claude-skills:plan`, etc.) cannot correctly point at the target project /
+the step is a trivial change of a few lines where the overhead of delegation does not pay off.
+When updating status inline, edit status.md and the plan file directly.
+Even inline, the review (Step B) takes the stance of an independent, critical reviewer: do not assume the judgments made
+while implementing — re-read only the code and the tests to evaluate them, and state findings explicitly as BLOCK / WARN / INFO.
 
-## パラメータ
+## Parameters
 
-- 引数: 追加の指示（特定ステップの指定、スコープの限定など）
+- Argument: additional instructions (naming a specific step, narrowing the scope, etc.)
 
-## Phase 0: 計画の読み込みとステータス更新
+## Phase 0: Load the Plan and Update Status
 
-1. `.agents/artifacts/status.md` を読み、現在 🟡 Planning のセッションを特定する
-   - 途中ステップからの再入（既に 🔵 Implementing のセッション）も正常系として扱う
-2. 該当する計画ファイル (`.agents/artifacts/plans/` 内) を読み込む
-3. 計画の全体像・ステップ一覧・現在の進捗を把握する（🟢 Done のステップは再実装しない）
-4. 引数に特定ステップの指定があればそこから開始する
-5. **ステータスを 🔵 Implementing に更新する**（スキル `claude-skills:plan` を起動し status 更新。既に 🔵 Implementing なら更新不要）
+1. Read `.agents/artifacts/status.md` and identify the session currently at 🟡 Planning
+   - Re-entry from a step partway through (a session already at 🔵 Implementing) is also a normal case
+2. Load the corresponding plan file (inside `.agents/artifacts/plans/`)
+3. Grasp the overall picture of the plan, the list of steps, and the current progress (do not re-implement 🟢 Done steps)
+4. If the argument names a specific step, start from there
+5. **Update the status to 🔵 Implementing** (invoke the skill `claude-skills:plan` to update status. No update is needed if it is already 🔵 Implementing)
 
-## Phase 1-N: 実装ループ（ステップごとに繰り返し）
+## Phase 1-N: Implementation Loop (repeated per step)
 
-各ステップについて以下を実行する:
+For each step, do the following:
 
-### Step A: TDD 実装（Red → Green → Refactor）
+### Step A: TDD Implementation (Red → Green → Refactor)
 
-サブエージェントで実装エージェントを起動する。以下の TDD サイクルを**厳守**させる。
+Launch an implementation agent as a subagent. Make it **strictly observe** the TDD cycle below.
 
-**TDD 契約参照**: [tdd-contract.md](../shared/references/tdd-contract.md) に従い、テストファースト（RED → GREEN → REFACTOR）で進めること。
+**TDD contract reference**: follow [tdd-contract.md](../shared/references/tdd-contract.md) and proceed test-first (RED → GREEN → REFACTOR).
 
-#### Red（テスト先行）
-1. 計画の該当ステップの要件からテストを**先に**書く
-   - 期待する入出力、エッジケース、エラーパスをテストで表現する
-   - 対象プロジェクトの `AGENTS.md` / `CLAUDE.md` と、共有の [design-principles.md](../shared/references/design-principles.md) を遵守する
-   - [testing-anti-patterns.md](../shared/references/testing-anti-patterns.md) のアンチパターンを避ける
-2. テストを実行し、**失敗することを確認する**
-   - コンパイルエラーは許容（未実装の型・関数への参照）
-   - 既存テストが壊れていないことも確認する
-   - **各ステップの RED の失敗出力の要点（エラー種別・メッセージ）を記録し、完了報告に含める**（「RED 確認」とだけ書くのは不可）
+#### Red (Test First)
+1. Write the test **first**, from the requirements of the corresponding step of the plan
+   - Express the expected inputs and outputs, the edge cases, and the error paths as tests
+   - Observe the target project's `AGENTS.md` / `CLAUDE.md` and the shared [design-principles.md](../shared/references/design-principles.md)
+   - Avoid the anti-patterns in [testing-anti-patterns.md](../shared/references/testing-anti-patterns.md)
+2. Run the test and **confirm that it fails**
+   - A compile error is acceptable (a reference to an unimplemented type or function)
+   - Confirm too that no existing test has been broken
+   - **Record the essentials of each step's RED failure output (error kind, message) and include them in the completion report** (writing only "RED confirmed" is not acceptable)
 
-#### Green（最小実装）
-3. テストを通すための**最小限の実装**を書く
-   - 過剰な抽象化や先回り実装はしない
-   - まずテストが全て通ることを最優先にする
-4. テストを実行し、**全パスを確認する**
+#### Green (Minimal Implementation)
+3. Write the **minimum implementation** that makes the test pass
+   - No excessive abstraction, no implementing ahead of need
+   - Make all tests passing the first priority
+4. Run the tests and **confirm they all pass**
 
-#### Refactor（リファクタリング）
-5. テストが通った状態でコードを整理する
-   - 重複排除、命名改善、責務分離
-   - リファクタリング後も**テストが全パスすることを確認する**
+#### Refactor
+5. Tidy the code while the tests pass
+   - Remove duplication, improve naming, separate responsibilities
+   - **Confirm that all tests still pass** after the refactoring as well
 
-**Verification Gate**: テスト実行結果を各ステップで確認し、[verification-gate.md](../shared/references/verification-gate.md) の Gate Function に従うこと。テスト全パスのエビデンス（コマンド出力）を結果ファイルに含めること。
+**Verification Gate**: check the test execution results at every step and follow the Gate Function of [verification-gate.md](../shared/references/verification-gate.md). Include the evidence that all tests pass (the command output) in the result file.
 
-実装結果を受け取る。
+Receive the implementation result.
 
-### Step B: レビュー
+### Step B: Review
 
-1. サブエージェントでレビューエージェントを起動する
-   - **厳しめの評価基準**を与える。批判的な立場を取らせる
-   - **`.claude/review-rules.md` が存在する場合、必ず読み込んでレビュー基準として使用する**
-   - `.claude/review-rules.md` がない場合は以下のデフォルト観点を使用:
-     - 対象プロジェクト固有の指示と [design-principles.md](../shared/references/design-principles.md) への違反がないか
-     - 責務の混在がないか
-     - テストが十分か（カバレッジ、エッジケース）
-     - パフォーマンス・メモリ効率に問題がないか
-     - セキュリティ上の懸念がないか
-     - コード重複・デッドコードがないか
-   - 指摘を severity (BLOCK / WARN / INFO) で分類させる（定義は
-     [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md) 準拠）
-   - **指摘ゼロの場合も「BLOCK / WARN / INFO: なし」と明示的に報告させる**（分類スキームを適用した証拠を残す）
-2. レビュー結果を受け取る
+1. Launch a review agent as a subagent
+   - Give it **strict evaluation criteria**. Make it take a critical stance
+   - **When `.claude/review-rules.md` exists, you must load it and use it as the review criteria**
+   - When there is no `.claude/review-rules.md`, use the default viewpoints below:
+     - Whether anything violates the target project's own instructions or [design-principles.md](../shared/references/design-principles.md)
+     - Whether responsibilities are mixed together
+     - Whether the tests are sufficient (coverage, edge cases)
+     - Whether there is a problem with performance or memory efficiency
+     - Whether there is a security concern
+     - Whether there is code duplication or dead code
+   - Make it classify findings by severity (BLOCK / WARN / INFO) (definitions per
+     [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md))
+   - **Even with zero findings, make it report 「BLOCK / WARN / INFO: なし」 explicitly** (leaving evidence that the classification scheme was applied)
+2. Receive the review result
 
-### Step C: 判定と反映
+### Step C: Judgment and Incorporation
 
-1. レビュー結果を審議する
-   - **BLOCK**: 必ず修正が必要 → Step A に戻る（修正指示を出す）
-   - **WARN**: 改善が望ましい → 内容を検討し、修正するか判断する
-     - 修正する場合 → Step A に戻る
-     - 許容する場合 → 理由を明記して次へ
-   - **INFO**: 参考情報 → 記録して次へ
-2. BLOCK/WARN が残っている場合、修正エージェントを起動して対応する
-3. 修正後、再度 Step B のレビューを実行する
-4. **BLOCK がなくなるまでこのループを繰り返す**（Step B レビュー → Step C 修正の往復 1 回を 1 イテレーションと数え、**ステップごとに**最大 3 イテレーション）
+1. Deliberate on the review result
+   - **BLOCK**: a fix is mandatory → return to Step A (issue fix instructions)
+   - **WARN**: an improvement is desirable → consider the content and decide whether to fix it
+     - Fixing it → return to Step A
+     - Accepting it → state the reason and move on
+   - **INFO**: reference information → record it and move on
+2. When BLOCK/WARN remain, launch a fix agent and address them
+3. After the fix, run the Step B review again
+4. **Repeat this loop until no BLOCK remains** (count one round trip of Step B review → Step C fix as one iteration, up to 3 iterations **per step**)
 
-### Step D: ステータス更新とコミット（必須 - スキップ禁止）
+### Step D: Status Update and Commit (mandatory — must not be skipped)
 
-**ステップ完了ごとに必ず実行する。これをスキップしてはならない。**
+**Always do this on completing each step. You must not skip it.**
 
-1. スキル `claude-skills:plan` を起動し、以下を更新する:
-   - 完了したステップのステータスを 🟢 Done に変更
-   - 次のステップ情報を記載
-   - 実装のサマリー（変更ファイル、テスト数など）を記録
-2. 当該ステップの変更（実装・テスト・ステータス更新）をコミットする
-   - ビルド生成物・キャッシュ（例: `__pycache__`, `node_modules`, `target`）は追跡しない。混入するなら先に ignore 設定を整備する
-   - `.agents/artifacts` が Git 追跡外のプロジェクトでは、ステータス更新はコミット対象に含まれない（実装とテストのみコミットする）
-3. コミットが完了してから次のステップに進む
+1. Invoke the skill `claude-skills:plan` and update the following:
+   - Change the status of the completed step to 🟢 Done
+   - Note the information for the next step
+   - Record a summary of the implementation (changed files, test count, etc.)
+2. Commit that step's changes (implementation, tests, status update)
+   - Do not track build artifacts or caches (e.g. `__pycache__`, `node_modules`, `target`). If they get mixed in, set up the ignore configuration first
+   - In a project where `.agents/artifacts` is outside Git tracking, the status update is not part of the commit (commit only the implementation and the tests)
+3. Move on to the next step only after the commit is done
 
-## Phase Final: 完了処理
+## Phase Final: Completion Handling
 
-全ステップ完了後:
+After every step is complete:
 
-1. **変更内容全体のレビュー**をサブエージェントで実行する
-   - `git diff` で全変更を確認
-   - 実装計画の全課題が解決されたか網羅的に検証
-   - プロジェクトのテストコマンドを実行して全パスを確認する（例: `cargo test`, `npm test`, `go test ./...` など）
-   - プロジェクトの lint コマンドを実行して警告がないことを確認する（例: `cargo clippy`, `eslint`, `golangci-lint` など）。lint が設定されていないプロジェクトではスキップし、その旨を報告する
-2. 最終レビューで WARN 以上の指摘があれば修正ループに戻る
-3. 全て解決したら:
-   - スキル `claude-skills:plan` を起動し、ステータスを 🟢 Complete に更新
-   - 未コミットの変更（ステータス更新等）が残っていればコミットする
-   - 実装サマリーをユーザーに提示する
+1. Run a **review of the whole set of changes** in a subagent
+   - Check all changes with `git diff`
+   - Verify exhaustively that every issue in the implementation plan has been resolved
+   - Run the project's test command and confirm everything passes (e.g. `cargo test`, `npm test`, `go test ./...`)
+   - Run the project's lint command and confirm there are no warnings (e.g. `cargo clippy`, `eslint`, `golangci-lint`). In a project with no lint configured, skip it and report that
+2. If the final review has any finding of WARN or above, go back to the fix loop
+3. Once everything is resolved:
+   - Invoke the skill `claude-skills:plan` and update the status to 🟢 Complete
+   - If uncommitted changes (the status update, etc.) remain, commit them
+   - Present the implementation summary to the user
 
-## 重要なルール
+## Key Rules
 
-- **ステータス更新は各ステップ完了時に必ず行う。後回しにしない。**
-- **TDD サイクル (Red → Green → Refactor) を厳守する。実装コードより先にテストを書く。**
-- **テストなしの実装は禁止。テストが書けない場合は設計を見直す。**
-- **BLOCK 指摘は必ず解消してから次に進む。**
-- **最大イテレーション数を超えた場合は、残存する指摘を一覧表示してユーザーに判断を仰ぐ。**
-- 各エージェントには対象プロジェクトの `AGENTS.md` / `CLAUDE.md` と [design-principles.md](../shared/references/design-principles.md) の内容を必ず伝達する。
+- **Always update the status when each step completes. Do not defer it.**
+- **Strictly observe the TDD cycle (Red → Green → Refactor). Write the test before the implementation code.**
+- **Implementation without tests is forbidden. If a test cannot be written, revisit the design.**
+- **A BLOCK finding must be resolved before moving on.**
+- **When the maximum iteration count is exceeded, list the remaining findings and ask the user to decide.**
+- Always convey to each agent the contents of the target project's `AGENTS.md` / `CLAUDE.md` and [design-principles.md](../shared/references/design-principles.md).

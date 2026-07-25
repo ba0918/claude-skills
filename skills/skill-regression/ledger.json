@@ -96,6 +96,50 @@
     "surface_sha256": "b82dd071782c475b53797b7befd059c3281d3e40592597f726b64b8a451dc9ef",
     "verified": "2026-07-25"
   },
+  "decision-journal": {
+    "file_sha256": {
+      "skills/decision-journal/SKILL.md": "ee34886577b0523a4065acd2cbeead928a23745d9dde87418ba36b439d44d56e",
+      "skills/decision-journal/fixtures.json": "f72c390c8ad36049282da249b32506f205e4ab17654d3df5a00ee425e0001a76",
+      "skills/decision-journal/references/decision-record-template.md": "80cf07e4d5d511905dd5cc8c9dc3a9feba5be316e88f6640823e246125e569de",
+      "skills/decision-journal/references/interview-guide.md": "e7f855049d051bba9500bbe45df5b83ca690c41d2411a07f3d7ea938b5e87207",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/decision-protocol.md": "9eff7d16008b37d7e45c16a07dfe85a7667aa1927f4e59057a3dd82e2db4ba05"
+    },
+    "note": "dj-003 baseline リセット後の計測: 4 シナリオを本番同等モデルの実行者 16 体 + 独立採点者 16 体で日英両版に実行（争点の dj-003 / dj-004 は k=3）。JA 平均 0.982 → EN 平均 1.000、全 16 run で critical failure ゼロ、封印セクション不改変は sha256 で機械検証済み。旧チェックリスト b9145a0b の dj-003 は Interview 全工程を 1 ターンで測っており、復元不能の確定・証拠強度ラベル・途中保存の 3 要件が構造的に到達不能だった。実行者への照会 0 回。",
+    "result": "pass",
+    "surface": [
+      "skills/decision-journal/SKILL.md",
+      "skills/decision-journal/fixtures.json",
+      "skills/decision-journal/references/decision-record-template.md",
+      "skills/decision-journal/references/interview-guide.md",
+      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/decision-protocol.md"
+    ],
+    "surface_sha256": "9e2cc291e400a3174f1f8cc752db735dea4f9cf5132a28306bf3a990ef36be07",
+    "verified": "2026-07-25"
+  },
+  "design-guide": {
+    "file_sha256": {
+      "skills/design-guide/SKILL.md": "845674b5107d22825fc1ecfbdffa85332cb254b10c40e5fe8825e1e970278c0d",
+      "skills/design-guide/fixtures.json": "dd17b40c38c3e77e1c203326cc150737fd43fbae81682f9bf1962354432110f9",
+      "skills/design-guide/references/anti-patterns.md": "3c61f4579e582f5346c7f442d0a9434142b75abde5dded51552eb019b4e0a6b5",
+      "skills/design-guide/references/design-md-template.md": "f429ad90dfc1650e1efe49fceee49ffba3b261be385e0c50487e24ca701fbf81",
+      "skills/design-guide/references/discovery-questions.md": "aafdbb1c088d828c7b9da66e78afb9570632b686533afa06d901d9d98008bc9a",
+      "skills/shared/references/human-readable-summary.md": "f3dba0207381c14d9d73c0e72c1ed249843b48596c38edcb8de3c90f4e1ecc26"
+    },
+    "note": "本文を英語へ差し替えた版で再検証。バッチ 20260726-design-guide-english の EN アーム実測は dg-001 precision 1.00 / critical 全 pass（合理化防止テーブル追加後の rep2）、dg-003 precision 1.00 / critical 全 pass。JA アームと同点で、EN 固有の悪化はゼロ。",
+    "result": "pass",
+    "surface": [
+      "skills/design-guide/SKILL.md",
+      "skills/design-guide/fixtures.json",
+      "skills/design-guide/references/anti-patterns.md",
+      "skills/design-guide/references/design-md-template.md",
+      "skills/design-guide/references/discovery-questions.md",
+      "skills/shared/references/human-readable-summary.md"
+    ],
+    "surface_sha256": "f8b65a1b9f5e178f41a88114c0c82435560122d1d16584af942389196a0bd76c",
+    "verified": "2026-07-26"
+  },
   "doc-write": {
     "file_sha256": {
       "skills/doc-write/SKILL.md": "1f54131634a3fbb4b08b91008509f8a54cc23d6940a5d3afa96bb2021f1d9e25",
@@ -124,8 +168,8 @@
   },
   "github-issue": {
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "ced4e6b0bb499db3013d4cd53efd7b8939687691621738ea48e96629e7725043",
-      "skills/github-issue/fixtures.json": "82707dcd4af8ec10a969524604f9d593e7e607e288b647628c98e9649fd1e4af",
+      "skills/github-issue/SKILL.md": "d4b251dafab8147de47ef81bb8736bceccd6fd3dd2f04ed917c8a8a9e4184cd1",
+      "skills/github-issue/fixtures.json": "6727406b6c2e79cfc4a38ad6955c3af7b976cb07f70a5f23ffcaa2bd92c2069b",
       "skills/github-issue/references/cleanup-spec.md": "95125e8c661ac6d9b20dffaaaf8c12afc6d777aa29bde234a82b4267e86ef095",
       "skills/github-issue/references/codex-review-loop.md": "19e54be0fe9d1f92c344b81fee0584d0833171ddd98ecbabb21d3ad533225323",
       "skills/github-issue/references/config-defaults.md": "c1ec30f3dacc15715d0f1863a20f8382c458126a5ae5c6c924f5408a0c71b079",
@@ -138,6 +182,7 @@
       "skills/shared/references/measurement-identity.md": "fa0afacac0d12c6de689768cc7c29fe997b79523661f9bc7a181262d53893151",
       "skills/shared/references/polling-pattern.md": "98f623552d4c6ec957e07b20a90c389b8513ecc3572b73ccaa80cfa9bab8c25f"
     },
+    "note": "英語化 A/B（バッチ 20260725-gh-issue-reset）で 4 シナリオ k=1 を JA/EN 両アーム実測。EN median precision は全シナリオ 1.00 で critical failure ゼロ、ADOPT。gi-003 / gi-004 は前バッチの要件欠陥（環境到達不能・契約矛盾）を baseline リセットして再ロックした版。実行者・採点者はプロセス型ランナー経路。",
     "result": "pass",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -154,7 +199,7 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "2656cf9b1c22a7ea06daa9697183af154a05d01820d603822cb8dfbe0d70d43f",
+    "surface_sha256": "2da90d38f92718da8e92b32b3cbcb62fffa2ed39670116f9e371c85cee18b09b",
     "verified": "2026-07-25"
   },
   "handoff": {
@@ -242,6 +287,32 @@
     "surface_sha256": "514617af809b8f88a9dd24dd7973fbe9708cf827ebbce1125b7712a9600e5a07",
     "verified": "2026-07-25"
   },
+  "plan-implement": {
+    "file_sha256": {
+      "skills/plan-implement/SKILL.md": "c644ca37e118f4b891b6994418439cac31ebdc1db3b08774d52d24359ed65392",
+      "skills/plan-implement/fixtures.json": "9fd4a770127a9a768e1cae9b06b2afa1f1cc8e10dbf78b9c4e9d236e902da2e8",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
+      "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
+      "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
+      "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
+    },
+    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（pi-001 7/7 / pi-002 5/5 / pi-003 4/4、critical は 5+3+3 全 pass）。3 シナリオとも停止ゼロで完走し、日本語アームの初回実走で 3 件中 2 件が起こした入れ子委譲の停止は再発しなかった（実行者プロンプトの環境例外条項を今回は 3 本すべてへ均一に与えた。日本語アームは pi-001 のみ条項なしという非対称が残っていたので、アームとしては今回のほうが均質）。挙動も同等 — pi-001 は ModuleNotFoundError の RED を実出力で示し 3 要件を 5 テストで固定、レビューで limit == 0 の境界未固定を WARN として自力検出（limit < 0 を limit <= 0 に変異させると全通することを根拠に挙げている）。pi-002 は Step 1 の成果物をコミット差分に一切出さず再入を正常系として処理。pi-003 は .gitignore を実装コミットと同時に入れ、全コミット走査で __pycache__ / .pyc 混入 0。編集有無とコミット内容は baseline ハッシュと git で機械照合し、採点は実行者と別の白紙エージェントが担当。構造パリティ（見出し13/フェンス0/リンク8/番号22/箇条書き46/水平線0）・リンク先集合・識別子41種・ユーザー提示定型文1種・frontmatter の byte 不変を機械検証済み。日本語行比率 98.0% → 0.0%。sweep-fix sf-002 の教訓を反映し、実行者プロンプトからスキルの出力形式への言及を全廃した（計測器がスキルの規定を上書きするのを防ぐため）",
+    "result": "pass",
+    "surface": [
+      "skills/plan-implement/SKILL.md",
+      "skills/plan-implement/fixtures.json",
+      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/design-principles.md",
+      "skills/shared/references/severity-and-verdicts.md",
+      "skills/shared/references/tdd-contract.md",
+      "skills/shared/references/testing-anti-patterns.md",
+      "skills/shared/references/verification-gate.md"
+    ],
+    "surface_sha256": "77104c089737620fdde42a7db6a6413ef57228de1eb7e5211692562fb72e0dfc",
+    "verified": "2026-07-26"
+  },
   "plan-reviewer": {
     "file_sha256": {
       "skills/plan-reviewer/SKILL.md": "73a6cc3c1e65c04ad6b57a2f413835e3f475ea033f8fef2defcadda68f55a7db",
@@ -282,5 +353,97 @@
     ],
     "surface_sha256": "bb32f0e0a5029ca3af748985ca4c0a1254e1edafdfd590f629405620819f43d3",
     "verified": "2026-07-25"
+  },
+  "refactor": {
+    "file_sha256": {
+      "skills/refactor/SKILL.md": "7f4417155eac0b070000d6bc273abda12d297090ecde6cbcd099844a8bfe6dd9",
+      "skills/refactor/fixtures.json": "52a1627a3a378531cbda915806f25d8dd7d94815991147a685ef06693b14f795",
+      "skills/refactor/references/behavior-preservation-checks.md": "8288a6c286dd869c55e916329446f1319948a629de1f2b8406c6863d9dfbcd34",
+      "skills/refactor/references/refactoring-catalog.md": "a549836cb8cefa229bcaa7751cbfdd10799bdc2c8ad48b4449bad98080ba6381",
+      "skills/refactor/references/similarity-detection.md": "4cb235f4a713766ce348089d791a70a569458d28147b70dce704941aa3c4c260",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
+      "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
+    },
+    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（rf-001 7/7 / rf-002 6/6 / rf-003 3/3、critical は 4+4+2 全 pass）。挙動も日本語アームと同一 — rf-001 は format_row を 3 段ネストからガード節へ平坦化し、同型の改善が適用可能でテストも揃っている src/summary.py を CONFIRMED と判定したうえで headless のスコープ外規則により report-only に留めた（UNCERTAIN へ逃げていないので Iron Law 5 とスコープ外 opt-in 規則が弁別できている）。rf-002 は apply_discount の docstring 契約との食い違いを BUG_FOUND に分類して本体を修正せず、issue ファイルを作らずコマンド案の提示に留めた（当該関数にテストが無いため、直さなかった理由が『テストに止められた』ではなく本文の条項であることが弁別できる）。rf-003 は編集 0 件で no-op 終了し、会話出力を簡略版に留めた。動作保持は採点者が改善前後をモジュールとして読み込み突き合わせて実測（rf-001 は 9 ケース / rf-002 は 16 ケースで mismatch 0）。編集有無は baseline ハッシュと git で機械照合し、採点は実行者と別の白紙エージェントが担当。構造パリティ（見出し14/フェンス6/リンク10/番号37/箇条書き39/水平線0/フェンス内49行）・リンク先集合・識別子56種・ユーザー提示定型文17種・frontmatter の byte 不変を機械検証済み。日本語行比率 91.5% → 0.0%。フェンス内は読み手で切り分け、Iron Laws とフロー図（実行者が読む）は英訳し、REFACTOR REPORT テンプレート（ユーザーが読む）は原文のまま。実行者プロンプトはスキルの出力形式へ一切言及しない形にした（sweep-fix sf-002 で計測器がスキルの規定を上書きした事故の再発防止）。この中立化により rf-003 の要件 3（簡略版レポート）は実行者が自力でスキルの規則と計測用レポートを切り分けて pass している。rf-003 の実行者から新規の記述漏れ 1 件: Phase 2 の already-clean Gate は『no-op で終了』と書くがフロー図は Phase 0-6 の直列を示すため、候補 0 件のとき Phase 3/4 を空通過すると読む余地があり、レポートの横展開テーブルの有無が読み方で変わる",
+    "result": "pass",
+    "surface": [
+      "skills/refactor/SKILL.md",
+      "skills/refactor/fixtures.json",
+      "skills/refactor/references/behavior-preservation-checks.md",
+      "skills/refactor/references/refactoring-catalog.md",
+      "skills/refactor/references/similarity-detection.md",
+      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/orchestration-patterns.md",
+      "skills/shared/references/severity-and-verdicts.md",
+      "skills/shared/references/verification-gate.md"
+    ],
+    "surface_sha256": "2a666431ee14afcc7dba78b119f0a417efe30cdffeefe0284abfd9f29a52041c",
+    "verified": "2026-07-26"
+  },
+  "sweep-fix": {
+    "file_sha256": {
+      "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
+      "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
+      "skills/sweep-fix/SKILL.md": "1e79fe8af2f6ca14108ad67bedab3a35b1df5e111b88dc8a2a44fe669bcea893",
+      "skills/sweep-fix/fixtures.json": "f2527daf33f8e4cbc12b74b40470337f2a142917d100bf646a6be12a33e1e7d4",
+      "skills/sweep-fix/references/context-verification.md": "2c1955b9ffa171c4bffb4123a7137e442924ea25c6546754f98e4abb5ce17f5c",
+      "skills/sweep-fix/references/pattern-extraction.md": "511c23c087da40c08406630106dab9b37687a96bb386e025eddea7a720fee417"
+    },
+    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（sf-001 7/7 / sf-002 5/5（再走）/ sf-003 3/3、critical は 4+3+3 全 pass）。挙動も日本語アームと同一 — sf-001 は広めの grep + ast-grep で候補 5 件を集めてから api/cache を修正し、意図明記コメントのある shutdown.py と narrow な parse.py を根拠つきで FALSE_POSITIVE 除外（CONFIRMED 3 / FP 2 / UNCERTAIN 0）。sf-002 は編集 0 件・中間ファイル不在で早期終了。sf-003 は範囲未指定を検出して Phase 0 で中断（日本語アームは範囲照会を 1 往復したが、英語アームは照会せず中断まで到達。要件 3 は or 条件のためどちらも pass）。編集有無は baseline ハッシュと git で機械照合し、採点は実行者と別の白紙エージェントが担当。構造パリティ（見出し12/フェンス4/リンク6/番号26/箇条書き33/水平線0/フェンス内36行）・リンク先集合・識別子31種・ユーザー提示定型文18種・frontmatter の byte 不変を機械検証済み。日本語行比率 96.8% → 0.0%。フェンス内は読み手で切り分け、フロー図と候補リスト JSON のプレースホルダ説明（実行者が読む）は英訳し、SWEEP-FIX REPORT テンプレート（ユーザーが読む）は原文のまま。初回 sf-002 は要件 5 を落としたが原因は翻訳ではなく実行者プロンプトの汚染で、レポート形式へ言及しない中立プロンプトで再走して 5/5 に回復した（経緯は fixtures.json の sf-002 notes に記録。今回の更新で fixtures.json の変更は当該 notes のみで setup/prompt/requirements は不変）。sf-001 の中間ファイル削除は権限システムに拒否され残存（ハーネス制約。迂回削除はしていない）",
+    "result": "pass",
+    "surface": [
+      "skills/shared/references/orchestration-patterns.md",
+      "skills/shared/references/severity-and-verdicts.md",
+      "skills/shared/references/verification-gate.md",
+      "skills/sweep-fix/SKILL.md",
+      "skills/sweep-fix/fixtures.json",
+      "skills/sweep-fix/references/context-verification.md",
+      "skills/sweep-fix/references/pattern-extraction.md"
+    ],
+    "surface_sha256": "4a3cd94071f4def918788a5d991bc8d79493d1ce49983d59b1c4a399151ed138",
+    "verified": "2026-07-26"
+  },
+  "systematic-debugging": {
+    "file_sha256": {
+      "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
+      "skills/systematic-debugging/SKILL.md": "12705e5c9f10378d73810fb3c46411f9e3267d4d8feb8c3299fc98f27032e40d",
+      "skills/systematic-debugging/fixtures.json": "3581f610b0b790518266ab8be0e3375bed56165386767c29740cbc681523a99f",
+      "skills/systematic-debugging/references/root-cause-tracing.md": "8d5a478058c90f36bee45ee9d01c0cb910b0328d8ab4e1f49ee37b1dd4aa8078"
+    },
+    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（sd-001 6/6 / sd-002 4/4 / sd-003 5/5、critical は 4+3+3 全 pass）。挙動も日本語アームと同一に再現 — sd-001 は bucket=None + ガードで修正し collect_all は未変更、sd-002 は編集 0 件（決定性 1 万回・全コードポイント 0x110000 網羅・ファズ 20 万回で再現不能を示し Phase 3 Step 3.3 を選択）、sd-003 は runner.py 無変更のまま config.py の get_retries を修正。編集有無は baseline ハッシュと git で機械照合し、採点は実行者と別の白紙エージェント 3 体が担当。構造パリティ（見出し25/フェンス18/リンク3/番号6/箇条書き41/水平線0/フェンス内44行）・リンク先集合・識別子34種・ユーザー提示定型文10種・frontmatter の byte 不変を機械検証済み。日本語行比率 91.8% → 0.0%。実行者プロンプトは日本語アームの記録が残っていないためレポート構造から再構成した同型（作業ディレクトリ/スキルパス/依頼文verbatim/4節レポート、環境例外条項つき）。sd-001 と sd-003 の実行者が『本文英語なのに Three-Failed-Attempts のユーザー提示ブロックだけ日本語』を意図か漏れか判別できないと申告したが、両者とも実害なし（ユーザー提示定型文は non_goal の裁定どおりで TDD も同構造）",
+    "result": "pass",
+    "surface": [
+      "skills/shared/references/tdd-contract.md",
+      "skills/shared/references/verification-gate.md",
+      "skills/systematic-debugging/SKILL.md",
+      "skills/systematic-debugging/fixtures.json",
+      "skills/systematic-debugging/references/root-cause-tracing.md"
+    ],
+    "surface_sha256": "8cf6f08bb47ebe11ca590bbb8d0c2e3f72e10fb6eeec52851c9f9f394fee8a24",
+    "verified": "2026-07-26"
+  },
+  "test-driven-development": {
+    "file_sha256": {
+      "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
+      "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
+      "skills/test-driven-development/SKILL.md": "d2682c54212772112e0c63aefe2398a3331f0f1b3e81ac47c66e6968bf2343a6",
+      "skills/test-driven-development/fixtures.json": "ad73bf8a0daf85dad9eabdb049e48d449310be0db1ba0823a26aaa1376fb3ad4"
+    },
+    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（td-001 6/6 / td-002 3/3 編集ゼロ / td-003 5/5）。td-002 は英語化した『the existence of a language's standard test runner does not count as successful detection』を引用して推測フォールバックを却下、td-003 は英語化した境界確認条項に従い負値を含む 6 点を実測して真の RED を取得（日本語アームより広い範囲）。プロンプトは日本語アームと同一。構造パリティ（見出し16/フェンス22/リンク5/番号26/箇条書き35/水平線2）・識別子30種・ユーザー提示定型文15種・frontmatter の byte 不変を機械検証済み。日本語行比率 96.8% → 3.3%",
+    "result": "pass",
+    "surface": [
+      "skills/shared/references/tdd-contract.md",
+      "skills/shared/references/testing-anti-patterns.md",
+      "skills/shared/references/verification-gate.md",
+      "skills/test-driven-development/SKILL.md",
+      "skills/test-driven-development/fixtures.json"
+    ],
+    "surface_sha256": "3fcf0c08c81d0eca6b60090b5f357255ec6c4c206cb7d6eb3c7814846f389839",
+    "verified": "2026-07-26"
   }
 }

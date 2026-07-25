@@ -5,14 +5,14 @@ description: TDD (RED-GREEN-REFACTOR) サイクルをガイドするスキル。
 
 # Test-Driven Development
 
-RED-GREEN-REFACTOR サイクルの対話型ガイドスキル。ユーザーのタスクに対して TDD を強制し、各フェーズでテスト実行結果のエビデンスを要求する。
+An interactive guide skill for the RED-GREEN-REFACTOR cycle. It enforces TDD on the user's task and demands evidence of test execution results at every phase.
 
-### 他スキルとの差別化
+### Differentiation from Other Skills
 
-- **cycle / iterate との違い**: cycle/iterate はサブエージェントのプロンプトに TDD 契約を注入して自動実行する。本スキルはユーザーと対話しながら 1 サイクルずつ丁寧にガイドする教育的ツール
-- **commit との違い**: commit はコミット前のベストエフォート検証。本スキルは実装プロセス全体を TDD で制御する
+- **vs cycle / iterate**: cycle and iterate inject the TDD contract into subagent prompts and run automatically. This skill is a teaching tool that walks the user through one cycle at a time, interactively
+- **vs commit**: commit performs best-effort verification before committing. This skill governs the whole implementation process with TDD
 
-## 絶対的な制約
+## Absolute Constraints
 
 ### Iron Law
 
@@ -20,32 +20,33 @@ RED-GREEN-REFACTOR サイクルの対話型ガイドスキル。ユーザーの�
 NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 ```
 
-テストが失敗することをシェルコマンドで確認するまで、GREEN フェーズに進めない。
-テストが全パスすることをシェルコマンドで確認するまで、REFACTOR フェーズに進めない。
+You may not advance to the GREEN phase until a shell command has confirmed the test fails.
+You may not advance to the REFACTOR phase until a shell command has confirmed all tests pass.
 
-### verification-gate 適用
+### Applying verification-gate
 
-各フェーズの遷移条件として [../shared/references/verification-gate.md](../shared/references/verification-gate.md) の Gate Function を適用する。
-「通るはず」「自信がある」等の推測による遷移は禁止。
+Apply the Gate Function of [../shared/references/verification-gate.md](../shared/references/verification-gate.md) as the transition condition for every phase.
+Transitions based on guesswork — "it should pass", "I'm confident" — are forbidden.
 
-## Workflow: Guide（デフォルト）
+## Workflow: Guide (default)
 
-### Phase 0: コンテキスト取得
+### Phase 0: Acquire Context
 
-1. ユーザーのタスクを `$ARGUMENTS` から取得する
-   - `$ARGUMENTS` が空の場合: ユーザーに確認して「TDD で実装したいタスクを教えてください」と尋ねる
-2. テストフレームワークを自動検出する:
+1. Take the user's task from `$ARGUMENTS`
+   - If `$ARGUMENTS` is empty: ask the user 「TDD で実装したいタスクを教えてください」
+2. Auto-detect the test framework:
    - `package.json` → `npm test` / `npx vitest` / `npx jest`
    - `Cargo.toml` → `cargo test`
    - `go.mod` → `go test ./...`
    - `pyproject.toml` / `pytest.ini` → `pytest`
-   - `Makefile` (test ターゲット) → `make test`
-3. **テストフレームワーク検出失敗時**:
-   - ユーザーに確認: 「テスト実行コマンドを教えてください（例: `npm test`, `pytest`, `cargo test`）」
-   - ユーザーが「なし」と回答 → 「TDD にはテストフレームワークが必要です。先にテスト環境をセットアップしてください」と表示して終了
-4. テストコマンドを `$TEST_CMD` として保持
+   - `Makefile` (test target) → `make test`
+3. **When test framework detection fails**:
+   - **Interactive mode**: ask the user 「テスト実行コマンドを教えてください（例: `npm test`, `pytest`, `cargo test`）」
+     - The user answers 「なし」 → display 「TDD にはテストフレームワークが必要です。先にテスト環境をセットアップしてください」 and finish
+   - **headless / Auto mode**: do not guess a test command and continue. Report 「テストフレームワークが検出できない」 and abort (standing up test infrastructure is outside this skill's responsibility; the existence of a language's standard test runner does not count as successful detection)
+4. Hold the test command as `$TEST_CMD`
 
-表示:
+Display:
 ```
 ══════════════════════════════════════
 TDD SESSION
@@ -54,23 +55,33 @@ Test command: {TEST_CMD}
 ══════════════════════════════════════
 ```
 
-### Phase 1: RED — 失敗するテストを書く
+### Phase 1: RED — Write a Failing Test
 
-1. ユーザーのタスクから、最初にテストすべき振る舞いを特定する
-2. テストを 1 つ書く:
-   - 1 つの振る舞いに対して 1 つのテスト
-   - 明確なテスト名（何をテストしているかが名前でわかる）
-   - 可能な限り実コードを使う（モックは最小限）
-   - [testing-anti-patterns.md](../shared/references/testing-anti-patterns.md) に準拠
-3. **シェルでテストを実行する**:
+1. Identify, from the user's task, the first behavior that should be tested
+2. Write one test:
+   - One test per behavior
+   - A clear test name (the name alone tells you what is being tested)
+   - Use real code wherever possible (keep mocks minimal)
+   - Conform to [testing-anti-patterns.md](../shared/references/testing-anti-patterns.md)
+3. **Run the test in the shell**:
    ```bash
    {TEST_CMD}
    ```
-4. **テスト結果を確認する**:
-   - ✅ テストが**失敗**した → RED 成功。GREEN へ進む
-   - ❌ テストが**通った** → 既存の振る舞いをテストしている。テストを修正する
-   - ❌ テストが**エラー**（テストフレームワーク自体のエラー）→ エラーを修正して再実行
-   - ❌ **タイムアウト**（60秒以上）→ テストを中断し、ユーザーに確認して対応を確認:
+4. **Check the test result**:
+   - ✅ The test **failed** → RED succeeded. Advance to GREEN
+   - ❌ The test **passed** → you are testing existing behavior. Fix the test
+     - If rewriting the test still cannot produce a RED (the requested behavior is already implemented) →
+       **you must not weaken the implementation to manufacture a RED**. Show, in test execution output,
+       that the requirement is already satisfied, then finish the session without adding an implementation.
+       This ending is a legitimate result
+       (declaring "already implemented, so finishing" without evidence is forbidden — presenting the output is the condition for finishing)
+     - Before choosing this ending, **actually probe the boundaries of the input range the requirement covers**.
+       Do not generalize from a handful of sampled points to "it holds for every input" (include the points where
+       the implementation's branch conditions switch: negatives, zero, empty, upper limits). If even one input
+       fails to hold, the requirement is unsatisfied and that is the true RED. If the range cannot be exhausted,
+       state the range you checked and finish
+   - ❌ The test **errored** (an error in the test framework itself) → fix the error and re-run
+   - ❌ **Timeout** (60 seconds or more) → abort the test and ask the user how to proceed:
      ```
      ⚠️ テスト実行がタイムアウトしました。
      1. テストコマンドを変更する
@@ -78,7 +89,7 @@ Test command: {TEST_CMD}
      3. セッションを中断する
      ```
 
-表示:
+Display:
 ```
 ── RED ──
 Test: {test_name}
@@ -87,21 +98,21 @@ Failure: {failure_message}
 → Proceeding to GREEN
 ```
 
-### Phase 2: GREEN — 最小限の実装
+### Phase 2: GREEN — Minimal Implementation
 
-1. テストを通すための**最小限のコード**を書く:
-   - 過剰な抽象化、先回り実装はしない
-   - YAGNI — テストが要求しないコードは書かない
-2. **シェルでテストを実行する**:
+1. Write the **minimum code** that makes the test pass:
+   - No excessive abstraction, no implementing ahead of need
+   - YAGNI — do not write code the test does not demand
+2. **Run the test in the shell**:
    ```bash
    {TEST_CMD}
    ```
-3. **テスト結果を確認する**:
-   - ✅ テストが**全パス** → GREEN 成功。REFACTOR へ進む
-   - ❌ テストが**失敗** → 実装を修正して再実行（RED には戻らない）
-   - ❌ **既存テストが壊れた** → 既存テストの修正を優先する
+3. **Check the test result**:
+   - ✅ **All tests pass** → GREEN succeeded. Advance to REFACTOR
+   - ❌ The test **failed** → fix the implementation and re-run (do not go back to RED)
+   - ❌ **An existing test broke** → prioritize fixing the existing test
 
-表示:
+Display:
 ```
 ── GREEN ──
 Tests: {pass_count}/{total_count} passed
@@ -109,22 +120,22 @@ Result: ALL PASS ✅
 → Proceeding to REFACTOR
 ```
 
-### Phase 3: REFACTOR — 整理する
+### Phase 3: REFACTOR — Tidy Up
 
-1. テストが通った状態でコードを整理する:
-   - 重複の排除
-   - 命名の改善
-   - ヘルパーの抽出
-   - **新しい振る舞いの追加は禁止**
-2. **シェルでテストを実行する**:
+1. Tidy the code while the tests are green:
+   - Remove duplication
+   - Improve naming
+   - Extract helpers
+   - **Adding new behavior is forbidden**
+2. **Run the test in the shell**:
    ```bash
    {TEST_CMD}
    ```
-3. **テスト結果を確認する**:
-   - ✅ テストが**全パス** → REFACTOR 成功。次のサイクルへ
-   - ❌ テストが**失敗** → リファクタリングで壊した箇所を修正して再実行
+3. **Check the test result**:
+   - ✅ **All tests pass** → REFACTOR succeeded. On to the next cycle
+   - ❌ The test **failed** → fix what the refactoring broke and re-run
 
-表示:
+Display:
 ```
 ── REFACTOR ──
 Changes: {refactoring_summary}
@@ -132,10 +143,10 @@ Tests: {pass_count}/{total_count} passed
 Result: ALL PASS ✅
 ```
 
-### Phase 4: 次のサイクルまたは完了
+### Phase 4: Next Cycle or Completion
 
-1. タスクの残りの振る舞いを確認する
-2. ユーザーに確認して次のアクションを確認する:
+1. Review the task's remaining behaviors
+2. Ask the user which action to take next:
    ```
    🔄 TDD サイクル完了！
    
@@ -145,8 +156,8 @@ Result: ALL PASS ✅
    1. 次の振る舞いをテストする (→ RED に戻る)
    2. TDD セッションを終了する
    ```
-3. 「次の振る舞い」選択 → Phase 1 (RED) に戻る
-4. 「終了」選択 → 完了表示:
+3. "next behavior" selected → return to Phase 1 (RED)
+4. "finish" selected → completion display:
    ```
    ══════════════════════════════════════
    TDD SESSION COMPLETE
@@ -156,25 +167,25 @@ Result: ALL PASS ✅
    ══════════════════════════════════════
    ```
 
-## エラーハンドリング
+## Error Handling
 
-### テストフレームワーク検出失敗
+### Test framework detection failed
 
-ユーザーに確認してテストコマンドを確認する。「なし」の場合はセッション終了。
+Ask the user for the test command. If the answer is 「なし」, finish the session.
 
-### テスト実行タイムアウト（60秒以上）
+### Test execution timeout (60 seconds or more)
 
-テストを中断し、ユーザーに確認して 3 択を提示する:
+Abort the test, ask the user, and present three choices:
 1. テストコマンドを変更する
 2. タイムアウトを無視して続行する
 3. セッションを中断する
 
-### テスト実行でランタイムエラー
+### Runtime error during test execution
 
-エラーメッセージを表示し「テスト環境に問題がある可能性があります」と警告。修正を試みてからテストを再実行する。
+Display the error message and warn 「テスト環境に問題がある可能性があります」. Attempt a fix, then re-run the test.
 
-## 参照
+## References
 
-- [../shared/references/tdd-contract.md](../shared/references/tdd-contract.md) — TDD 共通契約
-- [../shared/references/verification-gate.md](../shared/references/verification-gate.md) — 完了前検証ゲート
-- [testing-anti-patterns.md](../shared/references/testing-anti-patterns.md) — テストアンチパターン集
+- [../shared/references/tdd-contract.md](../shared/references/tdd-contract.md) — the shared TDD contract
+- [../shared/references/verification-gate.md](../shared/references/verification-gate.md) — the pre-completion verification gate
+- [testing-anti-patterns.md](../shared/references/testing-anti-patterns.md) — the testing anti-pattern catalog

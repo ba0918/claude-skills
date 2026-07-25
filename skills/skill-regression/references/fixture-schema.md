@@ -105,7 +105,11 @@ CI で全 `skills/*/fixtures.json` に対して同じ検証を強制する。
    回帰の隠蔽。落ちた原因の切り分け（スキル回帰 or 仕様変更）が先
 6. **秘密情報を入れない**: fixture は commit される。実在の認証情報・内部 URL・個人情報を
    setup / prompt に含めない
-7. **`setup.files` で表現できない前提に依存させない**: `setup.files` は「パス → 内容」しか
+7. **要件の到達可能性を検算してから固定する**: 工程到達性（停止点より前か）だけでなく
+   **環境到達性**（この `setup` でその工程に到達するか）と**契約整合性**（要件を満たす振る舞いが
+   スキル本文の他の条項に違反しないか）も確認する。手順は
+   [requirement-reachability.md](../../empirical-prompt-tuning/references/requirement-reachability.md)
+8. **`setup.files` で表現できない前提に依存させない**: `setup.files` は「パス → 内容」しか
    持たない。mtime・git の状態・ファイル**件数**・環境変数といった前提はスキーマの外にあり、
    run のたびに実行者の裁量で埋められる。埋め方が変われば測っている経路も変わる
 
