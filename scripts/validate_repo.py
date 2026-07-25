@@ -482,6 +482,55 @@ def parse_version(text):
     return tuple(int(p) for p in parts)
 
 
+_UNRELEASED_CANON = "Unreleased"
+_HEADING_RE = re.compile(r"^##\s+(.+?)\s*$", re.M)
+
+
+def _is_unreleased_label(text):
+    """`[Unreleased]` / `unreleased` などの表記ゆれも未配布セクションとして拾う。"""
+    return text.strip().strip("[]").casefold() == _UNRELEASED_CANON.casefold()
+
+
+def check_unreleased_section(changelog):
+    """チェック12b: `## Unreleased` の表記・個数・位置を検証する。
+
+    PR ごとに version を bump すると、並走する PR が全て同じ番号を名乗り、マージ順に
+    依存した manifest 衝突が必ず起きる（実例: 同時に開いた 6 PR が揃って 1.66.0）。
+    起票は `## Unreleased` へ集約し、bump はリリース時に一度だけ行う運用を正とする。
+
+    この節が表記ゆれで増殖したり配布済みエントリの下に埋もれると、リリース時にどれを
+    番号へ昇格させるか機械的に決められなくなる。単一・先頭・正規表記を要求して、
+    昇格対象が常に一意に定まる状態を保つ。
+    """
+    errors = []
+    unreleased = [
+        (m.start(), m.group(1))
+        for m in _HEADING_RE.finditer(changelog)
+        if _is_unreleased_label(m.group(1))
+    ]
+    if not unreleased:
+        return errors
+    for _, label in unreleased:
+        if label != _UNRELEASED_CANON:
+            errors.append(
+                f"[changelog] 未配布セクションの見出しは「## {_UNRELEASED_CANON}」に"
+                f"統一する（検出: 「## {label}」）"
+            )
+    if len(unreleased) > 1:
+        errors.append(
+            f"[changelog] 「## {_UNRELEASED_CANON}」が {len(unreleased)} 個ある"
+            f"（未配布の起票先は 1 つに集約する）"
+        )
+    first_version = next(_VERSION_HEADING_RE.finditer(changelog), None)
+    if first_version is not None and unreleased[0][0] > first_version.start():
+        errors.append(
+            f"[changelog] 「## {_UNRELEASED_CANON}」が配布済みエントリ"
+            f"「## {first_version.group(1)}」より下にある"
+            f"（未配布の起票先は最新版より上に置く）"
+        )
+    return errors
+
+
 def check_changelog_sync(root):
     """チェック12: plugin.json の version と CHANGELOG.md の見出しを双方向で照合する。
 
@@ -493,6 +542,10 @@ def check_changelog_sync(root):
     と、CHANGELOG に「配布されていないバージョン」の記述が残る。読者は配布物に入っていない
     変更を入っていると誤読するため、先行エントリも違反として扱う。順方向だけを見ていた
     ため実際にすり抜けた（1.66.0 / 1.67.0 の起票と bump 延期）。
+
+    未配布の変更は番号付き見出しではなく `## Unreleased` へ起票する。逆方向チェックが
+    禁じているのは「配布済みに見える番号」であって未配布の記録そのものではなく、
+    Unreleased は誤読が原理的に起きないため許可する（書式は check_unreleased_section）。
     """
     plugin_path = os.path.join(root, ".claude-plugin", "plugin.json")
     if not os.path.isfile(plugin_path):
@@ -528,8 +581,9 @@ def check_changelog_sync(root):
             errors.append(
                 f"[changelog] 未配布バージョンのエントリが残っている: 「## {found}」 > "
                 f"plugin.json の version {version}"
-                f"（bump するか、エントリを取り下げる）"
+                f"（bump するか、「## {_UNRELEASED_CANON}」へ移す）"
             )
+    errors += check_unreleased_section(changelog)
     return errors
 
 

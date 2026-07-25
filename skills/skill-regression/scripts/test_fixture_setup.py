@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -161,6 +162,143 @@ class TestValidateSetup(unittest.TestCase):
     def test_non_string_env_value_is_reported(self):
         f = _fixture(setup={"env": {"PORT": 8080}})
         self.assertTrue(any("setup.env" in e for e in fixture_setup.validate(f)))
+
+
+class TestArtifactStoreDeclaration(unittest.TestCase):
+    """`.agents/` を宣言する fixture が Artifact Store 契約を満たすか（静的検査）。
+
+    契約違反のまま実体化した fixture は store が writable: false に落ち、Phase 0 で
+    store を検証するスキルは宣言したシナリオへ到達しないまま abort する。落ちる
+    fixture と違って赤くならないので、宣言の時点で止める。
+    """
+
+    STORE = {".agents/artifacts/status.md": "# status\n"}
+    IGNORE = "# ignore\n/.agents/artifacts/\n"
+
+    def _store_errors(self, files, git={"init": True, "commit": True}):
+        keys = ("artifact store", "runtime 領域", "artifacts.yml")
+        return [e for e in fixture_setup.validate(_fixture(setup={"files": files, "git": git}))
+                if any(k in e for k in keys)]
+
+    def test_ignored_store_passes(self):
+        self.assertEqual(self._store_errors({".gitignore": self.IGNORE, **self.STORE}), [])
+
+    def test_store_without_any_gitignore_is_reported(self):
+        errors = self._store_errors(dict(self.STORE))
+        self.assertTrue(any("到達できない" in e for e in errors), errors)
+
+    def test_store_with_unrelated_gitignore_is_reported(self):
+        files = {".gitignore": "__pycache__/\n*.pyc\n", **self.STORE}
+        self.assertTrue(any("到達できない" in e for e in self._store_errors(files)))
+
+    def test_bare_directory_pattern_covers_the_store(self):
+        self.assertEqual(self._store_errors({".gitignore": ".agents/\n", **self.STORE}), [])
+
+    def test_negation_re_exposing_the_store_is_reported(self):
+        files = {".gitignore": ".agents/\n!.agents/artifacts/\n", **self.STORE}
+        self.assertTrue(any("到達できない" in e for e in self._store_errors(files)))
+
+    def test_scenario_without_own_git_is_not_checked(self):
+        # 自前の git を持たないシナリオは、周囲のリポジトリが無視設定を持つ。
+        # fixture の宣言だけでは判定できないので検査しない（偽陽性を出さない）
+        self.assertEqual(self._store_errors(dict(self.STORE), git={}), [])
+
+    def test_scenario_without_store_files_is_not_checked(self):
+        self.assertEqual(self._store_errors({"src/a.py": "x\n"}), [])
+
+    def test_explicit_public_policy_may_be_tracked(self):
+        files = {".agents/artifacts.yml": "schema_version: 1\nroot: .agents/artifacts\n"
+                                          "visibility: public\nworktree_scope: worktree\n",
+                 **self.STORE}
+        self.assertEqual(self._store_errors(files), [])
+
+    def test_public_store_that_is_gitignored_is_reported(self):
+        files = {".gitignore": self.IGNORE,
+                 ".agents/artifacts.yml": "schema_version: 1\nvisibility: public\n",
+                 **self.STORE}
+        self.assertTrue(any("追跡されず" in e for e in self._store_errors(files)))
+
+    def test_gitignored_policy_file_is_reported(self):
+        files = {".gitignore": ".agents/\n",
+                 ".agents/artifacts.yml": "schema_version: 1\nvisibility: local\n",
+                 **self.STORE}
+        self.assertTrue(any("policy" in e for e in self._store_errors(files)))
+
+    def test_custom_root_from_the_declared_policy_is_honoured(self):
+        policy = {".agents/artifacts.yml": "schema_version: 1\nroot: .agents/store\n"
+                                           "visibility: local\n"}
+        moved = {".agents/store/status.md": "# status\n"}
+        # 既定 root だけ無視しても、宣言された root は無視されていない
+        self.assertTrue(self._store_errors({".gitignore": self.IGNORE, **policy, **moved}))
+        self.assertEqual(
+            self._store_errors({".gitignore": "/.agents/store/\n", **policy, **moved}), [])
+
+    def test_runtime_area_must_be_ignored_regardless_of_visibility(self):
+        runtime = {".agents/runtime/polling/session.json": "{}\n"}
+        public = {".agents/artifacts.yml": "schema_version: 1\nvisibility: public\n"}
+        self.assertTrue(any("runtime 領域" in e
+                            for e in self._store_errors({**public, **runtime})))
+        files = {".gitignore": "/.agents/runtime/\n", **public, **runtime}
+        self.assertEqual(self._store_errors(files), [])
+
+
+class TestShippedFixturesReachTheirStore(unittest.TestCase):
+    """静的検査の判定が、実体化後の store 検査と一致すること。
+
+    宣言だけを読む `--validate` と、実体を読む artifact_store の判定がずれると、
+    CI が緑でもシナリオに到達できない状態が復活する。同梱 fixture を実際に
+    実体化して両者を突き合わせ、静的検査を実測に固定する。
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        shared = os.path.normpath(os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "..", "shared", "scripts"))
+        if shared not in sys.path:
+            sys.path.insert(0, shared)
+        import artifact_store  # noqa: PLC0415
+        cls.artifact_store = artifact_store
+        cls.skills = os.path.normpath(os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+    def _scenarios(self):
+        for name in sorted(os.listdir(self.skills)):
+            path = os.path.join(self.skills, name, "fixtures.json")
+            if not os.path.isfile(path):
+                continue
+            with open(path, encoding="utf-8") as handle:
+                doc = json.load(handle)
+            for scenario in doc["scenarios"]:
+                setup = scenario.get("setup") or {}
+                files = setup.get("files") or {}
+                # 自前の git を宣言するシナリオだけが、fixture の宣言だけで判定できる。
+                # 宣言しないシナリオは実体化先の周囲のリポジトリが無視設定を持つ
+                if (setup.get("git") or {}).get("init") and any(
+                        p.startswith(".agents/") for p in files):
+                    yield doc["skill"], scenario
+
+    def test_every_declared_store_is_writable_after_materialize(self):
+        checked = []
+        for skill, scenario in self._scenarios():
+            with tempfile.TemporaryDirectory() as dest:
+                fixture_setup.materialize(scenario, dest, base_time=1_750_000_000)
+                result = self.artifact_store.inspect(dest)
+            checked.append(f"{skill}/{scenario['id']}")
+            self.assertTrue(
+                result["writable"],
+                f"{skill}/{scenario['id']} の store が writable でない: {result['errors']}")
+        self.assertTrue(checked, "git を宣言する .agents/ シナリオが 1 件も無い（検出側の壊れ）")
+
+    def test_static_check_agrees_with_the_materialized_store(self):
+        for skill, scenario in self._scenarios():
+            declared_ok = not fixture_setup.validate(
+                {"skill": skill, "scenarios": [scenario]}, source=skill)
+            with tempfile.TemporaryDirectory() as dest:
+                fixture_setup.materialize(scenario, dest, base_time=1_750_000_000)
+                actual_ok = self.artifact_store.inspect(dest)["writable"]
+            self.assertEqual(
+                declared_ok, actual_ok,
+                f"{skill}/{scenario['id']}: 宣言の検査={declared_ok} 実体の検査={actual_ok}")
 
 
 class TestMaterialize(unittest.TestCase):

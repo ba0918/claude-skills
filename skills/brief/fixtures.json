@@ -13,6 +13,7 @@
           "message": "baseline"
         },
         "files": {
+          ".gitignore": "# Agent Artifact Store / runtime（local visibility は Git 無視が契約上の不変条件）\n/.agents/artifacts/\n/.agents/runtime/\n",
           "README.md": "# sample-app\n\n注文の取り込みバッチ。\n",
           ".agents/artifacts.yml": "schema_version: 1\nroot: .agents/artifacts\nvisibility: local\nworktree_scope: worktree\n",
           ".agents/artifacts/plans/20260720093000_retry-backoff.md": "# 取り込みバッチの再試行に指数バックオフを入れる\n\n**Cycle ID:** `20260720093000`\n\n## What & Why\n\n連携先が 503 を返したときに即時再試行して詰まる。間隔を空けて再試行する。\n\n## Design\n\n初回 1 秒、以後 2 倍、上限 60 秒、最大 5 回。\n\n## Implementation Steps\n\n1. バックオフ計算を切り出す\n2. 取り込み経路へ適用する\n3. 上限到達時の記録を足す\n",
@@ -231,6 +232,7 @@
           "message": "baseline"
         },
         "files": {
+          ".gitignore": "# Agent Artifact Store / runtime（local visibility は Git 無視が契約上の不変条件）\n/.agents/artifacts/\n/.agents/runtime/\n",
           "README.md": "# sample-app\n\n注文の取り込みバッチ。\n",
           ".agents/artifacts.yml": "schema_version: 1\nroot: .agents/artifacts\nvisibility: local\nworktree_scope: worktree\n",
           ".agents/artifacts/plans/20260720093000_retry-backoff.md": "# 取り込みバッチの再試行に指数バックオフを入れる\n\n**Cycle ID:** `20260720093000`\n\n## What & Why\n\n連携先が 503 を返したときに即時再試行して詰まる。間隔を空けて再試行する。\n\n## Design\n\n初回 1 秒、以後 2 倍、上限 60 秒、最大 5 回。\n\n## Implementation Steps\n\n1. バックオフ計算を切り出す\n2. 取り込み経路へ適用する\n3. 上限到達時の記録を足す\n"

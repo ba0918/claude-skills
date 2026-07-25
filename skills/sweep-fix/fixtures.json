@@ -1,0 +1,94 @@
+{
+  "skill": "sweep-fix",
+  "scenarios": [
+    {
+      "id": "sf-001",
+      "title": "単一問題の横展開 — 意図的な握り潰しを偽陽性として除外する",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/loader.py": "import json\n\n\ndef load_config(path):\n    \"\"\"設定ファイルを読み込む。失敗時は空 dict を返す。\"\"\"\n    try:\n        with open(path, encoding=\"utf-8\") as f:\n            return json.load(f)\n    except:\n        pass\n    return {}\n",
+          "src/api.py": "import json\nimport urllib.request\n\n\ndef fetch_user(url):\n    \"\"\"ユーザー情報を取得する。失敗時は None を返す。\"\"\"\n    try:\n        with urllib.request.urlopen(url) as res:\n            return json.load(res)\n    except:\n        pass\n    return None\n",
+          "src/cache.py": "import json\n\n\ndef read_cache(path):\n    \"\"\"キャッシュを読み込む。失敗時は None を返す。\"\"\"\n    try:\n        with open(path, encoding=\"utf-8\") as f:\n            return json.load(f)\n    except:\n        pass\n    return None\n",
+          "src/shutdown.py": "import socket\n\n\ndef close_quietly(sock: socket.socket) -> None:\n    # 設計上の best-effort。終了処理は例外を投げてはならない。プロセスは既に\n    # 終了中で peer が先に閉じている場合もあり、ここで上げた例外は本来の終了理由を\n    # 覆い隠すだけである。握り潰しは意図であって欠陥ではない。\n    try:\n        sock.close()\n    except:\n        pass\n",
+          "src/parse.py": "def parse_port(raw):\n    \"\"\"ポート番号を int で返す。数値でなければ None。\"\"\"\n    try:\n        return int(raw)\n    except ValueError:\n        return None\n",
+          "tests/__init__.py": "",
+          "tests/test_loader.py": "import json\nimport os\nimport tempfile\nimport unittest\n\nfrom src.loader import load_config\n\n\nclass LoadConfigTest(unittest.TestCase):\n    def test_valid_json_is_parsed(self):\n        fd, path = tempfile.mkstemp(suffix=\".json\")\n        with os.fdopen(fd, \"w\", encoding=\"utf-8\") as f:\n            json.dump({\"a\": 1}, f)\n        try:\n            self.assertEqual(load_config(path), {\"a\": 1})\n        finally:\n            os.remove(path)\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "src/loader.py の except: pass で設定読み込みのエラーが握り潰されていて、失敗の原因が分からなくなるのが気になっている。同じ問題が他にもないか探して直してほしい。",
+      "requirements": [
+        { "text": "src/loader.py の指摘箇所を検索可能なパターンに変換し、コードベース全体へ横展開検索してから修正に入っている（元箇所だけを直して終わっていない）", "critical": true },
+        { "text": "候補箇所を CONFIRMED / FALSE_POSITIVE / UNCERTAIN の3値で判定し、各判定に根拠を添えている", "critical": true },
+        { "text": "握り潰しが意図であるとコメントで明記された src/shutdown.py を FALSE_POSITIVE と判定し、修正していない（同ファイルが未編集）", "critical": true },
+        { "text": "src/api.py と src/cache.py の両方を修正している（横展開が実際に届いている）", "critical": true },
+        { "text": "レポートに FALSE_POSITIVE の除外理由が file:line つきで記録されている", "critical": false },
+        { "text": "修正後に Makefile から判明するテストコマンドを実行し、その出力をレポートに提示している", "critical": false },
+        { "text": "問題が1つのため横展開検索で並行サブエージェントを起動していない（過剰オーケストレーションをしていない）", "critical": false }
+      ],
+      "notes": "偽陽性の弁別子は src/shutdown.py（bare except を維持したまま、握り潰しが意図であることをコメントで明記）。src/parse.py は except を含むが narrow で明らかに健全な雑音候補。CONFIRMED 想定は api / cache の 2 箇所に留めており、Phase 4 の続行確認（BLOCK 級かつ10箇所超）に到達しないようにしてある。指定範囲を 1 ファイル・問題を 1 つに設計したのは、Phase 1 の 11 ファイル以上委譲と Phase 2 の複数問題並行起動を回避してインライン単段で測るため（入れ子委譲は環境依存で停止しうる）。テストコマンドは make 依存を避けられるよう Makefile に 1 行で置き、実行者が直接 python3 で叩いても同じになるようにしている。"
+    },
+    {
+      "id": "sf-002",
+      "title": "問題ゼロの早期終了 — 指摘をひねり出さない",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "src/__init__.py": "",
+          "src/util.py": "def chunk(items, size):\n    \"\"\"items を size 件ずつに分割して返す。\n\n    size が 1 未満なら ValueError を送出する。\n    \"\"\"\n    if size < 1:\n        raise ValueError(f\"size must be >= 1, got {size}\")\n    return [items[i:i + size] for i in range(0, len(items), size)]\n\n\ndef first(items, default=None):\n    \"\"\"先頭要素を返す。空なら default を返す。\"\"\"\n    return items[0] if items else default\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "src/util.py のエラーハンドリング周りに問題がないか見て、あれば同じ問題を全部直しておいて。",
+      "requirements": [
+        { "text": "指定範囲に問題が検出されなかったと報告して正常終了している（指摘をひねり出していない）", "critical": true },
+        { "text": "ファイルを一切編集していない（setup.files の内容が実行前と同一）", "critical": true },
+        { "text": "中間ファイル置き場 .claude/tmp/sweep-fix/ を残していない", "critical": true },
+        { "text": "修正が発生していないため検証ゲート（テスト実行）は不要として扱っている（テスト未実行を欠陥として報告していない）", "critical": false },
+        { "text": "完全版レポートではなく、検出した問題と分析根拠のみの簡略版を出力している", "critical": false }
+      ],
+      "notes": "早期終了パス（Phase 1 step 4）の検証。src/util.py は入力検証を明示し戻り値も素直な小さな純関数だけにして、指摘の余地を意図的に削っている。ここで問題を報告してくる場合は『指摘をひねり出さない』という支配原則が剥がれた兆候として扱う。実行者プロンプトでレポート形式に言及してはならない（2026-07-26 実測）。「スキルが定めるレポート形式の全文をレポートに含めよ」と指示した回で、実行者が Phase 5 のフル 6 節を再現して要件 5 を落とした。同一シナリオをレポート形式へ言及しないプロンプトで再走すると、実行者は英語本文の early-exit 条項を引用して簡略版を出し 5/5 に転じた。この要件は実行者への指示文が形式を上書きできてしまうため、計測器側の中立性が合否を左右する。"
+    },
+    {
+      "id": "sf-003",
+      "title": "対象範囲未指定 — 推測して全体スキャンを始めない",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "src/__init__.py": "",
+          "src/util.py": "def chunk(items, size):\n    if size < 1:\n        raise ValueError(f\"size must be >= 1, got {size}\")\n    return [items[i:i + size] for i in range(0, len(items), size)]\n",
+          "src/loader.py": "import json\n\n\ndef load_config(path):\n    try:\n        with open(path, encoding=\"utf-8\") as f:\n            return json.load(f)\n    except:\n        pass\n    return {}\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "似たような問題が他にもあると思うから、まとめて探して一掃しておいて。",
+      "requirements": [
+        { "text": "対象範囲が未指定であることを検出し、範囲を推測して全体スキャンを始めていない", "critical": true },
+        { "text": "ファイルを一切編集していない（setup.files の内容が実行前と同一）", "critical": true },
+        { "text": "対象範囲を確認する選択肢を提示している、または対象範囲が未指定であると報告して中断している", "critical": true }
+      ],
+      "notes": "Phase 0 step 2 の fail-safe 検証。src/loader.py に bare except を置いてあるため、範囲を推測して全体スキャンに走った実行者は必ず修正を始めてしまい、要件 2 のハッシュ照合で機械的に検出できる。誘惑を置かずに『何もしなかった』を測ると、範囲確認の判断と単なる不作為が区別できない。"
+    }
+  ]
+}

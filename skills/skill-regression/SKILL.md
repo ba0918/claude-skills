@@ -83,6 +83,10 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
    - 同一メッセージ内で複数サブエージェント呼び出しを並べて並行実行（[orchestration-patterns.md](../shared/references/orchestration-patterns.md) 準拠）
    - 実行者の tier は fixture の `executor_tier` に従う（既定 `standard` = 機械的なシナリオ実行。判断の重いスキルで精度が出ない場合のみ `high` に上げ、理由を `notes` に記録して固定する）。具体的なモデル名を fixture に書かない — プラットフォーム非依存の表現を保つ
    - ファイルを生成・編集するシナリオは使い捨て git worktree で隔離し、終了後に破棄する
+   - **サブエージェント起動枠が尽きている / バッチが大きい / 無人実行したい場合**は、
+     サブエージェントの代わりに別プロセスへ委譲する経路を選べる（起動枠を消費しない）。
+     手順と制約は [references/process-queue.md](references/process-queue.md)。
+     判定規則は executor-contract のまま変わらない
 3. **判定**: executor-contract の判定規則で各シナリオを ○/× 判定する。
    スキル単位の合格 = 全シナリオで `[critical]` 要件が全て ○
 4. **報告**: シナリオ別の結果表（合格/不合格・落ちた critical 項目・実行者の不明瞭点自己申告）を提示する
@@ -153,4 +157,5 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
 
 - [fixture-schema.md](references/fixture-schema.md) — fixtures.json のスキーマと設計指針
 - [executor-contract.md](references/executor-contract.md) — 白紙実行者の起動契約と判定規則
+- [process-queue.md](references/process-queue.md) — 別プロセス委譲でバッチを回す経路（起動枠を消費しない）
 - [orchestration-patterns.md](../shared/references/orchestration-patterns.md) / [verification-gate.md](../shared/references/verification-gate.md)

@@ -1,10 +1,14 @@
 # Changelog
 
 claude-skills プラグインのバージョン履歴。
-`.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
+
+変更は PR で `## Unreleased` へ追記する。**PR では version を bump しない** — 並走する PR が
+揃って同じ番号を名乗り、マージ順に依存した manifest 衝突が必ず起きるため。リリース時に
+`## Unreleased` を `## <version>` へ改名し、`.claude-plugin/plugin.json` /
+`.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
-## 1.66.0
+## Unreleased
 
 `brief` を追加した。LLM 向けに書かれた差分・実装計画・引き継ぎ・進行中の会話を、人間が
 判断する順に組み替えた自己完結 HTML として見せる手動起動のスキル。承認が「なんとなく
@@ -22,6 +26,133 @@ claude-skills プラグインのバージョン履歴。
 
 自分自身の差分・計画・引き継ぎ・会話で 5 回試用し、画面が無ければ出なかった指摘が 8 件
 出た。うち 1 件は、計画書の進捗表が 6 段階すべて未着手のまま放置されていたことだった。
+
+プロンプト単位の作業をサブエージェントではなく別プロセスへ委譲する汎用ワークキューランナーを
+共有資産として追加した（issue #16）。サブエージェント起動枠はセッション累計で数えられ完了しても
+戻らないため、3 役分離の計測ハーネスのようなファンアウトはバッチ途中で上限に当たる。実行者・
+採点者に必要なのは「独立した文脈でのモデル呼び出し」であってサブエージェントではない、という
+切り分けを契約として固定した。
+
+- `skills/shared/references/process-delegation.md`: 適用条件（機械判定可能な oracle の存在）、
+  work キュー / バックエンドレジストリの schema、成否は終了コードではなく成果物で決める規約、
+  権限境界、polling-pattern §6 準拠の safety brake と一回限りドレインゆえの逸脱を明文化
+- `skills/shared/scripts/process_runner.py`: ベンダー名を一切持たないランナー。実行ファイルと
+  フラグは operator が書く `backends.json` にのみ存在し、work キューは argv に 1 要素も寄与
+  できない（これが権限境界そのもの）。成果物が既に妥当なユニットは skip するため、再実行が
+  そのまま引き継ぎになる
+- `skills/shared/scripts/test_process_runner.py`: 未検証だった失敗経路を 114 ケースで固定
+  （タイムアウト、実行中の kill file による停止と実行中プロセスグループの終了、JSON 成果物の
+  破損、バックエンド起動失敗、並列上限、containment 違反、failed_streak / max_wallclock）。
+  起動時点で失敗するユニットは in-flight にならず dispatch ループを絞れないため、
+  failed_streak を dispatch 側でも検査する（存在しない実行ファイルでキュー全消費を防ぐ）
+- `skills/skill-regression/scripts/regression_queue.py` + `references/process-queue.md`:
+  最初の利用者。fixtures.json から実行者プロンプトと work キューを生成し、戻ってきた
+  レポートを機械的に集計する producer。判定規則は executor-contract のまま変えず、
+  `critical` フラグは manifest に留めてプロンプトへ出さない。集計は `pass` を名乗らず
+  `unadjudicated_pass` を返す — 自己申告と成果物の突合は呼び出し側の責務であり、
+  harness 起因の `needs_rerun` はスキルの回帰と区別する
+- `skills/empirical-prompt-tuning/SKILL.md` / `skills/skill-regression/SKILL.md`:
+  起動枠が尽きた場合の代替経路として参照を追加
+- README: 共有資産の直接利用として本契約を追記
+
+実 CLI での検証で、n=1 プロトタイプでは踏んでいなかった前提が 1 つ崩れた。エージェント CLI は
+書き込みをプロセスの作業ディレクトリに限定することがあり、成果物を兄弟ディレクトリに置くと
+ユニットは全工程を終えてから配送だけ失敗する（実測: 343 秒、終了コード 0、成果物なし）。
+成果物をユニットの作業ディレクトリ内に置く規約を契約へ追加し、producer の配置もそれに合わせた。
+
+systematic-debugging の Phase 1 が置いていた 2 つの暗黙の前提を解消した。Step 1.1 は
+エラーメッセージとスタックトレースの存在を前提にしていたため、例外を投げず戻り値だけが
+汚染される silent failure では記録すべき対象が 1 つも取得できず、代替エビデンスの規定も
+なかった。Step 1.3 の `git diff HEAD~5 --stat` はコミット 5 本未満のリポジトリ
+（新規プロジェクト・fixture・浅い clone）で必ず exit 128 になるが、失敗時の扱いが
+書かれていなかった。
+
+- `skills/systematic-debugging/SKILL.md`: Step 1.1 に、例外を伴わないバグでは症状の
+  観測値（期待値 vs 実測値・汚染を露出させた観測）を代替エビデンスとし、その要約を
+  Phase 1 表示の `Error:` に充てることを明記
+- `skills/systematic-debugging/SKILL.md`: Step 1.3 に初期コミットまで遡る fallback を
+  添え、なお比較できない場合は「履歴が浅く比較不能」と記録して Step 1.4 へ進むことと、
+  履歴の不在それ自体は根本原因のエビデンスにならないことを明記
+- skill-regression の run で sd-001 / sd-002 / sd-003 を白紙実行者により再実行し、
+  台帳ベースラインと同一（6/6・4/4・5/5、critical 全 pass）で非劣化を実測
+
+cycle Phase 3 の status.md アーカイブ経路が Step 3b のガードで到達不能になっていた問題を修正
+（issue #18）。ガードが判定に使う状態を「終端状態（Current Session がクリア済み）」だけに限定し、
+Phase 2 が書き込む中間ラベルでは発火しないようにした。あわせて Step 3 が通った分岐を最終表示へ
+出すようにして、静かなスキップが静かな成功と区別できない状態を解消した。
+
+- 原因は状態ラベルの衝突。plan-implement の完了処理が Current Session の `Phase` を
+  `🟢 Complete` に書き換え、直後の Step 3b ガード「Status が `Completed` なら skip」が
+  その中間状態に一致していた。Case 2 が producing する終端状態は `_No active session._` なので、
+  ガードが見るべき状態と Phase 2 が作る状態が同じラベルで衝突していた。
+  Current Session table に `Status` という項目は存在せず（実体は `Phase`）、この語の不一致が
+  実行者ごとの解釈揺れを生んでいた
+- 判別シナリオ 4 種 × 白紙実行者で A/B 実測。成果物はチェッカーではなく機械オラクル
+  （session-history.md の行数と Current Session の終端状態）で判定した。
+  critical 合格は修正前 6/14 → 修正後 12/12。修正前に合格していたシナリオを
+  修正後に落としていないことを差分形式のゲートで確認（冪等性シナリオを含む）
+- 指示量は 26 行のまま（+156 バイト）。同一作業を行うシナリオでのトークン差は
+  +0.6〜1.1% で run 間ばらつき（noise band 約 160 tokens）の範囲内
+- `skills/cycle/SKILL.md`: Step 3b のガード条件・Step 3c の適用範囲・最終表示の `Session` 行
+- `skills/cycle/fixtures.json`: cy-001 の最終表示要件に `Session` 行の分岐表示を追加
+
+Agent Artifact Store 契約に違反した状態で実体化される回帰 fixture を是正し、同じ違反を
+`fixture_setup.py --validate` で機械的に止めるようにした。違反した fixture は store が
+`writable: false` に落ちるため、Phase 0 で store を検証するスキルは宣言したシナリオへ
+一度も到達しないまま abort する。落ちる fixture と違って赤くならず素通りするため、
+台帳には「到達していない経路」に対する合格記録が付いていた（issue #17）。
+
+- 実測: `.agents/` を宣言する全 15 シナリオを実体化して `artifact_store.inspect` で判定。
+  修正前は自前 git を宣言する 4 シナリオ（cy-001 / cy-003 / ho-004 / pl-004）が
+  `writable: false` で 0/4、修正後は 4/4。周囲のリポジトリに依存する 11 シナリオは前後とも変化なし
+- `skills/{cycle,handoff,plan}/fixtures.json`: `setup.files['.gitignore']` に
+  `/.agents/artifacts/` と `/.agents/runtime/` を宣言。cy-002 は `.agents/` を宣言しないが
+  自前 git を持ち Phase 0 で store を検証されるため併せて是正した
+- `skills/skill-regression/scripts/fixture_setup.py`: `setup.git.init` を宣言し
+  `.agents/` 配下を持つシナリオに対し、`.gitignore` の無視宣言・`visibility: public` の
+  明示 policy・runtime 領域の常時無視・policy 自体の追跡を静的検査する。
+  `scripts/validate_repo.py` 経由で CI が止める
+- 静的検査の判定を実体化後の `artifact_store.inspect` と突き合わせる unit test を追加し、
+  宣言側の検査が実測から乖離しないよう固定した
+
+CHANGELOG の起票先を `## Unreleased` に一本化し、version bump を PR から切り離した。
+これまでは PR ごとに bump していたため、同時に開いた 6 本の PR が全て 1.66.0 を名乗り、
+1 本マージするたび残り全部が 3 manifest + CHANGELOG でコンフリクトする状態になっていた。
+bump は「配布の単位」であって「変更の単位」ではないので、リリース時にまとめて判断する。
+
+- `validate_repo.py` にチェック12b を追加: `## Unreleased` の表記ゆれ（`[Unreleased]` /
+  小文字）・重複・配布済みエントリより下への配置を検出する。リリース時に番号へ昇格させる
+  対象が常に一意に定まる状態を機械的に保つ
+- チェック12 の逆方向（未配布の番号付きエントリを禁止）は維持。禁じているのは「配布済みに
+  見える番号」であって未配布の記録そのものではないため、`## Unreleased` は許可対象と明記した
+- `skill-authoring.md` の「横断最適化のリリース単位」を、横展開バッチ限定の規約から
+  PR 全般の規約へ一般化した
+
+あわせて、worktree から push すると pre-push hook が必ず失敗するバグを修正した。git は hook へ
+`GIT_DIR` を渡すが、worktree ではこれが絶対パスになるため、検証中の `git init` / `git check-ignore`
+（cwd = 一時ディレクトリ）が一時リポジトリではなく本物のリポジトリを操作してしまっていた。
+通常 checkout では `GIT_DIR` が相対パス `.git` で cwd 基準に解決されるため偶然動いており、
+worktree でのみ露出していた。hook から GIT_* の継承を明示的に断ち切る。
+
+Opus 5 プロンプトガイドの「保守的な報告指示は報告量を減らす」という主張を本リポジトリで実測し、
+**ほぼ当てはまらない**ことを確認した。`skill-authoring.md` に「保守的」の 3 分類（報告抑制 /
+逆方向の保守性 / 自動修正 fail-safe）と実測結果を追記し、語の字面だけを根拠にレビュー系スキルの
+判定基準を緩めることを防ぐ。fail-safe を報告抑制と誤認して緩める改変は安全性を落とすため、
+分類を先に通すことを規範化した。
+
+- 棚卸し: 本文に「保守的」と書かれた箇所のうち報告を実際に抑制するのは 1 箇所のみ。
+  他は severity を下げない側の保守性、または NEEDS_JUDGMENT / UNCERTAIN へ倒す自動修正 fail-safe
+- 実測: 該当 1 箇所を before/after 2 変種 × 2 シナリオ（判別シナリオは k=3）で 3 役分離評価。
+  severity 降格は両変種とも 0/3 で発生せず、実行者は docstring・例外送出といったコード自身の
+  契約証拠から BLOCK を維持した。低影響シナリオでも BLOCK 膨張なし（要件 5/5）
+- 書き換え版は非劣性だが改善が測定されなかったため、`review-testing` の判定基準は変更していない
+
+あわせて `verification-gate.md` の削除是非も実測し、こちらも null result だった。gate 本文を
+88 行 → 30 行に削るアブレーションを `cycle` の cy-001 で各 n=3 実走したが、トークン中央値の差は
+noise_band をぎりぎり超える程度で確立できず、品質劣化も観測されなかった。gate の執行力は既に
+参照側スキル（`cycle/SKILL.md` の Phase 2 がテスト実行エビデンスを要求）へインライン化されており、
+共有契約側の分量は実行挙動に効かない。削除の根拠が無いため gate は現状維持とし、計測手順と
+アブレーションの限界を `skill-authoring.md` に記録した。
 
 ## 1.65.0
 

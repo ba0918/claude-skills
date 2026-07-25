@@ -13,9 +13,11 @@ CLI:
   python3 fixture_setup.py --materialize FIXTURE SCENARIO_ID DEST
       シナリオの setup を DEST に実体化し、baseline ハッシュと env を JSON で出力
 """
+import fnmatch
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -65,8 +67,129 @@ _GIT_INHERITED = (
 )
 
 
+# Agent Artifact Store 契約（skills/shared/references/artifact-store.md）の写し。
+# ここで扱うのは「fixture の宣言が契約を満たすか」だけで、実体の検査は
+# skills/shared/scripts/artifact_store.py が行う。二重定義に見えるが、--validate は
+# 実体化せず宣言だけを読む静的検査なので、実体側のモジュールには寄せられない。
+STORE_CONFIG_REL = ".agents/artifacts.yml"
+DEFAULT_STORE_ROOT = ".agents/artifacts"
+RUNTIME_ROOT = ".agents/runtime"
+# local / shared-private は「Git 無視かつ追跡ファイルなし」が不変条件。
+# public だけが追跡され、逆に無視されていてはならない
+IGNORED_VISIBILITIES = ("local", "shared-private")
+_YAML_SCALAR_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)\s*$")
+
+
 def _err(where, message):
     return f"[fixture] {where}: {message}"
+
+
+def _declared_policy(files):
+    """setup.files の `.agents/artifacts.yml` から (root, visibility, explicit) を読む。
+
+    宣言が無ければ契約の既定（local / .agents/artifacts）に解決する。外部 YAML
+    エンジンは使わない（契約が禁じているのと、fixture の policy は平坦スカラだけ）。
+    """
+    raw = files.get(STORE_CONFIG_REL)
+    if raw is None:
+        return DEFAULT_STORE_ROOT, "local", False
+    root, visibility = DEFAULT_STORE_ROOT, "local"
+    for line in raw.splitlines():
+        match = _YAML_SCALAR_RE.match(line)
+        if not match:
+            continue
+        key, value = match.group(1), match.group(2).strip("'\"")
+        if key == "root" and value:
+            root = value.strip("/")
+        elif key == "visibility" and value:
+            visibility = value
+    return root, visibility, True
+
+
+def _gitignore_covers(text, path):
+    """`.gitignore` の宣言が path（またはその祖先ディレクトリ）を無視するか。
+
+    git の完全な実装ではない。fixture の `.gitignore` は宣言なので、
+    「ディレクトリを丸ごと無視する」形だけを解釈すれば足りる。
+    スラッシュを含まないパターンは任意の階層のベース名に、含むパターンは
+    リポジトリ相対パスに当てる（git の規則と同じ切り分け）。
+    """
+    if not text:
+        return False
+    segments = [s for s in path.strip("/").split("/") if s]
+    ancestors = ["/".join(segments[:i + 1]) for i in range(len(segments))]
+    covered = False
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        negated = line.startswith("!")
+        if negated:
+            line = line[1:]
+        pattern = line.strip("/")
+        if not pattern:
+            continue
+        for ancestor in ancestors:
+            target = ancestor if "/" in pattern else ancestor.rsplit("/", 1)[-1]
+            if fnmatch.fnmatchcase(target, pattern):
+                covered = not negated
+                break
+    return covered
+
+
+def _validate_artifact_store(where, files, git):
+    """`.agents/` 配下を宣言する fixture が Artifact Store 契約を満たすか検査する。
+
+    `setup.git.init` を宣言したシナリオは実体化先が自前の git リポジトリになるため、
+    Git 無視の前提は fixture の `.gitignore` 宣言が全てになる。宣言が欠けると
+    store が `writable: false` に落ち、Phase 0 で store を検証するスキル
+    （cycle 等）は宣言したシナリオへ一度も到達しないまま abort する。
+    赤くならず素通りするぶん、落ちる fixture より質が悪い。
+    """
+    if not git.get("init"):
+        # 自前の git を持たないシナリオは、実体化先を用意する側（周囲のリポジトリ）
+        # が無視設定を持つ。fixture の宣言だけでは判定できないので検査しない
+        return []
+    root, visibility, explicit = _declared_policy(files)
+    gitignore = files.get(".gitignore", "")
+    errors = []
+
+    store_files = [p for p in files if p == root or p.startswith(root + "/")]
+    if store_files and visibility in IGNORED_VISIBILITIES:
+        if not _gitignore_covers(gitignore, root):
+            errors.append(_err(
+                where,
+                f"visibility {visibility!r} の artifact store {root!r} を setup.files で"
+                f"宣言しているが、setup.files['.gitignore'] が無視していない"
+                f"（store が writable: false になり、宣言したシナリオに到達できない）。"
+                f"`/{root}/` を .gitignore に足すか、`{STORE_CONFIG_REL}` で"
+                f" visibility: public を明示する"))
+    if store_files and visibility == "public":
+        if not explicit:
+            errors.append(_err(
+                where, f"visibility: public は {STORE_CONFIG_REL} の明示宣言を必要とする"))
+        if _gitignore_covers(gitignore, root):
+            errors.append(_err(
+                where,
+                f"visibility: public の artifact store {root!r} を"
+                f" setup.files['.gitignore'] が無視している（追跡されず存在しない扱いになる）"))
+
+    # runtime 領域は visibility に関わらず常にマシンローカル（契約 Runtime area）
+    runtime_files = [
+        p for p in files if p == RUNTIME_ROOT or p.startswith(RUNTIME_ROOT + "/")]
+    if runtime_files and not _gitignore_covers(gitignore, RUNTIME_ROOT):
+        errors.append(_err(
+            where,
+            f"runtime 領域 {RUNTIME_ROOT!r} を setup.files で宣言しているが、"
+            f"setup.files['.gitignore'] が無視していない"
+            f"（runtime は visibility に関わらず常に Git 無視）"))
+
+    if explicit and _gitignore_covers(gitignore, STORE_CONFIG_REL):
+        errors.append(_err(
+            where,
+            f"{STORE_CONFIG_REL} は追跡される policy なので"
+            f" setup.files['.gitignore'] で無視してはならない"))
+    return errors
 
 
 def _validate_git(where, git, files):
@@ -152,6 +275,7 @@ def _validate_setup(where, setup):
             errors.append(_err(where, "setup.git はオブジェクトである必要がある"))
         else:
             errors += _validate_git(where, git, files)
+            errors += _validate_artifact_store(where, files, git)
 
     env = setup.get("env") or {}
     if not isinstance(env, dict):
