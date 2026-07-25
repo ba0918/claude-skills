@@ -138,7 +138,10 @@ class TestCheckArtifactStore(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         root = temp.name
-        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        # git hook の中では GIT_DIR などが環境に置かれており、引き継ぐと
+        # ここの init が呼び出し元のリポジトリを指して失敗する。
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True, env=env)
         os.makedirs(os.path.join(root, ".agents"), exist_ok=True)
         with open(os.path.join(root, ".gitignore"), "w", encoding="utf-8") as handle:
             handle.write("/.agents/artifacts/\n")
