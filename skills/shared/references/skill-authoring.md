@@ -28,6 +28,7 @@ Claude Code 上でもスキルは `/skill-name` で直接起動できるため�
 - command を追加してよいのは **multi-workflow スキルの名前付きエントリポイント**が必要な場合のみ（例: `issue` スキルに対する issue-create / issue-list / issue-plan。1スキル複数ワークフローの各入口を `/` 補完に個別の説明付きで並べたい場合）
 - command を作る場合もロジックは書かない。Skill ツール呼び出し + `$ARGUMENTS` の受け渡しのみの薄いラッパーに徹する
 - **既存 commands は互換性のため維持する**。1行ラッパーで維持コストはほぼゼロであり、削除は既存ユーザーの `/claude-skills:*` 呼び出しを壊す。積極的に増やさず自然減に任せる
+- **command 名がスキル名と対応しない場合、description で起動先スキルを名指しする**（`validate_repo.py` チェック16 が強制）。`/debug` → `systematic-debugging` のように名前がずれると、利用者からは command とスキルが別々の名前空間に見え、`/` 補完の説明文だけでは入口が判別できない。改名も削除もしない方針なので説明文側で解決する。`<スキル名>-<workflow>` 形式（`issue-list` 等）は対応が自明なので免除される
 
 ## Frontmatter 契約（validate_repo.py が強制）
 
