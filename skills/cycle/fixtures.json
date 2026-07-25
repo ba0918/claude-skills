@@ -39,7 +39,7 @@
           "critical": true
         },
         {
-          "text": "最終表示が CYCLE COMPLETE フォーマット（Feature / Refine / Implement / Commits / Result 行を含む）で提示され、Issue 行が (none) 扱いになっている（計画に **Issue:** 行がないため issue close を試みていない）",
+          "text": "最終表示が CYCLE COMPLETE フォーマット（Feature / Refine / Implement / Commits / Result 行を含む）で提示され、Session 行が Step 3 の分岐（archived）を示し、Issue 行が (none) 扱いになっている（計画に **Issue:** 行がないため issue close を試みていない）",
           "critical": false
         },
         {

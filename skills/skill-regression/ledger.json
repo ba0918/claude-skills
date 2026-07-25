@@ -74,15 +74,15 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "c8694e8d88907fcc31ab9b3e572b578784b02855c3f675baa0f49671b7ed9f42",
-      "skills/cycle/fixtures.json": "390fa5bdfa40ea497eda9d452f24089e36c784f07bfaa945990e780b2a1fe4e1",
+      "skills/cycle/SKILL.md": "58d882b4d6f51f27799f512d1ec7650d27c19bfb4bea8683e6e3859bae86841b",
+      "skills/cycle/fixtures.json": "cb405816cc5a28fdc624be8f13842304ec96104025088e5cebd4923a102001d6",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
       "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
-    "note": "issue #17 の fixture 修正後の実 run。3/3 合格（critical のみ）。3 シナリオとも空ディレクトリ（自前 git）で実体化。cy-001/cy-003 は Phase 1/2 を委譲、Phase 3 は非委譲。状況照会 0 回（委譲先がスキル名起動不可のため SKILL.md 絶対パスを渡すフォールバックを実行者が自力で採用）。cy-001 の非 critical R6（Phase 3 成果物のコミット）は 部分的 — store が契約どおり Git 無視のため result/status/session-history は構造的にコミット対象外。cy-001・cy-003 の実行者が独立に同じ矛盾を指摘（cycle Phase 3 step 4 と artifact-store invariant 3）。要設計判断。",
+    "note": "Phase 3 ガード修正（PR #27 / issue #18）の run と、fixture の artifact store 契約是正（PR #26 / issue #17）の run を統合した記録。PR #27 の実走時点で issue #17 は未マージだったが、実行者が .agents/ の gitignore 宣言を run 時に補って実体化しており、#26 マージ後の環境と実質同条件で評価している（fixture 本体は #26 が正式化）。cy-001/002/003 の critical を 3/3 合格。cy-001/003 は Phase 1/2 を委譲（配下は再委譲不可でインライン代行）・Phase 3 は直接実行、状況照会 0 回。Phase 3 の判別は checker ではなく機械オラクル（session-history.md の当該行数 == 1 かつ Current Session が終端状態）で採点し、未実行ワークスペースに対して 0 合格を返すことで判別力も検証済み。cy-001 の非 critical R6（Phase 3 成果物のコミット）は 部分的 — store が契約どおり Git 無視のため result/status/session-history は構造的にコミット対象外。cy-001・cy-003 の実行者が独立に同じ矛盾（cycle Phase 3 step 4 と artifact-store invariant 3）を指摘しており、要設計判断として据え置き。",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -93,8 +93,8 @@
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "8024a6c0f9fe01c24deee592baeceb440789239ac33b4eca5369fd38dc2cbd34",
-    "verified": "2026-07-25"
+    "surface_sha256": "62cfb79f437a87de0cc1ebf0083e00d467291886de821fe2c19cad3b252bd860",
+    "verified": "2026-07-26"
   },
   "decision-journal": {
     "file_sha256": {

@@ -10,6 +10,26 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+cycle Phase 3 の status.md アーカイブ経路が Step 3b のガードで到達不能になっていた問題を修正
+（issue #18）。ガードが判定に使う状態を「終端状態（Current Session がクリア済み）」だけに限定し、
+Phase 2 が書き込む中間ラベルでは発火しないようにした。あわせて Step 3 が通った分岐を最終表示へ
+出すようにして、静かなスキップが静かな成功と区別できない状態を解消した。
+
+- 原因は状態ラベルの衝突。plan-implement の完了処理が Current Session の `Phase` を
+  `🟢 Complete` に書き換え、直後の Step 3b ガード「Status が `Completed` なら skip」が
+  その中間状態に一致していた。Case 2 が producing する終端状態は `_No active session._` なので、
+  ガードが見るべき状態と Phase 2 が作る状態が同じラベルで衝突していた。
+  Current Session table に `Status` という項目は存在せず（実体は `Phase`）、この語の不一致が
+  実行者ごとの解釈揺れを生んでいた
+- 判別シナリオ 4 種 × 白紙実行者で A/B 実測。成果物はチェッカーではなく機械オラクル
+  （session-history.md の行数と Current Session の終端状態）で判定した。
+  critical 合格は修正前 6/14 → 修正後 12/12。修正前に合格していたシナリオを
+  修正後に落としていないことを差分形式のゲートで確認（冪等性シナリオを含む）
+- 指示量は 26 行のまま（+156 バイト）。同一作業を行うシナリオでのトークン差は
+  +0.6〜1.1% で run 間ばらつき（noise band 約 160 tokens）の範囲内
+- `skills/cycle/SKILL.md`: Step 3b のガード条件・Step 3c の適用範囲・最終表示の `Session` 行
+- `skills/cycle/fixtures.json`: cy-001 の最終表示要件に `Session` 行の分岐表示を追加
+
 Agent Artifact Store 契約に違反した状態で実体化される回帰 fixture を是正し、同じ違反を
 `fixture_setup.py --validate` で機械的に止めるようにした。違反した fixture は store が
 `writable: false` に落ちるため、Phase 0 で store を検証するスキルは宣言したシナリオへ

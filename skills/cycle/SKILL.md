@@ -241,20 +241,20 @@ Artifact paths follow the Agent Artifact Store contract.
        failure, not a guard** — this includes old-format status.md files without session
        management: do not repair or rewrite them, just record and continue)
      - Current Session section exists → Step 3b
-   - **Step 3b: Guard conditions (skip when any applies)**:
-     - The Current Session body starts with `_No active session` (section exists but
-       uninitialized)
-     - The Current Session table's Status is `Completed`
-     - When either applies, do nothing and move on (not a failure)
-   - **Step 3c: Normal processing (no guard applies)**: follow **Case 2 (In Progress →
+   - **Step 3b: Guard (skip only when already archived)**: the Current Session body starts
+     with `_No active session` → Case 2 has already run; do nothing and move on (not a
+     failure). **Decide on that body text alone, never on the `Phase` field** — `🟢 Complete`
+     is what Phase 2 writes on a session that is still listed, i.e. not yet archived.
+   - **Step 3c: Normal processing (guard does not apply)**: follow **Case 2 (In Progress →
      Completed)** of [status-update-guide.md](../plan/references/status-update-guide.md).
-     Case 2 applies to any still-active session regardless of its Phase label — a session
-     still in 🟡 Planning also completes via Case 2 (the cycle has just implemented it):
+     Case 2 applies to any still-listed session regardless of its Phase label:
      - Step 2a: archive to session-history.md
      - Step 2b: clear the Session History section
      - Step 2c: clear Current Session
    - **On failure during Step 3c** (Edit failure, write failure, ...): append
      `"status.md update"` to `phase3_failures` and move on
+   - **Record which branch Step 3 took** (`archived` / `already archived` / `failed`) in the
+     final display — a silent skip is otherwise indistinguishable from a silent success
    - **Step 3d (runs regardless of the Step 3a/3b outcomes):** verify the plan file's own
      **Status:** header is marked completed (implement normally does this; update it here
      if it is stale) — otherwise the next cycle's Phase 0 would reselect this plan. On
@@ -289,6 +289,7 @@ Refine: {verdict} ({iterations} rounds)
 Implement: {steps_done}/{steps_total} steps
 Commits: {N}（サイクル全体で作成したコミット数。Phase 3 の成果物コミットを含む）
 Result: {result_file_path}
+Session: {archived → session-history.md / already archived / ⚠️ update failed}
 Issue: {closed ✅ / ⚠️ close failed: {slug} — manual close required / (none)}
 {phase3_failures が空でない場合:}
 ⚠️ Phase 3 partial failures: {phase3_failures をカンマ区切りで表示}
