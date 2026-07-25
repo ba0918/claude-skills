@@ -103,13 +103,25 @@ Fable 5 世代モデルでも「短くすれば良くなる」わけではない
 
 `empirical-prompt-tuning` の fixture として plan スキルの 4 iteration 収束履歴が `.claude/tmp/empirical/plan-*/fixture.json` に記録される。横展開バッチ1 の計測は `.claude/tmp/empirical/20260722-lean-rollout/`（summary.md + iterations.jsonl）。カテゴリ推移・削減量・学びの全文はそこを参照。再チューニング時のベースライン比較・回帰検出資産として使う。
 
-### 横断最適化のリリース単位
+### リリース単位と version bump
 
-- 複数スキルへ段階的に横展開する最適化は、実装・検証・コミットをバッチ単位で分離する一方、
-  plugin version は各バッチで bump しない
-- rollout の親issueで対象一覧と完了条件を管理し、全対象の検証完了時に一度だけversionをbumpする
-- CHANGELOGは完了時にrollout全体の体感可能な変化、総削減量、検証範囲を1エントリへ集約する。
-  バッチ固有の測定履歴はissueとローカル empirical artifactを正本にし、暫定release entryを作らない
+version は「配布の単位」であって「変更の単位」ではない。PR 単位で bump すると、並走する PR が
+揃って同じ番号を名乗り、1 本マージするたび残りが 3 manifest + CHANGELOG でコンフリクトする
+（実例: 同時に開いた 6 PR が全て 1.66.0）。
+
+- **PR では version を bump しない**。変更は `CHANGELOG.md` の `## Unreleased` へ追記する
+- bump はリリース時に一度だけ行う。`## Unreleased` を `## <version>` へ改名し、
+  `.claude-plugin/plugin.json` / `.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json`
+  を揃えて更新する
+- `## Unreleased` は単一・正規表記・最新版より上に保つ（`validate_repo.py` のチェック12b が検証）。
+  リリース時に番号へ昇格させる対象を一意に定めるため
+
+複数スキルへ段階的に横展開する最適化では、これに加えて次を守る。
+
+- 実装・検証・コミットはバッチ単位で分離するが、`## Unreleased` への起票は rollout 完了時に
+  全体の体感可能な変化・総削減量・検証範囲を 1 エントリへ集約する
+- rollout の親 issue で対象一覧と完了条件を管理する。バッチ固有の測定履歴は issue と
+  ローカル empirical artifact を正本にし、バッチごとの暫定エントリを作らない
 
 ## クロスツール互換性の注意
 
@@ -127,4 +139,4 @@ Fable 5 世代モデルでも「短くすれば良くなる」わけではない
 - [ ] plugin manifest への反映が必要な変更なら `.claude-plugin/` / `.codex-plugin/` を更新した
 - [ ] 複数エージェントを使う場合は [orchestration-patterns.md](orchestration-patterns.md) の判断フローを通し、Agent 呼び出しに model 指定（モデル階層準拠）を明示した
 - [ ] `python3 scripts/validate_repo.py` が全チェック合格
-- [ ] バージョン bump 時は plugin.json / marketplace.json / CHANGELOG.md を更新した
+- [ ] `CHANGELOG.md` の `## Unreleased` へ変更を追記した（PR では version を bump しない）

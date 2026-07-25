@@ -1,8 +1,33 @@
 # Changelog
 
 claude-skills プラグインのバージョン履歴。
-`.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
+
+変更は PR で `## Unreleased` へ追記する。**PR では version を bump しない** — 並走する PR が
+揃って同じ番号を名乗り、マージ順に依存した manifest 衝突が必ず起きるため。リリース時に
+`## Unreleased` を `## <version>` へ改名し、`.claude-plugin/plugin.json` /
+`.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
+
+## Unreleased
+
+CHANGELOG の起票先を `## Unreleased` に一本化し、version bump を PR から切り離した。
+これまでは PR ごとに bump していたため、同時に開いた 6 本の PR が全て 1.66.0 を名乗り、
+1 本マージするたび残り全部が 3 manifest + CHANGELOG でコンフリクトする状態になっていた。
+bump は「配布の単位」であって「変更の単位」ではないので、リリース時にまとめて判断する。
+
+- `validate_repo.py` にチェック12b を追加: `## Unreleased` の表記ゆれ（`[Unreleased]` /
+  小文字）・重複・配布済みエントリより下への配置を検出する。リリース時に番号へ昇格させる
+  対象が常に一意に定まる状態を機械的に保つ
+- チェック12 の逆方向（未配布の番号付きエントリを禁止）は維持。禁じているのは「配布済みに
+  見える番号」であって未配布の記録そのものではないため、`## Unreleased` は許可対象と明記した
+- `skill-authoring.md` の「横断最適化のリリース単位」を、横展開バッチ限定の規約から
+  PR 全般の規約へ一般化した
+
+あわせて、worktree から push すると pre-push hook が必ず失敗するバグを修正した。git は hook へ
+`GIT_DIR` を渡すが、worktree ではこれが絶対パスになるため、検証中の `git init` / `git check-ignore`
+（cwd = 一時ディレクトリ）が一時リポジトリではなく本物のリポジトリを操作してしまっていた。
+通常 checkout では `GIT_DIR` が相対パス `.git` で cwd 基準に解決されるため偶然動いており、
+worktree でのみ露出していた。hook から GIT_* の継承を明示的に断ち切る。
 
 ## 1.65.0
 
