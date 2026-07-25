@@ -48,11 +48,26 @@ skill 間 handoff や複数 artifact をまたぐ「統合 fixture」では、fi
 
 ### 実装ガイド
 
-- harness は checker を dispatch する直前に「これから渡す artifact キー集合」と
-  `input_range_required` を突合し、欠落があれば dispatch を中止して
-  `harness_error.type = "input_range_violation"` で当該 iteration を記録する
+- harness は checker を dispatch する直前に `validate_input_range()` を呼ぶ。
+  `ok` が false なら dispatch を中止し、`harness_error.type` に返り値の
+  failure type を入れて当該 iteration を記録する。
+  `detail` 用の欠落キーは `sorted(set(input_range_required) - set(dispatch_keys))` で得る
+  （set のまま文字列化すると順序が実行ごとに変わり、記録の再現性が壊れる）
+- 余分なキーを渡すのは違反ではない（欠落のみが再現性を壊す）。
+  `input_range_required` が空 / 未宣言の unit fixture は常に pass する
+- checker 返答は `validate_checker_output(raw, checklist, fixture_kind=fixture["fixture_kind"])`
+  で検証する。`fixture_kind="integration"` のときだけ `isolation_note` を必須にする
 - checker 側テンプレートには "以下の artifact **のみ**を根拠にすること。ここに
   無いソースを開いてはならない" と明記する（isolation の宣言）
+
+```python
+ok, failure = validate_input_range(set(artifacts), fixture.get("input_range_required"))
+if not ok:
+    record_harness_error(failure, detail=str(set(fixture["input_range_required"]) - set(artifacts)))
+else:
+    raw = dispatch_checker(artifacts, checklist)
+    ok, failure = validate_checker_output(raw, checklist, fixture_kind=fixture["fixture_kind"])
+```
 
 ## Protocol failure と candidate failure の分離
 
@@ -75,11 +90,23 @@ checker の返答は「候補プロンプトの失敗」と「checker/harness �
 | `duplicate_grade` | 同一要件番号が複数回採点されている |
 | `invalid_result_value` | `result` が `pass` / `fail` / `partial` 以外 |
 | `empty_checklist` | 呼び出し側が空の checklist を渡した（fixture ロード不良の指標） |
-| `isolation_violation` | 成果物ではなくリポジトリ本体を調査した（ログ・宣言・出力から検出） |
+| `missing_evidence` | grade に非空の `evidence` が無い（採点が根拠と紐づいていない） |
+| `missing_isolation_note` | 統合 fixture なのに出力へ `isolation_note` キーが無い |
+| `isolation_violation` | `isolation_note` に非空文字列があり、成果物外のソースを読んだと自己申告している |
 | `input_range_violation` | 統合 fixture の `input_range_required` に対して欠落入力で dispatch した |
 
-これらは `scripts/convergence.py` の `validate_checker_output()` と
-`has_protocol_failure()` で検出する。
+10 分類すべてを `scripts/convergence.py` の純関数が emit する。harness 側で
+自前検出を書く必要はない。
+
+| 検出タイミング | 関数 | 返り値 |
+|---------------|------|-------|
+| dispatch 直前 | `validate_input_range(dispatch_keys, input_range_required)` | `(ok, failure_type)` |
+| checker 返答後 | `validate_checker_output(raw, checklist, fixture_kind=...)` | `(ok, failure_type)` |
+| iteration 記録後 | `has_protocol_failure(iteration_record)` | `bool` |
+
+`validate_checker_output()` の検査順は「構造 → 統合 isolation → grade 形状 →
+被覆 → evidence」。構造が壊れた出力は evidence 症状ではなく構造の failure type を
+返すため、実装者は先に直すべき箇所へ誘導される。
 
 ### Safe-stop（評価不能時の安全停止）
 
@@ -113,6 +140,9 @@ checker の返答は「候補プロンプトの失敗」と「checker/harness �
 - consumer: <...>
 - reference: <...>
 
+`isolation_note` は必ず出力に含めること。違反が無い場合は `null` を入れる。
+文字列を入れるのは違反を自己申告する場合のみ（感想・補足を書かない）。
+
 ## 要件チェックリスト
 0. [critical] <要件テキスト>
 1. <要件テキスト>
@@ -134,6 +164,7 @@ checker の返答は「候補プロンプトの失敗」と「checker/harness �
 }
 
 - grades は checklist の全要件を過不足なく含めること
+- `evidence` は全 grade に非空文字列で入れる（空文字・省略は harness error）
 - 追加のトップレベルキー（例: `--output` 用の値、コメント）は付けない
 - 迷った場合でも上記 3 値以外の result を返さない
 ```

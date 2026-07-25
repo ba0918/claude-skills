@@ -160,13 +160,17 @@ input_range_violation 等）は **candidate failure と混同しない**。
 - `resolve_exit_verdict()` は `halt` を返し、`halt_reason` は
   `checker_protocol_failure` になる
 - 検証用純関数: [scripts/convergence.py](scripts/convergence.py) の
-  `validate_checker_output()` / `has_protocol_failure()`
+  `validate_input_range()`（dispatch 直前）/ `validate_checker_output()`（返答後）/
+  `has_protocol_failure()`（記録後）。分類は全て純関数側が emit するので
+  harness で自前検出を書かない
 - 詳細と分類は [references/checker-protocol.md](references/checker-protocol.md)
   「Protocol failure と candidate failure の分離」節を参照
 
 統合 fixture（複数 artifact をまたぐ handoff 評価等）を扱う場合は、fixture 側で
-`input_range_required` を宣言し、harness は checker dispatch 直前に突合すること。
-欠落があれば candidate failure ではなく `input_range_violation` として halt する。
+`input_range_required` を宣言し、harness は dispatch 直前に `validate_input_range()`
+で突合する。欠落があれば candidate failure ではなく `input_range_violation` として
+halt する。checker 返答の検証には `fixture_kind="integration"` を渡し、
+`isolation_note` の明示を必須にする。
 
 ## 収束判定（純関数 — `scripts/convergence.py`）
 

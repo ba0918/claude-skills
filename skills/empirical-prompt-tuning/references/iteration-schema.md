@@ -47,12 +47,13 @@ checker / harness 側の逸脱を candidate failure と分離して記録する�
 
 ```json
 {
-  "type": "malformed_output | missing_grade | extra_grade | duplicate_grade | invalid_result_value | empty_checklist | isolation_violation | input_range_violation",
+  "type": "malformed_output | missing_grade | extra_grade | duplicate_grade | invalid_result_value | empty_checklist | missing_evidence | missing_isolation_note | isolation_violation | input_range_violation",
   "detail": "自由記述（補足）"
 }
 ```
 
-`type` は `scripts/convergence.py` の `PROTOCOL_FAILURE_TYPES` と同期。
+`type` は `scripts/convergence.py` の `PROTOCOL_FAILURE_TYPES` と同期
+（全分類が `validate_input_range()` / `validate_checker_output()` から emit される）。
 harness_error が入った scenario は precision 集計・収束/発散判定から除外し、
 `resolve_exit_verdict()` は halt を返す（`halt_reason == "checker_protocol_failure"`）。
 
