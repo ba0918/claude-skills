@@ -287,6 +287,32 @@
     "surface_sha256": "514617af809b8f88a9dd24dd7973fbe9708cf827ebbce1125b7712a9600e5a07",
     "verified": "2026-07-25"
   },
+  "plan-implement": {
+    "file_sha256": {
+      "skills/plan-implement/SKILL.md": "2f538f0efb9ef7f7f4e23d3347b0c713d367573f11c2aedceb9a7f6e07416463",
+      "skills/plan-implement/fixtures.json": "9fd4a770127a9a768e1cae9b06b2afa1f1cc8e10dbf78b9c4e9d236e902da2e8",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
+      "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
+      "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
+      "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
+    },
+    "note": "3 シナリオ実走 pass。初回実走では pi-002 / pi-003 が Step A を入れ子委譲し完了通知が親へ届かず Step B / D の手前で停止したため、実行者プロンプトへ環境例外条項（委譲せずインライン代行）を置いて新規実体化で再走し完走した（pi-001 は初回のまま。setup バイト同一を検算済みだが条項の与え方が他 2 本と異なる）。pi-003 は import レベルの RED では不十分と判断し NotImplementedError スタブで振る舞い単位の RED を取り直し、コミット前に .gitignore を整備して __pycache__ 混入 0 を達成。pi-002 は Phase 0-1 の再入を 3 根拠で正常系と判定。ハーネス制約: 並行 dispatch 時にエージェントの env cwd が指示した作業ディレクトリと食い違う事象が 2 件発生（いずれも実行者が baseline ハッシュ照合で切り分け、実害なし）",
+    "result": "pass",
+    "surface": [
+      "skills/plan-implement/SKILL.md",
+      "skills/plan-implement/fixtures.json",
+      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/design-principles.md",
+      "skills/shared/references/severity-and-verdicts.md",
+      "skills/shared/references/tdd-contract.md",
+      "skills/shared/references/testing-anti-patterns.md",
+      "skills/shared/references/verification-gate.md"
+    ],
+    "surface_sha256": "614bed786548a639684ac8a05f8d7d19736cb9ce6a75ca2ee296a11b2e32bd02",
+    "verified": "2026-07-26"
+  },
   "plan-reviewer": {
     "file_sha256": {
       "skills/plan-reviewer/SKILL.md": "73a6cc3c1e65c04ad6b57a2f413835e3f475ea033f8fef2defcadda68f55a7db",
@@ -328,6 +354,34 @@
     "surface_sha256": "bb32f0e0a5029ca3af748985ca4c0a1254e1edafdfd590f629405620819f43d3",
     "verified": "2026-07-25"
   },
+  "refactor": {
+    "file_sha256": {
+      "skills/refactor/SKILL.md": "685140ee770704c2401dec802b99a7cf56ee1de353c433194d6d0e3ad5bff6ad",
+      "skills/refactor/fixtures.json": "52a1627a3a378531cbda915806f25d8dd7d94815991147a685ef06693b14f795",
+      "skills/refactor/references/behavior-preservation-checks.md": "8288a6c286dd869c55e916329446f1319948a629de1f2b8406c6863d9dfbcd34",
+      "skills/refactor/references/refactoring-catalog.md": "a549836cb8cefa229bcaa7751cbfdd10799bdc2c8ad48b4449bad98080ba6381",
+      "skills/refactor/references/similarity-detection.md": "4cb235f4a713766ce348089d791a70a569458d28147b70dce704941aa3c4c260",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
+      "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
+    },
+    "note": "3 シナリオ実走 pass。全フェーズインライン単段（スコープ1ファイル・候補2件で委譲閾値に未到達）。rf-001 は headless を自己判定してスコープ外候補を report-only 固定にし、独自に 16 ケースの差分等価検算を実施。rf-003 は初版 setup の to_cents が浮動小数点丸めで BUG_FOUND を招き Phase 6 の形式選択規則により簡略版が到達不能だったため、要件は変えず setup を整数演算へ差し替えて再走（rf-001/rf-002 は setup バイト同一を検算のうえ初回結果を採用）",
+    "result": "pass",
+    "surface": [
+      "skills/refactor/SKILL.md",
+      "skills/refactor/fixtures.json",
+      "skills/refactor/references/behavior-preservation-checks.md",
+      "skills/refactor/references/refactoring-catalog.md",
+      "skills/refactor/references/similarity-detection.md",
+      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/orchestration-patterns.md",
+      "skills/shared/references/severity-and-verdicts.md",
+      "skills/shared/references/verification-gate.md"
+    ],
+    "surface_sha256": "0ddf7af947cecc2956c398bddd049ce159ffebd1efe9e7509e560ea25e4b3862",
+    "verified": "2026-07-26"
+  },
   "sweep-fix": {
     "file_sha256": {
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
@@ -350,6 +404,46 @@
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
     "surface_sha256": "03f304d1da61c5fb3b0fd34b6babc34f85453787e9c69eb487d83544d2fc27a5",
+    "verified": "2026-07-26"
+  },
+  "systematic-debugging": {
+    "file_sha256": {
+      "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
+      "skills/systematic-debugging/SKILL.md": "2880423086887ec495d63165fd06b348a371561a957086813a15782d58ddb15d",
+      "skills/systematic-debugging/fixtures.json": "3581f610b0b790518266ab8be0e3375bed56165386767c29740cbc681523a99f",
+      "skills/systematic-debugging/references/root-cause-tracing.md": "8d5a478058c90f36bee45ee9d01c0cb910b0328d8ab4e1f49ee37b1dd4aa8078"
+    },
+    "note": "3 シナリオ実走 pass。全フェーズインライン単段。sd-001 は可変デフォルト引数を bucket=None + ガードで修正し collect_all は未変更（症状対処に逃げず）。sd-002 は 20 プロセス × ハッシュシード random まで実測して再現不能を示し Phase 3 Step 3.3 の『わからないと認める』を選択、編集 0 件。sd-003 はトレースバックの指す runner.py ではなく config.py の型契約違反を根本原因と特定。sd-001 の隔離領域に実行基盤由来の .mcp.json が出現したが fixture 宣言外でハッシュ照合に影響なし",
+    "result": "pass",
+    "surface": [
+      "skills/shared/references/tdd-contract.md",
+      "skills/shared/references/verification-gate.md",
+      "skills/systematic-debugging/SKILL.md",
+      "skills/systematic-debugging/fixtures.json",
+      "skills/systematic-debugging/references/root-cause-tracing.md"
+    ],
+    "surface_sha256": "b83b197922f6bc457dc4492790ae4422140dbd5ab11f9b2a6ceeef52b4f4382e",
+    "verified": "2026-07-26"
+  },
+  "test-driven-development": {
+    "file_sha256": {
+      "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
+      "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
+      "skills/test-driven-development/SKILL.md": "59c4c625748d4f071ec704b76845bdb4deab991645ca5fa3907e3fac9367aff5",
+      "skills/test-driven-development/fixtures.json": "ad73bf8a0daf85dad9eabdb049e48d449310be0db1ba0823a26aaa1376fb3ad4"
+    },
+    "note": "3 シナリオ実走 pass。全フェーズインライン単段。初回実走で td-002 が critical 2 本を落とし（Phase 0-3 に headless 分岐がなく実行者が python3 -m unittest を仮定してプロダクションコードを実装）、原因をスキル本文の記述漏れと切り分けて SKILL.md へ headless 分岐を追加、同一 setup で再走し 3/3 へ転じた。Phase 1-4 へ追加した『要求が既に実装済みなら実装せず終了』分岐は、初版の文面では実行者が非負 4 点から誤って一般化し未充足の負値領域を残したまま早期終了したため、境界確認の義務を明記して締め直し、fixture 側にも遵守を測る critical 要件を追加して再ロックした（fixture-schema.md 設計指針 4 の意図的な仕様変更に伴う再 capture）。td-002 は修正後 2 回連続で編集 0 件を維持",
+    "result": "pass",
+    "surface": [
+      "skills/shared/references/tdd-contract.md",
+      "skills/shared/references/testing-anti-patterns.md",
+      "skills/shared/references/verification-gate.md",
+      "skills/test-driven-development/SKILL.md",
+      "skills/test-driven-development/fixtures.json"
+    ],
+    "surface_sha256": "34add78fd39d06c93b698d6d441abbde667440e8f03d389f6f4614c477703e68",
     "verified": "2026-07-26"
   }
 }
