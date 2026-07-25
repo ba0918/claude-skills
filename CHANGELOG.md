@@ -4,6 +4,27 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.66.0
+
+Agent Artifact Store 契約に違反した状態で実体化される回帰 fixture を是正し、同じ違反を
+`fixture_setup.py --validate` で機械的に止めるようにした。違反した fixture は store が
+`writable: false` に落ちるため、Phase 0 で store を検証するスキルは宣言したシナリオへ
+一度も到達しないまま abort する。落ちる fixture と違って赤くならず素通りするため、
+台帳には「到達していない経路」に対する合格記録が付いていた（issue #17）。
+
+- 実測: `.agents/` を宣言する全 15 シナリオを実体化して `artifact_store.inspect` で判定。
+  修正前は自前 git を宣言する 4 シナリオ（cy-001 / cy-003 / ho-004 / pl-004）が
+  `writable: false` で 0/4、修正後は 4/4。周囲のリポジトリに依存する 11 シナリオは前後とも変化なし
+- `skills/{cycle,handoff,plan}/fixtures.json`: `setup.files['.gitignore']` に
+  `/.agents/artifacts/` と `/.agents/runtime/` を宣言。cy-002 は `.agents/` を宣言しないが
+  自前 git を持ち Phase 0 で store を検証されるため併せて是正した
+- `skills/skill-regression/scripts/fixture_setup.py`: `setup.git.init` を宣言し
+  `.agents/` 配下を持つシナリオに対し、`.gitignore` の無視宣言・`visibility: public` の
+  明示 policy・runtime 領域の常時無視・policy 自体の追跡を静的検査する。
+  `scripts/validate_repo.py` 経由で CI が止める
+- 静的検査の判定を実体化後の `artifact_store.inspect` と突き合わせる unit test を追加し、
+  宣言側の検査が実測から乖離しないよう固定した
+
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の
