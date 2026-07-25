@@ -24,12 +24,22 @@ VIEWS = ("change", "document", "orientation", "discussion")
 
 KINDS = {
     "change": ("feature", "fix", "refactor", "docs", "test", "chore"),
-    "document": ("goal", "design", "constraint", "risk", "step", "acceptance"),
+    "document": (
+        "goal", "design", "constraint", "risk", "step", "acceptance",
+        "undecided", "progress",
+    ),
     "orientation": ("done", "inflight", "next", "blocked"),
     "discussion": ("topic", "decided", "undecided", "option"),
 }
 
 LEVELS = ("low", "medium", "high")
+
+# レンダラがこれを読み手向けのラベルへ変える。一覧に無い値は訳されないまま
+# 画面へ出るため、自由記述にはできない。
+SOURCE_KINDS = (
+    "unstaged", "staged", "branch", "commits",
+    "plan", "handoff", "session", "document",
+)
 
 UNIVERSE_KEY = {
     "change": "hunks",
@@ -76,6 +86,11 @@ def _validate_structure(model):
     view = metadata.get("view")
     if view not in VIEWS:
         errors.append("[metadata] view が不正: %r" % (view,))
+    if metadata.get("source_kind") not in SOURCE_KINDS:
+        errors.append(
+            "[metadata] source_kind が一覧にない: %r（画面へ訳されずに出る）"
+            % (metadata.get("source_kind"),)
+        )
 
     summary = model["summary"]
     if not isinstance(summary, dict):
@@ -382,6 +397,8 @@ KIND_STYLE = {
         "risk": ("危ないところ", "rail-warning", "badge--warning", "心配な点"),
         "step": ("手順", "", "", "やること"),
         "acceptance": ("できた条件", "rail-success", "badge--success", "満たすこと"),
+        "undecided": ("未決", "rail-warning", "badge--warning", "決まっていないこと"),
+        "progress": ("進み具合", "", "", "いまの状態"),
     },
     "orientation": {
         "done": ("終わった", "rail-success", "badge--success", "済んだこと"),
@@ -404,6 +421,14 @@ ATTENTION = {
     "document": ("要注意", None),
     "orientation": ("詰まり", "blocked"),
     "discussion": ("未決", "undecided"),
+}
+
+# 差分でないものを「差分」と呼ぶと、引用そのものが使われなくなる。
+EXCERPT_HEADING = {
+    "change": "実際の差分",
+    "document": "もとの記述",
+    "orientation": "もとの記述",
+    "discussion": "もとの発言",
 }
 
 RISK_LABEL = {"low": "低リスク", "medium": "中リスク", "high": "高リスク"}
@@ -600,6 +625,9 @@ def _render_group(group, position, view):
         '        <span class="summary-line">%s</span>' % _esc(group["intent"]),
         "      </summary>",
         '      <div class="body">',
+        # 同じ一文が畳んだ見出しと本文の先頭の両方にある。見出し側は開くと隠れる
+        # ので、読み手には常にどちらか一方しか見えない。
+        '        <p class="lead">%s</p>' % _esc(group["intent"]),
         "        <h4>どういうこと</h4>",
         "        <p>%s</p>" % _esc(group["plain_explanation"]),
     ]
@@ -612,7 +640,9 @@ def _render_group(group, position, view):
 
     excerpts = group.get("excerpts") or []
     if excerpts:
-        out.append("        <h4>実際の差分</h4>")
+        out.append(
+            "        <h4>%s</h4>" % _esc(EXCERPT_HEADING.get(view, "もとの記述"))
+        )
         for excerpt in excerpts:
             out += _render_excerpt(excerpt)
 

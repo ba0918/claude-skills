@@ -21,7 +21,7 @@ comprehension_questions[] required, exactly 3
 | `schema_version` | yes | Integer. Currently `1` |
 | `run_id` | yes | Identifies the run; used in artifact filenames |
 | `view` | yes | `change` / `document` / `orientation` / `discussion` |
-| `source_kind` | yes | Where the material came from, e.g. `unstaged`, `branch`, `plan`, `handoff`, `session` |
+| `source_kind` | yes | Where the material came from. One of `unstaged`, `staged`, `branch`, `commits`, `plan`, `handoff`, `session`, `document` — a closed set, because the renderer turns it into a reader-facing label and an unlisted value would reach the page untranslated |
 | `source_ref` | no | Revision range, file path, or absent for `session` |
 | `perspective` | no | The invocation argument, verbatim |
 
@@ -121,12 +121,18 @@ change can be well understood and still dangerous.
 |-------|--------------------------|
 | `high` | Behaviour visible outside the system changes; data, schema or configuration changes in a way that is not straightforward to undo; authentication, permissions, money or personal data are touched; or deciding later closes off options that are open now |
 | `medium` | Internal behaviour changes but is reversible, or the effect reaches beyond the files this group covers |
-| `low` | Behaviour does not change (wording, documentation, tests, pure restructuring), and the effect stays inside this group |
+| `low` | Nobody acts differently because of it, and the effect stays inside this group |
 
 **Outside the system** means: someone who never reads this repository's code would notice. An
 end user, an operator on call, a downstream consumer, a third-party service, or a record that
 outlives the run. A request that used to succeed and now times out is outside. A source that
 used to be ingested and now is skipped is outside. Renaming an internal helper is not.
+
+**The kind of artifact does not set the level.** Documentation and tests are not `low` by
+being documentation and tests. A README section that tells an on-call operator to stop
+intervening changes what a person does, which is outside the system by the definition above; a
+README section that describes behaviour already in place changes nothing. Ask what anyone does
+differently, not what kind of file was edited.
 
 Take the highest level any single item in the group reaches. A group is as risky as its worst
 element — averaging hides exactly the item the reader needed to see.
@@ -184,7 +190,7 @@ the reader believing everything was decided.
 | View | Allowed kinds |
 |------|---------------|
 | `change` | `feature`, `fix`, `refactor`, `docs`, `test`, `chore` |
-| `document` | `goal`, `design`, `constraint`, `risk`, `step`, `acceptance` |
+| `document` | `goal`, `design`, `constraint`, `risk`, `step`, `acceptance`, `undecided`, `progress` |
 | `orientation` | `done`, `inflight`, `next`, `blocked` |
 | `discussion` | `topic`, `decided`, `undecided`, `option` |
 

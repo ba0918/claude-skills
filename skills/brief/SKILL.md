@@ -63,7 +63,8 @@ python3 {skill_dir}/scripts/brief_collect.py candidates --repo {repo_root}
 
 Session context is always a candidate, so **the candidate set is never empty** — never answer
 that there is nothing to show. Because it is always there, it is not what decides whether to
-ask. **Count the candidates that came from the repository** and branch on that:
+ask. **Count the candidates that came from the repository** — every entry the scan returns
+except the one for the conversation — and branch on that:
 
 1. None — run `discussion`, and say that is what you are explaining.
 2. Exactly one — proceed with it, state in one line which target was chosen, and mention that
@@ -151,9 +152,16 @@ unread, which defeats the whole measurement.
 - The renderer detects the platform's opener. If it reports that it could not open the page,
   and the command environment confines execution, **retry outside that confinement before
   giving up** — a restricted environment blocks the opener while leaving the rest working, so
-  a single failed attempt is not evidence that opening is impossible.
+  a single failed attempt is not evidence that opening is impossible. Retry the **open step**,
+  not the generation; the page is already written and rendering it twice only risks producing
+  a second one.
 - If it genuinely cannot open, say so explicitly and give the path. Never let a silent
   downgrade to path-handover pass as success.
+
+**When this step does not apply.** If the request was to repair, inspect or validate a model
+rather than to explain something to a reader, the run ends at validation. Opening a page and
+recording that it was opened belong to an explanation somebody asked for; performing them for
+a repair puts a line in the log for a reading that never happened.
 
 Then let the reader talk back in this same session — that is the whole feedback path, and the
 reason no export machinery exists.
@@ -163,6 +171,11 @@ Append one line to the run log:
 ```
 | 日時 | view | 対象 | 読んだか | 指摘が出たか | ★画面がなければ出なかった指摘か |
 ```
+
+Write that header and its separator row when the file does not exist yet. The last three
+columns cannot be filled at generation time — the reader has not read anything yet — so record
+them as 未確認 and come back after the conversation that follows. A row invented at generation
+time would be measuring the writer, not the reader.
 
 The ★ column is the decisive one. At five entries it settles three different outcomes that
 otherwise get confused: ★ twice or more means the page earns its wiring into other workflows;

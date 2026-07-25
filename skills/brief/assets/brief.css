@@ -132,6 +132,7 @@ details[open] .chevron { transform: rotate(90deg); color: var(--color-primary); 
 .count { display: inline-block; font-size: var(--font-size-caption); color: var(--color-text-secondary); font-family: var(--font-code); }
 
 .body { padding: 0 var(--spacing-4) var(--spacing-4); }
+.body .lead { font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-secondary); margin-bottom: var(--spacing-2); }
 .body h4 { font-size: var(--font-size-caption); letter-spacing: var(--letter-spacing-caption); color: var(--color-text-secondary); font-weight: var(--font-weight-h4); margin: var(--spacing-4) 0 var(--spacing-1); }
 .body p { margin: 0; max-width: var(--measure); }
 .body ul { margin: 0; padding-left: 1.2em; max-width: var(--measure); }
@@ -218,13 +219,38 @@ details.card[open] > summary {
   background: var(--color-surface);
   border-bottom: 1px solid transparent;
 }
+/* The one-line summary is an index affordance: it exists so a closed group can
+   be judged without opening it. Once open it has done its job, and a wrapped
+   line here would ride down the screen taking a third of the reading area with
+   it. Drop it on open — never on stuck. Height that changes when an element
+   sticks un-sticks it, and the two states fight each other forever. The same
+   sentence leads the body, so nothing is lost. */
+details.card[open] > summary .summary-line { display: none; }
 details.card[open] > summary.stuck {
   border-bottom-color: var(--color-border);
   box-shadow: var(--shadow-raised);
 }
-.head-row { display: flex; align-items: baseline; gap: var(--spacing-2); flex-wrap: wrap; }
-.head-row .title { flex: 1 1 auto; min-width: var(--title-min); margin-bottom: 0; }
-.head-row .tags { flex: 0 0 auto; }
+/* Badges never claim a line of their own: they sit beside the title and the
+   title wraps under them. A wrapped badge row costs a full line of the sticky
+   header while carrying two words. */
+.head-row { display: flex; align-items: baseline; gap: var(--spacing-2); flex-wrap: nowrap; }
+.head-row .title { flex: 1 1 auto; min-width: 0; margin-bottom: 0; }
+.head-row .tags { flex: 0 0 auto; flex-wrap: nowrap; }
+
+/* Below this the two cannot share a line without crushing the title, so let
+   them stack again — the header is not sticky-critical on a phone anyway. */
+@media (max-width: 560px) {
+  .head-row { flex-wrap: wrap; }
+  .head-row .title { min-width: var(--title-min); }
+  .head-row .tags { flex-wrap: wrap; }
+}
+
+/* The item count answers "is there enough in here to be worth opening". Once
+   open the items are right there being counted by eye. Same reasoning as the
+   one-line summary: it is an index affordance, and it goes when the index
+   turns into the thing itself. The kind and risk labels stay — those are read
+   alongside the text, not instead of it. */
+details.card[open] > summary .count { display: none; }
 
 @media (max-width: 1023px) {
   .group { grid-template-columns: 1fr; }

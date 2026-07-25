@@ -19,6 +19,7 @@ DIFF_HEADER = re.compile(r"^diff --git a/(.+?) b/(.+)$")
 PLUS_FILE = re.compile(r"^\+\+\+ b/(.+)$")
 HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 LIST_ITEM = re.compile(r"^[-*+]\s+(.+?)\s*$")
+ANY_ITEM = re.compile(r"^(?:[-*+]|\d+\.)\s+(.+?)\s*$")
 
 DEFAULT_BRANCHES = ("main", "master", "develop")
 
@@ -154,6 +155,28 @@ def split_document_sections(text):
     # bullets rather than hand back a universe of size one.
     items = _split_list_items(lines)
     return items if len(items) > 1 else sections
+
+
+def split_open_items(text):
+    """Every item a state document lists, bulleted or numbered.
+
+    The orientation view checks that no open item silently left the page, and
+    that check needs the list of items to check against. Nothing produced it
+    before, so the one view meant to answer "what is left" was the one view
+    whose input had to be assembled by hand.
+    """
+    items = []
+    for line in (text or "").splitlines():
+        match = ANY_ITEM.match(line)
+        if match:
+            items.append(
+                {
+                    "id": "o%03d" % (len(items) + 1),
+                    "title": match.group(1).strip(),
+                    "unit": "item",
+                }
+            )
+    return items
 
 
 def resolve_base(runner):
@@ -334,6 +357,9 @@ def main(argv=None):
     sections = sub.add_parser("sections", help="split a document into sections")
     sections.add_argument("--file", required=True)
 
+    openitems = sub.add_parser("open-items", help="list what a state document leaves open")
+    openitems.add_argument("--file", required=True)
+
     args = parser.parse_args(argv)
 
     if args.command == "candidates":
@@ -355,7 +381,12 @@ def main(argv=None):
         return 0
 
     with open(args.file, encoding="utf-8") as handle:
-        collected = split_document_sections(handle.read())
+        text = handle.read()
+    if args.command == "open-items":
+        collected = split_open_items(text)
+        _emit({"open_items": [i["id"] for i in collected], "detail": collected})
+        return 0
+    collected = split_document_sections(text)
     _emit({"sections": [s["id"] for s in collected], "detail": collected})
     return 0
 

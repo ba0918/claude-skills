@@ -319,3 +319,29 @@ class CandidateDetail(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             for candidate in scan_candidates(root, lambda args: (1, "")):
                 self.assertTrue(candidate["detail"].strip(), candidate["kind"])
+
+
+class OpenItemsCollector(unittest.TestCase):
+    """The orientation check needs a universe, and nothing produced one."""
+
+    STATE = "# Handoff\n\n## 完了\n\n- 実装した\n\n## 次のアクション\n\n1. 測る\n2. 直す\n"
+
+    def test_it_lists_bulleted_and_numbered_items_alike(self):
+        items = brief_collect.split_open_items(self.STATE)
+        self.assertEqual([i["id"] for i in items], ["o001", "o002", "o003"])
+        self.assertEqual([i["title"] for i in items], ["実装した", "測る", "直す"])
+
+    def test_the_command_reports_them_under_the_key_the_check_expects(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = os.path.join(root, "handoff.md")
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(self.STATE)
+            code, out = run_cli("open-items", "--file", path)
+            self.assertEqual(code, 0)
+            self.assertEqual(json.loads(out)["open_items"], ["o001", "o002", "o003"])
+
+    def test_the_key_matches_what_the_validator_asks_for(self):
+        import brief_render
+        self.assertIn("open_items", json.loads(run_cli(
+            "open-items", "--file", __file__)[1]))
+        self.assertEqual(brief_render.UNIVERSE_KEY["orientation"], "open_items")

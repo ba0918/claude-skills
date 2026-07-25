@@ -22,18 +22,18 @@
   },
   "brief": {
     "file_sha256": {
-      "skills/brief/SKILL.md": "42ec6a6fbe4d3c951e8924fb903b34a2303f6bce1557f9baf9b49d6e82d87644",
-      "skills/brief/assets/brief.css": "e2d28ca47e491c441f4a790ef14a17c22f401d6c5df02396e0c95c5fbfe0a711",
+      "skills/brief/SKILL.md": "932b9b178870995d04253b3e3875c94e6e0669f226575a71984b53e83f9484bd",
+      "skills/brief/assets/brief.css": "9ef1a533765cd3463be8fcdf0ab59a694983f43143ffce2d33c31647209aa8cd",
       "skills/brief/assets/brief.js": "3448e3dc90bbfe4451e9f2cff5981cdc42ce3b021411ccc3a16c3a52e86bbfc3",
       "skills/brief/assets/tokens.brief.json": "c3b5edd00e3451f313f7dbdb676baa8f2f763652bc7ef179627002dab242e9db",
       "skills/brief/assets/tokens.css": "e62f02714ff77cb803993cf9796f09b5adafff8523418c3ec7a3c73f80947a2c",
       "skills/brief/fixtures.json": "7a5ba5077b28ccc539d98db6d21f2fe74a937293e25ed0e022e31c2a3351cf45",
-      "skills/brief/references/brief-model.md": "d9c7e1ec2da367581b171e7e8a5682a87186fea64d8575414f0d8e65c4ad8c2b",
-      "skills/brief/scripts/brief_collect.py": "973c9c28d380828034852ab62f5b17a0460f418c797d152143700542bac57192",
-      "skills/brief/scripts/brief_render.py": "ce1421169af9956be69da3c56fe46740f8c4756ccf17ccfcfcb4ab154564c361",
+      "skills/brief/references/brief-model.md": "f3bcf0635bd5146fa3c59dbf98dcf920d95fdcc995b8e8f3ec9e3877358411a5",
+      "skills/brief/scripts/brief_collect.py": "6d0e638d5d36e3f62008c27967695e76f42f9cbe2afd659391e7118b4866d986",
+      "skills/brief/scripts/brief_render.py": "132063d012513e4e077d1effed7499353c40d8064550b47e75fa101f23febc0f",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5"
     },
-    "note": "4 回目の run（6/6 合格、bf-006 を新設して 6 シナリオ）。evidence_refs をページから外す・risk の『システムの外』定義・confidence の『入力の外』を一般知識から切り離す・候補はリポジトリ由来のみ数える、を入れた版。尺度 v2 で bf-003 の risk が 4 回目にして high/high へ収束し、v1 で medium に張り付いていた confidence が high/medium に分かれて識別力を回復した。実行者は 4 回とも報告を送らず待機に入り、事実のみの状況照会 1 回ずつで回収。未解決: (1) risk の low 行が『文書・テスト』を種類として列挙しており、当直の行動を変える文書は『外から見える』条件と正面衝突する（bf-002 が指摘）。(2) モデル修復だけを頼まれたとき Step 4（開く・ログ追記）が適用されるかが 3 回連続で不明瞭点に挙がっている。(3) excerpts の見出しがレンダラで『実際の差分』に固定されており、document view で引用すると差分でないものを差分と呼ぶため実行者が引用を見送った。(4) source_kind が自由記述でレンダラが生値を画面へ出す。(5) 『閉じ込めの外で再試行』が render 全体か開く工程だけかが不明。",
+    "note": "5 回目の run（6/6 合格）。risk の low 行から成果物の種類を外す・Step 4 の適用範囲・引用見出しの view 別出し分け・source_kind の閉集合化・document の語彙に undecided と progress を追加・orientation の収集口新設、を入れた版。実測で効果を確認: (a) bf-002 の文書グループの risk が low(run3)→medium(run4)→high(run5) と動き「文書だから低、はしていない」と明記された (b) 引用見出しを出し分けたら bf-004 が 3 グループすべてに引用を付けた（前回は差分と呼ぶことになるため引用自体を見送っていた） (c) Step 4 の除外条件が引用され、修復依頼で render とログ追記を行わなくなった (d) bf-003 の risk/confidence が run4 と完全一致し 2 回連続で再現。未解決: (1) 根拠欄が件数だけで読み手に何も伝えない（人間の指摘、引用へ一本化する） (2) source_kind の閉集合に「差分ファイルを直接渡された」に当たる値が無い (3) document の単位ラベルが「節」固定だが箇条書きフォールバック時は実体と食い違う (4) Step 1 に「依頼が特定ファイルを名指しした場合」の行が無い（2 回連続） (5) inputs JSON の置き場が成果物リストに無い（3 回連続） (6) option kind の items が何を指すか契約に無く、レンダラの見出しが挙動を決めている。",
     "result": "pass",
     "surface": [
       "skills/brief/SKILL.md",
@@ -47,7 +47,7 @@
       "skills/brief/scripts/brief_render.py",
       "skills/shared/references/artifact-store.md"
     ],
-    "surface_sha256": "23955bbf890a71edb1c4241bc9f1cf3fab9383743ef64d794d28788c8d23e8ab",
+    "surface_sha256": "096b125ddee2008aa383cb8716acce3de303acda78f05861bcbd1f82977febdd",
     "verified": "2026-07-26"
   },
   "commit": {

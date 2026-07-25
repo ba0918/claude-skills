@@ -618,3 +618,97 @@ class EvidenceIsAnAnchorNotReadingMaterial(unittest.TestCase):
         page = render_html(model)
         text = visible_text(page[: page.index('class="foot"')])
         self.assertNotIn("turn-12", text)
+
+
+class StickyHeaderStaysShort(unittest.TestCase):
+    """An open group's header rides down the screen. Keep it to what a reader
+    still needs there, and never change its height on stuck — that oscillates."""
+
+    def test_the_one_line_summary_is_dropped_once_the_group_is_open(self):
+        css = (ASSET_DIR / "brief.css").read_text()
+        self.assertIn("details.card[open] > summary .summary-line { display: none; }", css)
+
+    def test_nothing_is_hidden_on_stuck(self):
+        css = (ASSET_DIR / "brief.css").read_text()
+        for rule in re.findall(r"[^}]*\.stuck[^{]*\{[^}]*\}", css):
+            self.assertNotIn("display: none", rule)
+            self.assertNotIn("height", rule)
+
+    def test_the_item_count_is_dropped_once_the_group_is_open(self):
+        css = (ASSET_DIR / "brief.css").read_text()
+        self.assertIn("details.card[open] > summary .count { display: none; }", css)
+
+    def test_the_labels_a_reader_reads_alongside_the_text_are_kept(self):
+        # kind and risk are read with the body; only index affordances go.
+        css = (ASSET_DIR / "brief.css").read_text()
+        hidden = re.findall(r"details\.card\[open\] > summary \.(\w[\w-]*) \{ display: none", css)
+        self.assertEqual(sorted(hidden), ["count", "summary-line"])
+
+    def test_badges_never_take_a_line_of_their_own_at_reading_width(self):
+        css = (ASSET_DIR / "brief.css").read_text()
+        head = re.search(r"\.head-row \{[^}]*\}", css).group(0)
+        self.assertIn("flex-wrap: nowrap", head)
+
+    def test_the_same_sentence_leads_the_body_so_nothing_is_lost(self):
+        model = discussion_model()
+        page = render_html(model)
+        intent = model["groups"][0]["intent"]
+        self.assertEqual(page.count(intent), 2)
+        self.assertIn('<p class="lead">%s</p>' % intent, page)
+
+
+class SourceKindIsAClosedSet(unittest.TestCase):
+    """The renderer turns it into a label; an unlisted value reaches the page raw."""
+
+    def test_a_listed_value_passes(self):
+        model = discussion_model()
+        model["metadata"]["source_kind"] = "session"
+        self.assertEqual(validate_model(model), [])
+
+    def test_an_invented_value_is_rejected(self):
+        model = discussion_model()
+        model["metadata"]["source_kind"] = "打ち合わせメモ"
+        self.assertTrue(any("source_kind" in e for e in validate_model(model)))
+
+
+class ExcerptHeadingFollowsTheMaterial(unittest.TestCase):
+    """Calling a quoted memo line a diff is what stopped anyone quoting one."""
+
+    def test_a_diff_is_called_a_diff(self):
+        self.assertIn("実際の差分", render_html(excerpt_model()))
+
+    def test_a_document_quote_is_not(self):
+        model = document_model()
+        model["metadata"]["source_kind"] = "plan"
+        model["groups"][0]["excerpts"] = [
+            {"path": "notes.md", "lines": [{"text": "- 計測してから直す"}]}
+        ]
+        page = render_html(model)
+        self.assertIn("もとの記述", page)
+        self.assertNotIn("実際の差分", page)
+
+    def test_a_conversation_quote_is_called_a_remark(self):
+        model = discussion_model()
+        model["groups"][0]["excerpts"] = [
+            {"path": "conversation.md", "lines": [{"text": "A: 外部に寄せる"}]}
+        ]
+        self.assertIn("もとの発言", render_html(model))
+
+
+class DocumentVocabularyCoversUnsettledAndProgress(unittest.TestCase):
+    """Two runs reported having nowhere to put a carried-over item."""
+
+    def test_an_unsettled_section_has_a_kind_of_its_own(self):
+        model = document_model()
+        model["groups"][0]["kind"] = "undecided"
+        self.assertEqual(validate_model(model, DOCUMENT_INPUTS), [])
+
+    def test_a_progress_section_has_a_kind_of_its_own(self):
+        model = document_model()
+        model["groups"][0]["kind"] = "progress"
+        self.assertEqual(validate_model(model, DOCUMENT_INPUTS), [])
+
+    def test_both_render_with_reader_facing_labels(self):
+        model = document_model()
+        model["groups"][0]["kind"] = "undecided"
+        self.assertIn("決まっていないこと", render_html(model))
