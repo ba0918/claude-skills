@@ -4,6 +4,24 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.66.0
+
+systematic-debugging の Phase 1 が置いていた 2 つの暗黙の前提を解消した。Step 1.1 は
+エラーメッセージとスタックトレースの存在を前提にしていたため、例外を投げず戻り値だけが
+汚染される silent failure では記録すべき対象が 1 つも取得できず、代替エビデンスの規定も
+なかった。Step 1.3 の `git diff HEAD~5 --stat` はコミット 5 本未満のリポジトリ
+（新規プロジェクト・fixture・浅い clone）で必ず exit 128 になるが、失敗時の扱いが
+書かれていなかった。
+
+- `skills/systematic-debugging/SKILL.md`: Step 1.1 に、例外を伴わないバグでは症状の
+  観測値（期待値 vs 実測値・汚染を露出させた観測）を代替エビデンスとし、その要約を
+  Phase 1 表示の `Error:` に充てることを明記
+- `skills/systematic-debugging/SKILL.md`: Step 1.3 に初期コミットまで遡る fallback を
+  添え、なお比較できない場合は「履歴が浅く比較不能」と記録して Step 1.4 へ進むことと、
+  履歴の不在それ自体は根本原因のエビデンスにならないことを明記
+- skill-regression の run で sd-001 / sd-002 / sd-003 を白紙実行者により再実行し、
+  台帳ベースラインと同一（6/6・4/4・5/5、critical 全 pass）で非劣化を実測
+
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の
