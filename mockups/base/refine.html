@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>brief — 計画レビューの結果</title>
+<style>
+:root {
+  --color-primary: #2C4A63;
+  --color-secondary: #6E6A62;
+  --color-background: #FBFAF7;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F4F2EC;
+  --color-warning: #C8442C;
+  --color-success: #2F6B57;
+  --color-text-primary: #1A1917;
+  --color-text-secondary: #6E6A62;
+  --color-text-disabled: #A29D93;
+  --color-border: #E4E0D7;
+  --color-focus-ring: #2C4A63;
+
+  --font-heading: "Hiragino Mincho ProN", "HiraMinProN-W3", "Yu Mincho", "YuMincho", "BIZ UDPMincho", "Noto Serif JP", "Source Han Serif JP", serif;
+  --font-body: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "YuGothic", "BIZ UDPGothic", "Noto Sans JP", "Meiryo", sans-serif;
+  --font-code: "SFMono-Regular", "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace;
+
+  --font-size-display: 38px;
+  --line-height-display: 1.45;
+  --letter-spacing-display: 0.04em;
+  --font-size-h2: 24px;
+  --line-height-h2: 1.55;
+  --letter-spacing-h2: 0.02em;
+  --font-size-h3: 18px;
+  --font-size-body: 16px;
+  --line-height-body: 1.85;
+  --font-size-body-small: 14px;
+  --line-height-body-small: 1.8;
+  --font-size-caption: 13px;
+  --line-height-caption: 1.7;
+  --letter-spacing-caption: 0.02em;
+
+  --spacing-0: 4px;
+  --spacing-1: 8px;
+  --spacing-2: 12px;
+  --spacing-3: 16px;
+  --spacing-4: 24px;
+  --spacing-6: 48px;
+  --spacing-7: 64px;
+  --max-content-width: 768px;
+  --section-spacing: 48px;
+
+  --radius-card: 2px;
+  --radius-badge: 0;
+  --shadow-flat: none;
+  --shadow-raised: 0 1px 2px rgba(26,25,23,0.06);
+  --bar-height: 52px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* 開閉でページ高が変わるたびスクロールバーが出入りすると、
+   幅が変わってヘッダーが折り返し、レイアウトが跳ねる。溝を常時確保して止める。 */
+html { scrollbar-gutter: stable; }
+
+body { margin: 0; background: var(--color-background); color: var(--color-text-primary); font-family: var(--font-body); font-size: var(--font-size-body); line-height: var(--line-height-body); -webkit-font-smoothing: antialiased; }
+
+.bar { position: sticky; top: 0; z-index: 10; background: var(--color-background); border-bottom: 1px solid var(--color-border); }
+.bar-inner { max-width: var(--max-content-width); margin: 0 auto; padding: 0 var(--spacing-3); height: var(--bar-height); display: flex; align-items: center; gap: var(--spacing-2); flex-wrap: nowrap; }
+.bar-id { flex: 0 0 auto; font-family: var(--font-code); font-size: var(--font-size-caption); letter-spacing: 0.06em; color: var(--color-primary); white-space: nowrap; }
+.bar-target { flex: 1 1 auto; min-width: 0; font-size: var(--font-size-body-small); color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chips { flex: 0 0 auto; display: flex; align-items: center; gap: var(--spacing-1); }
+.chipset { display: inline-flex; align-items: center; gap: var(--spacing-1); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 2px var(--spacing-1); font-family: var(--font-code); font-size: var(--font-size-caption); color: var(--color-text-secondary); white-space: nowrap; }
+.chipset .flag { color: var(--color-warning); }
+.chipset .split { color: var(--color-primary); }
+.chipset.todo { border-color: var(--color-warning); }
+.toggle-all { font-family: var(--font-body); font-size: var(--font-size-caption); background: transparent; color: var(--color-primary); border: 1px solid var(--color-primary); border-radius: 3px; padding: var(--spacing-0) var(--spacing-2); cursor: pointer; white-space: nowrap; }
+.toggle-all:hover { background: var(--color-primary); color: var(--color-background); }
+.toggle-all:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+
+.page { max-width: var(--max-content-width); margin: 0 auto; padding: var(--spacing-6) var(--spacing-3) var(--spacing-7); }
+
+.lede { margin-bottom: var(--section-spacing); }
+.eyebrow { font-size: var(--font-size-caption); letter-spacing: var(--letter-spacing-caption); color: var(--color-text-secondary); margin: 0 0 var(--spacing-2); }
+.one-liner { font-family: var(--font-heading); font-size: var(--font-size-display); line-height: var(--line-height-display); letter-spacing: var(--letter-spacing-display); font-weight: 400; margin: 0 0 var(--spacing-4); max-width: 42rem; }
+.meta { font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-secondary); margin: 0; max-width: 42rem; }
+.meta + .meta { margin-top: var(--spacing-1); }
+.meta b { font-weight: 700; color: var(--color-text-primary); }
+
+.rule { border: 0; border-top: 1px solid var(--color-border); margin: var(--section-spacing) 0; }
+.section-label { font-family: var(--font-heading); font-size: var(--font-size-h2); line-height: var(--line-height-h2); letter-spacing: var(--letter-spacing-h2); font-weight: 400; margin: 0 0 var(--spacing-2); }
+.section-note { font-size: var(--font-size-body-small); color: var(--color-text-secondary); margin: 0 0 var(--spacing-4); max-width: 42rem; }
+
+/* ── あなたの判断が要ること ── */
+.decisions { border-top: 3px solid var(--color-warning); background: var(--color-surface); border-right: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); border-left: 1px solid var(--color-border); padding: var(--spacing-4); margin-bottom: var(--section-spacing); }
+.decisions h2 { font-family: var(--font-heading); font-size: var(--font-size-h2); line-height: var(--line-height-h2); letter-spacing: var(--letter-spacing-h2); font-weight: 400; margin: 0 0 var(--spacing-1); }
+.decisions p.note { font-size: var(--font-size-body-small); color: var(--color-text-secondary); margin: 0 0 var(--spacing-3); }
+.decisions ol { margin: 0; padding-left: 1.3em; }
+.decisions li + li { margin-top: var(--spacing-2); }
+.decisions a { color: var(--color-primary); }
+
+/* ── グループ ── */
+.group { display: grid; grid-template-columns: 72px 1fr; column-gap: var(--spacing-4); margin-bottom: var(--spacing-2); }
+.num { font-family: var(--font-code); font-size: var(--font-size-body-small); color: var(--color-text-disabled); text-align: right; padding-top: var(--spacing-4); letter-spacing: 0.06em; }
+.group:has(details.card[open]) .num { color: var(--color-primary); }
+.num-inline { display: none; }
+
+details.card { --rail: var(--color-text-disabled); background: var(--color-surface-alt); border: 1px solid var(--color-border); border-left: 4px solid var(--rail); border-radius: var(--radius-card); box-shadow: var(--shadow-flat); transition: border-left-width 120ms ease, background-color 120ms ease; }
+details.card.rail-primary { --rail: var(--color-primary); }
+details.card.rail-warning { --rail: var(--color-warning); }
+details.card.rail-success { --rail: var(--color-success); }
+details.card:hover { border-left-width: 6px; background: var(--color-surface); }
+details.card[open] { background: var(--color-surface); box-shadow: var(--shadow-raised); }
+
+summary { display: block; padding: var(--spacing-3) var(--spacing-4); padding-right: var(--spacing-6); cursor: pointer; position: relative; }
+summary::-webkit-details-marker { display: none; }
+summary::marker { content: ""; }
+summary:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+.chevron { position: absolute; right: var(--spacing-4); top: var(--spacing-3); color: var(--color-text-disabled); font-family: var(--font-code); font-size: var(--font-size-body-small); transition: transform 120ms ease; display: inline-block; }
+details.card[open] > summary .chevron { transform: rotate(90deg); color: var(--color-primary); }
+
+.title { display: block; font-size: var(--font-size-h3); font-weight: 700; line-height: 1.6; margin-bottom: var(--spacing-1); }
+.summary-line { display: block; font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-secondary); margin-bottom: var(--spacing-2); max-width: 42rem; }
+.tags { display: flex; flex-wrap: wrap; gap: var(--spacing-1); align-items: center; }
+
+.badge { display: inline-block; border-radius: var(--radius-badge); padding: 2px var(--spacing-1); font-size: var(--font-size-caption); line-height: var(--line-height-caption); letter-spacing: var(--letter-spacing-caption); background: var(--color-surface); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
+.badge--warning { background: var(--color-warning); color: var(--color-background); border-color: var(--color-warning); }
+.badge--success { background: var(--color-success); color: var(--color-background); border-color: var(--color-success); }
+.badge--split { background: var(--color-primary); color: var(--color-background); border-color: var(--color-primary); }
+.count { display: inline-block; font-size: var(--font-size-caption); color: var(--color-text-secondary); font-family: var(--font-code); }
+
+.body { padding: 0 var(--spacing-4) var(--spacing-4); }
+.body h4 { font-size: var(--font-size-caption); letter-spacing: var(--letter-spacing-caption); color: var(--color-text-secondary); font-weight: 700; margin: var(--spacing-4) 0 var(--spacing-1); }
+.body p { margin: 0; max-width: 42rem; }
+.body ul { margin: 0; padding-left: 1.2em; max-width: 42rem; }
+.body li + li { margin-top: var(--spacing-0); }
+
+/* ── レビュー指摘 ── */
+.finding { border: 1px solid var(--color-border); border-left: 3px solid var(--color-text-disabled); border-radius: var(--radius-card); background: var(--color-surface-alt); padding: var(--spacing-2) var(--spacing-3); }
+.finding + .finding { margin-top: var(--spacing-1); }
+.finding.act { border-left-color: var(--color-warning); }
+.finding.split { border-left-color: var(--color-primary); }
+.finding-head { display: flex; flex-wrap: wrap; gap: var(--spacing-1); align-items: center; margin-bottom: var(--spacing-1); }
+.finding-claim { font-size: var(--font-size-body); line-height: 1.7; margin: 0 0 var(--spacing-1); }
+.who { font-size: var(--font-size-caption); color: var(--color-text-secondary); margin: 0 0 var(--spacing-1); }
+.chip { display: inline-block; font-family: var(--font-code); font-size: var(--font-size-caption); color: var(--color-text-secondary); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-badge); padding: 1px var(--spacing-1); }
+.handled { font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-primary); margin: 0; border-top: 1px dotted var(--color-border); padding-top: var(--spacing-1); }
+.handled b { font-weight: 700; }
+.stance { font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); margin: 0 0 var(--spacing-0); }
+.stance .name { font-family: var(--font-code); font-size: var(--font-size-caption); color: var(--color-primary); margin-right: var(--spacing-1); }
+
+details.resolved { margin-top: var(--spacing-2); border: 1px solid var(--color-border); border-radius: var(--radius-card); background: var(--color-surface-alt); }
+details.resolved > summary { padding: var(--spacing-2) var(--spacing-3); padding-right: var(--spacing-3); font-size: var(--font-size-body-small); color: var(--color-text-secondary); }
+details.resolved ul { padding: 0 var(--spacing-3) var(--spacing-3) 2.2em; font-size: var(--font-size-body-small); color: var(--color-text-secondary); }
+
+.hidden-note { font-size: var(--font-size-body-small); color: var(--color-text-secondary); border-top: 1px solid var(--color-border); padding-top: var(--spacing-3); margin-top: var(--spacing-4); max-width: 42rem; }
+.questions { margin-top: var(--section-spacing); }
+.questions ol { margin: 0; padding-left: 1.3em; max-width: 42rem; }
+.questions li + li { margin-top: var(--spacing-2); }
+.questions .note { font-size: var(--font-size-body-small); color: var(--color-text-secondary); margin: 0 0 var(--spacing-3); max-width: 42rem; }
+.foot { margin-top: var(--section-spacing); font-size: var(--font-size-caption); color: var(--color-text-disabled); font-family: var(--font-code); }
+
+/* ── 指摘の出典 ── */
+.anchor { display: block; font-size: var(--font-size-caption); color: var(--color-text-secondary); margin-bottom: var(--spacing-1); }
+.anchor .where { font-family: var(--font-code); color: var(--color-primary); }
+.quote { margin: 0 0 var(--spacing-1); padding: var(--spacing-1) var(--spacing-2); border-left: 2px solid var(--color-border); background: var(--color-surface); font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-secondary); }
+
+/* ── セクションヘッダーの追従（GitHub の diff viewer 方式） ──
+   長い節を読んでいる最中でも、その節の見出しと開閉操作を画面内に残す。
+   高さは stuck 時も変えない（変えると sticky の占有領域が動いて本文が跳ねる）。 */
+details.card[open] > summary {
+  position: sticky;
+  top: var(--bar-height);
+  z-index: 5;
+  background: var(--color-surface);
+  border-bottom: 1px solid transparent;
+}
+details.card[open] > summary.stuck {
+  border-bottom-color: var(--color-border);
+  box-shadow: 0 2px 4px rgba(26,25,23,0.05);
+}
+.head-row { display: flex; align-items: baseline; gap: var(--spacing-2); flex-wrap: wrap; }
+.head-row .title { flex: 1 1 auto; min-width: 14rem; margin-bottom: 0; }
+.head-row .tags { flex: 0 0 auto; }
+
+@media (max-width: 1023px) {
+  .group { grid-template-columns: 1fr; }
+  .num { display: none; }
+  .num-inline { display: inline; font-family: var(--font-code); color: var(--color-text-disabled); margin-right: var(--spacing-1); }
+  .bar-target { display: none; }
+}
+@media (max-width: 700px) {
+  .chipset.scale { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-inner">
+    <span class="bar-id">brief / 計画レビュー</span>
+    <span class="bar-target">brief スキルの実装計画 — 3 巡目</span>
+    <span class="chips">
+      <span class="chipset scale" title="レビュー全体の規模">指摘 11 · 対応済 8</span>
+      <span class="chipset todo" title="あなたの判断が要るもの"><span class="flag">要判断 2</span> · <span class="split">割れた 1</span></span>
+      <button class="toggle-all" id="toggleAll" type="button">閉じる</button>
+    </span>
+  </div>
+</div>
+
+<main class="page">
+
+  <header class="lede">
+    <p class="eyebrow">つまり</p>
+    <h1 class="one-liner">レビューで 11 件の指摘が出て、8 件はその場で直した。残り 3 件はあなたに判断してほしい。</h1>
+    <p class="meta"><b>レビューした人</b> 7 つの観点で見た担当（実現可能性・セキュリティ・性能・構造・網羅性・代替案・画面）と、別の AI による第二意見</p>
+    <p class="meta"><b>どこまで直したか</b> 計画の書き換えで済むものは直した。前提そのものが変わるものは残した。</p>
+  </header>
+
+  <section class="decisions">
+    <h2>あなたに決めてほしいこと</h2>
+    <p class="note">この 3 件は判断の前提が人によって変わるため、こちらでは決めませんでした。</p>
+    <ol>
+      <li><b>ブラウザが自動で開けない環境をどうするか</b> — 2 人が同じ問題を指摘。実際にこの環境で再現した（<a href="#g02">02 を見る</a>）</li>
+      <li><b>開けなかったときパスだけ出すか</b> — それだと読まれなくなる懸念が未解消（<a href="#g02">02 を見る</a>）</li>
+      <li><b>共通のトークン定義を広げるか、brief 側で持つか</b> — レビュアー同士で意見が割れた（<a href="#g03">03 を見る</a>）</li>
+    </ol>
+  </section>
+
+  <hr class="rule">
+
+  <h2 class="section-label">計画のどこが論点になったか</h2>
+  <p class="section-note">3 か所に集まりました。直したものは各項目の下にまとめてあります。</p>
+
+  <article class="group">
+    <div class="num">01</div>
+    <details class="card rail-success" open>
+      <summary>
+        <span class="chevron">›</span>
+        <span class="head-row"><span class="title"><span class="num-inline">01</span>作る範囲の絞り込み</span>
+          <span class="tags">
+          <span class="badge badge--success">対応済</span>
+          <span class="count">指摘 5 件 / すべて解決</span>
+        </span></span>
+        <span class="summary-line">最初に作る量が多すぎるという指摘。計画の書き換えで解消した</span>
+      </summary>
+      <div class="body">
+        <h4>何が問題だったか</h4>
+        <p>最初の版は、画面の作り込み・大量項目の扱い・評価の仕組みを一度に作る計画になっていた。複数のレビュアーが「最初に確かめたいことに対して作る量が釣り合っていない」と指摘した。</p>
+
+        <h4>どう直したか</h4>
+        <ul>
+          <li>大量項目向けの機能を後回しにした</li>
+          <li>結果を書き出す仕組みを削り、会話で返す形にした</li>
+          <li>最初に動かすものを「会話の解説」1 つに絞った</li>
+        </ul>
+
+        <details class="resolved">
+          <summary>直した指摘 5 件を見る</summary>
+          <ul>
+            <li>網羅性 — 最初の段階に含める機能が多すぎる（範囲を縮小して解決）</li>
+            <li>実現可能性 — 評価の仕組みが最初から要るという前提が誤り（後段へ移動）</li>
+            <li>構造 — 画面を作る部分と中身を作る部分が混ざっている（責務を分離）</li>
+            <li>代替案 — 文章だけで済む可能性を検討していない（検討記録を追加）</li>
+            <li>第二意見 — 5〜8 件の評価は初回には重い（2 件に縮小）</li>
+          </ul>
+        </details>
+      </div>
+    </details>
+  </article>
+
+  <article class="group" id="g02">
+    <div class="num">02</div>
+    <details class="card rail-warning" open>
+      <summary>
+        <span class="chevron">›</span>
+        <span class="head-row"><span class="title"><span class="num-inline">02</span>画面を自動で開けるのか</span>
+          <span class="tags">
+          <span class="badge badge--warning">要判断 2</span>
+          <span class="count">指摘 4 件 / 2 件が未解決</span>
+        </span></span>
+        <span class="summary-line">計画の必須条件だが、この環境では実際に動かなかった</span>
+      </summary>
+      <div class="body">
+
+        <h4>あなたの判断が要る指摘</h4>
+
+        <div class="finding act">
+          <div class="finding-head">
+            <span class="badge badge--warning">要判断</span>
+            <span class="chip">2 人が同意</span>
+          </div>
+          <span class="anchor">計画の <span class="where">「出力と成果物」</span> に対して</span>
+          <blockquote class="quote">生成後、OS 標準のオープナーで HTML を開く。<b>ここを省略しない</b>。パスを提示して終わると開く手間で読まれなくなり、MVP の測定対象が成立しないため。</blockquote>
+          <p class="finding-claim">必須条件として書かれているが、環境によっては実行できない。実行できないときの扱いが計画にない。</p>
+          <p class="who">言った人 — <span class="chip">実現可能性</span> <span class="chip">第二意見</span></p>
+          <p class="handled"><b>こちらの対応</b> 直せませんでした。実際にこの環境で再現し、代わりに手でファイルを移して確認しています。開ける環境を前提にするか、開けない環境を標準とみなすかで設計が変わるため、判断を残しました。</p>
+        </div>
+
+        <div class="finding act">
+          <div class="finding-head">
+            <span class="badge badge--warning">要判断</span>
+            <span class="chip">1 人が指摘</span>
+          </div>
+          <span class="anchor">計画の <span class="where">「出力と成果物」</span> に対して（同じ節の次の文）</span>
+          <blockquote class="quote">オープナーはプラットフォーム非依存に検出し、失敗しても生成自体は成功扱いとしてパスを提示する。</blockquote>
+          <p class="finding-claim">この後始末は、同じ節の 2 文前にある「パスを提示して終わると読まれなくなる」という記述とそのまま矛盾している。</p>
+          <p class="who">言った人 — <span class="chip">画面</span></p>
+          <p class="handled"><b>こちらの対応</b> 矛盾は認めますが、代案が見つかりませんでした。読ませ方の設計に関わるため、判断を残しました。</p>
+        </div>
+
+        <details class="resolved">
+          <summary>直した指摘 2 件を見る</summary>
+          <ul>
+            <li>セキュリティ — 外部から取得したファイルを開く可能性がある（自分で作ったファイルに限定）</li>
+            <li>実現可能性 — 開く処理の失敗で全体が失敗扱いになる（失敗しても成功として扱う旨を明記）</li>
+          </ul>
+        </details>
+      </div>
+    </details>
+  </article>
+
+  <article class="group" id="g03">
+    <div class="num">03</div>
+    <details class="card rail-primary" open>
+      <summary>
+        <span class="chevron">›</span>
+        <span class="head-row"><span class="title"><span class="num-inline">03</span>共通の定義を広げるかどうか</span>
+          <span class="tags">
+          <span class="badge badge--split">意見が割れた</span>
+          <span class="count">指摘 2 件</span>
+        </span></span>
+        <span class="summary-line">レビュアー同士で結論が逆になった。どちらも筋は通っている</span>
+      </summary>
+      <div class="body">
+
+        <h4>何が起きたか</h4>
+        <p>色の定義を置く共通の仕組みが、コード表示用の暗い色を表現できません。ここを共通側で広げるか、brief だけの追加分として持つかで、2 人の結論が逆になりました。</p>
+
+        <h4>それぞれの言い分</h4>
+
+        <div class="finding split">
+          <span class="anchor">計画の <span class="where">「デザイン資産の 2 層構造」→ 共有スキーマの不足</span> に対して</span>
+          <blockquote class="quote">MVP では拡張レイヤを持ち、共有スキーマ側は変更しない（共有契約の変更は参照スキル全体への回帰評価が必要になるため、消費者 1 個の段階では割に合わない）。</blockquote>
+          <p class="stance"><span class="name">構造の観点</span>共通側を広げるべき。あとから同じ不足に当たる利用者が必ず出る。今の回避策は、共通の決まりを守っていない部分が残ることになり、時間が経つほど直しにくくなる。</p>
+          <p class="stance"><span class="name">第二意見</span>広げるべきでない。共通側を変えると、それを使っている十数個の仕組み全部を確かめ直す必要がある。使う側がまだ 1 つしかない段階では割に合わない。</p>
+          <p class="handled"><b>こちらの対応</b> 今は brief だけの追加分として持つ形にしてあります。ただしこれは「決めた」というより「先送り」に近く、2 つ目の利用者が出た時点で必ず再検討が要ります。判断を残しました。</p>
+        </div>
+
+        <h4>判断の材料</h4>
+        <ul>
+          <li>いま共通側を広げると、確認が要る対象は 14 個</li>
+          <li>いま広げないと、決まりを守っていない箇所が 1 か所残る</li>
+          <li>2 つ目の利用者が出る見込みは、今のところ立っていない</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <p class="hidden-note">レビュー全体では 11 件の指摘が出ています。上に出していない 8 件は、計画の書き換えだけで解決し、前提が変わっていないため折りたたみに入れてあります（各項目の「直した指摘」から読めます）。</p>
+
+  <hr class="rule">
+
+  <section class="questions">
+    <h2 class="section-label">読み終えたら</h2>
+    <p class="note">答え合わせはしません。答えられないことに気づくためだけの 3 問です。</p>
+    <ol>
+      <li>あなたが決めないと進まないのは、どれとどれ？</li>
+      <li>意見が割れた件で、それぞれの言い分は何だった？</li>
+      <li>ここで判断を間違えた場合、いつ気づける？</li>
+    </ol>
+  </section>
+
+  <p class="foot">brief / document (plan-refine) / 20260726011631</p>
+
+</main>
+
+<script>
+(function () {
+  var button = document.getElementById("toggleAll");
+  var cards = document.querySelectorAll("details.card");
+  button.addEventListener("click", function () {
+    var shouldOpen = button.textContent === "開く";
+    for (var i = 0; i < cards.length; i++) { cards[i].open = shouldOpen; }
+    button.textContent = shouldOpen ? "閉じる" : "開く";
+  });
+  function sync() {
+    var openCount = document.querySelectorAll("details.card[open]").length;
+    button.textContent = openCount === 0 ? "開く" : "閉じる";
+  }
+  for (var i = 0; i < cards.length; i++) { cards[i].addEventListener("toggle", sync); }
+
+  var sentinelMargin = "-" + (document.querySelector(".bar").offsetHeight + 1) + "px 0px 0px 0px";
+  if ("IntersectionObserver" in window) {
+    var stickWatch = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        entries[i].target.classList.toggle("stuck", entries[i].intersectionRatio < 1);
+      }
+    }, { rootMargin: sentinelMargin, threshold: [1] });
+    var heads = document.querySelectorAll("details.card > summary");
+    for (var j = 0; j < heads.length; j++) { stickWatch.observe(heads[j]); }
+  }
+
+})();
+</script>
+</body>
+</html>

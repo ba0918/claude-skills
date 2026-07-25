@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>brief — 今の会話</title>
+<style>
+:root {
+  --color-primary: #2C4A63;
+  --color-secondary: #6E6A62;
+  --color-background: #FBFAF7;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F4F2EC;
+  --color-warning: #C8442C;
+  --color-success: #2F6B57;
+  --color-text-primary: #1A1917;
+  --color-text-secondary: #6E6A62;
+  --color-text-disabled: #A29D93;
+  --color-border: #E4E0D7;
+  --color-focus-ring: #2C4A63;
+
+  --font-heading: "Hiragino Mincho ProN", "HiraMinProN-W3", "Yu Mincho", "YuMincho", "BIZ UDPMincho", "Noto Serif JP", "Source Han Serif JP", serif;
+  --font-body: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "YuGothic", "BIZ UDPGothic", "Noto Sans JP", "Meiryo", sans-serif;
+  --font-code: "SFMono-Regular", "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace;
+
+  --font-size-display: 38px;
+  --line-height-display: 1.45;
+  --letter-spacing-display: 0.04em;
+  --font-size-h2: 24px;
+  --line-height-h2: 1.55;
+  --letter-spacing-h2: 0.02em;
+  --font-size-h3: 18px;
+  --font-size-body: 16px;
+  --line-height-body: 1.85;
+  --font-size-body-small: 14px;
+  --line-height-body-small: 1.8;
+  --font-size-caption: 13px;
+  --line-height-caption: 1.7;
+  --letter-spacing-caption: 0.02em;
+
+  --spacing-0: 4px;
+  --spacing-1: 8px;
+  --spacing-2: 12px;
+  --spacing-3: 16px;
+  --spacing-4: 24px;
+  --spacing-6: 48px;
+  --spacing-7: 64px;
+  --max-content-width: 768px;
+  --section-spacing: 48px;
+
+  --radius-card: 2px;
+  --radius-badge: 0;
+  --shadow-flat: none;
+  --shadow-raised: 0 1px 2px rgba(26,25,23,0.06);
+  --bar-height: 52px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* 開閉でページ高が変わるたびスクロールバーが出入りすると、
+   幅が変わってヘッダーが折り返し、レイアウトが跳ねる。溝を常時確保して止める。 */
+html { scrollbar-gutter: stable; }
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.bar { position: sticky; top: 0; z-index: 10; background: var(--color-background); border-bottom: 1px solid var(--color-border); }
+.bar-inner { max-width: var(--max-content-width); margin: 0 auto; padding: 0 var(--spacing-3); height: var(--bar-height); display: flex; align-items: center; gap: var(--spacing-2); flex-wrap: nowrap; }
+.bar-id { flex: 0 0 auto; font-family: var(--font-code); font-size: var(--font-size-caption); letter-spacing: 0.06em; color: var(--color-primary); white-space: nowrap; }
+.bar-target { flex: 1 1 auto; min-width: 0; font-size: var(--font-size-body-small); color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chips { flex: 0 0 auto; display: flex; align-items: center; gap: var(--spacing-1); }
+.chipset { display: inline-flex; align-items: center; gap: var(--spacing-1); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 2px var(--spacing-1); font-family: var(--font-code); font-size: var(--font-size-caption); color: var(--color-text-secondary); white-space: nowrap; }
+.chipset .flag { color: var(--color-warning); }
+.chipset.todo { border-color: var(--color-warning); }
+.toggle-all { font-family: var(--font-body); font-size: var(--font-size-caption); background: transparent; color: var(--color-primary); border: 1px solid var(--color-primary); border-radius: 3px; padding: var(--spacing-0) var(--spacing-2); cursor: pointer; white-space: nowrap; }
+.toggle-all:hover { background: var(--color-primary); color: var(--color-background); }
+.toggle-all:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+
+.page { max-width: var(--max-content-width); margin: 0 auto; padding: var(--spacing-6) var(--spacing-3) var(--spacing-7); }
+
+.lede { margin-bottom: var(--section-spacing); }
+.eyebrow { font-size: var(--font-size-caption); letter-spacing: var(--letter-spacing-caption); color: var(--color-text-secondary); margin: 0 0 var(--spacing-2); }
+.one-liner { font-family: var(--font-heading); font-size: var(--font-size-display); line-height: var(--line-height-display); letter-spacing: var(--letter-spacing-display); font-weight: 400; margin: 0 0 var(--spacing-4); max-width: 42rem; }
+.meta { font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-secondary); margin: 0; max-width: 42rem; }
+.meta + .meta { margin-top: var(--spacing-1); }
+.meta b { font-weight: 700; color: var(--color-text-primary); }
+
+.rule { border: 0; border-top: 1px solid var(--color-border); margin: var(--section-spacing) 0; }
+
+.section-label { font-family: var(--font-heading); font-size: var(--font-size-h2); line-height: var(--line-height-h2); letter-spacing: var(--letter-spacing-h2); font-weight: 400; margin: 0 0 var(--spacing-4); }
+
+.group { display: grid; grid-template-columns: 72px 1fr; column-gap: var(--spacing-4); margin-bottom: var(--spacing-2); }
+.num { font-family: var(--font-code); font-size: var(--font-size-body-small); color: var(--color-text-disabled); text-align: right; padding-top: var(--spacing-4); letter-spacing: 0.06em; }
+.group:has(details[open]) .num { color: var(--color-primary); }
+.num-inline { display: none; }
+
+details.card {
+  --rail: var(--color-text-disabled);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--rail);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-flat);
+  transition: border-left-width 120ms ease, background-color 120ms ease;
+}
+details.card.rail-primary { --rail: var(--color-primary); }
+details.card.rail-warning { --rail: var(--color-warning); }
+details.card.rail-success { --rail: var(--color-success); }
+details.card:hover { border-left-width: 6px; background: var(--color-surface); }
+details.card[open] { background: var(--color-surface); box-shadow: var(--shadow-raised); }
+
+summary { display: block; padding: var(--spacing-3) var(--spacing-4); padding-right: var(--spacing-6); cursor: pointer; position: relative; }
+summary::-webkit-details-marker { display: none; }
+summary::marker { content: ""; }
+summary:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+.chevron { position: absolute; right: var(--spacing-4); top: var(--spacing-3); color: var(--color-text-disabled); font-family: var(--font-code); font-size: var(--font-size-body-small); transition: transform 120ms ease; display: inline-block; }
+details[open] .chevron { transform: rotate(90deg); color: var(--color-primary); }
+
+.title { display: block; font-size: var(--font-size-h3); font-weight: 700; line-height: 1.6; margin-bottom: var(--spacing-1); }
+.summary-line { display: block; font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-secondary); margin-bottom: var(--spacing-2); max-width: 42rem; }
+.tags { display: flex; flex-wrap: wrap; gap: var(--spacing-1); align-items: center; }
+
+.badge { display: inline-block; border-radius: var(--radius-badge); padding: 2px var(--spacing-1); font-size: var(--font-size-caption); line-height: var(--line-height-caption); letter-spacing: var(--letter-spacing-caption); background: var(--color-surface); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
+.badge--warning { background: var(--color-warning); color: var(--color-background); border-color: var(--color-warning); }
+.badge--success { background: var(--color-success); color: var(--color-background); border-color: var(--color-success); }
+.count { display: inline-block; font-size: var(--font-size-caption); color: var(--color-text-secondary); font-family: var(--font-code); }
+
+.body { padding: 0 var(--spacing-4) var(--spacing-4); }
+.body h4 { font-size: var(--font-size-caption); letter-spacing: var(--letter-spacing-caption); color: var(--color-text-secondary); font-weight: 700; margin: var(--spacing-4) 0 var(--spacing-1); }
+.body p { margin: 0; max-width: 42rem; }
+.body ul { margin: 0; padding-left: 1.2em; max-width: 42rem; }
+.body li + li { margin-top: var(--spacing-0); }
+
+.hidden-note { font-size: var(--font-size-body-small); color: var(--color-text-secondary); border-top: 1px solid var(--color-border); padding-top: var(--spacing-3); margin-top: var(--spacing-4); max-width: 42rem; }
+
+.questions { margin-top: var(--section-spacing); }
+.questions ol { margin: 0; padding-left: 1.3em; max-width: 42rem; }
+.questions li + li { margin-top: var(--spacing-2); }
+.questions .note { font-size: var(--font-size-body-small); color: var(--color-text-secondary); margin: 0 0 var(--spacing-3); max-width: 42rem; }
+
+.foot { margin-top: var(--section-spacing); font-size: var(--font-size-caption); color: var(--color-text-disabled); font-family: var(--font-code); }
+
+@media (max-width: 700px) {
+  .chipset.scale { display: none; }
+}
+/* ── セクションヘッダーの追従（GitHub の diff viewer 方式） ──
+   長い節を読んでいる最中でも、その節の見出しと開閉操作を画面内に残す。
+   高さは stuck 時も変えない（変えると sticky の占有領域が動いて本文が跳ねる）。 */
+details.card[open] > summary {
+  position: sticky;
+  top: var(--bar-height);
+  z-index: 5;
+  background: var(--color-surface);
+  border-bottom: 1px solid transparent;
+}
+details.card[open] > summary.stuck {
+  border-bottom-color: var(--color-border);
+  box-shadow: 0 2px 4px rgba(26,25,23,0.05);
+}
+.head-row { display: flex; align-items: baseline; gap: var(--spacing-2); flex-wrap: wrap; }
+.head-row .title { flex: 1 1 auto; min-width: 14rem; margin-bottom: 0; }
+.head-row .tags { flex: 0 0 auto; }
+
+@media (max-width: 1023px) {
+  .group { grid-template-columns: 1fr; }
+  .num { display: none; }
+  .num-inline { display: inline; font-family: var(--font-code); color: var(--color-text-disabled); margin-right: var(--spacing-1); }
+  .bar-target { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-inner">
+    <span class="bar-id">brief / 会話</span>
+    <span class="bar-target">このセッション — brief の設計</span>
+    <span class="chips">
+      <span class="chipset scale" title="この会話の規模">4 論点 · 除外 2</span>
+      <span class="chipset todo" title="持ち越しになったもの"><span class="flag">未決 3</span></span>
+      <button class="toggle-all" id="toggleAll" type="button">閉じる</button>
+    </span>
+  </div>
+</div>
+
+<main class="page">
+
+  <header class="lede">
+    <p class="eyebrow">つまり</p>
+    <h1 class="one-liner">LLM が書いた文章を読まずに承認してしまう問題に対して、手動で開く解説画面を作ることにした。</h1>
+    <p class="meta"><b>この会話の目的</b> 作るかどうかと、作るなら何から作るかを決める。</p>
+    <p class="meta"><b>まだやっていないこと</b> 画面そのものの実装。今日決めたのは方針と最初の一歩まで。</p>
+  </header>
+
+  <hr class="rule">
+
+  <h2 class="section-label">話したことは 4 つ</h2>
+
+  <article class="group">
+    <div class="num">01</div>
+    <details class="card rail-primary" open>
+      <summary>
+        <span class="chevron">›</span>
+        <span class="head-row"><span class="title"><span class="num-inline">01</span>そもそも何が困っていたか</span>
+          <span class="tags"><span class="badge">論点</span></span></span>
+        <span class="summary-line">計画も成果物も読まないまま「いい感じ」で通してしまう</span>
+      </summary>
+      <div class="body">
+        <h4>出た話</h4>
+        <ul>
+          <li>自動で進むぶん、人が意味を判断する場面が承認の一点しか残っていない</li>
+          <li>そこが形だけになると、その先の自動チェックが全部空振りになる</li>
+          <li>きれいな画面を出しても、結局押すだけになったら同じこと</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <article class="group">
+    <div class="num">02</div>
+    <details class="card rail-success" open>
+      <summary>
+        <span class="chevron">›</span>
+        <span class="head-row"><span class="title"><span class="num-inline">02</span>決まったこと</span>
+          <span class="tags"><span class="badge badge--success">決定</span><span class="count">6 件</span></span></span>
+        <span class="summary-line">手動で開く単体のスキルとして始める。既存の流れには当面つながない</span>
+      </summary>
+      <div class="body">
+        <h4>合意した内容</h4>
+        <ul>
+          <li>名前は brief にする</li>
+          <li>差分・計画・引き継ぎ・今の会話の 4 種類に対応する</li>
+          <li>画面の作り手は 1 つに保ち、種類ごとの違いはデータ側で吸収する</li>
+          <li>明るい読み物寄りの見た目にして、コードの部分だけ暗くする</li>
+          <li>見た目は最初に一度だけ決めて、以降は使い回す</li>
+          <li>読んだ後の指摘はその場で会話に戻す。ファイルでやり取りしない</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <article class="group">
+    <div class="num">03</div>
+    <details class="card rail-warning" open>
+      <summary>
+        <span class="chevron">›</span>
+        <span class="head-row"><span class="title"><span class="num-inline">03</span>まだ決まっていないこと</span>
+          <span class="tags"><span class="badge badge--warning">未決</span><span class="count">3 件</span></span></span>
+        <span class="summary-line">この 3 つは今日は結論を出していない</span>
+      </summary>
+      <div class="body">
+        <h4>持ち越し</h4>
+        <ul>
+          <li><b>レビューする対象をどこにするか</b> — 保存する前の変更か、共有する直前のまとまりか。会社のやり方とこのリポジトリのやり方で向いている答えが違うため両対応にはしたが、既定値は決めていない</li>
+          <li><b>いつ自動で開くようにするか</b> — 当面は手動。何回か使って判断するとは決めたが、切り替える条件そのものは数字にしていない</li>
+          <li><b>読まずに押す状態をどう見つけるか</b> — 防ぐ仕組みより見つける仕組みを入れる方針までは決めたが、何をもって「読んでいない」とするかは未定</li>
+        </ul>
+
+        <h4>なぜここが大事か</h4>
+        <p>会話のまとめでは、決まったことは書きやすいので残り、決まっていないことは曖昧なので静かに消える。消えると全部片付いた気になってしまうため、この欄は必ず出す。</p>
+      </div>
+    </details>
+  </article>
+
+  <article class="group">
+    <div class="num">04</div>
+    <details class="card" open>
+      <summary>
+        <span class="chevron">›</span>
+        <span class="head-row"><span class="title"><span class="num-inline">04</span>やらないと決めたこと</span>
+          <span class="tags"><span class="badge">選択肢</span><span class="count">3 件</span></span></span>
+        <span class="summary-line">検討したうえで外した案。理由ごと残しておく</span>
+      </summary>
+      <div class="body">
+        <h4>外した案</h4>
+        <ul>
+          <li><b>計画だけを見せる画面</b> — 計画は書き換わるうえ、実際に困っているのは成果物のほうだった</li>
+          <li><b>承認ボタンと結果の書き出し</b> — 手動で開くなら同じ画面の会話で返せるので、仕組みを足す意味がない</li>
+          <li><b>最初から自動で開くようにする</b> — 「開いても読まない」と「開くのを忘れる」が混ざって、どちらが問題か分からなくなる</li>
+        </ul>
+      </div>
+    </details>
+  </article>
+
+  <p class="hidden-note">この画面に出していない話題が 2 件あります（見た目の細かい選択肢、作業場所の切り替え手順）。どちらも結論だけで十分と判断して外しました。</p>
+
+  <hr class="rule">
+
+  <section class="questions">
+    <h2 class="section-label">読み終えたら</h2>
+    <p class="note">答え合わせはしません。答えられないことに気づくためだけの 3 問です。</p>
+    <ol>
+      <li>なぜ最初から自動で開くようにしなかった？</li>
+      <li>今日まだ決まっていないことは何だった？</li>
+      <li>この方針が間違っていた場合、どこで気づける？</li>
+    </ol>
+  </section>
+
+  <p class="foot">brief / discussion / 20260726011631</p>
+
+</main>
+
+<script>
+(function () {
+  var button = document.getElementById("toggleAll");
+  var cards = document.querySelectorAll("details.card");
+  button.addEventListener("click", function () {
+    var shouldOpen = button.textContent === "開く";
+    for (var i = 0; i < cards.length; i++) { cards[i].open = shouldOpen; }
+    button.textContent = shouldOpen ? "閉じる" : "開く";
+  });
+  function sync() {
+    var openCount = document.querySelectorAll("details.card[open]").length;
+    button.textContent = openCount === 0 ? "開く" : "閉じる";
+  }
+  for (var i = 0; i < cards.length; i++) { cards[i].addEventListener("toggle", sync); }
+
+  var sentinelMargin = "-" + (document.querySelector(".bar").offsetHeight + 1) + "px 0px 0px 0px";
+  if ("IntersectionObserver" in window) {
+    var stickWatch = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        entries[i].target.classList.toggle("stuck", entries[i].intersectionRatio < 1);
+      }
+    }, { rootMargin: sentinelMargin, threshold: [1] });
+    var heads = document.querySelectorAll("details.card > summary");
+    for (var j = 0; j < heads.length; j++) { stickWatch.observe(heads[j]); }
+  }
+
+})();
+</script>
+</body>
+</html>
