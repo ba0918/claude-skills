@@ -34,6 +34,15 @@ When `$ARGUMENTS` contains the path to an investigate skill output file, read th
 2. Record the line numbers, file paths, and error codes
 3. Do not ignore warning messages either
 
+**When the bug raises no exception**, there is no message, stack trace, or error code to
+record — the return value, the state, or the output is simply wrong. Do not read this step as
+unsatisfiable and skip it. Record the observed symptom as the substitute evidence:
+
+1. The expected value and the actual value, side by side
+2. The observation that exposes the corruption (which state or intermediate value you
+   inspected, and how you inspected it)
+3. Use that symptom summary for `Error:` in the Phase 1 display
+
 ### Step 1.2: Reproduce
 
 1. Confirm that you can reliably reproduce the bug
@@ -47,6 +56,18 @@ When `$ARGUMENTS` contains the path to an investigate skill output file, read th
 git log --oneline -10
 git diff HEAD~5 --stat
 ```
+
+`HEAD~5` exits non-zero with `unknown revision` when the repository holds fewer than five
+commits (new projects, fixtures, shallow clones). That failure describes the history, not the
+bug — do not record it as a finding and do not investigate it. Fall back to the full history:
+
+```bash
+git diff $(git rev-list --max-parents=0 HEAD) --stat
+```
+
+If the history is still too shallow to compare against (a single initial commit, for example),
+record "history too shallow to compare" and move on to Step 1.4. The absence of history is not
+itself evidence about the root cause.
 
 - What changed?
 - Any new dependencies? Any configuration changes?

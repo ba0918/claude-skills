@@ -410,11 +410,11 @@
     "file_sha256": {
       "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
-      "skills/systematic-debugging/SKILL.md": "12705e5c9f10378d73810fb3c46411f9e3267d4d8feb8c3299fc98f27032e40d",
+      "skills/systematic-debugging/SKILL.md": "43fb42b04b096ffa78e38b53138b768badeb57bd4fb50492dd9e473686624b0c",
       "skills/systematic-debugging/fixtures.json": "3581f610b0b790518266ab8be0e3375bed56165386767c29740cbc681523a99f",
       "skills/systematic-debugging/references/root-cause-tracing.md": "8d5a478058c90f36bee45ee9d01c0cb910b0328d8ab4e1f49ee37b1dd4aa8078"
     },
-    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（sd-001 6/6 / sd-002 4/4 / sd-003 5/5、critical は 4+3+3 全 pass）。挙動も日本語アームと同一に再現 — sd-001 は bucket=None + ガードで修正し collect_all は未変更、sd-002 は編集 0 件（決定性 1 万回・全コードポイント 0x110000 網羅・ファズ 20 万回で再現不能を示し Phase 3 Step 3.3 を選択）、sd-003 は runner.py 無変更のまま config.py の get_retries を修正。編集有無は baseline ハッシュと git で機械照合し、採点は実行者と別の白紙エージェント 3 体が担当。構造パリティ（見出し25/フェンス18/リンク3/番号6/箇条書き41/水平線0/フェンス内44行）・リンク先集合・識別子34種・ユーザー提示定型文10種・frontmatter の byte 不変を機械検証済み。日本語行比率 91.8% → 0.0%。実行者プロンプトは日本語アームの記録が残っていないためレポート構造から再構成した同型（作業ディレクトリ/スキルパス/依頼文verbatim/4節レポート、環境例外条項つき）。sd-001 と sd-003 の実行者が『本文英語なのに Three-Failed-Attempts のユーザー提示ブロックだけ日本語』を意図か漏れか判別できないと申告したが、両者とも実害なし（ユーザー提示定型文は non_goal の裁定どおりで TDD も同構造）",
+    "note": "Issue #32 の Phase 1 追記（Step 1.1 の silent failure 代替エビデンス / Step 1.3 の浅い履歴フォールバック）後の非劣化 run。sd-001 6/6・sd-002 4/4・sd-003 5/5 で台帳ベースラインと同一、critical 4+3+3 全 pass、落とした要件ゼロ。実行者は 3 名とも全フェーズをインライン代行（委譲なし）・外部照会 0 回。判定は自己申告でなく成果物で裏取り: sd-002 は baseline sha256 6 件全 MATCH かつ作業ツリー clean で編集ゼロ、sd-001 は collect のデフォルト引数を bucket=None+ガードで修正し collect_all 未変更、sd-003 は get_retries のみ修正で runner.py と get_endpoint は無変更。追記した 2 経路が実際に踏まれたことを確認 — sd-001 は Error: に症状要約（例外なし）を代入し、sd-001/sd-002 とも fallback 実行後に『history too shallow to compare』を記録した。Issue #32 が報告した 2 件の不明瞭点は 3 レポートとも消滅。新出の不明瞭点は Phase 2 の比較対象不在（sd-001）と Phase 3 の最小変更の粒度（sd-001/sd-003）で、いずれも本 issue の射程外。",
     "result": "pass",
     "surface": [
       "skills/shared/references/tdd-contract.md",
@@ -423,8 +423,8 @@
       "skills/systematic-debugging/fixtures.json",
       "skills/systematic-debugging/references/root-cause-tracing.md"
     ],
-    "surface_sha256": "8cf6f08bb47ebe11ca590bbb8d0c2e3f72e10fb6eeec52851c9f9f394fee8a24",
-    "verified": "2026-07-26"
+    "surface_sha256": "8a2f28b5670a83632fe590d9af6812a30f105fe564a7938447c72160d1171961",
+    "verified": "2026-07-25"
   },
   "test-driven-development": {
     "file_sha256": {
