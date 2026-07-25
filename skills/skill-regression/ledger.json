@@ -410,11 +410,11 @@
     "file_sha256": {
       "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
-      "skills/systematic-debugging/SKILL.md": "2880423086887ec495d63165fd06b348a371561a957086813a15782d58ddb15d",
+      "skills/systematic-debugging/SKILL.md": "12705e5c9f10378d73810fb3c46411f9e3267d4d8feb8c3299fc98f27032e40d",
       "skills/systematic-debugging/fixtures.json": "3581f610b0b790518266ab8be0e3375bed56165386767c29740cbc681523a99f",
       "skills/systematic-debugging/references/root-cause-tracing.md": "8d5a478058c90f36bee45ee9d01c0cb910b0328d8ab4e1f49ee37b1dd4aa8078"
     },
-    "note": "3 シナリオ実走 pass。全フェーズインライン単段。sd-001 は可変デフォルト引数を bucket=None + ガードで修正し collect_all は未変更（症状対処に逃げず）。sd-002 は 20 プロセス × ハッシュシード random まで実測して再現不能を示し Phase 3 Step 3.3 の『わからないと認める』を選択、編集 0 件。sd-003 はトレースバックの指す runner.py ではなく config.py の型契約違反を根本原因と特定。sd-001 の隔離領域に実行基盤由来の .mcp.json が出現したが fixture 宣言外でハッシュ照合に影響なし",
+    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（sd-001 6/6 / sd-002 4/4 / sd-003 5/5、critical は 4+3+3 全 pass）。挙動も日本語アームと同一に再現 — sd-001 は bucket=None + ガードで修正し collect_all は未変更、sd-002 は編集 0 件（決定性 1 万回・全コードポイント 0x110000 網羅・ファズ 20 万回で再現不能を示し Phase 3 Step 3.3 を選択）、sd-003 は runner.py 無変更のまま config.py の get_retries を修正。編集有無は baseline ハッシュと git で機械照合し、採点は実行者と別の白紙エージェント 3 体が担当。構造パリティ（見出し25/フェンス18/リンク3/番号6/箇条書き41/水平線0/フェンス内44行）・リンク先集合・識別子34種・ユーザー提示定型文10種・frontmatter の byte 不変を機械検証済み。日本語行比率 91.8% → 0.0%。実行者プロンプトは日本語アームの記録が残っていないためレポート構造から再構成した同型（作業ディレクトリ/スキルパス/依頼文verbatim/4節レポート、環境例外条項つき）。sd-001 と sd-003 の実行者が『本文英語なのに Three-Failed-Attempts のユーザー提示ブロックだけ日本語』を意図か漏れか判別できないと申告したが、両者とも実害なし（ユーザー提示定型文は non_goal の裁定どおりで TDD も同構造）",
     "result": "pass",
     "surface": [
       "skills/shared/references/tdd-contract.md",
@@ -423,7 +423,7 @@
       "skills/systematic-debugging/fixtures.json",
       "skills/systematic-debugging/references/root-cause-tracing.md"
     ],
-    "surface_sha256": "b83b197922f6bc457dc4492790ae4422140dbd5ab11f9b2a6ceeef52b4f4382e",
+    "surface_sha256": "8cf6f08bb47ebe11ca590bbb8d0c2e3f72e10fb6eeec52851c9f9f394fee8a24",
     "verified": "2026-07-26"
   },
   "test-driven-development": {
