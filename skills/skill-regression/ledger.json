@@ -75,14 +75,14 @@
   "cycle": {
     "file_sha256": {
       "skills/cycle/SKILL.md": "c8694e8d88907fcc31ab9b3e572b578784b02855c3f675baa0f49671b7ed9f42",
-      "skills/cycle/fixtures.json": "a81c189e30b16bb0488c5d00c9a51f27400a3511d2a9b23d36f6a59ba5940d39",
+      "skills/cycle/fixtures.json": "390fa5bdfa40ea497eda9d452f24089e36c784f07bfaa945990e780b2a1fe4e1",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
       "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
-    "note": "3 シナリオ実走 pass。3 件すべてインライン代行経路・状況照会 0 回。.gitignore 宣言により __pycache__ 混入でも作業ツリー clean を維持（前回 run では実行者が自作するかどうかでブレていた）",
+    "note": "issue #17 の fixture 修正後の実 run。3/3 合格（critical のみ）。3 シナリオとも空ディレクトリ（自前 git）で実体化。cy-001/cy-003 は Phase 1/2 を委譲、Phase 3 は非委譲。状況照会 0 回（委譲先がスキル名起動不可のため SKILL.md 絶対パスを渡すフォールバックを実行者が自力で採用）。cy-001 の非 critical R6（Phase 3 成果物のコミット）は 部分的 — store が契約どおり Git 無視のため result/status/session-history は構造的にコミット対象外。cy-001・cy-003 の実行者が独立に同じ矛盾を指摘（cycle Phase 3 step 4 と artifact-store invariant 3）。要設計判断。",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -93,7 +93,7 @@
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "b82dd071782c475b53797b7befd059c3281d3e40592597f726b64b8a451dc9ef",
+    "surface_sha256": "8024a6c0f9fe01c24deee592baeceb440789239ac33b4eca5369fd38dc2cbd34",
     "verified": "2026-07-25"
   },
   "decision-journal": {
@@ -183,12 +183,12 @@
   "handoff": {
     "file_sha256": {
       "skills/handoff/SKILL.md": "aa2c61a4f384affd45069a71dff1686e3cf6b64848a6df8596f7a4d450a4a3d8",
-      "skills/handoff/fixtures.json": "784fe3a37d1a1a5417d6aa57ee2bd83febbf4792a0445bc60248909292a7a749",
+      "skills/handoff/fixtures.json": "d6ade78b61fe7cabaee8373d57ed4bac6943676cb0f85dbe3fe97bb67b02e30e",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/checkpoint-pattern.md": "b120f3562565c4cda0febd645f086b2d25b988c3e718078b0398a1a97f8059b9",
       "skills/shared/references/human-readable-summary.md": "f3dba0207381c14d9d73c0e72c1ed249843b48596c38edcb8de3c90f4e1ecc26"
     },
-    "note": "4 シナリオ実走 pass。ho-004 は隔離領域内の実 HEAD で superseded を判定（親リポジトリ HEAD 依存を解消）。インライン単段のため状況照会 0 回",
+    "note": "issue #17 の fixture 修正後の実 run。4/4 合格。ho-004 は隔離を空ディレクトリ（自前 git）、ho-001/002/003 は本リポジトリの使い捨て worktree で実体化。読み取り専用要件は sha256 ベースライン照合で裏取り。委譲なし・状況照会 0 回。",
     "result": "pass",
     "surface": [
       "skills/handoff/SKILL.md",
@@ -197,7 +197,7 @@
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "e6b51ff78ade2730556a24aa95e78191fe2e5e2012ba8f87b0d58cee8a88c6c5",
+    "surface_sha256": "ed80972df1460b3e4b625d9f5f2bc101f11c5e64d0152336e4a4974199a527fe",
     "verified": "2026-07-25"
   },
   "investigate": {
@@ -244,14 +244,14 @@
   "plan": {
     "file_sha256": {
       "skills/plan/SKILL.md": "1dfef8514afbe7e939fd50bb4b2543f5cff0c94559b371de98f1af7ec2f43a86",
-      "skills/plan/fixtures.json": "9b41a0bc8bf8a6d9bf01fc2b637790585425aba9afbdfeb9c10494514dee93fe",
+      "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
       "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/checkpoint-pattern.md": "b120f3562565c4cda0febd645f086b2d25b988c3e718078b0398a1a97f8059b9"
     },
-    "note": "4 シナリオ実走 pass。pl-004 は隔離領域内の実 HEAD で superseded を判定。pl-003 は session-history 不在からの新規作成分岐を通った。状況照会 0 回",
+    "note": "issue #17 の fixture 修正後の実 run。4/4 合格。pl-004 は空ディレクトリ（自前 git）、pl-001/002/003 は使い捨て worktree。pl-001 実行者が artifact_store.py resolve --require-writable の成功と git status 空を独立に確認。委譲なし・状況照会 0 回。",
     "result": "pass",
     "surface": [
       "skills/plan/SKILL.md",
@@ -262,7 +262,7 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "514617af809b8f88a9dd24dd7973fbe9708cf827ebbce1125b7712a9600e5a07",
+    "surface_sha256": "8c89a14621399ecb802f0f913114b010e1f927f8491c05769db9ab55d1d42444",
     "verified": "2026-07-25"
   },
   "plan-reviewer": {
