@@ -61,6 +61,17 @@ Paths are resolved against `--root` and must stay inside it (see §8). `output_f
 is what makes parallel execution safe: two units can never target the same artifact, so there
 is no write contention to arbitrate.
 
+**Put `output_file` inside `cwd`.** Agent CLIs commonly confine writes to their working
+directory, and a unit that cannot reach its artifact path fails after doing all the work —
+measured: a full run, exit 0, nothing delivered. Giving each unit its own directory, with the
+artifact inside it, removes the failure mode and narrows the write scope at the same time. The
+runner does not enforce this; it is a producer obligation.
+
+**Anything the unit must read from outside `cwd` is a backend concern.** The registry decides
+what a unit can reach (§5), so read access to a source tree is granted there, once, by the
+operator. `validate` cannot check it — a unit that cannot read its inputs looks exactly like a
+unit that failed, so confirm the grant on the first unit rather than across a whole batch.
+
 ## 4. Backend registry (`backends.json`)
 
 ```json

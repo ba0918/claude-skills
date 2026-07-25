@@ -24,8 +24,20 @@ claude-skills プラグインのバージョン履歴。
   破損、バックエンド起動失敗、並列上限、containment 違反、failed_streak / max_wallclock）。
   起動時点で失敗するユニットは in-flight にならず dispatch ループを絞れないため、
   failed_streak を dispatch 側でも検査する（存在しない実行ファイルでキュー全消費を防ぐ）
-- `skills/empirical-prompt-tuning/SKILL.md`: 起動上限に達した場合の代替経路として参照を追加
+- `skills/skill-regression/scripts/regression_queue.py` + `references/process-queue.md`:
+  最初の利用者。fixtures.json から実行者プロンプトと work キューを生成し、戻ってきた
+  レポートを機械的に集計する producer。判定規則は executor-contract のまま変えず、
+  `critical` フラグは manifest に留めてプロンプトへ出さない。集計は `pass` を名乗らず
+  `unadjudicated_pass` を返す — 自己申告と成果物の突合は呼び出し側の責務であり、
+  harness 起因の `needs_rerun` はスキルの回帰と区別する
+- `skills/empirical-prompt-tuning/SKILL.md` / `skills/skill-regression/SKILL.md`:
+  起動枠が尽きた場合の代替経路として参照を追加
 - README: 共有資産の直接利用として本契約を追記
+
+実 CLI での検証で、n=1 プロトタイプでは踏んでいなかった前提が 1 つ崩れた。エージェント CLI は
+書き込みをプロセスの作業ディレクトリに限定することがあり、成果物を兄弟ディレクトリに置くと
+ユニットは全工程を終えてから配送だけ失敗する（実測: 343 秒、終了コード 0、成果物なし）。
+成果物をユニットの作業ディレクトリ内に置く規約を契約へ追加し、producer の配置もそれに合わせた。
 
 ## 1.65.0
 
