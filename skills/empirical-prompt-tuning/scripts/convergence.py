@@ -27,14 +27,16 @@ FRICTION_CATEGORIES = frozenset({
 # They mean the current iteration is unevaluable and must halt safely instead of
 # being recorded as a fail against the candidate prompt.
 PROTOCOL_FAILURE_TYPES = frozenset({
-    "malformed_output",       # checker output not parseable / schema-invalid
-    "missing_grade",          # checker did not grade every requirement
-    "extra_grade",            # checker returned grades for non-existent requirements
-    "duplicate_grade",        # same requirement graded multiple times
-    "invalid_result_value",   # result not in {pass, fail, partial}
-    "empty_checklist",        # caller passed a zero-length checklist (fixture load bug)
-    "isolation_violation",    # checker inspected sources beyond the artifact
-    "input_range_violation",  # candidate given only a subset of a multi-artifact fixture
+    "malformed_output",        # checker output not parseable / schema-invalid
+    "missing_grade",           # checker did not grade every requirement
+    "extra_grade",             # checker returned grades for non-existent requirements
+    "duplicate_grade",         # same requirement graded multiple times
+    "invalid_result_value",    # result not in {pass, fail, partial}
+    "empty_checklist",         # caller passed a zero-length checklist (fixture load bug)
+    "missing_evidence",        # a grade carries no non-empty evidence line
+    "missing_isolation_note",  # integration fixture output omits the isolation_note key
+    "isolation_violation",     # checker inspected sources beyond the artifact
+    "input_range_violation",   # candidate given only a subset of a multi-artifact fixture
 })
 
 # ---------------------------------------------------------------------------
@@ -168,7 +170,57 @@ def classify_friction(raw_points: list[dict]) -> list[dict]:
 _VALID_RESULT_VALUES = frozenset({"pass", "fail", "partial"})
 
 
-def validate_checker_output(raw_output, checklist: list[dict]) -> tuple[bool, str | None]:
+def validate_input_range(
+    dispatch_keys,
+    input_range_required,
+) -> tuple[bool, str | None]:
+    """Pre-dispatch guard: are all declared input_range keys actually being sent?
+
+    Called by the harness immediately *before* dispatching the checker, with
+    the artifact keys it is about to hand over. Returns
+    (ok, protocol_failure_type) — the same 2-tuple contract as
+    validate_checker_output() so both guards are consumed identically.
+
+    An empty / absent `input_range_required` means the fixture declares no
+    multi-artifact requirement (`fixture_kind: "unit"`) and always passes.
+    Extra keys beyond the declared set are NOT a violation: only missing
+    ones are, because a checker given less than the fixture declares cannot
+    reproduce the grading. Callers that want the offending keys for
+    `harness_error.detail` compute them as
+    `set(input_range_required) - set(dispatch_keys)`.
+    """
+    if not input_range_required:
+        return True, None
+    if set(input_range_required) - set(dispatch_keys):
+        return False, "input_range_violation"
+    return True, None
+
+
+def _validate_isolation_note(parsed: dict) -> tuple[bool, str | None]:
+    """Post-dispatch isolation check for integration fixtures.
+
+    Contract (checker-protocol.md): the key must be present. `null` means
+    "no out-of-range source was opened"; any non-empty string is the
+    checker's own admission that it read beyond the artifact set.
+    """
+    if "isolation_note" not in parsed:
+        return False, "missing_isolation_note"
+    note = parsed["isolation_note"]
+    if note is None:
+        return True, None
+    if not isinstance(note, str):
+        return False, "malformed_output"
+    if note.strip():
+        return False, "isolation_violation"
+    return True, None
+
+
+def validate_checker_output(
+    raw_output,
+    checklist: list[dict],
+    *,
+    fixture_kind: str | None = None,
+) -> tuple[bool, str | None]:
     """Validate a checker's raw output against the iteration-schema contract.
 
     Returns (ok, protocol_failure_type). When ok is False the caller MUST
@@ -177,6 +229,17 @@ def validate_checker_output(raw_output, checklist: list[dict]) -> tuple[bool, st
 
     This isolates checker/harness-side deviations from candidate failures
     so that a malformed checker never counts as a fail against the prompt.
+
+    `fixture_kind` takes only the one field the isolation rule needs rather
+    than the whole fixture record, so a caller never has to reshape fixture
+    metadata to call this. Pass "integration" to additionally require an
+    explicit `isolation_note`; the default (None) keeps unit-fixture
+    behaviour unchanged.
+
+    Check order is structural-first: parse, then the integration isolation
+    contract, then per-grade shape, then coverage, and only finally
+    evidence. A structurally broken output therefore reports the structural
+    failure rather than the evidence symptom it also exhibits.
     """
     if not checklist:
         # zero-length checklist would make an empty grades list trivially
@@ -196,6 +259,11 @@ def validate_checker_output(raw_output, checklist: list[dict]) -> tuple[bool, st
     grades = parsed.get("grades") if isinstance(parsed, dict) else None
     if not isinstance(grades, list):
         return False, "malformed_output"
+
+    if fixture_kind == "integration":
+        ok, failure = _validate_isolation_note(parsed)
+        if not ok:
+            return False, failure
 
     expected_indices = set(range(len(checklist)))
     seen_indices: set[int] = set()
@@ -217,6 +285,12 @@ def validate_checker_output(raw_output, checklist: list[dict]) -> tuple[bool, st
 
     if seen_indices != expected_indices:
         return False, "missing_grade"
+
+    # Evidence last: only meaningful once the grade set is structurally sound.
+    for g in grades:
+        evidence = g.get("evidence")
+        if not isinstance(evidence, str) or not evidence.strip():
+            return False, "missing_evidence"
 
     return True, None
 

@@ -15,6 +15,7 @@ from convergence import (
     resolve_exit_verdict,
     resolve_halt_reason,
     validate_checker_output,
+    validate_input_range,
     verify_checklist_integrity,
 )
 
@@ -382,7 +383,9 @@ class TestValidateCheckerOutput(unittest.TestCase):
         # public taxonomy so downstream code can enumerate them.
         emitted = {"malformed_output", "missing_grade",
                    "extra_grade", "duplicate_grade",
-                   "invalid_result_value", "empty_checklist"}
+                   "invalid_result_value", "empty_checklist",
+                   "missing_evidence", "missing_isolation_note",
+                   "isolation_violation"}
         self.assertTrue(emitted.issubset(PROTOCOL_FAILURE_TYPES))
 
     def test_duplicate_requirement_index(self):
@@ -410,6 +413,249 @@ class TestValidateCheckerOutput(unittest.TestCase):
         ok, failure = validate_checker_output({"grades": []}, [])
         self.assertFalse(ok)
         self.assertEqual(failure, "empty_checklist")
+
+
+# ===========================================================================
+# evidence enforcement
+# ===========================================================================
+
+class TestEvidenceValidation(unittest.TestCase):
+
+    def _grades(self, ev0, ev1):
+        return {"grades": [
+            {"requirement_index": 0, "result": "pass", "evidence": ev0},
+            {"requirement_index": 1, "result": "fail", "evidence": ev1},
+        ]}
+
+    def test_absent_evidence_key_is_missing_evidence(self):
+        raw = {"grades": [
+            {"requirement_index": 0, "result": "pass", "evidence": "e0"},
+            {"requirement_index": 1, "result": "fail"},
+        ]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "missing_evidence")
+
+    def test_empty_evidence_is_missing_evidence(self):
+        ok, failure = validate_checker_output(self._grades("e0", ""), CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "missing_evidence")
+
+    def test_whitespace_only_evidence_is_missing_evidence(self):
+        ok, failure = validate_checker_output(self._grades("  \n ", "e1"), CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "missing_evidence")
+
+    def test_non_string_evidence_is_missing_evidence(self):
+        ok, failure = validate_checker_output(self._grades("e0", 42), CHECKLIST_TWO)
+        self.assertFalse(ok)
+        self.assertEqual(failure, "missing_evidence")
+
+    def test_structural_failure_outranks_missing_evidence(self):
+        # a grade set that is BOTH incomplete and evidence-less reports the
+        # structural cause — the implementer fixes coverage, not evidence.
+        raw = {"grades": [{"requirement_index": 0, "result": "pass"}]}
+        ok, failure = validate_checker_output(raw, CHECKLIST_TWO)
+        self.assertEqual(failure, "missing_grade")
+
+
+# ===========================================================================
+# isolation_note (integration fixtures)
+# ===========================================================================
+
+VALID_GRADES = {
+    "grades": [
+        {"requirement_index": 0, "result": "pass", "evidence": "e0"},
+        {"requirement_index": 1, "result": "fail", "evidence": "e1"},
+    ]
+}
+
+
+class TestIsolationNote(unittest.TestCase):
+
+    def _with_note(self, note):
+        return {**VALID_GRADES, "isolation_note": note}
+
+    def test_unit_fixture_does_not_require_isolation_note(self):
+        ok, failure = validate_checker_output(VALID_GRADES, CHECKLIST_TWO)
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
+
+    def test_default_fixture_kind_keeps_legacy_behaviour(self):
+        # no fixture_kind passed == pre-existing callers, unchanged
+        ok, _ = validate_checker_output(
+            self._with_note("read the repo tree"), CHECKLIST_TWO)
+        self.assertTrue(ok)
+
+    def test_integration_fixture_requires_the_key(self):
+        ok, failure = validate_checker_output(
+            VALID_GRADES, CHECKLIST_TWO, fixture_kind="integration")
+        self.assertFalse(ok)
+        self.assertEqual(failure, "missing_isolation_note")
+
+    def test_integration_null_note_is_clean(self):
+        ok, failure = validate_checker_output(
+            self._with_note(None), CHECKLIST_TWO, fixture_kind="integration")
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
+
+    def test_self_reported_note_is_isolation_violation(self):
+        ok, failure = validate_checker_output(
+            self._with_note("also opened skills/plan/SKILL.md"),
+            CHECKLIST_TWO, fixture_kind="integration")
+        self.assertFalse(ok)
+        self.assertEqual(failure, "isolation_violation")
+
+    def test_blank_note_is_treated_as_no_violation(self):
+        ok, failure = validate_checker_output(
+            self._with_note("   "), CHECKLIST_TWO, fixture_kind="integration")
+        self.assertTrue(ok)
+
+    def test_non_string_note_is_malformed(self):
+        ok, failure = validate_checker_output(
+            self._with_note(["a"]), CHECKLIST_TWO, fixture_kind="integration")
+        self.assertFalse(ok)
+        self.assertEqual(failure, "malformed_output")
+
+    def test_isolation_outranks_evidence(self):
+        # a contaminated checker's grades are worthless regardless of evidence
+        raw = {
+            "grades": [
+                {"requirement_index": 0, "result": "pass", "evidence": "e0"},
+                {"requirement_index": 1, "result": "fail"},
+            ],
+            "isolation_note": "opened the source tree",
+        }
+        ok, failure = validate_checker_output(
+            raw, CHECKLIST_TWO, fixture_kind="integration")
+        self.assertEqual(failure, "isolation_violation")
+
+
+# ===========================================================================
+# validate_input_range
+# ===========================================================================
+
+class TestValidateInputRange(unittest.TestCase):
+
+    def test_all_required_keys_present(self):
+        ok, failure = validate_input_range(
+            {"consumer", "reference"}, ["consumer", "reference"])
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
+
+    def test_missing_key_is_violation(self):
+        ok, failure = validate_input_range({"consumer"}, ["consumer", "reference"])
+        self.assertFalse(ok)
+        self.assertEqual(failure, "input_range_violation")
+
+    def test_extra_keys_are_allowed(self):
+        ok, failure = validate_input_range(
+            {"consumer", "reference", "extra"}, ["consumer", "reference"])
+        self.assertTrue(ok)
+
+    def test_unit_fixture_without_requirement_passes(self):
+        for required in ([], None):
+            with self.subTest(required=required):
+                ok, failure = validate_input_range(set(), required)
+                self.assertTrue(ok)
+                self.assertIsNone(failure)
+
+    def test_accepts_any_iterable(self):
+        ok, _ = validate_input_range(
+            ["consumer", "reference"], ("consumer", "reference"))
+        self.assertTrue(ok)
+
+    def test_empty_dispatch_against_requirement_is_violation(self):
+        ok, failure = validate_input_range([], ["consumer"])
+        self.assertFalse(ok)
+        self.assertEqual(failure, "input_range_violation")
+
+    def test_failure_type_is_registered(self):
+        self.assertIn("input_range_violation", PROTOCOL_FAILURE_TYPES)
+
+
+# ===========================================================================
+# taxonomy / emitter coverage
+# ===========================================================================
+
+# Labeled corpus: one sample per published protocol failure type, plus clean
+# samples. Drives the coverage test below AND the measurement harness — if a
+# type is published but no library call emits it, harness authors must
+# hand-roll the detection (the gap this corpus exists to prevent).
+PROTOCOL_CORPUS = [
+    # (label, callable -> (ok, failure))
+    ("malformed_output",
+     lambda: validate_checker_output("{not json", CHECKLIST_TWO)),
+    ("missing_grade",
+     lambda: validate_checker_output(
+         {"grades": [{"requirement_index": 0, "result": "pass", "evidence": "e"}]},
+         CHECKLIST_TWO)),
+    ("extra_grade",
+     lambda: validate_checker_output(
+         {"grades": [{"requirement_index": 9, "result": "pass", "evidence": "e"}]},
+         CHECKLIST_TWO)),
+    ("duplicate_grade",
+     lambda: validate_checker_output(
+         {"grades": [
+             {"requirement_index": 0, "result": "pass", "evidence": "e"},
+             {"requirement_index": 0, "result": "fail", "evidence": "e"},
+         ]}, CHECKLIST_TWO)),
+    ("invalid_result_value",
+     lambda: validate_checker_output(
+         {"grades": [{"requirement_index": 0, "result": "MAYBE", "evidence": "e"}]},
+         CHECKLIST_TWO)),
+    ("empty_checklist",
+     lambda: validate_checker_output({"grades": []}, [])),
+    ("missing_evidence",
+     lambda: validate_checker_output(
+         {"grades": [
+             {"requirement_index": 0, "result": "pass", "evidence": "e"},
+             {"requirement_index": 1, "result": "fail", "evidence": ""},
+         ]}, CHECKLIST_TWO)),
+    ("missing_isolation_note",
+     lambda: validate_checker_output(
+         VALID_GRADES, CHECKLIST_TWO, fixture_kind="integration")),
+    ("isolation_violation",
+     lambda: validate_checker_output(
+         {**VALID_GRADES, "isolation_note": "opened the repo"},
+         CHECKLIST_TWO, fixture_kind="integration")),
+    ("input_range_violation",
+     lambda: validate_input_range({"consumer"}, ["consumer", "reference"])),
+]
+
+CLEAN_CORPUS = [
+    ("unit output",
+     lambda: validate_checker_output(VALID_GRADES, CHECKLIST_TWO)),
+    ("integration output",
+     lambda: validate_checker_output(
+         {**VALID_GRADES, "isolation_note": None},
+         CHECKLIST_TWO, fixture_kind="integration")),
+    ("complete input range",
+     lambda: validate_input_range(
+         {"consumer", "reference"}, ["consumer", "reference"])),
+]
+
+
+class TestTaxonomyEmitterCoverage(unittest.TestCase):
+
+    def test_every_published_type_has_an_emitter(self):
+        # AC: publishing a type the library cannot emit pushes detection onto
+        # every harness author. Keep PROTOCOL_FAILURE_TYPES and the emitters
+        # in lockstep.
+        emitted = set()
+        for label, call in PROTOCOL_CORPUS:
+            ok, failure = call()
+            self.assertFalse(ok, label)
+            self.assertEqual(failure, label)
+            emitted.add(failure)
+        self.assertEqual(emitted, set(PROTOCOL_FAILURE_TYPES))
+
+    def test_clean_samples_produce_no_false_positives(self):
+        for label, call in CLEAN_CORPUS:
+            with self.subTest(label=label):
+                ok, failure = call()
+                self.assertTrue(ok)
+                self.assertIsNone(failure)
 
 
 # ===========================================================================
