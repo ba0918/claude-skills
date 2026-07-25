@@ -5,4 +5,12 @@
 set -eu
 
 cd "$(git rev-parse --show-toplevel)"
+
+# git は hook へ GIT_DIR を渡す。worktree ではこれが絶対パスになるため、検証中の
+# `git init` / `git check-ignore`（cwd = 一時ディレクトリ）が一時リポジトリではなく
+# 本物のリポジトリを操作してしまう。通常 checkout では相対パス `.git` が cwd 基準で
+# 解決されて偶然動くだけで、cwd を渡す実装だけでは防げない。継承を明示的に断ち切る。
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
+unset GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES
+
 exec sh scripts/run_checks.sh

@@ -153,6 +153,18 @@ description: agent 向けテキスト指示（skill / slash command / task プ�
 - 改善判定: 前回中央値と今回中央値の差が noise_band（run 間差の半分）を超えたときのみ「改善」と認定
 - 「運が良かった run」での誤採択を機械的に排除
 
+**非劣化 A/B（baseline と候補を並べる形）のゲートは差分形式で書く。**
+
+```
+NG: 候補アームで critical が pass すること
+OK: baseline が pass していた critical を候補が落としていないこと
+```
+
+絶対述語で書くと、baseline 自身がその critical を落としている場合に候補が何であっても成立せず、
+**定数 false を返して候補を弁別しなくなる**。baseline の欠陥を候補の責任にしないこと
+（実測と判別基準は [requirement-reachability.md](references/requirement-reachability.md)
+「判定ルールの誤りは『緩和』ではない」節）。
+
 ## Protocol failure と candidate failure の分離
 
 checker/harness 側の逸脱（malformed 出力、要件と grade の不整合、成果物以外を
