@@ -81,7 +81,7 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
    - 出力の `baseline` を編集ゼロの裏取りに使い、`env` を実行者プロンプトの
      環境セットアップ節へ転記する
    - 同一メッセージ内で複数サブエージェント呼び出しを並べて並行実行（[orchestration-patterns.md](../shared/references/orchestration-patterns.md) 準拠）
-   - 実行者は軽量モデルを明示（機械的なシナリオ実行。判断の重いスキルで精度が出ない場合のみ高性能モデルに上げ、fixture の `executor_model` に記録して固定する）
+   - 実行者の tier は fixture の `executor_tier` に従う（既定 `standard` = 機械的なシナリオ実行。判断の重いスキルで精度が出ない場合のみ `high` に上げ、理由を `notes` に記録して固定する）。具体的なモデル名を fixture に書かない — プラットフォーム非依存の表現を保つ
    - ファイルを生成・編集するシナリオは使い捨て git worktree で隔離し、終了後に破棄する
 3. **判定**: executor-contract の判定規則で各シナリオを ○/× 判定する。
    スキル単位の合格 = 全シナリオで `[critical]` 要件が全て ○
