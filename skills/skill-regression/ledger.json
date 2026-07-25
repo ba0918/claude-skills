@@ -74,15 +74,15 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "c8694e8d88907fcc31ab9b3e572b578784b02855c3f675baa0f49671b7ed9f42",
-      "skills/cycle/fixtures.json": "a81c189e30b16bb0488c5d00c9a51f27400a3511d2a9b23d36f6a59ba5940d39",
+      "skills/cycle/SKILL.md": "58d882b4d6f51f27799f512d1ec7650d27c19bfb4bea8683e6e3859bae86841b",
+      "skills/cycle/fixtures.json": "55ab24b54aa3251768aef11401474a6aba1f77fc5f8d1c41cec8c5c7d14b5074",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
       "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
-    "note": "3 シナリオ実走 pass。3 件すべてインライン代行経路・状況照会 0 回。.gitignore 宣言により __pycache__ 混入でも作業ツリー clean を維持（前回 run では実行者が自作するかどうかでブレていた）",
+    "note": "cy-001/003 は Phase 1/2 を委譲（配下は再委譲不可でインライン代行）・Phase 3 は直接実行。issue #17 未修正のため .agents/ の gitignore 宣言を run 時のみ補って実体化（fixture 本体は未変更）。cy-001 R6 は store が Git 無視で成果物コミット不成立のため部分的（非 critical）",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -93,7 +93,7 @@
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "b82dd071782c475b53797b7befd059c3281d3e40592597f726b64b8a451dc9ef",
+    "surface_sha256": "ac02ff16f8e52913d5fa1f63859cde5f18a1d68e5576f6cb05b55403460c12ce",
     "verified": "2026-07-25"
   },
   "decision-journal": {
