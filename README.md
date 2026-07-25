@@ -216,6 +216,13 @@ rules/           Claude Code の初期プロンプトに配置する常駐専用
 scripts/         リポジトリ整合性バリデータ（CI で自動実行）
 ```
 
+共有資産のうち、スキル経由ではなくコマンドラインから直接使うものもある。
+[process-delegation.md](skills/shared/references/process-delegation.md) は、プロンプト単位の作業を
+サブエージェントではなく別プロセスへ外注するための契約とランナー
+（`skills/shared/scripts/process_runner.py`）である。セッション累計のサブエージェント起動上限を
+消費せず、本体コンテキストも汚さずにワークキューを消化する。成果物ファイルの有無と妥当性だけで
+合否を判定できるユニットにのみ適用する。
+
 ## 開発
 
 ```bash

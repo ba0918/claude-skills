@@ -4,6 +4,29 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.66.0
+
+プロンプト単位の作業をサブエージェントではなく別プロセスへ委譲する汎用ワークキューランナーを
+共有資産として追加した（issue #16）。サブエージェント起動枠はセッション累計で数えられ完了しても
+戻らないため、3 役分離の計測ハーネスのようなファンアウトはバッチ途中で上限に当たる。実行者・
+採点者に必要なのは「独立した文脈でのモデル呼び出し」であってサブエージェントではない、という
+切り分けを契約として固定した。
+
+- `skills/shared/references/process-delegation.md`: 適用条件（機械判定可能な oracle の存在）、
+  work キュー / バックエンドレジストリの schema、成否は終了コードではなく成果物で決める規約、
+  権限境界、polling-pattern §6 準拠の safety brake と一回限りドレインゆえの逸脱を明文化
+- `skills/shared/scripts/process_runner.py`: ベンダー名を一切持たないランナー。実行ファイルと
+  フラグは operator が書く `backends.json` にのみ存在し、work キューは argv に 1 要素も寄与
+  できない（これが権限境界そのもの）。成果物が既に妥当なユニットは skip するため、再実行が
+  そのまま引き継ぎになる
+- `skills/shared/scripts/test_process_runner.py`: 未検証だった失敗経路を 114 ケースで固定
+  （タイムアウト、実行中の kill file による停止と実行中プロセスグループの終了、JSON 成果物の
+  破損、バックエンド起動失敗、並列上限、containment 違反、failed_streak / max_wallclock）。
+  起動時点で失敗するユニットは in-flight にならず dispatch ループを絞れないため、
+  failed_streak を dispatch 側でも検査する（存在しない実行ファイルでキュー全消費を防ぐ）
+- `skills/empirical-prompt-tuning/SKILL.md`: 起動上限に達した場合の代替経路として参照を追加
+- README: 共有資産の直接利用として本契約を追記
+
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の
