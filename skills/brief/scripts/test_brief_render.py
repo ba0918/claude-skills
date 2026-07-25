@@ -406,13 +406,12 @@ class InitialOrder(unittest.TestCase):
         ]
         self.assertEqual(positions, sorted(positions))
 
-    def test_a_group_reads_explanation_then_items_then_evidence(self):
+    def test_a_group_reads_explanation_then_items(self):
         page = render_html(discussion_model())
         group = discussion_model()["groups"][0]
         self.assertLess(
             page.index(group["plain_explanation"]), page.index(group["items"][0])
         )
-        self.assertLess(page.index(group["items"][0]), page.index("もとの箇所"))
 
     def test_the_intent_stays_visible_above_the_explanation(self):
         page = render_html(discussion_model())
@@ -595,9 +594,18 @@ class WithheldMaterialNaming(unittest.TestCase):
 class EvidenceIsAnAnchorNotReadingMaterial(unittest.TestCase):
     """The count says the claim is backed; the token says nothing to a reader."""
 
-    def test_the_page_states_how_many_places_back_a_group(self):
+    def test_the_page_does_not_count_the_anchors_at_the_reader(self):
+        # A bare count says "this is backed" without letting anyone check it.
+        # Grounding is enforced by validation; the page shows the quotation or
+        # it shows nothing.
         page = render_html(discussion_model())
-        self.assertIn("もとの箇所 1 件", page)
+        self.assertNotIn("もとの箇所", page)
+        self.assertNotIn("<h4>根拠</h4>", page)
+
+    def test_a_quotation_is_what_stands_in_for_evidence(self):
+        page = render_html(excerpt_model())
+        self.assertIn("実際の差分", page)
+        self.assertIn("return a &amp; b", page)
 
     def test_identifiers_never_reach_the_reading_flow(self):
         model = change_model()
@@ -610,6 +618,7 @@ class EvidenceIsAnAnchorNotReadingMaterial(unittest.TestCase):
     def test_identifiers_stay_available_for_tracing(self):
         page = render_html(change_model())
         self.assertIn('data-refs="h001 h002"', page)
+        self.assertNotIn("h001", visible_text(page))
 
     def test_this_holds_for_the_conversation_view_too(self):
         # discussion has no attribution check, and the absence of a check is
@@ -712,3 +721,18 @@ class DocumentVocabularyCoversUnsettledAndProgress(unittest.TestCase):
         model = document_model()
         model["groups"][0]["kind"] = "undecided"
         self.assertIn("決まっていないこと", render_html(model))
+
+
+class MaterialLabelsMatchTheMaterial(unittest.TestCase):
+    def test_a_diff_handed_over_as_a_file_has_a_value_of_its_own(self):
+        model = change_model()
+        model["metadata"]["source_kind"] = "diff"
+        self.assertEqual(validate_model(model, CHANGE_INPUTS), [])
+        self.assertIn("差分ファイル", render_html(model))
+
+    def test_the_document_unit_holds_for_bullets_as_well_as_sections(self):
+        # The collector falls back to list items when headings do not divide a
+        # document, so calling every unit a section makes the page lie.
+        page = render_html(document_model())
+        self.assertNotIn("節", visible_text(page))
+        self.assertIn("項目", page)

@@ -22,18 +22,18 @@
   },
   "brief": {
     "file_sha256": {
-      "skills/brief/SKILL.md": "932b9b178870995d04253b3e3875c94e6e0669f226575a71984b53e83f9484bd",
+      "skills/brief/SKILL.md": "4730935e20c0a85824478352eab527936853bd2ce4c21f704904ee3ccdfc7d22",
       "skills/brief/assets/brief.css": "9ef1a533765cd3463be8fcdf0ab59a694983f43143ffce2d33c31647209aa8cd",
       "skills/brief/assets/brief.js": "3448e3dc90bbfe4451e9f2cff5981cdc42ce3b021411ccc3a16c3a52e86bbfc3",
       "skills/brief/assets/tokens.brief.json": "c3b5edd00e3451f313f7dbdb676baa8f2f763652bc7ef179627002dab242e9db",
       "skills/brief/assets/tokens.css": "e62f02714ff77cb803993cf9796f09b5adafff8523418c3ec7a3c73f80947a2c",
       "skills/brief/fixtures.json": "7a5ba5077b28ccc539d98db6d21f2fe74a937293e25ed0e022e31c2a3351cf45",
-      "skills/brief/references/brief-model.md": "f3bcf0635bd5146fa3c59dbf98dcf920d95fdcc995b8e8f3ec9e3877358411a5",
+      "skills/brief/references/brief-model.md": "5e3adb51c462a65ad7df26e621ebec577c222ffff6e4b23938102deb372e54c4",
       "skills/brief/scripts/brief_collect.py": "6d0e638d5d36e3f62008c27967695e76f42f9cbe2afd659391e7118b4866d986",
-      "skills/brief/scripts/brief_render.py": "132063d012513e4e077d1effed7499353c40d8064550b47e75fa101f23febc0f",
+      "skills/brief/scripts/brief_render.py": "b4fc93158220b7b1fce0ca7cf0e0cbcdaf644a93ebee1e7f4f39ca9c9dd5eba0",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5"
     },
-    "note": "5 回目の run（6/6 合格）。risk の low 行から成果物の種類を外す・Step 4 の適用範囲・引用見出しの view 別出し分け・source_kind の閉集合化・document の語彙に undecided と progress を追加・orientation の収集口新設、を入れた版。実測で効果を確認: (a) bf-002 の文書グループの risk が low(run3)→medium(run4)→high(run5) と動き「文書だから低、はしていない」と明記された (b) 引用見出しを出し分けたら bf-004 が 3 グループすべてに引用を付けた（前回は差分と呼ぶことになるため引用自体を見送っていた） (c) Step 4 の除外条件が引用され、修復依頼で render とログ追記を行わなくなった (d) bf-003 の risk/confidence が run4 と完全一致し 2 回連続で再現。未解決: (1) 根拠欄が件数だけで読み手に何も伝えない（人間の指摘、引用へ一本化する） (2) source_kind の閉集合に「差分ファイルを直接渡された」に当たる値が無い (3) document の単位ラベルが「節」固定だが箇条書きフォールバック時は実体と食い違う (4) Step 1 に「依頼が特定ファイルを名指しした場合」の行が無い（2 回連続） (5) inputs JSON の置き場が成果物リストに無い（3 回連続） (6) option kind の items が何を指すか契約に無く、レンダラの見出しが挙動を決めている。",
+    "note": "6 回目の run（6/6 合格）。件数だけの根拠欄を削除して引用へ一本化・source_kind に diff 追加・単位ラベルを項目へ・Step 1 にファイル名指しの分岐・再試行に別オープナーを含む・成果物に inputs JSON を追加・option は採らなかった案のみ、を入れた版。実測: (a) 根拠欄が消えて全グループに引用が付いた（bf-004/bf-005 のページで確認、識別子は data 属性のみ） (b) 単位ラベルが「項目」になり箇条書きフォールバック時の食い違いが解消 (c) bf-003 の risk/confidence が run4/5/6 と 3 回連続で完全一致 (d) 文書グループの risk が run5/6 と 2 回連続で high。未解決（いずれも軽微、次に触るときの候補）: source_kind の unstaged と diff、session と document の使い分けが未記述 / inputs を作るサブコマンド名が Step 2 本文に無い / 分岐 5 に「会話も選べる」が適用されるか読み取りにくい / 未決を 1 グループにまとめるか分けるかの粒度指針が無い / 開けたことの成功判定基準が無い（exit 0 で足りるか）。",
     "result": "pass",
     "surface": [
       "skills/brief/SKILL.md",
@@ -47,7 +47,7 @@
       "skills/brief/scripts/brief_render.py",
       "skills/shared/references/artifact-store.md"
     ],
-    "surface_sha256": "096b125ddee2008aa383cb8716acce3de303acda78f05861bcbd1f82977febdd",
+    "surface_sha256": "fe6bf9e7041f8e8d33d8ec8e3aa9830a0cea325a00925ccf8e1a710aa72e70fe",
     "verified": "2026-07-26"
   },
   "commit": {

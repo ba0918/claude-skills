@@ -21,7 +21,7 @@ comprehension_questions[] required, exactly 3
 | `schema_version` | yes | Integer. Currently `1` |
 | `run_id` | yes | Identifies the run; used in artifact filenames |
 | `view` | yes | `change` / `document` / `orientation` / `discussion` |
-| `source_kind` | yes | Where the material came from. One of `unstaged`, `staged`, `branch`, `commits`, `plan`, `handoff`, `session`, `document` — a closed set, because the renderer turns it into a reader-facing label and an unlisted value would reach the page untranslated |
+| `source_kind` | yes | Where the material came from. One of `unstaged`, `staged`, `branch`, `commits`, `plan`, `handoff`, `session`, `document`, `diff` — a closed set, because the renderer turns it into a reader-facing label and an unlisted value would reach the page untranslated |
 | `source_ref` | no | Revision range, file path, or absent for `session` |
 | `perspective` | no | The invocation argument, verbatim |
 
@@ -44,7 +44,7 @@ comprehension_questions[] required, exactly 3
 | `plain_explanation` | yes | The explanation a reader who has not opened the source can follow |
 | `risk` | yes | `low` / `medium` / `high`. See the scales below |
 | `confidence` | yes | `low` / `medium` / `high`. See the scales below |
-| `evidence_refs` | yes | At least one. Ids from the collected input. Machine-side only — **never rendered**, in any view |
+| `evidence_refs` | yes | At least one. Ids from the collected input. Machine-side only — **never in the reading flow**, in any view. Carried on the page as a data attribute so a run can still be traced |
 | `items` | yes | One entry per line. Never a comma-joined paragraph |
 | `concerns` | no | Anything noticed but not established. Ungrounded claims land here |
 | `excerpts` | no | Verbatim source lines worth showing inline. See below |
@@ -163,11 +163,15 @@ you understand gets `high` even when it worries you; that worry belongs in `risk
 - A group with no evidence fails validation.
 - A claim that cannot be grounded must not appear in `intent` or `plain_explanation`. Move it
   to `concerns`.
-- **Identifiers are anchors, not reading material.** The page states how many places back a
-  group and never prints `h001` or `b003`; a reader who has to decode a token is reading the
-  format instead of the work. This holds in `discussion` too, where nothing checks the tokens —
-  the absence of a check is not permission to put them on the page. When you want the reader to
-  see the source itself, that is what `excerpts` is for.
+- **Identifiers are anchors, not reading material.** The page never prints `h001` or `b003`; a
+  reader who has to decode a token is reading the format instead of the work. This holds in
+  `discussion` too, where nothing checks the tokens — the absence of a check is not permission
+  to put them on the page.
+- **Nor is a count of them.** Saying a group rests on three places, without showing which
+  three, asserts that the claim is backed and gives the reader no way to check it. Whether
+  evidence exists at all is already enforced by validation, so a number on the page adds a
+  number and nothing else. **What a reader can use is the quotation** — so the only evidence
+  the page shows is `excerpts`. A group whose grounding matters to the reader gets one.
 
 ## Attribution completeness
 
@@ -193,6 +197,10 @@ the reader believing everything was decided.
 | `document` | `goal`, `design`, `constraint`, `risk`, `step`, `acceptance`, `undecided`, `progress` |
 | `orientation` | `done`, `inflight`, `next`, `blocked` |
 | `discussion` | `topic`, `decided`, `undecided`, `option` |
+
+In `discussion`, an `option` group holds the alternatives that were **not** taken, with the
+reason each was set aside. The one that was chosen belongs to the `decided` group it produced —
+listing it twice makes a reader look for a disagreement that was already settled.
 
 ## Reader-facing language
 

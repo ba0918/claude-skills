@@ -74,6 +74,12 @@ except the one for the conversation — and branch on that:
    twice, and do not pick for the reader.
 4. If the argument clearly names the conversation ("this chat", "what we just discussed"),
    take `discussion` without asking, whatever the scan found.
+5. If the argument names a specific file, that file is the target — the scan only looks where
+   plans and handoffs live, so anything else will never appear in it. Naming a file is not
+   inferring a target from wording; the reader said which one.
+
+Whichever branch you take, the conversation stays available. Say so when you ask, and say so
+when you proceed without asking.
 
 If the base revision cannot be resolved, drop the branch-range candidate and say so. A huge
 diff computed against the wrong base is worse than an absent option.
@@ -140,9 +146,13 @@ Artifacts go to the resolved store:
 
 ```
 {artifacts}/reviews/{run_id}_brief-model.json
+{artifacts}/reviews/{run_id}_brief-inputs.json
 {artifacts}/reviews/{run_id}_brief.html
 {artifacts}/reviews/brief-log.md
 ```
+
+The collected identifiers are an artifact too. Validation cannot be repeated without them, so
+a page whose inputs were thrown away can never be re-checked against what it was built from.
 
 ### Step 4 — Show it and close the loop
 
@@ -154,7 +164,8 @@ unread, which defeats the whole measurement.
   giving up** — a restricted environment blocks the opener while leaving the rest working, so
   a single failed attempt is not evidence that opening is impossible. Retry the **open step**,
   not the generation; the page is already written and rendering it twice only risks producing
-  a second one.
+  a second one. Trying a different opener counts as retrying — a desktop opener wired to the
+  wrong application is the same kind of obstacle as a blocked one.
 - If it genuinely cannot open, say so explicitly and give the path. Never let a silent
   downgrade to path-handover pass as success.
 

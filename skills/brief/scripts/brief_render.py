@@ -38,7 +38,7 @@ LEVELS = ("low", "medium", "high")
 # 画面へ出るため、自由記述にはできない。
 SOURCE_KINDS = (
     "unstaged", "staged", "branch", "commits",
-    "plan", "handoff", "session", "document",
+    "plan", "handoff", "session", "document", "diff",
 )
 
 UNIVERSE_KEY = {
@@ -357,11 +357,13 @@ SOURCE_LABEL = {
     "plan": "実装計画",
     "handoff": "引き継ぎ",
     "session": "このセッション",
+    "document": "文書",
+    "diff": "差分ファイル",
 }
 
 SCALE_UNIT = {
     "change": "変更",
-    "document": "節",
+    "document": "項目",
     "orientation": "項目",
     "discussion": "論点",
 }
@@ -638,6 +640,9 @@ def _render_group(group, position, view):
         out += ["          <li>%s</li>" % _esc(item) for item in items]
         out.append("        </ul>")
 
+    # 根拠として読み手に見せられるのは引用そのものだけ。件数は「裏づけがある」
+    # と言っているようで、読み手にできることを何も増やさない。裏づけの有無は
+    # 検証が機械的に強制しているので、画面で数える意味はない。
     excerpts = group.get("excerpts") or []
     if excerpts:
         out.append(
@@ -651,17 +656,17 @@ def _render_group(group, position, view):
         out.append("        <h4>気になっている点</h4>")
         out += ['        <p class="concern">%s</p>' % _esc(c) for c in concerns]
 
-    # 識別子は帰属検査の錨であって読み物ではない。件数は「裏づけがある」を伝え、
-    # h001 は伝えない。追跡したい者のために属性へは残すが、読みの流れには出さない。
+    # 識別子は帰属検査の錨であって読み物ではない。追跡する者のために要素へ残すが、
+    # 読みの流れには一切出さない。
     refs = [str(r) for r in (group.get("evidence_refs") or [])]
     out += [
-        "        <h4>根拠</h4>",
-        '        <p class="evidence" data-refs="%s">もとの箇所 %d 件</p>'
-        % (_esc(" ".join(refs)), len(refs)),
         "      </div>",
         "    </details>",
         "  </article>",
     ]
+    out[2] = '    <details class="%s" data-refs="%s" open>' % (
+        classes, _esc(" ".join(refs))
+    )
     return out
 
 
