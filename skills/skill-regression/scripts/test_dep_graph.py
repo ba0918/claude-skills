@@ -68,6 +68,62 @@ class TestBehaviorSurface(unittest.TestCase):
             self.assertIn("skills/skill-regression/SKILL.md", surface)
             self.assertNotIn("skills/skill-regression/ledger.json", surface)
 
+    def test_does_not_traverse_out_of_external_files(self):
+        # 共有契約から他スキルへの「関連」リンク 1 本で、実行経路の交わらない
+        # スキルが同じ面に載る回帰（issue -> ... -> skill-regression）を防ぐ
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md",
+                   "[gate](../shared/references/gate.md)")
+            _write(root, "skills/shared/references/gate.md",
+                   "関連: [pattern](pattern.md)")
+            _write(root, "skills/shared/references/pattern.md",
+                   "[unrelated](../../z/SKILL.md)")
+            _write(root, "skills/z/SKILL.md", "無関係なスキル")
+            surface = dep_graph.behavior_surface(root, "a")
+            self.assertIn("skills/shared/references/gate.md", surface)
+            self.assertNotIn("skills/shared/references/pattern.md", surface)
+            self.assertNotIn("skills/z/SKILL.md", surface)
+
+    def test_own_references_reach_their_direct_contracts(self):
+        # スキル自身の references/ は起点なので、そこからの 1 ホップは面に入る
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "[own](references/own.md)")
+            _write(root, "skills/a/references/own.md",
+                   "[gate](../../shared/references/gate.md)")
+            _write(root, "skills/shared/references/gate.md", "contract")
+            self.assertIn(
+                "skills/shared/references/gate.md",
+                dep_graph.behavior_surface(root, "a"),
+            )
+
+    def test_bare_path_reference_in_prompt_is_a_dependency(self):
+        # 委譲プロンプト内の契約は md リンクではなく素のパスで書かれる
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md",
+                   "プロンプト: `skills/shared/references/tdd-contract.md` に従うこと")
+            _write(root, "skills/shared/references/tdd-contract.md", "contract")
+            self.assertIn(
+                "skills/shared/references/tdd-contract.md",
+                dep_graph.behavior_surface(root, "a"),
+            )
+
+    def test_runtime_artifact_paths_are_not_dependencies(self):
+        # 実行時に書き換わる成果物を面に入れると恒久 stale になる
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md",
+                   "`.agents/artifacts/status.md` を更新する")
+            _write(root, ".agents/artifacts/status.md", "runtime")
+            self.assertNotIn(
+                ".agents/artifacts/status.md",
+                dep_graph.behavior_surface(root, "a"),
+            )
+
+    def test_bare_path_to_missing_file_is_ignored(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "skills/shared/references/nope.md")
+            self.assertEqual(
+                dep_graph.behavior_surface(root, "a"), ["skills/a/SKILL.md"])
+
     def test_missing_skill_returns_empty(self):
         with tempfile.TemporaryDirectory() as root:
             _repo(root)

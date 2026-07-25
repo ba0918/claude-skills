@@ -20,7 +20,7 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
 
 | 用語 | 定義 |
 |------|------|
-| 挙動面 (behavior surface) | スキルの実行時挙動に影響しうるファイル集合。`skills/<name>/` 配下全部（test_*.py / __pycache__ 除く）+ SKILL.md から相対 .md リンクで到達できる推移閉包（共有契約を含む） |
+| 挙動面 (behavior surface) | スキルの実行時挙動に影響しうるファイル集合。`skills/<name>/` 配下全部（test_*.py / __pycache__ 除く）+ そのスキル自身の .md から **1 ホップ**で参照される `skills/` 配下のファイル（共有契約を含む）。参照は md リンクと手順文中の素のパスの両方を拾う。スキル外のファイルからは辿らない — 共有契約どうしの「関連」リンクを辿ると、実行経路の交わらないスキルが同じ面に載るため（[skill-authoring](../shared/references/skill-authoring.md) の「参照は 1 階層まで」原則に一致させている） |
 | fixture | `skills/<name>/fixtures.json`。シナリオ + [critical] 付き要件チェックリストの集合。スキーマは [references/fixture-schema.md](references/fixture-schema.md) |
 | 台帳 (ledger) | `skills/skill-regression/ledger.json`。「この挙動面のときに全シナリオ合格した」という検証イベントの記録。commit する |
 
@@ -41,6 +41,7 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
 | 「fixture 化して」「資産化して」（tuning 直後・plan 完了後） | capture |
 | 「回帰評価して」「この変更の影響を確認して」（契約・SKILL.md 編集後） | run |
 | 「状況見せて」「どれが stale？」 | status |
+| 「fixture が無いのはどれ？」「カバレッジは？」 | status（`--coverage`） |
 | CI が `[stale]` / `[unverified]` で fail した | run（対象は fail メッセージのスキル） |
 
 ## capture — 合格基準の資産化
@@ -90,6 +91,20 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
 - `python3 {skill_dir}/scripts/ledger.py --status {repo_root}` で全追跡スキルの
   verified / stale / unverified / orphan を表示する
 - `--check` は CI と同一判定（issue があれば exit 1）。orphan は `--remove <skill>` で掃除する
+- `--coverage` は **追跡対象そのものの母数**を covered / exempt / uncovered で表示する。
+  `--check` は fixture 保有スキルだけを見る opt-in ゲートなので、全件合格しても
+  「fixture を書いていないスキル」は数に入らない。両者は別の問いに答える:
+
+  | 問い | モード |
+  |------|-------|
+  | 検証済みの資産は古びていないか | `--check` |
+  | そもそもどれだけ検証しているか | `--coverage` |
+
+- 対象外の宣言は `ledger.py` の `COVERAGE_EXEMPT` に**理由付きで**置く（スキル側に置かない —
+  スキルディレクトリを触るだけで計上から消せてしまうため）。
+  **「まだ書いていない」は免除理由にならない**。それは uncovered である
+- `--coverage --strict` は uncovered が 1 件でもあれば exit 1。カバレッジ拡大の
+  作業中ゲートとして使う（CI の常時ゲートは `--check`）
 
 ## CI ゲート
 

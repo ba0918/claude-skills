@@ -99,6 +99,58 @@ class TestClosure(unittest.TestCase):
             _write(root, "outside.md", "outside the repo")
             self.assertEqual(md_links.closure(inner, "a.md"), ["a.md"])
 
+    def test_max_depth_one_stops_at_direct_links(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md",
+                   "[c](../shared/references/contract.md)")
+            _write(root, "skills/shared/references/contract.md",
+                   "[other](other.md)")
+            _write(root, "skills/shared/references/other.md", "end")
+            self.assertEqual(
+                md_links.closure(root, "skills/a/SKILL.md", max_depth=1),
+                ["skills/a/SKILL.md", "skills/shared/references/contract.md"],
+            )
+
+    def test_max_depth_zero_returns_only_starts(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "[c](b.md)")
+            _write(root, "skills/a/b.md", "end")
+            self.assertEqual(
+                md_links.closure(root, "skills/a/SKILL.md", max_depth=0),
+                ["skills/a/SKILL.md"],
+            )
+
+    def test_multiple_starts_are_all_depth_zero(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "[x](refs/x.md)")
+            _write(root, "skills/a/refs/x.md", "[y](y.md)")
+            _write(root, "skills/a/refs/y.md", "end")
+            # x.md も start に含めれば、その直リンク y.md まで depth 1 で届く
+            got = md_links.closure(
+                root, ["skills/a/SKILL.md", "skills/a/refs/x.md"], max_depth=1)
+            self.assertEqual(
+                got,
+                ["skills/a/SKILL.md", "skills/a/refs/x.md", "skills/a/refs/y.md"],
+            )
+
+    def test_depth_is_shortest_hop_not_discovery_order(self):
+        # b.md は a 経由なら深さ 2、直リンクなら深さ 1。幅優先なので後者で数える
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/s/SKILL.md", "[a](a.md) [b](b.md)")
+            _write(root, "skills/s/a.md", "[b](b.md)")
+            _write(root, "skills/s/b.md", "[c](c.md)")
+            _write(root, "skills/s/c.md", "end")
+            got = md_links.closure(root, "skills/s/SKILL.md", max_depth=1)
+            self.assertIn("skills/s/b.md", got)
+            self.assertNotIn("skills/s/c.md", got)
+
+    def test_unlimited_depth_remains_default(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "[c](c.md)")
+            _write(root, "skills/a/c.md", "[d](d.md)")
+            _write(root, "skills/a/d.md", "end")
+            self.assertIn("skills/a/d.md", md_links.closure(root, "skills/a/SKILL.md"))
+
     def test_missing_start_returns_empty(self):
         with tempfile.TemporaryDirectory() as root:
             self.assertEqual(md_links.closure(root, "nope.md"), [])

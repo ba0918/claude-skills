@@ -3,10 +3,18 @@
 
 挙動面 = スキルの実行時挙動に影響しうるファイル集合:
   - skills/<name>/ 配下の全ファイル（test_*.py / __pycache__ / *.pyc を除く）
-  - SKILL.md から相対 .md リンクで到達できる推移閉包（共有契約を含む）
+  - そのスキル自身の .md から相対リンクで **1 ホップ**到達するファイル（共有契約を含む）
 
 共有契約を 1 つ編集すると、それを参照する全スキルの挙動が変わりうる。
 この逆引き（変更ファイル → 影響スキル）が回帰評価のトリガーになる。
+
+**1 ホップに制限する理由**: 以前は無制限の推移閉包だった。しかし共有契約どうしの
+「関連」リンクを辿り続けるため、実行経路が一切交わらないスキルが同じ面に載る。
+実例として `issue` は issue → measurement-identity.md → loop-engineering.md →
+skill-regression/SKILL.md の 3 ホップで skill-regression に依存し、後者の節を
+追記しただけで stale 判定された。スキル境界の外に出た先からは辿らないことで、
+skill-authoring の「参照は 1 階層まで」原則と挙動面の定義を一致させる
+（skill-interface-audit の SI-S001 が同じ原則を静的に強制している）。
 
 CLI:
   python3 dep_graph.py [root]                # 全スキルの挙動面を JSON で出力
@@ -14,6 +22,7 @@ CLI:
 """
 import json
 import os
+import re
 import sys
 
 sys.path.insert(
@@ -50,14 +59,62 @@ def _skill_dir_files(root, skill):
     return files
 
 
+# 委譲プロンプトや手順文の中では、契約が md リンクではなく素のパスで書かれる
+# （例: cycle の Phase 2 プロンプト内の `skills/shared/references/tdd-contract.md`）。
+# md リンクだけを見ると、これらの実依存が挙動面から落ちて偽陰性になる。
+_BARE_PATH_RE = re.compile(r"[A-Za-z0-9_./-]+\.md")
+
+
+def _bare_path_refs(root, rel):
+    """rel の本文に素のパスとして現れる実在 .md を root 相対で返す。
+
+    repo root 起点とファイル位置起点の両方で解決を試みる（手順文は前者、
+    相対リンク風の記述は後者で書かれる）。実在しないものは無視する。
+    """
+    # 手順文は成果物パス（.agents/artifacts/status.md 等）にも言及する。これらは
+    # スキル定義ではなく実行時に書き換わるファイルなので、面に入れると恒久 stale になる。
+    # 本スクリプトのスコープどおり skills/ 配下だけを依存として認める。
+    abs_root = os.path.abspath(root)
+    path = os.path.join(abs_root, rel)
+    try:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        return set()
+    base = os.path.dirname(path)
+    found = set()
+    for token in _BARE_PATH_RE.findall(text):
+        if "{" in token or "*" in token:
+            continue
+        for candidate in (os.path.join(abs_root, token), os.path.join(base, token)):
+            resolved = os.path.normpath(candidate)
+            if not os.path.isfile(resolved):
+                continue
+            if os.path.commonpath([abs_root, resolved]) != abs_root:
+                continue
+            found_rel = os.path.relpath(resolved, abs_root).replace(os.sep, "/")
+            if found_rel.startswith("skills/"):
+                found.add(found_rel)
+    return found
+
+
 def behavior_surface(root, skill):
-    """スキル 1 つの挙動面をソート済みリストで返す。SKILL.md が無ければ空。"""
+    """スキル 1 つの挙動面をソート済みリストで返す。SKILL.md が無ければ空。
+
+    起点はスキルディレクトリ内の全 .md（SKILL.md と references/**）。そこから
+    1 ホップだけ辿る。スキル外のファイル（共有契約・他スキルの文書）は面に含めるが、
+    その先のリンクは辿らない。
+    """
     skill_md = os.path.join(root, "skills", skill, "SKILL.md")
     if not os.path.isfile(skill_md):
         return []
-    surface = set(_skill_dir_files(root, skill))
-    surface.update(md_links.closure(root, f"skills/{skill}/SKILL.md"))
-    return sorted(surface)
+    own = _skill_dir_files(root, skill)
+    own_md = [rel for rel in own if rel.endswith(".md")]
+    surface = set(own)
+    surface.update(md_links.closure(root, own_md, max_depth=1))
+    for rel in own_md:
+        surface.update(_bare_path_refs(root, rel))
+    return sorted(rel for rel in surface if rel not in _EXCLUDED_RELS)
 
 
 def build_graph(root):

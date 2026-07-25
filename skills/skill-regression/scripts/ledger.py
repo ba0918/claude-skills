@@ -16,6 +16,8 @@ check() が返す issue の種別:
 
 CLI:
   python3 ledger.py --check [root]             # CI 用。issue があれば exit 1
+  python3 ledger.py --coverage [--strict] [root]
+      fixture 保有率を covered / exempt / uncovered で計上（--strict で uncovered を exit 1）
   python3 ledger.py --update SKILL [--accept] [root]
       fixtures 合格後に台帳を更新（--accept は「実行せず再評価不要と判断」を明示記録）
   python3 ledger.py --remove SKILL [root]
@@ -73,6 +75,28 @@ def make_entry(root, surface, result, verified_date):
     }
 
 
+# fixture による挙動検証の対象外。理由必須。免除はスキル側ではなくここに置く
+# （スキルディレクトリを触るだけで計上から消せないようにするため — validate_repo.py の
+# 各 EXEMPT と同じ idiom）。「まだ書いていない」は免除理由ではなく uncovered である。
+COVERAGE_EXEMPT = {
+    "shared": "スキルではなく共有契約ライブラリ。単独で起動される挙動を持たない",
+    "migrate-cycles-to-plans":
+        "旧レイアウトからの一回限りの移行スキル。移行完了後に削除する予定で、"
+        "資産化しても再実行されない",
+}
+
+
+def _all_skills(root):
+    """skills/ 配下の全スキル名（SKILL.md を持つディレクトリ）。"""
+    base = os.path.join(root, "skills")
+    if not os.path.isdir(base):
+        return set()
+    return {
+        name for name in os.listdir(base)
+        if os.path.isfile(os.path.join(base, name, "SKILL.md"))
+    }
+
+
 def _fixtures_skills(root):
     base = os.path.join(root, "skills")
     if not os.path.isdir(base):
@@ -80,6 +104,27 @@ def _fixtures_skills(root):
     return {
         name for name in os.listdir(base)
         if os.path.isfile(os.path.join(base, name, "fixtures.json"))
+    }
+
+
+def coverage(root, exempt=None):
+    """fixture 保有状況を {covered, exempt, uncovered, total} で返す。
+
+    `--check` は fixture を持つスキルだけを見る opt-in ゲートなので、全件合格しても
+    「検証されていない領域がどれだけあるか」は表せない。covered と uncovered を
+    構造的に区別するのは coverage-ledger 契約と同じ考え方
+    （skills/shared/references/coverage-ledger.md）。
+    """
+    exempt = COVERAGE_EXEMPT if exempt is None else exempt
+    skills = _all_skills(root)
+    with_fixtures = _fixtures_skills(root)
+    covered = skills & with_fixtures
+    exempted = {s: exempt[s] for s in sorted(skills & set(exempt)) if s not in covered}
+    return {
+        "covered": sorted(covered),
+        "exempt": exempted,
+        "uncovered": sorted(skills - covered - set(exempted)),
+        "total": len(skills),
     }
 
 
@@ -145,7 +190,39 @@ def main(argv):
             hint = "skills/skill-regression/SKILL.md の run ワークフローで再評価"
             print(f"✗ {len(issues)} 件。{hint}してから ledger.py --update すること")
             return 1
-        print("✓ regression ledger: 全スキル検証済み")
+        # 合格表示に必ず母数を添える。fixture を持つスキルだけを見るゲートなので、
+        # 「全スキル検証済み」と書くと未検証領域が検証済みに見える（実際に誤読を招いた）。
+        cov = coverage(root)
+        print(
+            f"✓ regression ledger: fixture 保有 {len(cov['covered'])} スキルすべて検証済み"
+            f"（対象外 {len(cov['exempt'])} / 未保有 {len(cov['uncovered'])} "
+            f"/ 全 {cov['total']}）"
+        )
+        return 0
+
+    if "--coverage" in args:
+        args.remove("--coverage")
+        strict = "--strict" in args
+        if strict:
+            args.remove("--strict")
+        root = _root(args)
+        cov = coverage(root)
+        for skill in cov["covered"]:
+            print(f"{skill}\tcovered")
+        for skill, reason in cov["exempt"].items():
+            print(f"{skill}\texempt\t{reason}")
+        for skill in cov["uncovered"]:
+            print(f"{skill}\tuncovered")
+        print(
+            f"covered {len(cov['covered'])} / exempt {len(cov['exempt'])} "
+            f"/ uncovered {len(cov['uncovered'])} / total {cov['total']}"
+        )
+        if strict and cov["uncovered"]:
+            print(
+                f"✗ fixture 未保有 {len(cov['uncovered'])} 件。capture ワークフローで"
+                f"資産化するか、COVERAGE_EXEMPT に理由付きで登録すること"
+            )
+            return 1
         return 0
 
     if "--update" in args or "--remove" in args:
