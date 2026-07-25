@@ -1,0 +1,102 @@
+/* =================================================================
+ * Design Tokens — Auto-generated from tokens.json
+ * DO NOT EDIT MANUALLY. Run design-scaffold to regenerate.
+ * ================================================================= */
+
+:root {
+  /* ── Colors ── */
+  --color-primary: #2C4A63;
+  --color-primary-hover: #1F3648;
+  --color-secondary: #6E6A62;
+  --color-accent: #2C4A63;
+  --color-background: #FBFAF7;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F4F2EC;
+  --color-error: #A62B1F;
+  --color-warning: #C8442C;
+  --color-success: #2F6B57;
+  --color-text-primary: #1A1917;
+  --color-text-secondary: #6E6A62;
+  --color-text-disabled: #A29D93;
+  --color-border: #E4E0D7;
+  --color-focus-ring: #2C4A63;
+
+  /* ── Typography ── */
+  --font-heading: "Hiragino Mincho ProN", "HiraMinProN-W3", "Yu Mincho", "YuMincho", "BIZ UDPMincho", "Noto Serif JP", "Source Han Serif JP", serif;
+  --font-body: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "YuGothic", "BIZ UDPGothic", "Noto Sans JP", "Meiryo", sans-serif;
+  --font-code: "SFMono-Regular", "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace;
+
+  --font-size-display: 38px;
+  --font-weight-display: 400;
+  --line-height-display: 1.45;
+  --letter-spacing-display: 0.04em;
+
+  --font-size-h1: 30px;
+  --font-weight-h1: 400;
+  --line-height-h1: 1.5;
+  --letter-spacing-h1: 0.03em;
+
+  --font-size-h2: 24px;
+  --font-weight-h2: 400;
+  --line-height-h2: 1.55;
+  --letter-spacing-h2: 0.02em;
+
+  --font-size-h3: 18px;
+  --font-weight-h3: 700;
+  --line-height-h3: 1.6;
+
+  --font-size-h4: 16px;
+  --font-weight-h4: 700;
+  --line-height-h4: 1.6;
+
+  --font-size-body: 16px;
+  --font-weight-body: 400;
+  --line-height-body: 1.85;
+
+  --font-size-body-small: 14px;
+  --font-weight-body-small: 400;
+  --line-height-body-small: 1.8;
+
+  --font-size-caption: 13px;
+  --font-weight-caption: 400;
+  --line-height-caption: 1.7;
+  --letter-spacing-caption: 0.02em;
+
+  --font-size-code: 14px;
+  --font-weight-code: 400;
+  --line-height-code: 1.7;
+
+  /* ── Spacing ── */
+  --spacing-base: 8px;
+  --spacing-0: 4px;
+  --spacing-1: 8px;
+  --spacing-2: 12px;
+  --spacing-3: 16px;
+  --spacing-4: 24px;
+  --spacing-5: 32px;
+  --spacing-6: 48px;
+  --spacing-7: 64px;
+  --max-content-width: 768px;
+  --grid-columns: 1;
+  --grid-gap: 0px;
+  --section-spacing: 48px;
+
+  /* ── Component Radii ── */
+  --radius-button: 3px;
+  --radius-card: 2px;
+  --radius-input: 3px;
+
+  /* ── Depth ── */
+  --shadow-flat: none;
+  --shadow-raised: 0 1px 2px rgba(26,25,23,0.06);
+  --shadow-overlay: 0 4px 12px rgba(26,25,23,0.10);
+  --shadow-modal: 0 12px 32px rgba(26,25,23,0.14);
+  --shadow-toast: 0 8px 24px rgba(26,25,23,0.16);
+
+  /* ── Responsive ── */
+  --breakpoint-sm: 0px;
+  --breakpoint-md: 640px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --touch-target: 44px;
+}

@@ -1,0 +1,352 @@
+{
+  "version": "1.0.0",
+  "framework": "vanilla",
+  "components": [
+    {
+      "name": "GroupCard",
+      "category": "container",
+      "description": "意図別グループを表す縦積みアコーディオンのカード。閉じた状態でも件数と 1 行要約を示し、展開時のみ影が付く",
+      "variants": [
+        {
+          "name": "collapsed",
+          "description": "閉じた状態。地は surfaceAlt、影なし",
+          "styles": {
+            "background": "$tokens.colors.surfaceAlt",
+            "border": "$tokens.components.cards.border",
+            "borderRadius": "$tokens.components.cards.borderRadius",
+            "padding": "$tokens.components.cards.padding",
+            "shadow": "$tokens.depth.flat.shadow",
+            "cursor": "pointer"
+          },
+          "cssClass": "group-card"
+        },
+        {
+          "name": "expanded",
+          "description": "展開中。地を surface へ白抜きし、raised の影で今見ている 1 枚を示す",
+          "styles": {
+            "background": "$tokens.colors.surface",
+            "border": "$tokens.components.cards.border",
+            "borderRadius": "$tokens.components.cards.borderRadius",
+            "padding": "$tokens.components.cards.padding",
+            "shadow": "$tokens.depth.raised.shadow"
+          },
+          "cssClass": "group-card--expanded"
+        }
+      ],
+      "states": [
+        {
+          "name": "hover",
+          "trigger": ":hover",
+          "styles": {
+            "background": "$tokens.colors.surface"
+          }
+        },
+        {
+          "name": "focus",
+          "trigger": ":focus-visible",
+          "styles": {
+            "border": "$tokens.colors.focusRing"
+          }
+        },
+        {
+          "name": "selected",
+          "trigger": "[aria-expanded=\"true\"]",
+          "styles": {
+            "shadow": "$tokens.depth.raised.shadow"
+          }
+        }
+      ],
+      "props": [
+        { "name": "index", "type": "number", "required": true, "description": "通し番号。本文カラムの左外にぶら下げる" },
+        { "name": "title", "type": "string", "required": true },
+        { "name": "railTone", "type": "\"primary\" | \"warning\" | \"success\" | \"muted\"", "required": true, "default": "primary", "description": "left rail の色。グループの性格を示す", "enumValues": ["primary", "warning", "success", "muted"] },
+        { "name": "itemCount", "type": "number", "required": true, "description": "閉じた状態でも表示する内包件数" },
+        { "name": "oneLiner", "type": "string", "required": true, "description": "閉じた状態でも表示する 1 行要約" },
+        { "name": "expanded", "type": "boolean", "default": false }
+      ],
+      "tokens": [
+        "$tokens.colors.surface",
+        "$tokens.colors.surfaceAlt",
+        "$tokens.colors.primary",
+        "$tokens.colors.warning",
+        "$tokens.colors.success",
+        "$tokens.colors.textDisabled",
+        "$tokens.colors.border",
+        "$tokens.components.cards.borderRadius",
+        "$tokens.components.cards.padding",
+        "$tokens.depth.flat.shadow",
+        "$tokens.depth.raised.shadow"
+      ],
+      "a11y": {
+        "role": "button",
+        "ariaAttributes": [
+          { "name": "aria-expanded", "boundToProp": "expanded" },
+          { "name": "aria-controls" }
+        ],
+        "keyboardNav": [
+          { "key": "Enter", "action": "展開 / 折りたたみをトグルする" },
+          { "key": "Space", "action": "展開 / 折りたたみをトグルする" }
+        ],
+        "focusManagement": "roving",
+        "minContrastRatio": 4.5
+      },
+      "slots": [
+        { "name": "intent", "description": "グループの意図", "required": true },
+        { "name": "evidence", "description": "根拠への参照", "required": true },
+        { "name": "items", "description": "1 行 1 項目のリスト", "required": true },
+        { "name": "concerns", "description": "懸念（あれば）", "required": false }
+      ]
+    },
+    {
+      "name": "Badge",
+      "category": "feedback",
+      "description": "種別・リスク・状態のラベル。角丸 0px でカード・ボタンと明確に差別化する。色だけで意味を伝えないため必ずテキストを持つ",
+      "variants": [
+        {
+          "name": "kind",
+          "description": "種別ラベル。地は surfaceAlt",
+          "styles": {
+            "background": "$tokens.colors.surfaceAlt",
+            "color": "$tokens.colors.textSecondary",
+            "border": "$tokens.components.cards.border",
+            "borderRadius": 0,
+            "fontSize": "$tokens.typography.scale.caption.size",
+            "paddingY": 2,
+            "paddingX": 8
+          },
+          "cssClass": "badge"
+        },
+        {
+          "name": "warning",
+          "description": "要注意・未決。唯一彩度を上げる箇所",
+          "styles": {
+            "background": "$tokens.colors.warning",
+            "color": "$tokens.colors.background",
+            "border": "none",
+            "borderRadius": 0,
+            "fontSize": "$tokens.typography.scale.caption.size",
+            "paddingY": 2,
+            "paddingX": 8
+          },
+          "cssClass": "badge--warning"
+        },
+        {
+          "name": "success",
+          "description": "確認済み・検証通過",
+          "styles": {
+            "background": "$tokens.colors.success",
+            "color": "$tokens.colors.background",
+            "border": "none",
+            "borderRadius": 0,
+            "fontSize": "$tokens.typography.scale.caption.size",
+            "paddingY": 2,
+            "paddingX": 8
+          },
+          "cssClass": "badge--success"
+        }
+      ],
+      "props": [
+        { "name": "label", "type": "string", "required": true, "description": "色だけで伝えないためのテキスト。省略不可" },
+        { "name": "tone", "type": "\"kind\" | \"warning\" | \"success\"", "required": true, "default": "kind", "enumValues": ["kind", "warning", "success"] }
+      ],
+      "tokens": [
+        "$tokens.colors.surfaceAlt",
+        "$tokens.colors.textSecondary",
+        "$tokens.colors.warning",
+        "$tokens.colors.success",
+        "$tokens.colors.background",
+        "$tokens.colors.border",
+        "$tokens.typography.scale.caption.size"
+      ],
+      "a11y": {
+        "minContrastRatio": 4.5
+      }
+    },
+    {
+      "name": "CodeBlock",
+      "category": "container",
+      "description": "コード・diff の表示領域。読み物基調の中で唯一の暗い面。差分は行頭マーカーで示し背景色だけに頼らない",
+      "variants": [
+        {
+          "name": "plain",
+          "description": "通常のコード表示",
+          "styles": {
+            "borderRadius": 3,
+            "paddingY": 16,
+            "paddingX": 20,
+            "fontFamily": "$tokens.typography.codeFont",
+            "fontSize": "$tokens.typography.scale.code.size",
+            "lineHeight": "$tokens.typography.scale.code.lineHeight"
+          },
+          "cssClass": "code-block"
+        },
+        {
+          "name": "diff",
+          "description": "差分表示。追加 / 削除を行頭マーカーで示す",
+          "styles": {
+            "borderRadius": 3,
+            "paddingY": 16,
+            "paddingX": 20,
+            "fontFamily": "$tokens.typography.codeFont",
+            "fontSize": "$tokens.typography.scale.code.size",
+            "lineHeight": "$tokens.typography.scale.code.lineHeight"
+          },
+          "cssClass": "code-block--diff"
+        }
+      ],
+      "props": [
+        { "name": "content", "type": "string", "required": true, "description": "エスケープ済みの表示テキスト" },
+        { "name": "mode", "type": "\"plain\" | \"diff\"", "required": true, "default": "plain", "enumValues": ["plain", "diff"] }
+      ],
+      "tokens": [
+        "$tokens.typography.codeFont",
+        "$tokens.typography.scale.code.size",
+        "$tokens.typography.scale.code.lineHeight"
+      ],
+      "a11y": {
+        "focusManagement": "none",
+        "minContrastRatio": 4.5
+      }
+    },
+    {
+      "name": "GroupIndex",
+      "category": "navigation",
+      "description": "グループ索引。通し番号を本文カラムの左外にぶら下げる唯一の意図的な非対称要素",
+      "variants": [
+        {
+          "name": "hanging",
+          "description": "lg 以上。番号を左外にぶら下げる",
+          "styles": {
+            "background": "$tokens.colors.background",
+            "maxWidth": "$tokens.spacing.maxContentWidth",
+            "display": "block"
+          },
+          "cssClass": "group-index"
+        },
+        {
+          "name": "inline",
+          "description": "sm。番号を見出し行の先頭へ戻す",
+          "styles": {
+            "background": "$tokens.colors.background",
+            "display": "block"
+          },
+          "cssClass": "group-index--inline"
+        }
+      ],
+      "states": [
+        {
+          "name": "selected",
+          "trigger": "[aria-current=\"true\"]",
+          "styles": {
+            "color": "$tokens.colors.primary"
+          }
+        }
+      ],
+      "props": [
+        { "name": "groups", "type": "GroupSummary[]", "required": true },
+        { "name": "deferredCount", "type": "number", "required": true, "description": "隠れている件数。常時可視にする" }
+      ],
+      "tokens": [
+        "$tokens.colors.background",
+        "$tokens.colors.primary",
+        "$tokens.spacing.maxContentWidth"
+      ],
+      "a11y": {
+        "role": "navigation",
+        "keyboardNav": [
+          { "key": "Tab", "action": "次のグループへフォーカスを移す" }
+        ],
+        "focusManagement": "roving",
+        "minContrastRatio": 4.5
+      }
+    },
+    {
+      "name": "Button",
+      "category": "action",
+      "description": "アクションボタン。MVP では折りたたみ操作と索引への復帰のみに使う",
+      "variants": [
+        {
+          "name": "primary",
+          "styles": {
+            "background": "$tokens.components.buttons.variants.primary.background",
+            "color": "$tokens.components.buttons.variants.primary.color",
+            "border": "none",
+            "borderRadius": "$tokens.components.buttons.borderRadius",
+            "paddingY": "$tokens.components.buttons.paddingY",
+            "paddingX": "$tokens.components.buttons.paddingX",
+            "cursor": "pointer"
+          },
+          "cssClass": "btn"
+        },
+        {
+          "name": "secondary",
+          "styles": {
+            "background": "transparent",
+            "color": "$tokens.components.buttons.variants.secondary.color",
+            "border": "$tokens.components.buttons.variants.secondary.border",
+            "borderRadius": "$tokens.components.buttons.borderRadius",
+            "paddingY": "$tokens.components.buttons.paddingY",
+            "paddingX": "$tokens.components.buttons.paddingX",
+            "cursor": "pointer"
+          },
+          "cssClass": "btn--secondary"
+        },
+        {
+          "name": "ghost",
+          "styles": {
+            "background": "transparent",
+            "color": "$tokens.components.buttons.variants.ghost.color",
+            "border": "none",
+            "borderRadius": "$tokens.components.buttons.borderRadius",
+            "cursor": "pointer"
+          },
+          "cssClass": "btn--ghost"
+        }
+      ],
+      "states": [
+        {
+          "name": "hover",
+          "trigger": ":hover",
+          "styles": {
+            "background": "$tokens.colors.primaryHover"
+          }
+        },
+        {
+          "name": "focus",
+          "trigger": ":focus-visible",
+          "styles": {
+            "border": "$tokens.colors.focusRing"
+          }
+        },
+        {
+          "name": "disabled",
+          "trigger": ":disabled",
+          "styles": {
+            "color": "$tokens.colors.textDisabled",
+            "cursor": "not-allowed"
+          }
+        }
+      ],
+      "props": [
+        { "name": "label", "type": "string", "required": true },
+        { "name": "variant", "type": "\"primary\" | \"secondary\" | \"ghost\"", "required": false, "default": "secondary", "enumValues": ["primary", "secondary", "ghost"] }
+      ],
+      "tokens": [
+        "$tokens.components.buttons.borderRadius",
+        "$tokens.components.buttons.paddingY",
+        "$tokens.components.buttons.paddingX",
+        "$tokens.colors.primaryHover",
+        "$tokens.colors.focusRing",
+        "$tokens.colors.textDisabled"
+      ],
+      "a11y": {
+        "role": "button",
+        "keyboardNav": [
+          { "key": "Enter", "action": "実行する" },
+          { "key": "Space", "action": "実行する" }
+        ],
+        "minContrastRatio": 4.5
+      }
+    }
+  ]
+}
