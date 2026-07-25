@@ -55,52 +55,113 @@ Never infer the target from the wording of the argument. A phrase like "explain 
 does not distinguish unstaged edits from a branch range from a plan, and the reader is not
 thinking in those terms either. Decide from repository state instead.
 
-1. Scan for candidates. Session context is always a candidate, so **the candidate set is never
-   empty** — never answer that there is nothing to show.
+Run the candidate scan:
+
+```
+python3 {skill_dir}/scripts/brief_collect.py candidates --repo {repo_root}
+```
+
+1. Session context is always a candidate, so **the candidate set is never empty** — never
+   answer that there is nothing to show.
 2. Exactly one candidate — proceed, and state in one line which target was chosen.
 3. Several candidates — ask once, listing each with its concrete size (file counts, item
-   counts). Do not ask twice.
-4. If the argument clearly names the conversation, take `discussion` without asking.
+   counts). Do not ask twice, and do not pick for the reader.
+4. If the argument clearly names the conversation ("this chat", "what we just discussed"),
+   take `discussion` without asking.
+
+If the base revision cannot be resolved, drop the branch-range candidate and say so. A huge
+diff computed against the wrong base is worse than an absent option.
 
 The argument is the **perspective**, not the target. It steers emphasis ("focus on the risky
-parts"), and is carried into the model as `metadata.perspective`.
+parts") and is carried into the model as `metadata.perspective`.
 
 ### Step 2 — Build the model
 
-Produce a model conforming to [references/brief-model.md](references/brief-model.md).
+Collect and normalise the input, then write a model conforming to
+[references/brief-model.md](references/brief-model.md). You produce the model **and nothing
+else** — no markup, no styling, no colour choices.
 
-- Every `intent` and `plain_explanation` must be backed by `evidence_refs` pointing at real
-  hunks or sections. A claim you cannot ground does not belong in the body — record it under
+Writing rules, in priority order:
+
+- **Ground every claim.** `intent` and `plain_explanation` need `evidence_refs` pointing at
+  real hunks or sections. A claim you cannot ground does not belong in the body — move it to
   `concerns` as unverified.
-- Plain language and information preservation are **separate** requirements. Output that reads
-  easily because it dropped a precondition or a scope limit fails.
-- Do not expose internal vocabulary in reader-facing labels.
-- Write exactly three comprehension questions. They are not scored and take no input.
+- **Plain and complete are separate requirements.** Text that reads easily because it dropped
+  a precondition, a scope limit or a guarantee is a failure, not a summary. Whatever you leave
+  out goes to `deferred` with a reason, never into silence.
+- **Keep internal vocabulary off the page.** `view`, `evidence`, `deferred` and `attribution`
+  are contract words; readers get plain labels. Expand any abbreviation on first use.
+- **One item per line.** Never join items into a comma-separated paragraph.
+- **Quote what matters.** When a claim rests on specific lines, put them in `excerpts` so the
+  reader does not have to leave the page. Pass the source text verbatim — escaping is the
+  renderer's job, and pre-escaping it corrupts the output.
+- **Exactly three comprehension questions.** Not scored, no input field, they block nothing.
+  Write questions that cannot be answered without having read the page.
 
-### Step 3 — Validate and render
+### Step 3 — Validate, then render
 
-Validation is deterministic and runs before rendering. It enforces schema, reference integrity
-and **attribution completeness** — the mechanical guarantee that nothing silently fell out of
-the page. Rendering produces a single self-contained file with no network references, styled
-only from tokens.
+Validation is deterministic and runs first. It enforces the schema, reference integrity and
+**attribution completeness** — the mechanical guarantee that nothing silently fell out of the
+page.
+
+```
+python3 {skill_dir}/scripts/brief_render.py validate --model {model.json} [--inputs {inputs.json}]
+python3 {skill_dir}/scripts/brief_render.py render --model {model.json} --out {out.html} --open
+```
+
+Fix reported violations by fixing the model. **Never loosen the check** — an unassigned hunk
+is a hole in the page, and `deferred` is not an escape hatch for it.
+
+If a credential-shaped string is detected, rendering stops. Show the reader what was found and
+let them decide; only pass `--allow-secrets` after a human has looked. Do not add the flag to
+get past the message.
+
+Artifacts go to the resolved store:
+
+```
+{artifacts}/reviews/{run_id}_brief-model.json
+{artifacts}/reviews/{run_id}_brief.html
+{artifacts}/reviews/brief-log.md
+```
 
 ### Step 4 — Show it and close the loop
 
-Open the page with the platform's default opener. If opening fails, still report success and
-give the path. Then let the reader talk back in this same session — that is the whole feedback
-path, and the reason no export machinery exists.
+**Opening the page is part of the job, not a bonus.** Handing over a path ends with the page
+unread, which defeats the whole measurement.
 
-Append one line to the run log. The decisive column is **whether a remark would have surfaced
-without the page**. That column, not overall impressions, decides whether this gets wired into
-other workflows later.
+- The renderer detects the platform's opener. If it reports that it could not open the page,
+  and the command environment confines execution, **retry outside that confinement before
+  giving up** — a restricted environment blocks the opener while leaving the rest working, so
+  a single failed attempt is not evidence that opening is impossible.
+- If it genuinely cannot open, say so explicitly and give the path. Never let a silent
+  downgrade to path-handover pass as success.
+
+Then let the reader talk back in this same session — that is the whole feedback path, and the
+reason no export machinery exists.
+
+Append one line to the run log:
+
+```
+| 日時 | view | 対象 | 読んだか | 指摘が出たか | ★画面がなければ出なかった指摘か |
+```
+
+The ★ column is the decisive one. At five entries it settles three different outcomes that
+otherwise get confused: ★ twice or more means the page earns its wiring into other workflows;
+★ never means the page is not the answer; frequently forgetting to invoke means the page is
+fine and the trigger is what is missing.
 
 ## Design system
 
-The rendered page follows [DESIGN.md](../../DESIGN.md) and consumes design tokens. The renderer
-must not hardcode colours or dimensions — visual quality is settled once, as an asset, so it
-does not vary per run.
+Visual quality is settled once, as an asset, so it does not vary per run. The page is styled
+from `assets/tokens.css` plus the code-surface extension in `assets/tokens.brief.json`, and
+the renderer holds no colours or dimensions of its own.
+
+`assets/tokens.css` is a distribution copy — the authoring source is `DESIGN.md` and
+`.design/` at the root of this repository, which do not exist where the skill is installed. A
+repository check requires the two to stay byte-identical, so **never hand-edit the copy**:
+change the design source, regenerate, and let the check confirm.
 
 ## References
 
 - [references/brief-model.md](references/brief-model.md) — model schema, per-view differences,
-  evidence and attribution rules
+  evidence, excerpts and attribution rules

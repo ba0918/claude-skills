@@ -6,8 +6,12 @@ was dropped. Diffs become hunks, documents become sections, and the
 repository state becomes a candidate list the reader chooses from.
 """
 
+import argparse
+import json
 import os
 import re
+import subprocess
+import sys
 
 HUNK_HEADER = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
 DIFF_HEADER = re.compile(r"^diff --git a/(.+?) b/(.+)$")
@@ -183,3 +187,77 @@ def scan_candidates(root, runner):
         {"kind": "discussion", "label": "今の会話", "count": 1, "ref": None}
     )
     return candidates
+
+
+# ---------------------------------------------------------------------------
+# CLI
+#
+# The skill body drives this through a shell, so every step it describes has a
+# command behind it. Output is JSON on stdout: the caller is a language model
+# building the brief model, not a person reading a table.
+# ---------------------------------------------------------------------------
+
+DIFF_ARGS = {
+    "unstaged": ["diff"],
+    "staged": ["diff", "--cached"],
+    "branch": ["diff"],
+}
+
+
+def git_runner(root):
+    def run(args):
+        result = subprocess.run(
+            ["git"] + args, cwd=root, capture_output=True, text=True
+        )
+        return result.returncode, result.stdout
+
+    return run
+
+
+def _emit(payload):
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="brief input collection")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    scan = sub.add_parser("candidates", help="what can be explained right now")
+    scan.add_argument("--repo", default=".")
+
+    hunks = sub.add_parser("hunks", help="split a diff into addressable hunks")
+    hunks.add_argument("--repo", default=".")
+    hunks.add_argument("--source", choices=sorted(DIFF_ARGS), default="unstaged")
+    hunks.add_argument("--ref", help="revision range, required for --source branch")
+
+    sections = sub.add_parser("sections", help="split a document into sections")
+    sections.add_argument("--file", required=True)
+
+    args = parser.parse_args(argv)
+
+    if args.command == "candidates":
+        _emit(scan_candidates(args.repo, git_runner(args.repo)))
+        return 0
+
+    if args.command == "hunks":
+        command = list(DIFF_ARGS[args.source])
+        if args.source == "branch":
+            if not args.ref:
+                parser.error("--source branch needs --ref")
+            command.append(args.ref)
+        code, out = git_runner(args.repo)(command)
+        if code != 0:
+            print("git diff が失敗した: %s" % " ".join(command), file=sys.stderr)
+            return 1
+        collected = split_diff_hunks(out)
+        _emit({"hunks": [h["id"] for h in collected], "detail": collected})
+        return 0
+
+    with open(args.file, encoding="utf-8") as handle:
+        collected = split_document_sections(handle.read())
+    _emit({"sections": [s["id"] for s in collected], "detail": collected})
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

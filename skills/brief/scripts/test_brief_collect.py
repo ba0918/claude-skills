@@ -228,3 +228,52 @@ class ScanCandidates(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------------------
+# CLI
+#
+# The skill body drives collection through a shell, so the wiring between the
+# subcommands and the pure functions is part of the contract, not a detail.
+# ---------------------------------------------------------------------------
+
+import io  # noqa: E402
+import json  # noqa: E402
+from contextlib import redirect_stdout  # noqa: E402
+
+import brief_collect  # noqa: E402
+
+
+def run_cli(*argv):
+    buffer = io.StringIO()
+    with redirect_stdout(buffer):
+        code = brief_collect.main(list(argv))
+    return code, buffer.getvalue()
+
+
+class CandidatesCommand(unittest.TestCase):
+    def test_it_emits_the_candidate_list_as_json(self):
+        with tempfile.TemporaryDirectory() as root:
+            code, out = run_cli("candidates", "--repo", root)
+            self.assertEqual(code, 0)
+            self.assertEqual([c["kind"] for c in json.loads(out)], ["discussion"])
+
+
+class SectionsCommand(unittest.TestCase):
+    def test_it_reports_identifiers_alongside_the_section_bodies(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = os.path.join(root, "doc.md")
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write("# Title\n\n## One\n\nbody\n\n## Two\n\nbody\n")
+            code, out = run_cli("sections", "--file", path)
+            self.assertEqual(code, 0)
+            payload = json.loads(out)
+            self.assertEqual(payload["sections"], ["s001", "s002"])
+            self.assertEqual([s["title"] for s in payload["detail"]], ["One", "Two"])
+
+
+class HunksCommand(unittest.TestCase):
+    def test_a_branch_range_without_a_ref_is_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(SystemExit):
+                run_cli("hunks", "--repo", root, "--source", "branch")
