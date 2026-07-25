@@ -621,10 +621,13 @@ def _render_group(group, position, view):
         out.append("        <h4>気になっている点</h4>")
         out += ['        <p class="concern">%s</p>' % _esc(c) for c in concerns]
 
-    refs = group.get("evidence_refs") or []
+    # 識別子は帰属検査の錨であって読み物ではない。件数は「裏づけがある」を伝え、
+    # h001 は伝えない。追跡したい者のために属性へは残すが、読みの流れには出さない。
+    refs = [str(r) for r in (group.get("evidence_refs") or [])]
     out += [
         "        <h4>根拠</h4>",
-        '        <p class="evidence">%s</p>' % _esc(" / ".join(str(r) for r in refs)),
+        '        <p class="evidence" data-refs="%s">もとの箇所 %d 件</p>'
+        % (_esc(" ".join(refs)), len(refs)),
         "      </div>",
         "    </details>",
         "  </article>",

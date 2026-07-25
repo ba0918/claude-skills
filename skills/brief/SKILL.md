@@ -61,13 +61,18 @@ Run the candidate scan:
 python3 {skill_dir}/scripts/brief_collect.py candidates --repo {repo_root}
 ```
 
-1. Session context is always a candidate, so **the candidate set is never empty** — never
-   answer that there is nothing to show.
-2. Exactly one candidate — proceed, and state in one line which target was chosen.
-3. Several candidates — ask once, listing each with its concrete size (file counts, item
-   counts). Do not ask twice, and do not pick for the reader.
+Session context is always a candidate, so **the candidate set is never empty** — never answer
+that there is nothing to show. Because it is always there, it is not what decides whether to
+ask. **Count the candidates that came from the repository** and branch on that:
+
+1. None — run `discussion`, and say that is what you are explaining.
+2. Exactly one — proceed with it, state in one line which target was chosen, and mention that
+   the conversation itself is also available. Asking here spends a turn on a question with one
+   real answer.
+3. Two or more — ask once, presenting each with the `detail` line the scan returned. Do not ask
+   twice, and do not pick for the reader.
 4. If the argument clearly names the conversation ("this chat", "what we just discussed"),
-   take `discussion` without asking.
+   take `discussion` without asking, whatever the scan found.
 
 If the base revision cannot be resolved, drop the branch-range candidate and say so. A huge
 diff computed against the wrong base is worse than an absent option.

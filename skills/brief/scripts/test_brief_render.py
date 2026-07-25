@@ -412,9 +412,7 @@ class InitialOrder(unittest.TestCase):
         self.assertLess(
             page.index(group["plain_explanation"]), page.index(group["items"][0])
         )
-        self.assertLess(
-            page.index(group["items"][0]), page.index(group["evidence_refs"][0])
-        )
+        self.assertLess(page.index(group["items"][0]), page.index("もとの箇所"))
 
     def test_the_intent_stays_visible_above_the_explanation(self):
         page = render_html(discussion_model())
@@ -592,3 +590,31 @@ class WithheldMaterialNaming(unittest.TestCase):
     def test_an_entry_without_a_reference_is_still_rejected(self):
         errors = validate_model(self._model(ref=""))
         self.assertTrue(any("ref が空" in e for e in errors))
+
+
+class EvidenceIsAnAnchorNotReadingMaterial(unittest.TestCase):
+    """The count says the claim is backed; the token says nothing to a reader."""
+
+    def test_the_page_states_how_many_places_back_a_group(self):
+        page = render_html(discussion_model())
+        self.assertIn("もとの箇所 1 件", page)
+
+    def test_identifiers_never_reach_the_reading_flow(self):
+        model = change_model()
+        page = render_html(model)
+        text = visible_text(page[: page.index('class="foot"')])
+        for group in model["groups"]:
+            for ref in group["evidence_refs"]:
+                self.assertNotIn(ref, text)
+
+    def test_identifiers_stay_available_for_tracing(self):
+        page = render_html(change_model())
+        self.assertIn('data-refs="h001 h002"', page)
+
+    def test_this_holds_for_the_conversation_view_too(self):
+        # discussion has no attribution check, and the absence of a check is
+        # not permission to put tokens on the page.
+        model = discussion_model()
+        page = render_html(model)
+        text = visible_text(page[: page.index('class="foot"')])
+        self.assertNotIn("turn-12", text)

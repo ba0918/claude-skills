@@ -44,7 +44,7 @@ comprehension_questions[] required, exactly 3
 | `plain_explanation` | yes | The explanation a reader who has not opened the source can follow |
 | `risk` | yes | `low` / `medium` / `high`. See the scales below |
 | `confidence` | yes | `low` / `medium` / `high`. See the scales below |
-| `evidence_refs` | yes | At least one. Ids from the collected input |
+| `evidence_refs` | yes | At least one. Ids from the collected input. Machine-side only — **never rendered**, in any view |
 | `items` | yes | One entry per line. Never a comma-joined paragraph |
 | `concerns` | no | Anything noticed but not established. Ungrounded claims land here |
 | `excerpts` | no | Verbatim source lines worth showing inline. See below |
@@ -123,6 +123,11 @@ change can be well understood and still dangerous.
 | `medium` | Internal behaviour changes but is reversible, or the effect reaches beyond the files this group covers |
 | `low` | Behaviour does not change (wording, documentation, tests, pure restructuring), and the effect stays inside this group |
 
+**Outside the system** means: someone who never reads this repository's code would notice. An
+end user, an operator on call, a downstream consumer, a third-party service, or a record that
+outlives the run. A request that used to succeed and now times out is outside. A source that
+used to be ingested and now is skipped is outside. Renaming an internal helper is not.
+
 Take the highest level any single item in the group reaches. A group is as risky as its worst
 element — averaging hides exactly the item the reader needed to see.
 
@@ -133,6 +138,13 @@ element — averaging hides exactly the item the reader needed to see.
 | `high` | Every claim in `intent` and `plain_explanation` is readable directly from what `evidence_refs` points at |
 | `medium` | The main claims are readable, but some part rests on material outside the input (a convention, a neighbouring file, general knowledge) |
 | `low` | A central claim has no support in the input. Move the unsupported part to `concerns` and keep the level at `low` — lowering confidence is not a substitute for that move |
+
+**Outside the input** means project-specific material you cannot see: another file's contents,
+a local convention, a runtime value, a team habit. It does **not** mean general knowledge of
+the language, its standard library, or widely used third-party APIs — relying on that is what
+reading code *is*. Counting it as outside pins every group at `medium` and the scale stops
+telling anything apart. Knowing that a timeout argument bounds how long a call waits is
+reading; not knowing what a project-local `SKIP` collection contains is a gap.
 
 Confidence is about the explanation, not about the work being explained. A change you are sure
 you understand gets `high` even when it worries you; that worry belongs in `risk` or
@@ -145,6 +157,11 @@ you understand gets `high` even when it worries you; that worry belongs in `risk
 - A group with no evidence fails validation.
 - A claim that cannot be grounded must not appear in `intent` or `plain_explanation`. Move it
   to `concerns`.
+- **Identifiers are anchors, not reading material.** The page states how many places back a
+  group and never prints `h001` or `b003`; a reader who has to decode a token is reading the
+  format instead of the work. This holds in `discussion` too, where nothing checks the tokens —
+  the absence of a check is not permission to put them on the page. When you want the reader to
+  see the source itself, that is what `excerpts` is for.
 
 ## Attribution completeness
 

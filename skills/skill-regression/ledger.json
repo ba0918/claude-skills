@@ -22,18 +22,18 @@
   },
   "brief": {
     "file_sha256": {
-      "skills/brief/SKILL.md": "a0e25da93ef65375d708e247506f48da4316aebf7bd03b52bee3b30cf13556f4",
+      "skills/brief/SKILL.md": "42ec6a6fbe4d3c951e8924fb903b34a2303f6bce1557f9baf9b49d6e82d87644",
       "skills/brief/assets/brief.css": "e2d28ca47e491c441f4a790ef14a17c22f401d6c5df02396e0c95c5fbfe0a711",
       "skills/brief/assets/brief.js": "3448e3dc90bbfe4451e9f2cff5981cdc42ce3b021411ccc3a16c3a52e86bbfc3",
       "skills/brief/assets/tokens.brief.json": "c3b5edd00e3451f313f7dbdb676baa8f2f763652bc7ef179627002dab242e9db",
       "skills/brief/assets/tokens.css": "e62f02714ff77cb803993cf9796f09b5adafff8523418c3ec7a3c73f80947a2c",
-      "skills/brief/fixtures.json": "02d0615809d97fdbfc9628ec821ab8eda478de5bebaa3984bafedc40b1f4cbd8",
-      "skills/brief/references/brief-model.md": "9c375802df732d2a9fa2a748f73076cefe988d9a153c4478b2ba9772045f41aa",
+      "skills/brief/fixtures.json": "7a5ba5077b28ccc539d98db6d21f2fe74a937293e25ed0e022e31c2a3351cf45",
+      "skills/brief/references/brief-model.md": "d9c7e1ec2da367581b171e7e8a5682a87186fea64d8575414f0d8e65c4ad8c2b",
       "skills/brief/scripts/brief_collect.py": "973c9c28d380828034852ab62f5b17a0460f418c797d152143700542bac57192",
-      "skills/brief/scripts/brief_render.py": "82b86784edf0478423eaa14cf54532a35a967f2896953485755fe4685c65ff0d",
+      "skills/brief/scripts/brief_render.py": "ce1421169af9956be69da3c56fe46740f8c4756ccf17ccfcfcb4ab154564c361",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5"
     },
-    "note": "3 回目の run（5/5 合格）。deferred の ref/label 分離・sections の箇条書きフォールバック・candidates の detail・intent の但し書き・fixture の hunk header 修正を入れた版。label 分離は実測で効いた（bf-004 のページから機械 ID が消え、run2 で出ていた s001-b4 相当の露出が 0 件）。candidates の detail も効いた（run1/run2 では実行者が規模情報を自力収集する裁量補完を報告していたが、run3 では消えた）。未解決: (1) groups[].evidence_refs はレンダラが生で出すため h001 / b001 が読み手のページに残っている（deferred と同じ欠陥の別箇所、bf-004 が報告）。(2) risk の high 条件『システムの外から見える振る舞い』の境界が未定義で bf-003 の 2 グループ目が medium/high に割れた。(3) confidence の『入力の外』が言語一般知識まで含むと読め、medium に張り付く。(4) bf-002 の setup model.json の g1.risk=low は新尺度では medium が妥当で、見本として不整合。",
+    "note": "4 回目の run（6/6 合格、bf-006 を新設して 6 シナリオ）。evidence_refs をページから外す・risk の『システムの外』定義・confidence の『入力の外』を一般知識から切り離す・候補はリポジトリ由来のみ数える、を入れた版。尺度 v2 で bf-003 の risk が 4 回目にして high/high へ収束し、v1 で medium に張り付いていた confidence が high/medium に分かれて識別力を回復した。実行者は 4 回とも報告を送らず待機に入り、事実のみの状況照会 1 回ずつで回収。未解決: (1) risk の low 行が『文書・テスト』を種類として列挙しており、当直の行動を変える文書は『外から見える』条件と正面衝突する（bf-002 が指摘）。(2) モデル修復だけを頼まれたとき Step 4（開く・ログ追記）が適用されるかが 3 回連続で不明瞭点に挙がっている。(3) excerpts の見出しがレンダラで『実際の差分』に固定されており、document view で引用すると差分でないものを差分と呼ぶため実行者が引用を見送った。(4) source_kind が自由記述でレンダラが生値を画面へ出す。(5) 『閉じ込めの外で再試行』が render 全体か開く工程だけかが不明。",
     "result": "pass",
     "surface": [
       "skills/brief/SKILL.md",
@@ -47,7 +47,7 @@
       "skills/brief/scripts/brief_render.py",
       "skills/shared/references/artifact-store.md"
     ],
-    "surface_sha256": "80abedb8e22c9222fedcfb2468b5a1a1fcf193ca4d88ea04332204a68176ef10",
+    "surface_sha256": "23955bbf890a71edb1c4241bc9f1cf3fab9383743ef64d794d28788c8d23e8ab",
     "verified": "2026-07-26"
   },
   "commit": {

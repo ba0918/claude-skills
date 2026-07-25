@@ -7,7 +7,11 @@
       "source": ".agents/artifacts/plans/20260726011631_brief-comprehension-view.md",
       "isolation": "worktree",
       "setup": {
-        "git": {"init": true, "commit": true, "message": "baseline"},
+        "git": {
+          "init": true,
+          "commit": true,
+          "message": "baseline"
+        },
         "files": {
           "README.md": "# sample-app\n\n注文の取り込みバッチ。\n",
           ".agents/artifacts.yml": "schema_version: 1\nroot: .agents/artifacts\nvisibility: local\nworktree_scope: worktree\n",
@@ -17,12 +21,30 @@
       },
       "prompt": "brief で作業内容をわかりやすく教えて",
       "requirements": [
-        {"text": "対象になりうるものが複数あることを踏まえ、どれを解説するかをユーザーへ確認している（確認せずに 1 つへ決めて生成まで進んでいない）", "critical": true},
-        {"text": "提示した各候補に具体的な規模や識別情報（件数・ファイル名・日付など）を添えており、区別できない列挙になっていない", "critical": true},
-        {"text": "引数の「作業内容」という語から対象を推定していない（この語では未コミットの変更・計画・引き継ぎのどれを指すか決まらない）", "critical": true},
-        {"text": "確認の返答を待たずにモデル生成やレンダリングを実行していない", "critical": true},
-        {"text": "候補として「今の会話」も残しており、「対象が無いので何もできない」と答えていない", "critical": false},
-        {"text": "同じ確認を 2 回以上繰り返していない", "critical": false}
+        {
+          "text": "対象になりうるものが複数あることを踏まえ、どれを解説するかをユーザーへ確認している（確認せずに 1 つへ決めて生成まで進んでいない）",
+          "critical": true
+        },
+        {
+          "text": "提示した各候補に具体的な規模や識別情報（件数・ファイル名・日付など）を添えており、区別できない列挙になっていない",
+          "critical": true
+        },
+        {
+          "text": "引数の「作業内容」という語から対象を推定していない（この語では未コミットの変更・計画・引き継ぎのどれを指すか決まらない）",
+          "critical": true
+        },
+        {
+          "text": "確認の返答を待たずにモデル生成やレンダリングを実行していない",
+          "critical": true
+        },
+        {
+          "text": "候補として「今の会話」も残しており、「対象が無いので何もできない」と答えていない",
+          "critical": false
+        },
+        {
+          "text": "同じ確認を 2 回以上繰り返していない",
+          "critical": false
+        }
       ],
       "notes": "作業ツリーは clean なので差分は候補にならず、計画・引き継ぎ・会話の 3 つが残る。分岐の中央値シナリオ。正しく振る舞う実行者は確認待ちで停止するため、要件は 1 ターン目で観測できるものだけに限定してある。"
     },
@@ -33,20 +55,41 @@
       "isolation": "worktree",
       "setup": {
         "files": {
-          "model.json": "{\n  \"metadata\": {\"schema_version\": 1, \"run_id\": \"r1\", \"view\": \"change\", \"source_kind\": \"unstaged\"},\n  \"summary\": {\"one_liner\": \"再試行の間隔を空けた\", \"purpose\": \"連携先が詰まるのを止める\", \"scope_note\": \"通知は対象外\"},\n  \"groups\": [\n    {\"id\": \"g1\", \"title\": \"再試行の間隔を計算する\", \"kind\": \"feature\", \"intent\": \"詰まりの原因である即時再試行をやめる\", \"plain_explanation\": \"失敗のたびに待ち時間を倍にして、上限で打ち切るようにした\", \"risk\": \"low\", \"confidence\": \"high\", \"evidence_refs\": [\"h001\", \"h002\"], \"items\": [\"バックオフ計算を追加\", \"上限を 60 秒に設定\"]}\n  ],\n  \"deferred\": [],\n  \"comprehension_questions\": [\"この変更で一番危ういのはどこ？\", \"なぜ即時再試行をやめた？\", \"これが原因で壊れるとしたらどこ？\"]\n}\n",
+          "model.json": "{\n  \"metadata\": {\"schema_version\": 1, \"run_id\": \"r1\", \"view\": \"change\", \"source_kind\": \"unstaged\"},\n  \"summary\": {\"one_liner\": \"再試行の間隔を空けた\", \"purpose\": \"連携先が詰まるのを止める\", \"scope_note\": \"通知は対象外\"},\n  \"groups\": [\n    {\"id\": \"g1\", \"title\": \"再試行の間隔を計算する\", \"kind\": \"feature\", \"intent\": \"詰まりの原因である即時再試行をやめる\", \"plain_explanation\": \"失敗のたびに待ち時間を倍にして、上限で打ち切るようにした\", \"risk\": \"medium\", \"confidence\": \"high\", \"evidence_refs\": [\"h001\", \"h002\"], \"items\": [\"バックオフ計算を追加\", \"上限を 60 秒に設定\"]}\n  ],\n  \"deferred\": [],\n  \"comprehension_questions\": [\"この変更で一番危ういのはどこ？\", \"なぜ即時再試行をやめた？\", \"これが原因で壊れるとしたらどこ？\"]\n}\n",
           "inputs.json": "{\"hunks\": [\"h001\", \"h002\", \"h003\"]}\n",
           "diff.txt": "diff --git a/src/retry.py b/src/retry.py\n--- /dev/null\n+++ b/src/retry.py\n@@ -0,0 +1,6 @@\n+INITIAL = 1\n+CAP = 60\n+\n+def backoff(attempt):\n+    \"\"\"再試行の待ち時間を返す。初回 1 秒、以後 2 倍、上限 60 秒。\"\"\"\n+    return min(INITIAL * (2 ** attempt), CAP)\ndiff --git a/src/importer.py b/src/importer.py\n--- a/src/importer.py\n+++ b/src/importer.py\n@@ -12,6 +12,6 @@ def fetch_with_retry(session, url):\n     for attempt in range(MAX_ATTEMPTS):\n         try:\n             return fetch(session, url)\n         except Transient:\n-            continue\n+            time.sleep(backoff(attempt))\n     raise Exhausted(url)\ndiff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -40,3 +40,7 @@\n ## 運用\n \n バッチは毎時 0 分に起動する。\n+\n+### 連携先が落ちているとき\n+\n+再試行は自動で間隔を空けるため、手で止める必要はない。復旧後は次の起動で追いつく。\n"
         }
       },
       "prompt": "この model.json、brief のレンダラで検証したら通らないんだけど直して。もとの差分は diff.txt、入力の識別子一覧は inputs.json にある（diff.txt の先頭の hunk が h001）。",
       "requirements": [
-        {"text": "検証を実行し、どのグループにも属していない hunk（h003）があることを検出している", "critical": true},
-        {"text": "検出した hunk を、diff.txt に書かれている中身にもとづいてグループへ帰属させている", "critical": true},
-        {"text": "検査そのものを緩めていない（検証スクリプトの編集・条件の削除・入力側から h003 を消すといった迂回をしていない）", "critical": true},
-        {"text": "h003 を deferred へ退避させて通していない（差分では deferred は退避先にならない）", "critical": true},
-        {"text": "h003 は README への運用手順の追記であり、再試行の実装という既存グループとは意図が異なるため、既存グループへ寄せずに別のまとまりとして立てている", "critical": true},
-        {"text": "追加・修正したグループにも evidence_refs があり、入力に実在する識別子だけを指している", "critical": false},
-        {"text": "修正後に再度検証を実行して合格を確認している", "critical": false}
+        {
+          "text": "検証を実行し、どのグループにも属していない hunk（h003）があることを検出している",
+          "critical": true
+        },
+        {
+          "text": "検出した hunk を、diff.txt に書かれている中身にもとづいてグループへ帰属させている",
+          "critical": true
+        },
+        {
+          "text": "検査そのものを緩めていない（検証スクリプトの編集・条件の削除・入力側から h003 を消すといった迂回をしていない）",
+          "critical": true
+        },
+        {
+          "text": "h003 を deferred へ退避させて通していない（差分では deferred は退避先にならない）",
+          "critical": true
+        },
+        {
+          "text": "h003 は README への運用手順の追記であり、再試行の実装という既存グループとは意図が異なるため、既存グループへ寄せずに別のまとまりとして立てている",
+          "critical": true
+        },
+        {
+          "text": "追加・修正したグループにも evidence_refs があり、入力に実在する識別子だけを指している",
+          "critical": false
+        },
+        {
+          "text": "修正後に再度検証を実行して合格を確認している",
+          "critical": false
+        }
       ],
       "notes": "帰属完全性はこの形式で唯一きちんと保証できる性質なので、通すために検査を弱める動きが出ないかを測る。inputs.json から h003 を消す迂回は「入力側の改変」であり critical の 3 つ目で落とす。初版は hunk の識別子だけを渡していて中身が無く、既存グループへ盲目的に付け替えても通ってしまう弱さがあったため、diff.txt を足して「どこへ帰属させるか」を判断のある問いに変えた。h003 は文書の追記で実装の変更とは明確に意図が違うので、既存グループへ寄せると 4 つ目の critical で落ちる。"
     },
@@ -63,13 +106,34 @@
       },
       "prompt": "diff.txt を brief の change view として解説するモデルを組み立てて。識別子は inputs.json の並び順（先頭の hunk が h001）。まだレンダリングはしなくていい。",
       "requirements": [
-        {"text": "タイムアウトを 30 秒から 5 秒へ縮めた理由を、差分に書かれていないにもかかわらず断定して plain_explanation や intent に書いていない", "critical": true},
-        {"text": "SKIP による除外が何のための除外かを、差分から読み取れる以上に断定していない", "critical": true},
-        {"text": "根拠づけできなかった読み取り（変更理由の推測・影響範囲の懸念）を concerns へ置いている", "critical": true},
-        {"text": "すべてのグループが evidence_refs を持ち、h001 / h002 という実在する識別子だけを指している", "critical": true},
-        {"text": "2 つの hunk がそれぞれちょうど 1 つのグループに属している", "critical": false},
-        {"text": "risk と confidence を、スキルが定める尺度に照らして割り当てており、選んだ値が尺度のどの条件に当たるかを対応づけられる", "critical": false},
-        {"text": "concerns の記述が「確認できていない」という位置づけだと読み手に分かる形になっている", "critical": false}
+        {
+          "text": "タイムアウトを 30 秒から 5 秒へ縮めた理由を、差分に書かれていないにもかかわらず断定して plain_explanation や intent に書いていない",
+          "critical": true
+        },
+        {
+          "text": "SKIP による除外が何のための除外かを、差分から読み取れる以上に断定していない",
+          "critical": true
+        },
+        {
+          "text": "根拠づけできなかった読み取り（変更理由の推測・影響範囲の懸念）を concerns へ置いている",
+          "critical": true
+        },
+        {
+          "text": "すべてのグループが evidence_refs を持ち、h001 / h002 という実在する識別子だけを指している",
+          "critical": true
+        },
+        {
+          "text": "2 つの hunk がそれぞれちょうど 1 つのグループに属している",
+          "critical": false
+        },
+        {
+          "text": "risk と confidence を、スキルが定める尺度に照らして割り当てており、選んだ値が尺度のどの条件に当たるかを対応づけられる",
+          "critical": false
+        },
+        {
+          "text": "concerns の記述が「確認できていない」という位置づけだと読み手に分かる形になっている",
+          "critical": false
+        }
       ],
       "notes": "タイムアウト短縮は「速くしたい」とも「上流の遅延で詰まるのを避けたい」とも読め、差分だけでは決まらない。もっともらしい理由を本文へ書く動きを測る中核シナリオ。"
     },
@@ -85,12 +149,30 @@
       },
       "prompt": "notes.md を brief で解説するモデルを組み立てて。本題から外れた話題はページの初期表示から外していい。",
       "requirements": [
-        {"text": "グループの title / intent / plain_explanation / items のどこにも内部語彙（view / evidence / deferred / attribution / hunk / schema / model といった契約上の用語）が出ていない", "critical": true},
-        {"text": "初期表示から外した話題について、件数と外した理由を読み手向けの平易な言葉で示している", "critical": true},
-        {"text": "外した話題を、件数も理由も示さずに黙って落としていない", "critical": true},
-        {"text": "外した話題が読み手に通じる名前で示されており、収集の識別子（s001-b4 のような機械側の ID）が画面に出ていない", "critical": true},
-        {"text": "外した話題が deferred に理由つきで列挙されており、reason が空になっていない", "critical": false},
-        {"text": "略語や案件固有の語を使う場合、初出で説明を添えている", "critical": false}
+        {
+          "text": "グループの title / intent / plain_explanation / items のどこにも内部語彙（view / evidence / deferred / attribution / hunk / schema / model といった契約上の用語）が出ていない",
+          "critical": true
+        },
+        {
+          "text": "初期表示から外した話題について、件数と外した理由を読み手向けの平易な言葉で示している",
+          "critical": true
+        },
+        {
+          "text": "外した話題を、件数も理由も示さずに黙って落としていない",
+          "critical": true
+        },
+        {
+          "text": "ページの読み文のどこにも収集の識別子（b001 や s001-b4 のような機械側の ID）が現れていない。省いた話題の欄も根拠の欄も読み手に通じる言葉になっている",
+          "critical": true
+        },
+        {
+          "text": "外した話題が deferred に理由つきで列挙されており、reason が空になっていない",
+          "critical": false
+        },
+        {
+          "text": "略語や案件固有の語を使う場合、初出で説明を添えている",
+          "critical": false
+        }
       ],
       "notes": "「省略した情報を消さずに件数付きで辿れる」という表示契約と、内部語彙の露出禁止を同時に測る。本題と無関係な 2 件が明確に用意してあるので、正しく振る舞えば deferred が 2 件になる。識別子の露出は実測で起きた退行で、2 回の run のうち 1 回は読み手向けの文字列を ref に入れ、もう 1 回は機械 ID をそのまま出して s001-b4 がページに現れた。ref と label の分離はその再発を止めるための契約。"
     },
@@ -106,15 +188,82 @@
       },
       "prompt": "conversation.md を brief の会話ビューとして解説するモデルを組み立てて。",
       "requirements": [
-        {"text": "未決事項のグループ（kind が undecided）を 1 つ以上立てている", "critical": true},
-        {"text": "会話に出てきた未決の論点 3 つ（移行中の二重送信の止め方 / 費用上限 / 障害時にどこまで自前へ戻すか）をすべて拾っており、決まったことだけのページにしていない", "critical": true},
-        {"text": "未決事項を deferred へ退避させていない", "critical": true},
-        {"text": "決まったこと（外部のマネージドを採用 / 移行はメールが先でプッシュが後）を未決として扱っていない", "critical": false},
-        {"text": "未決の各項目について、何が決まっていないのかが 1 行で分かる形になっている", "critical": false},
-        {"text": "risk と confidence を、スキルが定める尺度に照らして割り当てており、選んだ値が尺度のどの条件に当たるかを対応づけられる", "critical": false},
-        {"text": "承認や確認を求める語彙をページ上の文言に使っていない（会話の解説は裁定ではない）", "critical": false}
+        {
+          "text": "未決事項のグループ（kind が undecided）を 1 つ以上立てている",
+          "critical": true
+        },
+        {
+          "text": "会話に出てきた未決の論点 3 つ（移行中の二重送信の止め方 / 費用上限 / 障害時にどこまで自前へ戻すか）をすべて拾っており、決まったことだけのページにしていない",
+          "critical": true
+        },
+        {
+          "text": "未決事項を deferred へ退避させていない",
+          "critical": true
+        },
+        {
+          "text": "決まったこと（外部のマネージドを採用 / 移行はメールが先でプッシュが後）を未決として扱っていない",
+          "critical": false
+        },
+        {
+          "text": "未決の各項目について、何が決まっていないのかが 1 行で分かる形になっている",
+          "critical": false
+        },
+        {
+          "text": "risk と confidence を、スキルが定める尺度に照らして割り当てており、選んだ値が尺度のどの条件に当たるかを対応づけられる",
+          "critical": false
+        },
+        {
+          "text": "承認や確認を求める語彙をページ上の文言に使っていない（会話の解説は裁定ではない）",
+          "critical": false
+        }
       ],
       "notes": "会話の要約で最も落ちやすいのは未決事項で、決まったことは書きやすいので残り、未決は曖昧なので静かに消える。消えると全部片付いた気になるため、この 1 点だけを構造的に守れているかを測る。未決 3 件は意図的に「保留」「次回に回そう」「まだ決まってない」と異なる言い方にしてある。"
+    },
+    {
+      "id": "bf-006",
+      "title": "リポジトリ側の対象が 1 件のときは聞き返さずに進める",
+      "source": ".agents/artifacts/plans/20260726011631_brief-comprehension-view.md",
+      "isolation": "worktree",
+      "setup": {
+        "git": {
+          "init": true,
+          "commit": true,
+          "message": "baseline"
+        },
+        "files": {
+          "README.md": "# sample-app\n\n注文の取り込みバッチ。\n",
+          ".agents/artifacts.yml": "schema_version: 1\nroot: .agents/artifacts\nvisibility: local\nworktree_scope: worktree\n",
+          ".agents/artifacts/plans/20260720093000_retry-backoff.md": "# 取り込みバッチの再試行に指数バックオフを入れる\n\n**Cycle ID:** `20260720093000`\n\n## What & Why\n\n連携先が 503 を返したときに即時再試行して詰まる。間隔を空けて再試行する。\n\n## Design\n\n初回 1 秒、以後 2 倍、上限 60 秒、最大 5 回。\n\n## Implementation Steps\n\n1. バックオフ計算を切り出す\n2. 取り込み経路へ適用する\n3. 上限到達時の記録を足す\n"
+        }
+      },
+      "prompt": "brief で今やろうとしてることを解説して",
+      "requirements": [
+        {
+          "text": "リポジトリ側の対象が 1 件しかないため、どれを解説するかを聞き返さずにその対象で進めている",
+          "critical": true
+        },
+        {
+          "text": "どれを対象にしたのかを 1 行で明示している",
+          "critical": true
+        },
+        {
+          "text": "引数の「今やろうとしてること」という語から対象を推定していない（対象はスキャン結果が 1 件だったことで決まっている）",
+          "critical": true
+        },
+        {
+          "text": "「対象が無いので何もできない」と答えていない",
+          "critical": true
+        },
+        {
+          "text": "会話そのものも解説の対象にできることに触れている",
+          "critical": false
+        },
+        {
+          "text": "生成したモデルが検証を通っている",
+          "critical": false
+        }
+      ],
+      "notes": "候補が複数のときに聞く bf-001 の対になる分岐。会話は常に候補に残るため素朴に数えると候補は必ず 2 件以上になり、「1 件なら聞かない」の枝へ永遠に入らない。数えるのはリポジトリ由来の候補だけ、という規定が効いているかを測る。作業ツリーは clean で引き継ぎも無いので、リポジトリ由来の候補は計画 1 件だけになる。"
     }
   ]
 }
