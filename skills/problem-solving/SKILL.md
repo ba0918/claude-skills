@@ -5,51 +5,55 @@ description: 行き詰まった時の思考ツール集。5つのサブワーク
 
 # Problem Solving
 
-行き詰まった時の思考ツール集。問題の種類に応じた 5 つのサブワークフローで、概念レベルの思考をガイドする。
+A toolkit of thinking techniques for when you are stuck. Five sub-workflows, chosen by the
+kind of impasse, guide reasoning at the conceptual level.
 
-### 他スキルとの差別化
+### How this differs from neighbouring skills
 
-- **brainstorm との違い**: brainstorm は自由発散型。本スキルは特定の思考テクニックを構造的に適用する
-- **investigate との違い**: investigate はコードベースの事実調査。本スキルは概念レベルの思考支援（コード生成なし）
+- **vs. brainstorm**: brainstorm diverges freely. This skill applies a specific thinking
+  technique in a structured way
+- **vs. investigate**: investigate establishes facts about a codebase. This skill supports
+  conceptual thinking (no code generation)
 
-## 絶対的な制約
+## Hard constraints
 
-### 禁止操作（いかなる状況でも実行禁止）
+### Forbidden operations (never perform, under any circumstances)
 
-- ファイル編集
-- ファイル作成・上書き
-- ノートブック編集
+- Editing files
+- Creating or overwriting files
+- Editing notebooks
 
-### 禁止行為
+### Forbidden behaviour
 
-- コード生成・実装提案禁止（擬似コードでの概念説明は可）
-- 「実装しましょう」「コードを書きます」は絶対に言わない
-- 概念レベルの議論に集中する
+- No code generation, no implementation proposals (pseudo-code for explaining a concept is
+  fine)
+- Never say "let's implement it" or "I'll write the code"
+- Stay on conceptual discussion
 
-### 許可操作
+### Permitted operations
 
-- ファイルの読み取り（コードベース調査用）
-- パターン検索（コードベース調査用）
-- ファイル一覧取得（コードベース調査用）
-- シェルコマンド（**読み取り専用のみ**: `git log`, `ls`, `cat` 等）
-- ユーザーとの対話（選択肢の提示・確認）
+- Reading files (to investigate the codebase)
+- Pattern search (to investigate the codebase)
+- Listing files (to investigate the codebase)
+- Shell commands (**read-only only**: `git log`, `ls`, `cat`, ...)
+- Dialogue with the user (offering choices, confirming)
 
-## Workflow Selection
+## Workflow selection
 
-`$ARGUMENTS` の先頭キーワードでワークフローを決定する:
+The leading keyword of `$ARGUMENTS` selects the workflow:
 
 - `simplify` → **Simplification Cascades**
 - `collide` → **Collision-Zone Thinking**
 - `invert` → **Inversion Exercise**
 - `scale` → **Scale Game**
 - `pattern` → **Meta-Pattern Recognition**
-- (なし) → **Dispatch**（行き詰まりの種類を特定して適切な手法に誘導）
+- (none) → **Dispatch** (identify the kind of impasse and route to the right technique)
 
 ---
 
-## Dispatch Workflow（キーワードなしの場合）
+## Dispatch workflow (no keyword)
 
-ユーザーに確認して行き詰まりの種類を特定する:
+Ask the user to identify the kind of impasse:
 
 ```
 どのような行き詰まりですか？
@@ -60,171 +64,173 @@ description: 行き詰まった時の思考ツール集。5つのサブワーク
 5. 似たパターンを他で見た気がする → pattern を提案
 ```
 
-ユーザーの選択に応じて該当するサブワークフローを実行する。
+Run the sub-workflow matching the user's choice.
 
 ---
 
-## 各サブワークフローの共通構造
+## Shared structure of every sub-workflow
 
-すべてのサブワークフローは以下の 4 ステップで進行する:
+All sub-workflows run in the same four steps:
 
-1. **問題の定義** — ユーザーに確認して問題を具体化する
-2. **手法の適用** — 各手法固有のステップを実行する
-3. **発見の整理** — 要約を表示する
-4. **次のアクション提案** — brainstorm に戻る / plan 作成 / 別の手法を試す
+1. **Define the problem** — ask the user to make the problem concrete
+2. **Apply the technique** — run the steps specific to that technique
+3. **Organise the findings** — present a summary
+4. **Propose next actions** — back to brainstorm / create a plan / try another technique
 
 ---
 
 ## Simplification Cascades
 
-「全ては〇〇の特殊ケース」を見つけて、複雑性を劇的に削減する。
+Find the "everything is a special case of X" and cut complexity drastically.
 
-### いつ使うか
+### When to use
 
-- 同じことを 5 通り以上の方法で実装している
-- 特殊ケースが増え続けている
-- if/else の連鎖が複雑化している
-- 設定オプションが過剰
+- The same thing is implemented in five or more ways
+- Special cases keep multiplying
+- if/else chains are getting complicated
+- Too many configuration options
 
-### プロセス
+### Process
 
-1. **問題の定義**: ユーザーに確認して「何が複雑すぎると感じますか？」
-2. **類似パターンの特定**: 類似の実装、特殊ケース、条件分岐をリスト化
-3. **共通の本質を探す**: 「これらすべてに共通する操作は何か？」
-4. **統一モデルの提案**: 「全ては {X} の特殊ケースである」というフレームを提示
-5. **カスケード効果の評価**: 統一すると何が不要になるかをリスト化
+1. **Define the problem**: ask the user "what feels too complex?"
+2. **Identify similar patterns**: list the similar implementations, special cases, and
+   branches
+3. **Look for the common essence**: "what operation do all of these share?"
+4. **Propose a unifying model**: present the frame "everything is a special case of {X}"
+5. **Evaluate the cascade**: list what becomes unnecessary once unified
 
-### Quick Reference
+### Quick reference
 
-| 症状 | カスケードの可能性 |
+| Symptom | Possible cascade |
 |------|--------------|
-| 同じ概念の 5+ 実装 | 共通パターンを抽象化 |
-| 特殊ケースリストの増加 | 一般ケースを見つける |
-| 例外だらけの複雑なルール | 例外のないルールを見つける |
-| 過剰な設定オプション | 95% で機能するデフォルトを見つける |
+| 5+ implementations of the same concept | Abstract the shared pattern |
+| A growing list of special cases | Find the general case |
+| Complex rules riddled with exceptions | Find the rule with no exceptions |
+| Too many configuration options | Find the default that works for 95% |
 
 ---
 
 ## Collision-Zone Thinking
 
-無関係な概念を強制的に衝突させて、創発的な発見をする。
+Force unrelated concepts to collide and let discoveries emerge.
 
-### いつ使うか
+### When to use
 
-- 従来のアプローチでは不十分
-- 画期的なアイデアが必要
-- 発想を転換したい
+- Conventional approaches are not enough
+- A breakthrough idea is needed
+- You want to shift perspective
 
-### プロセス
+### Process
 
-1. **問題の定義**: ユーザーに確認して「何に取り組んでいますか？」
-2. **無関係なドメインを選ぶ**: 問題と全く関係のない分野を 3 つ提示
-3. **強制衝突**: 「もし {問題} を {ドメイン} のように扱ったら？」
-4. **創発的性質の探索**: 衝突から生まれる新しいアイデアをリスト化
-5. **実現可能性の議論**: ユーザーと一緒にアイデアを吟味
+1. **Define the problem**: ask the user "what are you working on?"
+2. **Pick unrelated domains**: offer three fields with no connection to the problem
+3. **Force the collision**: "what if we treated {problem} like {domain}?"
+4. **Explore emergent properties**: list the new ideas the collision produces
+5. **Discuss feasibility**: weigh the ideas together with the user
 
-### Quick Reference
+### Quick reference
 
-| 行き詰まり | 衝突させるドメイン | 発見の可能性 |
+| Impasse | Domain to collide with | Possible discovery |
 |-----------|-------------|-----------|
-| コード構成 | DNA/遺伝学 | ミューテーションテスト、進化的アルゴリズム |
-| サービス構造 | レゴブロック | コンポーザブルなマイクロサービス |
-| データ管理 | 水の流れ | ストリーミング、データレイク |
-| リクエスト処理 | 郵便配達 | メッセージキュー、非同期処理 |
+| Code organisation | DNA / genetics | Mutation testing, evolutionary algorithms |
+| Service structure | Lego bricks | Composable microservices |
+| Data management | Water flow | Streaming, data lakes |
+| Request handling | Postal delivery | Message queues, async processing |
 
 ---
 
 ## Inversion Exercise
 
-前提を反転させて、隠れた制約と代替アプローチを発見する。
+Invert the assumptions to uncover hidden constraints and alternative approaches.
 
-### いつ使うか
+### When to use
 
-- 「こうするしかない」と感じている
-- 疑問に思わない前提がある
-- 制約が正しいか確認したい
+- It feels like "there is no other way"
+- There are assumptions you never question
+- You want to check whether a constraint is real
 
-### プロセス
+### Process
 
-1. **問題の定義**: ユーザーに確認して「何が『こうするしかない』と感じますか？」
-2. **前提のリスト化**: 現在の前提を 5 つ以上リスト化
-3. **各前提を反転**: 「もし逆だったら？」を体系的に検討
-4. **反転の含意を探る**: 反転した世界ではどう設計するか？
-5. **隠れた制約の発見**: 反転が不可能な前提 = 本当の制約。反転可能な前提 = 思い込み
+1. **Define the problem**: ask the user "what feels like 'there is no other way'?"
+2. **List the assumptions**: list five or more current assumptions
+3. **Invert each one**: work through "what if the opposite were true?" systematically
+4. **Explore the implications**: how would you design in the inverted world?
+5. **Find the hidden constraints**: an assumption that cannot be inverted is a real
+   constraint; one that can be inverted was a belief
 
-### Quick Reference
+### Quick reference
 
-| 通常の前提 | 反転 | 発見 |
+| Usual assumption | Inversion | Discovery |
 |-----------|------|------|
-| キャッシュでレイテンシ削減 | レイテンシを追加してキャッシュ可能に | デバウンスパターン |
-| 必要時にデータをプル | 必要前にデータをプッシュ | プリフェッチ、イーガーローディング |
-| エラー発生時に処理 | エラーを構造的に不可能に | 型システム、契約 |
-| ユーザーが望む機能を追加 | ユーザーが不要な機能を削除 | シンプリシティ > 追加 |
+| Cache to cut latency | Add latency to make things cacheable | Debounce pattern |
+| Pull data when needed | Push data before it is needed | Prefetching, eager loading |
+| Handle errors when they occur | Make errors structurally impossible | Type systems, contracts |
+| Add the features users want | Remove the features users don't need | Simplicity > addition |
 
 ---
 
 ## Scale Game
 
-極端なスケール（1000倍大きい/小さい）でテストして本質を露出させる。
+Test at extreme scale (1000× bigger / smaller) to expose the essence.
 
-### いつ使うか
+### When to use
 
-- スケーラビリティに不安がある
-- エッジケースが不明
-- アーキテクチャの限界を知りたい
+- You are unsure about scalability
+- The edge cases are unclear
+- You want to know the limits of the architecture
 
-### プロセス
+### Process
 
-1. **問題の定義**: ユーザーに確認して「何をスケールテストしたいですか？」
-2. **スケール次元の選択**: Volume / Speed / Users / Duration / Failure rate
-3. **最小極を考える**: 1000倍小さい/少ない/速い場合は？
-4. **最大極を考える**: 1000倍大きい/多い/遅い場合は？
-5. **壊れるポイントの特定**: どの時点で設計が破綻するか？
+1. **Define the problem**: ask the user "what do you want to scale-test?"
+2. **Choose the scale dimension**: Volume / Speed / Users / Duration / Failure rate
+3. **Consider the minimum extreme**: what if it were 1000× smaller / fewer / faster?
+4. **Consider the maximum extreme**: what if it were 1000× bigger / more / slower?
+5. **Identify the breaking point**: at what point does the design fall apart?
 
-### Quick Reference
+### Quick reference
 
-| スケール次元 | 極端なテスト | 発見 |
+| Scale dimension | Extreme test | Discovery |
 |------------|-----------|------|
-| データ量 | 1件 vs 10億件 | アルゴリズム計算量の限界 |
-| 速度 | 即時 vs 1年 | 非同期の必要性、キャッシュ |
-| ユーザー数 | 1人 vs 10億人 | 並行性、リソース制限 |
-| 期間 | ミリ秒 vs 数年 | メモリリーク、状態の肥大化 |
-| 失敗率 | 0% vs 100% | エラーハンドリングの妥当性 |
+| Data volume | 1 row vs 1 billion rows | Algorithmic complexity limits |
+| Speed | Instant vs one year | Need for async, caching |
+| Users | 1 vs 1 billion | Concurrency, resource limits |
+| Duration | Milliseconds vs years | Memory leaks, state bloat |
+| Failure rate | 0% vs 100% | Soundness of error handling |
 
 ---
 
 ## Meta-Pattern Recognition
 
-3つ以上のドメインに現れるパターンから普遍原則を抽出する。
+Extract a universal principle from a pattern that appears in three or more domains.
 
-### いつ使うか
+### When to use
 
-- 異なる場所で同じパターンを見た気がする
-- デジャヴを感じる
-- 車輪の再発明をしている気がする
+- You feel you have seen the same pattern elsewhere
+- You are getting déjà vu
+- You suspect you are reinventing the wheel
 
-### プロセス
+### Process
 
-1. **問題の定義**: ユーザーに確認して「どんなパターンに気づいていますか？」
-2. **3+ ドメインでの出現を確認**: パターンが現れる場所をリスト化
-3. **抽象形式の抽出**: ドメイン非依存の形で記述
-4. **バリエーションの特定**: 各ドメインでのアダプテーション
-5. **新しい適用先の探索**: このパターンが使えるまだ適用されていない場所
+1. **Define the problem**: ask the user "what pattern have you noticed?"
+2. **Confirm it appears in 3+ domains**: list where the pattern shows up
+3. **Extract the abstract form**: describe it in a domain-independent way
+4. **Identify the variations**: how each domain adapts it
+5. **Explore new applications**: where this pattern could be used but has not been
 
-### Quick Reference
+### Quick reference
 
-| パターンの出現場所 | 抽象形式 | 他の適用先 |
+| Where the pattern appears | Abstract form | Other applications |
 |--------------|---------|----------|
-| CPU/DB/HTTP/DNS キャッシュ | 頻繁にアクセスするデータを近くに配置 | LLM プロンプトキャッシュ、CDN |
-| レイヤリング (Network/Storage/Compute) | 抽象レベルで関心を分離 | アーキテクチャ、組織設計 |
-| キューイング (Message/Task/Request) | バッファでプロデューサーとコンシューマーを分離 | イベントシステム、非同期処理 |
-| プーリング (Connection/Thread/Object) | 高コストなリソースを再利用 | メモリ管理、リソースガバナンス |
+| CPU / DB / HTTP / DNS caches | Keep frequently accessed data close | LLM prompt caching, CDN |
+| Layering (network / storage / compute) | Separate concerns by abstraction level | Architecture, org design |
+| Queueing (message / task / request) | Buffer to decouple producer and consumer | Event systems, async processing |
+| Pooling (connection / thread / object) | Reuse expensive resources | Memory management, resource governance |
 
 ---
 
-## 次のアクション提案（全サブワークフロー共通）
+## Proposing next actions (all sub-workflows)
 
-各サブワークフローの終了時に ユーザーに確認して次のアクションを提案する:
+At the end of every sub-workflow, ask the user which next action to take:
 
 ```
 💡 発見を次にどう活かしますか？
