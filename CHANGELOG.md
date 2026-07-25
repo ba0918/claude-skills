@@ -1,10 +1,14 @@
 # Changelog
 
 claude-skills プラグインのバージョン履歴。
-`.claude-plugin/plugin.json` の `version` を bump したら、このファイルにエントリを追加すること
+
+変更は PR で `## Unreleased` へ追記する。**PR では version を bump しない** — 並走する PR が
+揃って同じ番号を名乗り、マージ順に依存した manifest 衝突が必ず起きるため。リリース時に
+`## Unreleased` を `## <version>` へ改名し、`.claude-plugin/plugin.json` /
+`.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
-## 1.66.0
+## Unreleased
 
 cycle Phase 3 の status.md アーカイブ経路が Step 3b のガードで到達不能になっていた問題を修正
 （issue #18）。ガードが判定に使う状態を「終端状態（Current Session がクリア済み）」だけに限定し、
@@ -25,6 +29,64 @@ Phase 2 が書き込む中間ラベルでは発火しないようにした。あ
   +0.6〜1.1% で run 間ばらつき（noise band 約 160 tokens）の範囲内
 - `skills/cycle/SKILL.md`: Step 3b のガード条件・Step 3c の適用範囲・最終表示の `Session` 行
 - `skills/cycle/fixtures.json`: cy-001 の最終表示要件に `Session` 行の分岐表示を追加
+
+Agent Artifact Store 契約に違反した状態で実体化される回帰 fixture を是正し、同じ違反を
+`fixture_setup.py --validate` で機械的に止めるようにした。違反した fixture は store が
+`writable: false` に落ちるため、Phase 0 で store を検証するスキルは宣言したシナリオへ
+一度も到達しないまま abort する。落ちる fixture と違って赤くならず素通りするため、
+台帳には「到達していない経路」に対する合格記録が付いていた（issue #17）。
+
+- 実測: `.agents/` を宣言する全 15 シナリオを実体化して `artifact_store.inspect` で判定。
+  修正前は自前 git を宣言する 4 シナリオ（cy-001 / cy-003 / ho-004 / pl-004）が
+  `writable: false` で 0/4、修正後は 4/4。周囲のリポジトリに依存する 11 シナリオは前後とも変化なし
+- `skills/{cycle,handoff,plan}/fixtures.json`: `setup.files['.gitignore']` に
+  `/.agents/artifacts/` と `/.agents/runtime/` を宣言。cy-002 は `.agents/` を宣言しないが
+  自前 git を持ち Phase 0 で store を検証されるため併せて是正した
+- `skills/skill-regression/scripts/fixture_setup.py`: `setup.git.init` を宣言し
+  `.agents/` 配下を持つシナリオに対し、`.gitignore` の無視宣言・`visibility: public` の
+  明示 policy・runtime 領域の常時無視・policy 自体の追跡を静的検査する。
+  `scripts/validate_repo.py` 経由で CI が止める
+- 静的検査の判定を実体化後の `artifact_store.inspect` と突き合わせる unit test を追加し、
+  宣言側の検査が実測から乖離しないよう固定した
+
+CHANGELOG の起票先を `## Unreleased` に一本化し、version bump を PR から切り離した。
+これまでは PR ごとに bump していたため、同時に開いた 6 本の PR が全て 1.66.0 を名乗り、
+1 本マージするたび残り全部が 3 manifest + CHANGELOG でコンフリクトする状態になっていた。
+bump は「配布の単位」であって「変更の単位」ではないので、リリース時にまとめて判断する。
+
+- `validate_repo.py` にチェック12b を追加: `## Unreleased` の表記ゆれ（`[Unreleased]` /
+  小文字）・重複・配布済みエントリより下への配置を検出する。リリース時に番号へ昇格させる
+  対象が常に一意に定まる状態を機械的に保つ
+- チェック12 の逆方向（未配布の番号付きエントリを禁止）は維持。禁じているのは「配布済みに
+  見える番号」であって未配布の記録そのものではないため、`## Unreleased` は許可対象と明記した
+- `skill-authoring.md` の「横断最適化のリリース単位」を、横展開バッチ限定の規約から
+  PR 全般の規約へ一般化した
+
+あわせて、worktree から push すると pre-push hook が必ず失敗するバグを修正した。git は hook へ
+`GIT_DIR` を渡すが、worktree ではこれが絶対パスになるため、検証中の `git init` / `git check-ignore`
+（cwd = 一時ディレクトリ）が一時リポジトリではなく本物のリポジトリを操作してしまっていた。
+通常 checkout では `GIT_DIR` が相対パス `.git` で cwd 基準に解決されるため偶然動いており、
+worktree でのみ露出していた。hook から GIT_* の継承を明示的に断ち切る。
+
+Opus 5 プロンプトガイドの「保守的な報告指示は報告量を減らす」という主張を本リポジトリで実測し、
+**ほぼ当てはまらない**ことを確認した。`skill-authoring.md` に「保守的」の 3 分類（報告抑制 /
+逆方向の保守性 / 自動修正 fail-safe）と実測結果を追記し、語の字面だけを根拠にレビュー系スキルの
+判定基準を緩めることを防ぐ。fail-safe を報告抑制と誤認して緩める改変は安全性を落とすため、
+分類を先に通すことを規範化した。
+
+- 棚卸し: 本文に「保守的」と書かれた箇所のうち報告を実際に抑制するのは 1 箇所のみ。
+  他は severity を下げない側の保守性、または NEEDS_JUDGMENT / UNCERTAIN へ倒す自動修正 fail-safe
+- 実測: 該当 1 箇所を before/after 2 変種 × 2 シナリオ（判別シナリオは k=3）で 3 役分離評価。
+  severity 降格は両変種とも 0/3 で発生せず、実行者は docstring・例外送出といったコード自身の
+  契約証拠から BLOCK を維持した。低影響シナリオでも BLOCK 膨張なし（要件 5/5）
+- 書き換え版は非劣性だが改善が測定されなかったため、`review-testing` の判定基準は変更していない
+
+あわせて `verification-gate.md` の削除是非も実測し、こちらも null result だった。gate 本文を
+88 行 → 30 行に削るアブレーションを `cycle` の cy-001 で各 n=3 実走したが、トークン中央値の差は
+noise_band をぎりぎり超える程度で確立できず、品質劣化も観測されなかった。gate の執行力は既に
+参照側スキル（`cycle/SKILL.md` の Phase 2 がテスト実行エビデンスを要求）へインライン化されており、
+共有契約側の分量は実行挙動に効かない。削除の根拠が無いため gate は現状維持とし、計測手順と
+アブレーションの限界を `skill-authoring.md` に記録した。
 
 ## 1.65.0
 

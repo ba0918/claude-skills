@@ -5,12 +5,12 @@ description: 4フェーズ構造化デバッグスキル。根本原因を特定
 
 # Systematic Debugging
 
-4フェーズの構造化デバッグスキル。ランダムな修正を防ぎ、根本原因の特定を義務付ける。
+A four-phase structured debugging skill. It blocks random fixes and makes identifying the root cause mandatory.
 
-### 他スキルとの差別化
+### Differentiation from Other Skills
 
-- **investigate との違い**: investigate は読み取り専用の調査。本スキルは調査 + 修正まで実行する。investigate の出力を入力として受け付ける
-- **cycle / iterate との違い**: cycle/iterate は計画ベースの実装。本スキルはバグ・問題の構造化された解決に特化
+- **vs investigate**: investigate is a read-only investigation. This skill performs the investigation *and* the fix. It accepts investigate's output as input
+- **vs cycle / iterate**: cycle and iterate are plan-based implementation. This skill specializes in the structured resolution of bugs and problems
 
 ## The Iron Law
 
@@ -18,49 +18,49 @@ description: 4フェーズ構造化デバッグスキル。根本原因を特定
 NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST
 ```
 
-Phase 1 を完了するまで、修正を提案してはならない。
+You may not propose a fix until Phase 1 is complete.
 
 ## Phase 1: Root Cause Investigation
 
-**修正の提案を一切行わないこと。調査のみ。**
+**Propose no fix whatsoever. Investigation only.**
 
-### investigate の出力を入力として受け付ける
+### Accepting investigate's Output as Input
 
-`$ARGUMENTS` に investigate スキルの出力ファイルパスが含まれている場合、そのレポートを読み込んでコンテキストとして使用する。Phase 1 の一部をスキップできる。
+When `$ARGUMENTS` contains the path to an investigate skill output file, read that report and use it as context. It lets you skip part of Phase 1.
 
-### Step 1.1: エラーメッセージの精読
+### Step 1.1: Read the Error Message Closely
 
-1. エラーメッセージ、スタックトレースを**完全に**読む（スキップしない）
-2. 行番号、ファイルパス、エラーコードを記録する
-3. 警告メッセージも無視しない
+1. Read the error message and the stack trace **in full** (do not skip any of it)
+2. Record the line numbers, file paths, and error codes
+3. Do not ignore warning messages either
 
-### Step 1.2: 再現
+### Step 1.2: Reproduce
 
-1. バグを確実に再現できるか確認する
-   - シェルでテストや問題のコマンドを実行する
-2. 再現手順を記録する
-3. 再現できない場合 → より多くのデータを収集する（推測しない）
+1. Confirm that you can reliably reproduce the bug
+   - Run the test or the failing command in the shell
+2. Record the reproduction steps
+3. Cannot reproduce it → collect more data (do not guess)
 
-### Step 1.3: 最近の変更の確認
+### Step 1.3: Check Recent Changes
 
 ```bash
 git log --oneline -10
 git diff HEAD~5 --stat
 ```
 
-- 何が変更されたか？
-- 新しい依存関係は？設定変更は？
-- 環境の差異は？
+- What changed?
+- Any new dependencies? Any configuration changes?
+- Any differences in the environment?
 
-### Step 1.4: データフロートレース
+### Step 1.4: Trace the Data Flow
 
-[references/root-cause-tracing.md](references/root-cause-tracing.md) の手法を適用する。
+Apply the technique in [references/root-cause-tracing.md](references/root-cause-tracing.md).
 
-- バグの症状から後方にトレースする
-- 各レイヤーで入出力データを検証する
-- 多層システムでは診断インストルメンテーションを追加する
+- Trace backwards from the symptom of the bug
+- Verify the input and output data at each layer
+- In multi-layer systems, add diagnostic instrumentation
 
-表示:
+Display:
 ```
 ── Phase 1: Root Cause Investigation ──
 Error: {error_summary}
@@ -72,22 +72,22 @@ Suspected root cause: {hypothesis}
 
 ## Phase 2: Pattern Analysis
 
-### Step 2.1: 動作する類似コードの発見
+### Step 2.1: Find Similar Code That Works
 
-- コードベース内のパターン検索・ファイル読み取りで類似パターンを探す
-- 動作している部分と壊れている部分を比較する
+- Look for similar patterns by searching the codebase and reading files
+- Compare the part that works against the part that is broken
 
-### Step 2.2: 差分の特定
+### Step 2.2: Identify the Differences
 
-- 動作するコードと壊れたコードの**すべての差分**をリスト化する
-- 「関係ないだろう」と仮定しない — すべての差分を記録する
+- List **every difference** between the working code and the broken code
+- Do not assume "this one can't be related" — record every difference
 
-### Step 2.3: 依存関係の理解
+### Step 2.3: Understand the Dependencies
 
-- このコードが必要とする他のコンポーネントは？
-- どんな設定・環境変数・前提条件があるか？
+- What other components does this code require?
+- What configuration, environment variables, or preconditions are in play?
 
-表示:
+Display:
 ```
 ── Phase 2: Pattern Analysis ──
 Working reference: {file_path}
@@ -97,24 +97,24 @@ Key difference: {description}
 
 ## Phase 3: Hypothesis & Testing
 
-### Step 3.1: 仮説を1つ立てる
+### Step 3.1: Form Exactly One Hypothesis
 
-- 「{X} が根本原因だと考える。なぜなら {Y} だから」
-- 具体的に書く（曖昧にしない）
+- "I believe {X} is the root cause, because {Y}"
+- Write it concretely (do not leave it vague)
 
-### Step 3.2: 最小限の変更でテスト
+### Step 3.2: Test It With a Minimal Change
 
-- 仮説を検証する**最小限の変更**を1つだけ行う
-- 一度に複数の修正をしない
-- シェルでテストを実行して結果を確認する
+- Make exactly one **minimal change** that verifies the hypothesis
+- Do not apply several fixes at once
+- Run the test in the shell and check the result
 
-### Step 3.3: 検証
+### Step 3.3: Verify
 
-- 仮説が正しかった → Phase 4 へ
-- 仮説が間違っていた → **新しい仮説**を立てる（追加の修正を重ねない）
-- わからない → 「わからない」と認める。推測しない
+- The hypothesis held → advance to Phase 4
+- The hypothesis was wrong → form a **new hypothesis** (do not pile on further fixes)
+- You do not know → admit that you do not know. Do not guess
 
-表示:
+Display:
 ```
 ── Phase 3: Hypothesis ──
 Hypothesis: {description}
@@ -124,26 +124,26 @@ Result: {confirmed/rejected}
 
 ## Phase 4: Implementation
 
-### Step 4.1: 失敗するテストケースの作成
+### Step 4.1: Write a Failing Test Case
 
-- このバグを再現する最小限のテストを書く
-- TDD 契約に従う: [../shared/references/tdd-contract.md](../shared/references/tdd-contract.md)
-- シェルでテストを実行し、**失敗することを確認する**
+- Write the minimal test that reproduces this bug
+- Follow the TDD contract: [../shared/references/tdd-contract.md](../shared/references/tdd-contract.md)
+- Run the test in the shell and **confirm that it fails**
 
-### Step 4.2: 修正の実装
+### Step 4.2: Implement the Fix
 
-- 根本原因を修正する（症状ではなく）
-- **1つの変更のみ**。「ついでに」改善しない
-- バンドルリファクタリング禁止
+- Fix the root cause (not the symptom)
+- **One change only**. No "while I'm here" improvements
+- Bundled refactoring is forbidden
 
-### Step 4.3: 検証
+### Step 4.3: Verify
 
-- シェルでテストを実行し、**全パスを確認する**:
-  - 新しい回帰テストが通ること
-  - 既存テストが壊れていないこと
-- verification-gate を適用: [../shared/references/verification-gate.md](../shared/references/verification-gate.md)
+- Run the tests in the shell and **confirm they all pass**:
+  - The new regression test passes
+  - No existing test has been broken
+- Apply verification-gate: [../shared/references/verification-gate.md](../shared/references/verification-gate.md)
 
-表示:
+Display:
 ```
 ── Phase 4: Implementation ──
 Fix: {description}
@@ -152,11 +152,11 @@ Tests: {pass_count}/{total_count} passed
 Result: ALL PASS ✅
 ```
 
-## 3回修正失敗ルール
+## Three-Failed-Attempts Rule
 
-3回以上修正を試みて失敗した場合、**自動修正を続行しない**。
+Once you have attempted a fix three or more times and failed, **do not continue fixing automatically**.
 
-ユーザーに選択肢を提示して相談する:
+Present the choices to the user and consult them:
 
 ```
 ⚠️ 3回の修正試行が失敗しました。根本的な設計の問題の可能性があります。
@@ -172,9 +172,9 @@ Result: ALL PASS ✅
 3. 調査結果をレポートとして出力し中断する
 ```
 
-- 「1」選択 → アーキテクチャの議論に移行
-- 「2」選択 → Phase 1 に戻って再分析（異なるアプローチ）
-- 「3」選択 → 調査レポートを表示して終了:
+- 「1」 selected → move on to the architecture discussion
+- 「2」 selected → return to Phase 1 and re-analyze (with a different approach)
+- 「3」 selected → show the investigation report and finish:
   ```
   ══════════════════════════════════════
   DEBUG SESSION REPORT (INCOMPLETE)
@@ -185,9 +185,9 @@ Result: ALL PASS ✅
   ══════════════════════════════════════
   ```
 
-## investigate からの連携
+## Handoff from investigate
 
-investigate の出力を受け取る導線:
+The path through which investigate's output arrives:
 
 ```
 /claude-skills:investigate {problem}
@@ -195,9 +195,9 @@ investigate の出力を受け取る導線:
   → /claude-skills:debug {investigate_report_summary}
 ```
 
-Phase 1 で investigate レポートの内容をコンテキストとして活用し、重複した調査を省略する。
+In Phase 1, put the contents of the investigate report to work as context and drop the duplicated investigation.
 
-## 完了表示
+## Completion Display
 
 ```
 ══════════════════════════════════════
@@ -210,10 +210,10 @@ Tests: ALL PASS ✅
 ══════════════════════════════════════
 ```
 
-## 重要なルール
+## Key Rules
 
-- **Phase 1 完了前に修正を提案しない** — 根本原因の特定が先
-- **一度に1つの変更** — 複数の修正を同時にしない
-- **「ついでに」改善しない** — 修正と改善を混ぜない
-- **3回失敗したら止まる** — 設計の問題を疑う
-- **「わからない」と認める** — 推測より追加調査
+- **Propose no fix before Phase 1 is complete** — the root cause comes first
+- **One change at a time** — never apply several fixes simultaneously
+- **No "while I'm here" improvements** — do not mix fixing with improving
+- **Stop after three failures** — suspect a design problem
+- **Admit when you do not know** — more investigation beats guessing
