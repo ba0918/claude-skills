@@ -7,70 +7,85 @@ description: アーキテクチャ・技術選定の意思決定を判例集方�
 
 Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
-アーキテクチャ・技術選定の意思決定を「判例集」として記録・聞き取りするスキル。
-意思決定の中身（何を選ぶべきか）を推薦するのではなく、**悪い賭けの事前棄却と反証可能性の保証**に
-限定する。すなわち棄却条件の反証可能化・選定の来歴保存・再評価条件の記録に集中し、推薦器にはしない。
+Record and interview architecture and technology decisions as a body of case law.
+The skill does not recommend what to decide; it is limited to **rejecting bad bets up front
+and guaranteeing falsifiability**. It concentrates on making abandonment conditions
+falsifiable, preserving the provenance of a selection, and recording re-evaluation
+conditions — it never becomes a recommender.
 
-意思決定プロトコルの本文（3 通過条件・非対称設計・クローズ手順・射程）は
-[decision-protocol.md](../shared/references/decision-protocol.md) を正本とする。本スキルはその
-プロトコルを実際に適用・記録するフロントエンドである。全記録は「規範」でなく「プロセス仮説 v1」の
-前向き適用であり、後ろ向きの聞き取りより前向き記録 1 件の方が証拠強度が高い。
+[decision-protocol.md](../shared/references/decision-protocol.md) is the source of truth for
+the decision protocol itself (the three passing conditions, asymmetric design, the close
+procedure, and scope). This skill is the front end that applies and records that protocol.
+Every record is a forward application of "process hypothesis v1", not a norm; one
+forward-recorded entry carries more evidential weight than a backward interview.
 
 ## Workflow Selection
 
-$ARGUMENTS の先頭キーワードでワークフローを決定する（Hick's Law: 選択肢は 4 つに保つ）。
+The leading keyword of $ARGUMENTS selects the workflow (Hick's Law: keep the choice at four).
 
-- `start` → **Start Workflow**（着手前 1 行プロトコル。成功基準の宣言）
-- `capture` → **Capture Workflow**（LLM 選定会話を決定記録に固化する。本命）
-- `interview` → **Interview Workflow**（過去プロジェクトの判例を考古学的に聞き取る）
-- `list` → **List Workflow**（記録済み決定の一覧表示）
+- `start` → **Start Workflow** (the one-line pre-commitment protocol; declare the success criterion)
+- `capture` → **Capture Workflow** (freeze an LLM selection conversation into a decision record — the main one)
+- `interview` → **Interview Workflow** (archaeologically interview a past project for its case law)
+- `list` → **List Workflow** (list the recorded decisions)
 
-決定記録は Agent Artifact Store の `decisions` kind に保存する。保存先は
-`.agents/artifacts/decisions/{slug}.md`（`slug` = `yyyymmddhhmmss_{kebab-title}`。
-kebab-title はタイトルの意味を英訳した ASCII `[a-z0-9-]` とする。記録本文のタイトルは原語のままでよい）。
-書き込み前に artifact-store の contract に従い store を解決・検証する（`docs/` パスを埋め込まない）。
+Decision records are stored under the `decisions` kind of the Agent Artifact Store, at
+`.agents/artifacts/decisions/{slug}.md` (`slug` = `yyyymmddhhmmss_{kebab-title}`, where
+kebab-title is the meaning of the title rendered in ASCII `[a-z0-9-]`; the title inside the
+record may stay in its original language). Resolve and validate the store per the
+artifact-store contract before writing (never embed a `docs/` path).
 
-## 全ワークフロー共通の安全規約
+## Safety rules shared by every workflow
 
-判例・決定記録には社名・内部事情などの機密情報が入りうる。次を守る。
+Case law and decision records can contain company names and internal circumstances.
+Observe the following.
 
-1. **書き出し前のユーザー確認**: ファイルへ書き出す前に、機密情報が含まれないかユーザーに確認する
-   （brainstorm の Wrap と同じ規約）。
-2. **秘密情報の自動除外**: 会話や証言から記録を組み立てる際、トークン・認証情報・秘密鍵・パスワード
-   らしき文字列は記録対象から除外する（ユーザー確認が漏れた場合のフォールバック）。
-3. **検出時の中断パス**（happy path を続けない。選択肢は 3 つ = Hick's Law 準拠）:
-   - `中断して確認` — 該当箇所を提示し、続行するか確認する
-   - `該当欄を除外して続行` — 秘密らしき値を含む欄だけ落として続ける。秘密が記録のどの欄にも
-     対応しない場合は「その値と関連する言及を記録に一切含めない」ことを意味する
-     （対応欄が無いことを、検出をスルーして続行する理由にしない）
-   - `中止` — 何も書き出さずに終了する
-4. `decisions/` は local visibility の artifact store 管轄（Git 管理外）であり、tracked ファイルを
-   作らない。
+1. **Confirm with the user before writing out**: before writing to a file, ask the user
+   whether the content contains confidential information (the same rule as brainstorm's Wrap).
+2. **Automatic exclusion of secrets**: while assembling a record from a conversation or
+   testimony, exclude anything that looks like a token, credential, private key, or password
+   (the fallback for when the user confirmation is skipped).
+3. **Interruption path on detection** (do not continue the happy path; three options, per
+   Hick's Law):
+   - `中断して確認` — show the passage in question and confirm whether to continue
+   - `該当欄を除外して続行` — drop only the fields holding the secret-looking value and carry
+     on. When the secret maps to no field of the record, this means "include neither that
+     value nor any related mention anywhere in the record" (the absence of a matching field
+     is not a reason to ignore the detection and continue)
+   - `中止` — end without writing anything
+4. `decisions/` belongs to the local-visibility artifact store (outside Git), so do not create
+   tracked files.
 
 ---
 
-## Start Workflow（着手前 1 行プロトコル）
+## Start Workflow (the one-line pre-commitment protocol)
 
-新規プロジェクト・新規の技術的賭けの着手前に、成功基準を宣言して 1 行残す。
+Before starting a new project or a new technical bet, declare the success criterion and leave
+one line behind.
 
 ### Steps
 
-1. 対象（プロジェクト名・賭けの内容）を $ARGUMENTS またはユーザーから取得する。
-2. 成功基準を **「遊び / 学習 / 製品 / 事業」** の 4 分類から 1 つ選んでもらう
-   （Hick's Law: 4 択・既定は「遊び」= 低賭け金探索）。射程（個人 Pj / 企業 Pj）もここで
-   併せて確認する（既定: 個人 Pj）。
-3. 選ばれた基準に応じて 1 問だけ確認する:
-   - 「製品」「事業」なら → その製品の**不可欠な成立条件**は何か。最安の E2E スパイクで先に検証するか。
-   - 「遊び」「学習」なら → 投入上限（時間・金額）を確認する（開始は抑制しない）。
-     既定値は $ARGUMENTS の文言から推定して提案し（例: 「週末に」→ 2 日。金額は言及がなければ
-     「なし」を既定とする）、推定できなければ質問する。投入上限は選定時セクションの「制約」欄に
-     記録する（終了時 1 行メモはテンプレートの既存欄をそのまま使う。新しい欄は追加しない）。
-4. 上位選定が言語を従属的に連れてくる場合のみ、**従属言語の 1 問**を挟む:
-   「その言語と長時間過ごせるか・学習資産になるか」。
-5. [decision-record-template.md](references/decision-record-template.md) の最小形（選定時セクションのみ）で
-   `.agents/artifacts/decisions/{slug}.md` に保存する。結果・損失欄は空のまま残す（後日 capture/追記）。
-   最小形でも結果セクションの欄見出し（「終了時 1 行メモ」を含む）はテンプレートどおり残す。
-6. 完了メッセージ（宣言した成功基準を 1 行エコーする）:
+1. Get the subject (project name, the content of the bet) from $ARGUMENTS or from the user.
+2. Have the user pick one success criterion out of the four categories
+   **「遊び / 学習 / 製品 / 事業」** (Hick's Law: four options; the default is 「遊び」 =
+   a low-stake exploration). Confirm the scope (個人 Pj / 企業 Pj) here as well
+   (default: 個人 Pj).
+3. Ask exactly one follow-up question, chosen by the criterion:
+   - 「製品」 or 「事業」 → what is the **indispensable condition** for that product to work?
+     Will you verify it first with the cheapest end-to-end spike?
+   - 「遊び」 or 「学習」 → confirm the investment ceiling (time, money); do not suppress the
+     start. Propose a default inferred from the wording of $ARGUMENTS (e.g. 「週末に」 → 2 days;
+     with no mention of money, default to 「なし」), and ask only when you cannot infer it.
+     Record the ceiling in the 「制約」 field of the selection-time section (the one-line
+     closing memo reuses the existing template field — do not add a new one).
+4. Only when the higher-level selection drags a language along with it, insert the
+   **one dependent-language question**: can you spend long hours with that language, and does
+   it become a learning asset?
+5. Save to `.agents/artifacts/decisions/{slug}.md` using the minimal form of
+   [decision-record-template.md](references/decision-record-template.md) (the selection-time
+   section only). Leave the outcome and loss fields empty (append later via capture). Even in
+   the minimal form, keep the outcome section's field headings — including 「終了時 1 行メモ」 —
+   exactly as the template has them.
+6. Completion message (echo the declared success criterion in one line):
    ```
    ✅ 着手前プロトコルを記録しました
    🎯 成功基準: {遊び|学習|製品|事業} — {1 行宣言}
@@ -80,41 +95,56 @@ kebab-title はタイトルの意味を英訳した ASCII `[a-z0-9-]` とする�
 
 ---
 
-## Capture Workflow（LLM 選定会話の固化 — 本命）
+## Capture Workflow (freezing an LLM selection conversation — the main one)
 
-LLM に候補を挙げさせて裁可する選定会話は ADR の原料を含むが、来歴（誰が・何を根拠に・どの確信度で
-裁可したか）が失われやすい。会話から構造を抽出して固化する。
+A selection conversation where the LLM lists candidates and the user rules on them contains the
+raw material of an ADR, but the provenance — who ruled, on what grounds, with how much
+confidence — is easily lost. Extract the structure from the conversation and freeze it.
 
 ### Steps
 
-1. 対象の選定会話を特定する（現在の会話、または指定された会話ログ）。
-2. 会話から次を抽出する（**推測で埋めない**。無い欄は「復元不能」を正式な結論として認める）:
-   - **候補**（挙がった選択肢すべて。現状維持案・不採用案を含む）
-   - **制約**（会話で言及された前提・要件）
-   - **裁可理由**とその**由来**（当時明示 / 当時の痕跡あり / 事後回想 / 現在の推測）
-   - **確信度**（裁可者がどれだけ確信していたか。判定基準: 明確な確信の言明 = 高 /
-     留保つき受容（「まあ〜でいいか」等）= 中 / 消極的・言明なし = 低。会話に無い確信を高にしない）
-   - **棄却条件・再評価条件**（何が観測されたらこの賭けを降りるか。無ければ「未設定」と記録）
-   - **成功基準**（テンプレートのヘッダ欄）: 同一対象の Start 記録が `decisions/` に既にあれば
-     その宣言を引き継ぐ。無ければ「未設定（Start 未実施）」と記録する（4 分類から推測で選ばない）
-   - **射程**（テンプレートのヘッダ欄）: 会話に企業・チーム運用の言及があれば「企業 Pj」、
-     無ければ既定の「個人 Pj」とする（List Workflow が一覧表示するため空欄にしない）
-   - **賭け金**（影響軸別 4 軸）: **会話がその軸に明示的に触れた場合のみ**埋め、触れていない軸は
-     「言及なし」とする（周辺情報からの推定で埋めない）。4 軸すべてが低い（損失上限小・
-     撤退点観測可能・外部影響小・機密非曝露）と会話から言える場合は、テンプレートの
-     「賭け金が低いなら全欄を埋めなくてよい」規定に従い数行メモに留めてよい
-   - **各主張の証拠強度**: 上記の各欄を書いた時点で OBSERVED / REPORTED / INTERPRETATION /
-     HYPOTHESIS を付す（選定会話は通常 OBSERVED = ログが残っている）
-3. 上記以外のテンプレート欄は **Capture の守備範囲外**として次のとおり扱う。空欄を推測で埋めない。
-   - **封印セクション**: セクションごと省略する（Interview 専用。template の「記入の注意」に従う）
-   - **結果セクション / 判旨・射程・反例**: 欄見出しは残し、中身は空のままにする
-     （結果が出てから追記する欄であり、省略すると追記先が消える）
-4. 共通安全規約を適用する。秘密の有無に関わらず書き出し前にユーザーへ確認する。確認では
-   **保存先パスと、記録に載る欄の一覧**を示す（全文提示は必須ではない）。秘密を検出した場合は
-   この確認を 3 択の中断パスに置き換える。
-5. 確認を通過したら [decision-record-template.md](references/decision-record-template.md) に沿って
-   `.agents/artifacts/decisions/{slug}.md` に保存する。
-6. 完了メッセージ（抽出した候補・裁可理由・確信度を要約し保存先を示す）:
+1. Identify the target selection conversation (the current conversation, or a specified log).
+2. Extract the following from the conversation (**never fill a field by guessing**; for a
+   field with no answer, 「復元不能」 is an acceptable formal conclusion):
+   - **候補** (every option raised, including the status-quo option and the rejected ones)
+   - **制約** (the premises and requirements mentioned in the conversation)
+   - **裁可理由** and its **由来** (stated at the time / traces from the time / recalled
+     afterwards / inferred now)
+   - **確信度** (how certain the decider was. Criterion: an explicit statement of confidence
+     = 高 / acceptance with reservation (「まあ〜でいいか」 and the like) = 中 / passive or
+     unstated = 低. Never upgrade to 高 a confidence the conversation does not show)
+   - **棄却条件・再評価条件** (what observation would make you walk away from this bet; record
+     「未設定」 when there is none)
+   - **成功基準** (a template header field): if a Start record for the same subject already
+     exists under `decisions/`, carry that declaration over. Otherwise record
+     「未設定（Start 未実施）」 — do not guess one of the four categories
+   - **射程** (a template header field): 「企業 Pj」 when the conversation mentions a company or
+     team operation, otherwise the default 「個人 Pj」 (never leave it blank, because the List
+     Workflow displays it)
+   - **賭け金** (four impact axes): fill an axis **only when the conversation touched it
+     explicitly**; mark an untouched axis 「言及なし」 (do not infer it from surrounding
+     information). When the conversation supports all four axes being low (small loss ceiling,
+     observable exit point, small external impact, no exposure of confidential data), the
+     template's "you need not fill every field when the stake is low" rule applies and a
+     few lines of memo are enough
+   - **各主張の証拠強度**: attach OBSERVED / REPORTED / INTERPRETATION / HYPOTHESIS at the
+     moment you write each of the fields above (a selection conversation is usually OBSERVED —
+     the log survives)
+3. Treat every other template field as **outside Capture's remit**, as follows. Do not fill a
+   blank by guessing.
+   - **封印セクション**: omit the section entirely (Interview only; per the template's
+     "記入の注意")
+   - **結果セクション / 判旨・射程・反例**: keep the field headings and leave the contents
+     empty (these are appended once the outcome exists; omitting them would delete the place
+     the append goes)
+4. Apply the shared safety rules. Confirm with the user before writing out, whether or not a
+   secret was found. The confirmation shows **the destination path and the list of fields the
+   record will carry** (presenting the full text is not required). When a secret is detected,
+   replace this confirmation with the three-option interruption path.
+5. Once the confirmation passes, save to `.agents/artifacts/decisions/{slug}.md` following
+   [decision-record-template.md](references/decision-record-template.md).
+6. Completion message (summarise the extracted candidates, ruling rationale, and confidence,
+   and show the destination):
    ```
    ✅ 選定会話を決定記録に固化しました
    🧭 候補: {候補一覧}／採用: {採用案}
@@ -123,37 +153,43 @@ LLM に候補を挙げさせて裁可する選定会話は ADR の原料を含�
    📄 File: .agents/artifacts/decisions/{slug}.md
    ```
 
-**注意**: 理由を保存しても決定の来歴（誰が・何を根拠に・どの確信度で裁可したか）は失われうる。
-「保存」ではなく来歴・裁可・再評価条件の**構造化**に価値がある。
+**Note**: saving the rationale does not save the provenance — who ruled, on what grounds, with
+how much confidence. The value is in **structuring** provenance, the ruling, and the
+re-evaluation condition, not in "saving".
 
 ---
 
-## Interview Workflow（判例の考古学的聞き取り）
+## Interview Workflow (archaeological interview of a case)
 
-過去プロジェクトの意思決定を後ろ向きに聞き取り、判例として記録する。手法の詳細は
-[interview-guide.md](references/interview-guide.md) を正本とする。長い対話になりうるため、
-**各ステップで途中保存し、中断しても再開できるようにする**。
+Interview a past project's decisions retrospectively and record them as case law.
+[interview-guide.md](references/interview-guide.md) is the source of truth for the technique.
+The dialogue can run long, so **save incrementally at every step so it can resume after an
+interruption**.
 
 ### Steps
 
-1. **聴取前の封印記録**（interview-guide の手順に従う）。仮説・反証条件・結末予想を聴取開始前に
-   固定し、`.agents/artifacts/decisions/{slug}.md` の封印セクションに先に書き出す
-   （採取後の後付けを防ぐ。聴取結果に関わらず書き換えない）。
-2. **自由再生から始める**。質問文に判例語彙（境界・成立条件・賭け金 等）を使わず、本人の言葉で
-   語ってもらう。判例の型に証言を収斂させない。
-3. 欄ごとに聞き取り、各欄に**証拠強度ラベル**を付ける（OBSERVED / REPORTED / INTERPRETATION /
-   HYPOTHESIS。定義は decision-record-template 参照）。
-   - **停止理由と非再開理由を分離**して聞く。
-   - **選択肢リストを提示して比較を捏造しない**（本人が比較していないなら「比較なし」と記録）。
-   - 記憶の無い欄は「復元不能」を正式な結論として記録する。
-   - テンプレートのヘッダ欄（成功基準・射程）も証言から復元する。成功基準は、当時の宣言の証言が
-     あればそれを採用し、無ければ「未設定（Start 未実施）」を主とする。状況からの推定は括弧の
-     暫定注記に留め INTERPRETATION ラベルを付ける（「復元不能」は宣言の有無自体が確認できない
-     場合に使う）。
-4. **各ステップで途中保存し、進捗（取得済みの欄 / 残りの欄）をエコーする**。中断・再開時に
-   どこまで進んだかが見えるようにする。
-5. 共通安全規約を適用する（秘密情報検出時は中断パスへ）。
-6. 完了メッセージ（復元できた欄と「復元不能」欄の内訳を提示する）:
+1. **Seal the record before interviewing** (follow the interview-guide procedure). Fix the
+   hypothesis, the refutation conditions, and the predicted ending before the interview starts,
+   and write them out first into the 封印セクション of `.agents/artifacts/decisions/{slug}.md`
+   (this blocks retrofitting after collection; never rewrite it, whatever the interview yields).
+2. **Start from free recall**. Keep case-law vocabulary (境界, 成立条件, 賭け金 and the like) out
+   of your questions and let the person speak in their own words. Do not make the testimony
+   converge on the shape of the template.
+3. Interview field by field, attaching an **証拠強度ラベル** to each field (OBSERVED /
+   REPORTED / INTERPRETATION / HYPOTHESIS; definitions in decision-record-template).
+   - **Ask about the reason for stopping and the reason for not resuming separately.**
+   - **Do not fabricate a comparison by presenting a list of options** (if the person did not
+     compare, record 「比較なし」).
+   - For a field with no memory, record 「復元不能」 as a formal conclusion.
+   - Restore the template header fields (成功基準, 射程) from the testimony too. For 成功基準,
+     adopt the testimony of a declaration made at the time when there is one; otherwise lead
+     with 「未設定（Start 未実施）」. Keep an inference from circumstances to a parenthetical
+     provisional note and label it INTERPRETATION (「復元不能」 is for when you cannot even
+     confirm whether a declaration existed).
+4. **Save incrementally at every step and echo the progress** (fields obtained / fields
+   remaining), so that an interruption and resumption show how far you got.
+5. Apply the shared safety rules (on detecting a secret, take the interruption path).
+6. Completion message (present the breakdown of restored fields and 「復元不能」 fields):
    ```
    ✅ 判例を記録しました
    🗂 復元できた欄: {欄名一覧}
@@ -164,25 +200,28 @@ LLM に候補を挙げさせて裁可する選定会話は ADR の原料を含�
 
 ---
 
-## List Workflow（一覧表示）
+## List Workflow
 
 ### Steps
 
-1. `.agents/artifacts/decisions/` 内の `*.md` を列挙する（なければ「まだ決定記録がありません」と表示）。
-2. 各記録のタイトル・成功基準・射程（個人/企業）・状態を一覧表示する。
-3. 件数サマリーを表示する:
+1. Enumerate `*.md` under `.agents/artifacts/decisions/` (if there are none, print
+   「まだ決定記録がありません」).
+2. List each record's title, success criterion, scope (個人/企業), and state.
+3. Show the count summary:
    ```
    📊 決定記録数: {N}
    ```
 
 ---
 
-## 設計方針
+## Design policy
 
-- **skills-first**: command は追加しない。ワークフロー分岐は $ARGUMENTS の先頭キーワードで行う
-  （brainstorm と同型）。
-- **プラットフォーム非依存**: 特定ツール API 名・モデル名を使わない。
-- **推薦器にしない**: v1 は制約の引き出し・棄却条件の記録・来歴の構造化に限定する。捕捉率・誤発火率・
-  再評価実施率を測ってからゲートの blocking 化を検討する。
-- **brainstorm / plan との棲み分け**: brainstorm はアイデア発散、plan は実装計画。本スキルは
-  意思決定の記録・聞き取り・来歴保存を所有する。
+- **skills-first**: add no command. The workflow branches on the leading keyword of $ARGUMENTS
+  (the same shape as brainstorm).
+- **Platform-agnostic**: use no specific tool API name or model name.
+- **Not a recommender**: v1 is limited to eliciting constraints, recording abandonment
+  conditions, and structuring provenance. Measure capture rate, false-trigger rate, and
+  re-evaluation rate before considering making the gate blocking.
+- **Boundary with brainstorm / plan**: brainstorm is idea divergence, plan is the
+  implementation plan. This skill owns recording, interviewing, and preserving the provenance
+  of decisions.
