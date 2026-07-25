@@ -7,159 +7,159 @@ description: 実装完了後のコードを動作を完全に維持したまま�
 
 Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
-指定スコープのコードを完全に理解したうえで、**動作を完全に維持したまま**表現を改善し、
-コードベース全体の類似コードへ文脈検証つきで横展開する。
-**理解 → 改善候補の抽出 → 横展開検索 → 文脈検証 → 動作保持リファクタ → 報告** のワークフロー。
+Fully understand the code in the specified scope, then improve its expression **while preserving behavior completely**,
+and propagate the improvement to similar code across the codebase with context verification.
+The workflow: **understand → extract improvement candidates → sweep for similar code → verify context → behavior-preserving refactor → report**.
 
-sweep-fix が「問題（バグ）起点の find-one-fix-all」なのに対し、refactor は
-「動作保持の表現改善」起点。発見したバグは**修正せず** issue 化コマンド案を提示してユーザに委ねる。
+Where sweep-fix is a find-one-fix-all driven by a problem (a bug), refactor is driven by
+behavior-preserving improvement of expression. A bug you find is **not fixed** — you present a proposed issue-creation command and leave it to the user.
 
 ## Iron Laws
 
 ```
-1. 動作を完全に維持する — 変えるのは表現だけ。入出力・副作用・エラー挙動・順序は同一
-2. 理解していないコードをリファクタするな — Chesterton's Fence
-3. バグを見つけても直すな — issue 化コマンド案を提示してユーザに委ねる（diff に混ぜない・自動作成もしない）
-4. 既にきれいなら何もするな — no-op は正当な結果
-5. 迷ったら直すな — UNCERTAIN はユーザに委ねる。証明手段（テスト/型検査/probe）がない箇所は APPLY しない
+1. Preserve behavior completely — only the expression changes. Inputs/outputs, side effects, error behavior, and ordering stay identical
+2. Do not refactor code you do not understand — Chesterton's Fence
+3. Do not fix a bug even when you find one — present a proposed issue-creation command and leave it to the user (do not mix it into the diff, do not create it automatically)
+4. Do nothing if it is already clean — a no-op is a legitimate result
+5. When in doubt, do not touch it — hand UNCERTAIN to the user. Do not APPLY where there is no means of proof (test / type check / probe)
 ```
 
-## 他スキルとの差別化
+## Differentiation from Other Skills
 
-- **sweep-fix**: 問題（バグ・アンチパターン）起点の find-one-fix-all で、**挙動を変える**前提。refactor は**動作保持**が前提で、改善カタログも検証観点も別物（バグ成立検証 vs 動作保持検証）。correctness / security 起因の候補は refactor では扱わず sweep-fix / issue に送る
-- **iterate**: ユーザが修正指示を持ち込む cycle 後の改善ループ。refactor はスコープ指定分析から改善候補の発見自体を行う
-- **investigate**: 読み取り専用の分析のみ。refactor は Phase 5 で改善実施まで行う
-- **systematic-debugging**: バグの根本原因特定と修正が目的。refactor はバグに手を出さない
-- **simplify（Claude Code ビルトイン）**: 直近の変更 diff に対する quality-only の整理。refactor はユーザ指定スコープ（既存コード全般）を対象とし、横展開・3値判定・issue 化提案まで行う
-- **codebase-review**: 全体固定スキャンのレポート止まり。refactor はユーザ指定スコープ起点で修正まで行う
+- **sweep-fix**: a find-one-fix-all driven by a problem (a bug, an anti-pattern), on the premise that **behavior changes**. refactor is premised on **behavior preservation**, and both its improvement catalog and its verification viewpoints are different (verifying a bug holds vs verifying behavior is preserved). Candidates rooted in correctness / security are not handled by refactor — send them to sweep-fix / issue
+- **iterate**: a post-cycle improvement loop where the user brings the fix instructions. refactor performs the discovery of improvement candidates itself, from an analysis of the specified scope
+- **investigate**: read-only analysis only. refactor goes as far as carrying out the improvement, in Phase 5
+- **systematic-debugging**: aims at identifying and fixing the root cause of a bug. refactor does not lay a hand on bugs
+- **simplify (a Claude Code built-in)**: a quality-only tidy-up of the most recent change diff. refactor targets a user-specified scope (existing code in general) and goes as far as sweeping, three-way verdicts, and proposing issue creation
+- **codebase-review**: a fixed whole-codebase scan that stops at a report. refactor starts from a user-specified scope and goes as far as making the fix
 
-## 共有契約への準拠
+## Conformance to Shared Contracts
 
-- [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md): 3値判定（CONFIRMED / FALSE_POSITIVE / UNCERTAIN）の**定義のみ**参照する。severity（BLOCK / WARN / INFO）は refactor では使わない
-- [verification-gate.md](../shared/references/verification-gate.md): 完了前検証・証拠要求（Phase 1 の検証手段確保 Gate と Phase 5 のテスト証拠の根拠）
-- [orchestration-patterns.md](../shared/references/orchestration-patterns.md): read-only フェーズのサブエージェント委譲閾値の根拠（パターン7: リサーチ隔離）
+- [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md): reference **only the definitions** of the three-way verdict (CONFIRMED / FALSE_POSITIVE / UNCERTAIN). refactor does not use severity (BLOCK / WARN / INFO)
+- [verification-gate.md](../shared/references/verification-gate.md): pre-completion verification and the demand for evidence (the basis for the Phase 1 gate securing a means of verification and for the Phase 5 test evidence)
+- [orchestration-patterns.md](../shared/references/orchestration-patterns.md): the basis for the subagent delegation thresholds in the read-only phases (pattern 7: research isolation)
 
-> **検証観点は自前で持つ**: sweep-fix の `context-verification.md` はバグ成立検証向けの質問リストで、動作保持検証とは問いが異なる。また兄弟スキルの private reference への横依存は結合を生むため参照しない。refactor 固有の [references/behavior-preservation-checks.md](references/behavior-preservation-checks.md) を使う。3値判定の**定義**は共有契約 severity-and-verdicts.md に準拠する。
+> **Own your verification viewpoints**: sweep-fix's `context-verification.md` is a question list aimed at verifying that a bug holds, and behavior-preservation verification asks different questions. A lateral dependency on a sibling skill's private reference also creates coupling, so do not reference it. Use refactor's own [references/behavior-preservation-checks.md](references/behavior-preservation-checks.md). The **definitions** of the three-way verdict conform to the shared contract severity-and-verdicts.md.
 
-## フロー
+## Flow
 
 ```
-Phase 0: SCOPE      — スコープ解釈と対象確定（安全上限つき）
-Phase 1: UNDERSTAND — 対象コードの完全理解（Chesterton's Fence + 検証手段の確保）
-Phase 2: IDENTIFY   — 改善候補の洗い出し・分類と Gate 判定
-Phase 3: SWEEP      — 類似コードの横展開検索（読み取り専用・範囲限定）
-Phase 4: VERIFY     — 文脈検証・3値判定 ★品質の要
-Phase 5: APPLY      — 1改善ずつの動作保持リファクタ + テスト（スコープ外は opt-in）
-Phase 6: REPORT     — 結果報告 + 発見バグの issue 化コマンド案提示
+Phase 0: SCOPE      — interpret the scope and fix the targets (with a safety cap)
+Phase 1: UNDERSTAND — fully understand the target code (Chesterton's Fence + secure a means of verification)
+Phase 2: IDENTIFY   — enumerate and classify improvement candidates, and judge the gates
+Phase 3: SWEEP      — sweep for similar code (read-only, range-limited)
+Phase 4: VERIFY     — verify context, three-way verdict ★ where the quality is decided
+Phase 5: APPLY      — behavior-preserving refactor, one improvement at a time + tests (outside the scope it is opt-in)
+Phase 6: REPORT     — report the results + present proposed issue-creation commands for the bugs found
 ```
 
-## Phase 0: SCOPE — スコープ解釈と対象確定
+## Phase 0: SCOPE — Interpret the Scope and Fix the Targets
 
-1. `$ARGUMENTS` からスコープを解釈する:
-   - ファイルパス / ディレクトリ / glob / クラス名・関数名
-   - git 期間表現（「直近5コミット」「今週の変更」→ `git log --since=...` / `git diff HEAD~N --name-only` で対象ファイル集合に展開）
-2. **引用の徹底**: パス・引数に空白やシェルメタ文字が含まれる場合は、コマンド組み立て時に必ず引用符で囲む（`git diff HEAD~5 --name-only -- "src/my dir"`）
-3. **引数なしの場合**: 直近コミットの変更ファイル（`git diff HEAD~1 --name-only`）をデフォルトスコープとして提示し確認する
-4. **存在確認**: 展開後の対象パスの存在を `ls` / ファイル一覧取得で確認する。存在しなければ即エラーで中断
-5. **テストファイルの扱い**: スコープ展開（git 期間指定等）にテストファイルが含まれても、テストは**改善対象ではなく検証手段**として扱う（immutable。Phase 5 の「テストを修正しない」規則と同根）
-6. **安全上限**: 展開後の対象が **50 ファイルを超える**場合は、そのまま進めずスコープの分割案を提示してユーザに確認する（スコープ総量の暴走防止。Phase 5 の Rule of 500 は1改善あたりのサイズ制御で別レイヤ）
-7. **Gate: 一時コード判定** — プロトタイプ・使い捨てスクリプト・削除予定コード（`TODO: remove` / `experimental` / `scratch` 等のシグナル + ユーザへの確認）は**改善対象から除外**して報告する（一時コードに労力を割くのは時間の無駄）。一時に見えて仕様化しているコード（migration shim 等）があるため、**削除・統合系の変換は初版の対象外**とし、命名整理・抽出・重複解消など可逆性の高い変換に限定する
+1. Interpret the scope from `$ARGUMENTS`:
+   - File path / directory / glob / class name / function name
+   - A git period expression (「直近5コミット」「今週の変更」 → expand to the set of target files with `git log --since=...` / `git diff HEAD~N --name-only`)
+2. **Quote rigorously**: when a path or argument contains whitespace or shell metacharacters, always wrap it in quotes when assembling the command (`git diff HEAD~5 --name-only -- "src/my dir"`)
+3. **With no argument**: present the changed files of the most recent commit (`git diff HEAD~1 --name-only`) as the default scope and confirm it
+4. **Existence check**: confirm that the expanded target paths exist with `ls` / by listing files. Abort with an error immediately if they do not
+5. **Handling of test files**: even when scope expansion (a git period specification, etc.) includes test files, treat the tests **not as improvement targets but as the means of verification** (immutable. Same root as the Phase 5 rule "do not modify the tests")
+6. **Safety cap**: when the expanded targets exceed **50 files**, do not press on — present a proposal for splitting the scope and confirm it with the user (preventing a runaway in total scope volume. Phase 5's Rule of 500 controls the size of a single improvement and is a separate layer)
+7. **Gate: temporary-code judgment** — prototypes, throwaway scripts, and code slated for deletion (signals such as `TODO: remove` / `experimental` / `scratch` + confirmation with the user) are **excluded from the improvement targets** and reported as such (spending effort on temporary code is a waste of time). Because there is code that looks temporary but has become specified (a migration shim, etc.), **deletion and consolidation transformations are out of scope for the first version** — limit yourself to highly reversible transformations such as tidying names, extraction, and removing duplication
 
-## Phase 1: UNDERSTAND — 対象コードの完全理解
+## Phase 1: UNDERSTAND — Fully Understand the Target Code
 
-**Chesterton's Fence: なぜこう書かれたかを理解するまで壊さない。**
+**Chesterton's Fence: do not break it until you understand why it was written this way.**
 
-1. 対象コードの責務・入出力・副作用・エラー挙動・エッジケースを読み取る
-2. 呼び出し元・呼び出し先をパターン検索 / 言語サーバー（LSP）で確認する（挙動契約の把握）
-3. `git log --follow` / `git blame` で経緯を確認する（「なぜこう書かれたか」— パフォーマンス対策・プラットフォーム制約・過去のバグ修正の可能性）
-4. **Gate: 理解不足** — 答えられない箇所は改善対象から除外し、除外理由を `unknown_reason` として記録する:
-   `no_history` / `dynamic_dispatch` / `public_api` / `generated_or_vendor` / `unclear_tests`（テストはあるが範囲・意図が読めない） / `semantic_dependency` / `no_verification_means`（テスト・型検査・probe 等の検証手段そのものが不在。次項 Gate による除外・UNCERTAIN 降格もこの語を使う）。**理解していないコードを単純化しない**
-5. **Gate: 検証手段の確保（動作保持の証明可能性）** — 既存テストの有無と範囲を確認する:
-   - テストが存在しない場合は characterization test（現挙動の固定テスト）の追加を提案し、ユーザ合意が得られれば作成・実行してから進む
-   - **headless 実行では合意が取れないため characterization test / probe を勝手に生成せず、該当箇所は UNCERTAIN / no-op に落とす**（test と probe は本 Gate で常に同じ扱い）。headless とは cycle 経由・subagent・自動化パイプライン等、**ユーザへの確認・質問に応答が得られない文脈全般**を指す（Phase 5 の headless も同義）
-   - 既存テスト・ビルド・型検査・lint・実行可能な characterization probe の**いずれも用意できない箇所は APPLY 対象にしない**（UNCERTAIN または no-op に落とす）。証明手段なしの「動作完全維持」主張は verification-gate 契約違反
-   - Phase 1 で作成した characterization test / probe は以降 **immutable**（Phase 5 の「テストを修正しない」規則の対象に含める）
-6. **委譲判定**: スコープが **10 ファイルを超える**場合、UNDERSTAND の読み取り調査は read-only の探索型サブエージェントに委譲する（orchestration-patterns.md パターン7: リサーチ隔離。メインコンテキスト肥大の防止）
+1. Read off the target code's responsibilities, inputs and outputs, side effects, error behavior, and edge cases
+2. Confirm the callers and callees with pattern search / the language server (LSP) (grasping the behavioral contract)
+3. Confirm the history with `git log --follow` / `git blame` ("why was it written this way" — possibly a performance measure, a platform constraint, or a past bug fix)
+4. **Gate: insufficient understanding** — exclude anything you cannot answer for from the improvement targets, and record the reason for exclusion as `unknown_reason`:
+   `no_history` / `dynamic_dispatch` / `public_api` / `generated_or_vendor` / `unclear_tests` (tests exist but their range and intent cannot be read) / `semantic_dependency` / `no_verification_means` (the means of verification itself — test, type check, probe, etc. — is absent. Use this term too for the exclusion and UNCERTAIN demotion by the next gate). **Do not simplify code you do not understand**
+5. **Gate: securing a means of verification (provability of behavior preservation)** — confirm whether existing tests are present and what they cover:
+   - When no test exists, propose adding a characterization test (a test that pins the current behavior), and if the user agrees, create and run it before proceeding
+   - **In a headless run, agreement cannot be obtained, so do not generate a characterization test / probe on your own — drop those sites to UNCERTAIN / no-op** (test and probe are always treated alike by this gate). headless means any context where a confirmation or question to the user gets no response — via cycle, a subagent, an automation pipeline, and so on (the headless in Phase 5 is the same)
+   - **Do not make a site an APPLY target when you can prepare none of** an existing test, a build, a type check, a lint, or a runnable characterization probe (drop it to UNCERTAIN or no-op). Claiming "behavior fully preserved" without a means of proof violates the verification-gate contract
+   - A characterization test / probe created in Phase 1 is **immutable** from then on (include it in the Phase 5 rule "do not modify the tests")
+6. **Delegation judgment**: when the scope exceeds **10 files**, delegate the UNDERSTAND read-only investigation to a read-only exploration subagent (orchestration-patterns.md pattern 7: research isolation. Preventing bloat of the main context)
 
-## Phase 2: IDENTIFY — 改善候補の洗い出しと分類
+## Phase 2: IDENTIFY — Enumerate and Classify Improvement Candidates
 
-1. [references/refactoring-catalog.md](references/refactoring-catalog.md) のパターン表（深いネスト / 長大関数 / ネストした三項演算子 / boolean フラグ引数 / 汎用名 / what コメント / 重複ロジック / デッドコード / 無価値ラッパー等）に照らして候補をリストアップする
-2. 各候補を **4値に分類**する:
+1. List candidates against the pattern table in [references/refactoring-catalog.md](references/refactoring-catalog.md) (deep nesting / overlong functions / nested ternaries / boolean flag arguments / generic names / what-comments / duplicated logic / dead code / worthless wrappers, etc.)
+2. Classify each candidate into **four values**:
 
-   | 分類 | 意味 | 扱い |
+   | Class | Meaning | Treatment |
    |------|------|------|
-   | `REFACTOR_CANDIDATE` | 動作保持で表現を改善できる | Phase 3 以降の対象 |
-   | `BUG_FOUND` | correctness / security / data loss / behavior mismatch を理由とする | Phase 6 で issue 化案として提示（**改善候補に入れない**） |
-   | `OUT_OF_SCOPE` | 一時コード・理解不足・スコープ外 | 除外して報告 |
-   | `ALREADY_CLEAN` | 既にシンプルで可読性が高い | 何もしない |
+   | `REFACTOR_CANDIDATE` | The expression can be improved while preserving behavior | A target from Phase 3 onward |
+   | `BUG_FOUND` | Grounded in correctness / security / data loss / behavior mismatch | Presented as a proposed issue in Phase 6 (**not put into the improvement candidates**) |
+   | `OUT_OF_SCOPE` | Temporary code, insufficient understanding, outside the scope | Excluded and reported |
+   | `ALREADY_CLEAN` | Already simple and highly readable | Do nothing |
 
-3. **sweep-fix との境界規則**: 候補の改善価値が correctness / security / data loss / behavior mismatch を理由とする場合、それは refactor 候補ではなく `BUG_FOUND`。バグ修正が目的なら sweep-fix を使う
-4. 各 `REFACTOR_CANDIDATE` に「**新しいチームメンバーが元より速く理解できるか？**」テストを適用する
-5. **Gate: already-clean** — 改善候補ゼロまたは全候補が「効果薄」→ **no-op で終了**する。「既にシンプルで可読性が高い」ことを正当な結果として報告する（無理に適用しない）。この場合、変更が発生しないため検証ゲート（テスト実行）は**必須ではない**（挙動契約の把握目的で既存テストを読み取り専用に1回実行するのは妨げない）。簡略版レポート（スコープ / 判定サマリ / 理由のみ。形式選択の規則は Phase 6 冒頭）を会話上に出力する
-6. **Gate: パフォーマンスクリティカル** — ホットパス・ベンチマーク対象・計測コメントのある箇所は、「シンプルな版」が遅くなる可能性を明記し、計測なしに書き換えない。**ホットパスかどうか不明な場合も UNCERTAIN に倒す**（fail-safe の完結）
+3. **The boundary rule with sweep-fix**: when a candidate's improvement value is grounded in correctness / security / data loss / behavior mismatch, it is not a refactor candidate but a `BUG_FOUND`. If fixing the bug is the goal, use sweep-fix
+4. Apply the test 「**新しいチームメンバーが元より速く理解できるか？**」 to each `REFACTOR_CANDIDATE`
+5. **Gate: already-clean** — zero improvement candidates, or every candidate is "low value" → **finish with a no-op**. Report "already simple and highly readable" as a legitimate result (do not force an application). In this case no change occurs, so the verification gate (running tests) is **not mandatory** (running the existing tests once, read-only, to grasp the behavioral contract is not precluded). Print an abbreviated report (scope / verdict summary / reasons only. The rule for choosing the format is at the top of Phase 6) in the conversation
+6. **Gate: performance-critical** — for a hot path, a benchmark target, or a site with a measurement comment, state that the "simpler version" may be slower, and do not rewrite it without measurement. **When it is unclear whether it is a hot path, fall to UNCERTAIN as well** (completing the fail-safe)
 
-## Phase 3: SWEEP — 類似コードの横展開検索
+## Phase 3: SWEEP — Sweep for Similar Code
 
-**読み取り専用・範囲限定。一切修正しない。**
+**Read-only and range-limited. Fix nothing at all.**
 
-1. Phase 2 の各 `REFACTOR_CANDIDATE` をパターン化し、類似事例を検索する。各改善は `improvement_id` を持ち、`origin`（Phase 0 スコープ内の元箇所）と `sweep_candidates`（スコープ外の類似箇所）を区別して記録する
-2. **検索範囲の限定**: Phase 0 スコープと**同一言語・関連ディレクトリに限定**する（巨大 monorepo での similarity-* 全体走査は重い。「コードベース全体」を無条件に走査しない）
-3. **検出ツールの使い分け**（詳細は [references/similarity-detection.md](references/similarity-detection.md)）。ツールは役割が異なるため、候補の性質と言語で選ぶ（純粋な段階フォールバックではない）:
-   - `similarity-ts` / `similarity-rs`（`which` で存在確認）: 重複ブロック・コードクローンの構造的検出。**TS/JS/Rust のみ**
-   - `ast-grep`（`which` で存在確認）: 既知の構文パターンの全インスタンス列挙
-   - パターン検索（常に利用可能）: 広めの字面検索。上記が使えない場合のフォールバック
-4. **言語カバレッジの非対称性**: similarity-* 非対応言語（Python / Go / PHP / Dart 等）では字面検索に落ちるため偽陽性リスクが上がる。非対応言語では横展開を保守的に運用する。使用ツールと `fallback_reason` を記録して REPORT に載せる
-5. 検索は広く（偽陰性防止）、修正判断は Phase 4 に委ねる（検索と検証の責務分離）
-6. **委譲判定**: スコープが **10 ファイルを超える**場合、SWEEP は read-only サブエージェントに委譲する（高性能モデルを明示）
+1. Turn each `REFACTOR_CANDIDATE` from Phase 2 into a pattern and search for similar cases. Each improvement has an `improvement_id`, and records `origin` (the original site inside the Phase 0 scope) separately from `sweep_candidates` (similar sites outside the scope)
+2. **Limit the search range**: **limit it to the same language and related directories** as the Phase 0 scope (a whole-repository similarity-* pass is heavy in a huge monorepo. Do not scan "the whole codebase" unconditionally)
+3. **Choosing between detection tools** (details in [references/similarity-detection.md](references/similarity-detection.md)). The tools have different roles, so choose by the nature of the candidate and the language (this is not a pure staged fallback):
+   - `similarity-ts` / `similarity-rs` (check existence with `which`): structural detection of duplicated blocks and code clones. **TS/JS/Rust only**
+   - `ast-grep` (check existence with `which`): enumerate every instance of a known syntactic pattern
+   - Pattern search (always available): a wide textual search. The fallback when the above are unusable
+4. **Asymmetry in language coverage**: in languages similarity-* does not support (Python / Go / PHP / Dart, etc.) you fall back to textual search, which raises the false-positive risk. In unsupported languages, run the sweep conservatively. Record the tool used and the `fallback_reason` and put them in the REPORT
+5. Search wide (preventing false negatives), and leave the fix decision to Phase 4 (separating the responsibilities of searching and verifying)
+6. **Delegation judgment**: when the scope exceeds **10 files**, delegate SWEEP to a read-only subagent (state a high-capability model explicitly)
 
-## Phase 4: VERIFY — 文脈検証・3値判定
+## Phase 4: VERIFY — Verify Context, Three-Way Verdict
 
-**このスキルの品質を決める Phase。スキップ・簡略化は禁止。**
+**This phase decides the quality of this skill. Skipping or abbreviating it is forbidden.**
 
-判定値の定義は共有契約 [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md)（CONFIRMED / FALSE_POSITIVE / UNCERTAIN）に準拠する。
-検証観点は refactor 固有の [references/behavior-preservation-checks.md](references/behavior-preservation-checks.md) の質問リストを使う。
+The definitions of the verdict values conform to the shared contract [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md) (CONFIRMED / FALSE_POSITIVE / UNCERTAIN).
+For the verification viewpoints, use the question list in refactor's own [references/behavior-preservation-checks.md](references/behavior-preservation-checks.md).
 
-1. `origin` / `sweep_candidates` の**両方**を検証に通す。候補ごとに該当ファイルの周辺コンテキストを **実際にファイルを読んで確認する**（excerpt だけで判定しない）
-2. behavior-preservation-checks.md の質問で判定する:
-   - 「同じ変換をこの箇所に**動作を保持したまま**安全に適用できるか」
-   - 「挙動契約（入出力・副作用・エラー挙動・順序）は同一に保てるか」
-   - 「呼び出し文脈は origin と同質か」
-   - 「意図的な差異の痕跡（コメント・履歴・将来分岐予定）はないか」
-   - 「ホットパスの可能性はないか（不明なら UNCERTAIN）」
-3. 3値判定を下す:
+1. Put **both** `origin` and `sweep_candidates` through verification. For each candidate, **actually read the file** to confirm the surrounding context (do not judge from the excerpt alone)
+2. Judge with the questions in behavior-preservation-checks.md:
+   - "Can the same transformation be applied safely to this site **while preserving behavior**?"
+   - "Can the behavioral contract (inputs/outputs, side effects, error behavior, ordering) be kept identical?"
+   - "Is the calling context of the same nature as the origin's?"
+   - "Is there any trace of a deliberate difference (a comment, the history, a planned future branch)?"
+   - "Is there any chance this is a hot path (UNCERTAIN if unclear)?"
+3. Return a three-way verdict:
 
-   | 判定 | 意味 | 扱い |
+   | Verdict | Meaning | Treatment |
    |------|------|------|
-   | **CONFIRMED** | 動作を保持したまま同じ変換を安全に適用できる | APPLY 候補 |
-   | **FALSE_POSITIVE** | 表面上似ているが文脈が違う（適用不可・不要） | 除外。**除外理由を必ず記録** |
-   | **UNCERTAIN** | 判断に必要な文脈が不足、または適用可否が文脈依存 | 修正しない。判断材料付きでレポート |
+   | **CONFIRMED** | The same transformation can be applied safely while preserving behavior | An APPLY candidate |
+   | **FALSE_POSITIVE** | It resembles it on the surface but the context differs (inapplicable or unnecessary) | Excluded. **Always record why it was excluded** |
+   | **UNCERTAIN** | The context needed to judge is missing, or applicability is context-dependent | Not fixed. Reported with the material to decide |
 
-4. **判定には根拠を必ず添える**。根拠を書けない CONFIRMED は UNCERTAIN に降格する
-5. **fail-safe: 迷ったら直さない**。「表面上同じに見えるが文脈が違う」（例: 同形の重複コードだが片方は将来分岐予定でコメントあり / 片方はホットパス）を FALSE_POSITIVE または UNCERTAIN に落とす。**UNCERTAIN → CONFIRMED への昇格は禁止**（逆の降格は常に許可）
-6. **委譲判定**: 候補が **20 件を超える**場合は VERIFY をサブエージェントに委譲する（高性能モデルを明示。判定基準は behavior-preservation-checks.md をサブエージェントのプロンプトに注入する）
+4. **Always attach the basis for a verdict**. A CONFIRMED you cannot write a basis for is demoted to UNCERTAIN
+5. **fail-safe: when in doubt, do not touch it**. Drop "it looks the same on the surface but the context differs" (e.g. identically shaped duplicated code where one side has a comment about a planned future branch / one side is a hot path) to FALSE_POSITIVE or UNCERTAIN. **Promoting UNCERTAIN → CONFIRMED is forbidden** (the reverse demotion is always allowed)
+6. **Delegation judgment**: when candidates exceed **20**, delegate VERIFY to a subagent (state a high-capability model explicitly. Inject the criteria from behavior-preservation-checks.md into the subagent's prompt)
 
-## Phase 5: APPLY — 動作保持リファクタ（スコープ外は opt-in）
+## Phase 5: APPLY — Behavior-Preserving Refactor (Outside the Scope It Is Opt-In)
 
-1. **適用ポリシー**:
-   - `origin`（Phase 0 スコープ内）の CONFIRMED は APPLY する
-   - `sweep_candidates`（スコープ外の横展開候補）は CONFIRMED でも**デフォルトは report-only** とし、件数・対象・変換内容を提示してユーザの **opt-in 確認**を得てから適用する
-   - **headless 実行（cycle 経由等、確認が取れない文脈）では report-only 固定**。「このファイルをきれいにして」が「似た20箇所も書き換えて」を意味するとは限らない
-2. **1改善（improvement_id）ずつ**適用 → テスト実行 → パスしたら次へ（失敗したら revert して再考）。複数候補を並列に直さない。**1回の実行で APPLY する改善は最大 10 件**とし、残りはレポートに回す（この 10 は適用バッチ上限。Phase 1/3 の「10 ファイル」委譲閾値とは別軸）
-3. **動作維持の検証**: 既存テスト（および Phase 1 で作った characterization test / probe）を**修正せず**全パスさせる。テストの修正が必要になった時点で behavior change の疑い → **revert**
-4. **テスト実行の最適化（任意）**: 各変更では対象モジュールの targeted test、全改善の適用完了後に全スイートを1回、という構成を許容する（大規模スイートでの N×全実行を回避）
-5. **検証ゲート**（[verification-gate.md](../shared/references/verification-gate.md) 準拠）: テスト実行コマンドと結果を証拠として記録する。証拠なしの完了主張禁止
-6. **Rule of 500**: 1改善の diff が **500 行（`git diff --stat` で実測）を超える**場合、手作業 Edit を禁止し機械的変換を使う:
-   - 第一選択は **ast-grep rewrite**（構文単位で安全）
-   - `sed` は字面置換で文字列リテラル・コメント内の同形テキストも書き換えるため**最終手段**とし、使う場合は **(a) 変換前に revert 点（コミットまたは stash）を確保 (b) 変換後に diff 全件確認 (c) テスト全パス** の3条件を必須とする
+1. **Application policy**:
+   - A CONFIRMED in `origin` (inside the Phase 0 scope) is APPLYed
+   - A `sweep_candidates` entry (a sweep candidate outside the scope) is **report-only by default** even when CONFIRMED — present the count, the targets, and the transformation, and apply it only after obtaining the user's **opt-in confirmation**
+   - **In a headless run (via cycle, etc., a context where confirmation cannot be obtained), report-only is fixed**. "Clean up this file" does not necessarily mean "rewrite the 20 similar sites too"
+2. Apply **one improvement (`improvement_id`) at a time** → run the tests → move on when they pass (revert and reconsider on failure). Do not fix multiple candidates in parallel. **Cap the improvements APPLYed in one run at 10**, and defer the rest to the report (this 10 is the application batch cap. It is a different axis from the "10 files" delegation threshold in Phase 1/3)
+3. **Verifying behavior is maintained**: make the existing tests (and any characterization test / probe made in Phase 1) all pass **without modifying them**. The moment a test needs modifying, suspect a behavior change → **revert**
+4. **Optimizing test runs (optional)**: a structure of a targeted test for the affected module on each change, plus one whole-suite run after every improvement has been applied, is acceptable (avoiding N full runs on a large suite)
+5. **Verification gate** (conforming to [verification-gate.md](../shared/references/verification-gate.md)): record the test command and its result as evidence. Claiming completion without evidence is forbidden
+6. **Rule of 500**: when a single improvement's diff **exceeds 500 lines** (measured with `git diff --stat`), hand editing is forbidden — use a mechanical transformation:
+   - The first choice is **ast-grep rewrite** (safe because it works in syntactic units)
+   - `sed` is textual replacement and rewrites identically shaped text inside string literals and comments too, so it is a **last resort**; when you use it, these three conditions are mandatory: **(a) secure a revert point (a commit or a stash) before the transformation (b) review every diff after the transformation (c) all tests pass**
 
-## Phase 6: REPORT — 結果報告 + issue 化コマンド案
+## Phase 6: REPORT — Report the Results + Proposed Issue-Creation Commands
 
-レポート形式は次の規則で選ぶ:
+Choose the report format by the following rule:
 
-- **簡略版**（スコープ / 判定サマリ / 理由のみ）: 変更ゼロ **かつ** 提示すべき項目（UNCERTAIN / report-only の sweep_candidates / BUG_FOUND）もゼロの場合（already-clean 終了が典型）
-- **フル構造**（下記）: それ以外。APPLY が 0 件でも、UNCERTAIN や BUG_FOUND 等の提示項目が 1 つでもあればフル構造を使う（該当のないセクションは省略可）
+- **Abbreviated** (scope / verdict summary / reasons only): when there are zero changes **and** zero items to present (UNCERTAIN / report-only `sweep_candidates` / `BUG_FOUND`) as well (an already-clean ending is the typical case)
+- **Full structure** (below): everything else. Even with 0 APPLYs, use the full structure if there is even one item to present, such as an UNCERTAIN or a `BUG_FOUND` (sections with nothing to report may be omitted)
 
-フル構造は以下の形で会話上に出力する:
+Print the full structure in the conversation in the following form:
 
 ```
 ══════════════════════════════════════
@@ -201,32 +201,32 @@ REFACTOR REPORT
 - diff: {git diff --stat の要約}
 ```
 
-**セクション帰属の規則**: `sweep_candidates` のうち UNCERTAIN 判定のものは §4（判断保留）に主記載する。§5 には **CONFIRMED かつユーザ opt-in 待ち**の候補のみを載せる。1候補が複数の非適用理由（例: 検証手段なし + スコープ外）に該当する場合は、より根本的な理由である UNCERTAIN（§4）を優先し、他の理由は **§4 の同じ行に併記**する（§5 への重複掲載はしない。1候補は必ず1セクションにのみ載せる）。
+**The rule for section attribution**: a `sweep_candidates` entry judged UNCERTAIN is recorded primarily in §4 (held for judgment). §5 carries only the candidates that are **CONFIRMED and awaiting the user's opt-in**. When one candidate falls under several reasons for non-application (e.g. no means of verification + outside the scope), give priority to the more fundamental reason, UNCERTAIN (§4), and **note the other reasons on the same line in §4** (no duplicate listing in §5. One candidate always appears in exactly one section).
 
-**重要**: refactor 実行中に `.agents/artifacts/issues` 等のリポジトリ文書を作成・編集しない。issue 化はコマンド案の提示のみ（自動 issue 作成はしない）。リファクタ diff にも issue ファイルにも手を出さない。
+**Important**: do not create or edit repository documents such as `.agents/artifacts/issues` while running refactor. Issue creation is limited to presenting a proposed command (no automatic issue creation). Lay a hand on neither the refactor diff nor an issue file.
 
-## 合理化防止
+## Rationalization Guard
 
-| 言い訳 | 現実 |
+| Excuse | Reality |
 |--------|------|
-| 「行数が減ったからシンプルになった」 | 簡潔さの基準は理解速度であって行数ではない。1行のネスト三項は5行の if/else より複雑 |
-| 「ついでにこのバグも直しておこう」 | behavior change。リファクタ diff が汚染されレビュー不能になる。issue 化案の提示が正しい経路 |
-| 「テストをちょっと直せば通る」 | テスト修正が必要 = 挙動が変わった証拠。revert する |
-| 「テストがないけど見れば分かる変更だ」 | 証明手段なしの動作保持主張は verification-gate 違反。probe を作るか no-op に落とす |
-| 「このヘルパーは無駄だからインライン化」 | 概念に名前を与える抽象・テスタビリティのための抽象は複雑性ではない |
-| 「似てるから同じ修正でいいでしょ」 | 字面の類似は文脈の同一を意味しない。Phase 4 の検証を通過するまで修正対象ではない |
-| 「横展開で見つけたから全部直そう」 | スコープ外の適用はユーザ opt-in。指定範囲外の大量 diff はユーザを驚かせレビュー不能にする |
-| 「動いてるコードだし理解は後でいい」 | 理解なきリファクタは劣化。Phase 1 に戻る |
-| 「プロジェクトの慣例よりこの書き方がベター」 | 慣例を壊す「簡素化」は churn。周辺コードとの一貫性が優先 |
+| "Fewer lines, so it got simpler" | The measure of concision is speed of understanding, not line count. A one-line nested ternary is more complex than a five-line if/else |
+| "While I'm here, let me fix this bug too" | That is a behavior change. It contaminates the refactor diff and makes it unreviewable. Presenting a proposed issue is the correct path |
+| "It passes with a small tweak to the test" | Needing to modify a test = evidence that behavior changed. revert |
+| "There is no test, but the change is obvious on sight" | Claiming behavior preservation without a means of proof violates verification-gate. Build a probe or drop to a no-op |
+| "This helper is pointless, inline it" | An abstraction that gives a concept a name, or that exists for testability, is not complexity |
+| "They look alike, so the same fix will do" | Textual similarity does not imply identical context. It is not a fix target until it passes the Phase 4 verification |
+| "The sweep found them, so let us fix them all" | Application outside the scope is the user's opt-in. A huge diff outside the specified range surprises the user and makes review impossible |
+| "It is working code, understanding can come later" | A refactor without understanding is degradation. Return to Phase 1 |
+| "This style is better than the project's convention" | A "simplification" that breaks convention is churn. Consistency with the surrounding code comes first |
 
-## Red Flags — スキルが守られていない兆候
+## Red Flags — Signs the Skill Is Not Being Followed
 
-- テストを修正して GREEN にしている
-- リファクタ diff にロジック変更（条件の追加・削除、戻り値の変化）が混ざっている
-- Phase 1 の理解チェックに答えられないままファイルを編集している
-- テスト・型検査・probe のいずれもないコードに APPLY している
-- UNCERTAIN 判定の箇所を修正している
-- スコープ外の `sweep_candidates` をユーザ確認なしに APPLY している
-- refactor 実行中に .agents/artifacts/issues 配下のファイルを作成・編集している
-- エラーハンドリングを「きれいにするため」に削除している
-- no-op 判定を避けるために効果の薄い改善を無理に列挙している
+- Tests are being modified to make things GREEN
+- A logic change (a condition added or removed, a changed return value) is mixed into the refactor diff
+- Files are being edited while the Phase 1 understanding checks remain unanswered
+- APPLY is happening on code that has neither a test, a type check, nor a probe
+- Sites judged UNCERTAIN are being fixed
+- `sweep_candidates` outside the scope are being APPLYed without the user's confirmation
+- Files under .agents/artifacts/issues are being created or edited while running refactor
+- Error handling is being removed "to make things clean"
+- Low-value improvements are being forced into a list to avoid a no-op verdict

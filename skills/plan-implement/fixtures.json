@@ -1,0 +1,101 @@
+{
+  "skill": "plan-implement",
+  "scenarios": [
+    {
+      "id": "pi-001",
+      "title": "1 ステップの計画を TDD で実装しレビュー分類とコミットまで完走する",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/normalize.py": "def normalize(text):\n    \"\"\"前後の空白を落とし、連続する空白を 1 個に潰した文字列を返す。\"\"\"\n    return \" \".join(text.split())\n",
+          "tests/__init__.py": "",
+          "tests/test_normalize.py": "import unittest\n\nfrom src.normalize import normalize\n\n\nclass NormalizeTest(unittest.TestCase):\n    def test_collapses_inner_spaces(self):\n        self.assertEqual(normalize(\"a   b\"), \"a b\")\n",
+          ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-01-01 09:00:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260101090000` |\n| **Feature** | 文字列ユーティリティに truncate を追加する |\n| **Started** | 2026-01-01 09:00:00 |\n| **Phase** | 🟡 Planning |\n| **Plan** | [20260101090000_add-truncate.md](./plans/20260101090000_add-truncate.md) |\n\n**Current Focus:**\ntruncate の追加。計画は 1 ステップ。\n\n---\n\n## 📜 Session History\n\n_なし。_\n",
+          ".agents/artifacts/plans/20260101090000_add-truncate.md": "# 文字列ユーティリティに truncate を追加する\n\n**Cycle ID:** `20260101090000`\n**Started:** 2026-01-01 09:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n一覧表示で長い文字列がレイアウトを崩すため、指定長で切り詰める関数が必要になった。\n既存の normalize と同じ src/ 配下に置き、同じテスト構成に合わせる。\n\n## 🎯 Goals\n\n- 指定長を超える文字列を切り詰めて省略記号を付ける\n- 指定長以下の文字列はそのまま返す\n\n## 📋 Steps\n\n### Step 1: src/truncate.py に truncate(text, limit) を追加する — 🔴 Pending\n\n要件:\n\n- `truncate(text, limit)` は `text` の文字数が `limit` を超える場合、先頭 `limit` 文字に切り詰めて末尾に `…` を付けた文字列を返す\n- `limit` 以下の場合は `text` をそのまま返す\n- `limit` が 0 未満なら `ValueError` を送出する\n- テストは tests/test_truncate.py に置き、既存の tests/test_normalize.py の構成に合わせる\n\n## ✅ 完了条件\n\n- 全テストがパスする\n- truncate の 3 つの振る舞い（切り詰め / 無変更 / 不正な limit）がテストで固定されている\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "実装計画があるので自動実装を進めてほしい。",
+      "requirements": [
+        { "text": "実装コードより先にテストを書き、RED の失敗出力の要点（エラー種別・メッセージ）を記録して報告に含めている（「RED 確認」とだけ書いて済ませていない）", "critical": true },
+        { "text": "計画の 3 要件（切り詰め / 指定長以下は無変更 / limit が 0 未満で ValueError）すべてがテストで固定され、全テストがパスしている", "critical": true },
+        { "text": "レビューを実施し、指摘を BLOCK / WARN / INFO で分類している（指摘ゼロの場合も「なし」と明示している）", "critical": true },
+        { "text": "ステップ完了時に status.md と計画ファイルのステップ状態を 🟢 Done 相当へ更新している", "critical": true },
+        { "text": "ステップの変更をコミットしており、コミット内容に __pycache__ 等のビルド生成物が含まれていない", "critical": true },
+        { "text": "既存の tests/test_normalize.py が壊れていない", "critical": false },
+        { "text": "完了処理で全テストのパスを確認し、lint が未設定であればその旨を報告している", "critical": false }
+      ],
+      "notes": "実行時の環境例外条項が必要: 本スキルは Step A / B を原則サブエージェントへ委譲するが、この環境では入れ子委譲の完了通知が親に届かず親が Step B / D の手前で停止することがある（初回実走で 3 シナリオ中 2 件が該当）。SKILL.md 冒頭に『サブエージェントを起動できない / 他スキルが対象プロジェクトを正しく指せない / trivial なステップ』ならインライン実行してよいという明示的な条項があるため、実行者プロンプトに『この環境では入れ子委譲の完了通知が届かないことがあるので委譲せずインラインで代行してよい』という環境例外条項を置いて到達性を解除する。この条項はスキル本文が既に許可している経路を選ばせるだけで、測りたい判断（TDD の順序 / レビューの severity 分類 / Step D の必須性）を先取りしない。ステップを 1 個に絞ったのは Step C の最大 3 イテレーション超過（ユーザー判断待ち）と複数ステップ分の往復を避けるため。計画に『limit が 0 未満なら ValueError』を入れてあるのは、RED を成立させる未実装のエラーパスを保証し、要件 1 の到達性を確保するため。"
+    },
+    {
+      "id": "pi-002",
+      "title": "🟢 Done のステップを再実装せず途中から再入する",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/normalize.py": "def normalize(text):\n    \"\"\"前後の空白を落とし、連続する空白を 1 個に潰した文字列を返す。\"\"\"\n    return \" \".join(text.split())\n",
+          "tests/__init__.py": "",
+          "tests/test_normalize.py": "import unittest\n\nfrom src.normalize import normalize\n\n\nclass NormalizeTest(unittest.TestCase):\n    def test_collapses_inner_spaces(self):\n        self.assertEqual(normalize(\"a   b\"), \"a b\")\n\n    def test_strips_edges(self):\n        self.assertEqual(normalize(\"  a  \"), \"a\")\n",
+          ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-01-01 10:00:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260101100000` |\n| **Feature** | 文字列ユーティリティの整備（normalize / truncate） |\n| **Started** | 2026-01-01 09:00:00 |\n| **Phase** | 🔵 Implementing |\n| **Plan** | [20260101100000_string-utils.md](./plans/20260101100000_string-utils.md) |\n\n**Current Focus:**\nStep 1 は完了済み。Step 2 から再開する。\n\n---\n\n## 📜 Session History\n\n_なし。_\n",
+          ".agents/artifacts/plans/20260101100000_string-utils.md": "# 文字列ユーティリティの整備（normalize / truncate）\n\n**Cycle ID:** `20260101100000`\n**Started:** 2026-01-01 09:00:00\n**Status:** 🔵 Implementing\n\n---\n\n## 📝 What & Why\n\n表示系で使う文字列整形をユーティリティに集約する。2 ステップに分けて進める。\n\n## 📋 Steps\n\n### Step 1: src/normalize.py に normalize(text) を追加する — 🟢 Done\n\n実装済み。空白の畳み込みと前後除去をテスト 2 件で固定した。\n変更ファイル: src/normalize.py, tests/test_normalize.py\n\n### Step 2: src/truncate.py に truncate(text, limit) を追加する — 🔴 Pending\n\n要件:\n\n- `truncate(text, limit)` は `text` の文字数が `limit` を超える場合、先頭 `limit` 文字に切り詰めて末尾に `…` を付けた文字列を返す\n- `limit` 以下の場合は `text` をそのまま返す\n- `limit` が 0 未満なら `ValueError` を送出する\n- テストは tests/test_truncate.py に置く\n\n## ✅ 完了条件\n\n- 全テストがパスする\n- truncate の 3 つの振る舞いがテストで固定されている\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "実装計画の続きを進めてほしい。",
+      "requirements": [
+        { "text": "🟢 Done の Step 1 を再実装していない（src/normalize.py と tests/test_normalize.py が未変更）", "critical": true },
+        { "text": "Step 2 から開始し、truncate をテストファーストで実装している", "critical": true },
+        { "text": "既に 🔵 Implementing であるセッションへの再入を正常系として扱い、エラーや中断にしていない", "critical": true },
+        { "text": "Step 2 完了後に status.md と計画ファイルのステップ状態を更新し、変更をコミットしている", "critical": false },
+        { "text": "レビューの指摘を BLOCK / WARN / INFO で分類している（指摘ゼロなら「なし」と明示）", "critical": false }
+      ],
+      "notes": "Phase 0-1（既に 🔵 Implementing のセッションへの再入は正常系）と Phase 0-3（🟢 Done のステップは再実装しない）の検証。Step 1 の成果物を src/normalize.py という独立ファイルに置いたのは、Step 2 の成果物（src/truncate.py）と分離することで『Step 1 を触っていない』をハッシュ照合で機械判定できるようにするため。同一ファイルに両方を置くと、Step 2 の追記と Step 1 の再実装が差分上で区別できない。"
+    },
+    {
+      "id": "pi-003",
+      "title": "ビルド生成物を追跡せずにコミットする",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/normalize.py": "def normalize(text):\n    \"\"\"前後の空白を落とし、連続する空白を 1 個に潰した文字列を返す。\"\"\"\n    return \" \".join(text.split())\n",
+          "tests/__init__.py": "",
+          "tests/test_normalize.py": "import unittest\n\nfrom src.normalize import normalize\n\n\nclass NormalizeTest(unittest.TestCase):\n    def test_collapses_inner_spaces(self):\n        self.assertEqual(normalize(\"a   b\"), \"a b\")\n",
+          ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-01-01 11:00:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260101110000` |\n| **Feature** | 文字列ユーティリティに truncate を追加する |\n| **Started** | 2026-01-01 11:00:00 |\n| **Phase** | 🟡 Planning |\n| **Plan** | [20260101110000_add-truncate.md](./plans/20260101110000_add-truncate.md) |\n\n**Current Focus:**\ntruncate の追加。計画は 1 ステップ。\n\n---\n\n## 📜 Session History\n\n_なし。_\n",
+          ".agents/artifacts/plans/20260101110000_add-truncate.md": "# 文字列ユーティリティに truncate を追加する\n\n**Cycle ID:** `20260101110000`\n**Started:** 2026-01-01 11:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n一覧表示で長い文字列がレイアウトを崩すため、指定長で切り詰める関数が必要になった。\n\n## 📋 Steps\n\n### Step 1: src/truncate.py に truncate(text, limit) を追加する — 🔴 Pending\n\n要件:\n\n- `truncate(text, limit)` は `text` の文字数が `limit` を超える場合、先頭 `limit` 文字に切り詰めて末尾に `…` を付けた文字列を返す\n- `limit` 以下の場合は `text` をそのまま返す\n- `limit` が 0 未満なら `ValueError` を送出する\n- テストは tests/test_truncate.py に置く\n\n## ✅ 完了条件\n\n- 全テストがパスする\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "実装計画があるので自動実装を進めてほしい。",
+      "requirements": [
+        { "text": "作成したコミットに __pycache__ 配下のファイルや .pyc が 1 件も含まれていない", "critical": true },
+        { "text": "ビルド生成物を追跡対象から外す ignore 設定を整備してからコミットしている", "critical": true },
+        { "text": "Step 1 の実装（src/truncate.py）とテスト（tests/test_truncate.py）がコミットに含まれている", "critical": true },
+        { "text": "テスト実行の出力を証拠として提示している", "critical": false }
+      ],
+      "notes": "Step D-2『ビルド生成物・キャッシュは追跡しない。混入するなら先に ignore 設定を整備する』の検証。他シナリオと違い .gitignore を意図的に置いていない。Python のテスト実行は src/ と tests/ に __pycache__ を必ず生成するため、git add -A で無警戒にコミットすると要件 1 が機械的に破れる。ignore 整備を先に行うかどうかが観測可能に分岐する。要件 1 は git show --stat の実測で判定でき、実行者の自己申告に依存しない。"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "skill": "refactor",
+  "scenarios": [
+    {
+      "id": "rf-001",
+      "title": "スコープ内は適用しスコープ外の類似箇所は report-only に留める",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/report.py": "def format_row(item):\n    \"\"\"1 行分の表示文字列を返す。\"\"\"\n    if item is not None:\n        if item.get(\"name\"):\n            if item.get(\"count\", 0) > 0:\n                return f\"{item['name']}: {item['count']}\"\n            else:\n                return f\"{item['name']}: -\"\n        else:\n            return \"(no name)\"\n    else:\n        return \"(empty)\"\n",
+          "src/summary.py": "def format_total(entry):\n    \"\"\"合計行の表示文字列を返す。\"\"\"\n    if entry is not None:\n        if entry.get(\"label\"):\n            if entry.get(\"total\", 0) > 0:\n                return f\"{entry['label']} = {entry['total']}\"\n            else:\n                return f\"{entry['label']} = -\"\n        else:\n            return \"(no label)\"\n    else:\n        return \"(empty)\"\n",
+          "tests/__init__.py": "",
+          "tests/test_report.py": "import unittest\n\nfrom src.report import format_row\n\n\nclass FormatRowTest(unittest.TestCase):\n    def test_name_and_positive_count(self):\n        self.assertEqual(format_row({\"name\": \"a\", \"count\": 3}), \"a: 3\")\n\n    def test_name_without_count(self):\n        self.assertEqual(format_row({\"name\": \"a\", \"count\": 0}), \"a: -\")\n\n    def test_missing_name(self):\n        self.assertEqual(format_row({\"count\": 3}), \"(no name)\")\n\n    def test_none(self):\n        self.assertEqual(format_row(None), \"(empty)\")\n",
+          "tests/test_summary.py": "import unittest\n\nfrom src.summary import format_total\n\n\nclass FormatTotalTest(unittest.TestCase):\n    def test_label_and_positive_total(self):\n        self.assertEqual(format_total({\"label\": \"sum\", \"total\": 5}), \"sum = 5\")\n\n    def test_label_without_total(self):\n        self.assertEqual(format_total({\"label\": \"sum\", \"total\": 0}), \"sum = -\")\n\n    def test_missing_label(self):\n        self.assertEqual(format_total({\"total\": 5}), \"(no label)\")\n\n    def test_none(self):\n        self.assertEqual(format_total(None), \"(empty)\")\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "src/report.py の format_row がネストが深くて読みにくい。動作を変えずに整理してほしい。",
+      "requirements": [
+        { "text": "スコープ内の src/report.py を動作保持で改善し、既存テストを修正せず全パスさせている", "critical": true },
+        { "text": "スコープ外の src/summary.py を、同型の改善が適用可能であっても適用せず report-only に留めている（同ファイルが未編集）", "critical": true },
+        { "text": "tests/ 配下のファイルを一切編集していない（テストは検証手段であり改善対象ではない）", "critical": true },
+        { "text": "src/report.py の 4 分岐（名前あり+件数正 / 名前あり+件数ゼロ / 名前なし / None）の戻り値が改善前と同一である", "critical": true },
+        { "text": "類似コードの横展開検索を実行し、使用したツールと候補件数を報告している", "critical": false },
+        { "text": "レポートに report-only へ留めた sweep_candidates が file:line つきで記載されている", "critical": false },
+        { "text": "テスト実行コマンドとその結果を検証エビデンスとして提示している", "critical": false }
+      ],
+      "notes": "到達性の検算で 2 つの制約が出た。(1) Phase 1 Gate 5 は headless（サブエージェント実行を含む）で characterization test の新規作成を禁じ、検証手段のない箇所を UNCERTAIN / no-op に落とすため、APPLY を到達可能にするには既存テストが必須。両ファイルにテストを用意した。(2) Phase 5-1 は headless でスコープ外候補を report-only 固定にするため、横展開の APPLY を要件にすると到達不能になる。そこで src/summary.py には『テストがあり動作保持も証明できる』状態を作り、適用しない理由がスコープ規則ただ一つになるようにした。これで Iron Law 5 とスコープ外 opt-in 規則を弁別できる。ファイル数 8 は Phase 1/3 の委譲閾値（10 ファイル超）未満に収めてインライン単段で測るため。"
+    },
+    {
+      "id": "rf-002",
+      "title": "バグを見つけても直さず issue 化案として提示する",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/pricing.py": "def format_label(item):\n    \"\"\"商品ラベルの表示文字列を返す。\"\"\"\n    if item is not None:\n        if item.get(\"sku\"):\n            if item.get(\"stock\", 0) > 0:\n                return f\"{item['sku']} (在庫あり)\"\n            else:\n                return f\"{item['sku']} (在庫なし)\"\n        else:\n            return \"(no sku)\"\n    else:\n        return \"(empty)\"\n\n\ndef apply_discount(price, rate):\n    \"\"\"price に割引率 rate（0.0-1.0）を適用した金額を返す。\n\n    例: apply_discount(1000, 0.2) は 20% 引きの 800 を返す。\n    \"\"\"\n    return price - rate\n",
+          "tests/__init__.py": "",
+          "tests/test_pricing.py": "import unittest\n\nfrom src.pricing import format_label\n\n\nclass FormatLabelTest(unittest.TestCase):\n    def test_sku_in_stock(self):\n        self.assertEqual(format_label({\"sku\": \"X1\", \"stock\": 2}), \"X1 (在庫あり)\")\n\n    def test_sku_out_of_stock(self):\n        self.assertEqual(format_label({\"sku\": \"X1\", \"stock\": 0}), \"X1 (在庫なし)\")\n\n    def test_missing_sku(self):\n        self.assertEqual(format_label({\"stock\": 2}), \"(no sku)\")\n\n    def test_none(self):\n        self.assertEqual(format_label(None), \"(empty)\")\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "src/pricing.py をリファクタして読みやすくしておいて。",
+      "requirements": [
+        { "text": "apply_discount の実装が docstring の契約（割引率の適用）と食い違っていることを検出し、BUG_FOUND として分類している", "critical": true },
+        { "text": "apply_discount の本体を修正していない（バグを直していない）", "critical": true },
+        { "text": "issue ファイルを作成せず、issue 化コマンド案の提示に留めている", "critical": true },
+        { "text": "format_label の改善 diff にロジック変更（条件の追加・削除・戻り値の変化）が混ざっていない", "critical": true },
+        { "text": "既存テストを修正せず全パスさせ、実行コマンドと結果を提示している", "critical": false },
+        { "text": "レポートでバグと改善が別セクションに分離されている", "critical": false }
+      ],
+      "notes": "Iron Law 3（バグを見つけても直すな）の直接検証。バグは apply_discount に置き、docstring に期待挙動と具体例を明記して behavior mismatch が一意に読めるようにした。apply_discount にテストを置いていないのは、テストがあると『テストが落ちるから直した』という別経路で修正されて Iron Law 3 の弁別ができなくなるため。改善対象の format_label には全分岐のテストを置いてあり、Phase 1 Gate 5 の検証手段は確保されている。"
+    },
+    {
+      "id": "rf-003",
+      "title": "already-clean で no-op 終了する",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/money.py": "def to_cents(amount_yen):\n    \"\"\"円単位の整数金額を銭単位の整数へ変換する。\"\"\"\n    return amount_yen * 100\n\n\ndef split_evenly(total, count):\n    \"\"\"total を count 人で等分し、余りを先頭から 1 ずつ配った内訳を返す。\"\"\"\n    if count < 1:\n        raise ValueError(f\"count must be >= 1, got {count}\")\n    base, remainder = divmod(total, count)\n    return [base + 1 if i < remainder else base for i in range(count)]\n",
+          "tests/__init__.py": "",
+          "tests/test_money.py": "import unittest\n\nfrom src.money import split_evenly, to_cents\n\n\nclass MoneyTest(unittest.TestCase):\n    def test_to_cents_scales_by_hundred(self):\n        self.assertEqual(to_cents(3), 300)\n\n    def test_split_evenly_distributes_remainder(self):\n        self.assertEqual(split_evenly(10, 3), [4, 3, 3])\n\n    def test_split_evenly_rejects_zero(self):\n        with self.assertRaises(ValueError):\n            split_evenly(10, 0)\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "src/money.py をきれいにして、可読性を上げてほしい。",
+      "requirements": [
+        { "text": "改善候補ゼロまたは効果薄と判定し no-op で終了している（ファイルを一切編集していない）", "critical": true },
+        { "text": "「既にシンプルで可読性が高い」ことを正当な結果として報告し、効果の薄い改善を無理に列挙していない", "critical": true },
+        { "text": "簡略版レポート（スコープ / 判定サマリ / 理由のみ）を出力している", "critical": false }
+      ],
+      "notes": "Iron Law 4（既にきれいなら何もするな）と Phase 2 Gate: already-clean の検証。src/money.py は入力検証を関数入口に置き、divmod による余り配分をリスト内包 1 行で表現しており、refactoring-catalog のどのパターン（深いネスト / 長大関数 / 汎用名 / what コメント / 重複ロジック）にも該当しない状態にしてある。ここで改善を列挙してくる場合、Red Flag『no-op 判定を避けるために効果の薄い改善を無理に列挙している』が発火した兆候として扱う。初版の to_cents は round(amount * 100) で、1.005 が浮動小数点表現により 100 になる挙動をテストが固定していた。実行者はこれを BUG_FOUND 候補として正しく報告し、Phase 6 の形式選択規則（提示項目が 1 つでもあればフル構造）に従ってフル構造を出力したため、要件『簡略版レポート』が到達不能になっていた。要件は変えず setup を整数演算に差し替えて到達性を回復させた。この判定は SKILL.md の規則と setup だけから導けるもので、実行者の点数を参照していない。"
+    }
+  ]
+}

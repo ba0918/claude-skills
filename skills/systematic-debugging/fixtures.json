@@ -1,0 +1,96 @@
+{
+  "skill": "systematic-debugging",
+  "scenarios": [
+    {
+      "id": "sd-001",
+      "title": "根本原因を特定してから修正する（症状レベルの回避に留めない）",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/collector.py": "def collect(item, bucket=[]):\n    \"\"\"item を bucket に追加して返す。bucket 省略時は新しいリストを使う。\"\"\"\n    bucket.append(item)\n    return bucket\n\n\ndef collect_all(items):\n    \"\"\"items を順に collect へ渡し、最後の戻り値を返す。\"\"\"\n    result = None\n    for item in items:\n        result = collect(item)\n    return result\n",
+          "tests/__init__.py": "",
+          "tests/test_collector.py": "import unittest\n\nfrom src.collector import collect\n\n\nclass CollectTest(unittest.TestCase):\n    def test_explicit_bucket_receives_item(self):\n        bucket = []\n        self.assertEqual(collect(\"a\", bucket), [\"a\"])\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "src/collector.py の collect が変な挙動をする。bucket を省略して呼ぶと、2 回目以降の戻り値に前の呼び出しの要素が混ざってくる。1 回目は [\"a\"] が返るのに、次に collect(\"b\") すると [\"a\", \"b\"] になる。直してほしい。",
+      "requirements": [
+        { "text": "修正の前に根本原因（デフォルト引数のリストが関数定義時に 1 個だけ作られ呼び出し間で共有されること）を特定して提示している", "critical": true },
+        { "text": "バグを再現する失敗するテストを追加し、修正前にそのテストが失敗することをテスト実行の出力で確認している", "critical": true },
+        { "text": "collect のデフォルト引数そのものを修正している（呼び出し側で毎回新しいリストを渡す等の症状レベルの回避に留めていない）", "critical": true },
+        { "text": "diff が根本原因の修正と回帰テストの追加のみで構成されており、「ついでに」の改善が混ざっていない", "critical": true },
+        { "text": "修正後に既存テストを含む全テストのパスをテスト実行の出力で確認している", "critical": false },
+        { "text": "根本原因・仮説・修正・テスト結果を各フェーズの表示形式に沿って報告している", "critical": false }
+      ],
+      "notes": "Iron Law（NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST）と Phase 4.1（失敗するテストを先に作る）の検証。可変デフォルト引数を選んだのは、症状レベルの回避策（collect_all 側で bucket=[] を明示的に渡す）が実際に症状を消してしまうため、根本原因修正と症状対処が観測可能に分岐する題材だから。症状対処だけでもユーザーの訴えは解消するので、要件 3 が Iron Law の実効性を直接測る。3 回修正失敗ルール（ユーザー相談で停止）へ到達しないよう、原因が一意で最初の仮説で解決する題材にしてある。Phase 1.3 の git log は初期コミット 1 本のみで実質空振りになるため要件にしていない（setup.git は複数コミットを宣言できない）。"
+    },
+    {
+      "id": "sd-002",
+      "title": "再現できないバグ報告に対して推測で修正しない",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/slug.py": "import re\n\n_NON_ALNUM = re.compile(r\"[^a-z0-9]+\")\n\n\ndef slugify(text):\n    \"\"\"英数字以外をハイフンにまとめ、前後のハイフンを落とした小文字文字列を返す。\"\"\"\n    return _NON_ALNUM.sub(\"-\", text.lower()).strip(\"-\")\n",
+          "tests/__init__.py": "",
+          "tests/test_slug.py": "import unittest\n\nfrom src.slug import slugify\n\n\nclass SlugifyTest(unittest.TestCase):\n    def test_spaces_become_hyphen(self):\n        self.assertEqual(slugify(\"Hello World\"), \"hello-world\")\n\n    def test_symbols_are_collapsed(self):\n        self.assertEqual(slugify(\"a!!!b\"), \"a-b\")\n\n    def test_leading_and_trailing_are_stripped(self):\n        self.assertEqual(slugify(\"  x  \"), \"x\")\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "src/slug.py の slugify が壊れてる。\"Hello World\" を渡すと \"hello_world\" みたいにアンダースコアになって返ってくることがあるんだよね。直しておいて。",
+      "requirements": [
+        { "text": "報告された症状の再現を実際に試み、再現できないことをテスト実行または実測の出力で示している", "critical": true },
+        { "text": "src/ 配下のプロダクションコードを編集していない（推測による修正を行っていない）", "critical": true },
+        { "text": "追加情報（再現手順・実際の入力・環境・バージョン等）の提供を求めている、または再現できないため修正に進まないと報告して終了している", "critical": true },
+        { "text": "「たぶんこれが原因だろう」という推測の原因を確定した扱いにしていない", "critical": false }
+      ],
+      "notes": "Phase 1.2「再現できない場合 → より多くのデータを収集する（推測しない）」と重要ルール「わからないと認める」の検証。slugify は報告された症状（アンダースコア化）を起こしえない実装で、置換文字はハイフン固定。既存テストが 3 分岐を固定しているため、実行者は再現不能を機械的に示せる。推測で「アンダースコアになるのはここだろう」と正規表現を書き換えると要件 2 のハッシュ照合で機械的に検出できる。誘惑として正規表現という「いかにも直せそうな箇所」を残してある。"
+    },
+    {
+      "id": "sd-003",
+      "title": "症状の出る場所と根本原因の場所が違う",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/config.py": "_RAW = {\"retries\": \"3\", \"endpoint\": \"https://example.test\"}\n\n\ndef get_retries():\n    \"\"\"リトライ回数を int で返す。\"\"\"\n    return _RAW[\"retries\"]\n\n\ndef get_endpoint():\n    \"\"\"エンドポイント URL を str で返す。\"\"\"\n    return _RAW[\"endpoint\"]\n",
+          "src/runner.py": "from src.config import get_retries\n\n\ndef total_attempts():\n    \"\"\"初回試行 + リトライ回数の合計を返す。\"\"\"\n    return get_retries() + 1\n",
+          "tests/__init__.py": "",
+          "tests/test_config.py": "import unittest\n\nfrom src.config import get_endpoint\n\n\nclass ConfigTest(unittest.TestCase):\n    def test_endpoint_is_returned(self):\n        self.assertEqual(get_endpoint(), \"https://example.test\")\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "total_attempts() を呼ぶと TypeError: can only concatenate str (not \"int\") to str が src/runner.py で出る。トレースバックは runner.py の return 行を指してる。直してほしい。",
+      "requirements": [
+        { "text": "トレースバックが指す src/runner.py ではなく、docstring で int を返すと宣言しながら str を返している src/config.py の get_retries を根本原因として特定している", "critical": true },
+        { "text": "バグを再現する失敗するテストを追加し、修正前に失敗することをテスト実行の出力で確認している", "critical": true },
+        { "text": "get_retries が int を返すよう修正している（runner.py 側で int() で包む症状対処に留めていない）", "critical": true },
+        { "text": "修正後に既存テストを含む全テストのパスをテスト実行の出力で確認している", "critical": false },
+        { "text": "get_endpoint など無関係な箇所を「ついでに」変更していない", "critical": false }
+      ],
+      "notes": "Phase 1.4（症状から後方へトレースする）の検証。トレースバックが指す行と根本原因の所在を意図的にずらしてある。runner.py 側で int() で包むのが最短の症状対処で、それでもエラーは消えるため、根本原因修正と症状対処が観測可能に分岐する。どちらが根本原因かは get_retries の docstring（int を返すと宣言）で一意に決まるようにしており、実行者の主観に依存しない。get_endpoint は「ついでに触らない」の検出用に置いた無関係な正常コード。"
+    }
+  ]
+}

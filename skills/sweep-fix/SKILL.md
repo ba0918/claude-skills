@@ -5,128 +5,128 @@ description: ユーザ指定範囲のコードを分析して問題を検出し�
 
 # Sweep Fix
 
-指定範囲で見つけた問題を「1箇所直して終わり」にせず、コードベース全体の同種問題まで一括修正する。
-**局所の発見 → パターン化 → 全体への横展開 → 文脈検証 → 一括修正** の find-one-fix-all ワークフロー。
+Do not let a problem found in the specified scope end at "fixed in one place". Fix every instance of the same kind across the whole codebase.
+A find-one-fix-all workflow: **local discovery → generalize into a pattern → sweep the whole codebase → verify the context → fix in bulk**.
 
-### 他スキルとの差別化
+### Differentiation from Other Skills
 
-- **investigate との違い**: investigate は読み取り専用で修正しない。sweep-fix は検証を通った箇所を実際に修正する
-- **codebase-review / attack-review との違い**: レビュー系はスコープが全体固定でレポート止まり。sweep-fix はユーザ指定の局所範囲を起点に、見つけた問題だけを全体へ波及修正する
-- **iterate との違い**: iterate はユーザが問題（修正指示）を持ち込む前提。sweep-fix は問題の発見フェーズ自体を含む
-- **systematic-debugging との違い**: debugging は既知の症状の根本原因を追う。sweep-fix は症状の報告なしに範囲から問題を探索する
+- **vs investigate**: investigate is read-only and fixes nothing. sweep-fix actually fixes the sites that pass verification
+- **vs codebase-review / attack-review**: the review skills have a fixed whole-codebase scope and stop at a report. sweep-fix starts from a local scope the user names and propagates only the problems it found there
+- **vs iterate**: iterate assumes the user brings the problem (a fix instruction) with them. sweep-fix includes the discovery phase itself
+- **vs systematic-debugging**: debugging chases the root cause of a known symptom. sweep-fix explores a scope for problems with no symptom reported
 
-## 支配原則
+## Governing Principles
 
-1. **字面の類似は文脈の同一を意味しない** — 横展開で見つけた候補は、文脈検証（Phase 3）を通過するまで修正対象ではない
-2. **迷ったら直さない（fail-safe）** — 判定が UNCERTAIN の箇所は修正せず、判断材料付きでユーザに委ねる
-3. **検索は広く、修正は狭く** — 検索漏れ（偽陰性）は Phase 2 で広めの検索により防ぎ、誤修正（偽陽性）は Phase 3 の検証で防ぐ。両者の責務を混ぜない
+1. **Textual similarity does not imply identical context** — a candidate found by the sweep is not a fix target until it passes context verification (Phase 3)
+2. **When in doubt, do not fix (fail-safe)** — leave any site judged UNCERTAIN unfixed and hand it to the user with the material needed to decide
+3. **Search wide, fix narrow** — prevent misses (false negatives) with a wide search in Phase 2, and prevent wrong fixes (false positives) with the verification in Phase 3. Do not mix the two responsibilities
 
-## フロー
+## Flow
 
 ```
-Phase 0: SCOPE   — 対象範囲の確定
-Phase 1: ANALYZE — 指定範囲の問題検出
-Phase 2: SWEEP   — パターン化と全体横展開検索（読み取り専用）
-Phase 3: VERIFY  — 文脈検証・偽陽性除去 ★品質の要
-Phase 4: FIX     — CONFIRMED 箇所のみ修正 + 検証ゲート
-Phase 5: REPORT  — 構造化レポート + 中間ファイル削除
+Phase 0: SCOPE   — fix the target scope
+Phase 1: ANALYZE — detect problems in the specified scope
+Phase 2: SWEEP   — generalize into patterns and sweep the whole codebase (read-only)
+Phase 3: VERIFY  — verify context, eliminate false positives ★ where the quality is decided
+Phase 4: FIX     — fix CONFIRMED sites only + verification gate
+Phase 5: REPORT  — structured report + delete intermediate files
 ```
 
-## Phase 0: SCOPE — 対象範囲の確定
+## Phase 0: SCOPE — Fix the Target Scope
 
-1. `$ARGUMENTS` から対象範囲（ファイル / ディレクトリ / glob / 関数名）と、あれば着目観点（例: 「エラーハンドリング」「null 安全性」）をパースする
-2. 範囲が未指定の場合:
-   - **対話モード**: ユーザーに選択肢を提示して対象範囲を確認する
-   - **headless / Auto モード**: 範囲を推測して続行しない。「対象範囲が未指定」と報告して中断する（範囲なしの全体スキャンは codebase-review の領分）
-3. 指定パスの存在を確認する（`ls` / ファイル一覧取得）。存在しなければ即エラーで中断
+1. Parse from `$ARGUMENTS` the target scope (file / directory / glob / function name) and, if present, the aspect to focus on (e.g. 「エラーハンドリング」「null 安全性」)
+2. When no scope is specified:
+   - **Interactive mode**: present the user with choices and confirm the target scope
+   - **headless / Auto mode**: do not guess a scope and continue. Report 「対象範囲が未指定」 and abort (a whole-codebase scan with no scope is codebase-review's territory)
+3. Confirm that the specified paths exist (`ls` / list the files). Abort with an error immediately if they do not
 
-> 中間ファイル置き場 `.claude/tmp/sweep-fix/` はこの時点では作らない。最初にファイルを保存する時点（Phase 1 の問題リスト保存）で作成する — 問題ゼロで早期終了したときにゴミを残さないため。
+> Do not create the intermediate-file location `.claude/tmp/sweep-fix/` at this point. Create it at the moment the first file is saved (the problem list in Phase 1) — so that finishing early with zero problems leaves no litter.
 
-## Phase 1: ANALYZE — 指定範囲の問題検出
+## Phase 1: ANALYZE — Detect Problems in the Specified Scope
 
-指定範囲のコードを分析し、問題リストを作成する。
+Analyze the code in the specified scope and build a problem list.
 
-1. **実行形態の判定**:
-   - 範囲が **10 ファイル以下**: メインコンテキストで直接分析する
-   - 範囲が **11 ファイル以上**: 単一サブエージェントに委譲する（高性能モデルを明示。レビュー・発見系は検証ゲートがないため安いモデルにしない — [orchestration-patterns.md](../shared/references/orchestration-patterns.md) モデル階層参照）
-2. **重大度分類**: 各問題に [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md) の重大度（BLOCK / WARN / INFO）を付ける
-   - 境界事例（BLOCK と WARN のどちらとも読める等）で迷ったら**高い方に倒し**、判定根拠を1行記録する。重大度は修正フローを変えない（Phase 4 の続行確認の発火条件に影響するだけ）ので、境界判定に時間をかけない
-3. **各問題に必ず付記する情報**:
-   - 問題の説明と該当箇所（`file:line`）
-   - なぜ問題か（根拠。推測なら推測と明記）
-   - 修正案（コード変更の方針）
-   - **一般化可能性** — この問題は他の場所でも起こりうる構造か。固有事情（その箇所だけの仕様）なら横展開対象から外す
-4. **問題ゼロの場合（早期終了パス）**: 「指定範囲に問題は検出されなかった」と報告して正常終了する。指摘をひねり出さない
-   - 中間ファイルは作成しない（既に作成済みなら `rm -rf .claude/tmp/sweep-fix` で削除する）
-   - レポートは Phase 5 の完全版ではなく、「検出した問題」セクション + 分析根拠のみの簡略版を会話上に出力する
-   - 修正が発生していないため検証ゲート（テスト実行）は不要。「変更なしのため検証対象なし」で足りる
-5. 問題リストを保存する: `mkdir -p .claude/tmp/sweep-fix` を実行してから `.claude/tmp/sweep-fix/problems.json` に書く
+1. **Decide the execution form**:
+   - Scope of **10 files or fewer**: analyze directly in the main context
+   - Scope of **11 files or more**: delegate to a single subagent (state a high-capability model explicitly. Review and discovery work has no verification gate, so do not put it on a cheap model — see the model tiers in [orchestration-patterns.md](../shared/references/orchestration-patterns.md))
+2. **Severity classification**: tag each problem with a severity (BLOCK / WARN / INFO) from [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md)
+   - On a borderline case (it reads as either BLOCK or WARN, etc.), **round up** and record the basis for the call in one line. Severity does not change the fix flow (it only affects what triggers the continue-confirmation in Phase 4), so do not spend time on borderline calls
+3. **Information every problem must carry**:
+   - A description of the problem and the site (`file:line`)
+   - Why it is a problem (the basis. If it is a guess, say so)
+   - The proposed fix (the direction of the code change)
+   - **Generalizability** — is this problem a structure that can occur elsewhere? If it is specific to that site (a spec local to it), drop it from the sweep
+4. **When there are zero problems (the early-exit path)**: report 「指定範囲に問題は検出されなかった」 and finish normally. Do not manufacture findings
+   - Do not create intermediate files (if you already created them, delete them with `rm -rf .claude/tmp/sweep-fix`)
+   - The report is not Phase 5's full version but an abbreviated one — the "problems detected" section plus the basis of the analysis — printed in the conversation
+   - No fix happened, so the verification gate (running tests) is unnecessary. 「変更なしのため検証対象なし」 suffices
+5. Save the problem list: run `mkdir -p .claude/tmp/sweep-fix`, then write `.claude/tmp/sweep-fix/problems.json`
 
-**着目観点が指定されている場合**はその観点を優先しつつ、明白な BLOCK 級の問題は観点外でも報告する（修正するかはユーザ判断）。
+**When an aspect to focus on is specified**, prioritize that aspect, but still report an obvious BLOCK-class problem even if it falls outside the aspect (whether to fix it is the user's call).
 
-## Phase 2: SWEEP — パターン化と全体横展開検索
+## Phase 2: SWEEP — Generalize Into Patterns and Sweep the Whole Codebase
 
-Phase 1 の各問題（一般化可能性ありのもの）を検索可能なシグネチャに変換し、コードベース全体から候補箇所を収集する。**この Phase は読み取り専用。一切修正しない。**
+Convert each Phase 1 problem (the ones marked generalizable) into a searchable signature and collect candidate sites from across the whole codebase. **This phase is read-only. Fix nothing at all.**
 
-1. **パターン変換**: [references/pattern-extraction.md](references/pattern-extraction.md) に従い、問題ごとに検索戦略を選ぶ:
-   - 字面パターン → パターン検索（正規表現）
-   - 構文パターン → **ast-grep**（`which ast-grep` で存在確認。なければパターン検索にフォールバック）
-   - シンボル参照 → 言語サーバー（LSP）（同一関数・型の全使用箇所。利用不可ならパターン検索にフォールバック）
-2. **検索は広めに設計する**: 取りこぼしを避けるため、パターンは意図的に緩くする。絞り込みは Phase 3 の責務
-3. **実行形態の判定**:
-   - 問題が **1 つ**: メイン（または単一 Agent）で検索する。過剰なオーケストレーションをしない
-   - 問題が **複数**: 問題ごとに sweep サブエージェントを並行起動する（[orchestration-patterns.md](../shared/references/orchestration-patterns.md) パターン2）
-     - **必須**: 複数のサブエージェント呼び出しを**同一メッセージ内**で発行する（逐次ターンでは直列化される）
-     - **必須**: 各サブエージェントに高性能モデルを明示する（高額セッションモデルの継承防止）
-     - 各エージェントは結果を `.claude/tmp/sweep-fix/{problem_id}_candidates.json` に書き、メインにはサマリー（候補件数・ファイルパス）のみ返す
-4. **候補リストの構造**（JSON）:
+1. **Pattern conversion**: following [references/pattern-extraction.md](references/pattern-extraction.md), pick a search strategy per problem:
+   - Textual pattern → pattern search (regular expression)
+   - Syntactic pattern → **ast-grep** (check it exists with `which ast-grep`. Fall back to pattern search if absent)
+   - Symbol reference → the language server (LSP) (every use site of the same function or type. Fall back to pattern search if unavailable)
+2. **Design the search wide**: keep the pattern deliberately loose so nothing slips through. Narrowing is Phase 3's responsibility
+3. **Decide the execution form**:
+   - **One** problem: search in the main context (or a single Agent). Do not over-orchestrate
+   - **Multiple** problems: launch one sweep subagent per problem in parallel ([orchestration-patterns.md](../shared/references/orchestration-patterns.md) pattern 2)
+     - **Required**: issue the multiple subagent calls **within a single message** (sequential turns serialize them)
+     - **Required**: state a high-capability model explicitly for each subagent (prevents inheriting an expensive session model)
+     - Each agent writes its results to `.claude/tmp/sweep-fix/{problem_id}_candidates.json` and returns only a summary (candidate count, file paths) to the main context
+4. **Structure of the candidate list** (JSON):
    ```json
    {
      "problem_id": "P1",
-     "pattern_used": "検索に使ったパターン",
+     "pattern_used": "the pattern used for the search",
      "tool": "grep | ast-grep | lsp",
      "candidates": [
-       { "file": "path/to/file", "line": 42, "excerpt": "該当コード断片" }
+       { "file": "path/to/file", "line": 42, "excerpt": "the matching code fragment" }
      ]
    }
    ```
-5. Phase 1 で検出した元の箇所も候補リストに含める（元箇所も Phase 3 の検証を通す。分析時の判断が誤っている可能性も検証で拾う）
+5. Include the original sites found in Phase 1 in the candidate list too (put them through Phase 3 verification as well. Verification also catches a call that was wrong at analysis time)
 
-## Phase 3: VERIFY — 文脈検証・偽陽性除去
+## Phase 3: VERIFY — Verify Context, Eliminate False Positives
 
-**このスキルの品質を決める Phase。スキップ・簡略化は禁止。**
+**This phase decides the quality of this skill. Skipping or abbreviating it is forbidden.**
 
-全候補箇所を [references/context-verification.md](references/context-verification.md) のチェックリストで判定する。
+Judge every candidate site against the checklist in [references/context-verification.md](references/context-verification.md).
 
-1. 候補ごとに該当ファイルの周辺コンテキスト（関数全体・呼び出し元・ガード条件）を **実際にファイルを読んで確認する**。excerpt だけで判定しない
-2. 3値判定を下す:
+1. For each candidate, **actually read the file** to confirm the surrounding context (the whole function, the callers, the guard conditions). Do not judge from the excerpt alone
+2. Return a three-way verdict:
 
-   | 判定 | 意味 | 扱い |
+   | Verdict | Meaning | Treatment |
    |------|------|------|
-   | **CONFIRMED** | 同じ問題が同じ理由で成立する | Phase 4 の修正対象 |
-   | **FALSE_POSITIVE** | 字面は似ているが文脈的に問題ない | 除外。**除外理由を必ず記録** |
-   | **UNCERTAIN** | 判断に必要な文脈が不足、または正当性が文脈依存 | 修正しない。レポートに判断材料付きで掲載 |
+   | **CONFIRMED** | The same problem holds for the same reason | A fix target in Phase 4 |
+   | **FALSE_POSITIVE** | It looks alike textually but is fine in context | Excluded. **Always record why it was excluded** |
+   | **UNCERTAIN** | The context needed to judge is missing, or the validity is context-dependent | Not fixed. Listed in the report with the material to decide |
 
-3. **判定には根拠を必ず添える**: 「なぜこの箇所では問題が成立する / しないのか」を 1-2 文で記録する。根拠を書けない CONFIRMED は UNCERTAIN に降格する
-4. **UNCERTAIN を CONFIRMED に倒すことは禁止**（fail-safe）。逆（CONFIRMED を保守的に UNCERTAIN に降格）は許可
-5. 候補が多い場合（20 箇所超）は検証をサブエージェントに委譲してよい（高性能モデルを明示）。その場合も判定基準は context-verification.md をサブエージェントのプロンプトに注入する
-6. 判定結果を `.claude/tmp/sweep-fix/verdicts.json` に保存する
+3. **Always attach the basis for a verdict**: record in one or two sentences "why the problem does or does not hold at this site". A CONFIRMED you cannot write a basis for is demoted to UNCERTAIN
+4. **Promoting UNCERTAIN to CONFIRMED is forbidden** (fail-safe). The reverse (conservatively demoting CONFIRMED to UNCERTAIN) is allowed
+5. When there are many candidates (more than 20), you may delegate verification to subagents (state a high-capability model explicitly). Even then, inject the criteria from context-verification.md into the subagent's prompt
+6. Save the verdicts to `.claude/tmp/sweep-fix/verdicts.json`
 
-## Phase 4: FIX — 修正適用
+## Phase 4: FIX — Apply the Fixes
 
-**CONFIRMED 箇所のみ**修正する。FALSE_POSITIVE / UNCERTAIN に触れる変更経路を作らない。
+Fix **CONFIRMED sites only**. Do not create any path by which a change touches a FALSE_POSITIVE or UNCERTAIN site.
 
-1. Phase 1 の修正案を、各箇所の文脈（周辺の命名・イディオム・コメント密度）に合わせて適用する。機械的な一括置換で文脈を壊さない
-2. 修正が **BLOCK 級かつ 10 箇所超**に及ぶ場合は、修正一覧を提示して続行確認を挟む（対話モードのみ。headless では続行し、レポートで強調する）
-3. **検証ゲート**（[verification-gate.md](../shared/references/verification-gate.md) 準拠）:
-   - テストコマンドが判明している（CLAUDE.md / package.json / Makefile 等から検出できる）場合は実行し、出力を確認する
-   - テスト失敗時: 自分の修正が原因なら修正する。無関係な既存失敗なら区別してレポートに明記する
-   - `git diff --stat` で変更ファイル一覧を取得し、修正対象リストと一致することを確認する（意図しないファイルへの変更がないこと）
-4. **コミットはしない**。コミットはユーザが `/claude-skills:commit` で行う（このスキルの責務は修正まで）
+1. Apply the Phase 1 proposed fix, adapted to each site's context (surrounding naming, idiom, comment density). Do not break the context with a mechanical bulk replace
+2. When the fix is **BLOCK-class and spans more than 10 sites**, present the list of fixes and insert a continue-confirmation (interactive mode only. In headless, continue and emphasize it in the report)
+3. **Verification gate** (conforming to [verification-gate.md](../shared/references/verification-gate.md)):
+   - When the test command is known (detectable from CLAUDE.md / package.json / Makefile, etc.), run it and check the output
+   - On test failure: if your fix caused it, fix it. If it is an unrelated pre-existing failure, distinguish it and state so in the report
+   - Get the list of changed files with `git diff --stat` and confirm it matches the fix-target list (that no unintended file was changed)
+4. **Do not commit**. The user commits with `/claude-skills:commit` (this skill's responsibility ends at the fix)
 
-## Phase 5: REPORT — 構造化レポート
+## Phase 5: REPORT — Structured Report
 
-以下の構造で会話上にレポートを出力し、最後に中間ファイルを削除する（`rm -rf .claude/tmp/sweep-fix`）。
+Print a report in the conversation with the structure below, then delete the intermediate files at the end (`rm -rf .claude/tmp/sweep-fix`).
 
 ```
 ══════════════════════════════════════
@@ -161,22 +161,22 @@ SWEEP-FIX REPORT
 - diff: {git diff --stat の要約}
 ```
 
-## 合理化防止
+## Rationalization Guard
 
-| 言い訳 | 現実 |
+| Excuse | Reality |
 |--------|------|
-| 「候補は明らかに同じ問題だから検証スキップ」 | 字面の類似は文脈の同一を意味しない。例外なし |
-| 「excerpt を見れば判定できる」 | 周辺コンテキストをファイルから読まずに下した判定は推測。ガード条件は excerpt の外にある |
-| 「UNCERTAIN が多いと役に立たないから CONFIRMED に倒す」 | 誤修正 1 件の損害は保留 10 件より大きい。fail-safe は仕様 |
-| 「検索パターンを絞れば検証は不要」 | 絞った検索は偽陰性を増やすだけ。広く検索して検証で絞るのが設計 |
-| 「テストが無いから検証ゲートは省略」 | テスト未検出なら「未検出」とレポートに明記する。黙って省略しない |
-| 「修正箇所が多いので一括 sed で置換」 | 各箇所の文脈に合わせるのが Phase 4 の責務。機械置換は文脈破壊 |
+| "The candidates are obviously the same problem, so skip verification" | Textual similarity does not imply identical context. No exceptions |
+| "I can judge it from the excerpt" | A verdict reached without reading the surrounding context from the file is a guess. The guard condition lives outside the excerpt |
+| "Too many UNCERTAIN makes this useless, so promote them to CONFIRMED" | The damage from one wrong fix exceeds ten held-back items. fail-safe is the specification |
+| "Narrow the search pattern and verification becomes unnecessary" | A narrowed search only increases false negatives. Searching wide and narrowing by verification is the design |
+| "There are no tests, so skip the verification gate" | If no test is detected, state 「未検出」 in the report. Do not skip it silently |
+| "There are many sites to fix, so bulk-replace with sed" | Adapting to each site's context is Phase 4's responsibility. Mechanical replacement destroys context |
 
-## Red Flags — スキルが守られていない兆候
+## Red Flags — Signs the Skill Is Not Being Followed
 
-- Phase 3 を通らずに Phase 4 の編集が始まっている
-- FALSE_POSITIVE の件数が 0 のまま大量の候補が全部 CONFIRMED になっている（検証が形骸化している疑い）
-- 除外理由・判定根拠が記録されていない
-- レポートに UNCERTAIN セクションがない（保留を握りつぶしている疑い）
-- `git diff --stat` の変更ファイルが修正対象リストより多い
-- 問題 1 つに対して並行エージェントを起動している（過剰オーケストレーション）
+- Phase 4 editing has begun without passing through Phase 3
+- The FALSE_POSITIVE count stays at 0 while a large number of candidates all become CONFIRMED (verification is suspected of being hollow)
+- The exclusion reasons and verdict bases are not recorded
+- The report has no UNCERTAIN section (holds are suspected of being swept away)
+- `git diff --stat` shows more changed files than the fix-target list
+- Parallel agents were launched for a single problem (over-orchestration)

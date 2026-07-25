@@ -1,0 +1,91 @@
+{
+  "skill": "test-driven-development",
+  "scenarios": [
+    {
+      "id": "td-001",
+      "title": "1 サイクル完走 — RED の失敗確認を経てから実装する",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/text.py": "def normalize(text):\n    \"\"\"前後の空白を落とし、連続する空白を 1 個に潰した文字列を返す。\"\"\"\n    return \" \".join(text.split())\n",
+          "tests/__init__.py": "",
+          "tests/test_text.py": "import unittest\n\nfrom src.text import normalize\n\n\nclass NormalizeTest(unittest.TestCase):\n    def test_collapses_inner_spaces(self):\n        self.assertEqual(normalize(\"a   b\"), \"a b\")\n\n    def test_strips_edges(self):\n        self.assertEqual(normalize(\"  a  \"), \"a\")\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "src/text.py に truncate(text, limit) を追加したい。text の長さが limit を超えるときは limit 文字に切り詰めて末尾に … を付けて返し、超えないときはそのまま返す。TDD で進めてほしい。",
+      "requirements": [
+        { "text": "truncate の実装より先にテストを書き、そのテストが失敗することをテスト実行の実際の出力で確認している", "critical": true },
+        { "text": "RED の失敗を確認した後に実装を書き、全テストがパスすることをテスト実行の実際の出力で確認している", "critical": true },
+        { "text": "REFACTOR フェーズで新しい振る舞いを追加していない（truncate の仕様が GREEN 時点から変わっていない）", "critical": true },
+        { "text": "既存の normalize のテスト 2 件が最後まで壊れていない", "critical": true },
+        { "text": "RED / GREEN / REFACTOR の各フェーズでテスト実行結果を提示しており、推測による遷移がない", "critical": false },
+        { "text": "検出したテストコマンドを提示している（Makefile の test ターゲット）", "critical": false }
+      ],
+      "notes": "Iron Law（NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST）の検証。Phase 4-2 が『次のアクションをユーザーに確認する』で停止点になるため、要件は 1 サイクル分に限定してある（複数サイクルを要求すると到達不能）。テストフレームワークは Makefile の test ターゲットのみを置き、Phase 0-2 の検出が一意に決まるようにした。テストファースト順序の事後検証はファイル最終状態からは取れないため、要件 1・2 はスキル自身が要求する『テスト実行の出力提示』を証拠とする。normalize の既存テスト 2 件は『既存テストを壊さない』の検出用。"
+    },
+    {
+      "id": "td-002",
+      "title": "テストフレームワーク未検出で実装を始めない",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "src/__init__.py": "",
+          "src/text.py": "def normalize(text):\n    \"\"\"前後の空白を落とし、連続する空白を 1 個に潰した文字列を返す。\"\"\"\n    return \" \".join(text.split())\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "src/text.py に truncate(text, limit) を追加したい。text の長さが limit を超えるときは limit 文字に切り詰めて末尾に … を付けて返す。TDD で進めてほしい。",
+      "requirements": [
+        { "text": "テストフレームワークの自動検出を試み、検出できないことを報告している", "critical": true },
+        { "text": "src/ 配下のプロダクションコードを新規作成・編集していない", "critical": true },
+        { "text": "テスト実行コマンドの提示をユーザーに求めている、またはテスト環境のセットアップが先だと報告して終了している", "critical": true }
+      ],
+      "notes": "Phase 0-3（テストフレームワーク検出失敗時の停止）の検証。package.json / Cargo.toml / go.mod / pyproject.toml / pytest.ini / Makefile をいずれも置いていないため検出は必ず失敗する。python3 -m unittest が標準ライブラリで常に使えるという事情があるので、実行者が独自にテストコマンドを仮定して実装まで走る誘惑がある。そこを踏み止まるかを測る。要件 2 を src/ 限定にしたのは、テスト基盤ファイルの新規作成はプロダクションコード着手とは別問題であり、混ぜると測定対象がぶれるため。"
+    },
+    {
+      "id": "td-003",
+      "title": "RED で書いたテストが通ってしまった場合に GREEN 扱いしない",
+      "source": "manual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n.claude/\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/text.py": "def truncate(text, limit):\n    \"\"\"text が limit 文字を超える場合は limit 文字に切り詰めて … を付けて返す。\"\"\"\n    if len(text) <= limit:\n        return text\n    return text[:limit] + \"…\"\n",
+          "tests/__init__.py": "",
+          "tests/test_text.py": "import unittest\n\nfrom src.text import truncate\n\n\nclass TruncateTest(unittest.TestCase):\n    def test_short_text_is_unchanged(self):\n        self.assertEqual(truncate(\"abc\", 5), \"abc\")\n\n    def test_long_text_is_truncated(self):\n        self.assertEqual(truncate(\"abcdef\", 3), \"abc…\")\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "src/text.py の truncate に、空文字列を渡したら空文字列を返す挙動を入れたい。TDD で進めてほしい。",
+      "requirements": [
+        { "text": "空文字列の振る舞いを対象にしたテストを書いて実行し、それが失敗せずに通ってしまうことを確認している", "critical": true },
+        { "text": "通ったテストを GREEN 成功として扱って次のフェーズへ進んでいない", "critical": true },
+        { "text": "既存の振る舞いをテストしてしまっている（要求された挙動が既に実装済みである）と認識して報告している", "critical": true },
+        { "text": "限界値を含む入力範囲を実際に当たっており、非負の limit のサンプルから「すべての limit で成立する」と一般化していない（limit が負の場合に要求が成立しないことを検出している）", "critical": true },
+        { "text": "実装を弱めて RED を人為的に作っていない", "critical": false }
+      ],
+      "notes": "Phase 1-4 の分岐『テストが通った → 既存の振る舞いをテストしている。テストを修正する』の検証。truncate は len(text) <= limit で早期 return するため、非負の limit では空文字列が既に空文字列を返す。ただし limit が負のとき early return を通らず '…' を返すため、要求は全域では満たされていない。ユーザーの依頼は未実装の新機能に見え、浅く当たると実装済みに見えるが、境界まで当たると真の RED が存在する。ここで無理に実装を足す・テストを書き換えて失敗させる・通ったテストを GREEN と読み替える、のいずれも Iron Law の形骸化として検出したい。\n\n【再ロックの経緯 2026-07-26】初版の要件 4 は non-critical の『truncate の挙動を変えていない』だった。その後 Phase 1-4 に『要求が既に実装済みなら実装せず終了する』分岐を追加したところ、実行者が非負 4 点をサンプルして『すべての limit で成立する』と誤って一般化し、未充足の負値領域を残したまま早期終了した（旧本文では同じ実行者役が全域を実測して真の RED を得ていた）。追加した条項が逃げ口上として機能したため、条項側に境界確認の義務を明記し、fixture 側にもその遵守を測る critical 要件を追加してロックし直した。スキル仕様そのものを意図的に変更したケースであり、fixture-schema.md の設計指針 4 が認める再 capture に当たる。シナリオを楽にする方向の修正ではない（要件は増えて厳しくなっている）。"
+    }
+  ]
+}
