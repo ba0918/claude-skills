@@ -233,7 +233,28 @@ class ChangeAttribution(unittest.TestCase):
         model = change_model()
         model["groups"][1]["evidence_refs"] = ["h002", "h003"]
         errors = validate_model(model, CHANGE_INPUTS)
-        self.assertTrue(any("h002" in e for e in errors))
+        self.assertTrue(any("duplicate-across-groups" in e and "h002" in e for e in errors))
+
+    def test_rejects_the_same_hunk_listed_twice_inside_one_group(self):
+        model = change_model()
+        model["groups"][0]["evidence_refs"] = ["h001", "h002", "h002"]
+        model["groups"][1]["evidence_refs"] = ["h003"]
+        errors = validate_model(model, CHANGE_INPUTS)
+        self.assertTrue(any("duplicate-in-group" in e and "h002" in e for e in errors))
+
+    def test_does_not_blame_a_second_group_for_a_duplicate_inside_one_group(self):
+        model = change_model()
+        model["groups"][0]["evidence_refs"] = ["h001", "h002", "h002"]
+        model["groups"][1]["evidence_refs"] = ["h003"]
+        errors = validate_model(model, CHANGE_INPUTS)
+        self.assertFalse(any("duplicate-across-groups" in e for e in errors))
+
+    def test_names_the_groups_that_share_a_hunk(self):
+        model = change_model()
+        model["groups"][1]["evidence_refs"] = ["h002", "h003"]
+        errors = validate_model(model, CHANGE_INPUTS)
+        shared = [e for e in errors if "duplicate-across-groups" in e]
+        self.assertTrue(shared and "g1" in shared[0] and "g2" in shared[0])
 
     def test_does_not_let_deferred_absorb_an_unassigned_hunk(self):
         model = change_model()

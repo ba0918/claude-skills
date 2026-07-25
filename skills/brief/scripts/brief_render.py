@@ -142,11 +142,20 @@ def _validate_questions(model):
     ]
 
 
-def _group_refs(model):
-    refs = []
+def _refs_by_group(model):
+    """Return [(group id, [ref, ...]), ...] preserving each group's own list."""
+    pairs = []
     for group in model["groups"]:
         if isinstance(group, dict) and isinstance(group.get("evidence_refs"), list):
-            refs += [r for r in group["evidence_refs"] if isinstance(r, str)]
+            refs = [r for r in group["evidence_refs"] if isinstance(r, str)]
+            pairs.append((group.get("id"), refs))
+    return pairs
+
+
+def _group_refs(model):
+    refs = []
+    for _, group_refs in _refs_by_group(model):
+        refs += group_refs
     return refs
 
 
@@ -167,10 +176,24 @@ def _validate_attribution(model, view, universe):
         errors.append("[evidence] 入力に存在しない参照: %s" % ref)
 
     if view == "change":
-        for ref in sorted({r for r in group_refs if group_refs.count(r) > 1}):
-            errors.append("[attribution] 複数のグループに属している: %s" % ref)
+        # 「どこで重複したか」で原因も直し方も変わる。同一グループ内の書き損じを
+        # 「複数のグループに属している」と報告すると、存在しない別グループを探させる。
+        owners = {}
+        for group_id, refs in _refs_by_group(model):
+            for ref in sorted({r for r in refs if refs.count(r) > 1}):
+                errors.append(
+                    "[attribution/duplicate-in-group] 同じグループ内で重複している: "
+                    "%s (%s)" % (ref, group_id)
+                )
+            for ref in set(refs):
+                owners.setdefault(ref, []).append(group_id)
+        for ref in sorted(r for r, gids in owners.items() if len(gids) > 1):
+            errors.append(
+                "[attribution/duplicate-across-groups] 複数のグループに属している: "
+                "%s (%s)" % (ref, " / ".join(str(g) for g in owners[ref]))
+            )
         for ref in sorted(set(universe) - set(group_refs)):
-            errors.append("[attribution] どのグループにも属していない: %s" % ref)
+            errors.append("[attribution/unassigned] どのグループにも属していない: %s" % ref)
         # deferred is not an escape hatch for change: a hunk nobody grouped is
         # a hole in the page, not a detail worth hiding.
         for ref in sorted(set(deferred_refs) & set(universe)):
