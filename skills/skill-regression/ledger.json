@@ -356,7 +356,7 @@
   },
   "refactor": {
     "file_sha256": {
-      "skills/refactor/SKILL.md": "685140ee770704c2401dec802b99a7cf56ee1de353c433194d6d0e3ad5bff6ad",
+      "skills/refactor/SKILL.md": "7f4417155eac0b070000d6bc273abda12d297090ecde6cbcd099844a8bfe6dd9",
       "skills/refactor/fixtures.json": "52a1627a3a378531cbda915806f25d8dd7d94815991147a685ef06693b14f795",
       "skills/refactor/references/behavior-preservation-checks.md": "8288a6c286dd869c55e916329446f1319948a629de1f2b8406c6863d9dfbcd34",
       "skills/refactor/references/refactoring-catalog.md": "a549836cb8cefa229bcaa7751cbfdd10799bdc2c8ad48b4449bad98080ba6381",
@@ -366,7 +366,7 @@
       "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
-    "note": "3 シナリオ実走 pass。全フェーズインライン単段（スコープ1ファイル・候補2件で委譲閾値に未到達）。rf-001 は headless を自己判定してスコープ外候補を report-only 固定にし、独自に 16 ケースの差分等価検算を実施。rf-003 は初版 setup の to_cents が浮動小数点丸めで BUG_FOUND を招き Phase 6 の形式選択規則により簡略版が到達不能だったため、要件は変えず setup を整数演算へ差し替えて再走（rf-001/rf-002 は setup バイト同一を検算のうえ初回結果を採用）",
+    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（rf-001 7/7 / rf-002 6/6 / rf-003 3/3、critical は 4+4+2 全 pass）。挙動も日本語アームと同一 — rf-001 は format_row を 3 段ネストからガード節へ平坦化し、同型の改善が適用可能でテストも揃っている src/summary.py を CONFIRMED と判定したうえで headless のスコープ外規則により report-only に留めた（UNCERTAIN へ逃げていないので Iron Law 5 とスコープ外 opt-in 規則が弁別できている）。rf-002 は apply_discount の docstring 契約との食い違いを BUG_FOUND に分類して本体を修正せず、issue ファイルを作らずコマンド案の提示に留めた（当該関数にテストが無いため、直さなかった理由が『テストに止められた』ではなく本文の条項であることが弁別できる）。rf-003 は編集 0 件で no-op 終了し、会話出力を簡略版に留めた。動作保持は採点者が改善前後をモジュールとして読み込み突き合わせて実測（rf-001 は 9 ケース / rf-002 は 16 ケースで mismatch 0）。編集有無は baseline ハッシュと git で機械照合し、採点は実行者と別の白紙エージェントが担当。構造パリティ（見出し14/フェンス6/リンク10/番号37/箇条書き39/水平線0/フェンス内49行）・リンク先集合・識別子56種・ユーザー提示定型文17種・frontmatter の byte 不変を機械検証済み。日本語行比率 91.5% → 0.0%。フェンス内は読み手で切り分け、Iron Laws とフロー図（実行者が読む）は英訳し、REFACTOR REPORT テンプレート（ユーザーが読む）は原文のまま。実行者プロンプトはスキルの出力形式へ一切言及しない形にした（sweep-fix sf-002 で計測器がスキルの規定を上書きした事故の再発防止）。この中立化により rf-003 の要件 3（簡略版レポート）は実行者が自力でスキルの規則と計測用レポートを切り分けて pass している。rf-003 の実行者から新規の記述漏れ 1 件: Phase 2 の already-clean Gate は『no-op で終了』と書くがフロー図は Phase 0-6 の直列を示すため、候補 0 件のとき Phase 3/4 を空通過すると読む余地があり、レポートの横展開テーブルの有無が読み方で変わる",
     "result": "pass",
     "surface": [
       "skills/refactor/SKILL.md",
@@ -379,7 +379,7 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "0ddf7af947cecc2956c398bddd049ce159ffebd1efe9e7509e560ea25e4b3862",
+    "surface_sha256": "2a666431ee14afcc7dba78b119f0a417efe30cdffeefe0284abfd9f29a52041c",
     "verified": "2026-07-26"
   },
   "sweep-fix": {
