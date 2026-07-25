@@ -103,6 +103,24 @@ class TestEntryRoundtrip(unittest.TestCase):
             self.assertEqual(entry["verified"], "2026-07-07")
             self.assertEqual(entry["surface"], surface)
 
+    def test_note_is_recorded_when_given(self):
+        # 素の pass だけでは「同じ環境で次に回す者」に run の性質が伝わらない
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "body")
+            _write(root, "skills/a/fixtures.json", "{}")
+            surface = ledger.skill_surface(root, "a")
+            entry = ledger.make_entry(
+                root, surface, "pass", "2026-07-25", note="状況照会 4 回")
+            self.assertEqual(entry["note"], "状況照会 4 回")
+
+    def test_note_key_is_absent_when_not_given(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "body")
+            _write(root, "skills/a/fixtures.json", "{}")
+            entry = ledger.make_entry(
+                root, ledger.skill_surface(root, "a"), "pass", "2026-07-25")
+            self.assertNotIn("note", entry)
+
     def test_save_and_load(self):
         with tempfile.TemporaryDirectory() as root:
             _write(root, "skills/skill-regression/SKILL.md", "self")
