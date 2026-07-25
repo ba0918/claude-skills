@@ -7,74 +7,76 @@ description: LLMとのやり取り・調査結果・Web調査をリーダブル�
 
 Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
-LLM とのやり取り・調査結果・Web 調査をリーダブルなドキュメントに昇華するスキル。
-想定読者に応じた粒度調整、テンプレート自動選択、Mermaid 図生成、フィードバックループによる品質向上を特徴とする。
+Turn LLM exchanges, investigation results, and web research into readable documents.
+The skill adjusts granularity to the intended audience, selects a template automatically,
+generates Mermaid diagrams, and raises quality through a feedback loop.
 
-## 既存スキルとの住み分け
+## Boundary with neighbouring skills
 
-| スキル | 役割 | 出力 |
+| Skill | Role | Output |
 |--------|------|------|
-| `brainstorm-wrap` | 壁打ちの軽量メモ | `.agents/artifacts/ideas/` |
-| `investigate` | 問題の調査レポート | 会話上に出力 |
-| **`doc-write`** | **知見のリーダブルなドキュメント化** | **`docs/writings/`** |
+| `brainstorm-wrap` | Lightweight notes from a sparring session | `.agents/artifacts/ideas/` |
+| `investigate` | Investigation report on a problem | Printed in the conversation |
+| **`doc-write`** | **Turning knowledge into a readable document** | **`docs/writings/`** |
 
-investigate の出力を doc-write の入力にする関係も想定。
+Feeding investigate's output into doc-write is an intended combination.
 
-## Workflow Selection
+## Workflow selection
 
-$ARGUMENTS の先頭キーワードでワークフローを決定する:
+The leading keyword of $ARGUMENTS selects the workflow:
 
-- `resume` → **Resume Workflow**（既存ドキュメントの再編集）
-- (なし or テーマ文字列) → **Write Workflow**（メインワークフロー）
+- `resume` → **Resume workflow** (re-edit an existing document)
+- (none, or a theme string) → **Write workflow** (the main workflow)
 
 ---
 
-## Write Workflow（メインワークフロー）
+## Write workflow (main)
 
-### Phase 1: 要件確認
+### Phase 1: Requirements
 
-1. **想定読者の確認**（必須質問）
-   - ユーザーに確認して必ず確認する: 「このドキュメントの想定読者は誰ですか？（例: 自分用メモ / チームメンバー / 外部発表）」
-   - 読者に応じて粒度・用語の説明レベルを調整する
+1. **Confirm the intended audience** (mandatory question)
+   - Always ask the user: 「このドキュメントの想定読者は誰ですか？（例: 自分用メモ / チームメンバー / 外部発表）」
+   - Adjust granularity and how much terminology you explain to that audience
 
-2. **テーマの特定**
-   - $ARGUMENTS にテーマがあればそれを使用
-   - なければ現在のコンテキスト（会話内容）からテーマを推測
-   - 推測できなければ ユーザーに確認して確認
+2. **Identify the theme**
+   - If $ARGUMENTS carries a theme, use it
+   - Otherwise infer the theme from the current context (the conversation)
+   - If you cannot infer it, ask the user
 
-3. **入力ソースの判定**
-   以下の3パターンから判定する:
-   - **(a) 現在のコンテキスト**: 会話中の議論・調査結果をまとめる場合
-   - **(b) 既存ファイル**: 過去のメモ・レポートを統合する場合（ファイルパスを $ARGUMENTS または ユーザーに確認して取得）
-   - **(c) Web 調査**: テーマ指定で Web 調査してドキュメント化する場合
-     - Web 調査の深さは文脈判断:
-       - 「調べて」「まとめて」→ ライト調査（主要な情報源を数件）
-       - 「徹底的に調べて」「深く調査して」→ ディープ調査（複数情報源を網羅的に）
-     - **Web 調査失敗時**: ユーザーに通知し、手動入力への切替を提案する
+3. **Determine the input source**
+   Decide between these three:
+   - **(a) Current context**: summarising discussion or investigation from the conversation
+   - **(b) Existing files**: consolidating past notes or reports (get the path from
+     $ARGUMENTS or from the user)
+   - **(c) Web research**: researching a given theme and documenting it
+     - Judge the depth from context:
+       - 「調べて」「まとめて」 → light research (a few primary sources)
+       - 「徹底的に調べて」「深く調査して」 → deep research (comprehensive, multiple sources)
+     - **When web research fails**: notify the user and propose switching to manual input
 
-4. **テンプレート自動選択**
-   内容に応じて以下から自動選択する:
-   - **テックノート**: 技術的な知見・手順・解説 → [references/tech-note-template.md](references/tech-note-template.md)
-   - **ADR (Architecture Decision Record)**: 意思決定の記録 → [references/adr-template.md](references/adr-template.md)
-   - **ディスカッションサマリー**: 議論のまとめ → [references/discussion-summary-template.md](references/discussion-summary-template.md)
-   - テンプレート選択が曖昧な場合は ユーザーに確認してユーザーに確認する
+4. **Select the template automatically**
+   Pick by content:
+   - **Tech note**: technical knowledge, procedures, explanations → [references/tech-note-template.md](references/tech-note-template.md)
+   - **ADR (Architecture Decision Record)**: a record of a decision → [references/adr-template.md](references/adr-template.md)
+   - **Discussion summary**: a summary of a discussion → [references/discussion-summary-template.md](references/discussion-summary-template.md)
+   - If the choice is ambiguous, ask the user
 
-### Phase 2: ドキュメント生成
+### Phase 2: Generating the document
 
-1. テンプレートを読み込む
-2. 入力ソースから情報を収集・整理する
-3. 以下のルールに従ってドキュメントを生成:
-   - 想定読者に応じた粒度で記述
-   - 適切な箇所に Mermaid 図を挿入（[references/mermaid-guidelines.md](references/mermaid-guidelines.md) に従う）
-   - Mermaid 図は必須ではない — 図が有効な場合のみ挿入する
-   - frontmatter にメタデータを埋め込む（title, audience, template, created, updated）
-4. slug を生成: `yyyymmddhhmmss_{kebab-title}` (date +%Y%m%d%H%M%S)
-5. 出力先: `docs/writings/{slug}.md`
-   - `docs/writings/` ディレクトリがなければ `mkdir -p` で作成
+1. Load the template
+2. Collect and organise the information from the input source
+3. Generate the document under these rules:
+   - Write at the granularity the intended audience needs
+   - Insert Mermaid diagrams where they help (follow [references/mermaid-guidelines.md](references/mermaid-guidelines.md))
+   - Mermaid diagrams are not mandatory — insert one only when a diagram earns its place
+   - Embed metadata in the frontmatter (title, audience, template, created, updated)
+4. Generate the slug: `yyyymmddhhmmss_{kebab-title}` (date +%Y%m%d%H%M%S)
+5. Output path: `docs/writings/{slug}.md`
+   - Create `docs/writings/` with `mkdir -p` if it does not exist
 
-### Phase 3: フィードバックループ
+### Phase 3: Feedback loop
 
-1. 生成したドキュメントの概要を表示:
+1. Show an outline of the generated document:
    ```
    📄 ドキュメントを生成しました: docs/writings/{slug}.md
 
@@ -83,13 +85,14 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
 
    修正・追加したい点はありますか？（「OK」で確定）
    ```
-2. ユーザーに確認してフィードバックを受ける
-3. フィードバックがあれば修正して再度確認（ループ）
-4. 「OK」「問題ない」「大丈夫」等でループ終了
-5. 完了メッセージ。冒頭に [ヒューマンリーダブル要約契約](../shared/references/human-readable-summary.md) に従う
-   要約ブロックを summary-first で置く。「この文書が何を説明するものか」を 1 行のかみ砕いた言葉で述べる
-   （見出し一覧はフィードバックループで提示済みのため最小差分。要旨だけを平易にエコーする）。
-   機密値は要約に含めない：
+2. Take the user's feedback
+3. If there is feedback, revise and confirm again (loop)
+4. End the loop on 「OK」「問題ない」「大丈夫」 or similar
+5. Completion message. Lead with a summary block per the
+   [human-readable summary contract](../shared/references/human-readable-summary.md),
+   summary-first, stating in one plain line what this document explains (the outline was
+   already shown in the feedback loop, so keep this minimal — just echo the gist in plain
+   words). Keep confidential values out of the summary:
    ```
    📝 つまり: {この文書を読んでいない人にも「つまり何を説明する文書か」が伝わる平易な 1 行}
 
@@ -97,28 +100,29 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
    📄 File: docs/writings/{slug}.md
    ```
 
-### エラーハンドリング
+### Error handling
 
-- **空入力**: ユーザーに確認して再入力を要求
-- **Web 調査失敗**: ユーザーに通知し、手動での情報入力に切替を提案
-- **テンプレート選択曖昧**: ユーザーに確認して確認
+- **Empty input**: ask the user to re-enter
+- **Web research failure**: notify the user and propose switching to manual input
+- **Ambiguous template choice**: ask the user
 
 ---
 
-## Resume Workflow（既存ドキュメントの再編集）
+## Resume workflow (re-editing an existing document)
 
 ### Steps
 
-1. `resume` キーワード以降の $ARGUMENTS から対象を特定
-   - ファイルパス指定: そのファイルを読み込む
-   - slug 指定: `docs/writings/{slug}.md` を読み込む
-   - 指定なし: `docs/writings/` のファイル一覧を表示し、ユーザーに確認して選択
-   - `docs/writings/` が存在しない、またはファイルがない場合: 「まだドキュメントがありません」と表示して終了
-   - 指定されたファイルが存在しない場合: `docs/writings/` のファイル一覧を表示してエラー終了
+1. Identify the target from the $ARGUMENTS following the `resume` keyword
+   - A file path: load that file
+   - A slug: load `docs/writings/{slug}.md`
+   - Nothing specified: list the files under `docs/writings/` and have the user choose
+   - `docs/writings/` does not exist, or holds no files: show 「まだドキュメントがありません」 and stop
+   - The specified file does not exist: show the file list under `docs/writings/` and exit
+     with an error
 
-2. ファイルの frontmatter からメタデータを読み取る（audience, template 等）
+2. Read the metadata from the file's frontmatter (audience, template, ...)
 
-3. ドキュメントの内容を要約して表示:
+3. Summarise the document and show it:
    ```
    📄 ドキュメント "{title}" を読み込みました。
    👥 想定読者: {audience}
@@ -127,36 +131,37 @@ $ARGUMENTS の先頭キーワードでワークフローを決定する:
    何を修正・追加しますか？
    ```
 
-4. ユーザーに確認してユーザーの修正指示を受ける
+4. Take the user's revision instructions
 
-5. 指示に基づいてドキュメントを修正
-   - frontmatter の `updated` を今日の日付に更新
-   - 必要に応じて Mermaid 図の追加・修正（ガイドラインに従う）
+5. Revise the document accordingly
+   - Update `updated` in the frontmatter to today's date
+   - Add or revise Mermaid diagrams as needed (following the guidelines)
 
-6. フィードバックループ（Write Workflow の Phase 3 と同じ）
+6. Feedback loop (same as Phase 3 of the Write workflow)
 
 ---
 
-## File Structure (generated in the project using this skill)
+## File structure (generated in the project using this skill)
 
 ```
 docs/writings/
-  yyyymmddhhmmss_{slug}.md  - 個別ドキュメント
+  yyyymmddhhmmss_{slug}.md  - individual documents
 ```
 
 ## Templates
 
-- **テックノート:** [references/tech-note-template.md](references/tech-note-template.md)
+- **Tech note:** [references/tech-note-template.md](references/tech-note-template.md)
 - **ADR:** [references/adr-template.md](references/adr-template.md)
-- **ディスカッションサマリー:** [references/discussion-summary-template.md](references/discussion-summary-template.md)
+- **Discussion summary:** [references/discussion-summary-template.md](references/discussion-summary-template.md)
 
-## Mermaid 図ガイドライン
+## Mermaid diagram guidelines
 
 - [references/mermaid-guidelines.md](references/mermaid-guidelines.md)
 
 ## Notes
 
-- テンプレートは 3 型で開始し、必要に応じて追加する
-- Mermaid ガイドラインは最低限で開始し、使いながら育てる方針
-- investigate の出力を入力ソースとして使える
-- frontmatter がドキュメントのメタデータを保持する（想定読者、テンプレート型、更新日）
+- Start with the three template types and add more as needed
+- Start with minimal Mermaid guidelines and grow them through use
+- investigate's output can serve as an input source
+- The frontmatter holds the document's metadata (intended audience, template type, updated
+  date)

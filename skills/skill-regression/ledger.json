@@ -96,6 +96,32 @@
     "surface_sha256": "b82dd071782c475b53797b7befd059c3281d3e40592597f726b64b8a451dc9ef",
     "verified": "2026-07-25"
   },
+  "doc-write": {
+    "file_sha256": {
+      "skills/doc-write/SKILL.md": "1f54131634a3fbb4b08b91008509f8a54cc23d6940a5d3afa96bb2021f1d9e25",
+      "skills/doc-write/fixtures.json": "5cb93e4a2dd5a03deb5fb80501fc8d0c6706712606a26aa23d7d8243b6bb2773",
+      "skills/doc-write/references/adr-template.md": "eb67007a57e6aaeb562e2fd4a1bec2d87272fad78ba93eab4ee99971b7da2831",
+      "skills/doc-write/references/discussion-summary-template.md": "e058f5281e9b6f6481a70c4ab77a159b7243dec3409c497c427268683eda5892",
+      "skills/doc-write/references/mermaid-guidelines.md": "4ba12bebc6e40921b9ddf20b8566916799dc9bd157f40fd6df4366a80698d3d5",
+      "skills/doc-write/references/tech-note-template.md": "dbaf93ee19e911c94bd5e91604480ff4c79bcc2421d35765edee1af91763841f",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/human-readable-summary.md": "f3dba0207381c14d9d73c0e72c1ed249843b48596c38edcb8de3c90f4e1ecc26"
+    },
+    "note": "batch5a リセット後の計測: 4 シナリオを本番同等モデルの実行者 8 体 + 独立採点者 8 体で日英両版に実行し、両版とも平均 0.964 / critical 全 pass 4/4 で完全同点。dw-001 の完了メッセージ要約は単一ターンでは原理的に到達しないため要件から除外している（本文の欠陥ではない）。実行者への照会 0 回。",
+    "result": "pass",
+    "surface": [
+      "skills/doc-write/SKILL.md",
+      "skills/doc-write/fixtures.json",
+      "skills/doc-write/references/adr-template.md",
+      "skills/doc-write/references/discussion-summary-template.md",
+      "skills/doc-write/references/mermaid-guidelines.md",
+      "skills/doc-write/references/tech-note-template.md",
+      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/human-readable-summary.md"
+    ],
+    "surface_sha256": "a79285ced505bdf8e5b04910422855d7cb224197931e9ba1a7e821ed2cb61352",
+    "verified": "2026-07-25"
+  },
   "github-issue": {
     "file_sha256": {
       "skills/github-issue/SKILL.md": "ced4e6b0bb499db3013d4cd53efd7b8939687691621738ea48e96629e7725043",
