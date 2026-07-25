@@ -431,10 +431,10 @@
       "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
-      "skills/test-driven-development/SKILL.md": "59c4c625748d4f071ec704b76845bdb4deab991645ca5fa3907e3fac9367aff5",
+      "skills/test-driven-development/SKILL.md": "d2682c54212772112e0c63aefe2398a3331f0f1b3e81ac47c66e6968bf2343a6",
       "skills/test-driven-development/fixtures.json": "ad73bf8a0daf85dad9eabdb049e48d449310be0db1ba0823a26aaa1376fb3ad4"
     },
-    "note": "3 シナリオ実走 pass。全フェーズインライン単段。初回実走で td-002 が critical 2 本を落とし（Phase 0-3 に headless 分岐がなく実行者が python3 -m unittest を仮定してプロダクションコードを実装）、原因をスキル本文の記述漏れと切り分けて SKILL.md へ headless 分岐を追加、同一 setup で再走し 3/3 へ転じた。Phase 1-4 へ追加した『要求が既に実装済みなら実装せず終了』分岐は、初版の文面では実行者が非負 4 点から誤って一般化し未充足の負値領域を残したまま早期終了したため、境界確認の義務を明記して締め直し、fixture 側にも遵守を測る critical 要件を追加して再ロックした（fixture-schema.md 設計指針 4 の意図的な仕様変更に伴う再 capture）。td-002 は修正後 2 回連続で編集 0 件を維持",
+    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（td-001 6/6 / td-002 3/3 編集ゼロ / td-003 5/5）。td-002 は英語化した『the existence of a language's standard test runner does not count as successful detection』を引用して推測フォールバックを却下、td-003 は英語化した境界確認条項に従い負値を含む 6 点を実測して真の RED を取得（日本語アームより広い範囲）。プロンプトは日本語アームと同一。構造パリティ（見出し16/フェンス22/リンク5/番号26/箇条書き35/水平線2）・識別子30種・ユーザー提示定型文15種・frontmatter の byte 不変を機械検証済み。日本語行比率 96.8% → 3.3%",
     "result": "pass",
     "surface": [
       "skills/shared/references/tdd-contract.md",
@@ -443,7 +443,7 @@
       "skills/test-driven-development/SKILL.md",
       "skills/test-driven-development/fixtures.json"
     ],
-    "surface_sha256": "34add78fd39d06c93b698d6d441abbde667440e8f03d389f6f4614c477703e68",
+    "surface_sha256": "3fcf0c08c81d0eca6b60090b5f357255ec6c4c206cb7d6eb3c7814846f389839",
     "verified": "2026-07-26"
   }
 }
