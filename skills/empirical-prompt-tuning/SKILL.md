@@ -44,7 +44,11 @@ description: agent 向けテキスト指示（skill / slash command / task プ�
    - `[critical]` を最低 1 つ含める（0 件だと成功判定が vacuous になる）
    - 要件は観測可能な形で書く（「正しく動く」ではなく具体的な検証条件）
    - **事前に固定し、以後動かさない**
-4. シナリオ + チェックリストを JSON 正規化して **sha256 をロック**（`verify_checklist_integrity()`）
+4. **到達可能性を検算**（工程 / 環境 / 契約整合の 3 軸、詳細は [requirement-reachability.md](references/requirement-reachability.md)）:
+   - 要件表より先に、この環境でワークフローを止めうる停止条件を列挙する
+   - 到達不能な要件を残すと、指示どおり振る舞った実行者が減点され、測定が無効になる
+5. シナリオ + チェックリストを JSON 正規化して **sha256 をロック**（`verify_checklist_integrity()`）。
+   プロンプト側で到達性を解除する設計を採った場合は prompt もハッシュ対象に含める
 
 ### Phase 2 — 実行（3 役分離）
 
@@ -302,6 +306,8 @@ baseline 確定時に scenarios + requirements を JSON 正規化して sha256 �
 - **イテレーションごとに変更多すぎ**: どの修正が効いたか追えなくなる。1 テーマ 1 iter
 - **シナリオを修正に合わせてチューニング**: チェックリストの sha256 が変わって halt する（設計通り）
 - **checker に対象プロンプトを見せる**: 甘い解釈バイアスが復活する。絶対に渡さない
+- **到達不能な要件をロックする**: 環境要因で手前で停止する工程を採点すると、正しく振る舞った実行者が
+  減点され、両アーム同一の失敗として現れる。実測で 3 回再発している（[requirement-reachability.md](references/requirement-reachability.md)）
 
 ## 関連
 
@@ -309,6 +315,7 @@ baseline 確定時に scenarios + requirements を JSON 正規化して sha256 �
 - [skill-regression](../skill-regression/SKILL.md) — 本スキルの収束成果（fixture.json）を回帰資産に変換可能
 - [skill-improve](../skill-improve/SKILL.md) — 受動分析（過去 JSONL）。本スキルは能動テスト
 - [references/checker-protocol.md](references/checker-protocol.md) — checker サブエージェント 起動契約
+- [references/requirement-reachability.md](references/requirement-reachability.md) — ロック前の到達可能性検算（工程 / 環境 / 契約整合）
 - [references/iteration-schema.md](references/iteration-schema.md) — iteration JSON レコード schema
 - [references/friction-taxonomy.md](references/friction-taxonomy.md) — 摩擦の 6 分類
 - [references/compliance-probe.md](references/compliance-probe.md) — 受動的制約の評価手法
