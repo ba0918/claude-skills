@@ -327,5 +327,29 @@
     ],
     "surface_sha256": "bb32f0e0a5029ca3af748985ca4c0a1254e1edafdfd590f629405620819f43d3",
     "verified": "2026-07-25"
+  },
+  "sweep-fix": {
+    "file_sha256": {
+      "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
+      "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
+      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
+      "skills/sweep-fix/SKILL.md": "d0120ff0b74f51625f18f772b30cc9f59ecfb848770f11ea6a4ecd31ab005bbc",
+      "skills/sweep-fix/fixtures.json": "29fbbee4b91d4b3b657f77c236a4f513046cbad8b4de7313e3c6fe59f538fb67",
+      "skills/sweep-fix/references/context-verification.md": "2c1955b9ffa171c4bffb4123a7137e442924ea25c6546754f98e4abb5ce17f5c",
+      "skills/sweep-fix/references/pattern-extraction.md": "511c23c087da40c08406630106dab9b37687a96bb386e025eddea7a720fee417"
+    },
+    "note": "3 シナリオ実走 pass。全フェーズインライン単段（範囲1ファイル・問題1件・候補5件で委譲閾値に未到達）。状況照会 1 回（sf-003 が Phase 0 で範囲確認を送信 → 範囲を与えず中断確定を指示）。sf-001 は Phase 5 の中間ファイル削除が権限システムに 2 回拒否され、迂回せず残存を申告（ハーネス制約。.gitignore 済みでリポジトリ汚染なし）",
+    "result": "pass",
+    "surface": [
+      "skills/shared/references/orchestration-patterns.md",
+      "skills/shared/references/severity-and-verdicts.md",
+      "skills/shared/references/verification-gate.md",
+      "skills/sweep-fix/SKILL.md",
+      "skills/sweep-fix/fixtures.json",
+      "skills/sweep-fix/references/context-verification.md",
+      "skills/sweep-fix/references/pattern-extraction.md"
+    ],
+    "surface_sha256": "03f304d1da61c5fb3b0fd34b6babc34f85453787e9c69eb487d83544d2fc27a5",
+    "verified": "2026-07-26"
   }
 }
