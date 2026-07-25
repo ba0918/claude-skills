@@ -120,14 +120,14 @@
   },
   "design-guide": {
     "file_sha256": {
-      "skills/design-guide/SKILL.md": "dc027bac8a3a29fb4cd95489dcb8f3d3b609258994c90fa683e3d02e1d17b340",
+      "skills/design-guide/SKILL.md": "845674b5107d22825fc1ecfbdffa85332cb254b10c40e5fe8825e1e970278c0d",
       "skills/design-guide/fixtures.json": "dd17b40c38c3e77e1c203326cc150737fd43fbae81682f9bf1962354432110f9",
       "skills/design-guide/references/anti-patterns.md": "3c61f4579e582f5346c7f442d0a9434142b75abde5dded51552eb019b4e0a6b5",
       "skills/design-guide/references/design-md-template.md": "f429ad90dfc1650e1efe49fceee49ffba3b261be385e0c50487e24ca701fbf81",
       "skills/design-guide/references/discovery-questions.md": "aafdbb1c088d828c7b9da66e78afb9570632b686533afa06d901d9d98008bc9a",
       "skills/shared/references/human-readable-summary.md": "f3dba0207381c14d9d73c0e72c1ed249843b48596c38edcb8de3c90f4e1ecc26"
     },
-    "note": "バッチ 20260726-design-guide-english で dg-001 / dg-003 を k=1 実測。dg-001 は当初 critical 3 件が日英とも fail（ディスカバリー中の書き込み禁止が DRAFT ラベルによる合理化で回避されていた）。合理化防止テーブルと Red Flags を追加した後、両アームとも precision 1.00 / critical 全 pass。dg-003 は当初から両アーム 1.00。Phase 6（DESIGN.md 生成）は候補提示→選択の工程を先取りできないため単一ターンでは到達不能で、fixture 化していない。",
+    "note": "本文を英語へ差し替えた版で再検証。バッチ 20260726-design-guide-english の EN アーム実測は dg-001 precision 1.00 / critical 全 pass（合理化防止テーブル追加後の rep2）、dg-003 precision 1.00 / critical 全 pass。JA アームと同点で、EN 固有の悪化はゼロ。",
     "result": "pass",
     "surface": [
       "skills/design-guide/SKILL.md",
@@ -137,7 +137,7 @@
       "skills/design-guide/references/discovery-questions.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "0a8931effc0e452a457493ed2dbf74cf2c2fe570b9ceead038cfc1c1cd928c10",
+    "surface_sha256": "f8b65a1b9f5e178f41a88114c0c82435560122d1d16584af942389196a0bd76c",
     "verified": "2026-07-26"
   },
   "doc-write": {
