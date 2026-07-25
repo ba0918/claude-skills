@@ -5,7 +5,7 @@
       "id": "ca-001",
       "title": "汚れた指示ファイルの検出（stale + unsafe + 矛盾）",
       "source": "CHANGELOG 1.31.1（EPT iter2: CA-S001/CA-C001 recall ギャップ修正の回帰資産化。シナリオ本体は未保存のため再設計）",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {
@@ -27,7 +27,7 @@
       "id": "ca-002",
       "title": "健全なプロジェクトで誤検出しない（precision edge）",
       "source": "manual（fail-safe 検証: 検出ゼロ時に findings を捏造せず、状態も変更しないこと）",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {
@@ -48,7 +48,7 @@
       "id": "ca-003",
       "title": "AUTO_FIX 候補を diff 提示のみで適用しない（非対話フォールバック edge）",
       "source": "CHANGELOG 1.31.1（EPT iter3-5: 実行契約の非対話フォールバック = 明示指示なしなら適用せずレポート送り、の回帰資産化）",
-      "executor_model": "sonnet",
+      "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {

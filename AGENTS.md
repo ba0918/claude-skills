@@ -45,7 +45,7 @@ This file is the shared project instruction source for Claude Code, Codex CLI, a
 sh scripts/run_checks.sh
 ```
 
-このスクリプトが検証の正本で、ユニットテスト（全 scripts ディレクトリを自動発見）、`scripts/validate_repo.py`（symlink、frontmatter、相対リンク、README のスキル名カバレッジ、plugin version 同期、description 品質、共有契約語彙、dossier lint）、regression ledger check を順に実行する。CI と pre-push hook（`githooks/pre-push`）も同じスクリプトを呼ぶ。
+このスクリプトが検証の正本で、ユニットテスト（全 scripts ディレクトリを自動発見）、`scripts/validate_repo.py`（symlink、frontmatter、相対リンク、README のスキル名カバレッジ、plugin version 同期、description 品質、共有契約語彙、dossier lint、CHANGELOG 双方向同期、配布 manifest 整合性、command⇔スキル名の対応）、regression ledger check を順に実行する。CI と pre-push hook（`githooks/pre-push`）も同じスクリプトを呼ぶ。
 
 pre-push hook は clone ごとに 1 回、次で有効化する。
 

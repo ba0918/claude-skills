@@ -103,6 +103,24 @@ class TestEntryRoundtrip(unittest.TestCase):
             self.assertEqual(entry["verified"], "2026-07-07")
             self.assertEqual(entry["surface"], surface)
 
+    def test_note_is_recorded_when_given(self):
+        # 素の pass だけでは「同じ環境で次に回す者」に run の性質が伝わらない
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "body")
+            _write(root, "skills/a/fixtures.json", "{}")
+            surface = ledger.skill_surface(root, "a")
+            entry = ledger.make_entry(
+                root, surface, "pass", "2026-07-25", note="状況照会 4 回")
+            self.assertEqual(entry["note"], "状況照会 4 回")
+
+    def test_note_key_is_absent_when_not_given(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "body")
+            _write(root, "skills/a/fixtures.json", "{}")
+            entry = ledger.make_entry(
+                root, ledger.skill_surface(root, "a"), "pass", "2026-07-25")
+            self.assertNotIn("note", entry)
+
     def test_save_and_load(self):
         with tempfile.TemporaryDirectory() as root:
             _write(root, "skills/skill-regression/SKILL.md", "self")
@@ -110,6 +128,52 @@ class TestEntryRoundtrip(unittest.TestCase):
                              "result": "pass", "verified": "2026-07-07"}}
             ledger.save(root, entries)
             self.assertEqual(ledger.load(root), entries)
+
+
+class TestCoverage(unittest.TestCase):
+    """fixture 保有率の計上。--check は opt-in ゲートなので母数を別に数える。"""
+
+    EXEMPT = {"legacy": "一回限りの移行スキル"}
+
+    def _repo(self, root, skills):
+        for name, has_fixtures in skills.items():
+            _write(root, f"skills/{name}/SKILL.md", "body")
+            if has_fixtures:
+                _write(root, f"skills/{name}/fixtures.json", "{}")
+
+    def test_counts_covered_exempt_and_uncovered(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root, {"a": True, "b": False, "legacy": False})
+            cov = ledger.coverage(root, exempt=self.EXEMPT)
+            self.assertEqual(cov["covered"], ["a"])
+            self.assertEqual(cov["uncovered"], ["b"])
+            self.assertEqual(list(cov["exempt"]), ["legacy"])
+            self.assertEqual(cov["total"], 3)
+
+    def test_exempt_reason_is_carried(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root, {"legacy": False})
+            cov = ledger.coverage(root, exempt=self.EXEMPT)
+            self.assertEqual(cov["exempt"]["legacy"], "一回限りの移行スキル")
+
+    def test_exempt_skill_that_gained_fixtures_counts_as_covered(self):
+        # 免除リストの取り残しで実測済みスキルが未計上にならないこと
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root, {"legacy": True})
+            cov = ledger.coverage(root, exempt=self.EXEMPT)
+            self.assertEqual(cov["covered"], ["legacy"])
+            self.assertEqual(cov["exempt"], {})
+
+    def test_directory_without_skill_md_is_not_counted(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root, {"a": True})
+            os.makedirs(os.path.join(root, "skills", "not-a-skill"))
+            self.assertEqual(ledger.coverage(root, exempt={})["total"], 1)
+
+    def test_shipped_exempt_list_has_reasons(self):
+        # 理由なしの免除は「黙って計上から外す」ことと同じ
+        for skill, reason in ledger.COVERAGE_EXEMPT.items():
+            self.assertTrue(reason.strip(), f"理由が空: {skill}")
 
 
 if __name__ == "__main__":

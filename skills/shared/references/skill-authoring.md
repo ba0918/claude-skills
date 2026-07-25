@@ -28,6 +28,7 @@ Claude Code 上でもスキルは `/skill-name` で直接起動できるため�
 - command を追加してよいのは **multi-workflow スキルの名前付きエントリポイント**が必要な場合のみ（例: `issue` スキルに対する issue-create / issue-list / issue-plan。1スキル複数ワークフローの各入口を `/` 補完に個別の説明付きで並べたい場合）
 - command を作る場合もロジックは書かない。Skill ツール呼び出し + `$ARGUMENTS` の受け渡しのみの薄いラッパーに徹する
 - **既存 commands は互換性のため維持する**。1行ラッパーで維持コストはほぼゼロであり、削除は既存ユーザーの `/claude-skills:*` 呼び出しを壊す。積極的に増やさず自然減に任せる
+- **command 名がスキル名と対応しない場合、description で起動先スキルを名指しする**（`validate_repo.py` チェック16 が強制）。`/debug` → `systematic-debugging` のように名前がずれると、利用者からは command とスキルが別々の名前空間に見え、`/` 補完の説明文だけでは入口が判別できない。改名も削除もしない方針なので説明文側で解決する。`<スキル名>-<workflow>` 形式（`issue-list` 等）は対応が自明なので免除される
 
 ## Frontmatter 契約（validate_repo.py が強制）
 
@@ -102,9 +103,18 @@ Fable 5 世代モデルでも「短くすれば良くなる」わけではない
 
 `empirical-prompt-tuning` の fixture として plan スキルの 4 iteration 収束履歴が `.claude/tmp/empirical/plan-*/fixture.json` に記録される。横展開バッチ1 の計測は `.claude/tmp/empirical/20260722-lean-rollout/`（summary.md + iterations.jsonl）。カテゴリ推移・削減量・学びの全文はそこを参照。再チューニング時のベースライン比較・回帰検出資産として使う。
 
+### 横断最適化のリリース単位
+
+- 複数スキルへ段階的に横展開する最適化は、実装・検証・コミットをバッチ単位で分離する一方、
+  plugin version は各バッチで bump しない
+- rollout の親issueで対象一覧と完了条件を管理し、全対象の検証完了時に一度だけversionをbumpする
+- CHANGELOGは完了時にrollout全体の体感可能な変化、総削減量、検証範囲を1エントリへ集約する。
+  バッチ固有の測定履歴はissueとローカル empirical artifactを正本にし、暫定release entryを作らない
+
 ## クロスツール互換性の注意
 
 - **SKILL.md 本文の言語は 1 スキル内で統一する（本文は英語を推奨）**: 英日混在は可読性を損なう（2026-07-22 ユーザー裁定）。トークン効率も英語が有利 — o200k 実測で同内容の日本語版は約 +30%（commit: 英 1,607 vs 日 2,091 tokens）、英日混在だった plan-reviewer は英語統一だけで 3,758→3,025 tokens（-19.5%）。frontmatter `description` はユーザーの発話語彙（日本語トリガー）を含める必要があるため日本語のままでよい。日本語契約ファイルの見出し名や照合語彙（例: "ユーザー確認"）の引用は混在に数えない
+- **代理モデルの計測結果を本番モデルの保証として扱わない**: 高コストな本番モデルの代わりに同世代の低コストモデルで探索・非劣性評価を行う場合、fixture の `notes` と計測サマリへ `proxy verified / production untested` 相当の証拠範囲を明記する（skill-regression ledger の `pass` は挙動面の freshness 記録であり、モデル範囲は表さない）。本番モデルによる sentinel は自動実行せず、対象シナリオ・不確実性・推定消費・停止上限を提示してユーザー承認を得た場合だけ行う。未承認でも proxy 合格版は段階的 canary として展開できるが、本番精度保証を表明してはならない
 - スキル本文は `skills/` を単一の正本とし、Claude Code / Codex CLI / Cursor / Gemini CLI などで読める自然言語に保つ
 - `SKILL.md` と `references/` では、特定プラットフォームのツール API 名やモデル名に依存しない表現を使う
 - プラットフォーム差が必要な場合は、本文を分岐コピーせず [tool-mapping.md](tool-mapping.md) に共通語彙と対応方針を集約する

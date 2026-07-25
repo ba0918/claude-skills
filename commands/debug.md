@@ -1,5 +1,5 @@
 ---
-description: "4フェーズ構造化デバッグ。根本原因を特定してから修正する（investigate の補完）"
+description: "systematic-debugging スキルの入口。4フェーズ構造化デバッグで根本原因を特定してから修正する（investigate の補完）"
 ---
 
 スキル `claude-skills:systematic-debugging` を実行する。引数: `$ARGUMENTS`
