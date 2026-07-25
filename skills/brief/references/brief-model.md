@@ -47,6 +47,31 @@ comprehension_questions[] required, exactly 3
 | `evidence_refs` | yes | At least one. Ids from the collected input |
 | `items` | yes | One entry per line. Never a comma-joined paragraph |
 | `concerns` | no | Anything noticed but not established. Ungrounded claims land here |
+| `excerpts` | no | Verbatim source lines worth showing inline. See below |
+
+### groups[].excerpts[]
+
+A reader who has to leave the page to see what actually changed will not go. An excerpt puts
+the lines themselves next to the explanation. Only ever a quotation of collected input — the
+renderer escapes it and never interprets it.
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `path` | yes | File the lines came from |
+| `added` / `removed` | no | Line counts shown in the excerpt header |
+| `hunk_header` | no | The `@@ ... @@` line, when the source is a diff |
+| `lines` | yes | At least one entry |
+
+Each entry in `lines`:
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `text` | yes | The line, verbatim and unescaped. Never pre-escaped by the writer |
+| `marker` | no | `+`, `-`, or a space. Defaults to a space |
+| `old` / `new` | no | Line numbers. `null` on a side where the line does not exist |
+
+Excerpts are quotation, not narration: a claim that rests on an excerpt still needs its
+`evidence_refs`, and an excerpt never replaces `plain_explanation`.
 
 ### deferred[]
 
