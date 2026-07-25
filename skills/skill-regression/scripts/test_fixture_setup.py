@@ -446,3 +446,39 @@ class TestShippedFixtures(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MaterializeIsHermeticAgainstAnInheritedRepository(unittest.TestCase):
+    """A git hook exports GIT_DIR. Inheriting it makes the isolated area point
+    at the caller's repository, so the declaration stops deciding the setup."""
+
+    SCENARIO = {
+        "id": "x-001",
+        "setup": {"files": {"a.txt": "a\n"}, "git": {"init": True, "commit": True}},
+    }
+
+    def _materialize(self):
+        with tempfile.TemporaryDirectory() as root:
+            dest = os.path.join(root, "area")
+            result = fixture_setup.materialize(self.SCENARIO, dest)
+            return result, os.path.isdir(os.path.join(dest, ".git"))
+
+    def test_it_initialises_its_own_repository_without_an_inherited_one(self):
+        result, has_git = self._materialize()
+        self.assertTrue(result["git"].get("init"))
+        self.assertTrue(result["git"].get("commit"))
+        self.assertTrue(has_git)
+
+    def test_it_still_does_so_when_the_environment_names_another_repository(self):
+        previous = os.environ.get("GIT_DIR")
+        os.environ["GIT_DIR"] = os.path.abspath(".git")
+        try:
+            result, has_git = self._materialize()
+        finally:
+            if previous is None:
+                os.environ.pop("GIT_DIR", None)
+            else:
+                os.environ["GIT_DIR"] = previous
+        self.assertTrue(result["git"].get("init"))
+        self.assertTrue(result["git"].get("commit"))
+        self.assertTrue(has_git)

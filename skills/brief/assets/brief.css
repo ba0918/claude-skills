@@ -1,0 +1,263 @@
+/* =================================================================
+ * brief — page stylesheet
+ *
+ * Every colour and every semantic dimension resolves through a custom
+ * property declared in tokens.css (shared) or tokens.brief.json (this
+ * skill's extension layer). Literals that survive here are structural
+ * relationships, not design decisions: list indents in `em`, the two
+ * `1px` hairlines a border cannot express otherwise, and easing curves.
+ * ================================================================= */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Every open/close changes page height. If the scrollbar appears and
+   disappears with it, the viewport width changes, the sticky header
+   re-wraps, and the whole page jumps. Reserve the gutter permanently. */
+html { scrollbar-gutter: stable; }
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Fixed header ── */
+.bar { position: sticky; top: 0; z-index: 10; background: var(--color-background); border-bottom: 1px solid var(--color-border); }
+.bar-inner { max-width: var(--max-content-width); margin: 0 auto; padding: 0 var(--spacing-3); height: var(--bar-height); display: flex; align-items: center; gap: var(--spacing-2); flex-wrap: nowrap; }
+.bar-id { flex: 0 0 auto; font-family: var(--font-code); font-size: var(--font-size-caption); letter-spacing: var(--tracking-code); color: var(--color-primary); white-space: nowrap; }
+.bar-target { flex: 1 1 auto; min-width: 0; font-size: var(--font-size-body-small); color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chips { flex: 0 0 auto; display: flex; align-items: center; gap: var(--spacing-1); }
+.chipset { display: inline-flex; align-items: center; gap: var(--spacing-1); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: var(--spacing-hair) var(--spacing-1); font-family: var(--font-code); font-size: var(--font-size-caption); color: var(--color-text-secondary); white-space: nowrap; }
+.chipset .flag { color: var(--color-warning); }
+.chipset.todo { border-color: var(--color-warning); }
+.toggle-all {
+  font-family: var(--font-body);
+  font-size: var(--font-size-caption);
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-button);
+  padding: var(--spacing-0) var(--spacing-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.toggle-all:hover { background: var(--color-primary); color: var(--color-background); }
+.toggle-all:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+
+.page { max-width: var(--max-content-width); margin: 0 auto; padding: var(--spacing-6) var(--spacing-3) var(--spacing-7); }
+
+/* ── Lede ── */
+.lede { margin-bottom: var(--section-spacing); }
+.eyebrow { font-size: var(--font-size-caption); letter-spacing: var(--letter-spacing-caption); color: var(--color-text-secondary); margin: 0 0 var(--spacing-2); }
+.one-liner {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-display);
+  line-height: var(--line-height-display);
+  letter-spacing: var(--letter-spacing-display);
+  font-weight: var(--font-weight-display);
+  margin: 0 0 var(--spacing-4);
+  max-width: var(--measure);
+}
+.meta { font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-secondary); margin: 0; max-width: var(--measure); }
+.meta + .meta { margin-top: var(--spacing-1); }
+.meta b { font-weight: var(--font-weight-h4); color: var(--color-text-primary); }
+
+.rule { border: 0; border-top: 1px solid var(--color-border); margin: var(--section-spacing) 0; }
+
+.section-label {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h2);
+  line-height: var(--line-height-h2);
+  letter-spacing: var(--letter-spacing-h2);
+  font-weight: var(--font-weight-h2);
+  margin: 0 0 var(--spacing-4);
+}
+
+/* ── Groups ──
+   The hanging number is the one deliberate asymmetry in this layout.
+   It is what stops the page reading as a stack of generated cards. */
+.group { display: grid; grid-template-columns: var(--num-column) 1fr; column-gap: var(--spacing-4); margin-bottom: var(--spacing-2); }
+.num { font-family: var(--font-code); font-size: var(--font-size-body-small); color: var(--color-text-disabled); text-align: right; padding-top: var(--spacing-4); letter-spacing: var(--tracking-code); }
+.group:has(details[open]) .num { color: var(--color-primary); }
+.num-inline { display: none; }
+
+details.card {
+  --rail: var(--color-text-disabled);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-left: var(--rail-width) solid var(--rail);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-flat);
+  transition: border-left-width var(--motion-fast) ease, background-color var(--motion-fast) ease;
+}
+details.card.rail-primary { --rail: var(--color-primary); }
+details.card.rail-warning { --rail: var(--color-warning); }
+details.card.rail-success { --rail: var(--color-success); }
+details.card:hover { border-left-width: var(--rail-width-hover); background: var(--color-surface); }
+details.card[open] { background: var(--color-surface); box-shadow: var(--shadow-raised); }
+
+summary {
+  display: block;
+  padding: var(--spacing-3) var(--spacing-4);
+  padding-right: var(--spacing-6);
+  cursor: pointer;
+  position: relative;
+}
+summary::-webkit-details-marker { display: none; }
+summary::marker { content: ""; }
+summary:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+.chevron {
+  position: absolute;
+  right: var(--spacing-4);
+  top: var(--spacing-3);
+  color: var(--color-text-disabled);
+  font-family: var(--font-code);
+  font-size: var(--font-size-body-small);
+  transition: transform var(--motion-fast) ease;
+  display: inline-block;
+}
+details[open] .chevron { transform: rotate(90deg); color: var(--color-primary); }
+
+.title { display: block; font-size: var(--font-size-h3); font-weight: var(--font-weight-h3); line-height: var(--line-height-h3); margin-bottom: var(--spacing-1); }
+.summary-line { display: block; font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-secondary); margin-bottom: var(--spacing-2); max-width: var(--measure); }
+.tags { display: flex; flex-wrap: wrap; gap: var(--spacing-1); align-items: center; }
+
+.badge { display: inline-block; border-radius: var(--radius-badge); padding: var(--spacing-hair) var(--spacing-1); font-size: var(--font-size-caption); line-height: var(--line-height-caption); letter-spacing: var(--letter-spacing-caption); background: var(--color-surface); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
+.badge--warning { background: var(--color-warning); color: var(--color-background); border-color: var(--color-warning); }
+.badge--success { background: var(--color-success); color: var(--color-background); border-color: var(--color-success); }
+.count { display: inline-block; font-size: var(--font-size-caption); color: var(--color-text-secondary); font-family: var(--font-code); }
+
+.body { padding: 0 var(--spacing-4) var(--spacing-4); }
+.body .lead { font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-secondary); margin-bottom: var(--spacing-2); }
+.body h4 { font-size: var(--font-size-caption); letter-spacing: var(--letter-spacing-caption); color: var(--color-text-secondary); font-weight: var(--font-weight-h4); margin: var(--spacing-4) 0 var(--spacing-1); }
+.body p { margin: 0; max-width: var(--measure); }
+.body ul { margin: 0; padding-left: 1.2em; max-width: var(--measure); }
+.body li + li { margin-top: var(--spacing-0); }
+.concern { border-left: var(--rail-width-thin) solid var(--color-warning); padding-left: var(--spacing-2); }
+.concern + .concern { margin-top: var(--spacing-1); }
+.evidence { font-family: var(--font-code); font-size: var(--font-size-caption); color: var(--color-text-secondary); }
+
+/* ── Diff, GitHub-shaped but on this page's dark code surface ── */
+.diff {
+  margin-top: var(--spacing-2);
+  border-radius: var(--radius-code);
+  overflow: hidden;
+  background: var(--color-code-bg);
+  font-family: var(--font-code);
+  font-size: var(--font-size-code);
+  line-height: var(--line-height-code);
+}
+.diff + .diff { margin-top: var(--spacing-2); }
+.diff-file {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  background: var(--color-code-chrome);
+  border-bottom: 1px solid var(--color-code-rule);
+  padding: var(--spacing-1) var(--spacing-2);
+  color: var(--color-code-text);
+}
+.diff-file .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.diff-file .stat { margin-left: auto; white-space: nowrap; }
+.diff-file .stat .plus { color: var(--color-diff-added); }
+.diff-file .stat .minus { color: var(--color-diff-removed); }
+
+.diff-body { overflow-x: auto; }
+.diff-hunk {
+  color: var(--color-code-gutter);
+  background: var(--color-code-chrome);
+  border-top: 1px solid var(--color-code-rule);
+  border-bottom: 1px solid var(--color-code-rule);
+  padding: var(--spacing-hair) var(--spacing-2);
+}
+.row {
+  display: grid;
+  grid-template-columns: var(--diff-gutter) var(--diff-gutter) var(--diff-marker) 1fr;
+  color: var(--color-code-text);
+  white-space: pre;
+  min-width: max-content;
+}
+.row .ln {
+  color: var(--color-code-gutter);
+  text-align: right;
+  padding-right: var(--spacing-1);
+  user-select: none;
+  border-right: 1px solid var(--color-code-rule);
+}
+.row .mk { text-align: center; user-select: none; }
+.row .tx { padding-left: var(--spacing-1); padding-right: var(--spacing-3); }
+.row.add { background: var(--color-diff-added-bg); }
+.row.add .mk { color: var(--color-diff-added); }
+.row.del { background: var(--color-diff-removed-bg); }
+.row.del .mk { color: var(--color-diff-removed); }
+
+/* ── What is not on this page ── */
+.hidden-note { font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-secondary); border-top: 1px solid var(--color-border); padding-top: var(--spacing-3); margin-top: var(--spacing-4); max-width: var(--measure); }
+.hidden-note p { margin: 0; }
+.hidden-note ul { margin: var(--spacing-1) 0 0; padding-left: 1.2em; }
+.hidden-note li + li { margin-top: var(--spacing-0); }
+
+.questions { margin-top: var(--section-spacing); }
+.questions ol { margin: 0; padding-left: 1.3em; max-width: var(--measure); }
+.questions li + li { margin-top: var(--spacing-2); }
+.questions .note { font-size: var(--font-size-body-small); color: var(--color-text-secondary); margin: 0 0 var(--spacing-3); max-width: var(--measure); }
+
+.foot { margin-top: var(--section-spacing); font-size: var(--font-size-caption); color: var(--color-text-disabled); font-family: var(--font-code); }
+
+/* ── Section headers follow the scroll, GitHub diff-viewer style ──
+   A long group keeps its own heading and its close control on screen.
+   The height must not change when stuck: changing it moves the area the
+   sticky element occupies, and the body below oscillates. */
+details.card[open] > summary {
+  position: sticky;
+  top: var(--bar-height);
+  z-index: 5;
+  background: var(--color-surface);
+  border-bottom: 1px solid transparent;
+}
+/* The one-line summary is an index affordance: it exists so a closed group can
+   be judged without opening it. Once open it has done its job, and a wrapped
+   line here would ride down the screen taking a third of the reading area with
+   it. Drop it on open — never on stuck. Height that changes when an element
+   sticks un-sticks it, and the two states fight each other forever. The same
+   sentence leads the body, so nothing is lost. */
+details.card[open] > summary .summary-line { display: none; }
+details.card[open] > summary.stuck {
+  border-bottom-color: var(--color-border);
+  box-shadow: var(--shadow-raised);
+}
+/* Badges never claim a line of their own: they sit beside the title and the
+   title wraps under them. A wrapped badge row costs a full line of the sticky
+   header while carrying two words. */
+.head-row { display: flex; align-items: baseline; gap: var(--spacing-2); flex-wrap: nowrap; }
+.head-row .title { flex: 1 1 auto; min-width: 0; margin-bottom: 0; }
+.head-row .tags { flex: 0 0 auto; flex-wrap: nowrap; }
+
+/* Below this the two cannot share a line without crushing the title, so let
+   them stack again — the header is not sticky-critical on a phone anyway. */
+@media (max-width: 560px) {
+  .head-row { flex-wrap: wrap; }
+  .head-row .title { min-width: var(--title-min); }
+  .head-row .tags { flex-wrap: wrap; }
+}
+
+/* The item count answers "is there enough in here to be worth opening". Once
+   open the items are right there being counted by eye. Same reasoning as the
+   one-line summary: it is an index affordance, and it goes when the index
+   turns into the thing itself. The kind and risk labels stay — those are read
+   alongside the text, not instead of it. */
+details.card[open] > summary .count { display: none; }
+
+@media (max-width: 1023px) {
+  .group { grid-template-columns: 1fr; }
+  .num { display: none; }
+  .num-inline { display: inline; font-family: var(--font-code); color: var(--color-text-disabled); margin-right: var(--spacing-1); }
+  .bar-target { display: none; }
+}
+@media (max-width: 700px) {
+  .chipset.scale { display: none; }
+}

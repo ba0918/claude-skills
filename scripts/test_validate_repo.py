@@ -29,6 +29,7 @@ from validate_repo import (
     check_human_readable_summary,
     check_manifests,
     check_command_skill_mapping,
+    check_design_token_sync,
     check_fixtures,
     parse_version,
     HUMAN_READABLE_SUMMARY_LABEL,
@@ -138,7 +139,10 @@ class TestCheckArtifactStore(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         root = temp.name
-        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        # git hook の中では GIT_DIR などが環境に置かれており、引き継ぐと
+        # ここの init が呼び出し元のリポジトリを指して失敗する。
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True, env=env)
         os.makedirs(os.path.join(root, ".agents"), exist_ok=True)
         with open(os.path.join(root, ".gitignore"), "w", encoding="utf-8") as handle:
             handle.write("/.agents/artifacts/\n")
@@ -1167,3 +1171,38 @@ class TestCheckHumanReadableSummary(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestCheckDesignTokenSync(unittest.TestCase):
+    """チェック18: authoring 層と配布層のデザイントークンが同一であること。
+
+    片方だけ更新すると lint も配布物検査も素通りし、「lint は通るのに配布物は
+    古い配色」という無検証の乖離が残る。
+    """
+
+    def _write(self, root, rel, content):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def _both(self, root, authored, distributed):
+        self._write(root, ".design/tokens.css", authored)
+        self._write(root, "skills/brief/assets/tokens.css", distributed)
+
+    def test_identical_layers_pass(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._both(root, ":root { --a: 1px; }\n", ":root { --a: 1px; }\n")
+            self.assertEqual(check_design_token_sync(root), [])
+
+    def test_diverged_layers_are_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._both(root, ":root { --a: 1px; }\n", ":root { --a: 2px; }\n")
+            errors = check_design_token_sync(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("乖離している", errors[0])
+
+    def test_absent_authoring_layer_is_not_an_error(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/brief/assets/tokens.css", ":root { --a: 1px; }\n")
+            self.assertEqual(check_design_token_sync(root), [])

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>brief — 作業内容</title>
+<style>
+:root {
+  --color-primary: #2C4A63;
+  --color-secondary: #6E6A62;
+  --color-background: #FBFAF7;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #F4F2EC;
+  --color-warning: #C8442C;
+  --color-success: #2F6B57;
+  --color-text-primary: #1A1917;
+  --color-text-secondary: #6E6A62;
+  --color-text-disabled: #A29D93;
+  --color-border: #E4E0D7;
+  --color-focus-ring: #2C4A63;
+
+  /* brief 拡張レイヤ（共有トークンスキーマが表現できないコード面） */
+  --color-code-bg: #23211E;
+  --color-code-text: #EAE6DC;
+  --color-code-chrome: #2E2B27;
+  --color-code-rule: #38342D;
+  --color-code-gutter: #7A7466;
+  --color-diff-added: #8FBF9F;
+  --color-diff-removed: #D98A7E;
+  --color-diff-added-bg: rgba(143,191,159,0.13);
+  --color-diff-removed-bg: rgba(217,138,126,0.13);
+
+  --font-heading: "Hiragino Mincho ProN", "HiraMinProN-W3", "Yu Mincho", "YuMincho", "BIZ UDPMincho", "Noto Serif JP", "Source Han Serif JP", serif;
+  --font-body: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "YuGothic", "BIZ UDPGothic", "Noto Sans JP", "Meiryo", sans-serif;
+  --font-code: "SFMono-Regular", "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", "Liberation Mono", monospace;
+
+  --font-size-display: 38px;
+  --line-height-display: 1.45;
+  --letter-spacing-display: 0.04em;
+  --font-size-h2: 24px;
+  --line-height-h2: 1.55;
+  --letter-spacing-h2: 0.02em;
+  --font-size-h3: 18px;
+  --font-size-body: 16px;
+  --line-height-body: 1.85;
+  --font-size-body-small: 14px;
+  --line-height-body-small: 1.8;
+  --font-size-caption: 13px;
+  --line-height-caption: 1.7;
+  --letter-spacing-caption: 0.02em;
+  --font-size-code: 13px;
+  --line-height-code: 1.65;
+
+  --spacing-0: 4px;
+  --spacing-1: 8px;
+  --spacing-2: 12px;
+  --spacing-3: 16px;
+  --spacing-4: 24px;
+  --spacing-5: 32px;
+  --spacing-6: 48px;
+  --spacing-7: 64px;
+  --max-content-width: 768px;
+  --section-spacing: 48px;
+
+  --radius-card: 2px;
+  --radius-code: 3px;
+  --radius-badge: 0;
+  --shadow-flat: none;
+  --shadow-raised: 0 1px 2px rgba(26,25,23,0.06);
+  --bar-height: 52px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* 開閉でページ高が変わるたびスクロールバーが出入りすると、
+   幅が変わってヘッダーが折り返し、レイアウトが跳ねる。溝を常時確保して止める。 */
+html { scrollbar-gutter: stable; }
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── 固定ヘッダー ── */
+.bar { position: sticky; top: 0; z-index: 10; background: var(--color-background); border-bottom: 1px solid var(--color-border); }
+.bar-inner { max-width: var(--max-content-width); margin: 0 auto; padding: 0 var(--spacing-3); height: var(--bar-height); display: flex; align-items: center; gap: var(--spacing-2); flex-wrap: nowrap; }
+.bar-id { flex: 0 0 auto; font-family: var(--font-code); font-size: var(--font-size-caption); letter-spacing: 0.06em; color: var(--color-primary); white-space: nowrap; }
+.bar-target { flex: 1 1 auto; min-width: 0; font-size: var(--font-size-body-small); color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chips { flex: 0 0 auto; display: flex; align-items: center; gap: var(--spacing-1); }
+.chipset { display: inline-flex; align-items: center; gap: var(--spacing-1); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 2px var(--spacing-1); font-family: var(--font-code); font-size: var(--font-size-caption); color: var(--color-text-secondary); white-space: nowrap; }
+.chipset .flag { color: var(--color-warning); }
+.chipset.todo { border-color: var(--color-warning); }
+.toggle-all {
+  font-family: var(--font-body);
+  font-size: var(--font-size-caption);
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: 3px;
+  padding: var(--spacing-0) var(--spacing-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.toggle-all:hover { background: var(--color-primary); color: var(--color-background); }
+.toggle-all:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+
+.page { max-width: var(--max-content-width); margin: 0 auto; padding: var(--spacing-6) var(--spacing-3) var(--spacing-7); }
+
+/* ── つまり ── */
+.lede { margin-bottom: var(--section-spacing); }
+.eyebrow { font-size: var(--font-size-caption); letter-spacing: var(--letter-spacing-caption); color: var(--color-text-secondary); margin: 0 0 var(--spacing-2); }
+.one-liner {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-display);
+  line-height: var(--line-height-display);
+  letter-spacing: var(--letter-spacing-display);
+  font-weight: 400;
+  margin: 0 0 var(--spacing-4);
+  max-width: 42rem;
+}
+.meta { font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-secondary); margin: 0; max-width: 42rem; }
+.meta + .meta { margin-top: var(--spacing-1); }
+.meta b { font-weight: 700; color: var(--color-text-primary); }
+
+.rule { border: 0; border-top: 1px solid var(--color-border); margin: var(--section-spacing) 0; }
+
+.section-label {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h2);
+  line-height: var(--line-height-h2);
+  letter-spacing: var(--letter-spacing-h2);
+  font-weight: 400;
+  margin: 0 0 var(--spacing-4);
+}
+
+/* ── グループ ── */
+.group { display: grid; grid-template-columns: 72px 1fr; column-gap: var(--spacing-4); margin-bottom: var(--spacing-2); }
+.num { font-family: var(--font-code); font-size: var(--font-size-body-small); color: var(--color-text-disabled); text-align: right; padding-top: var(--spacing-4); letter-spacing: 0.06em; }
+.group:has(details[open]) .num { color: var(--color-primary); }
+.num-inline { display: none; }
+
+details.card {
+  --rail: var(--color-text-disabled);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--rail);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-flat);
+  transition: border-left-width 120ms ease, background-color 120ms ease;
+}
+details.card.rail-primary { --rail: var(--color-primary); }
+details.card.rail-warning { --rail: var(--color-warning); }
+details.card.rail-success { --rail: var(--color-success); }
+details.card:hover { border-left-width: 6px; background: var(--color-surface); }
+details.card[open] { background: var(--color-surface); box-shadow: var(--shadow-raised); }
+
+summary {
+  display: block;
+  padding: var(--spacing-3) var(--spacing-4);
+  padding-right: var(--spacing-6);
+  cursor: pointer;
+  position: relative;
+}
+summary::-webkit-details-marker { display: none; }
+summary::marker { content: ""; }
+summary:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+.chevron {
+  position: absolute;
+  right: var(--spacing-4);
+  top: var(--spacing-3);
+  color: var(--color-text-disabled);
+  font-family: var(--font-code);
+  font-size: var(--font-size-body-small);
+  transition: transform 120ms ease;
+  display: inline-block;
+}
+details[open] .chevron { transform: rotate(90deg); color: var(--color-primary); }
+
+.title { display: block; font-size: var(--font-size-h3); font-weight: 700; line-height: 1.6; margin-bottom: var(--spacing-1); }
+.summary-line { display: block; font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); color: var(--color-text-secondary); margin-bottom: var(--spacing-2); max-width: 42rem; }
+.tags { display: flex; flex-wrap: wrap; gap: var(--spacing-1); align-items: center; }
+
+.badge { display: inline-block; border-radius: var(--radius-badge); padding: 2px var(--spacing-1); font-size: var(--font-size-caption); line-height: var(--line-height-caption); letter-spacing: var(--letter-spacing-caption); background: var(--color-surface); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
+.badge--warning { background: var(--color-warning); color: var(--color-background); border-color: var(--color-warning); }
+.badge--success { background: var(--color-success); color: var(--color-background); border-color: var(--color-success); }
+.count { display: inline-block; font-size: var(--font-size-caption); color: var(--color-text-secondary); font-family: var(--font-code); }
+
+.body { padding: 0 var(--spacing-4) var(--spacing-4); }
+.body h4 { font-size: var(--font-size-caption); letter-spacing: var(--letter-spacing-caption); color: var(--color-text-secondary); font-weight: 700; margin: var(--spacing-4) 0 var(--spacing-1); }
+.body p { margin: 0; max-width: 42rem; }
+.body ul { margin: 0; padding-left: 1.2em; max-width: 42rem; }
+.body li + li { margin-top: var(--spacing-0); }
+.concern { border-left: 3px solid var(--color-warning); padding-left: var(--spacing-2); }
+.evidence { font-family: var(--font-code); font-size: var(--font-size-caption); color: var(--color-text-secondary); }
+
+/* ── GitHub 風 diff ── */
+.diff {
+  margin-top: var(--spacing-2);
+  border-radius: var(--radius-code);
+  overflow: hidden;
+  background: var(--color-code-bg);
+  font-family: var(--font-code);
+  font-size: var(--font-size-code);
+  line-height: var(--line-height-code);
+}
+.diff-file {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  background: var(--color-code-chrome);
+  border-bottom: 1px solid var(--color-code-rule);
+  padding: var(--spacing-1) var(--spacing-2);
+  color: var(--color-code-text);
+}
+.diff-file .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.diff-file .stat { margin-left: auto; white-space: nowrap; }
+.diff-file .stat .plus { color: var(--color-diff-added); }
+.diff-file .stat .minus { color: var(--color-diff-removed); }
+
+.diff-body { overflow-x: auto; }
+.diff-hunk {
+  color: var(--color-code-gutter);
+  background: var(--color-code-chrome);
+  border-top: 1px solid var(--color-code-rule);
+  border-bottom: 1px solid var(--color-code-rule);
+  padding: 2px var(--spacing-2);
+}
+.row {
+  display: grid;
+  grid-template-columns: 44px 44px 18px 1fr;
+  color: var(--color-code-text);
+  white-space: pre;
+  min-width: max-content;
+}
+.row .ln {
+  color: var(--color-code-gutter);
+  text-align: right;
+  padding-right: var(--spacing-1);
+  user-select: none;
+  border-right: 1px solid var(--color-code-rule);
+}
+.row .mk { text-align: center; user-select: none; }
+.row .tx { padding-left: var(--spacing-1); padding-right: var(--spacing-3); }
+.row.add { background: var(--color-diff-added-bg); }
+.row.add .mk { color: var(--color-diff-added); }
+.row.del { background: var(--color-diff-removed-bg); }
+.row.del .mk { color: var(--color-diff-removed); }
+
+.hidden-note { font-size: var(--font-size-body-small); color: var(--color-text-secondary); border-top: 1px solid var(--color-border); padding-top: var(--spacing-3); margin-top: var(--spacing-4); max-width: 42rem; }
+
+.questions { margin-top: var(--section-spacing); }
+.questions ol { margin: 0; padding-left: 1.3em; max-width: 42rem; }
+.questions li + li { margin-top: var(--spacing-2); }
+.questions .note { font-size: var(--font-size-body-small); color: var(--color-text-secondary); margin: 0 0 var(--spacing-3); max-width: 42rem; }
+
+.foot { margin-top: var(--section-spacing); font-size: var(--font-size-caption); color: var(--color-text-disabled); font-family: var(--font-code); }
+
+/* ── 指摘（コードレビュー結果） ── */
+.finding { border: 1px solid var(--color-border); border-left: 3px solid var(--color-warning); border-radius: var(--radius-card); background: var(--color-surface-alt); padding: var(--spacing-2) var(--spacing-3); }
+.finding + .finding { margin-top: var(--spacing-1); }
+.finding-head { display: flex; flex-wrap: wrap; gap: var(--spacing-1); align-items: center; margin-bottom: var(--spacing-1); }
+.anchor { display: block; font-size: var(--font-size-caption); color: var(--color-text-secondary); margin-bottom: var(--spacing-1); }
+.anchor .where { font-family: var(--font-code); color: var(--color-primary); }
+.finding-claim { line-height: 1.7; margin: 0 0 var(--spacing-1); }
+.who { font-size: var(--font-size-caption); color: var(--color-text-secondary); margin: 0 0 var(--spacing-1); }
+.chip { display: inline-block; font-family: var(--font-code); font-size: var(--font-size-caption); color: var(--color-text-secondary); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-badge); padding: 1px var(--spacing-1); }
+.handled { font-size: var(--font-size-body-small); line-height: var(--line-height-body-small); margin: 0; border-top: 1px dotted var(--color-border); padding-top: var(--spacing-1); }
+.finding .diff { margin: var(--spacing-1) 0; }
+
+/* ── セクションヘッダーの追従（GitHub の diff viewer 方式） ──
+   長い節を読んでいる最中でも、その節の見出しと開閉操作を画面内に残す。
+   高さは stuck 時も変えない（変えると sticky の占有領域が動いて本文が跳ねる）。 */
+details.card[open] > summary {
+  position: sticky;
+  top: var(--bar-height);
+  z-index: 5;
+  background: var(--color-surface);
+  border-bottom: 1px solid transparent;
+}
+details.card[open] > summary.stuck {
+  border-bottom-color: var(--color-border);
+  box-shadow: 0 2px 4px rgba(26,25,23,0.05);
+}
+.head-row { display: flex; align-items: baseline; gap: var(--spacing-2); flex-wrap: wrap; }
+.head-row .title { flex: 1 1 auto; min-width: 14rem; margin-bottom: 0; }
+.head-row .tags { flex: 0 0 auto; }
+
+@media (max-width: 1023px) {
+  .group { grid-template-columns: 1fr; }
+  .num { display: none; }
+  .num-inline { display: inline; font-family: var(--font-code); color: var(--color-text-disabled); margin-right: var(--spacing-1); }
+  .bar-target { display: none; }
+}
+@media (max-width: 700px) {
+  .chipset.scale { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-inner">
+    <span class="bar-id">brief / 差分</span>
+    <span class="bar-target">未ステージ差分 — brief の土台</span>
+    <span class="chips">
+      <span class="chipset scale" title="変更の規模">8f · 14h · 3g</span>
+      <span class="chipset todo" title="注意して見るもの"><span class="flag">指摘 1 · 要判断 1</span></span>
+      <button class="toggle-all" id="toggleAll" type="button">閉じる</button>
+    </span>
+  </div>
+</div>
+
+<main class="page">
+
+  <header class="lede">
+    <p class="eyebrow">つまり</p>
+    <h1 class="one-liner">brief の土台を作った。差分と文書を「数えられる形」に分解して、取りこぼしを機械が見つけられるようにした。</h1>
+    <p class="meta"><b>なぜ</b> LLM 向けに書かれた計画や差分を人間が読める形へ組み替えるスキルの第一歩。読まずに承認する状態を止めるのが目的。</p>
+    <p class="meta"><b>どこまで</b> 入力の分解とモデル検証まで。画面そのものを作る部分はまだ含まない。</p>
+  </header>
+
+  <hr class="rule">
+
+  <h2 class="section-label">3 つの意図に分かれている</h2>
+
+  <article class="group">
+    <div class="num">01</div>
+    <details class="card rail-primary" open>
+      <summary>
+        <span class="chevron">›</span>
+        <span class="head-row"><span class="title"><span class="num-inline">01</span>入力を「数えられる形」に分解する</span>
+          <span class="tags">
+          <span class="badge">新機能</span>
+          <span class="badge">低リスク</span>
+          <span class="count">2 ファイル / 5 hunk</span>
+        </span></span>
+        <span class="summary-line">差分と文書を、あとで全部拾えたか機械が数えられる単位に切り分ける</span>
+      </summary>
+      <div class="body">
+        <h4>意図</h4>
+        <p>差分をそのまま人に見せても「全部見たか」は誰にも分からない。先に番号付きの単位へ割ってしまえば、「この番号がどこにも出てこない」と機械が言えるようになる。</p>
+
+        <h4>やったこと</h4>
+        <ul>
+          <li>brief_collect.py を新設した</li>
+          <li>差分を hunk に切り分けて通し番号を振る</li>
+          <li>文書を見出し単位のセクションに切り分ける</li>
+          <li>いま何をレビューできるか（未ステージ・ブランチ差分・計画・会話）を数え上げる</li>
+        </ul>
+
+        <h4>実際の差分</h4>
+        <div class="diff">
+          <div class="diff-file">
+            <span class="path">skills/brief/scripts/brief_collect.py</span>
+            <span class="stat"><span class="plus">+9</span> <span class="minus">−0</span></span>
+          </div>
+          <div class="diff-body">
+            <div class="diff-hunk">@@ -0,0 +1,9 @@</div>
+            <div class="row add"><span class="ln"></span><span class="ln">131</span><span class="mk">+</span><span class="tx">def scan_candidates(root, runner):</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">132</span><span class="mk">+</span><span class="tx">    """今あるレビュー対象を、具体的なものから順に並べる。"""</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">133</span><span class="mk">+</span><span class="tx">    candidates = []</span></div>
+            <div class="row"><span class="ln">…</span><span class="ln">…</span><span class="mk"> </span><span class="tx">    # 未ステージ / ステージ済み / ブランチ差分 / 計画 / 引き継ぎ</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">168</span><span class="mk">+</span><span class="tx">    candidates.append(</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">169</span><span class="mk">+</span><span class="tx">        {"kind": "discussion", "label": "今の会話", "count": 1, "ref": None}</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">170</span><span class="mk">+</span><span class="tx">    )</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">171</span><span class="mk">+</span><span class="tx">    return candidates</span></div>
+          </div>
+        </div>
+
+        <h4>根拠</h4>
+        <p class="evidence">h001 – h005（brief_collect.py と そのテスト）</p>
+      </div>
+    </details>
+  </article>
+
+  <article class="group">
+    <div class="num">02</div>
+    <details class="card rail-warning" open>
+      <summary>
+        <span class="chevron">›</span>
+        <span class="head-row"><span class="title"><span class="num-inline">02</span>取りこぼしを機械が検出する</span>
+          <span class="tags">
+          <span class="badge">新機能</span>
+          <span class="badge badge--warning">要判断 1</span>
+          <span class="count">2 ファイル / 6 hunk / 指摘 1</span>
+        </span></span>
+        <span class="summary-line">まとめ方の良し悪しは測れないが、抜け落ちの有無なら測れる</span>
+      </summary>
+      <div class="body">
+        <h4>意図</h4>
+        <p>この形式で唯一きちんと保証できるのが「何も消えていないこと」だった。だからそこだけは厳しくした。</p>
+
+        <h4>やったこと</h4>
+        <ul>
+          <li>brief_render.py を新設した</li>
+          <li>差分レビューでは、すべての hunk がちょうど 1 つのまとまりに属することを必須にした</li>
+          <li>「折りたたみに逃がす」抜け道を塞いだ</li>
+          <li>会話レビューでは、未決事項のまとまりが 1 つも無い場合を不合格にした</li>
+          <li>重複の報告を「同じまとまりの中」と「別のまとまりとの間」で言い分けた</li>
+        </ul>
+
+        <h4>実際の差分</h4>
+        <div class="diff">
+          <div class="diff-file">
+            <span class="path">skills/brief/scripts/brief_render.py</span>
+            <span class="stat"><span class="plus">+7</span> <span class="minus">−2</span></span>
+          </div>
+          <div class="diff-body">
+            <div class="diff-hunk">@@ -214,6 +214,11 @@ def _validate_attribution(model, view, universe):</div>
+            <div class="row"><span class="ln">214</span><span class="ln">214</span><span class="mk"> </span><span class="tx">    if view == "change":</span></div>
+            <div class="row del"><span class="ln">215</span><span class="ln"></span><span class="mk">−</span><span class="tx">        covered = set(group_refs) | set(deferred_refs)</span></div>
+            <div class="row del"><span class="ln">216</span><span class="ln"></span><span class="mk">−</span><span class="tx">        return sorted(set(universe) - covered)</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">215</span><span class="mk">+</span><span class="tx">        for ref in sorted(set(universe) - set(group_refs)):</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">216</span><span class="mk">+</span><span class="tx">            errors.append("どのグループにも属していない: %s" % ref)</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">217</span><span class="mk">+</span><span class="tx">        # deferred は change の逃げ道にしない。誰もまとめなかった hunk は</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">218</span><span class="mk">+</span><span class="tx">        # 隠してよい細部ではなくページの穴である。</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">219</span><span class="mk">+</span><span class="tx">        for ref in sorted(set(deferred_refs) &amp; set(universe)):</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">220</span><span class="mk">+</span><span class="tx">            errors.append("change では deferred へ退避できない: %s" % ref)</span></div>
+            <div class="row"><span class="ln">217</span><span class="ln">221</span><span class="mk"> </span><span class="tx">        return errors</span></div>
+          </div>
+        </div>
+
+        <h4>レビューで出た指摘</h4>
+
+        <div class="finding">
+          <div class="finding-head">
+            <span class="badge badge--warning">要判断</span>
+            <span class="chip">2 人が同意</span>
+          </div>
+          <span class="anchor">この行に対して — <span class="where">brief_render.py:283</span>（会話レビューの分岐）</span>
+          <p class="finding-claim">会話レビューだけは、この時点で処理を打ち切っている。そのため根拠の参照が実在するかを誰も確かめておらず、存在しない参照を書いても通ってしまう。</p>
+          <p class="who">言った人 — <span class="chip">正確性</span> <span class="chip">第二意見</span></p>
+          <div class="diff">
+            <div class="diff-file">
+              <span class="path">skills/brief/scripts/brief_render.py</span>
+              <span class="stat">指摘箇所</span>
+            </div>
+            <div class="diff-body">
+              <div class="row"><span class="ln">282</span><span class="ln">282</span><span class="mk"> </span><span class="tx">    if view == "discussion":</span></div>
+              <div class="row"><span class="ln">283</span><span class="ln">283</span><span class="mk"> </span><span class="tx">        errors += _validate_discussion(model)</span></div>
+              <div class="row"><span class="ln">284</span><span class="ln">284</span><span class="mk"> </span><span class="tx">        return errors   # ← 参照の実在検査へ進まない</span></div>
+            </div>
+          </div>
+          <p class="handled"><b>こちらの対応</b> 直していません。会話には機械で切り分けられる入力がないため、実在を確かめる相手そのものが存在しません。参照を検証できる形を新たに作るか、この view では諦めるかの判断が要ります。</p>
+        </div>
+
+        <h4>気になっている点</h4>
+        <p class="concern">会話レビューだけは入力を機械で分解できないため、取りこぼし検査そのものが成立しない。代わりに「未決が消えていないか」だけを見ている。ここは弱点として残る。</p>
+
+        <h4>根拠</h4>
+        <p class="evidence">h006 – h011（brief_render.py と そのテスト）</p>
+      </div>
+    </details>
+  </article>
+
+  <article class="group">
+    <div class="num">03</div>
+    <details class="card" open>
+      <summary>
+        <span class="chevron">›</span>
+        <span class="head-row"><span class="title"><span class="num-inline">03</span>スキルとしての骨格と説明書</span>
+          <span class="tags">
+          <span class="badge">文書</span>
+          <span class="badge">低リスク</span>
+          <span class="count">3 ファイル / 3 hunk</span>
+        </span></span>
+        <span class="summary-line">新しいスキルとして検証を通る最小の形をそろえる</span>
+      </summary>
+      <div class="body">
+        <h4>意図</h4>
+        <p>ディレクトリを作った時点でリポジトリの検証が説明書を要求するため、先に骨組みだけ置いた。中身は次の段階で埋める。</p>
+
+        <h4>やったこと</h4>
+        <ul>
+          <li>SKILL.md（スキル本体の説明）を追加</li>
+          <li>brief-model.md（画面に載せるデータの決まりごと）を追加</li>
+          <li>README のスキル一覧に 1 行追加</li>
+        </ul>
+
+        <h4>実際の差分</h4>
+        <div class="diff">
+          <div class="diff-file">
+            <span class="path">README.md</span>
+            <span class="stat"><span class="plus">+1</span> <span class="minus">−0</span></span>
+          </div>
+          <div class="diff-body">
+            <div class="diff-hunk">@@ -156,6 +156,7 @@</div>
+            <div class="row"><span class="ln">157</span><span class="ln">157</span><span class="mk"> </span><span class="tx">| `decision-journal` | 技術選定の意思決定を判例集方式で記録 |</span></div>
+            <div class="row"><span class="ln">158</span><span class="ln">158</span><span class="mk"> </span><span class="tx">| `handoff` | セッション間のコンテキスト引き継ぎ（揮発型） |</span></div>
+            <div class="row add"><span class="ln"></span><span class="ln">159</span><span class="mk">+</span><span class="tx">| `brief` | 変更・計画・引き継ぎ・進行中の会話を人間の判断順に再構成 |</span></div>
+          </div>
+        </div>
+
+        <h4>根拠</h4>
+        <p class="evidence">h012 – h014</p>
+      </div>
+    </details>
+  </article>
+
+  <p class="hidden-note">このページに出していない変更はありません（差分レビューでは折りたたみへの退避を許していないため、14 hunk すべてが上のいずれかに含まれています）。</p>
+
+  <hr class="rule">
+
+  <section class="questions">
+    <h2 class="section-label">読み終えたら</h2>
+    <p class="note">答え合わせはしません。答えられないことに気づくためだけの 3 問です。</p>
+    <ol>
+      <li>この変更でいちばん危ういのはどこ？</li>
+      <li>なぜ「折りたたみに逃がす」を禁止した？</li>
+      <li>これが原因で壊れるとしたら、どこから壊れる？</li>
+    </ol>
+  </section>
+
+  <p class="foot">brief / change / 20260726011631</p>
+
+</main>
+
+<script>
+(function () {
+  var button = document.getElementById("toggleAll");
+  var cards = document.querySelectorAll("details.card");
+  button.addEventListener("click", function () {
+    var shouldOpen = button.textContent === "開く";
+    for (var i = 0; i < cards.length; i++) { cards[i].open = shouldOpen; }
+    button.textContent = shouldOpen ? "閉じる" : "開く";
+  });
+  function sync() {
+    var openCount = document.querySelectorAll("details.card[open]").length;
+    button.textContent = openCount === 0 ? "開く" : "閉じる";
+  }
+  for (var i = 0; i < cards.length; i++) { cards[i].addEventListener("toggle", sync); }
+
+  var sentinelMargin = "-" + (document.querySelector(".bar").offsetHeight + 1) + "px 0px 0px 0px";
+  if ("IntersectionObserver" in window) {
+    var stickWatch = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        entries[i].target.classList.toggle("stuck", entries[i].intersectionRatio < 1);
+      }
+    }, { rootMargin: sentinelMargin, threshold: [1] });
+    var heads = document.querySelectorAll("details.card > summary");
+    for (var j = 0; j < heads.length; j++) { stickWatch.observe(heads[j]); }
+  }
+
+})();
+</script>
+</body>
+</html>

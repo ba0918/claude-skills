@@ -53,6 +53,19 @@ _GIT_ENV = {
     "GIT_COMMITTER_EMAIL": "fixture@local",
 }
 
+# git hook の中では GIT_DIR などが環境に置かれており、それを引き継ぐと隔離領域の
+# `git init` が呼び出し元のリポジトリを指してしまう。fixture の実体化は宣言だけから
+# 決まらなければならないので、継承した状態は落とす。
+_GIT_INHERITED = (
+    "GIT_DIR",
+    "GIT_WORK_TREE",
+    "GIT_INDEX_FILE",
+    "GIT_OBJECT_DIRECTORY",
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    "GIT_COMMON_DIR",
+    "GIT_PREFIX",
+)
+
 
 # Agent Artifact Store 契約（skills/shared/references/artifact-store.md）の写し。
 # ここで扱うのは「fixture の宣言が契約を満たすか」だけで、実体の検査は
@@ -344,6 +357,8 @@ def validate(fixture, source="fixtures.json"):
 
 def _run_git(args, cwd):
     env = dict(os.environ, **_GIT_ENV)
+    for name in _GIT_INHERITED:
+        env.pop(name, None)
     return subprocess.run(
         ["git"] + args, cwd=cwd, env=env, capture_output=True, text=True)
 

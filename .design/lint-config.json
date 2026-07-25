@@ -1,0 +1,29 @@
+{
+  "include": [
+    "skills/brief/**/*.css",
+    "skills/brief/**/*.html",
+    "skills/brief/**/*.py"
+  ],
+  "exclude": [
+    "node_modules/**",
+    ".design/**",
+    ".agents/**",
+    "**/test_*.py",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/*.stories.*"
+  ],
+  "rules": {
+    "DL001": "error",
+    "DL002": "error",
+    "DL003": "warn",
+    "DL004": "warn",
+    "DL005": "warn",
+    "DL006": "error"
+  },
+  "allowRawValues": {
+    "colors": ["transparent", "inherit", "currentColor", "white", "black"],
+    "spacing": [0, "auto"],
+    "borderRadius": [0, "50%", "9999px"]
+  }
+}

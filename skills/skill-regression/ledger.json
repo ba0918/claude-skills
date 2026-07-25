@@ -20,6 +20,36 @@
     "surface_sha256": "e089ca06891bce863d6408ff13d3fd47739347505e4bd6d4881b61f4a5efc774",
     "verified": "2026-07-22"
   },
+  "brief": {
+    "file_sha256": {
+      "skills/brief/SKILL.md": "4730935e20c0a85824478352eab527936853bd2ce4c21f704904ee3ccdfc7d22",
+      "skills/brief/assets/brief.css": "9ef1a533765cd3463be8fcdf0ab59a694983f43143ffce2d33c31647209aa8cd",
+      "skills/brief/assets/brief.js": "3448e3dc90bbfe4451e9f2cff5981cdc42ce3b021411ccc3a16c3a52e86bbfc3",
+      "skills/brief/assets/tokens.brief.json": "c3b5edd00e3451f313f7dbdb676baa8f2f763652bc7ef179627002dab242e9db",
+      "skills/brief/assets/tokens.css": "e62f02714ff77cb803993cf9796f09b5adafff8523418c3ec7a3c73f80947a2c",
+      "skills/brief/fixtures.json": "4687d1a2567ebe2897b52b5d5c0420e3ce4f59a99f97a5c7518c1d3b1db63ace",
+      "skills/brief/references/brief-model.md": "5e3adb51c462a65ad7df26e621ebec577c222ffff6e4b23938102deb372e54c4",
+      "skills/brief/scripts/brief_collect.py": "6d0e638d5d36e3f62008c27967695e76f42f9cbe2afd659391e7118b4866d986",
+      "skills/brief/scripts/brief_render.py": "b4fc93158220b7b1fce0ca7cf0e0cbcdaf644a93ebee1e7f4f39ca9c9dd5eba0",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5"
+    },
+    "note": "実行せず再評価不要と判断（PR #26 マージにより新設された artifact store 契約の静的検査が bf-001 / bf-006 を検出したことへの対応）。変更は setup.files['.gitignore'] への無視宣言（/.agents/artifacts/ と /.agents/runtime/）の追加のみで、SKILL.md・実行者プロンプト・要件は不変。両シナリオの isolation は worktree であり、これまでもハーネスリポジトリ自身の .gitignore が同じ無視を提供していたため、実行者から見える環境は前後で同じ（周囲のリポジトリへの偶然依存を fixture 自身の宣言へ明示化した形）。bf-001 / bf-006 の要件はいずれも対象選択の確認挙動に関するもので .gitignore に依存しないため、検証力への影響もない。plan-implement で同一構造の判断を人間が裁定した先例に従う。",
+    "result": "accepted-without-run",
+    "surface": [
+      "skills/brief/SKILL.md",
+      "skills/brief/assets/brief.css",
+      "skills/brief/assets/brief.js",
+      "skills/brief/assets/tokens.brief.json",
+      "skills/brief/assets/tokens.css",
+      "skills/brief/fixtures.json",
+      "skills/brief/references/brief-model.md",
+      "skills/brief/scripts/brief_collect.py",
+      "skills/brief/scripts/brief_render.py",
+      "skills/shared/references/artifact-store.md"
+    ],
+    "surface_sha256": "f4953145c9798c6667dc175e54ab61c3ddd017af7d798f495c240f8782811b97",
+    "verified": "2026-07-26"
+  },
   "commit": {
     "file_sha256": {
       "skills/commit/SKILL.md": "8a3c4ce0d6b38b19ac25b7f96ca6514ec6f328121ff3407cddf12df8aacd6d28",

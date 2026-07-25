@@ -1,0 +1,33 @@
+{
+  "note": "Extension layer for the brief renderer. The shared design-scaffold token schema fixes `colors` to 15 keys with additionalProperties:false, so the dark code surface this skill needs cannot live in .design/tokens.json. Keys are CSS custom property names on purpose: this is the distribution layer, not the authoring layer, and the renderer emits them verbatim after tokens.css.",
+  "promote_when": "A second UI-producing skill needs the same code-surface colors. At that point this becomes a fixture-backed extension of the shared schema instead of a private layer.",
+  "tokens": {
+    "--color-code-bg": "#23211E",
+    "--color-code-text": "#EAE6DC",
+    "--color-code-chrome": "#2E2B27",
+    "--color-code-rule": "#38342D",
+    "--color-code-gutter": "#7A7466",
+    "--color-diff-added": "#8FBF9F",
+    "--color-diff-removed": "#D98A7E",
+    "--color-diff-added-bg": "rgba(143,191,159,0.13)",
+    "--color-diff-removed-bg": "rgba(217,138,126,0.13)",
+
+    "--radius-badge": "0",
+    "--radius-code": "3px",
+
+    "--spacing-hair": "2px",
+    "--bar-height": "52px",
+    "--measure": "42rem",
+    "--num-column": "72px",
+    "--title-min": "14rem",
+    "--diff-gutter": "44px",
+    "--diff-marker": "18px",
+
+    "--rail-width": "4px",
+    "--rail-width-hover": "6px",
+    "--rail-width-thin": "3px",
+
+    "--tracking-code": "0.06em",
+    "--motion-fast": "120ms"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "approvedAt": "2026-07-26T04:10:00+09:00",
+  "approvedBy": "human",
+  "tokensHash": "51bd9f5b9c61683464ed50c4229b5188da3841bdfec920c9dd9952b38d69c153",
+  "catalogHash": "ad9541e7c25121aa8aa7b700cc772d19b20dbde66df4cbc52518da930e3a2d4c",
+  "screenshotCount": 0,
+  "mockupFiles": [
+    "change.html",
+    "discussion.html",
+    "refine.html"
+  ],
+  "notes": "初期版として承認（2026-07-26）。読み物基調・明朝見出し・番号ハンギング・GitHub 風 diff・固定ヘッダー・セクション追従を含む。スクリーンショットは Playwright 未導入のため未取得。"
+}
