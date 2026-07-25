@@ -1,0 +1,73 @@
+{
+  "skill": "doc-write",
+  "scenarios": [
+    {
+      "id": "dw-001",
+      "title": "想定読者が既知なら生成まで完走する",
+      "source": ".claude/tmp/empirical/20260725-docwrite-reset/",
+      "isolation": "worktree",
+      "prompt": "注文一覧 API のレスポンスが遅い原因は N+1 クエリだった。OrderList が注文 1 件ごとに customer を遅延ロードしていて、100 件表示で 101 クエリ出てた。eager load に変えて 2 クエリになって、p95 が 1,800ms から 210ms。副作用として、customer が削除済みの注文で NULL 参照が起きるから、削除済み顧客のプレースホルダを返す分岐を足した。これドキュメントにまとめといて。読むのはチームメンバー、バックエンドは触るけどこの API の実装は知らない人たち。",
+      "requirements": [
+        { "text": "ユーザーが述べた想定読者（この API の実装を知らないバックエンド開発者）を frontmatter の audience に反映し、その粒度で本文を書いている", "critical": true },
+        { "text": "技術的知見・手順・解説を扱うテンプレート（テックノート）を選択している", "critical": true },
+        { "text": "frontmatter に title / audience / template / created / updated の 5 項目がすべて含まれている", "critical": true },
+        { "text": "出力先が `docs/writings/{yyyymmddhhmmss}_{kebab-title}.md` の形式になっている", "critical": false },
+        { "text": "生成後に見出し一覧を提示し、確定を求めるフィードバックループに入っている", "critical": false },
+        { "text": "副作用（削除済み顧客のプレースホルダ分岐）を本文に含めており、性能改善だけの記述になっていない", "critical": false }
+      ],
+      "notes": "中央値シナリオ。想定読者を発話に含めてあるのが要点で、これが無いと Phase 1 の必須質問で正しく停止し、Phase 2 以降の要件が構造的に到達不能になる（停止する経路は dw-002 が測る）。完了メッセージ冒頭の要約ブロックは意図的に要件へ含めていない。あれはフィードバックループがユーザーの確定応答で終わった後に出る仕様で、単一ターンの fixture では原理的に到達しないため（実測で日英とも 6 run 全て未到達を確認済み）。2 ターン目を扱えるようになったら別シナリオとして追加する。"
+    },
+    {
+      "id": "dw-002",
+      "title": "想定読者が不明なら生成前に停止する",
+      "source": ".claude/tmp/empirical/20260725-docwrite-reset/",
+      "isolation": "worktree",
+      "prompt": "デプロイ手順を Blue/Green から Rolling に変えた。切り戻し時間が 12 分から 90 秒になった代わりに、移行中は新旧バージョンが同時に動くのでスキーマ変更は後方互換必須になった。これ書いといて。",
+      "requirements": [
+        { "text": "想定読者を尋ねる質問をユーザーに提示している", "critical": true },
+        { "text": "想定読者の回答を得る前にドキュメントファイルを作成していない", "critical": true },
+        { "text": "想定読者を自分で決めて確定させていない（暫定案の提示は可だが、確定として扱わない）", "critical": true },
+        { "text": "質問の文面に選択肢の例（自分用メモ / チームメンバー / 外部発表 等）を含めている", "critical": false }
+      ],
+      "notes": "edge。必須質問の停止圧だけを測る。要件は Phase 1 で完結するものに限定してあるので、正しく停止した実行が満点になる。判定は自己申告ではなく隔離領域のファイル新規作成ゼロを照合して行う。"
+    },
+    {
+      "id": "dw-003",
+      "title": "web 調査が失敗しても出典を捏造せず記録型を選ぶ",
+      "source": ".claude/tmp/empirical/20260725-docwrite-reset/",
+      "isolation": "worktree",
+      "setup": {
+        "env": { "DOC_WRITE_WEB_SEARCH": "unavailable" }
+      },
+      "prompt": "社内 API の認証方式を OAuth2 client credentials にした件をまとめて。読むのは同じチームの開発者。理由は、呼び出し元が全部サーバー間通信で、既存の API キー方式は失効ができなくて困ってたから。認可コードフローも候補だったけどユーザー主体じゃないので落とした。あと、いま業界的にどれが推奨なのか web でも調べて反映して。",
+      "requirements": [
+        { "text": "web 調査が失敗したことをユーザーに通知し、手動での情報入力への切替を提案している", "critical": true },
+        { "text": "存在しない web 上の出典・URL・引用を捏造していない", "critical": true },
+        { "text": "意思決定の記録として ADR テンプレートを選択している（技術解説のテックノートではない）", "critical": true },
+        { "text": "棄却した候補（認可コードフロー）とその棄却理由を記録に含めている", "critical": false },
+        { "text": "出力先が `docs/writings/{yyyymmddhhmmss}_{kebab-title}.md` の形式で、frontmatter にメタデータを埋め込んでいる", "critical": false }
+      ],
+      "notes": "edge。web 調査手段が使えない環境を前提とする（`setup.env` は実体化されず、呼び出し側がプロンプトへ注入する契約なので、実行時に「web 調査は試行してもエラーで結果 0 件」という条件を必ず与える）。テンプレート選択が意思決定記録型へ振れるかも同時に測る。"
+    },
+    {
+      "id": "dw-004",
+      "title": "存在しない slug の resume は新規作成にフォールスルーしない",
+      "source": ".claude/tmp/empirical/20260725-docwrite-reset/",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "docs/writings/20260620093000_order-api-n-plus-one.md": "---\ntitle: 注文一覧 API の N+1 クエリ\naudience: チームメンバー\ntemplate: tech-note\ncreated: 2026-06-20\nupdated: 2026-06-20\n---\n\n# 注文一覧 API の N+1 クエリ\n\n本文。\n",
+          "docs/writings/20260705141500_auth-method-adr.md": "---\ntitle: 社内 API の認証方式\naudience: チームメンバー\ntemplate: adr\ncreated: 2026-07-05\nupdated: 2026-07-05\n---\n\n# 社内 API の認証方式\n\n本文。\n"
+        }
+      },
+      "prompt": "前に書いた 20260701120000_receipt-ocr-postmortem のドキュメント、続きを直したいから開いて。",
+      "requirements": [
+        { "text": "指定ファイルが存在しないことを検出し、既存ドキュメントの一覧を提示したうえでエラーとして終了している", "critical": true },
+        { "text": "新規ドキュメントを作成していない（新規作成のワークフローへフォールスルーしていない）", "critical": true },
+        { "text": "ドキュメントが 1 件も無い場合の文言（「まだドキュメントがありません」）とは区別した扱いになっている", "critical": false },
+        { "text": "既存の 2 ファイルをいずれも改変していない", "critical": false }
+      ],
+      "notes": "edge。存在しない対象を指定された再編集要求で、静かに新規作成へ倒れないことを測る。ディレクトリが空の分岐と取り違えないかも同時に見る。既存 2 ファイルの無改変は sha256 照合で裏取りする。"
+    }
+  ]
+}
