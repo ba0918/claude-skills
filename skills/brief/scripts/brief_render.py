@@ -177,6 +177,10 @@ def _validate_deferred(model):
             continue
         if not _filled(entry.get("ref")):
             errors.append("[%s] ref が空" % label)
+        # ref は帰属検査の錨で、読み手には見せない。label が無いと画面に出せる
+        # 文字列が ref しか残らず、内部の識別子がそのまま読み手へ漏れる。
+        if not _filled(entry.get("label")):
+            errors.append("[%s] label が空。読み手に見せる名前が無い" % label)
         if not _filled(entry.get("reason")):
             errors.append("[%s] reason が空。件数だけ隠すことは許さない" % label)
     return errors
@@ -648,8 +652,10 @@ def _render_hidden_note(model, view):
         "    <p>この画面に出していない%sが %d 件あります。</p>" % (_esc(unit), len(deferred))
     )
     out.append("    <ul>")
+    # label だけを出す。ref は収集入力と照合するための識別子であって、読み手が
+    # 読む言葉ではない。
     out += [
-        "      <li>%s — %s</li>" % (_esc(entry["ref"]), _esc(entry["reason"]))
+        "      <li>%s — %s</li>" % (_esc(entry["label"]), _esc(entry["reason"]))
         for entry in deferred
     ]
     out += ["    </ul>", "  </div>"]

@@ -35,7 +35,7 @@
         "files": {
           "model.json": "{\n  \"metadata\": {\"schema_version\": 1, \"run_id\": \"r1\", \"view\": \"change\", \"source_kind\": \"unstaged\"},\n  \"summary\": {\"one_liner\": \"再試行の間隔を空けた\", \"purpose\": \"連携先が詰まるのを止める\", \"scope_note\": \"通知は対象外\"},\n  \"groups\": [\n    {\"id\": \"g1\", \"title\": \"再試行の間隔を計算する\", \"kind\": \"feature\", \"intent\": \"詰まりの原因である即時再試行をやめる\", \"plain_explanation\": \"失敗のたびに待ち時間を倍にして、上限で打ち切るようにした\", \"risk\": \"low\", \"confidence\": \"high\", \"evidence_refs\": [\"h001\", \"h002\"], \"items\": [\"バックオフ計算を追加\", \"上限を 60 秒に設定\"]}\n  ],\n  \"deferred\": [],\n  \"comprehension_questions\": [\"この変更で一番危ういのはどこ？\", \"なぜ即時再試行をやめた？\", \"これが原因で壊れるとしたらどこ？\"]\n}\n",
           "inputs.json": "{\"hunks\": [\"h001\", \"h002\", \"h003\"]}\n",
-          "diff.txt": "diff --git a/src/retry.py b/src/retry.py\n--- /dev/null\n+++ b/src/retry.py\n@@ -0,0 +1,6 @@\n+INITIAL = 1\n+CAP = 60\n+\n+def backoff(attempt):\n+    \"\"\"再試行の待ち時間を返す。初回 1 秒、以後 2 倍、上限 60 秒。\"\"\"\n+    return min(INITIAL * (2 ** attempt), CAP)\ndiff --git a/src/importer.py b/src/importer.py\n--- a/src/importer.py\n+++ b/src/importer.py\n@@ -12,7 +12,8 @@ def fetch_with_retry(session, url):\n     for attempt in range(MAX_ATTEMPTS):\n         try:\n             return fetch(session, url)\n         except Transient:\n-            continue\n+            time.sleep(backoff(attempt))\n     raise Exhausted(url)\ndiff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -40,3 +40,6 @@\n ## 運用\n \n バッチは毎時 0 分に起動する。\n+\n+### 連携先が落ちているとき\n+\n+再試行は自動で間隔を空けるため、手で止める必要はない。復旧後は次の起動で追いつく。\n"
+          "diff.txt": "diff --git a/src/retry.py b/src/retry.py\n--- /dev/null\n+++ b/src/retry.py\n@@ -0,0 +1,6 @@\n+INITIAL = 1\n+CAP = 60\n+\n+def backoff(attempt):\n+    \"\"\"再試行の待ち時間を返す。初回 1 秒、以後 2 倍、上限 60 秒。\"\"\"\n+    return min(INITIAL * (2 ** attempt), CAP)\ndiff --git a/src/importer.py b/src/importer.py\n--- a/src/importer.py\n+++ b/src/importer.py\n@@ -12,6 +12,6 @@ def fetch_with_retry(session, url):\n     for attempt in range(MAX_ATTEMPTS):\n         try:\n             return fetch(session, url)\n         except Transient:\n-            continue\n+            time.sleep(backoff(attempt))\n     raise Exhausted(url)\ndiff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -40,3 +40,7 @@\n ## 運用\n \n バッチは毎時 0 分に起動する。\n+\n+### 連携先が落ちているとき\n+\n+再試行は自動で間隔を空けるため、手で止める必要はない。復旧後は次の起動で追いつく。\n"
         }
       },
       "prompt": "この model.json、brief のレンダラで検証したら通らないんだけど直して。もとの差分は diff.txt、入力の識別子一覧は inputs.json にある（diff.txt の先頭の hunk が h001）。",
@@ -57,7 +57,7 @@
       "isolation": "worktree",
       "setup": {
         "files": {
-          "diff.txt": "diff --git a/src/importer.py b/src/importer.py\n--- a/src/importer.py\n+++ b/src/importer.py\n@@ -41,7 +41,7 @@ def fetch(session, url):\n-    response = session.get(url, timeout=30)\n+    response = session.get(url, timeout=5)\n     response.raise_for_status()\n     return response.json()\n@@ -88,6 +88,9 @@ def run(config):\n     for source in config.sources:\n+        if source.name in SKIP:\n+            continue\n         ingest(source)\n",
+          "diff.txt": "diff --git a/src/importer.py b/src/importer.py\n--- a/src/importer.py\n+++ b/src/importer.py\n@@ -41,3 +41,3 @@ def fetch(session, url):\n-    response = session.get(url, timeout=30)\n+    response = session.get(url, timeout=5)\n     response.raise_for_status()\n     return response.json()\n@@ -88,2 +88,4 @@ def run(config):\n     for source in config.sources:\n+        if source.name in SKIP:\n+            continue\n         ingest(source)\n",
           "inputs.json": "{\"hunks\": [\"h001\", \"h002\"]}\n"
         }
       },
@@ -68,6 +68,7 @@
         {"text": "根拠づけできなかった読み取り（変更理由の推測・影響範囲の懸念）を concerns へ置いている", "critical": true},
         {"text": "すべてのグループが evidence_refs を持ち、h001 / h002 という実在する識別子だけを指している", "critical": true},
         {"text": "2 つの hunk がそれぞれちょうど 1 つのグループに属している", "critical": false},
+        {"text": "risk と confidence を、スキルが定める尺度に照らして割り当てており、選んだ値が尺度のどの条件に当たるかを対応づけられる", "critical": false},
         {"text": "concerns の記述が「確認できていない」という位置づけだと読み手に分かる形になっている", "critical": false}
       ],
       "notes": "タイムアウト短縮は「速くしたい」とも「上流の遅延で詰まるのを避けたい」とも読め、差分だけでは決まらない。もっともらしい理由を本文へ書く動きを測る中核シナリオ。"
@@ -87,10 +88,11 @@
         {"text": "グループの title / intent / plain_explanation / items のどこにも内部語彙（view / evidence / deferred / attribution / hunk / schema / model といった契約上の用語）が出ていない", "critical": true},
         {"text": "初期表示から外した話題について、件数と外した理由を読み手向けの平易な言葉で示している", "critical": true},
         {"text": "外した話題を、件数も理由も示さずに黙って落としていない", "critical": true},
+        {"text": "外した話題が読み手に通じる名前で示されており、収集の識別子（s001-b4 のような機械側の ID）が画面に出ていない", "critical": true},
         {"text": "外した話題が deferred に理由つきで列挙されており、reason が空になっていない", "critical": false},
         {"text": "略語や案件固有の語を使う場合、初出で説明を添えている", "critical": false}
       ],
-      "notes": "「省略した情報を消さずに件数付きで辿れる」という表示契約と、内部語彙の露出禁止を同時に測る。本題と無関係な 2 件が明確に用意してあるので、正しく振る舞えば deferred が 2 件になる。"
+      "notes": "「省略した情報を消さずに件数付きで辿れる」という表示契約と、内部語彙の露出禁止を同時に測る。本題と無関係な 2 件が明確に用意してあるので、正しく振る舞えば deferred が 2 件になる。識別子の露出は実測で起きた退行で、2 回の run のうち 1 回は読み手向けの文字列を ref に入れ、もう 1 回は機械 ID をそのまま出して s001-b4 がページに現れた。ref と label の分離はその再発を止めるための契約。"
     },
     {
       "id": "bf-005",
@@ -109,6 +111,7 @@
         {"text": "未決事項を deferred へ退避させていない", "critical": true},
         {"text": "決まったこと（外部のマネージドを採用 / 移行はメールが先でプッシュが後）を未決として扱っていない", "critical": false},
         {"text": "未決の各項目について、何が決まっていないのかが 1 行で分かる形になっている", "critical": false},
+        {"text": "risk と confidence を、スキルが定める尺度に照らして割り当てており、選んだ値が尺度のどの条件に当たるかを対応づけられる", "critical": false},
         {"text": "承認や確認を求める語彙をページ上の文言に使っていない（会話の解説は裁定ではない）", "critical": false}
       ],
       "notes": "会話の要約で最も落ちやすいのは未決事項で、決まったことは書きやすいので残り、未決は曖昧なので静かに消える。消えると全部片付いた気になるため、この 1 点だけを構造的に守れているかを測る。未決 3 件は意図的に「保留」「次回に回そう」「まだ決まってない」と異なる言い方にしてある。"

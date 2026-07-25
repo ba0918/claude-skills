@@ -12,11 +12,13 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 HUNK_HEADER = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
 DIFF_HEADER = re.compile(r"^diff --git a/(.+?) b/(.+)$")
 PLUS_FILE = re.compile(r"^\+\+\+ b/(.+)$")
 HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+LIST_ITEM = re.compile(r"^[-*+]\s+(.+?)\s*$")
 
 DEFAULT_BRANCHES = ("main", "master", "develop")
 
@@ -83,8 +85,40 @@ def _split_level(headings):
     return levels[1] if len(levels) > 1 else levels[0]
 
 
+def _split_list_items(lines):
+    """Split a body into its unindented list items.
+
+    A document whose headings do not divide it is still divided — by its
+    bullets. Without this the finest addressable unit is the whole document,
+    and nothing can be withheld from the page without withholding all of it.
+    """
+    starts = [
+        (index, match.group(1))
+        for index, match in ((i, LIST_ITEM.match(l)) for i, l in enumerate(lines))
+        if match
+    ]
+    items = []
+    for order, (start, title) in enumerate(starts, start=1):
+        end = starts[order][0] if order < len(starts) else len(lines)
+        items.append(
+            {
+                "id": "b%03d" % order,
+                "title": title.strip(),
+                "unit": "item",
+                "start_line": start + 1,
+                "end_line": end,
+                "body": "\n".join(lines[start:end]).strip(),
+            }
+        )
+    return items
+
+
 def split_document_sections(text):
-    """Split a document into its top-level sections, nesting deeper headings."""
+    """Split a document into its top-level sections, nesting deeper headings.
+
+    Falls back to list items when the headings fail to divide the document,
+    which is the shape most memos take: one title and a run of bullets.
+    """
     lines = (text or "").splitlines()
     headings = []
     for index, line in enumerate(lines):
@@ -92,7 +126,7 @@ def split_document_sections(text):
         if match:
             headings.append((len(match.group(1)), match.group(2), index))
     if not headings:
-        return []
+        return _split_list_items(lines)
 
     level = _split_level(headings)
     starts = [h for h in headings if h[0] == level]
@@ -107,13 +141,19 @@ def split_document_sections(text):
             {
                 "id": "s%03d" % order,
                 "title": title,
+                "unit": "section",
                 "level": level,
                 "start_line": start + 1,
                 "end_line": end,
                 "body": "\n".join(lines[start + 1 : end]).strip(),
             }
         )
-    return sections
+    if len(sections) > 1:
+        return sections
+    # One section is the document itself, not a division of it. Go to the
+    # bullets rather than hand back a universe of size one.
+    items = _split_list_items(lines)
+    return items if len(items) > 1 else sections
 
 
 def resolve_base(runner):
@@ -142,6 +182,31 @@ def _latest_document(root, relative_dir):
     return os.path.join(directory, names[-1])
 
 
+def _document_detail(path):
+    """A line that tells two documents apart: name, size, and what it is about.
+
+    Without this every document candidate reports `count: 1` and the choice
+    offered to a human is between things that look identical, so whoever
+    presents the list has to go gather this themselves — differently each time.
+    """
+    try:
+        with open(path, encoding="utf-8") as handle:
+            lines = handle.read().splitlines()
+    except OSError:
+        return os.path.basename(path)
+    title = ""
+    for line in lines:
+        match = HEADING.match(line)
+        if match:
+            title = match.group(2)
+            break
+    stamp = time.strftime("%Y-%m-%d %H:%M", time.localtime(os.path.getmtime(path)))
+    parts = [os.path.basename(path), "%d 行" % len(lines), stamp]
+    if title:
+        parts.append(title)
+    return " / ".join(parts)
+
+
 def scan_candidates(root, runner):
     """List the targets available right now, most concrete first.
 
@@ -153,13 +218,25 @@ def scan_candidates(root, runner):
     unstaged = _numstat_count(runner, ["diff", "--numstat"])
     if unstaged:
         candidates.append(
-            {"kind": "unstaged", "label": "未ステージ差分", "count": unstaged, "ref": None}
+            {
+                "kind": "unstaged",
+                "label": "未ステージ差分",
+                "count": unstaged,
+                "detail": "%d ファイル" % unstaged,
+                "ref": None,
+            }
         )
 
     staged = _numstat_count(runner, ["diff", "--cached", "--numstat"])
     if staged:
         candidates.append(
-            {"kind": "staged", "label": "ステージ済み差分", "count": staged, "ref": None}
+            {
+                "kind": "staged",
+                "label": "ステージ済み差分",
+                "count": staged,
+                "detail": "%d ファイル" % staged,
+                "ref": None,
+            }
         )
 
     base = resolve_base(runner)
@@ -168,23 +245,47 @@ def scan_candidates(root, runner):
         branch = _numstat_count(runner, ["diff", "--numstat", ref])
         if branch:
             candidates.append(
-                {"kind": "branch", "label": "ブランチ差分", "count": branch, "ref": ref}
+                {
+                    "kind": "branch",
+                    "label": "ブランチ差分",
+                    "count": branch,
+                    "detail": "%d ファイル / %s" % (branch, ref),
+                    "ref": ref,
+                }
             )
 
     plan = _latest_document(root, PLANS_DIR)
     if plan:
         candidates.append(
-            {"kind": "plan", "label": "直近の実装計画", "count": 1, "ref": plan}
+            {
+                "kind": "plan",
+                "label": "直近の実装計画",
+                "count": 1,
+                "detail": _document_detail(plan),
+                "ref": plan,
+            }
         )
 
     handoff = _latest_document(root, HANDOFF_DIR)
     if handoff:
         candidates.append(
-            {"kind": "handoff", "label": "直近の引き継ぎ", "count": 1, "ref": handoff}
+            {
+                "kind": "handoff",
+                "label": "直近の引き継ぎ",
+                "count": 1,
+                "detail": _document_detail(handoff),
+                "ref": handoff,
+            }
         )
 
     candidates.append(
-        {"kind": "discussion", "label": "今の会話", "count": 1, "ref": None}
+        {
+            "kind": "discussion",
+            "label": "今の会話",
+            "count": 1,
+            "detail": "ファイル入力なし。そのまま解説できる",
+            "ref": None,
+        }
     )
     return candidates
 

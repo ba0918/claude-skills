@@ -22,18 +22,18 @@
   },
   "brief": {
     "file_sha256": {
-      "skills/brief/SKILL.md": "52f3d29d64469f4364dfe86a61a08a93369594283024f13881ba6a0e8956475e",
+      "skills/brief/SKILL.md": "a0e25da93ef65375d708e247506f48da4316aebf7bd03b52bee3b30cf13556f4",
       "skills/brief/assets/brief.css": "e2d28ca47e491c441f4a790ef14a17c22f401d6c5df02396e0c95c5fbfe0a711",
       "skills/brief/assets/brief.js": "3448e3dc90bbfe4451e9f2cff5981cdc42ce3b021411ccc3a16c3a52e86bbfc3",
       "skills/brief/assets/tokens.brief.json": "c3b5edd00e3451f313f7dbdb676baa8f2f763652bc7ef179627002dab242e9db",
       "skills/brief/assets/tokens.css": "e62f02714ff77cb803993cf9796f09b5adafff8523418c3ec7a3c73f80947a2c",
-      "skills/brief/fixtures.json": "2e06d64952bfe2b2f40e3111c80080a5a1e844771223d63ce52b9b03b7d41d04",
-      "skills/brief/references/brief-model.md": "0cae04b65b2b3c7cdd4ae1a7046508c784f7af7660fc395c21625438c697442b",
-      "skills/brief/scripts/brief_collect.py": "3844120ab2e2911c136232ddd01aa8d79458c87cee7058ed0ec3baacdad43708",
-      "skills/brief/scripts/brief_render.py": "650fac7615f5632b05bd16c486855a44a6978f8a794a9a94f1a2609a075afd8e",
+      "skills/brief/fixtures.json": "02d0615809d97fdbfc9628ec821ab8eda478de5bebaa3984bafedc40b1f4cbd8",
+      "skills/brief/references/brief-model.md": "9c375802df732d2a9fa2a748f73076cefe988d9a153c4478b2ba9772045f41aa",
+      "skills/brief/scripts/brief_collect.py": "973c9c28d380828034852ab62f5b17a0460f418c797d152143700542bac57192",
+      "skills/brief/scripts/brief_render.py": "82b86784edf0478423eaa14cf54532a35a967f2896953485755fe4685c65ff0d",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5"
     },
-    "note": "2 回目の run（5/5 合格）。risk/confidence 尺度・出力言語規則・render の --inputs 必須を追記し、bf-002 に hunk 本文を足した版で再評価。尺度は実測で判断を動かした（bf-003 の g1 が run1 risk=medium/conf=high → run2 risk=high/conf=medium、根拠は尺度の文言を引用）。実行者 5 体すべて報告を送らず待機に入り、事実のみの状況照会 1 回ずつで回収（run1 と同じ症状、executor-contract の既知制約）。既知の fixture 不備: bf-002/bf-003 の diff.txt の hunk header 5 本中 4 本が実際の行数と不一致。実行者は 2 回とも見抜いて行番号推定を避けたため判定は歪んでいないが、次の改訂で数を合わせる。",
+    "note": "3 回目の run（5/5 合格）。deferred の ref/label 分離・sections の箇条書きフォールバック・candidates の detail・intent の但し書き・fixture の hunk header 修正を入れた版。label 分離は実測で効いた（bf-004 のページから機械 ID が消え、run2 で出ていた s001-b4 相当の露出が 0 件）。candidates の detail も効いた（run1/run2 では実行者が規模情報を自力収集する裁量補完を報告していたが、run3 では消えた）。未解決: (1) groups[].evidence_refs はレンダラが生で出すため h001 / b001 が読み手のページに残っている（deferred と同じ欠陥の別箇所、bf-004 が報告）。(2) risk の high 条件『システムの外から見える振る舞い』の境界が未定義で bf-003 の 2 グループ目が medium/high に割れた。(3) confidence の『入力の外』が言語一般知識まで含むと読め、medium に張り付く。(4) bf-002 の setup model.json の g1.risk=low は新尺度では medium が妥当で、見本として不整合。",
     "result": "pass",
     "surface": [
       "skills/brief/SKILL.md",
@@ -47,7 +47,7 @@
       "skills/brief/scripts/brief_render.py",
       "skills/shared/references/artifact-store.md"
     ],
-    "surface_sha256": "4037d7e8f537b6f44e44ec158e7ee7d29106c11bdbcb3ff215f1224124a88b3f",
+    "surface_sha256": "80abedb8e22c9222fedcfb2468b5a1a1fcf193ca4d88ea04332204a68176ef10",
     "verified": "2026-07-26"
   },
   "commit": {

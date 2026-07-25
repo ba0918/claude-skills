@@ -40,7 +40,7 @@ comprehension_questions[] required, exactly 3
 | `id` | yes | Unique within the model |
 | `title` | yes | Reader-facing. No internal vocabulary |
 | `kind` | yes | See per-view vocabulary below |
-| `intent` | yes | Why this group exists as one unit |
+| `intent` | yes | Why these things belong together as one unit. **Not the author's motive** — see below |
 | `plain_explanation` | yes | The explanation a reader who has not opened the source can follow |
 | `risk` | yes | `low` / `medium` / `high`. See the scales below |
 | `confidence` | yes | `low` / `medium` / `high`. See the scales below |
@@ -78,16 +78,35 @@ Excerpts are quotation, not narration: a claim that rests on an excerpt still ne
 Material deliberately kept out of the initial view. Never a way to make something disappear —
 the count stays visible and each entry is reachable.
 
-| Field | Required |
-|-------|----------|
-| `ref` | yes |
-| `reason` | yes |
-| `kind` | no |
+| Field | Required | Notes |
+|-------|----------|-------|
+| `ref` | yes | The collected identifier. Machine-side only; attribution is checked against it and **it is never shown to the reader** |
+| `label` | yes | What was withheld, named the way a reader would name it |
+| `reason` | yes | Why it is not in the initial view |
+| `kind` | no | Free-form. Not displayed |
+
+`ref` and `label` are split because one identifier cannot serve both jobs. Attribution needs a
+token that matches the collected input exactly; the reader needs to know what was left out.
+Collapsing them means either the check loses its anchor or the page shows the reader something
+like `s001-b4`, which is the internal vocabulary this format exists to keep off the page.
 
 ### comprehension_questions[]
 
 Exactly three strings. Not scored, no input field, never blocks anything. Their only job is to
 let a reader notice on their own that they cannot answer.
+
+## What `intent` is not
+
+`intent` answers **why these items form one group** — a statement about how the page is
+organised, which you can always ground because you did the grouping. It reads like "the value
+changed in one call site and nothing else moved, so it stands apart from the change that alters
+which sources get processed".
+
+It is not *why the author did this*. That question is usually unanswerable from the material,
+and answering it anyway is the exact failure this format is built to prevent. When you know the
+motive because the input states it, it belongs in `plain_explanation` with the evidence that
+states it. When you only suspect it, it belongs in `concerns` as unverified. It never belongs
+in `intent`, where it would be indistinguishable from the grounded part.
 
 ## The two scales
 

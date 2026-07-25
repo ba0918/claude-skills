@@ -95,7 +95,7 @@ def document_model():
                 "items": ["4 つの view に対応する"],
             }
         ],
-        "deferred": [{"ref": "s2", "reason": "実装手順の詳細のため初期表示から外した"}],
+        "deferred": [{"ref": "s2", "label": "実装手順の細目", "reason": "実装手順の詳細のため初期表示から外した"}],
         "comprehension_questions": list(QUESTIONS),
     }
 
@@ -259,7 +259,7 @@ class ChangeAttribution(unittest.TestCase):
     def test_does_not_let_deferred_absorb_an_unassigned_hunk(self):
         model = change_model()
         model["groups"][1]["evidence_refs"] = ["h002"]
-        model["deferred"] = [{"ref": "h003", "reason": "些細な変更のため"}]
+        model["deferred"] = [{"ref": "h003", "label": "空行の調整", "reason": "些細な変更のため"}]
         self.assertTrue(validate_model(model, CHANGE_INPUTS))
 
 
@@ -281,7 +281,7 @@ class OrientationAttribution(unittest.TestCase):
         model["metadata"]["source_kind"] = "handoff"
         model["groups"][0]["kind"] = "next"
         model["groups"][0]["evidence_refs"] = ["i1"]
-        model["deferred"] = [{"ref": "i2", "reason": "前回完了済みのため"}]
+        model["deferred"] = [{"ref": "i2", "label": "前回のタスク", "reason": "前回完了済みのため"}]
         return model
 
     def test_accepts_open_items_covered_by_groups_or_deferred(self):
@@ -308,7 +308,7 @@ class DiscussionRules(unittest.TestCase):
         model = discussion_model()
         model["groups"].pop()
         model["deferred"] = [
-            {"ref": "turn-18", "reason": "話が長いため", "kind": "undecided"}
+            {"ref": "turn-18", "label": "承認の副作用", "reason": "話が長いため", "kind": "undecided"}
         ]
         self.assertTrue(validate_model(model))
 
@@ -446,7 +446,7 @@ class DeferredVisibility(unittest.TestCase):
     def test_the_count_of_withheld_material_is_always_stated(self):
         model = discussion_model()
         model["deferred"] = [
-            {"ref": "turn-30", "reason": "結論だけで足りる", "kind": "topic"}
+            {"ref": "turn-30", "label": "見た目の細かい選択肢", "reason": "結論だけで足りる", "kind": "topic"}
         ]
         self.assertIn("出していない論点が 1 件", render_html(model))
 
@@ -567,3 +567,28 @@ class Opening(unittest.TestCase):
             self.assertEqual(
                 brief_render._opener_commands(), [["xdg-open"], ["gio", "open"]]
             )
+
+
+class WithheldMaterialNaming(unittest.TestCase):
+    """`ref` anchors the attribution check; `label` is what a reader reads."""
+
+    def _model(self, **overrides):
+        model = discussion_model()
+        entry = {"ref": "s001-b4", "label": "会議室の予約方法", "reason": "本題と関係ない"}
+        entry.update(overrides)
+        model["deferred"] = [entry]
+        return model
+
+    def test_the_reader_sees_the_label_and_never_the_identifier(self):
+        page = render_html(self._model())
+        note = page[page.index("この画面に出していない") :]
+        self.assertIn("会議室の予約方法", note)
+        self.assertNotIn("s001-b4", note)
+
+    def test_an_entry_without_a_label_is_rejected(self):
+        errors = validate_model(self._model(label=""))
+        self.assertTrue(any("label が空" in e for e in errors))
+
+    def test_an_entry_without_a_reference_is_still_rejected(self):
+        errors = validate_model(self._model(ref=""))
+        self.assertTrue(any("ref が空" in e for e in errors))

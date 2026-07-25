@@ -277,3 +277,45 @@ class HunksCommand(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             with self.assertRaises(SystemExit):
                 run_cli("hunks", "--repo", root, "--source", "branch")
+
+
+class BulletOnlyDocuments(unittest.TestCase):
+    """A memo is one heading and a run of bullets. Headings cannot divide it."""
+
+    MEMO = "# 打ち合わせメモ\n\n- 検索が遅い\n- 基盤の入れ替えは今期やらない\n- キャッシュは次回\n"
+
+    def test_it_falls_back_to_the_bullets_when_headings_do_not_divide(self):
+        units = split_document_sections(self.MEMO)
+        self.assertEqual([u["id"] for u in units], ["b001", "b002", "b003"])
+        self.assertEqual(units[0]["title"], "検索が遅い")
+
+    def test_a_document_with_real_sections_still_splits_by_heading(self):
+        text = "# T\n\n## One\n\n- a\n- b\n\n## Two\n\n- c\n"
+        units = split_document_sections(text)
+        self.assertEqual([u["id"] for u in units], ["s001", "s002"])
+
+    def test_a_bare_list_with_no_heading_at_all_still_divides(self):
+        units = split_document_sections("- one\n- two\n")
+        self.assertEqual([u["id"] for u in units], ["b001", "b002"])
+
+
+class CandidateDetail(unittest.TestCase):
+    """Two documents that both report `count: 1` are not a choice."""
+
+    def test_document_candidates_carry_something_that_tells_them_apart(self):
+        with tempfile.TemporaryDirectory() as root:
+            plans = os.path.join(root, ".agents", "artifacts", "plans")
+            os.makedirs(plans)
+            path = os.path.join(plans, "20260720093000_retry-backoff.md")
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write("# 再試行に指数バックオフを入れる\n\nbody\n")
+            candidates = scan_candidates(root, lambda args: (1, ""))
+            plan = [c for c in candidates if c["kind"] == "plan"][0]
+            self.assertIn("20260720093000_retry-backoff.md", plan["detail"])
+            self.assertIn("再試行に指数バックオフを入れる", plan["detail"])
+            self.assertIn("行", plan["detail"])
+
+    def test_every_candidate_carries_a_detail_line(self):
+        with tempfile.TemporaryDirectory() as root:
+            for candidate in scan_candidates(root, lambda args: (1, "")):
+                self.assertTrue(candidate["detail"].strip(), candidate["kind"])

@@ -88,7 +88,9 @@ Writing rules, in priority order:
   `concerns` as unverified.
 - **Plain and complete are separate requirements.** Text that reads easily because it dropped
   a precondition, a scope limit or a guarantee is a failure, not a summary. Whatever you leave
-  out goes to `deferred` with a reason, never into silence.
+  out goes to `deferred` with a reason, never into silence — and name it there the way a reader
+  would name it, not by the identifier the collector produced. The identifier stays in `ref`
+  for the attribution check and never reaches the page.
 - **Keep internal vocabulary off the page.** `view`, `evidence`, `deferred` and `attribution`
   are contract words; readers get plain labels. Expand any abbreviation on first use.
 - **One item per line.** Never join items into a comma-separated paragraph.
