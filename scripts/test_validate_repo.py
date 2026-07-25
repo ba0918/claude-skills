@@ -27,6 +27,7 @@ from validate_repo import (
     check_human_readable_summary,
     check_manifests,
     check_command_skill_mapping,
+    check_fixtures,
     parse_version,
     HUMAN_READABLE_SUMMARY_LABEL,
     HUMAN_READABLE_SUMMARY_SKILLS,
@@ -693,6 +694,62 @@ class TestCheckCommandSkillMapping(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             self._skill(root, "commit")
             self.assertEqual(check_command_skill_mapping(root), [])
+
+
+class TestCheckFixtures(unittest.TestCase):
+    """チェック17: skills/*/fixtures.json の契約適合を CI で強制する。"""
+
+    def _write(self, root, rel, content):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def _valid(self):
+        return {
+            "skill": "demo",
+            "scenarios": [{
+                "id": "d-001", "title": "t", "source": "manual", "prompt": "p",
+                "requirements": [{"text": "r", "critical": True}],
+            }],
+        }
+
+    def test_valid_fixture_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/fixtures.json", json.dumps(self._valid()))
+            self.assertEqual(check_fixtures(root), [])
+
+    def test_fixture_without_critical_requirement_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            bad = self._valid()
+            bad["scenarios"][0]["requirements"] = [{"text": "r", "critical": False}]
+            self._write(root, "skills/demo/fixtures.json", json.dumps(bad))
+            errors = check_fixtures(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("critical", errors[0])
+
+    def test_unknown_setup_key_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            bad = self._valid()
+            bad["scenarios"][0]["setup"] = {"symlinks": {}}
+            self._write(root, "skills/demo/fixtures.json", json.dumps(bad))
+            self.assertTrue(any("未知の setup キー" in e for e in check_fixtures(root)))
+
+    def test_broken_json_is_flagged_without_crashing(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/fixtures.json", "{ not json")
+            errors = check_fixtures(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("JSON として読めない", errors[0])
+
+    def test_skill_without_fixtures_is_skipped(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/SKILL.md", "---\nname: demo\n---\n")
+            self.assertEqual(check_fixtures(root), [])
+
+    def test_repo_without_skills_dir_is_noop(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.assertEqual(check_fixtures(root), [])
 
 
 class TestParseVersion(unittest.TestCase):

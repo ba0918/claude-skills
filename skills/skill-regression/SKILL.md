@@ -75,6 +75,11 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
      run してよい。実 run の `pass` で accepted-without-run を上書きするのは台帳品質の向上
 2. **実行**: 対象スキルの `fixtures.json` を読み、シナリオごとに白紙実行者サブエージェントを
    [references/executor-contract.md](references/executor-contract.md) の契約で起動する。
+   - **隔離領域は宣言から実体化する**: `python3 {skill_dir}/scripts/fixture_setup.py --materialize
+     skills/<skill>/fixtures.json <scenario_id> <dest>`。手作業で組み立てない —
+     mtime・git 状態・環境変数といった前提が宣言の外に漏れ、run のたびに違う前提で動く
+   - 出力の `baseline` を編集ゼロの裏取りに使い、`env` を実行者プロンプトの
+     環境セットアップ節へ転記する
    - 同一メッセージ内で複数サブエージェント呼び出しを並べて並行実行（[orchestration-patterns.md](../shared/references/orchestration-patterns.md) 準拠）
    - 実行者は軽量モデルを明示（機械的なシナリオ実行。判断の重いスキルで精度が出ない場合のみ高性能モデルに上げ、fixture の `executor_model` に記録して固定する）
    - ファイルを生成・編集するシナリオは使い捨て git worktree で隔離し、終了後に破棄する

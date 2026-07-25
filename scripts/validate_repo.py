@@ -26,6 +26,7 @@
   14. ヒューマンリーダブル要約契約の横展開ガード
   15. 配布 manifest の整合性（3 manifest の name / version、リポジトリ slug、LICENSE 実在）
   16. 名前が対応しない command が description で起動先スキルを名指ししている
+  17. skills/*/fixtures.json が回帰 fixture の契約に適合する
 
 チェック 10・11 と store 実在性:
   チェック 10（dossier lint）は local store が ignore されている環境では対象ファイルが
@@ -554,6 +555,40 @@ def check_command_skill_mapping(root):
     return errors
 
 
+_FIXTURE_SETUP_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..", "skills", "skill-regression", "scripts")
+
+
+def check_fixtures(root):
+    """チェック17: skills/*/fixtures.json が回帰 fixture の契約に適合するか。
+
+    fixture は commit される回帰資産だが、長らく機械検証がなく、critical 要件の
+    欠落や setup の未知キーが黙って通っていた。fixture_setup.validate を
+    in-process で適用する（dossier lint と同じ方式）。
+    """
+    skills_dir = os.path.join(root, "skills")
+    if not os.path.isdir(skills_dir):
+        return []
+    if _FIXTURE_SETUP_DIR not in sys.path:
+        sys.path.insert(0, _FIXTURE_SETUP_DIR)
+    import fixture_setup  # noqa: E402
+
+    errors = []
+    for name in sorted(os.listdir(skills_dir)):
+        path = os.path.join(skills_dir, name, "fixtures.json")
+        if not os.path.isfile(path):
+            continue
+        rel = f"skills/{name}/fixtures.json"
+        try:
+            fixture = json.loads(_read(path))
+        except json.JSONDecodeError as exc:
+            errors.append(f"[fixture] {rel}: JSON として読めない ({exc})")
+            continue
+        errors += fixture_setup.validate(fixture, source=rel)
+    return errors
+
+
 def check_manifests(root):
     """チェック15: 配布 manifest の name / version / リポジトリ slug / LICENSE を照合する。"""
     errors = []
@@ -735,6 +770,9 @@ def run_checks(root):
 
     # 16. command 名 ⇔ 起動スキル名の対応（二重名前空間の可視化）
     errors += check_command_skill_mapping(root)
+
+    # 17. 回帰 fixture の契約適合
+    errors += check_fixtures(root)
 
     return errors
 
