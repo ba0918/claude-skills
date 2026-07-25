@@ -20,6 +20,36 @@
     "surface_sha256": "e089ca06891bce863d6408ff13d3fd47739347505e4bd6d4881b61f4a5efc774",
     "verified": "2026-07-22"
   },
+  "brief": {
+    "file_sha256": {
+      "skills/brief/SKILL.md": "49c108286b014aa0063ee3e5ac773c9ddb552f478c2b5d2e7e35f3c301bd14a3",
+      "skills/brief/assets/brief.css": "e2d28ca47e491c441f4a790ef14a17c22f401d6c5df02396e0c95c5fbfe0a711",
+      "skills/brief/assets/brief.js": "3448e3dc90bbfe4451e9f2cff5981cdc42ce3b021411ccc3a16c3a52e86bbfc3",
+      "skills/brief/assets/tokens.brief.json": "c3b5edd00e3451f313f7dbdb676baa8f2f763652bc7ef179627002dab242e9db",
+      "skills/brief/assets/tokens.css": "e62f02714ff77cb803993cf9796f09b5adafff8523418c3ec7a3c73f80947a2c",
+      "skills/brief/fixtures.json": "3f75eda1382de8ed74d232c3c2e44cd449dfc4cfa24ac1adfc69f9c29c5e51f4",
+      "skills/brief/references/brief-model.md": "ad82b977d2f667d48ee513b812e30d4182c590fe3bdfa8af2ea1062b75f3e250",
+      "skills/brief/scripts/brief_collect.py": "3844120ab2e2911c136232ddd01aa8d79458c87cee7058ed0ec3baacdad43708",
+      "skills/brief/scripts/brief_render.py": "650fac7615f5632b05bd16c486855a44a6978f8a794a9a94f1a2609a075afd8e",
+      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5"
+    },
+    "note": "初回 run（5/5 合格、白紙実行者 5 体並行）。実行者 5 体すべてが報告を送らず待機に入り、事実のみの状況照会 1 回ずつで回収した（executor-contract の既知制約と同じ症状）。判定は成果物とセットアップ前後の sha256 照合を根拠に行い、自己申告は突き合わせのみに使用。read-only 前提のファイルは全シナリオで未編集。",
+    "result": "pass",
+    "surface": [
+      "skills/brief/SKILL.md",
+      "skills/brief/assets/brief.css",
+      "skills/brief/assets/brief.js",
+      "skills/brief/assets/tokens.brief.json",
+      "skills/brief/assets/tokens.css",
+      "skills/brief/fixtures.json",
+      "skills/brief/references/brief-model.md",
+      "skills/brief/scripts/brief_collect.py",
+      "skills/brief/scripts/brief_render.py",
+      "skills/shared/references/artifact-store.md"
+    ],
+    "surface_sha256": "8ac6bcc88b2ba64da63010b7b95579bbcb7ae64348a1e7db8088737ccd120a85",
+    "verified": "2026-07-26"
+  },
   "commit": {
     "file_sha256": {
       "skills/commit/SKILL.md": "8a3c4ce0d6b38b19ac25b7f96ca6514ec6f328121ff3407cddf12df8aacd6d28",
