@@ -256,6 +256,33 @@ Iron Laws は英訳してよく、利用者が読む REPORT テンプレート�
 - `.github/workflows/validate.yml`: checkout に `fetch-depth: 0` を追加。既定の shallow clone では
   `origin/main` が存在せず、比較元リビジョンを解決できずに skip して CI で黙って無効化される
 
+fixture 未保有スキルの references 24 本を英語化した（ledger 3 / skill-improve 3 /
+design-generate 1 / skill-interface-audit 2 / trigger-eval 3 / review-deps 3 /
+review-testing 5 / design-validate 1 / skill-regression 2 / design-lint 1）。
+到達は 73 → 97 / 163 ファイル、BLOCK は 0 件。全ファイルで着手前に `ledger.py --impact` を
+実行し、影響範囲に fixture 保有スキルが入らないことを確認した（`ledger --check` は緑のまま）。
+
+**フェンスの扱いは読み手で切り分けるという既存裁定を、references でも一貫して適用した**。
+サブエージェントへ渡す dispatch プロンプト（skill-improve の 4 ロール、skill-regression の
+白紙実行者、design-validate の judge）は読み手が LLM に閉じているので訳し、利用者が読む
+レポートテンプレート・完了メッセージ・lint の出力文言は原文のまま残した。WARN 11 件は
+すべてこの切り分けの結果で、内訳は各コミットメッセージに記録した。
+
+**3 ファイルは意図的に翻訳対象から外した**。`review-deps/references/report-template.md`、
+`review-testing/references/report-template.md`、`goal-decomposition/references/dossier-template.md` は
+本文のほぼ全体が「利用者へ出す成果物の様式」であり、訳すと日本語利用者への出力言語が
+変わる。フェーズ 1 で確定した「利用者が読む REPORT テンプレートは原文のまま」に該当する。
+これらは翻訳漏れではなく除外である。
+
+未翻訳 references を指す参照の解消も進んだ。judge-protocol.md「入力の配布方法」、
+metrics-spec.md「モード軸」、scanner-integration.md「深刻度のマッピング」、
+fixture-schema.md「素材別の変換ガイド」の 4 見出しを訳し、参照元（trigger-eval /
+review-deps / skill-regression の各 SKILL.md）の鉤括弧引用も英語見出しへ差し替えた。
+
+- 残る fixture 未保有 references 10 本（mockup-diff 1 / empirical-prompt-tuning 5 /
+  spec-verify 4）は、参照元 SKILL.md が別ブランチで英語化されており、アンカー更新が
+  衝突するため次バッチへ送った
+
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の
