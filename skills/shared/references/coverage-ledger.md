@@ -18,8 +18,8 @@ ledger structurally distinguishes "no problems (reviewed with no findings)" from
 ## The Iron Law
 
 ```
-finding が 0 件でも、評価範囲が空でないことを ledger で示せない限り「問題なし」と言ってはならない。
-見ていない領域は skipped / unsupported として必ず ledger に載せる。黙って落とさない。
+Even with 0 findings, you must not say "no problems" unless the ledger can show the evaluation scope is non-empty.
+Areas you did not look at always go on the ledger as skipped / unsupported. Never drop them silently.
 ```
 
 ## The 4 Values
@@ -44,8 +44,8 @@ evaluation" and is a different thing from the evaluation-scope axis. **PASS appe
 of `reviewed`.**
 
 ```
-reviewed  → finding あり（BLOCK/WARN/INFO） または finding なし（= PASS）
-skipped / unsupported / inconclusive → そもそも PASS を名乗る資格がない
+reviewed  → has findings (BLOCK/WARN/INFO) or has none (= PASS)
+skipped / unsupported / inconclusive → not eligible to claim PASS in the first place
 ```
 
 Reporting a `skipped` area as PASS is an Iron Law violation. Do not conflate the two axes.
@@ -76,12 +76,12 @@ section. The minimal form:
 ```
 ## Coverage Ledger
 
-| 対象 | 判定 | 理由 / 昇格条件 |
-|------|------|----------------|
-| src/**/*.test.ts（12 files） | reviewed | 全ファイルにアンチパターン述語を適用 |
-| e2e/（Playwright） | skipped | 本レビューは単体テスト品質に限定（利用者指定） |
-| mutation sensitivity | unsupported | mutation runner 未導入。導入すれば reviewed に昇格 |
-| 非同期順序依存 | inconclusive | flaky 再現に実行トレースが必要。ログがあれば結論可 |
+| Target | Value | Reason / promotion condition |
+|--------|-------|------------------------------|
+| src/**/*.test.ts (12 files) | reviewed | Applied the anti-pattern predicates to every file |
+| e2e/ (Playwright) | skipped | This review is limited to unit test quality (user-specified) |
+| mutation sensitivity | unsupported | No mutation runner installed. Installing one promotes this to reviewed |
+| Async ordering dependence | inconclusive | Reproducing the flake needs an execution trace. Conclusive if logs exist |
 ```
 
 - The ledger matters most precisely when there are 0 findings (it is the only way to make a

@@ -1,46 +1,46 @@
 # Report Template — review-deps
 
-review-deps の出力様式。**総合点は出さない**。findings と
-[coverage ledger](../../shared/references/coverage-ledger.md) の 2 本立てが成果物。
-finding の重大度・三値判定は
-[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) に従う。
+The output format for review-deps. **Do not emit an overall score.** The deliverable is
+findings plus a [coverage ledger](../../shared/references/coverage-ledger.md) — both, always.
+Finding severity and the 3-value verdict follow
+[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md).
 
-    # Dependency Health Review — {対象}
+    # Dependency Health Review — {target}
 
-    Scope: {manifest / lockfile / 依存 diff}
+    Scope: {manifest / lockfile / dependency diff}
     Ecosystem: {npm / cargo / pip / go / ...}
-    Scanner: {実行した scanner とバージョン、または "unavailable"}
-    Contract: read-only / 総合点なし / findings + coverage ledger
+    Scanner: {the scanner that ran and its version, or "unavailable"}
+    Contract: read-only / no overall score / findings + coverage ledger
 
 ## Findings
 
-各 finding は「種別 / 重大度 / 三値 / 証拠 / 対象」を持つ。scanner 由来か相関由来かを明示する。
+Every finding carries kind / severity / 3-value verdict / evidence / target. State explicitly whether it came from the scanner or from correlation.
 
-| # | 種別 | Severity | Verdict | 対象 (package@version) | 証拠 |
-|---|------|----------|---------|------------------------|------|
-| 1 | scanner: 既知脆弱性 | BLOCK | CONFIRMED | left-pad@1.0.0 | GHSA-xxxx（scanner 出力）。prod 経路から到達 |
-| 2 | 相関: install script | WARN | UNCERTAIN | build-tool@2.1.0 | postinstall が難読化。静的読解では意図不明 |
-| 3 | 相関: lockfile 異常 | WARN | CONFIRMED | ui-lib@3.0.0 | 同一バージョンで integrity hash が変化 |
+| # | Kind | Severity | Verdict | Target (package@version) | Evidence |
+|---|------|----------|---------|--------------------------|----------|
+| 1 | scanner: known vulnerability | BLOCK | CONFIRMED | left-pad@1.0.0 | GHSA-xxxx (scanner output). Reachable from the prod path |
+| 2 | correlation: install script | WARN | UNCERTAIN | build-tool@2.1.0 | The postinstall is obfuscated. Intent unclear from static reading |
+| 3 | correlation: lockfile anomaly | WARN | CONFIRMED | ui-lib@3.0.0 | The integrity hash changed for the same version |
 
-### 詳細（CONFIRMED かつ BLOCK のみ展開）
+### Details (expand only what is both CONFIRMED and BLOCK)
 
-- #1 left-pad@1.0.0 (GHSA-xxxx): scanner が既知脆弱性を報告。依存経路は prod（direct）。
-  到達可能性: アプリの入力処理から到達する。優先度が高い。
-  修正は review-deps のスコープ外（依存更新ワークフローへ）。
+- #1 left-pad@1.0.0 (GHSA-xxxx): the scanner reported a known vulnerability. The dependency path is prod (direct).
+  Reachability: reached from the application's input handling. High priority.
+  Fixing is out of scope for review-deps (hand off to a dependency update workflow).
 
 ## Coverage Ledger
 
-この節は finding が 0 件でも必須。
+This section is mandatory even with 0 findings.
 
-| 対象 | 判定 | 理由 / 昇格条件 |
-|------|------|----------------|
-| npm 依存（N packages） | reviewed | npm audit + lockfile 静的解析を適用 |
-| 既知脆弱性照合（cargo） | unsupported | cargo audit 未導入。導入すれば reviewed に昇格 |
-| メンテナ交代 | unsupported | レジストリ metadata へアクセス不可。オンライン環境で再実行すれば判定可 |
-| 難読化 postinstall の真意 | inconclusive | 静的読解では意図不明。動的解析は隔離環境が必要 |
+| Target | Value | Reason / promotion condition |
+|--------|-------|------------------------------|
+| npm dependencies (N packages) | reviewed | Applied npm audit + static lockfile analysis |
+| Known-vulnerability matching (cargo) | unsupported | cargo audit not installed. Installing it promotes this to reviewed |
+| Maintainer handover | unsupported | No access to registry metadata. Determinable by re-running in an online environment |
+| True intent of the obfuscated postinstall | inconclusive | Intent unclear from static reading. Dynamic analysis needs an isolated environment |
 
 ## Notes
 
-- 既知脆弱性の存在判定は scanner が正本。エージェントは優先順位付けと相関のみ担った。
-- hash / 署名の正当性はエージェント判断していない（機械検証の結果のみ採用）。
-- install script は実行していない（静的読解のみ / read-only）。
+- The scanner is the source of truth for whether a known vulnerability exists. The agent handled only prioritization and correlation.
+- The agent did not judge the validity of hashes / signatures (only machine-verified results were adopted).
+- Install scripts were not executed (static reading only / read-only).

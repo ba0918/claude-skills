@@ -1,49 +1,49 @@
 # Report Template — review-testing
 
-review-testing の出力様式。**総合点は出さない**。findings と
-[coverage ledger](../../shared/references/coverage-ledger.md) の 2 本立てが成果物。
-finding の重大度・三値判定は
-[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) に従う。
+The output format for review-testing. **Do not emit an overall score.** The deliverable is
+findings plus a [coverage ledger](../../shared/references/coverage-ledger.md) — both, always.
+Finding severity and the 3-value verdict follow
+[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md).
 
-    # Test Quality Review — {対象}
+    # Test Quality Review — {target}
 
-    Scope: {ディレクトリ / glob / 差分}
+    Scope: {directory / glob / diff}
     Date: {YYYY-MM-DD HH:MM}
-    Contract: read-only / 総合点なし / findings + coverage ledger
-    Target integrity: {実行前後の機械確認結果、または動的評価未実行}
+    Contract: read-only / no overall score / findings + coverage ledger
+    Target integrity: {machine-checked result before and after, or dynamic evaluation not run}
 
 ## Findings
 
-各 finding は「層 / 重大度 / 三値 / 証拠 / 対象」を持つ。証拠を書けない CONFIRMED は載せない（UNCERTAIN へ降格）。
+Every finding carries layer / severity / 3-value verdict / evidence / target. A CONFIRMED whose evidence cannot be written down is not listed (demote it to UNCERTAIN).
 
-| # | 層 | Anti-Pattern | Severity | Verdict | 対象 (file:line) | 証拠 |
-|---|----|--------------|----------|---------|------------------|------|
-| 1 | 層1 欠陥検出力 | AP1 モック検証 | WARN | CONFIRMED | foo.test.ts:42 | モック戻り値をそのまま検証。実振る舞い未検証 |
-| 2 | 層2 契約検証 | 失敗経路未検証 | BLOCK | CONFIRMED | auth.ts:88 | 拒否側のテストが存在しない（call site 列挙済み） |
-| 3 | 層3 安定性 | 時刻依存 | WARN | UNCERTAIN | order.test.ts:12 | 直接 Date 参照。flaky 再現に実行トレースが必要 |
+| # | Layer | Anti-Pattern | Severity | Verdict | Target (file:line) | Evidence |
+|---|-------|--------------|----------|---------|--------------------|----------|
+| 1 | L1 defect-detection power | AP1 mock behavior | WARN | CONFIRMED | foo.test.ts:42 | Asserts the mock return value as-is. Real behavior unverified |
+| 2 | L2 contract verification | Failure path unverified | BLOCK | CONFIRMED | auth.ts:88 | No test exists for the deny path (call sites enumerated) |
+| 3 | L3 stability | Time dependence | WARN | UNCERTAIN | order.test.ts:12 | Direct Date reference. Reproducing the flake needs an execution trace |
 
-### 詳細（CONFIRMED かつ BLOCK のみ展開）
+### Details (expand only what is both CONFIRMED and BLOCK)
 
-- #2 失敗経路未検証 (auth.ts:88): 認可の拒否側（権限のない主体）に対応テストが無い。
-  許可側のみ検証している。証拠: denyAccess の call site とテスト参照の不在一覧。
-  修正は review-testing のスコープ外（tdd / iterate へ）。
+- #2 Failure path unverified (auth.ts:88): the deny path of authorization (an unprivileged principal) has no corresponding test.
+  Only the allow path is verified. Evidence: the call sites of denyAccess and the list of missing test references.
+  Fixing is out of scope for review-testing (hand off to tdd / iterate).
 
 ## Coverage Ledger
 
-この節は finding が 0 件でも必須。見た範囲と見ていない範囲を区別する。
+This section is mandatory even with 0 findings. It distinguishes what was looked at from what was not.
 
-| 対象 | 判定 | 理由 / 昇格条件 |
-|------|------|----------------|
-| src/**/*.test.ts (N files) | reviewed | 全ファイルに 5 述語 + 三層を適用 |
-| テストファイル探索範囲（0 files の場合） | reviewed | glob と探索結果を確認。テスト不在を層2の契約対応と照合 |
-| e2e/ | skipped | 本レビューは単体テスト品質に限定（利用者指定） |
-| mutation sensitivity | unsupported | mutation runner 未導入。導入すれば層1を reviewed に昇格 |
-| 非同期順序依存 | inconclusive | flaky 再現に実行トレースが必要。ログがあれば結論可 |
-| TDD 順守 | inconclusive | git 履歴のみ。RED/GREEN ログがあれば CONFIRMED 可 |
+| Target | Value | Reason / promotion condition |
+|--------|-------|------------------------------|
+| src/**/*.test.ts (N files) | reviewed | Applied the 5 predicates + the three layers to every file |
+| Test file search range (when 0 files) | reviewed | Confirmed the glob and the search result. Checked the absence of tests against L2 contract coverage |
+| e2e/ | skipped | This review is limited to unit test quality (user-specified) |
+| mutation sensitivity | unsupported | No mutation runner installed. Installing one promotes L1 to reviewed |
+| Async ordering dependence | inconclusive | Reproducing the flake needs an execution trace. Conclusive if logs exist |
+| TDD adherence | inconclusive | git history only. CONFIRMED becomes possible with RED/GREEN logs |
 
-Fixture regression（検出述語 / fixture を変更したレビューでのみ記載）: {AP1〜AP4 positive=CONFIRMED / negative=FALSE_POSITIVE、AP5 positive=UNCERTAIN / negative=FALSE_POSITIVE}
+Fixture regression (record this only in a review that changed a detection predicate or a fixture): {AP1-AP4 positive=CONFIRMED / negative=FALSE_POSITIVE, AP5 positive=UNCERTAIN / negative=FALSE_POSITIVE}
 
 ## Notes
 
-- 総合スコアは意図的に出していない（何を測れなかったかを coverage ledger が明示する）。
-- 修正は行っていない（read-only）。修正系ワークフローへ引き継ぐ。
+- No overall score is emitted, deliberately (the coverage ledger is what states plainly what could not be measured).
+- No fixes were made (read-only). Hand off to a fix-oriented workflow.
