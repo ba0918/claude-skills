@@ -1,46 +1,46 @@
-# testcase-design — テストケース設計指針
+# testcase-design — test case design guidelines
 
-Phase 2 でケースを生成・事前固定するときの指針。**生成者は改稿担当と分離した専用サブエージェント（軽量モデル）**が担う。
+The guidelines for generating and pre-fixing cases in Phase 2. **The generator is a dedicated subagent (lightweight model), separate from the one that rewrites descriptions.**
 
-## ケースの種類と比率
+## Case types and ratios
 
-各対象スキルについて:
+For each target skill:
 
-- **positive**: そのスキルが発火すべき架空指示。1 スキルあたり 2 件。
-- **hard-negative**: Phase 1.5（`static_collisions.py`）の上位衝突ペアの**隣接スキルを正解に持つ**紛らわしい指示。1 スキルあたり 1–2 件。「紛らわしいが正解は 1 つ」を満たすこと。
-- **none**: どのスキルも発火しないのが正しい指示。**全体の 25% 以上**。
+- **positive**: a fictional instruction that should fire that skill. 2 per skill.
+- **hard-negative**: a confusable instruction **whose correct answer is a neighboring skill** from the top collision pairs of Phase 1.5 (`static_collisions.py`). 1-2 per skill. It must satisfy "confusable, but exactly one correct answer".
+- **none**: an instruction for which firing no skill is correct. **At least 25% of the whole.**
 
-すべてのケースは**単一の正解ラベル**（skill 名 or `none`）を持つ。曖昧・多義な指示は生成段階で排除する（**多義 / ambiguous ケースの扱いは v1 スコープ外**）。
+Every case carries **a single correct label** (a skill name or `none`). Ambiguous or polysemous instructions are excluded at generation time (**handling ambiguous cases is out of scope for v1**).
 
-## 生成の上限とチャンク検証
+## Generation limits and chunk validation
 
-- **1 呼び出し 10 スキル分まで**のチャンクに分割する（判定バッチ ≤20 と対称の上限設計）。
-- **出力ケース数 == 期待数を検証**する。不一致なら再生成。
+- Split into chunks of **at most 10 skills per call** (a limit designed symmetrically with the judging batch of ≤20).
+- **Verify that the number of emitted cases == the expected number.** Regenerate on a mismatch.
 
-## 事前固定原則と holdout 層化分割
+## The pre-fixing principle and stratified holdout split
 
-- Phase 2 でケースを固定し、**以後のイテレーションで動かさない**（差し替え禁止）。
-- **train 用 `cases.json` と holdout 用 `cases_holdout.json` の 2 ファイルに固定**する:
-  - holdout は全体の **20%**。
-  - **none 比率 25% 以上を train / holdout の両側で維持する層化分割**。
-  - holdout は改稿ループに見せない。収束後の holdout 判定を**採用ゲート**にする（`metrics-spec.md` の macro recall/precision がループ開始前 baseline 比で非劣化でなければ revert）。
+- Fix the cases in Phase 2 and **never move them in later iterations** (no substitutions).
+- **Fix them into 2 files: `cases.json` for train and `cases_holdout.json` for holdout**:
+  - The holdout is **20%** of the whole.
+  - **A stratified split that keeps the none ratio at 25% or more on both the train and holdout sides.**
+  - Never show the holdout to the rewriting loop. Make the post-convergence holdout verdict the **acceptance gate** (revert unless the macro recall/precision of `metrics-spec.md` is non-degraded against the pre-loop baseline).
 
-## 匿名化の三重ゲート（固定前に必ず適用）
+## The triple anonymization gate (always applied before fixing)
 
-実データ種（Phase 1 の `--capture-prompts` 出力）を言い換えて採用する場合を含め、cases を固定する**前に**次を機械的に適用する。永続化されるのは cases ファイルのみなので、ここで止める:
+Including the case where you paraphrase and adopt a real-data seed (the `--capture-prompts` output of Phase 1), apply the following mechanically **before** fixing the cases. The cases file is the only thing that gets persisted, so stop it here:
 
-1. **masker 再適用**: 全ケース文字列へ `collect.py` の `mask_secrets` を再適用する。
-2. **実データ raw seed との近似一致検査**: 正規化編集距離が **0.30 未満（=70% 以上一致）** のケースは「言い換えが不十分」として棄却する（LLM の匿名化が effectively コピーになっていないかの検証）。
-3. **高エントロピートークン screen**: プレフィックスなしの秘匿値が言い換えを生き残るケースを弾く。判定は機械的に行う: **`[A-Za-z0-9+/=_-]{20,}` にマッチする 20 文字以上の連続トークンのうち、数字・英大文字・英小文字の 3 種すべてが混在するものだけを高エントロピーとみなす**。3 種混在しないトークン（例: 小文字とハイフンのみで構成される長いスキル名 `migrate-cycles-to-plans`、`design-guide-mockup` 等）は誤検出を避けるため対象外とする。高エントロピートークンを含むケースは redact または棄却する。
+1. **Re-apply the masker**: re-apply `mask_secrets` from `collect.py` to every case string.
+2. **Near-match check against the raw real-data seed**: reject a case whose normalized edit distance is **below 0.30 (= 70% or more identical)** as "insufficiently paraphrased" (a check that the LLM's anonymization has not effectively become a copy).
+3. **High-entropy token screen**: reject cases where a prefix-less secret value survived the paraphrase. Decide mechanically: **among consecutive tokens of 20 or more characters matching `[A-Za-z0-9+/=_-]{20,}`, treat as high-entropy only those mixing all 3 of digits, uppercase letters, and lowercase letters**. Tokens without all 3 kinds (e.g. long lowercase-and-hyphen skill names such as `migrate-cycles-to-plans` or `design-guide-mockup`) are out of scope to avoid false positives. Redact or reject any case containing a high-entropy token.
 
-実データ種があれば、言い換えて匿名化した上で優先採用する。
+When a real-data seed exists, paraphrase and anonymize it and prefer it.
 
-## 実データ種の使い方
+## How to use real-data seeds
 
-- Phase 1 の採取ファイルは発火実績（`slash_fired`）と発火漏れ候補（`correction_after_skill` シグナル + マスク済み `user_text_masked`）を含む。
-- これらは**種**であって直接のケースではない。必ず言い換え + 三重ゲートを通す。
-- `report.md` に載せる失敗例は**匿名化検査済みケースのみ**（raw seed の転記禁止）。
+- The files captured in Phase 1 contain firing records (`slash_fired`) and misfire candidates (the `correction_after_skill` signal + the masked `user_text_masked`).
+- These are **seeds**, not cases as such. Always run them through paraphrasing + the triple gate.
+- Failure examples put into `report.md` must be **anonymization-checked cases only** (transcribing a raw seed is forbidden).
 
-## 生成者分離
+## Generator separation
 
-ケース生成 subagent と description 改稿担当は**別エージェント**にする。同一エージェントが両方を担うと、改稿しやすいケースを生成する利益相反が生じる。
+The case-generating subagent and the description rewriter must be **different agents**. When one agent does both, it has a conflict of interest: generating cases that are easy to rewrite for.
