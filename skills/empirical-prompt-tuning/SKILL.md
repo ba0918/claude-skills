@@ -163,7 +163,7 @@ OK: the candidate does not drop a critical that the baseline was passing
 Written as an absolute predicate, it never holds when the baseline itself drops that critical, whatever the
 candidate is — **it returns constant false and stops discriminating between candidates**. Do not make the
 baseline's defect the candidate's responsibility (measurements and the discrimination criteria are in
-[requirement-reachability.md](references/requirement-reachability.md), section 「判定ルールの誤りは『緩和』ではない」).
+[requirement-reachability.md](references/requirement-reachability.md), section "An error in the verdict rule is not loosening").
 
 ## Separating Protocol Failure from Candidate Failure
 
@@ -180,7 +180,7 @@ the input range was missing in an integration fixture, ...) **must not be confus
   `has_protocol_failure()` (after recording). Every classification is emitted by the pure functions, so
   do not write your own detection in the harness
 - For details and the classification, see [references/checker-protocol.md](references/checker-protocol.md),
-  section 「Protocol failure と candidate failure の分離」
+  section "Separating protocol failure from candidate failure"
 
 When handling an integration fixture (a handoff evaluation spanning multiple artifacts, etc.), declare
 `input_range_required` on the fixture side, and have the harness cross-check it with `validate_input_range()`
