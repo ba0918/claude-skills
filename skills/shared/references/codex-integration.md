@@ -1,8 +1,8 @@
 # Codex Second Opinion Integration
 
-共通リファレンス: 複数スキルが参照する Codex セカンドオピニオンの呼び出しパターン、フォールバック、セキュリティルール。
+Shared reference: the invocation pattern, fallbacks, and security rules for the Codex second opinion that several skills reference.
 
-## 呼び出しパターン
+## Invocation pattern
 
 ### Agent Tool Parameters
 
@@ -11,84 +11,84 @@ subagent_type: "codex:codex-rescue"
 mode: bypassPermissions (or default)
 ```
 
-**並行実行**: 複数の Agent 呼び出しを同一メッセージ内で発行することで実現する。
-`run_in_background` は Bash tool のパラメータであり Agent tool には適用されない。
+**Parallel execution**: achieved by issuing several Agent invocations within the same message.
+`run_in_background` is a parameter of the Bash tool and does not apply to the Agent tool.
 
-### プロンプト構造
+### Prompt structure
 
-1. **コンテキスト提供** — 計画ファイル / コード / 差分 / 会話テキストを明示的に渡す
-2. **指示** — 「設計上の問題点、見落とし、代替案を指摘せよ」
-3. **出力フォーマット指定** — JSON or 構造化テキスト（スキルごとに異なる）
+1. **Provide context** — pass the plan file / code / diff / conversation text explicitly
+2. **Instruct** — "point out design problems, oversights, and alternatives"
+3. **Specify the output format** — JSON or structured text (differs per skill)
 
-## バイアス制御
+## Bias control
 
-セカンドオピニオンの価値は独立性にある。以下を守らないと「同意マシン」になり、コストだけ払って盲点は残る。
+The value of a second opinion lies in its independence. Without the following it becomes an agreement machine: the cost is paid and the blind spots remain.
 
-### 渡してよいもの / 渡してはならないもの
+### What may be passed / what must not be passed
 
-| 渡してよい | 渡してはならない |
+| May be passed | Must not be passed |
 |-----------|----------------|
-| 成果物（計画ファイル / 差分 / 会話テキスト） | 自分（Claude 側）のレビュー結果・指摘一覧 |
-| 満たすべき制約・要件（仕様、ユーザー指示） | 自分の結論・判定（「問題ないと思うが確認して」等） |
-| 出力フォーマット指定 | 「〜のはず」「〜で正しい」という自己評価 |
+| The artifact (plan file / diff / conversation text) | Your own (Claude-side) review results or list of findings |
+| The constraints and requirements to satisfy (specification, user instructions) | Your own conclusion or verdict ("I think it is fine, but please check") |
+| The output-format specification | Self-assessments such as "this should be…" / "this is correct" |
 
-自分の結論を渡すと Codex はそれへの同意に引っ張られる（アンカリング）。
-Codex は**成果物が制約を満たすか**を独立に判定しなければならない。
-自分のレビュー結果との突き合わせは、Codex の応答が返った後の統合フェーズでのみ行う。
+Passing your own conclusion pulls Codex toward agreeing with it (anchoring).
+Codex must judge **whether the artifact satisfies the constraints** independently.
+Reconciliation with your own review results happens only in the integration phase, after Codex's response comes back.
 
-### 敵対的フレーミング
+### Adversarial framing
 
-プロンプトは「find issues」型で書く。「is this good?」型は禁止。
+Write the prompt in the "find issues" form. The "is this good?" form is forbidden.
 
-- ✅ 「この差分の設計上の問題点、見落とし、エッジケース、代替案を指摘せよ。問題が見つからない場合はその旨を明言せよ」
-- ❌ 「この差分は問題ないか確認して」「このアプローチで良いと思うが意見が欲しい」
+- ✅ "Point out design problems, oversights, edge cases, and alternatives in this diff. If you find no problems, say so explicitly"
+- ❌ "Check whether this diff is fine" / "I think this approach is good, but I would like your opinion"
 
-### Doubt Theater の検出（統合フェーズの Red Flag）
+### Detecting doubt theater (a Red Flag in the integration phase)
 
-Codex が実質的な指摘を返しているのに、統合フェーズで**全件を「重複」「コンテキスト不足によるノイズ」として棄却し続ける**のは、検証ではなく検証ごっこ（doubt theater）の兆候。2回連続で採用ゼロが続いたら、棄却理由を明示的に列挙してユーザーに提示する — 黙って握りつぶさない。
+When Codex returns substantive findings and the integration phase **keeps dismissing every one of them as "duplicate" or "noise from missing context"**, that is a sign of verification theater (doubt theater) rather than verification. If two consecutive rounds adopt nothing, enumerate the reasons for dismissal explicitly and present them to the user — do not quietly bury them.
 
-逆も同様: Codex の指摘を検証なしで全採用するのはセカンドオピニオンではなく責任転嫁。各指摘を成果物のテキストと照合してから採否を決める。
+The reverse holds too: adopting every Codex finding without verification is not a second opinion but an abdication of responsibility. Decide adoption for each finding only after collating it against the text of the artifact.
 
-## フォールバック
+## Fallbacks
 
-Codex エージェントのタスク結果を確認し、以下のルールで処理する:
+Check the task result of the Codex agent and handle it by these rules:
 
-| 状態 | アクション |
+| State | Action |
 |------|-----------|
-| 成功 | 結果を既存レビューに統合（重複排除後） |
-| エラー | 警告表示して既存処理のみで続行 |
-| タイムアウト | brainstorm は10秒、他は Agent tool のデフォルトタイムアウトに依存 |
-| 応答フォーマット不正（JSON パースエラー等） | 警告表示して既存処理のみで続行 |
+| Success | Integrate the result into the existing review (after deduplication) |
+| Error | Show a warning and continue with the existing processing only |
+| Timeout | brainstorm uses 10 seconds; others depend on the Agent tool's default timeout |
+| Malformed response format (JSON parse error, etc.) | Show a warning and continue with the existing processing only |
 
-### 警告メッセージテンプレート
+### Warning message templates
 
 ```
 ⚠️ Codex second opinion unavailable — proceeding with existing review only.
 ```
 
-brainstorm で初回失敗時:
+On the first failure in brainstorm:
 ```
 ⚠️ Codex unavailable — proceeding with Claude only
 ```
 
-## セキュリティ
+## Security
 
-- Codex に渡すコンテキストは**計画ファイル / 差分 / 会話テキスト**に限定する
-  - 例外: 修正ループの再レビュー（github-issue 等）では「前回の Codex 自身の指摘 + 修正差分」を渡してよい。対応確認に必要な文脈であり、バイアス制御の対象（Claude 側の結論）ではない
-- source code を直接渡す場合（codebase-review）、以下を `target_files` から除外する:
-  - `.gitignore` 対象ファイル
-  - `.env`, `credentials.*`, `*.key`, `*.pem` 等の秘密情報ファイル
-- Codex の応答は**レビュー結果としてのみ使用**し、直接実行しない
+- Limit the context passed to Codex to **the plan file / diff / conversation text**
+  - Exception: in a fix-loop re-review (github-issue and similar), "Codex's own previous findings + the fix diff" may be passed. It is the context needed to confirm that the findings were addressed, and it is not the target of bias control (a Claude-side conclusion)
+- When passing source code directly (codebase-review), exclude the following from `target_files`:
+  - Files covered by `.gitignore`
+  - Secret files such as `.env`, `credentials.*`, `*.key`, `*.pem`
+- Use Codex's response **only as a review result**; never execute it directly
 
-## 結果統合パターン
+## Result integration patterns
 
-### レビュー系スキル（plan-reviewer, codebase-review, iterate）
+### Review skills (plan-reviewer, codebase-review, iterate)
 
-- Codex の指摘を既存レビュー結果に追加する
-- 重複排除: 既存レビューと同じファイル・同じ問題を指摘している場合はスキップ
-- Codex 固有の指摘には `[Codex]` プレフィックスを付与する
+- Add Codex's findings to the existing review results
+- Deduplication: skip a finding that points at the same file and the same problem as the existing review
+- Prefix findings unique to Codex with `[Codex]`
 
-### 壁打ちスキル（brainstorm）
+### Sounding-board skills (brainstorm)
 
-- Codex の意見を `💡 Codex の視点:` セクションとして Claude の応答に追記する
-- Codex の応答を踏まえて Claude が統合的な回答を生成する
+- Append Codex's opinion to Claude's response as a `💡 Codex の視点:` section
+- Claude produces an integrated answer that takes Codex's response into account

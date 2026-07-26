@@ -1,7 +1,7 @@
-# Verification Gate 共通契約
+# Verification Gate Shared Contract
 
-cycle / iterate / commit / test-driven-development が共有する完了前検証の契約。
-「証拠なしに完了を主張するな」を機械的に強制する。
+The pre-completion verification contract shared by cycle / iterate / commit / test-driven-development.
+It mechanically enforces "never claim completion without evidence".
 
 ## The Iron Law
 
@@ -9,80 +9,80 @@ cycle / iterate / commit / test-driven-development が共有する完了前検�
 NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
 ```
 
-直近のメッセージ内で検証コマンドを実行していなければ、完了を主張してはならない。
+Unless a verification command was run within the most recent message, completion must not be claimed.
 
 ## Gate Function
 
 ```
-完了や成功を主張する前に:
+Before claiming completion or success:
 
-1. IDENTIFY — この主張を証明するコマンドは何か？
-2. RUN     — コマンドを完全に実行する（新規、フレッシュ）
-3. READ    — 出力全体を読み、終了コード・失敗数を確認する
-4. VERIFY  — 出力が主張を裏付けるか？
-   - NO  → 実際の状態をエビデンス付きで報告する
-   - YES → エビデンス付きで主張する
-5. CLAIM   — ここで初めて主張できる
+1. IDENTIFY — which command proves this claim?
+2. RUN     — run the command in full (new, fresh)
+3. READ    — read the whole output; check the exit code and the failure count
+4. VERIFY  — does the output back the claim?
+   - NO  → report the actual state, with evidence
+   - YES → make the claim, with evidence
+5. CLAIM   — only now may the claim be made
 
-いずれかのステップをスキップ = 検証ではなく推測
+Skipping any step = guessing, not verifying
 ```
 
-## 禁止表現
+## Forbidden expressions
 
-以下の表現は、検証コマンド実行前に使用してはならない:
+The following must not be used before a verification command has been run:
 
 - "should work" / "should pass" / 「通るはず」
 - "probably" / "seems to" / 「おそらく」
-- "Done!" / "Perfect!" / "Great!" / 「完了！」（検証前）
+- "Done!" / "Perfect!" / "Great!" / 「完了！」（before verification）
 - "I'm confident" / 「自信がある」
 - "looks correct" / 「正しそう」
 
-## 検証パターン表
+## Verification pattern table
 
-| 対象 | 必要なエビデンス | 不十分なエビデンス |
+| Subject | Required evidence | Insufficient evidence |
 |------|---------------|----------------|
-| テスト | テストコマンド出力: 0 failures | 前回の実行結果、「通るはず」 |
-| ビルド | ビルドコマンド: exit 0 | リンターが通っただけ |
-| リンター | リンター出力: 0 errors | 部分チェック、推測 |
-| バグ修正 | 元の症状の再テスト: pass | コード変更したから直ったはず |
-| 要件充足 | 要件一覧の1行ずつ照合 | テストが通っただけ |
-| Agent 委譲 | VCS diff で実際の変更を確認 | Agent の成功報告を信じる |
+| Tests | Test command output: 0 failures | A previous run's result, "it should pass" |
+| Build | Build command: exit 0 | The linter passed |
+| Linter | Linter output: 0 errors | A partial check, a guess |
+| Bug fix | Retest of the original symptom: pass | The code changed, so it must be fixed |
+| Requirement satisfaction | Line-by-line collation against the requirement list | The tests passed |
+| Agent delegation | Confirm the actual changes in the VCS diff | Trusting the agent's success report |
 
-## 合理化防止
+## Preventing rationalization
 
-| 言い訳 | 現実 |
+| Excuse | Reality |
 |--------|------|
-| 「もう通るはず」 | 検証コマンドを実行せよ |
-| 「自信がある」 | 自信 ≠ エビデンス |
-| 「今回だけ」 | 例外なし |
-| 「リンターは通った」 | リンター ≠ コンパイラ ≠ テスト |
-| 「Agent が成功と言った」 | 独立して検証せよ |
-| 「疲れた」 | 疲労は省略の理由にならない |
-| 「部分チェックで十分」 | 部分チェックは何も証明しない |
+| "It should pass by now" | Run the verification command |
+| "I'm confident" | Confidence ≠ evidence |
+| "Just this once" | No exceptions |
+| "The linter passed" | Linter ≠ compiler ≠ tests |
+| "The agent said it succeeded" | Verify independently |
+| "I'm tired" | Fatigue is not a reason to skip |
+| "A partial check is enough" | A partial check proves nothing |
 
-## スキル別統合指針
+## Integration guidance per skill
 
-### cycle への統合
+### Integration into cycle
 
-- Phase 2（Implement）の Agent プロンプトに注入
-- 各ステップ完了時に検証コマンド実行を要求
-- 結果ファイルにテスト実行出力のエビデンスを含める
+- Inject it into the agent prompt of Phase 2 (Implement)
+- Require a verification command run at the completion of each step
+- Include the test-run output as evidence in the result file
 
-### iterate への統合
+### Integration into iterate
 
-- Phase 4（Review）のレビューエージェントに Gate Function 適用を指示
-- テスト実行結果のエビデンスなしに PASS を出さない
+- Instruct the review agent of Phase 4 (Review) to apply the Gate Function
+- Do not issue a PASS without evidence of a test run
 
-### commit への統合（ベストエフォート）
+### Integration into commit (best effort)
 
-- コミット前にテストスイートの実行を**試みる**
-- テストフレームワークが検出できた場合のみ実行
-- テスト失敗時: コミットメッセージ body に警告を追記してコミット続行
+- **Attempt** to run the test suite before committing
+- Run it only when a test framework could be detected
+- On test failure: append a warning to the commit message body and continue committing
   - `⚠️ Tests failing: {failure_summary}`
-- テストフレームワーク不明時: スキップ（従来通り即コミット）
-- commit の Core Principle「No confirmation」を遵守し、テスト失敗でブロックしない
+- When the test framework is unknown: skip (commit immediately, as before)
+- Honor commit's Core Principle "No confirmation" — do not block on test failure
 
-### test-driven-development への統合
+### Integration into test-driven-development
 
-- RED / GREEN / REFACTOR の各フェーズで Gate Function を適用
-- テスト実行の Bash 出力が各フェーズの遷移条件
+- Apply the Gate Function in each of the RED / GREEN / REFACTOR phases
+- The Bash output of the test run is the transition condition of each phase
