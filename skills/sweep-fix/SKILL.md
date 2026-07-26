@@ -29,7 +29,7 @@ Phase 1: ANALYZE — detect problems in the specified scope
 Phase 2: SWEEP   — generalize into patterns and sweep the whole codebase (read-only)
 Phase 3: VERIFY  — verify context, eliminate false positives ★ where the quality is decided
 Phase 4: FIX     — fix CONFIRMED sites only + verification gate
-Phase 5: REPORT  — structured report + delete intermediate files
+Phase 5: REPORT  — structured report, then delete intermediate files (in that order)
 ```
 
 ## Phase 0: SCOPE — Fix the Target Scope
@@ -126,7 +126,9 @@ Fix **CONFIRMED sites only**. Do not create any path by which a change touches a
 
 ## Phase 5: REPORT — Structured Report
 
-Print a report in the conversation with the structure below, then delete the intermediate files at the end (`rm -rf .claude/tmp/sweep-fix`).
+Print a report in the conversation with the structure below. **Delete the intermediate files only after the report has been printed** (`rm -rf .claude/tmp/sweep-fix`). The order is a requirement, not a preference: `verdicts.json` holds the only record of the basis for each verdict, so a deletion that runs before the FALSE_POSITIVE exclusion reasons and the UNCERTAIN decision material have been written into the report destroys them irrecoverably.
+
+**When the deletion is refused or fails** (a permission gate, a mount constraint): state the surviving path in the report and finish normally. Do not force it through by another route (a different command, a broader permission). Leftover intermediate files are inert; a bypassed gate is not. This is the fallback for a deletion that was attempted and refused — not a licence to skip the attempt.
 
 ```
 ══════════════════════════════════════
@@ -171,6 +173,7 @@ SWEEP-FIX REPORT
 | "Narrow the search pattern and verification becomes unnecessary" | A narrowed search only increases false negatives. Searching wide and narrowing by verification is the design |
 | "There are no tests, so skip the verification gate" | If no test is detected, state 「未検出」 in the report. Do not skip it silently |
 | "There are many sites to fix, so bulk-replace with sed" | Adapting to each site's context is Phase 4's responsibility. Mechanical replacement destroys context |
+| "The intermediate-file deletion was refused, so remove it another way" | Leftover intermediate files are not a defect. Bypassing a permission gate is. Record the surviving path in the report and finish |
 
 ## Red Flags — Signs the Skill Is Not Being Followed
 
