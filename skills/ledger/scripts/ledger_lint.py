@@ -14,8 +14,8 @@ Finding schema (every finding): {where, what, why, how, check}
 
 Advisories share the finding schema but are report-only: they never set
 findings_present and never gate under --strict (pending-vocabulary part b —
-AGREED rows depending on 競合中/廃語 vocabulary — stays PROVISIONAL until the
-pilot confirms it, per agreement-ledger.md §C).
+AGREED rows depending on conflicting/retired vocabulary — stays PROVISIONAL
+until the pilot confirms it, per agreement-ledger.md §C).
 
 Exit codes (contract table in agreement-ledger.md):
   0 = run succeeded (report-only default: even with findings; zero targets too)
@@ -53,8 +53,14 @@ STATES = ("AGREED", "DELEGATED", "PROVISIONAL", "UNDECIDED", "REJECTED")
 ACTOR_KINDS = ("human",)
 # Risk band. Absent == not high-risk. Only `high` rows are barred from batches.
 RISK_LEVELS = ("high", "normal")
+# CONTEXT vocabulary states (context-vocabulary.md). The loader does not reject
+# an out-of-enum value — a vocabulary file is auxiliary input and one bad state
+# must not abort the ledger run — so the enum is enforced at the point of use as
+# the unknown-term-state advisory. Without that check an unrecognised state
+# would silently fall out of the unstable-dependency detection below.
+VOCAB_STATES = ("settled", "tentative", "conflicting", "retired")
 # Vocabulary states that make an AGREED dependency unstable (§C part b).
-UNSTABLE_TERM_STATES = ("競合中", "廃語")
+UNSTABLE_TERM_STATES = ("conflicting", "retired")
 
 # {field: (type token, required)} — tokens fixed by the md parse contract.
 ROW_FIELDS = {
@@ -589,8 +595,12 @@ def _check_pending_vocabulary(findings, advisories, where, state, row,
     """pending-vocabulary derived detection (§C). Only AGREED rows escalate —
     an agreed claim standing on unsettled vocabulary is the dangerous side.
       (a) AGREED row referencing an undefined term -> finding (confirmed).
-      (b) AGREED row referencing a 競合中/廃語 term -> advisory (report-only,
-          PROVISIONAL; does not gate CI until the pilot confirms it)."""
+      (b) AGREED row referencing a conflicting/retired term -> advisory
+          (report-only, PROVISIONAL; does not gate CI until the pilot
+          confirms it).
+      (c) AGREED row referencing a term whose state is outside VOCAB_STATES
+          -> advisory. (b) cannot classify such a term, so staying silent
+          would hide the gap rather than report it."""
     if context_terms is None or state != "AGREED":
         return
     refs = row.get("term_refs")
@@ -607,11 +617,21 @@ def _check_pending_vocabulary(findings, advisories, where, state, row,
                 f"CONTEXT.md に {t} を定義してから AGREED にするか、term_refs を実在 ID に直す"))
             continue
         term_state = _term_state(context_terms, t)
-        if term_state in UNSTABLE_TERM_STATES:
+        if isinstance(term_state, str) and term_state \
+                and term_state not in VOCAB_STATES:
+            advisories.append(make_finding(
+                where, "unknown-term-state",
+                f"AGREED 行が未知の語彙状態（{term_state}）の語に依存: {t}",
+                "enum 外の状態は不安定判定ができず、依存の危険度が不明のまま残る"
+                "（v1 以前の日本語値はここで検出される）",
+                f"{t} の state を settled / tentative / conflicting / retired の"
+                "いずれかに直す（本検出は report-only）"))
+        elif term_state in UNSTABLE_TERM_STATES:
             advisories.append(make_finding(
                 where, "unstable-term-dependency",
                 f"AGREED 行が不安定な語彙（{term_state}）に依存: {t}",
-                "競合中・廃語の語に依存する合意は再裁定候補（advisory・二重状態整合は PROVISIONAL）",
+                "conflicting・retired の語に依存する合意は再裁定候補"
+                "（advisory・二重状態整合は PROVISIONAL）",
                 f"{t} の語彙状態を確定させるか AGREED 行を再裁定する（本検出は report-only）"))
 
 

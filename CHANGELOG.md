@@ -10,6 +10,39 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+CONTEXT 語彙の状態 enum を英語化した（`確定` / `暫定` / `競合中` / `廃語` →
+`settled` / `tentative` / `conflicting` / `retired`）。S1 英語化では「`ledger_lint.py` が
+`UNSTABLE_TERM_STATES` として直に持つデータ値だから訳せない」として日本語を残したが、
+検証の都合で契約に日本語が固定されるのは順序が逆である。検証側を英語に対応させるのが正しい。
+
+棚卸ししたところ、そもそも **lint は状態 enum を一度も検証していなかった**。
+`load_context_terms` は `state` を文字列のまま読むだけで、実効があるのは
+`UNSTABLE_TERM_STATES` の 2 値の membership だけ。つまり enum は契約に書いてあるだけの
+未執行の宣言で、この状態で値を差し替えると旧い日本語値が**黙って**不安定依存検出から
+外れる。値の変更より先に、無かった検証を足す必要があった。
+
+`unknown-term-state` advisory を新設した。`AGREED` 行が依存する語の `state` が enum 外なら
+report-only で報告する。検証は loader ではなく**利用時**に置いた。語彙ファイルは補助入力で
+あり、状態 1 つの不正で台帳の lint 全体を落とすのは過剰なため（`load_context_terms` の
+raise は exit 2 = 入力破損の意味を持つ）。この advisory は v1 以前の日本語値からの
+移行経路も兼ねる。
+
+`tentative` を選んだのは、`暫定` の直訳である `PROVISIONAL` が agreement-ledger の合意状態
+enum と衝突するため。両者は別軸（語の状態 / 主張の状態）なので、同じ語が 2 つの層に現れると
+読み手がどちらの層の話か判別できない。
+
+- `skills/ledger/scripts/ledger_lint.py`: `VOCAB_STATES` を新設、`UNSTABLE_TERM_STATES` を
+  英語値へ、`_check_pending_vocabulary` に派生検出 (d) を追加
+- `skills/shared/references/context-vocabulary.md`: enum の英語化と、enum を利用時に
+  執行する理由・移行経路を明記
+- `skills/shared/references/agreement-ledger.md`: pending-vocabulary の派生検出に (d) を追加
+  （enum の正本は context-vocabulary 側に置き、ここでは再掲しない）
+- `skills/ledger/scripts/test_ledger_lint.py`: 状態リテラルを英語へ差し替え、
+  enum 外検出・旧日本語値検出・`tentative` は不安定でないこと・set 形式の
+  `context_terms` で誤検出しないことの 6 テストを追加（157 テスト green）
+- 実走確認: 旧値 `競合中` は `unknown-term-state`、新値 `conflicting` は
+  `unstable-term-dependency` を出し、`settled` は無音。gating finding は 0 件
+
 `sweep-fix` の中間ファイルに、置き場が VCS の ignore 対象外だった場合の扱いと、削除を試みずに
 残存だけ申告する抜け道の封じを入れた（issue #36 の (3)(4)）。(3) は退避先を作るか Phase 4-3 の
 確認から除外するかで設計が分かれる裁定事項だったが、置き場を動かさず「検出して報告する」側で

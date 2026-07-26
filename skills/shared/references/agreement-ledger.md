@@ -182,14 +182,14 @@ wobbles". This is detected as **pending-vocabulary**.
 pending-vocabulary is implemented as **a derived finding of lint — neither a new state nor a new
 field on a row**. The 5-state enum (`AGREED` / `DELEGATED` / `PROVISIONAL` / `UNDECIDED` /
 `REJECTED`) is immutable. The decision is "an `AGREED` row's `term_refs` is undefined in CONTEXT,
-or references vocabulary state `競合中` / `廃語`". There are 2 differences from the existing
+or references vocabulary state `conflicting` / `retired`". There are 2 differences from the existing
 undefined-word detection (which covers all states):
 
 - **(a) It escalates by restricting to `AGREED`**: an undefined-word reference from a ruled row
   is more dangerous than one from an unruled row (the agreement stands on wobbling vocabulary).
   This is promoted to a separate finding. It is a **finalized implementation**.
-- **(b) It adds the vocabulary-state dimension (`競合中` / `廃語`)**: it detects an `AGREED` row
-  depending on a `競合中` or `廃語` word. This (b), however, **stays advisory (report-only)** and
+- **(b) It adds the vocabulary-state dimension (`conflicting` / `retired`)**: it detects an `AGREED` row
+  depending on a `conflicting` or `retired` word. This (b), however, **stays advisory (report-only)** and
   is not a CI gate. It will be finalized with iterate after the measurements from pilot number 2
   of automation-visualize (consistent with the policy that the dual-state consistency of
   [context-vocabulary.md](context-vocabulary.md) is PROVISIONAL).
@@ -199,6 +199,10 @@ undefined-word detection (which covers all states):
   state). A row that does not depend on vocabulary may ignore this advisory (it does not gate).
   Type violations (non-array, invalid elements, an explicit null) are outside this detection's
   jurisdiction and are caught by the existing type verification (a gating finding).
+- **(d) Unknown vocabulary state**: when the term an `AGREED` row depends on carries a `state`
+  outside the enum, (b) cannot classify it, so an **advisory (report-only)** is emitted rather
+  than silence. The enum and the rationale for enforcing it at the point of use are canonical in
+  [context-vocabulary.md](context-vocabulary.md); this contract does not restate them.
 
 **What may be automated stops at candidate (tentative) detection; finalization is always done by
 a human.** Lint is a detector that proposes pending-vocabulary; it does not settle vocabulary or
