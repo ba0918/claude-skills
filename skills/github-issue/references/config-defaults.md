@@ -1,56 +1,56 @@
 # Configuration Defaults
 
-> **SSOT Note**: 共通契約 [`polling-pattern.md §10 Default Config`](../../shared/references/polling-pattern.md#10-default-config-conservative-initial-values) にある値（`max_parallel` / `max_iter` / `max_wallclock` / `failed_streak_limit` / `transient_retry_limit` / `tick_interval_loop_mode` / `dry_run` 等）は共通契約側を SSOT として参照し、本ファイルでは再定義しない。本ファイルには **GitHub 固有の config のみ** を記載する。
+> **SSOT Note**: the values that live in the shared contract [`polling-pattern.md §10 Default Config`](../../shared/references/polling-pattern.md#10-default-config-conservative-initial-values) (`max_parallel` / `max_iter` / `max_wallclock` / `failed_streak_limit` / `transient_retry_limit` / `tick_interval_loop_mode` / `dry_run`, and so on) are referenced with the shared contract as their SSOT and are never redefined here. This file carries **only GitHub-specific config**.
 
-すべての値は引数 `--config key=value` で上書き可能。
+Every value can be overridden with the `--config key=value` argument.
 
-## GitHub 固有 Config
+## GitHub-specific Config
 
-| Key | Default | 単位 | 説明 |
+| Key | Default | Unit | Description |
 |-----|---------|------|------|
-| `max_review_iterations` | `3` | 回 | Codex レビュー → iterate 修正 のループ上限 |
-| `parallel_worktree_limit` | `1` | 個 | parallel-cycle に渡す worktree 物理並列上限。明示オプトインで増やす。共通契約 `max_parallel` とは別責務（下記 Precedence 参照） |
-| `polling_interval` | `10m` | 時間 | `/loop` コマンドの外部呼び出し間隔（参考値）。共通契約 §10 の `tick_interval_loop_mode`（tick 内部の `--loop` リトライ間隔、default 30s）とは **別概念**。`/loop` は tick 単位で polling を起動し、その内部で `--loop` モードが `tick_interval_loop_mode` 毎に再 tick する |
-| `min_rate_limit_remaining` | `500` | requests | GitHub API 残量がこれ未満なら polling skip |
-| `max_diff_lines` | `2000` | 行 | これを超える PR は Codex に渡さず claude-failed |
-| `codex_review_timeout` | `5min` | 時間 | Codex 1 回呼び出しのタイムアウト |
-| `codex_consecutive_failure_threshold` | `3` | 回 | Codex API の連続一時障害がこの回数連続したら恒久 failed 扱い。`transient_retry_limit`（§10）とは独立パラメータ（[詳細](codex-review-loop.md#codex_consecutive_failure_threshold-vs-transient_retry_limit)）|
-| `auto_merge_strategy` | `squash` | 種別 | `gh pr merge` のマージ方式（`squash` / `merge` / `rebase`）|
-| `codex_required_for_merge` | `true` | bool | **Locked (not user-overridable)**: GitHub merge は不可逆操作のため fail-closed を強制する。`--config codex_required_for_merge=false` で上書きしようとしても警告を出して `true` にリセットする。|
-| `require_author_association` | `OWNER,MEMBER,COLLABORATOR` | csv | issue 作者がこれら以外なら polling skip |
-| `enable_base64_scan` | `false` | bool | secret-scanner の汎用 Base64 パターンを有効化するか。誤検知が多いため既定 off。詳細は [`secret-scanner.md`](secret-scanner.md) |
-| `rollback_gh_fetch_cap` | `10` | 件 | `rollback_orphans()` step ③ / ④ の 1 tick あたり `gh issue view` API 呼び出し上限。超過分は次 tick に持ち越す（fetch storm 防止）|
+| `max_review_iterations` | `3` | times | The loop cap on Codex review → iterate fix |
+| `parallel_worktree_limit` | `1` | count | The physical worktree parallelism cap handed to parallel-cycle. Raise it only by explicit opt-in. A separate responsibility from the shared contract's `max_parallel` (see Precedence below) |
+| `polling_interval` | `10m` | time | The external invocation interval of the `/loop` command (a reference value). A **distinct concept** from §10's `tick_interval_loop_mode` (the `--loop` retry interval inside a tick, default 30s). `/loop` starts polling in units of ticks, and inside it the `--loop` mode re-ticks every `tick_interval_loop_mode` |
+| `min_rate_limit_remaining` | `500` | requests | Skip polling when the remaining GitHub API budget is below this |
+| `max_diff_lines` | `2000` | lines | A PR exceeding this is not handed to Codex and becomes claude-failed |
+| `codex_review_timeout` | `5min` | time | The timeout for a single Codex invocation |
+| `codex_consecutive_failure_threshold` | `3` | times | Once transient Codex API failures occur this many times consecutively, treat it as a permanent failure. An independent parameter from `transient_retry_limit` (§10) ([details](codex-review-loop.md#codex_consecutive_failure_threshold-vs-transient_retry_limit))|
+| `auto_merge_strategy` | `squash` | kind | The merge method for `gh pr merge` (`squash` / `merge` / `rebase`)|
+| `codex_required_for_merge` | `true` | bool | **Locked (not user-overridable)**: because a GitHub merge is irreversible, fail-closed is enforced. Even an attempt to override it with `--config codex_required_for_merge=false` emits a warning and resets it to `true`.|
+| `require_author_association` | `OWNER,MEMBER,COLLABORATOR` | csv | Skip polling when the issue author is none of these |
+| `enable_base64_scan` | `false` | bool | Whether to enable secret-scanner's generic Base64 pattern. Off by default because it produces many false positives. See [`secret-scanner.md`](secret-scanner.md) for details |
+| `rollback_gh_fetch_cap` | `10` | count | The per-tick cap on `gh issue view` API calls in `rollback_orphans()` steps ③ / ④. The excess carries over to the next tick (preventing a fetch storm)|
 
 ## Parallel Precedence Rule
 
-`parallel_worktree_limit` と共通契約 `max_parallel`（§10）は責務が異なるため、両者を同 tick 内で併用する場合は **`min(...)` を実効上限** とする:
+Because `parallel_worktree_limit` and the shared contract's `max_parallel` (§10) carry different responsibilities, when both apply within the same tick the **effective cap is `min(...)`**:
 
-| パラメータ | 所在 | 責務 |
+| Parameter | Where it lives | Responsibility |
 |---|---|---|
-| `max_parallel` | 共通契約 §10 | tick あたり claim 上限。issue 単位の論理的な並行度 |
-| `parallel_worktree_limit` | 本ファイル (GitHub 固有) | worktree 物理リソース上限。`parallel-cycle` skill に渡す並列数 |
+| `max_parallel` | Shared contract §10 | The claim cap per tick. Logical concurrency in units of issues |
+| `parallel_worktree_limit` | This file (GitHub-specific) | The physical worktree resource cap. The parallelism handed to the `parallel-cycle` skill |
 
-実効上限:
+The effective cap:
 
 ```
 effective_parallel = min(max_parallel, parallel_worktree_limit)
-list_ready(effective_parallel)  # claim 数自体を物理上限に合わせる
+list_ready(effective_parallel)  # align the claim count itself with the physical cap
 ```
 
-これにより claim だけ進んで worktree が wait する状態を防ぐ。`parallel_worktree_limit` の default は 1 のため、明示的に上書きしない限り直列実行となる。
+This prevents a state where claims advance while worktrees wait. Since `parallel_worktree_limit` defaults to 1, execution is serial unless it is overridden explicitly.
 
 ## Schedule Path Alternative
 
-`/loop github-issue-polling` の代わりに `schedule` スキル（cron）でも polling を実行できる。長時間 cycle が走る場合や `/loop` を占有したくない場合に有効。
+Polling can also run through the `schedule` skill (cron) instead of `/loop github-issue-polling`. This is useful when long cycles run, or when you do not want `/loop` occupied.
 
-例:
+Example:
 ```
 schedule create --cron "*/10 * * * *" --command "/github-issue-polling --stateless"
 ```
 
-> **必ず `--stateless` を付けること**: cron 起動は 1 invocation = 1 tick でプロセスが毎回死ぬため、
-> `--stateless` なしでは `max_iter` / `max_wallclock` / `failed_streak` の 3 重ガードが毎回リセットされ実質無効になる
-> （共通契約 [`§6.5 Tick Session`](../../shared/references/polling-pattern.md#65-tick-session-persisting-the-safety-brakes-for-stateless-execution) 参照）。
+> **Always pass `--stateless`**: a cron start means 1 invocation = 1 tick and the process dies every time, so
+> without `--stateless` the triple guard of `max_iter` / `max_wallclock` / `failed_streak` resets each time and is effectively disabled
+> (see the shared contract [`§6.5 Tick Session`](../../shared/references/polling-pattern.md#65-tick-session-persisting-the-safety-brakes-for-stateless-execution)).
 
 ## Override Example
 
@@ -67,4 +67,4 @@ github-issue cycle 42 --config max_review_iterations=5 --config parallel_worktre
 - `auto_merge_strategy ∈ {squash, merge, rebase}`
 - `rollback_gh_fetch_cap >= 1`
 
-不正値は起動時にエラー終了する。
+An invalid value causes an error exit at startup.

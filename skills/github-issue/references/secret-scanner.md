@@ -1,10 +1,10 @@
 # Secret Scanner
 
-`gh pr diff` 出力を Codex に渡す前にスキャンし、検出時は即 `claude-failed` に遷移させる。
+Scan the `gh pr diff` output before handing it to Codex, and on a detection transition immediately to `claude-failed`.
 
-## Filename Patterns (即 reject)
+## Filename Patterns (immediate reject)
 
-変更ファイルパスがこのパターンに合致する場合、内容を見ずに reject。
+When a changed file path matches one of these patterns, reject without looking at the content.
 
 ```
 \.env(\.|$)
@@ -25,7 +25,7 @@ id_ed25519(\.|$)
 
 ## Content Regex Patterns
 
-diff の追加行（`+` で始まる行）に対して以下の正規表現でスキャンする。
+Scan the added lines of the diff (lines beginning with `+`) with the following regular expressions.
 
 ### AWS
 
@@ -72,37 +72,37 @@ SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}              # SendGrid
 ```
 -----BEGIN (RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----
 (?i)(api[_-]?key|api[_-]?secret|access[_-]?token|auth[_-]?token|client[_-]?secret)\s*[=:]\s*['"][^'"]{16,}['"]
-[a-zA-Z0-9+/]{40,}={0,2}                              # Base64-ish (要 false-positive 配慮、optional)
+[a-zA-Z0-9+/]{40,}={0,2}                              # Base64-ish (needs false-positive care, optional)
 ```
 
-#### Generic password (2 段階マッチ — 誤検知抑制版)
+#### Generic password (a 2-stage match — the false-positive-suppressing version)
 
-旧 `password|passwd|secret` の単発正規表現は誤検知が多すぎたため、以下の 2 段階マッチに置き換える。
+The old single-shot `password|passwd|secret` regex produced far too many false positives, so it is replaced by the following 2-stage match.
 
-**Stage 1: キーワード行検出**（環境変数名コンテキストを必須化）
+**Stage 1: keyword-line detection** (requiring an environment-variable-name context)
 
 ```
 (?i)\b(PASSWORD|PASSWD|PWD|DB_PASS|DB_PASSWORD|MYSQL_PASSWORD|POSTGRES_PASSWORD|SECRET)\s*[=:]
 ```
 
-**Stage 2: 同行から値を抽出して以下を AND 判定**
+**Stage 2: extract the value from the same line and AND the following conditions**
 
 ```
-- 値長が 12 文字以上（旧 8 → 12 に厳格化）
-- 既知のプレースホルダトークンを **exact match**（case-insensitive）で除外。substring match は誤検知（"xxxxxxxxxxxxxxxx" を含む真の高エントロピ値まで除外する）を生むため使わない:
+- The value is at least 12 characters long (tightened from the old 8 to 12)
+- Exclude known placeholder tokens by **exact match** (case-insensitive). Substring matching is not used because it produces false negatives (it would also exclude a genuinely high-entropy value that happens to contain "xxxxxxxxxxxxxxxx"):
     EXACT_PLACEHOLDER_TOKENS = {
       "xxx", "xxxx", "xxxxxxxx", "your_password", "your-password",
       "example", "placeholder", "changeme", "todo", "fixme",
       "dummy", "sample", "redacted", "your_secret_here", "yourpasswordhere"
     }
-  および以下の anchored regex で囲まれた形を除外:
+  and exclude forms enclosed by the following anchored regexes:
     ^<.+>$            # angle bracket placeholder
     ^\$\{.+\}$        # shell expansion
-    ^your[_-].+$      # "your_*" / "your-*" 全体マッチ
-- 値全体が単一の英字単語（記号・数字なし）の場合は除外（lorem ipsum 系の誤検知抑制）
+    ^your[_-].+$      # a whole-string match of "your_*" / "your-*"
+- Exclude the case where the whole value is a single alphabetic word (no symbols, no digits) — suppressing lorem-ipsum-style false positives
 ```
 
-擬似コード:
+Pseudocode:
 
 ```
 def scan_generic_password(line):
@@ -123,11 +123,11 @@ def scan_generic_password(line):
   return {"type": "content", "pattern": "generic_password", "value_len": len(value)}
 ```
 
-> **Note:** 最後の Base64 パターンは誤検知が多いため、デフォルトでは無効。`enable_base64_scan` の SSOT は [`config-defaults.md`](config-defaults.md) を参照（デフォルト `false`、`--config enable_base64_scan=true` で有効化）。
+> **Note:** the last Base64 pattern produces many false positives, so it is disabled by default. For the SSOT of `enable_base64_scan`, see [`config-defaults.md`](config-defaults.md) (default `false`, enabled with `--config enable_base64_scan=true`).
 
 ## Output Format
 
-スキャン結果は以下の構造で返す。
+Return the scan result in the following structure.
 
 ```json
 {
@@ -138,4 +138,4 @@ def scan_generic_password(line):
 }
 ```
 
-`matched: true` の場合、Cycle Workflow は Codex に diff を渡さず即 `claude-failed` に遷移する。
+When `matched: true`, the Cycle Workflow does not hand the diff to Codex and transitions immediately to `claude-failed`.

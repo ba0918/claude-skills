@@ -1,121 +1,121 @@
 # Cleanup Specification
 
-worktree とブランチの孤児検出 / クリーンアップ規則。
+The rules for detecting and cleaning up orphaned worktrees and branches.
 
-> **Drift Prevention (共通契約 §11 遵守)**: Kill file / SIGINT trap / orphan recovery 純関数などの共通仕様は [`polling-pattern.md`](../../shared/references/polling-pattern.md) に集約されている。本ファイルには GitHub 固有の部分（`sanitize_repo_slug` / worktree 命名 / 24h 検出 / Partial Claim Rollback）のみ残す。
+> **Drift Prevention (in compliance with shared contract §11)**: shared specifications such as the kill file, the SIGINT trap, and the orphan-recovery pure functions are consolidated in [`polling-pattern.md`](../../shared/references/polling-pattern.md). This file keeps only the GitHub-specific parts (`sanitize_repo_slug` / worktree naming / the 24h detection / Partial Claim Rollback).
 
-## sanitize_slug vs sanitize_repo_slug 責務分離
+## sanitize_slug vs sanitize_repo_slug Responsibility Separation
 
-> **Canonical Location**: 本節が canonical SSOT。`polling-adapter.md` / `SKILL.md` / 他 references は本節への直リンクのみ持ち、責務分離の定義を複製しない。
+> **Canonical Location**: this section is the canonical SSOT. `polling-adapter.md` / `SKILL.md` / the other references hold only direct links to this section and never duplicate the definition of the responsibility split.
 
-本スキルには 2 つの類似 sanitize 関数が存在する。**責務が異なるため混同禁止**:
+This skill has 2 similar sanitize functions. **They carry different responsibilities and must not be confused**:
 
-| 関数 | 定義元 | 入力 | 用途 | 責務 |
+| Function | Where it is defined | Input | Purpose | Responsibility |
 |---|---|---|---|---|
-| `sanitize_slug(raw)` | 共通契約 [`polling-pattern.md §4`](../../shared/references/polling-pattern.md#4-pure-function-signatures) | issue slug / state slug（例: `issue-42`）| 共通契約の `list_ready` / `claim` / `mark_*` API に渡す slug の正規化 | polling 契約レベルの slug 形式整備 |
-| `sanitize_repo_slug(raw)` | 本ファイル §`sanitize_repo_slug()` | `nameWithOwner`（例: `owner/repo`）| lockfile / worktree / `state_root` のディレクトリ名に埋め込む path segment 変換 | **GitHub 固有**の path traversal / shell metachar 防御 |
+| `sanitize_slug(raw)` | Shared contract [`polling-pattern.md §4`](../../shared/references/polling-pattern.md#4-pure-function-signatures) | An issue slug / state slug (e.g. `issue-42`)| Normalizing the slug handed to the shared contract's `list_ready` / `claim` / `mark_*` APIs | Shaping the slug format at the polling-contract level |
+| `sanitize_repo_slug(raw)` | This file, §`sanitize_repo_slug()` | `nameWithOwner` (e.g. `owner/repo`)| Converting a path segment embedded in the lockfile / worktree / `state_root` directory names | **GitHub-specific** defense against path traversal and shell metacharacters |
 
-**混同禁止のルール**:
+**The must-not-confuse rules**:
 
-- `sanitize_slug` は共通契約の純関数で、Label / FS 両 adapter が同じものを使う
-- `sanitize_repo_slug` は GitHub Label adapter 固有で、`nameWithOwner` → path segment 専用
-- 両者はシグネチャもホワイトリストも目的も異なる
-- 新規コード追加時は必ずこの表を参照し、適切な関数を選択する
+- `sanitize_slug` is a pure function of the shared contract, and both the Label and FS adapters use the same one
+- `sanitize_repo_slug` is specific to the GitHub Label adapter and exists solely for `nameWithOwner` → path segment
+- The two differ in signature, in whitelist, and in purpose
+- When adding new code, always consult this table and pick the appropriate function
 
-本規約は `polling-adapter.md` と `SKILL.md` から本節への直リンクで参照される（**canonical は本節の 1 箇所のみ**）。
+This convention is referenced from `polling-adapter.md` and `SKILL.md` by direct links to this section (**the canonical copy is this one place only**).
 
 ## sanitize_repo_slug()
 
-lockfile / worktree パス / `state_root` ディレクトリ名に `nameWithOwner`（例 `owner/repo`）を埋め込む際は、必ずホワイトリスト方式でサニタイズする。
+Whenever `nameWithOwner` (e.g. `owner/repo`) is embedded into a lockfile path, a worktree path, or a `state_root` directory name, always sanitize it with a whitelist approach.
 
 ```
 sanitize_repo_slug(name_with_owner: str) -> str:
-  # ホワイトリスト: [a-zA-Z0-9._-] のみ通す。それ以外は '_' に置換。
-  # これにより '/', null byte, パストラバーサル文字, シェルメタ文字を構造的に排除。
+  # Whitelist: allow only [a-zA-Z0-9._-]. Replace everything else with '_'.
+  # This structurally eliminates '/', null bytes, path-traversal characters, and shell metacharacters.
   value = regex_replace(name_with_owner, r"[^a-zA-Z0-9._-]", "_")
-  # Defense in depth: '.' はホワイトリストで通すため、'..' が残り得る。
-  # 監査ツール / レビュアーが path traversal の痕跡を読み違えないよう '__' に潰す。
+  # Defense in depth: '.' passes the whitelist, so '..' can survive.
+  # Collapse it to '__' so audit tools and reviewers do not misread traces of path traversal.
   value = value.replace("..", "__")
   return value
 
-# 例:
+# Examples:
 # sanitize_repo_slug("owner/repo")        -> "owner_repo"
 # sanitize_repo_slug("ev/il;rm -rf /")    -> "ev_il_rm_-rf__"
-# sanitize_repo_slug("a/../b")            -> "a___b" (双方向で '..' が消える)
+# sanitize_repo_slug("a/../b")            -> "a___b" ('..' disappears from both directions)
 ```
 
-> 旧実装の `tr / -` は `/` 以外の危険文字（空白、`;`, `$`, null byte 等）を素通しするため使用しない。
+> The old implementation's `tr / -` lets dangerous characters other than `/` through (whitespace, `;`, `$`, null bytes, and so on), so it is not used.
 
-## Worktree 命名規約
+## Worktree Naming Convention
 
 ```
 gh-issue-{issue_number}-{yyyymmddhhmmss}
 ```
 
-例: `gh-issue-42-20260408041530`
+Example: `gh-issue-42-20260408041530`
 
-- `issue_number`: GitHub issue 番号
-- `yyyymmddhhmmss`: 作成時刻（`date +%Y%m%d%H%M%S`）
+- `issue_number`: the GitHub issue number
+- `yyyymmddhhmmss`: the creation time (`date +%Y%m%d%H%M%S`)
 
-ブランチ名も同じく `gh-issue-{N}-{timestamp}` を使う。
+Branch names use the same `gh-issue-{N}-{timestamp}`.
 
-## 孤児検出ルール (24h 条件)
+## Orphan Detection Rules (the 24h condition)
 
-以下を **すべて** 満たす worktree のみクリーンアップ対象とする。
+Only a worktree satisfying **all** of the following is a cleanup target.
 
-1. ディレクトリ名が `gh-issue-{N}-{timestamp}` パターンに合致
-2. `timestamp` が現在時刻から **24 時間以上前**
-3. 対応する issue `#N` の状態が以下のいずれか:
-   - issue が close 済み
-   - issue に `claude-running` ラベルが**付いていない**
-4. 対応するブランチが merge 済み (`git branch --merged main` に含まれる) または対応する PR が closed/merged
+1. The directory name matches the `gh-issue-{N}-{timestamp}` pattern
+2. `timestamp` is **at least 24 hours** before the current time
+3. The state of the corresponding issue `#N` is one of:
+   - The issue is closed
+   - The issue does **not** carry the `claude-running` label
+4. The corresponding branch is merged (it appears in `git branch --merged main`), or the corresponding PR is closed/merged
 
-> **保守的クリーンアップ**: 上記 4 条件すべてを AND で要求する。1 つでも怪しければ削除しない。
+> **Conservative cleanup**: all 4 conditions above are required, ANDed together. If even one is doubtful, do not delete.
 
-本検出は `rollback_orphans()` step ① (`_check_worktree_orphans`) から呼ばれる。詳細は [`polling-adapter.md §rollback_orphans Sub-Steps`](polling-adapter.md#rollback_orphans-sub-steps) を参照。
+This detection is called from `rollback_orphans()` step ① (`_check_worktree_orphans`). See [`polling-adapter.md §rollback_orphans Sub-Steps`](polling-adapter.md#rollback_orphans-sub-steps) for details.
 
-## 削除手順
+## Deletion Procedure
 
 ```bash
-# 1. 削除対象を列挙
+# 1. Enumerate the deletion candidates
 git worktree list --porcelain | parse → candidates
 
-# 2. 各候補について再確認
+# 2. Re-check each candidate
 for wt in candidates:
   N = extract_issue_number(wt.name)
   ts = extract_timestamp(wt.name)
 
   if age(ts) < 24h: skip
   state = gh issue view ${N} --json state,labels
-  if "claude-running" in state.labels: skip   # 直前の再確認
+  if "claude-running" in state.labels: skip   # the immediately-preceding re-check
   if not (issue closed or branch merged): skip
 
-  # 3. 削除実行
+  # 3. Perform the deletion
   git worktree remove <path> --force
-  git branch -D <branch>   # ブランチも削除（merged 済み前提）
+  git branch -D <branch>   # delete the branch too (on the premise that it is merged)
 ```
 
-## 起動タイミング
+## When It Runs
 
-- **Polling Workflow** の `rollback_orphans()` step ① で実行（毎 tick 冒頭でクリーンアップ）
-- 手動 `cycle` 実行時は実行しない（並走中の他 worker に影響しないため）
+- Executed in `rollback_orphans()` step ① of the **Polling Workflow** (cleanup at the head of every tick)
+- Not executed on a manual `cycle` run (so it cannot affect other workers running alongside)
 
 ## Partial Claim Rollback
 
-Cycle Workflow Step 2 の atomic claim 3 段防御（[`polling-adapter.md §claim() 3 段防御`](polling-adapter.md#claim-3-段防御) 参照）は順序実行のため、途中段階で失敗した際に副作用が残る可能性がある。lockfile 取得には成功したが assignee / label 設定に失敗したケースは、以下の手順で明示的にロールバックする:
+Because the atomic-claim 3 layers of defense in Cycle Workflow Step 2 (see [`polling-adapter.md §claim() 3 Layers of Defense`](polling-adapter.md#claim-3-layers-of-defense)) execute in sequence, side effects can remain when an intermediate stage fails. The case where acquiring the lockfile succeeded but setting the assignee / label failed is rolled back explicitly by the following procedure:
 
-1. `gh issue edit ${N} --remove-label claude-running` を best-effort で実行（既に付与されていた場合）
-2. `gh issue edit ${N} --remove-assignee @me` を best-effort で実行（自分が assignee になっていた場合）
-3. dual-write label が一部付与されていた場合は **`-transient -permanent -claude-failed` の順** で削除する（precedence rule との整合性維持）
-4. `flock` の解除はプロセス終了で自動。`exec 8>&-` で明示クローズしてもよい
-5. ロールバック自体が失敗してもプロセスは abort 続行（次 tick の冪等性で復旧）
-6. `[claim-rollback] issue=#${N} reason=<…>` を stderr にログ
+1. Run `gh issue edit ${N} --remove-label claude-running` best-effort (in case it had already been added)
+2. Run `gh issue edit ${N} --remove-assignee @me` best-effort (in case you had become the assignee)
+3. If the dual-write labels were partially added, remove them **in the order `-transient -permanent -claude-failed`** (keeping consistency with the precedence rule)
+4. Releasing the `flock` happens automatically on process exit. Closing it explicitly with `exec 8>&-` is also acceptable
+5. Even if the rollback itself fails, the process continues aborting (recovery comes from the next tick's idempotency)
+6. Log `[claim-rollback] issue=#${N} reason=<…>` to stderr
 
-これにより部分 claim による「assignee は付いているが lock は解放済み」のような中途半端な状態を最小化する。
+This minimizes half-finished states from a partial claim, such as "the assignee is set but the lock has already been released".
 
-## ログ
+## Logging
 
-クリーンアップ実行時は標準出力に以下を記録:
+When cleanup runs, record the following on standard output:
 
 ```
 [cleanup] removed worktree: gh-issue-42-20260407041530 (issue closed, branch merged)

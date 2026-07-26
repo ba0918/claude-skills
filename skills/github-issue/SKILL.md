@@ -28,8 +28,8 @@ The first keyword of the arguments selects the workflow.
 
 Run these at the start of every workflow.
 
-1. **gh CLI check**: `gh --version` must succeed. On failure, exit with 「gh CLI が必要です。https://cli.github.com/ からインストールしてください」.
-2. **gh authentication check**: `gh auth status` must succeed. On failure, exit with 「gh CLI 未認証です。`gh auth login` を実行してください」.
+1. **gh CLI check**: `gh --version` must succeed. On failure, exit stating that the gh CLI is required and can be installed from https://cli.github.com/.
+2. **gh authentication check**: `gh auth status` must succeed. On failure, exit stating that the gh CLI is unauthenticated and that `gh auth login` should be run.
 3. **Repository check**: confirm the current directory sits inside a GitHub repository with `gh repo view --json nameWithOwner`. On failure you may resolve it through the same order as `fetch_git_remote_url()` ([`references/polling-adapter.md §state_root Resolution`](references/polling-adapter.md#state_root-resolution)) — `git remote get-url origin` first, `gh repo view` as the fallback. Keeping both in the same order guarantees that the repository check and state_root resolution never disagree about where the URL came from.
 4. **Configuration values**: load the defaults from `references/config-defaults.md`. Any value overridden by an argument takes precedence.
 
@@ -64,7 +64,7 @@ Take issue content from the user in natural language, infer suitable labels, and
    - A candidate title (when one is missing)
 5. **Confirm with the user**:
    - Show: title / body / inferred labels / whether `claude-auto` applies / the reasoning
-   - Options: 「作成」「修正」「キャンセル」
+   - Options: create / revise / cancel
 6. Once approved, create it with `gh issue create --title ... --body ... --label ...`
 7. Show the result (the issue URL)
 
@@ -130,7 +130,7 @@ Label adapter implementation details — the three-stage claim defence, state_ro
 12. **Emit TickResult**: return the structured counters conforming to shared contract §7 Tick Schema — `{run_id, tick_started_at, claimed, done, failed_transient, failed_permanent, halt_reason?}`. All seven fields including `run_id` and `tick_started_at` are invariant (see shared contract §7)
 13. **On the first successful tick**: create `<state_root>/.polling-initialized` with `write_atomic` (which lifts the forced dry-run from the next tick on)
 14. **Session persist (`--stateless` only)**: compute the counter update and the halt decision with `next_session_state(session, tick_result)`, then persist with `adapter.save_session()` (shared contract §6.5)
-15. **Measurement event append**: append the TickResult counters as a measurement event ([measurement-identity.md §4](../shared/references/measurement-identity.md#4-mapping-table-for-the-existing-systems)): `python3 skills/shared/scripts/measurement_identity.py emit --system polling-label --event tick --skill github-issue --repo-root {repo_root} --run-id {run_id} --outcome '{TickResult カウンタ JSON}'`. A failure here only warns; it never blocks the tick
+15. **Measurement event append**: append the TickResult counters as a measurement event ([measurement-identity.md §4](../shared/references/measurement-identity.md#4-mapping-table-for-the-existing-systems)): `python3 skills/shared/scripts/measurement_identity.py emit --system polling-label --event tick --skill github-issue --repo-root {repo_root} --run-id {run_id} --outcome '{TickResult counter JSON}'`. A failure here only warns; it never blocks the tick
 
 ### Snapshot boundary
 
@@ -159,7 +159,7 @@ The core workflow that drives a single issue to completion.
 
 Delegated to the adapter: just call `adapter.claim(slug)`. On failure, quiet abort with `ClaimFailed{reason}` (no retry).
 
-The three-stage defence (lockfile + gh edit + re-verify) is hidden in [`references/polling-adapter.md §claim() 3 段防御`](references/polling-adapter.md#claim-3-段防御). SKILL.md knows only the interface and does not depend on the internals (shared contract §3 + Layer Separation).
+The three-stage defence (lockfile + gh edit + re-verify) is hidden in [`references/polling-adapter.md §claim() 3 Layers of Defense`](references/polling-adapter.md#claim-3-layers-of-defense). SKILL.md knows only the interface and does not depend on the internals (shared contract §3 + Layer Separation).
 
 - lockfile path: `<state_root>/claim/{N}.lock` (non-blocking `flock(2)`)
 - Failure reasons: one of `LockBusy` / `gh edit failed` / `post-claim verify failed`
