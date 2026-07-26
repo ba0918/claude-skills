@@ -39,29 +39,29 @@ Allowed: read-only codebase investigation (file reads, pattern search, file list
       - Japanese: 「行き詰ま」「わからない」「どうすれば」「手詰まり」「煮詰ま」「堂々巡り」「進まない」
       - English: "stuck", "no idea", "don't know", "dead end", "going in circles"
 
-      then place the following block at the very top of the response generated in step d, and set `stuck_hint_shown = true`. Later keyword hits are suppressed. Fixed output order for the whole response: hint block (if any) → Codex-unavailable notice (if any) → response body → `💡 Codex の視点:` section (if any).
+      then place the following block at the very top of the response generated in step d, and set `stuck_hint_shown = true`. Later keyword hits are suppressed. Fixed output order for the whole response: hint block (if any) → Codex-unavailable notice (if any) → response body → `💡 Codex's perspective:` section (if any).
       ```
-      💡 行き詰まった時は `/claude-skills:problem-solving` で思考ツールを試せます:
-      - `simplify` — 「全ては〇〇の特殊ケース」を見つける
-      - `invert` — 前提を反転させてみる
-      - `collide` — 無関係な概念を衝突させる
-      - `scale` — 極端なスケールでテストする
-      - `pattern` — 他ドメインのパターンから学ぶ
+      💡 When you are stuck, try the thinking tools in `/claude-skills:problem-solving`:
+      - `simplify` — find the "everything is a special case of X"
+      - `invert` — flip the premise
+      - `collide` — collide unrelated concepts
+      - `scale` — test at an extreme scale
+      - `pattern` — learn from a pattern in another domain
       ```
-   c. **Codex second opinion** (only while `codex_available == true`): dispatch the Codex subagent with the theme, the user's message, and a 1–3 sentence summary of the discussion so far (use the literal string `（最初のターン、履歴なし）` on the first turn). Prompt: 「以下の壁打ちテーマとユーザーの発言に対して、異なる視点・反論・見落とし・関連するアイデアを提供してください。テーマ: {theme}。ユーザーの発言: {user_message}。これまでの議論: {summary}」. Pass conversation text only — never file-read results.
+   c. **Codex second opinion** (only while `codex_available == true`): dispatch the Codex subagent with the theme, the user's message, and a 1–3 sentence summary of the discussion so far (use the literal string `(first turn, no history)` on the first turn). Prompt: "For the sparring theme and user message below, offer a different perspective, a counterargument, an overlooked angle, or a related idea. Theme: {theme}. User message: {user_message}. Discussion so far: {summary}". Pass conversation text only — never file-read results.
       - On failure (call errors out, times out, Codex is unavailable in the environment, or the response is empty / malformed): display `⚠️ Codex unavailable — proceeding with Claude only` once in the step-d response (positioned per the fixed output order above), set `codex_available = false`, and skip Codex on later turns. Do not fabricate a Codex opinion.
    d. Generate the response (integrating Codex's opinion when present): question, probe, push back, offer alternative angles. When a Codex opinion exists, append at the end:
       ```
-      💡 Codex の視点:
-      {Codex の意見の要約}
+      💡 Codex's perspective:
+      {summary of Codex's opinion}
       ```
    e. Investigate the codebase read-only as needed.
    f. Ask the user for the next input.
    g. When the user says "wrap" / 「まとめて」 / 「終わり」 etc., exit the loop.
 4. On exit, show the pointer to Wrap:
    ```
-   壁打ちを終了します。
-   `/claude-skills:brainstorm-wrap` でアイデアをメモに整理できます。
+   Ending the sparring session.
+   Run `/claude-skills:brainstorm-wrap` to organize the ideas into a memo.
    ```
 
 **Note**: Response generation and subagent calls cannot run concurrently — call Codex first, then generate the response.
@@ -72,7 +72,7 @@ Shared contract details: [../shared/references/codex-integration.md](../shared/r
 
 - Probe with questions (Why? What if? How about?); state concerns frankly; propose alternative approaches; periodically summarize the discussion.
 - Back feasibility claims with read-only codebase investigation.
-- When the discussion starts converging on a specific technology, check the gravitational pull — ask 「その技術を使わないとしたら、何を解決しようとしてる？」 or 「技術名を抜いても問題を説明できる？」 as questions, not blocks.
+- When the discussion starts converging on a specific technology, check the gravitational pull — ask "if you did not use that technology, what would you be trying to solve?" or "can you state the problem without naming the technology?" as questions, not blocks.
 
 ---
 
@@ -80,7 +80,7 @@ Shared contract details: [../shared/references/codex-integration.md](../shared/r
 
 ### Precondition
 
-If the current conversation contains no sparring session (bare `/claude-skills:brainstorm-wrap`), reply 「壁打ちセッションが見つかりません。先に `/claude-skills:brainstorm テーマ` で壁打ちを行ってください」 and stop.
+If the current conversation contains no sparring session (bare `/claude-skills:brainstorm-wrap`), reply "No sparring session found. Run `/claude-skills:brainstorm {theme}` first to hold one." and stop.
 
 ### Steps
 
@@ -100,15 +100,15 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
    ```
 7. Append a row. The link text is the memo's `#` heading title (the human-readable title confirmed in Step 2) — idea-status.md is a derived index and rebuild-index regenerates each row from the memo's `#` heading, so a kebab slug here would flip on every rebuild:
    ```
-   | [{アイデアの # 見出しタイトル}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | 💡 Idea | {summary} |
+   | [{the idea's # heading title}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | 💡 Idea | {summary} |
    ```
 8. Update **Last Updated** to now.
-9. Show the completion message, opening with a summary-first block per the [human-readable summary contract](../shared/references/human-readable-summary.md): state the core of the saved idea in 1–2 plain lines and name the open questions left by the session (or 「なし」). No verbatim replay or exhaustive lists:
+9. Show the completion message, opening with a summary-first block per the [human-readable summary contract](../shared/references/human-readable-summary.md): state the core of the saved idea in 1–2 plain lines and name the open questions left by the session (or "none"). No verbatim replay or exhaustive lists:
    ```
    📝 In short: {what the saved idea amounts to, in 1-2 plain lines that reach
       someone who has not read the memo}. Undecided: {the remaining points, or "none"}
 
-   ✅ アイデアを保存しました!
+   ✅ Idea saved!
    📄 File: .agents/artifacts/ideas/{slug}.md
    📋 Index: .agents/artifacts/ideas/idea-status.md
    ```
@@ -121,18 +121,18 @@ If the sparring content contains sensitive information, confirm with the user be
 
 ## List Workflow
 
-1. Read `.agents/artifacts/ideas/idea-status.md`; if absent, reply 「まだアイデアがありません」 and stop.
+1. Read `.agents/artifacts/ideas/idea-status.md`; if absent, reply "No ideas yet." and stop.
 2. Display the table as-is.
 3. Show the count:
    ```
-   📊 アイデア数: {N}
+   📊 Ideas: {N}
    ```
 
 ---
 
 ## Plan Workflow
 
-1. Read `.agents/artifacts/ideas/idea-status.md`; if absent, reply 「まだアイデアがありません」 and stop.
+1. Read `.agents/artifacts/ideas/idea-status.md`; if absent, reply "No ideas yet." and stop.
 2. Have the user select the target idea. Run the explicit selection step even when only one entry exists (present the table; never silently proceed). When interaction is impossible and exactly one entry exists, present the table, proceed with that entry, and state the assumption; with multiple entries, stop and ask for a selection.
 3. Read the idea file.
    - **Title source**: the link text in the first column of idea-status.md (= the memo's `#` heading title; Wrap saves it and rebuild-index regenerates with the same value).
@@ -150,13 +150,13 @@ If the sparring content contains sensitive information, confirm with the user be
 6. In the archived file, change `**Status:** 💡 Idea` to `**Status:** 📋 Planned`.
 7. Show the completion message (`{plan path}` is the path kept from Step 4; `{slug}` is the idea memo's filename stem including its timestamp prefix):
    ```
-   ✅ アイデアから plan を作成しました!
+   ✅ Created a plan from the idea!
    📄 Plan: {plan path}
    📦 Archived: .agents/artifacts/ideas/archives/{slug}.md
 
    ## Next Steps
-   1. `/plan-review` で計画をレビュー
-   2. `/claude-skills:cycle` でサイクル実行
+   1. Review the plan with `/plan-review`
+   2. Run the cycle with `/claude-skills:cycle`
    ```
 
 ---
@@ -168,25 +168,25 @@ Reload an existing idea memo and restart the sparring session with it as context
 ### Steps
 
 1. Take the slug from $ARGUMENTS after the `resume` keyword.
-   - No slug → read idea-status.md, show the table, and have the user select (if idea-status.md is absent, reply 「まだアイデアがありません」 and stop).
+   - No slug → read idea-status.md, show the table, and have the user select (if idea-status.md is absent, reply "No ideas yet." and stop).
 2. Read `.agents/artifacts/ideas/{slug}.md`; if missing, list `.agents/artifacts/ideas/` and stop with an error.
 3. Show the recap and enter the loop:
    ```
-   📄 アイデア "{title}" を読み込みました。
+   📄 Loaded the idea "{title}".
 
-   ## 前回のまとめ
-   {Summary セクションの内容}
+   ## Previous summary
+   {contents of the Summary section}
 
-   ## 未解決の疑問
-   {Open Questions セクションの内容}
+   ## Open questions
+   {contents of the Open Questions section}
 
-   ここから壁打ちを再開します！
+   Resuming the sparring session from here!
    ```
 4. Initialize `codex_available = true` and `stuck_hint_shown = false`, then run the same sparring loop as Session Workflow steps 3a–3g (stuck detection, Codex second opinion, and the failure fallback all included), using the previous Open Questions as the primary starting points.
 5. On exit, point to Wrap in update mode:
    ```
-   壁打ちを終了します。
-   `/claude-skills:brainstorm-wrap` でアイデアメモを更新できます。
+   Ending the sparring session.
+   Run `/claude-skills:brainstorm-wrap` to update the idea memo.
    ```
 
 ### Wrap after Resume
