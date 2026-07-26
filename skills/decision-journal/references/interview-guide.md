@@ -1,64 +1,61 @@
-# 聞き取りガイド（判例の考古学）
+# The interview guide (the archaeology of precedents)
 
-過去プロジェクトの意思決定を後ろ向きに聞き取り、判例として記録するための手法。
-プロトコルの正本は [decision-protocol.md](../../shared/references/decision-protocol.md)、
-記録の型は [decision-record-template.md](decision-record-template.md) を参照する。
+A method for interviewing a past project's decisions retrospectively and recording them as precedents.
+For the canonical protocol see [decision-protocol.md](../../shared/references/decision-protocol.md),
+and for the form of the record see [decision-record-template.md](decision-record-template.md).
 
-聞き取りの敵は **事後合理化** と **型への収斂** である。証言者も聞き手も、後から一貫した物語を
-作りたがる。この誘惑を手続きで抑える。
+The enemies of an interview are **post-hoc rationalization** and **convergence onto a template**. Both the witness and the interviewer want to build a coherent story afterwards. This guide suppresses that temptation procedurally.
 
-## 1. 聴取前の封印記録
+## 1. The sealed record made before the interview
 
-聞き手の事前状態を、証言採取の**前に**固定して書き出す。採取後の後付けを防ぐため、以下は
-聴取結果に関わらず書き換えない。
+Fix and write out the interviewer's prior state **before** collecting testimony. To prevent retrofitting after collection, the following are never rewritten regardless of what the interview yields.
 
-- **現在の暫定仮説**: 聴取前に持っている仮説を明記する。仮説の強さも正確に書く
-  （例:「言語が成否を握らない」ではなく「この標本では言語が成否を握った証拠を観測していない」）。
-- **反証・限定条件**: どんな証拠が出たら仮説を限定・撤回するか。
-- **聴取前に不明な事項**: 何を知らないかを列挙する。
-- **結末分類の予想**: どう終わったかを予想する（自然消滅 / 明示的決断 等）。**外れたら外れたと記録する**。
-- **バイアス自覚**: 件数が増えるほど証言が判例の型に収斂する危険、「パターンを見出したい」圧力を明記する。
+- **The current tentative hypothesis**: state the hypothesis held going in. Write its strength accurately too
+  (for example, not "the language does not decide success or failure" but "in this sample, no evidence was observed that the language decided success or failure").
+- **Refutation and limiting conditions**: what evidence would narrow or retract the hypothesis.
+- **What is unknown before the interview**: enumerate what you do not know.
+- **The predicted ending category**: predict how it ended (a natural fade / an explicit decision, and so on). **If the prediction is wrong, record that it was wrong.**
+- **Bias self-awareness**: state the danger that testimony converges onto the precedent template as the count grows, and the pressure to "find a pattern".
 
-封印記録は決定記録ファイルの封印セクションに先に書き出し、以降変更しない。
+Write the sealed record into the sealed section of the decision-record file first, and never change it thereafter.
 
-## 2. 自由再生から始める
+## 2. Start from free recall
 
-- 最初の質問は**自由再生**にする。「このプロジェクトについて覚えていることを話してください」。
-- 質問文に**判例語彙（境界・成立条件・賭け金・可逆性 等）を使わない**。語彙で誘導すると証言が
-  型に収斂し、独立した証拠でなくなる。
-- 本人の言葉で語られたものを、こちらの語彙へ翻訳する前にそのまま記録する。
+- Make the first question **free recall**: "tell me what you remember about this project".
+- **Do not use precedent vocabulary (boundary, conditions for holding, stake, reversibility, and so on) in the wording of a question.** Leading with vocabulary makes the testimony converge onto the template and stop being independent evidence.
+- Record what is told in the person's own words as-is, before translating it into your vocabulary.
 
-## 3. 停止理由と非再開理由を分離する
+## 3. Separate the reason for stopping from the reason for not resuming
 
-- 「なぜ止めたか」と「なぜ再開しないか」は別の質問として聞く。両者は同じとは限らない
-  （止めた理由が解消しても再開しないことがある。逆もある）。
-- クローズ様式を特定する: 明示的決断 / 高速フェードアウト（決断の瞬間なし）/ 自然消滅。
-- 終了知識（何を根拠に見送ったか・再開条件）は今日の聴取で初めて言語化されることが多い。
-  それも「事後回想」ラベルで記録する。
+- Ask "why did you stop" and "why do you not resume" as separate questions. The two are not necessarily the same
+  (a project may not be resumed even after the reason for stopping is gone. The reverse also happens).
+- Identify the closing form: an explicit decision / a rapid fade-out (with no moment of decision) / a natural fade.
+- Ending knowledge (on what basis it was passed over, and the conditions for resuming) is often verbalized for the first time in today's interview.
+  Record that too, with the label "recalled afterwards".
 
-## 4. 比較を捏造しない
+## 4. Do not fabricate a comparison
 
-- **選択肢リストを提示して「どれと比較しましたか」と誘導しない**。本人が当時比較していないなら
-  「比較なし（既定値受容 / 理由不詳選択）」を正式な結論として記録する。
-- 決定入力の経路を区別する: 自由選択（理由不詳）/ 外部刺激 → 既定値受容 / 制約による強制。
-- 事後回想の理由が「その選択を識別しない」（他の選択肢でも同じ理由が成り立つ）場合、それは
-  裁可理由ではなく事後合理化の候補である。INTERPRETATION ラベルで区別する。
+- **Do not present a list of options and lead with "which did you compare it against".** If the person did not compare anything at the time,
+  record "no comparison (default accepted / choice with an unknown reason)" as a legitimate conclusion.
+- Distinguish the pathway of the decision input: free choice (reason unknown) / an external stimulus → accepting the default / compulsion by a constraint.
+- When a reason recalled afterwards "does not identify that choice" (the same reason would hold for the other options too), it is
+  not a reason for the ruling but a candidate for post-hoc rationalization. Distinguish it with the INTERPRETATION label.
 
-## 5. 「復元不能」を正式な結論として認める
+## 5. Accept "unrecoverable" as a legitimate conclusion
 
-- 記憶の無い欄を推測で埋めない。埋めた瞬間、考古学は事後合理化に変質する。
-- 「覚えていない」「当時の記録がない」は失敗ではなく、**正式な観測結果**である。
-- 魅力的な因果の物語（「よい設計がよい意思決定を可能にした」等）ほど、因果未確認ラベル
-  （HYPOTHESIS）を剥がさない。事後に自明に見えることと、事前に予測できたことは非対称である
-  （「自明だった」で上書きすると後知恵バイアスになる）。
+- Do not fill a field with conjecture where memory is absent. The moment you do, archaeology turns into post-hoc rationalization.
+- "I do not remember" and "there is no record from the time" are not failures but **legitimate observation results**.
+- The more attractive the causal story ("good design made good decisions possible", and the like), the more firmly the unconfirmed-causation label
+  (HYPOTHESIS) stays on. What looks obvious in hindsight and what could have been predicted in advance are asymmetric
+  (overwriting it with "it was obvious" is hindsight bias).
 
-## 6. 途中保存と進捗エコー
+## 6. Intermediate saves and progress echoes
 
-- 聞き取りは長い対話になりうる。**各ステップで途中保存**し、中断しても再開できるようにする。
-- 各ステップで**進捗（取得済みの欄 / 残りの欄）をエコー**し、再開時にどこまで進んだかが見えるようにする。
+- An interview can become a long dialogue. **Save at each step** so that it can resume after an interruption.
+- At each step, **echo the progress (the fields obtained / the fields remaining)** so that on resuming it is visible how far it got.
 
-## 7. 標本の性質を明記する
+## 7. State the nature of the sample
 
-- 同一人物・近接時期・同一開発環境の判例は**独立標本ではない**。件数を支持票として数えない。
-- 適正な結論の強さは「N 案件から次に反証可能な形で試すプロセス仮説が生成された」に留める。
-  「規範」への昇格は前向き適用で予測が当たり始めてからにする。
+- Precedents from the same person, a nearby period, or the same development environment are **not independent samples**. Do not count the number as supporting votes.
+- Keep the strength of a proper conclusion to "from N cases, a process hypothesis was generated that can next be tried in a refutable form".
+  Promotion to a "norm" waits until prospective application starts making the predictions come true.
