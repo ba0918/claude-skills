@@ -12,11 +12,11 @@ A meta-skill that measures and improves, as a property of description quality, t
 ## Minimal execution recipes
 
 ```
-trigger-eval                # 本リポジトリの skills/ を対象に Phase 0→6
-trigger-eval --dir PATH     # 任意のフラットなスキルディレクトリ
+trigger-eval                # Phase 0→6 over this repository's skills/
+trigger-eval --dir PATH     # any flat skill directory
 trigger-eval --user-scope   # ~/.claude/skills
-trigger-eval --no-e2e       # Tier 2 実発火検証をスキップ（デフォルトは実行）
-trigger-eval --selection-only  # Tier 1 を selection モードのみ計測（デフォルトは selection + autonomous）
+trigger-eval --no-e2e       # skip the Tier 2 live-firing check (it runs by default)
+trigger-eval --selection-only  # measure Tier 1 in selection mode only (the default is selection + autonomous)
 ```
 
 No command is created (the skills-first policy; being single-workflow, it needs no named entry point either).
@@ -95,11 +95,11 @@ Pass the judging agent (**a lightweight model, stated explicitly**, a fresh suba
 ### Phase 4: Aggregation
 
 ```bash
-# モードごとに同じスクリプトを別々に通す（aggregate_metrics.py は無改修）
+# run the same script separately per mode (aggregate_metrics.py stays unmodified)
 python3 skills/trigger-eval/scripts/aggregate_metrics.py \
   .claude/tmp/trigger-eval-{ts}/judged-selection-iterN.json \
   --output .claude/tmp/trigger-eval-{ts}/metrics-selection-iterN.json
-# --selection-only でない限り autonomous も同様に集計
+# unless --selection-only is set, aggregate autonomous the same way
 python3 skills/trigger-eval/scripts/aggregate_metrics.py \
   .claude/tmp/trigger-eval-{ts}/judged-autonomous-iterN.json \
   --output .claude/tmp/trigger-eval-{ts}/metrics-autonomous-iterN.json
@@ -108,7 +108,7 @@ python3 skills/trigger-eval/scripts/aggregate_metrics.py \
 Compute recall / precision / specificity / stability / confusion matrix / invalid_rate with the formulas of `metrics-spec.md`. **Never mix the two modes' results**: selection is authoritative for the convergence and regression guards, and autonomous is a reference series ("The mode axis" of `metrics-spec.md`).
 
 On completing a measurement (the selection series of each iteration), append a measurement event per target skill so that runs can be compared ([measurement-identity.md §4](../shared/references/measurement-identity.md#4-mapping-table-for-the-existing-systems), recommended):
-`python3 skills/shared/scripts/measurement_identity.py emit --system trigger-eval --event eval --skill <対象スキル> --repo-root {repo_root} --outcome '{"recall":R,"precision":P,"stability":S}'`
+`python3 skills/shared/scripts/measurement_identity.py emit --system trigger-eval --event eval --skill <target skill> --repo-root {repo_root} --outcome '{"recall":R,"precision":P,"stability":S}'`
 
 ### Phase 5: Revision
 

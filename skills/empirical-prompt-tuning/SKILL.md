@@ -220,7 +220,7 @@ On convergence (`exit_verdict == "converged"`), emit the final iteration's scena
 
 ```json
 {
-  "source_skill": "<対象スキル名 or null>",
+  "source_skill": "<target skill name or null>",
   "instruction_fingerprint": "abc123...",
   "eval_strategy": "task_scenario",
   "converged_at": "2026-07-09T13:42:00Z",
@@ -275,27 +275,27 @@ When the subagent launch cap is hit (counted cumulatively per session; a slot is
 ```
 ## Iteration N
 
-### 変更点（前回差分）
-- <修正内容 1 行>
+### Changes (diff from the previous round)
+- <the change, 1 line>
 
-### 実行結果（シナリオ別）
-| シナリオ | 成功 | 精度 | steps | duration | retries |
+### Results (per scenario)
+| Scenario | Success | Accuracy | steps | duration | retries |
 |---|---|---|---|---|---|
 | A | ○ | 90% | 4 | 20s | 0 |
 | B | × | 60% | 9 | 41s | 2 |
 
-### 摩擦報告（今回新出）
-- <シナリオ B>: [critical] 要件 N が × — <落ちた理由 1 行>
-- <シナリオ B>: [missing_premise] <詳細>
+### Friction report (new this round)
+- <scenario B>: [critical] requirement N failed — <reason, 1 line>
+- <scenario B>: [missing_premise] <details>
 
-### 裁量補完（今回新出）
-- <シナリオ B>: <補完内容>
+### Discretionary gap-filling (new this round)
+- <scenario B>: <what was filled in>
 
-### 次の修正案
-- <最小修正 1 行>
-- 対象要件: #N
+### Next proposed change
+- <the minimal change, 1 line>
+- Target requirement: #N
 
-（exit_verdict: continue | 収束まであと X 回クリア必要）
+(exit_verdict: continue | X more clean rounds needed before convergence)
 ```
 
 ## Red Flags (watch for rationalizations)

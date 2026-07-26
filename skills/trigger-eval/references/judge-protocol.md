@@ -31,7 +31,7 @@ In both cases, **access to SKILL.md bodies and other sources is forbidden** (a s
 ```json
 {
   "skills": [{"name": "commit", "description": "..."}, ...],
-  "cases": [{"case_id": "c001", "text": "この変更をコミットして"}, ...]
+  "cases": [{"case_id": "c001", "text": "commit this change"}, ...]
 }
 ```
 

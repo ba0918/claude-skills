@@ -11,7 +11,7 @@ preserve" in re-runnable form, and it is committed in the same repository as the
   "scenarios": [
     {
       "id": "sf-001",
-      "title": "単一ファイル指摘からの横展開",
+      "title": "Sweeping outward from a single-file finding",
       "source": ".agents/artifacts/plans/20260702143000_sweep-fix.md",
       "executor_tier": "standard",
       "isolation": "worktree",
@@ -23,12 +23,12 @@ preserve" in re-runnable form, and it is committed in the same repository as the
         "git": { "init": true, "commit": true },
         "env": { "XDG_STATE_HOME": "./xdg-state" }
       },
-      "prompt": "src/example.py の eval 使用が危険だと指摘された。同種の問題をコードベース全体から探して直したい。",
+      "prompt": "The use of eval in src/example.py was flagged as dangerous. I want to find and fix the same class of problem across the whole codebase.",
       "requirements": [
-        { "text": "指摘箇所をパターン化してから横展開検索している", "critical": true },
-        { "text": "検出箇所を CONFIRMED/FALSE_POSITIVE/UNCERTAIN の3値で判定している", "critical": true },
-        { "text": "UNCERTAIN を修正対象に含めていない", "critical": true },
-        { "text": "修正後に検証コマンドの実行結果を提示している", "critical": false }
+        { "text": "Turns the finding into a pattern before searching outward", "critical": true },
+        { "text": "Judges each detected site with the 3 values CONFIRMED/FALSE_POSITIVE/UNCERTAIN", "critical": true },
+        { "text": "Does not include UNCERTAIN sites among the fix targets", "critical": true },
+        { "text": "Presents the output of a verification command after fixing", "critical": false }
       ]
     }
   ]
@@ -36,7 +36,7 @@ preserve" in re-runnable form, and it is committed in the same repository as the
 ```
 
 The CONFIRMED / FALSE_POSITIVE / UNCERTAIN in the example are the vocabulary of
-「文脈検証の3値判定」 in [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md)
+"Three-valued context verification" in [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md)
 (when a requirement sentence uses shared vocabulary, write it with the meaning from its definition).
 
 | Field | Required | Meaning |

@@ -6,7 +6,7 @@ Both the hand-rolled validation (`spec_lint`) and
 against the same corpus, preventing the canon and the projection from diverging.
 
 Every fixture is **synthetic data** built around a fictional library lending system and contains no
-real credentials or personal information (the 「機密情報の規約」 section of clause-schema.md).
+real credentials or personal information (the "Confidential Information Convention" section of clause-schema.md).
 
 ## The expected verdicts
 

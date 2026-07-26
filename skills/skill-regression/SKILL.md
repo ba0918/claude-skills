@@ -38,10 +38,10 @@ runs the regression evaluation only against the skills whose behavior surface ch
 
 | Input | Workflow |
 |------|-------------|
-| 「fixture 化して」「資産化して」 (right after tuning, or after a plan completes) | capture |
-| 「回帰評価して」「この変更の影響を確認して」 (after editing a contract or a SKILL.md) | run |
-| 「状況見せて」「どれが stale？」 | status |
-| 「fixture が無いのはどれ？」「カバレッジは？」 | status (`--coverage`) |
+| "turn this into a fixture" / "make it an asset" (right after tuning, or after a plan completes) | capture |
+| "run the regression evaluation" / "check the impact of this change" (after editing a contract or a SKILL.md) | run |
+| "show me the status" / "which ones are stale?" | status |
+| "which ones have no fixture?" / "what is the coverage?" | status (`--coverage`) |
 | CI failed with `[stale]` / `[unverified]` | run (targeting the skills in the failure message) |
 
 ## capture — turning acceptance criteria into assets

@@ -94,7 +94,7 @@ The first argument branches the workflow:
 3. **Reverse-generation review**: reverse-generate a readable document and concrete examples from the
    generated clauses, and present **the plain-text `statement` paired with examples / counterexamples, per clause**.
    What the user reviews is not the JSON but "whether the concrete examples match the intent".
-4. **Approval protocol**: the choices are the 3 options 「**一括承認 / 条項別修正 / 保留**」.
+4. **Approval protocol**: the choices are the 3 options **approve all / revise per clause / defer**.
    In headless execution, save the draft under `.agents/artifacts/spec-verify/drafts/`
    (conforming to the [artifact-store contract](../shared/references/artifact-store.md); outside the
    search scope of lint / trace. The path is **relative to {project_root}** and may be lazily created
@@ -107,7 +107,7 @@ The first argument branches the workflow:
    after saving a draft headless, and confirm exit 0:
 
    ```bash
-   python3 {skill_dir}/scripts/spec_lint.py --root {project_root} --strict <draftパス>
+   python3 {skill_dir}/scripts/spec_lint.py --root {project_root} --strict <draft path>
    ```
 5. **preview → apply (TOCTOU countermeasure)**: at preview time, freeze 3 items into the draft — the
    clause payload digest, the digest of the base file being applied to, and the target path. Re-verify
@@ -235,7 +235,7 @@ python3 {skill_dir}/scripts/spec_docgen.py --root {project_root} \
 ```
 
 - The output is a **read-only view** and must not become a second canon (consistent with the two-layer declaration).
-  Always emit an auto-generation marker and 「編集禁止・正本は specs/clauses/」 at the top.
+  Always emit an auto-generation marker and "do not edit — the source of truth is specs/clauses/" at the top.
   The recommended output path is `specs/SPEC.md`.
 - Contents: a summary (assurance level aggregation, a note on the trust boundary) + a clause table (clause ID /
   revision / kind / assurance level / valid case count / recorded_at for display only /
@@ -272,15 +272,15 @@ Implementing the generated tests follows the RED → GREEN check of
 [tdd-contract](../shared/references/tdd-contract.md) (observe at least once that the generated property fails on a broken implementation).
 
 ```markdown
-## spec-verify 完了報告（<workflow>）
+## spec-verify completion report (<workflow>)
 
-- 実行コマンドと結果:
+- Commands run and their results:
   - `python3 .../spec_lint.py --root .` → exit 0, findings 0
   - `python3 .../trace_matrix.py --root . --json` → exit 0, unverified 2 / property 5
   - `<runner> -- <test_id>` → 0 failures（cases_valid=200, discarded=3）
-  - `python3 .../spec_docgen.py --root . --output specs/SPEC.md` → exit 0（docgen 実行時）
-- 変更: specs/clauses/plan.json（+3 条項）/ manifest.json（bindings +3, observations +3）
-- 未解決・保留: <保留にした条項、unsupported と報告した bind 対象など>
+  - `python3 .../spec_docgen.py --root . --output specs/SPEC.md` → exit 0 (when docgen was run)
+- Changes: specs/clauses/plan.json (+3 clauses) / manifest.json (bindings +3, observations +3)
+- Unresolved / deferred: <clauses left deferred, bind targets reported as unsupported, and so on>
 ```
 
 ## Confidentiality and Security
