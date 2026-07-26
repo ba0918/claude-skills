@@ -1,12 +1,6 @@
 ---
 name: mockup-diff
-description: >
-  承認済みモックアップ HTML と実アプリのスクリーンショットを Playwright で自動取得し、
-  並べて比較 → 差分を特定 → コードを修正する一連のワークフロー。
-  初回は SETUP でプロジェクトを自動調査し、テーラーメイドの比較スクリプトを生成する。
-  「モックアップと比較」「mockup diff」「見た目の差分」「デザイン差分チェック」
-  「モックと実装が違う」「スクショ比較」で起動。
-  DESIGN.md / mockup HTML を持つプロジェクトで使用する。
+description: A workflow that captures screenshots of an approved mockup HTML and of the real app automatically with Playwright, compares them side by side, identifies the differences, and fixes the code. On the first run, SETUP investigates the project automatically and generates a tailor-made comparison script. Use when the user says "compare with the mockup", "mockup diff", "visual difference", "design difference check", "the mock and the implementation differ", or "compare the screenshots". Use it in projects that have a DESIGN.md and mockup HTML.
 ---
 
 # Mockup Diff — Detect and Fix Visual Differences Between Mockup and App

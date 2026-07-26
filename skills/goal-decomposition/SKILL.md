@@ -1,6 +1,6 @@
 ---
 name: goal-decomposition
-description: 大枠ゴール（例「コードベース全体を精査してリファクタリング完遂」）を Loop Readiness Dossier（自走可能性の型検査結果）にコンパイルし、既存の閉ループ基盤（goal-loop / loop-triage / issue polling）への配線先を機械的に決める入口スキル。主成果は「自走してはいけない断片を機械的に説明して止めること」で、配線の実行はしない（型検査のみ）。「goal-decomposition」「大枠ゴール」「ループに乗せたい」「自走できる状態にして」「dossier」「ゴールを分解して配線」「loop readiness」「このゴールを自動化できるか」で起動。本リポジトリ専用。
+description: Compile a broad goal (for example "go through the whole codebase and finish the refactoring") into a Loop Readiness Dossier (the result of type-checking whether it can run autonomously), and mechanically decide where it wires into the existing closed-loop infrastructure (goal-loop / loop-triage / issue polling). Its main product is mechanically explaining and stopping the fragments that must not run autonomously, and it never performs the wiring itself (type-checking only). Use when the user says "goal-decomposition", "a broad goal", "put this on a loop", "make this able to run itself", "dossier", "decompose the goal and wire it up", "loop readiness", or "can this goal be automated". For this repository only.
 ---
 
 # Goal Decomposition

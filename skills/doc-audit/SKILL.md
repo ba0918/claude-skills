@@ -1,6 +1,6 @@
 ---
 name: doc-audit
-description: docs 内の全アーティファクト（ideas, issues, cycles, session-history）を横断スキャンし、不整合を検出・自動修復する。「doc-audit」「ドキュメント監査」「docs 監査」で起動。--dry-run でレポートのみ、カテゴリ指定（ideas/issues/cycles）で対象を限定可能。汎用スキル。
+description: Scan every artifact under docs (ideas, issues, cycles, session-history) across the board, detect inconsistencies, and repair them automatically. Use when the user says "doc-audit", "audit the documents", or "audit docs". Pass --dry-run for a report only, or a category (ideas/issues/cycles) to narrow the target. A general-purpose skill.
 ---
 
 # Doc Audit

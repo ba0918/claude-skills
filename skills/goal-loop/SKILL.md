@@ -1,6 +1,6 @@
 ---
 name: goal-loop
-description: 機械検証可能な条件（oracle コマンド）が真になるまで「oracle 実行 → 失敗出力を implementer に渡して修正」を自律反復する条件収束型ループ。「全テスト green まで回して」「lint エラーゼロまで直して」「ビルドが通るまで」で起動。oracle ファイル群をハッシュロックし、テストを弱めて合格する oracle-gaming を機械的に遮断（oracle_tampered で即 halt）。同一失敗の stall・往復の oscillation を検出して無限ループを防ぐ。「goal-loop」「ゴールループ」「収束するまで」「〜が通るまで繰り返して」でも起動。
+description: A condition-convergent loop that autonomously repeats "run the oracle, then hand the failure output to the implementer to fix" until a mechanically verifiable condition (an oracle command) becomes true. Use when the user says "run it until all tests are green", "fix it until there are zero lint errors", "until the build passes", "goal-loop", "until it converges", or "keep going until X passes". It hash-locks the oracle files, mechanically blocking the oracle-gaming of passing by weakening the tests (halting immediately on oracle_tampered). It detects stall on an identical failure and oscillation between two states to prevent infinite loops.
 ---
 
 # Goal Loop

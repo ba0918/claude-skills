@@ -1,6 +1,6 @@
 ---
 name: trigger-eval
-description: スキルセットの description 発火精度（recall / precision / stability / confusion matrix）を、description-only の判定 subagent で機械的に実測し、衝突ペアを特定して description 改稿→再評価ループを収束まで回すメタスキル。実測エビデンス（メトリクス差分・holdout ゲート・Tier1↔Tier2 乖離率）で改善を証明する。対象は本リポジトリの skills/ のほか、任意のスキルディレクトリやユーザースコープも指定できる。「trigger-eval」「発火精度」「スキル発火の計測」「トリガー評価」「description 改稿」「confusion matrix でスキル衝突を見たい」で起動。`empirical-prompt-tuning`（本文実行の質）に対し選択層（description→発火）を測る姉妹スキル。
+description: A meta skill that mechanically measures a skill set's description firing accuracy (recall / precision / stability / confusion matrix) using a description-only judging subagent, identifies colliding pairs, and runs the description-rewrite then re-evaluation loop until it converges. It proves improvement with measured evidence (metric deltas, a holdout gate, and the Tier1-to-Tier2 divergence rate). The target can be this repository's skills/, any skill directory, or the user scope. Use when the user says "trigger-eval", "firing accuracy", "measure skill firing", "trigger evaluation", "rewrite the descriptions", or "show me skill collisions with a confusion matrix". It is the sister skill of `empirical-prompt-tuning` (which covers the quality of body execution) and measures the selection layer, description to firing.
 ---
 
 # trigger-eval

@@ -1,6 +1,6 @@
 ---
 name: refactor
-description: 実装完了後のコードを動作を完全に維持したままリファクタリングし、類似コードへ文脈検証つきで横展開するスキル。ユーザ指定スコープ（ファイル / ディレクトリ / クラス名 / 「直近Nコミット」）を完全理解したうえで表現だけを改善し、発見したバグは修正せず issue 化案を提示する。「リファクタリング」「リファクタして」「refactor」「きれいにして」「シンプルにして」「可読性を上げて」「類似コードも直して」で起動。バグ修正・不具合対応・脆弱性修正が目的の場合は本スキルではなく sweep-fix を使う（本スキルは動作保持が前提）。
+description: Refactor finished code while preserving its behavior exactly, and sweep the improvement outward to similar code with context verification. It fully understands the user-specified scope (a file, a directory, a class name, or "the last N commits") and improves only the expression, presenting a proposal to file an issue rather than fixing any bug it happens to find. Use when the user says "refactor", "refactor this", "clean this up", "simplify this", "make it more readable", or "fix the similar code too". When the goal is fixing a bug, a defect, or a vulnerability, use sweep-fix instead, since this skill assumes behavior is preserved.
 ---
 
 # Refactor

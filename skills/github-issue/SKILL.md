@@ -1,6 +1,6 @@
 ---
 name: github-issue
-description: GitHub issue を起点に Claude が自走し、polling → 並列 cycle → draft PR → Codex レビュー → 修正ループ → auto merge + close まで完全自動化する。`create` / `list` / `polling` / `cycle` の 4 ワークフローを提供する。「github issue」「gh issue」「issue polling」「auto merge」「自走」で起動。
+description: Drive Claude autonomously from a GitHub issue, fully automating polling then parallel cycles then a draft PR then Codex review then the fix loop then auto merge and close. It provides the 4 workflows `create` / `list` / `polling` / `cycle`. Use when the user says "github issue", "gh issue", "issue polling", "auto merge", or "run it autonomously".
 ---
 
 # github-issue Skill

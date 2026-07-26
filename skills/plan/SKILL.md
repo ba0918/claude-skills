@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Create timestamped implementation plans with automatic .agents/artifacts/status.md management and progress tracking. Use when user requests (1) "make a plan", "create a plan", "design this feature" for creating new plans, or (2) "update status", "planning done", "implementation complete", "cycle done" for updating implementation progress, or (3) "resume", "continue from last time", "前回の続き", "前回の続きから" for loading the current session state. Alternative to Claude Code's standard plan mode with timestamp-based file naming and status tracking.
+description: Create timestamped implementation plans with automatic .agents/artifacts/status.md management and progress tracking. Use when user requests (1) "make a plan", "create a plan", "design this feature" for creating new plans, or (2) "update status", "planning done", "implementation complete", "cycle done" for updating implementation progress, or (3) "resume", "continue from last time", "pick up where we left off" for loading the current session state. Alternative to Claude Code's standard plan mode with timestamp-based file naming and status tracking.
 ---
 
 # Plan

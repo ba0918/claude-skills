@@ -1,6 +1,6 @@
 ---
 name: design-scaffold
-description: DESIGN.md から machine-readable なデザインシステム（tokens.json + tokens.css + component-catalog + lint 設定）を scaffold 生成するスキル。design-guide で作った DESIGN.md を機械的検証可能な形に変換する。「デザインスキャフォールド」「scaffold」「トークン生成」で起動。
+description: Scaffold a machine-readable design system (tokens.json + tokens.css + component-catalog + lint config) out of DESIGN.md. It converts the DESIGN.md written by design-guide into a mechanically verifiable form. Use when the user says "design scaffold", "scaffold", or "generate the tokens".
 ---
 
 # Design Scaffold

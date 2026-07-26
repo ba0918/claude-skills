@@ -1,6 +1,6 @@
 ---
 name: skill-interface-audit
-description: 各 SKILL.md を API 仕様として静的に監査し、契約の欠落・構造違反を検出するスキル。skill-authoring.md の執筆原則を正本とし、SI-* ルール体系で機械検証する。純関数 static + LLM 意味判断の混成モデル。パッチ候補を含む finding を出力し、動的検証は既存メタスキルへ橋渡しする。「skill-interface-audit」「インターフェース監査」「スキル契約チェック」「SKILL.md 監査」「API仕様チェック」で起動。
+description: Audit each SKILL.md statically as an API specification and detect missing contracts and structural violations. It treats the authoring principles in skill-authoring.md as the source of truth and verifies them mechanically through the SI-* rule system, using a hybrid model of pure-function static checks plus LLM semantic judgment. It emits findings that include candidate patches and hands dynamic verification over to the existing meta skills. Use when the user says "skill-interface-audit", "audit the interfaces", "check the skill contracts", "audit SKILL.md", or "check the API specification".
 ---
 
 # skill-interface-audit

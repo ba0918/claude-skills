@@ -1,6 +1,6 @@
 ---
 name: systematic-debugging
-description: 4フェーズ構造化デバッグスキル。根本原因を特定してから修正する。investigate（調査のみ）の補完として修正まで実行する。「debug」「デバッグ」「バグ修正」「なぜ壊れる」で起動。
+description: A 4-phase structured debugging skill that identifies the root cause before fixing anything. It complements investigate (which only investigates) by carrying the work through to the fix. Use when the user says "debug", "debug this", "fix this bug", or "why does this break".
 ---
 
 # Systematic Debugging

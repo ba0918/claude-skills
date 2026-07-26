@@ -1,6 +1,6 @@
 ---
 name: skill-improve
-description: セッションデータからスキル使用時の摩擦を検出・分析し、データ駆動でスキル改善を実行するメタスキル。「skill-improve」「スキル改善」「摩擦分析」で起動。
+description: A meta skill that detects and analyzes friction in skill usage from session data and drives skill improvements from that data. Use when the user says "skill-improve", "improve the skills", or "analyze the friction".
 ---
 
 # Skill Improve

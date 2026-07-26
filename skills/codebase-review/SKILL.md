@@ -1,6 +1,6 @@
 ---
 name: codebase-review
-description: コードベース全体を4つの専門エージェント（セキュリティ/機密情報、パフォーマンス/メモリ、実装品質/論理整合性、コード衛生/改善点）+ Codex セカンドオピニオンで並行レビューし、100点満点でスコアリングする。「コードベースレビュー」「全体レビュー」「codebase review」「コード品質チェック」「プロジェクト全体を分析」で起動。CLAUDE.mdがあればプロジェクト固有ルールも自動で考慮する。
+description: Review the whole codebase in parallel with 4 specialized agents (security/secrets, performance/memory, implementation quality/logical consistency, code hygiene/improvements) plus a Codex second opinion, and score it out of 100. Use when the user says "codebase review", "review the whole thing", "code quality check", or "analyze the whole project". Project-specific rules from CLAUDE.md are taken into account automatically when that file exists.
 ---
 
 # Codebase Review

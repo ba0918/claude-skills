@@ -1,6 +1,6 @@
 ---
 name: review-testing
-description: テストスイート自体の欠陥検出力・契約検証・安定性と testing-anti-patterns 違反を評価する focused read-only レビュー。「テスト品質レビュー」「テストの品質を見て」「テストアンチパターン検出」「このテストは意味があるか」「テストの欠陥検出力」「安全網として機能しているか」「review-testing」で起動。依存やセキュリティではなくテスト自体の健全性が対象。
+description: A focused read-only review that evaluates a test suite's own defect-detection power, contract verification, and stability, along with violations of testing-anti-patterns. Use when the user says "review the test quality", "look at the quality of the tests", "detect testing anti-patterns", "is this test meaningful", "how much can these tests detect", "do the tests work as a safety net", or "review-testing". Its subject is the health of the tests themselves, not dependencies or security.
 ---
 
 # Review: Testing Quality

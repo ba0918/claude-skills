@@ -1,6 +1,6 @@
 ---
 name: commit
-description: 変更内容を分析し、論理単位で自動コミットする。確認なしで即実行。「コミットして」「commit」「変更を保存して」で起動。
+description: Analyze the changes and commit them automatically in logical units, running immediately without confirmation. Use when the user says "commit", "commit this", or "save the changes".
 ---
 
 # Auto Commit

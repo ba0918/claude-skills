@@ -1,6 +1,6 @@
 ---
 name: cycle
-description: 実装計画に対して refine（計画品質ゲート）と implement（TDD 自動実装）をサブエージェント委譲で自律実行し、最後にメインコンテキストでサマリー生成・ステータス更新・コミットまで行う。ユーザー確認なしのヘッドレス実行に対応。「cycle」「サイクル回して」「計画を自動実装して」「全自動で実装」で起動。
+description: Run refine (the plan quality gate) and implement (automated TDD implementation) autonomously against an implementation plan by delegating to subagents, then generate the summary, update status, and commit from the main context at the end. Supports headless execution with no user confirmation. Use when the user says "cycle", "run the cycle", "implement the plan automatically", or "implement it fully automatically".
 ---
 
 # Cycle

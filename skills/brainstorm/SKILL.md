@@ -1,6 +1,6 @@
 ---
 name: brainstorm
-description: アイデアの壁打ちに特化したスキル。発散→収束→plan化の導線を提供する。壁打ち中はファイル編集を一切行わず議論に集中する。「壁打ち」「brainstorm」「アイデア」で起動。
+description: A skill dedicated to idea sparring. It provides the path from diverging to converging to a plan, and edits no files at all during the session so the discussion stays the focus. Use when the user says "brainstorm", "spar on an idea", "bounce an idea around", or wants to think an idea through out loud.
 ---
 
 # Brainstorm

@@ -1,6 +1,6 @@
 ---
 name: loop-triage
-description: リポジトリの問題をセンサー（validate_repo / ledger --check / context-audit 等）で検出し、finding を冪等化・admission 分類して .agents/artifacts/issues/ready/ キューに自動投入するループ中枢スキル。AUTO_FIX 級のみ enqueue し、ループ定義ファイルに触れる変更は fixture 非保有なら inbox に降格する自己修飾ゲートを持つ。「loop-triage」「ループトリアージ」「センサー実行して issue 化」「finding をキューに積んで」「ループ中枢」「自己修飾ゲート」で起動。issue polling（消化側）の上流に位置する供給側。本リポジトリ専用。
+description: The loop hub skill that detects repository problems with sensors (validate_repo / ledger --check / context-audit and others), makes findings idempotent, classifies them for admission, and pushes them automatically into the .agents/artifacts/issues/ready/ queue. Only AUTO_FIX-class findings are enqueued, and it carries a self-modification gate that demotes changes touching loop definition files to the inbox when they hold no fixture. Use when the user says "loop-triage", "loop triage", "run the sensors and file issues", "push the findings into the queue", "the loop hub", or "the self-modification gate". It sits upstream of issue polling (the consuming side) as the supplying side. For this repository only.
 ---
 
 # Loop Triage

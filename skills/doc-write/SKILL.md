@@ -1,6 +1,6 @@
 ---
 name: doc-write
-description: LLMとのやり取り・調査結果・Web調査をリーダブルなドキュメントに昇華するスキル。Mermaid図付きの構造化ドキュメントを生成する。「ドキュメント書いて」「まとめてドキュメントに」「doc-write」で起動。
+description: Elevate exchanges with an LLM, investigation results, and web research into readable documentation, producing structured documents with Mermaid diagrams. Use when the user says "write documentation", "turn this into a document", or "doc-write".
 ---
 
 # Doc-Write

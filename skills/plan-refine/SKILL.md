@@ -1,6 +1,6 @@
 ---
 name: plan-refine
-description: 実装計画を plan-reviewer による review → fix ループで改善する計画品質ゲート。全観点 PASS か最大イテレーション数到達で終了する。cycle の Phase 1 としても単体でも使える。「plan-refine」「計画を磨いて」「計画をレビューして直して」「refine」で起動。
+description: A plan quality gate that improves an implementation plan through a review-fix loop driven by plan-reviewer, finishing when every dimension is PASS or the iteration limit is reached. It works both as Phase 1 of cycle and on its own. Use when the user says "plan-refine", "polish the plan", "review the plan and fix it", or "refine".
 ---
 
 # Plan Refine

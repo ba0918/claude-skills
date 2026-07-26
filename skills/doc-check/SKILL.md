@@ -1,6 +1,6 @@
 ---
 name: doc-check
-description: プロジェクトのドキュメント（README.md、CLAUDE.md、API ドキュメント等）とコードベースの実態の整合性を検証し、不整合を自動修正する。「doc-check」「ドキュメントチェック」「ドキュメント整合性」「docs 確認」で起動。引数なしで直近5コミット、数値で指定コミット数、`all` で全体チェック、ファイルパスで特定ドキュメントのみチェック。汎用スキル — あらゆるプロジェクトで使用可能。
+description: Verify that project documentation (README.md, CLAUDE.md, API docs, and so on) matches the reality of the codebase, and fix the inconsistencies automatically. Use when the user says "doc-check", "check the documentation", "documentation consistency", or "check the docs". With no argument it covers the last 5 commits, a number specifies the commit count, `all` checks everything, and a file path checks that document alone. A general-purpose skill usable in any project.
 ---
 
 # Doc Check

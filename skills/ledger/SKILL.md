@@ -1,6 +1,6 @@
 ---
 name: ledger
-description: greenfield の要件・仕様・ドメイン知識を人間と裁定し、現在有効な合意を状態付きの台帳として正本化する。仕様の空白を暗黙補完させず、未裁定事項を可視化したいときに使う。workflow は extract / session / status / orient。「合意台帳」「ledger」「裁定セッション」「台帳を作って」「合意を裁定して」「何が決まって何が未裁定か」で起動する。
+description: Adjudicate greenfield requirements, specifications, and domain knowledge together with a human, and canonicalize the currently valid agreements as a ledger with states. Use it when you do not want the blanks in a specification filled in implicitly and you want the unadjudicated items made visible. The workflows are extract / session / status / orient. Use when the user says "agreement ledger", "ledger", "adjudication session", "build the ledger", "adjudicate the agreements", or "what is decided and what is not".
 ---
 
 # ledger — Agreement Ledger

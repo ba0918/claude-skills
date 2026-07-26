@@ -1,6 +1,6 @@
 ---
 name: design-guide
-description: プロジェクト用の DESIGN.md（デザインシステム定義）を対話型ディスカバリーで作成し、それに基づくモックアップも生成するスキル。二択の具体的な選択肢でぼんやりしたデザインイメージを構造化し、AIっぽくない一貫したUI生成の基盤を作る。「デザインガイド」「design guide」「DESIGN.md作成」「デザイントークン」「モックアップ」「mockup」で起動。
+description: Create a project's DESIGN.md (its design system definition) through interactive discovery, and generate mockups based on it. It structures a vague design impression through concrete binary choices, building the foundation for consistent UI generation that does not read as AI-made. Use when the user says "design guide", "create DESIGN.md", "design tokens", or "mockup".
 ---
 
 # Design Guide

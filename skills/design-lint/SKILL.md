@@ -1,6 +1,6 @@
 ---
 name: design-lint
-description: プロジェクトのコードベースを .design/tokens.json に基づいて lint し、デザイントークン違反（直書きカラー・フォント・spacing等）を機械的に検出するスキル。CI にも組み込み可能。「デザインリント」「design lint」「トークン検証」で起動。
+description: Lint the project codebase against .design/tokens.json and mechanically detect design token violations such as hard-coded colors, fonts, and spacing. It can also be wired into CI. Use when the user says "design lint", "lint the design", or "verify the tokens".
 ---
 
 # Design Lint

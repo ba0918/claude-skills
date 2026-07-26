@@ -1,6 +1,6 @@
 ---
 name: review-deps
-description: manifest・lockfile・依存差分を第一級入力として、既知脆弱性とサプライチェーン信号を評価する focused read-only レビュー。「依存レビュー」「依存関係の脆弱性を見て」「lockfile をチェック」「サプライチェーンリスク」「npm audit の結果を整理して」「typosquat 検出」「依存の健全性」「review-deps」で起動。テスト品質やコード品質ではなく依存の健全性が対象。
+description: A focused read-only review that treats manifests, lockfiles, and dependency diffs as first-class input and evaluates known vulnerabilities and supply chain signals. Use when the user says "review the dependencies", "look at the dependency vulnerabilities", "check the lockfile", "supply chain risk", "organize the npm audit output", "detect typosquats", "dependency health", or "review-deps". Its subject is the health of the dependencies, not test quality or code quality.
 ---
 
 # Review: Dependency Health

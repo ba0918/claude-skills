@@ -1,6 +1,6 @@
 ---
 name: generate-review-rules
-description: プロジェクトの CLAUDE.md、ドキュメント、コード構造を分析し、plan-reviewer およびコードレビュー用のプロジェクト固有レビュールール (.claude/review-rules.md) を自動生成する。「レビュールール生成」「generate review rules」「review-rules 作成」「レビュー設定」で起動。新しいプロジェクトでレビューを始める前のセットアップとして使用。
+description: Analyze a project's CLAUDE.md, documentation, and code structure, and generate project-specific review rules (.claude/review-rules.md) for plan-reviewer and for code review. Use when the user says "generate review rules", "create review-rules", or "set up reviews". Use it as setup before starting reviews in a new project.
 ---
 
 # Generate Review Rules

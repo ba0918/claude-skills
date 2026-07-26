@@ -1,6 +1,6 @@
 ---
 name: investigate
-description: 完全読み取り専用で問題を軽量調査し、構造化レポートを出力する。ファイル編集ゼロ保証。「調べて」「原因を調査して」「なぜこうなるか」「investigate」「バグ調査」「なぜ失敗するか」「影響範囲を確認したい」「実装を検証して」で起動。
+description: Investigate a problem lightly in a strictly read-only way and emit a structured report, with a guarantee of zero file edits. Use when the user says "look into it", "investigate the cause", "why does this happen", "investigate", "investigate this bug", "why does it fail", "I want to see the blast radius", or "verify the implementation".
 ---
 
 # Investigate

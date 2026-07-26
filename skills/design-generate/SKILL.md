@@ -1,6 +1,6 @@
 ---
 name: design-generate
-description: ページ定義（.design/pages/*.json）+ コンポーネントカタログに基づいて、制約付きでページを生成するスキル。LLM の自由度をセクション内コンテンツに限定し、デザインの再現性を保証する。「ページ生成」「design generate」「制約付き生成」で起動。
+description: Generate pages under constraints, based on page definitions (.design/pages/*.json) plus a component catalog. It limits the LLM's freedom to the content inside each section, which is what makes the design reproducible. Use when the user says "generate a page", "design generate", or "constrained generation".
 ---
 
 # Design Generate

@@ -1,6 +1,6 @@
 ---
 name: decision-journal
-description: アーキテクチャ・技術選定の意思決定を判例集方式で記録・聞き取りするスキル。着手前 1 行プロトコル / LLM 選定会話（候補・裁可理由・確信度・再評価条件）の固化 / 判例の考古学的聞き取りを提供する。棄却条件の反証可能化と技術選定の来歴保存が目的で、brainstorm（アイデア発散）や plan（実装計画）とは棲み分ける。「意思決定記録の固化」「技術選定の判例」「decision journal」「なぜこの技術にしたか記録」「棄却条件を残す」で起動。
+description: Record and elicit architecture and technology-selection decisions in a case-law style. It provides a one-line protocol to run before starting, a way to solidify an LLM selection conversation (candidates, the reason for the ruling, confidence, and re-evaluation conditions), and archaeological elicitation of past decisions. Its purpose is making rejection conditions falsifiable and preserving the provenance of technology choices, which keeps it distinct from brainstorm (diverging on ideas) and plan (implementation planning). Use when the user says "solidify the decision record", "decision journal", "record why we chose this technology", or "leave the rejection conditions behind".
 ---
 
 # Decision Journal

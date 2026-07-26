@@ -1,6 +1,6 @@
 ---
 name: sweep-fix
-description: ユーザ指定範囲のコードを分析して問題を検出し、各問題を検索可能なパターンに変換してコードベース全体へ横展開検索（Grep / ast-grep / LSP）、文脈検証で偽陽性を除去したうえで該当箇所を一括修正する find-one-fix-all 型スキル。「sweep-fix」「横展開修正」「同様の問題を探して直して」「この範囲の問題を全部直して」「似た問題を一掃して」で起動。引数に対象範囲（ファイル / ディレクトリ / glob / 関数名）と、あれば着目したい観点を指定する。
+description: A find-one-fix-all skill that analyzes code in a user-specified range to detect problems, converts each problem into a searchable pattern, sweeps the whole codebase for it (Grep / ast-grep / LSP), removes false positives through context verification, and then fixes every matching site in one pass. Use when the user says "sweep-fix", "sweep the fix outward", "find and fix the same problem elsewhere", "fix everything wrong in this range", or "clear out the similar problems". Pass the target range as an argument (a file, a directory, a glob, or a function name), plus any dimension you want it to focus on.
 ---
 
 # Sweep Fix

@@ -1,6 +1,6 @@
 ---
 name: empirical-prompt-tuning
-description: agent 向けテキスト指示（skill / slash command / task プロンプト / CLAUDE.md 節 / rules / コード生成プロンプト）を、バイアスを排した 3 役分離（チューナー / 実行者 / checker）で評価し、摩擦の固定タクソノミと統計的採択ゲートで反復改善する。収束した検証資産は可搬 fixture として資産化する。「empirical-prompt-tuning」「プロンプトチューニング」「指示の品質を測りたい」「skill を堅牢化したい」「このプロンプトが分かりにくい原因を知りたい」「rule が守られているか確認したい」で起動。`trigger-eval`（選択層 = description→発火の精度）の姉妹スキル（本文層 = 実行の質）。
+description: Evaluate text instructions written for agents (a skill, a slash command, a task prompt, a CLAUDE.md section, a rules file, or a code generation prompt) through an unbiased separation of 3 roles (tuner / executor / checker), and improve them iteratively with a fixed friction taxonomy and a statistical adoption gate. Converged verification assets are turned into portable fixtures. Use when the user says "empirical-prompt-tuning", "prompt tuning", "I want to measure instruction quality", "I want to harden this skill", "why is this prompt hard to follow", or "check whether the rule is being obeyed". It is the sister skill of `trigger-eval` (which measures the selection layer, description to firing) and covers the body layer, the quality of execution.
 ---
 
 # Empirical Prompt Tuning

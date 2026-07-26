@@ -1,6 +1,6 @@
 ---
 name: design-validate
-description: デザインシステム準拠の多段階検証ゲート。Static Lint → Visual Regression → Rubric Judge の順で検証し、全ゲート合格でコード反映を承認する。「デザイン検証」「design validate」「バリデーション」で起動。
+description: A multi-stage verification gate for design system compliance. It verifies in the order Static Lint then Visual Regression then Rubric Judge, and approves reflecting the work in code only when every gate passes. Use when the user says "design validate", "validate the design", or "run the validation".
 ---
 
 # Design Validate

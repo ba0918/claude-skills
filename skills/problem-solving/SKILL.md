@@ -1,6 +1,6 @@
 ---
 name: problem-solving
-description: 行き詰まった時の思考ツール集。5つのサブワークフロー（simplify/collide/invert/scale/pattern）で多角的にアプローチする。brainstorm セッションからも呼び出し可能。「problem-solving」「行き詰まった」「思考ツール」で起動。
+description: A toolbox of thinking tools for when you are stuck, approaching the problem from several angles through 5 sub-workflows (simplify/collide/invert/scale/pattern). It can also be called from a brainstorm session. Use when the user says "problem-solving", "I am stuck", "I cannot think of a good approach", or "thinking tools".
 ---
 
 # Problem Solving

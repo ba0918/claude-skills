@@ -1,6 +1,6 @@
 ---
 name: iterate
-description: cycle 完了後の追加指示を、サイズ適応型の軽量改善ループで実行する。修正・機能追加どちらにも対応。「iterate」「追加修正」「ここ直して」「これも追加して」「もうちょっと改善して」で起動。cycle よりも軽く、直接作業よりも品質を担保する中間的なワークフロー。
+description: Run follow-up instructions after a cycle completes, through a size-adaptive lightweight improvement loop that handles both fixes and new features. Use when the user says "iterate", "one more fix", "fix this bit", "add this too", or "polish it a little more". It is an intermediate workflow, lighter than cycle but with more quality assurance than working directly.
 ---
 
 # Iterate

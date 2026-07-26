@@ -1,6 +1,6 @@
 ---
 name: test-driven-development
-description: TDD (RED-GREEN-REFACTOR) サイクルをガイドするスキル。テストファースト開発を強制し、各フェーズでシェルコマンドによるテスト実行結果を証拠として要求する。「tdd」「テスト駆動」「テストファースト」で起動。
+description: Guide the TDD (RED-GREEN-REFACTOR) cycle. It enforces test-first development and demands the output of a test run through a shell command as evidence at each phase. Use when the user says "tdd", "test-driven", or "test first".
 ---
 
 # Test-Driven Development

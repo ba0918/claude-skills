@@ -1,6 +1,6 @@
 ---
 name: context-audit
-description: LLM 向け指示ファイル（CLAUDE.md / AGENTS.md / .claude/rules / プロジェクトメモリ）の老朽化・矛盾・有害指示・クロスツール乖離を監査する棚卸しスキル。純関数ルールエンジン（CA-* ルール体系）で機械検証し、AUTO_FIX / NEEDS_JUDGMENT / REPORT_ONLY の 3 値で扱い、削除は自動化しない。doc-check（code⇔docs）/ doc-audit（docs⇔docs）が見ない「指示としての品質」を所有する。「context-audit」「指示ファイル監査」「CLAUDE.md 棚卸し」「AGENTS.md 監査」「メモリ棚卸し」「指示の腐敗」「指示の陳腐化をチェック」で起動。
+description: An inventory skill that audits LLM instruction files (CLAUDE.md / AGENTS.md / .claude/rules / project memory) for decay, contradiction, harmful instructions, and cross-tool divergence. It verifies mechanically with a pure-function rule engine (the CA-* rule system), handles findings with the 3 values AUTO_FIX / NEEDS_JUDGMENT / REPORT_ONLY, and never automates deletion. It owns "quality as instructions", which neither doc-check (code vs docs) nor doc-audit (docs vs docs) looks at. Use when the user says "context-audit", "audit the instruction files", "take inventory of CLAUDE.md", "audit AGENTS.md", "review the memory files", "the instructions have rotted", or "check whether the instructions are stale".
 ---
 
 # context-audit
