@@ -60,7 +60,9 @@ Analyze the code in the specified scope and build a problem list.
    - Do not create intermediate files (if you already created them, delete them with `rm -rf .claude/tmp/sweep-fix`)
    - The report is not Phase 5's full version but an abbreviated one — the "problems detected" section plus the basis of the analysis — printed in the conversation
    - No fix happened, so the verification gate (running tests) is unnecessary. 「変更なしのため検証対象なし」 suffices
-5. Save the problem list: run `mkdir -p .claude/tmp/sweep-fix`, then write `.claude/tmp/sweep-fix/problems.json`
+5. Save the problem list: **before creating the directory, check whether the intermediate-file location is ignored by the VCS** (`git check-ignore -q .claude/tmp/sweep-fix`. If the check itself cannot be run, treat the state as unknown and handle it the same as not-ignored). Then run `mkdir -p .claude/tmp/sweep-fix` and write `.claude/tmp/sweep-fix/problems.json`
+   - **When it is not ignored**: do not move the location, and do not edit the project's ignore settings on your own (rewriting the user's repository setup is outside this skill's scope). Proceed as is and **state in the report that the intermediate files are visible to the VCS at that path**. Whether to add an ignore entry is the user's call
+   - The point of the check is not to change where the files go. It is so that Phase 4-3 does not misreport them as an unintended change, and so that leftovers surviving a refused deletion in Phase 5 do not get swept into the user's next commit unnoticed
 
 **When an aspect to focus on is specified**, prioritize that aspect, but still report an obvious BLOCK-class problem even if it falls outside the aspect (whether to fix it is the user's call).
 
@@ -122,6 +124,7 @@ Fix **CONFIRMED sites only**. Do not create any path by which a change touches a
    - When the test command is known (detectable from CLAUDE.md / package.json / Makefile, etc.), run it and check the output
    - On test failure: if your fix caused it, fix it. If it is an unrelated pre-existing failure, distinguish it and state so in the report
    - Get the list of changed files with `git diff --stat` and confirm it matches the fix-target list (that no unintended file was changed)
+   - **Exclude the intermediate-file location `.claude/tmp/sweep-fix/` from this comparison.** It is this skill's own workspace, not a fix target. When Phase 1 found the location is not ignored, it also shows up in `git status` — do not report it as an unintended change, and do not delete it here (Phase 5 owns the deletion)
 4. **Do not commit**. The user commits with `/claude-skills:commit` (this skill's responsibility ends at the fix)
 
 ## Phase 5: REPORT — Structured Report
@@ -131,6 +134,8 @@ Print a report in the conversation with the structure below, then delete the int
 **The order is a requirement, not a preference: delete only after the report has been printed.** `.claude/tmp/sweep-fix/verdicts.json` holds the only record of each verdict's basis, so the FALSE_POSITIVE exclusion reasons (section 4) and the UNCERTAIN decision material (section 5) must already be transcribed into the report before anything is deleted. Delete first and they are unrecoverable.
 
 **When the deletion is refused or fails** (a permission gate, a mount constraint): do not force it through by another route. State the surviving path in the report and finish normally — the run counts as complete. The leftovers are inert intermediate files, not an unfinished fix.
+
+**This exit is open only to a deletion that was actually attempted and refused — it is not a licence to skip the attempt.** Reporting leftovers without having run the deletion violates this phase, however confidently you predict the refusal. When the leftovers survive **and** Phase 1 found the location is not ignored by the VCS, they will surface in the user's `git status` and can be swept into their next commit: state that in the report too, and ask them to delete the path by hand or add an ignore entry.
 
 ```
 ══════════════════════════════════════
@@ -163,6 +168,7 @@ SWEEP-FIX REPORT
 
 - テスト: {実行コマンドと結果。未実行なら「テストコマンド未検出」と明記}
 - diff: {git diff --stat の要約}
+- 中間ファイル: {削除済み / 削除を試みたが拒否された場合は残存パスと理由。置き場が VCS の ignore 対象外だった場合はその旨と、手動削除または ignore 追加の依頼}
 ```
 
 ## Rationalization Guard
@@ -177,6 +183,9 @@ SWEEP-FIX REPORT
 | "There are many sites to fix, so bulk-replace with sed" | Adapting to each site's context is Phase 4's responsibility. Mechanical replacement destroys context |
 | "The intermediate-file deletion was refused, so remove it by another route" | Bypassing a refused deletion is forbidden. Record the surviving path in the report and finish |
 | "Delete the intermediate files first to keep the workspace clean, then write the report" | verdicts.json is the only record of the verdict bases. Deleting before transcription destroys the evidence |
+| "The deletion gets refused in this environment anyway, so report the leftovers without trying" | The exit for a refusal belongs to a deletion that was attempted. Predicting a refusal is not attempting it |
+| "The intermediate files show up in `git status`, so they are an unintended change" | The intermediate-file location is this skill's own workspace and is excluded from the Phase 4-3 comparison. Report it as an ignore-status finding, not as a stray fix |
+| "The intermediate files are not ignored, so add them to .gitignore / move the location" | Rewriting the user's repository setup is outside this skill's scope. Report it and leave the decision to them |
 
 ## Red Flags — Signs the Skill Is Not Being Followed
 
