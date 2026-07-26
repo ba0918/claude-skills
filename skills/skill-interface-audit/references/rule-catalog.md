@@ -1,121 +1,121 @@
 # SI-* Rule Catalog
 
-skill-interface-audit の全ルールの定義。
-[skill-authoring.md](../../shared/references/skill-authoring.md) の執筆原則を正本とし、
-その遵守を機械的に監査する。
+Definitions of every skill-interface-audit rule.
+The authoring principles of [skill-authoring.md](../../shared/references/skill-authoring.md) are the canon,
+and this audits compliance with them mechanically.
 
-- **Severity**（BLOCK / WARN / INFO / PASS）は問題の重大度。定義は
-  [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) に準拠。
-- **Action**（AUTO\_FIX / NEEDS\_JUDGMENT / REPORT\_ONLY）は修正の自動化可否。severity と直交する別軸で、
-  定義は [fix-action-taxonomy.md](../../shared/references/fix-action-taxonomy.md) に準拠。
-- Phase 1（SI-S\*）は純関数で決定的に判定する。Phase 2（SI-C\*）は LLM が意味判断し、全て REPORT\_ONLY。
+- **Severity** (BLOCK / WARN / INFO / PASS) is the seriousness of the problem. The definitions follow
+  [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md).
+- **Action** (AUTO\_FIX / NEEDS\_JUDGMENT / REPORT\_ONLY) is whether the fix can be automated. It is an axis
+  orthogonal to severity, and the definitions follow [fix-action-taxonomy.md](../../shared/references/fix-action-taxonomy.md).
+- Phase 1 (SI-S\*) decides deterministically with pure functions. Phase 2 (SI-C\*) is semantic judgment by the LLM, all REPORT\_ONLY.
 
-## ID band 規約
+## ID band convention
 
-| prefix | band | 意味 |
+| prefix | band | Meaning |
 |--------|------|------|
-| `S` | `0xx` | structural — 構造・形式の機械検証 |
-| `C` | `1xx` | contract — API 契約要素の意味的完備性 |
+| `S` | `0xx` | structural — mechanical verification of structure and form |
+| `C` | `1xx` | contract — semantic completeness of the API contract elements |
 
-v2 で band を追加する場合はこの表を更新する。
+Update this table when a band is added in v2.
 
-## Finding ID 採番規則
+## Finding ID numbering rule
 
-同一ルールで複数箇所にマッチした場合、finding ID にサフィックスを付与する:
-- 単一マッチ: `SI-S004`
-- 複数マッチ: `SI-S004-1`, `SI-S004-2`, ...（検出順）
+When one rule matches in several places, add a suffix to the finding ID:
+- single match: `SI-S004`
+- multiple matches: `SI-S004-1`, `SI-S004-2`, ... (in detection order)
 
-レポート内では `where` フィールド（`skill:file:line`）で一意に識別できるため、
-サフィックスは可読性のための補助であり、baseline での照合には `where` を使う。
+Because the `where` field (`skill:file:line`) identifies findings uniquely in the report,
+the suffix is an aid to readability only — use `where` for matching against a baseline.
 
-## Phase 1: Structural Rules（純関数）
+## Phase 1: Structural Rules (pure functions)
 
-validate\_repo.py が既に CI で強制しているチェック（frontmatter・description トリガー語・リンク実在・
-共有契約語彙）とは重複しない。本フェーズは validate\_repo.py が見ない構造的品質を所有する。
+These do not duplicate the checks validate\_repo.py already enforces in CI (frontmatter, description trigger
+words, link existence, shared contract vocabulary). This phase owns the structural quality validate\_repo.py does not look at.
 
-| ID | Severity | Action | 正本 | 検証 | 内容 |
+| ID | Severity | Action | Canon | Verification | Content |
 |----|----------|--------|------|------|------|
-| SI-S001 | WARN | REPORT\_ONLY | skill-authoring #4 | 純関数 | **参照チェーン深度超過**: SKILL.md → references/ 内ファイル → さらに別ファイルへの md リンク（depth > 1）。Progressive disclosure は1階層まで |
-| SI-S002 | WARN | REPORT\_ONLY | skill-authoring frontmatter | 純関数 | **description にワークフロー要約が混入**: 番号付きリスト・フェーズキーワード（Phase/Step/まず/次に）・手順記述パターンを検出。description は「何をするか + いつ使うか」に留める |
-| SI-S003 | INFO | REPORT\_ONLY | skill-authoring #1 | 純関数 | **prose 肥大**: SKILL.md 内に `Workflow` / `Phase` / `Step` 系見出しを持たないセクションが全体の 60% 超。Process over prose 原則の逸脱指標 |
-| SI-S004 | WARN | NEEDS\_JUDGMENT | AGENTS.md 編集ルール | 純関数 | **プラットフォーム固有ツール語彙の混入**: SKILL.md または references/ に特定プラットフォームのツール API 名（`Edit`, `Write`, `Read`, `Bash`, `Agent`, `Workflow` 等）やモデル固有名が含まれる。コードブロック・引用内は除外 |
+| SI-S001 | WARN | REPORT\_ONLY | skill-authoring #4 | pure function | **Reference chain depth exceeded**: SKILL.md → a file in references/ → an md link to yet another file (depth > 1). Progressive disclosure goes one level only |
+| SI-S002 | WARN | REPORT\_ONLY | skill-authoring frontmatter | pure function | **A workflow summary leaked into the description**: detects numbered lists, phase keywords (Phase/Step/まず/次に), and procedure description patterns. A description stays at "what it does + when to use it" |
+| SI-S003 | INFO | REPORT\_ONLY | skill-authoring #1 | pure function | **Prose bloat**: sections in SKILL.md without a `Workflow` / `Phase` / `Step` style heading exceed 60% of the whole. An indicator of deviation from the process-over-prose principle |
+| SI-S004 | WARN | NEEDS\_JUDGMENT | AGENTS.md editing rules | pure function | **Platform-specific tool vocabulary leaked in**: SKILL.md or references/ contains a platform-specific tool API name (`Edit`, `Write`, `Read`, `Bash`, `Agent`, `Workflow`, etc.) or a model-specific name. Code blocks and quotes are excluded |
 
-### SI-S001 詳細: 参照チェーン深度
+### SI-S001 detail: reference chain depth
 
-検出方法:
-1. SKILL.md 内の相対 md リンクを抽出し、references/ 配下へのリンクを一次参照とする
-2. 一次参照先ファイル内の相対 md リンクを抽出する
-3. 一次参照先から shared/references/ 以外への md リンクがあれば finding（shared は共有契約なので許可）
+Detection method:
+1. Extract the relative md links in SKILL.md and treat the links into references/ as primary references
+2. Extract the relative md links inside the primary reference files
+3. If a primary reference links to md outside shared/references/, that is a finding (shared is allowed, being the shared contract)
 
-### SI-S002 詳細: description ワークフロー要約
+### SI-S002 detail: workflow summary in the description
 
-検出パターン（regex ベース）:
-- `\d+[.)]\s` — 番号付きリスト
-- `Phase\s*\d` / `Step\s*\d` — フェーズ・ステップ番号
-- `まず.*次に` / `最初に.*その後` — 手順接続詞の連鎖
-- `→` が 2 つ以上 — フロー矢印の連鎖
+Detection patterns (regex-based):
+- `\d+[.)]\s` — a numbered list
+- `Phase\s*\d` / `Step\s*\d` — phase and step numbers
+- `まず.*次に` / `最初に.*その後` — a chain of procedural connectives
+- 2 or more `→` — a chain of flow arrows
 
-### SI-S003 詳細: prose 肥大判定
+### SI-S003 detail: prose bloat verdict
 
-ヒューリスティック:
-1. SKILL.md の `##` 見出しを分類: workflow 系（`Workflow` / `Phase` / `Step` / フロー / ワークフロー）vs prose 系（それ以外）。`###` 以下の小見出しは親 `##` の分類に従う。親 `##` を持たない独立 `###` は prose 系に分類する
-2. 分母は **frontmatter を除く SKILL.md の総行数**（空行を含む）。prose 系セクションの総行数 / 分母 > 0.6 なら finding
-3. 知識の羅列は references/ に逃がすべき（skill-authoring #1 + #4）
+Heuristic:
+1. Classify the `##` headings of SKILL.md: workflow-type (`Workflow` / `Phase` / `Step` / フロー / ワークフロー) vs prose-type (everything else). Subheadings at `###` and below inherit the classification of their parent `##`. A standalone `###` with no parent `##` is classified as prose-type
+2. The denominator is **the total line count of SKILL.md excluding the frontmatter** (blank lines included). If the total lines of prose-type sections / the denominator > 0.6, it is a finding
+3. A pile of knowledge should be moved out into references/ (skill-authoring #1 + #4)
 
-### SI-S004 詳細: プラットフォーム固有語彙
+### SI-S004 detail: platform-specific vocabulary
 
-検出対象語彙（context-audit CA-D001 と同じリスト、対象ファイルが異なる）:
-- ツール API 名: `Edit`, `Write`, `Read`, `Bash`, `Agent`, `Workflow`, `WebFetch`, `WebSearch`, `Grep`, `Glob`, `LSP`, `NotebookEdit`
-- 日本語「〜ツール」表記: `Edit ツール`, `Bash ツール` 等
-- モデル固有名: `claude-opus-*`, `claude-sonnet-*`, `claude-haiku-*`, `gpt-*`, `o1-*`
+Vocabulary detected (the same list as context-audit CA-D001, over a different file set):
+- tool API names: `Edit`, `Write`, `Read`, `Bash`, `Agent`, `Workflow`, `WebFetch`, `WebSearch`, `Grep`, `Glob`, `LSP`, `NotebookEdit`
+- the Japanese 「〜ツール」 form: `Edit ツール`, `Bash ツール`, etc.
+- model-specific names: `claude-opus-*`, `claude-sonnet-*`, `claude-haiku-*`, `gpt-*`, `o1-*`
 
-**大文字小文字の判定規則（英語 SKILL.md での誤検知防止）**:
-- PascalCase のツール名（`Edit`, `Read`, `Write` 等）は**文頭以外**で単独出現した場合のみ検出する
-- 文頭（行頭・ピリオド直後）の大文字は英語の通常表記であり除外する
-- 小文字の `edit`, `read`, `write` 等は一般動詞として除外する（Unix コマンドとしても使われるため）
-- `LSP` は業界標準プロトコル名としても使われるため、「`LSP` ツール」「`LSP` を使う」等のツール用法のみ検出し、プロトコル名としての言及（「`LSP` 準拠」「`LSP` サポート」等）は除外する
+**Case rules (to prevent false positives in an English SKILL.md)**:
+- A PascalCase tool name (`Edit`, `Read`, `Write`, etc.) is detected only when it appears standalone **outside sentence-initial position**
+- A capital at the start of a sentence (line start, or right after a period) is ordinary English orthography and is excluded
+- Lowercase `edit`, `read`, `write`, etc. are excluded as ordinary verbs (they are also used as Unix commands)
+- Because `LSP` is also an industry-standard protocol name, detect only tool usages such as 「`LSP` ツール」 or 「`LSP` を使う」, and exclude mentions of the protocol name (「`LSP` 準拠」, 「`LSP` サポート」, etc.)
 
-除外条件:
-- コードブロック（`` ``` `` / `` ` `` 内）
-- 引用ブロック（`> ` 行）
-- ファイルパス中の語（`scripts/test_*.py` 等）
-- 文頭（行頭・ピリオド直後）の大文字語
-- Markdown 見出し内の語（`## Workflow` 等。見出しは行頭 `#` で始まるため文頭除外にも該当するが、明示的に除外する）
-- 番号付きリスト直後の語（`3. Write ...` の `Write` 等。`N. ` のピリオドは文末ピリオドではないが、文頭相当として除外する）
+Exclusion conditions:
+- code blocks (inside `` ``` `` / `` ` ``)
+- quote blocks (`> ` lines)
+- words inside file paths (`scripts/test_*.py`, etc.)
+- capitalized words in sentence-initial position (line start, or right after a period)
+- words inside Markdown headings (`## Workflow`, etc. A heading starts with `#` at line start, so it also falls under the sentence-initial exclusion, but exclude it explicitly)
+- words right after a numbered list marker (the `Write` in `3. Write ...`, etc. The period in `N. ` is not a sentence-final period, but treat it as sentence-initial and exclude it)
 
-## Phase 2: Contract Rules（LLM 意味判断）
+## Phase 2: Contract Rules (LLM semantic judgment)
 
-全ルールの fix action は **REPORT\_ONLY**（上限は NEEDS\_JUDGMENT。AUTO\_FIX 禁止）。
-finding にはパッチ候補（`fix_draft`: 追記すべき文面のドラフト）を含める。
+The fix action of every rule is **REPORT\_ONLY** (the ceiling is NEEDS\_JUDGMENT; AUTO\_FIX is forbidden).
+A finding includes a patch candidate (`fix_draft`: a draft of the text that should be added).
 
-**「該当なし」は正当な状態**: スキルの性質上、特定の契約要素が不要な場合がある。
-LLM はスキルの目的・ワークフローを読んだ上で、「この要素が欠落すると
-LLM が誤解して事故を起こしうるか」で判定する。不要と判断すれば PASS。
+**"Not applicable" is a legitimate state**: given a skill's nature, a particular contract element may be
+unnecessary. The LLM reads the skill's purpose and workflow and decides on "could an LLM misunderstand and
+cause an accident if this element is missing". If it judges the element unnecessary, that is a PASS.
 
-| ID | Severity | 正本 | 内容 | N/A となる典型例 |
+| ID | Severity | Canon | Content | Typical N/A case |
 |----|----------|------|------|----------------|
-| SI-C001 | WARN | skill-authoring #2, #3 | **副作用未宣言**: ファイル生成・変更・削除、外部通信、状態変更が明示されていない。欠落すると LLM が「ついでに」副作用を追加する | 読み取り専用スキル（investigate 等）で「変更しない」と明記済み |
-| SI-C002 | WARN | verification-gate.md | **完了条件の欠落/非検証可能**: 何をもって完了とするかが不明、または検証不可能な形で書かれている | 対話型スキル（brainstorm 等）でユーザーが終了を判断する |
-| SI-C003 | WARN | skill-authoring #2 | **失敗時の扱い未定義**: エラー・中断時にどう振る舞うかが書かれていない。LLM は失敗を握りつぶして完了報告する | 失敗パスが存在しないスキル（problem-solving 等の思考ツール） |
-| SI-C004 | INFO | — | **入力/引数契約の欠落**: 引数の一覧・デフォルト・引数なし時の動作が不明 | 引数を取らないスキル |
-| SI-C005 | INFO | skill-authoring #2 | **出力/成果物の未定義**: 何を生成するか（ファイル・レポート・差分）が不明 | 対話のみで完結するスキル |
-| SI-C006 | INFO | — | **委譲条件の未文書化**: 類似スキルとの境界・使い分けが書かれていない | 唯一の目的を持ち他スキルと混同しようがないスキル |
+| SI-C001 | WARN | skill-authoring #2, #3 | **Undeclared side effects**: file creation, modification, or deletion, external communication, or state change is not stated. When missing, the LLM adds side effects "while it is at it" | A read-only skill (investigate, etc.) that already states "does not change anything" |
+| SI-C002 | WARN | verification-gate.md | **Missing or unverifiable completion condition**: what counts as done is unclear, or is written in a form that cannot be verified | An interactive skill (brainstorm, etc.) where the user decides when to stop |
+| SI-C003 | WARN | skill-authoring #2 | **Undefined failure handling**: how to behave on an error or interruption is not written. The LLM swallows the failure and reports completion | A skill with no failure path (a thinking tool such as problem-solving) |
+| SI-C004 | INFO | — | **Missing input/argument contract**: the list of arguments, their defaults, and the behavior with no argument are unclear | A skill that takes no arguments |
+| SI-C005 | INFO | skill-authoring #2 | **Undefined output/artifact**: what it produces (a file, a report, a diff) is unclear | A skill that is complete within the dialogue |
+| SI-C006 | INFO | — | **Undocumented delegation condition**: the boundary against similar skills and when to use which is not written | A skill with a single purpose that cannot be confused with another |
 
-### Severity の根拠規律
+### The discipline behind these severities
 
-SI-C001〜C003 が WARN、SI-C004〜C006 が INFO である根拠:
+Why SI-C001-C003 are WARN and SI-C004-C006 are INFO:
 
-- **WARN（C001〜C003）**: 欠落時の LLM 事故モードが skill-improve の friction データおよび
-  empirical-prompt-tuning の実測で観測されている（副作用の暴走、完了の誤判定、失敗の握りつぶし）。
-  エビデンスが蓄積され次第、severity を昇格または降格する
-- **INFO（C004〜C006）**: 欠落しても文脈から補われやすく、事故に直結した実測データがまだない。
-  skill-improve のログで事故相関が確認されれば WARN に昇格する
+- **WARN (C001-C003)**: the LLM accident mode on omission has been observed in skill-improve's friction data
+  and in empirical-prompt-tuning's measurements (runaway side effects, misjudging completion, swallowing failures).
+  Promote or demote the severity as evidence accumulates
+- **INFO (C004-C006)**: even when missing, the context tends to fill them in, and there is no measured data yet
+  tying them directly to an accident. Promote to WARN once skill-improve logs confirm a correlation with accidents
 
-## v2 候補（v1 対象外）
+## v2 candidates (out of scope for v1)
 
-- SI-C007: 冪等性/再入可能性 — 中断後の再実行安全性
-- SI-C008: 非対話フォールバック — headless 実行時の振る舞い
-- SI-C009: 前提条件 — 実行環境の要件
-- SI-S005: 合理化防止テーブルの欠落 — ファイル変更を伴うスキルでの推奨
-- baseline の claim 正規化 hash + expiry
-- SI-S\* の安定ルールの validate\_repo.py への昇格
+- SI-C007: idempotency / re-entrancy — safety of re-running after an interruption
+- SI-C008: non-interactive fallback — behavior under headless execution
+- SI-C009: preconditions — requirements on the execution environment
+- SI-S005: missing rationalization guard table — recommended for skills that modify files
+- claim normalization hash + expiry for the baseline
+- promotion of stable SI-S\* rules into validate\_repo.py

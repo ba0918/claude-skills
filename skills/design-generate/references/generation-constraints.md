@@ -1,51 +1,51 @@
 # Generation Constraints
 
-design-generate スキルが生成するコードに適用される制約ルール。
+The constraint rules applied to the code the design-generate skill produces.
 
-## 制約の階層
+## The constraint hierarchy
 
 ```
 Page Definition (sections, order, allowedComponents)
   → Component Catalog (variants, props, a11y)
     → Design Tokens (colors, fonts, spacing)
-      → CSS Custom Properties (var(--*) のみ)
+      → CSS Custom Properties (var(--*) only)
 ```
 
-上位の制約は下位を含む。ページ定義がコンポーネントを制約し、コンポーネントがトークンを制約し、トークンが CSS 値を制約する。
+An upper constraint contains the lower ones. The page definition constrains the components, the components constrain the tokens, and the tokens constrain the CSS values.
 
-## 許可される自由度
+## Permitted degrees of freedom
 
-| カテゴリ | 自由度 | 例 |
+| Category | Freedom | Example |
 |---------|--------|-----|
-| テキストコンテンツ | 完全に自由 | 見出し・本文・ラベルの文言 |
-| 画像コンテンツ | URL のみ自由 | `<img src="...">` の src 属性 |
-| アニメーション | tokens 外の領域 | `transition`, `animation`, `@keyframes` |
-| データバインディング | 完全に自由 | state management, API calls |
-| イベントハンドラ | 完全に自由 | onClick, onChange 等のロジック |
+| Text content | completely free | the wording of headings, body text, and labels |
+| Image content | URL only | the src attribute of `<img src="...">` |
+| Animation | outside the token domain | `transition`, `animation`, `@keyframes` |
+| Data binding | completely free | state management, API calls |
+| Event handlers | completely free | the logic of onClick, onChange, etc. |
 
-## 禁止事項
+## Prohibitions
 
-| カテゴリ | 禁止内容 | 違反時のルール |
+| Category | What is prohibited | Rule on violation |
 |---------|---------|-------------|
-| カラー | tokens 外の色の使用 | DL001 / DL006 |
-| フォント | tokens 外のフォントの使用 | DL002 |
-| スペーシング | tokens 外の spacing 値 | DL003 |
-| 角丸 | tokens 外の border-radius | DL004 |
-| シャドウ | tokens 外の box-shadow | DL005 |
-| コンポーネント | catalog 外のカスタムコンポーネント | DL101 |
-| バリアント | catalog 外の variant | DL102 |
-| スタイル上書き | inline style でのトークン対象プロパティ | DL103 |
-| セクション構成 | page-def の sections 変更 | DL203 |
-| レイアウト | layout-rules の constraints 違反 | DL204 |
+| Color | using a color outside the tokens | DL001 / DL006 |
+| Font | using a font outside the tokens | DL002 |
+| Spacing | a spacing value outside the tokens | DL003 |
+| Border radius | a border-radius outside the tokens | DL004 |
+| Shadow | a box-shadow outside the tokens | DL005 |
+| Component | a custom component outside the catalog | DL101 |
+| Variant | a variant outside the catalog | DL102 |
+| Style override | a token-governed property in an inline style | DL103 |
+| Section composition | changing the sections of the page-def | DL203 |
+| Layout | violating the constraints of layout-rules | DL204 |
 
-## Do's/Don'ts → 機械検証可能ルールの変換例
+## Examples: Do's/Don'ts → mechanically verifiable rules
 
-DESIGN.md の Do's/Don'ts は自然言語。layout-rules.json の `constraints` で機械検証可能な形に変換する。
+The Do's/Don'ts in DESIGN.md are natural language. Convert them into a mechanically verifiable form as `constraints` in layout-rules.json.
 
-| Do/Don't (自然言語) | constraint (機械検証) |
+| Do/Don't (natural language) | constraint (mechanically verifiable) |
 |---------------------|---------------------|
-| "左揃えを基本にする" | `LC001: text-align: center は h1, h2 のみ許可` |
-| "余白を十分に取る" | `LC002: section gap は spacing.scale の上位3値のみ` |
-| "3カラム以上のグリッドを使わない" | `LC003: grid-template-columns の列数 ≤ 3` |
-| "モバイルではカードを縦積みにする" | `LC004: sm ブレークポイントで flex-direction: column` |
-| "全要素に角丸をつける" | `LC005: border-radius: 0 は禁止（allowRawValues 除外を除く）` |
+| "左揃えを基本にする" | `LC001: text-align: center is allowed on h1, h2 only` |
+| "余白を十分に取る" | `LC002: section gap must be one of the top 3 values of spacing.scale` |
+| "3カラム以上のグリッドを使わない" | `LC003: grid-template-columns column count ≤ 3` |
+| "モバイルではカードを縦積みにする" | `LC004: flex-direction: column at the sm breakpoint` |
+| "全要素に角丸をつける" | `LC005: border-radius: 0 is forbidden (except the allowRawValues exclusions)` |
