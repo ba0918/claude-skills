@@ -5,46 +5,46 @@ description: セッションデータからスキル使用時の摩擦を検出�
 
 # Skill Improve
 
-セッションデータから摩擦シグナルを収集・分析し、スキルの自己改善を実行するメタスキル。
+A meta-skill that collects and analyzes friction signals from session data and carries out self-improvement of the skills.
 
-**Headless execution**: Phase 2 の全エージェントは自動実行モードで起動すること。ユーザーへの確認プロンプトは出さない。
+**Headless execution**: launch every agent in Phase 2 in automatic-execution mode. Do not raise confirmation prompts to the user.
 
 ## Flow Overview
 
 ```
-skill-improve コマンド
+skill-improve command
   │
-  ├─ Phase 1: データ収集（collect.py → context.json）
+  ├─ Phase 1: Data collection (collect.py → context.json)
   │
-  ├─ Phase 2: 摩擦分析（4エージェント並行）
+  ├─ Phase 2: Friction analysis (4 agents in parallel)
   │    ├─ friction-detector / pattern-analyzer
   │    ├─ expectation-auditor / drift-detector
   │    └─ → friction-report.md
   │
-  ├─ Phase 3: 改善仮説生成（investigate パターン）
-  │    └─ → 改善仮説 A/B/C + 自走度判定
+  ├─ Phase 3: Improvement hypotheses (the investigate pattern)
+  │    └─ → hypotheses A/B/C + autonomy verdict
   │
-  └─ Phase 4: 改善実装（improve モード時のみ）
+  └─ Phase 4: Improvement implementation (improve mode only)
        ├─ Small → iterate
-       └─ Large → plan 作成 → cycle に委譲
+       └─ Large → create a plan → delegate to cycle
 ```
 
-## パラメータ
+## Parameters
 
-- `$ARGUMENTS` の最初の引数: ワークフロー選択
-  - `analyze`（デフォルト）: Phase 1-3 を実行し friction-report.md を生成
-  - `report`: Phase 1 のみ実行し、収集データの JSON を出力
-  - `improve`: Phase 1-4 を実行し、改善まで自動実行（Dry-run 必須）
-- `--days N`: 分析対象期間（デフォルト: 30日）
-- `--project NAME`: プロジェクトフィルタ（デフォルト: cwd から推定）
-- `--all-projects`: 全プロジェクトを横断スキャンする。ユーザスコープのスキル分析や、スキル全体の利用傾向を把握したい場合に使う
-- `--capture-prompts`: opt-in。マスク済みの user プロンプト本文を JSONL で出力する（発火漏れ実例の採取用。`trigger-eval` スキルが第二の消費者）。本文を書き出すため `--output` は `cwd/.claude/tmp` 配下 かつ `git check-ignore` 済みのパスに機械的に制限される（fail-closed）。既定の body-free 出力とは別パスで、既存挙動には影響しない。秘匿値のマスクは `[REDACTED:kind]` の完全マスク（AWS / PEM / JWT / email / ホームパス / ghp_ ・ github_pat_ ・ xoxb- ・ sk- ・ sk-ant- ・ AIza 等の既知プレフィックストークンを引用符の有無を問わず検出）
+- The first argument of `$ARGUMENTS`: workflow selection
+  - `analyze` (default): run Phases 1-3 and generate friction-report.md
+  - `report`: run Phase 1 only and emit the collected data as JSON
+  - `improve`: run Phases 1-4 and carry the improvement through automatically (a dry-run is mandatory)
+- `--days N`: the analysis period (default: 30 days)
+- `--project NAME`: the project filter (default: inferred from the cwd)
+- `--all-projects`: scan across every project. Use it for analyzing user-scoped skills or for grasping usage trends across all skills
+- `--capture-prompts`: opt-in. Emits masked user prompt bodies as JSONL (for collecting real examples of missed triggering; the `trigger-eval` skill is the second consumer). Because it writes out bodies, `--output` is mechanically restricted to a path under `cwd/.claude/tmp` that is also `git check-ignore`d (fail-closed). It uses a different path from the default body-free output and does not affect existing behavior. Secret values are fully masked as `[REDACTED:kind]` (detecting AWS / PEM / JWT / email / home paths / known-prefix tokens such as ghp_, github_pat_, xoxb-, sk-, sk-ant-, and AIza, whether or not they are quoted)
 
-## Phase 1: データ収集
+## Phase 1: Data collection
 
-### Step 1.1: collect.py 実行
+### Step 1.1: Run collect.py
 
-`--all-projects` が指定されている場合:
+When `--all-projects` is given:
 
 ```bash
 python3 skills/skill-improve/scripts/collect.py \
@@ -53,7 +53,7 @@ python3 skills/skill-improve/scripts/collect.py \
   --output .claude/tmp/skill-improve-{datetime}/context.json
 ```
 
-デフォルト（プロジェクト指定）の場合:
+In the default case (a project is specified):
 
 ```bash
 python3 skills/skill-improve/scripts/collect.py \
@@ -62,9 +62,9 @@ python3 skills/skill-improve/scripts/collect.py \
   --output .claude/tmp/skill-improve-{datetime}/context.json
 ```
 
-### Step 1.2: 結果確認
+### Step 1.2: Check the result
 
-context.json を読み込み、サマリーを表示:
+Read context.json and display the summary:
 
 ```
 ── Phase 1: Data Collection ──
@@ -77,43 +77,43 @@ Unique skills: {unique_skills_used}
 Secret warnings: {count}
 ```
 
-`report` モードの場合はここで終了。JSON 内容を表示して完了。
+In `report` mode, stop here. Display the JSON contents and finish.
 
-スキル呼び出しが 0 件の場合:
+When there are zero skill invocations:
 
 ```
 ⚠️ No skill invocations found in the last {days} days.
 Try increasing the period with --days or checking the project filter.
 ```
 
-Phase 2 には進まず終了。
+Do not proceed to Phase 2; finish.
 
-## Phase 2: 摩擦分析（4エージェント並行）
+## Phase 2: Friction analysis (4 agents in parallel)
 
-### Step 2.1: エージェント spawn
+### Step 2.1: Spawn the agents
 
-4つの分析エージェントを **並行で** サブエージェント（軽量モデル、自動実行モード）として起動する。
-各エージェントのプロンプトは [references/analysis-roles.md](references/analysis-roles.md) を参照。
+Launch the four analysis agents **in parallel** as subagents (a lightweight model, automatic-execution mode).
+For each agent's prompt, see [references/analysis-roles.md](references/analysis-roles.md).
 
-**Important**: 自動実行モードは必須。これがないとバックグラウンドエージェントが `.claude/tmp/` への書き込み時に権限プロンプトでブロックされ、全エージェントが書き込み失敗する。
+**Important**: automatic-execution mode is mandatory. Without it, the background agents are blocked by a permission prompt when writing to `.claude/tmp/`, and every agent fails to write.
 
-各エージェントに渡すコンテキスト:
-1. context.json の内容
-2. 対象スキルの SKILL.md（ファイル一覧取得で特定）
-3. ロール固有の分析指示
-4. **プレッシャーテスト観点**: 「このスキルの制約はプレッシャー下で合理化されうるか？」を分析項目に含める
-   - プレッシャータイプ: 時間圧 / サンクコスト / 権威 / 経済性 / 疲労 / 社会的 / プラグマティック
-   - 各制約について「{プレッシャータイプ} 下でユーザーまたは LLM がこの制約をバイパスする合理化を行う可能性」を評価
-   - 高リスクの制約にはガードレール強化を推奨する
+The context handed to each agent:
+1. The contents of context.json
+2. The SKILL.md of the target skill (identified by listing the files)
+3. The role-specific analysis instructions
+4. **The pressure-test viewpoint**: include "could this skill's constraints be rationalized away under pressure?" as an analysis item
+   - Pressure types: time pressure / sunk cost / authority / economics / fatigue / social / pragmatic
+   - For each constraint, evaluate "the likelihood that the user or the LLM rationalizes bypassing this constraint under {pressure type}"
+   - Recommend strengthening the guardrails for high-risk constraints
 
-各エージェントは分析結果を JSON で `.claude/tmp/skill-improve-{datetime}/{role}.json` に書き出す。
+Each agent writes its analysis result as JSON to `.claude/tmp/skill-improve-{datetime}/{role}.json`.
 
-### Step 2.2: 結果統合
+### Step 2.2: Integrate the results
 
-統合用サブエージェント（軽量モデル、自動実行モード）を起動し、4つの分析結果を統合して
-`.claude/tmp/skill-improve-{datetime}/friction-report.md` を生成する。
+Launch an integrating subagent (a lightweight model, automatic-execution mode), and have it integrate the four analysis results to
+generate `.claude/tmp/skill-improve-{datetime}/friction-report.md`.
 
-統合エージェントのプロンプト:
+The integrating agent's prompt:
 ```
 .claude/tmp/skill-improve-{datetime}/ 配下の 4つの JSON ファイルを読み込み、
 摩擦レポートを friction-report.md として書き出してください。
@@ -141,7 +141,7 @@ Phase 2 には進まず終了。
 - Size: Small / Large
 ```
 
-表示:
+Display:
 
 ```
 ── Phase 2: Friction Analysis ──
@@ -151,35 +151,35 @@ Top friction skill: {name} (score: {score})
 Report: .claude/tmp/skill-improve-{datetime}/friction-report.md
 ```
 
-## Phase 3: 改善仮説と自走度判定
+## Phase 3: Improvement hypotheses and the autonomy verdict
 
-### Step 3.1: friction-report.md を読み込む
+### Step 3.1: Read friction-report.md
 
-### Step 3.2: 自走度判定
+### Step 3.2: Autonomy verdict
 
-[references/scoring-guide.md](references/scoring-guide.md) の基準に従い、改善の規模を判定:
+Following the criteria of [references/scoring-guide.md](references/scoring-guide.md), judge the size of the improvement:
 
-| 摩擦スコア | 判定 | アクション |
+| Friction score | Verdict | Action |
 |-----------|------|-----------|
-| 0-2 | レポートのみ | friction-report.md を表示して終了 |
-| 3-5 | Small | iterate で SKILL.md を直接修正 |
-| 6+ | Large | plan 作成 → cycle に委譲 |
+| 0-2 | Report only | Display friction-report.md and finish |
+| 3-5 | Small | Fix SKILL.md directly with iterate |
+| 6+ | Large | Create a plan → delegate to cycle |
 
-### Step 3.3: 改善仮説のカテゴリ分類
+### Step 3.3: Categorize the improvement hypotheses
 
-改善仮説は以下のカテゴリに分類する:
+Classify the improvement hypotheses into the following categories:
 
-| カテゴリ | 説明 | 例 |
+| Category | Description | Examples |
 |---------|------|-----|
-| UX 改善 | ユーザー体験の摩擦を低減 | エラーメッセージの改善、フロー簡素化 |
-| ロジック修正 | バグや論理的不整合の修正 | 条件分岐の誤り、エッジケース未処理 |
-| **ガードレール強化** | プレッシャー下での制約バイパスを防止 | 合理化防止テーブルの追加、Iron Law の強化、Gate Function の導入 |
-| パフォーマンス | 実行効率の改善 | 不要なサブエージェント呼び出しの削減 |
-| ドキュメント | 説明・参照の改善 | 不明瞭な指示の明確化 |
+| UX improvement | Reduce friction in the user experience | Better error messages, a simplified flow |
+| Logic fix | Fix bugs and logical inconsistencies | A wrong branch condition, an unhandled edge case |
+| **Guardrail hardening** | Prevent constraints from being bypassed under pressure | Adding a rationalization-prevention table, strengthening an Iron Law, introducing a Gate Function |
+| Performance | Improve execution efficiency | Cutting unnecessary subagent invocations |
+| Documentation | Improve explanations and references | Clarifying an unclear instruction |
 
-`analyze` モードの場合はここで終了。friction-report.md の内容と改善仮説を表示。
+In `analyze` mode, stop here. Display the contents of friction-report.md and the improvement hypotheses.
 
-表示:
+Display:
 
 ```
 ── Phase 3: Improvement Hypotheses ──
@@ -188,13 +188,13 @@ Recommended action: {Report only / iterate / cycle}
 Top hypothesis: {title} (target: {skill}, size: {size})
 ```
 
-## Phase 4: 改善実装（improve モード時のみ）
+## Phase 4: Improvement implementation (improve mode only)
 
-**重要: 全レベルで Dry-run を必ず実行する。**
+**Important: always run the dry-run, at every level.**
 
-### Step 4.1: Dry-run 表示
+### Step 4.1: Display the dry-run
 
-改善対象のスキルファイルと変更内容の概要を表示:
+Display the skill files to be improved and an outline of the changes:
 
 ```
 ══════════════════════════════════════
@@ -207,14 +207,14 @@ Proceeding with implementation...
 ══════════════════════════════════════
 ```
 
-### Step 4.2: 実装委譲
+### Step 4.2: Delegate the implementation
 
-| サイズ | 委譲先 | 方法 |
+| Size | Delegate to | How |
 |--------|--------|------|
-| Small | iterate | `claude-skills:iterate` スキルを実行。friction-report の改善仮説を引数として渡す |
-| Large | cycle | 改善仮説から plan を作成し、`claude-skills:cycle` に委譲 |
+| Small | iterate | Run the `claude-skills:iterate` skill. Pass the friction report's improvement hypothesis as the argument |
+| Large | cycle | Create a plan from the improvement hypothesis and delegate to `claude-skills:cycle` |
 
-### Step 4.3: 完了表示
+### Step 4.3: Display completion
 
 ```
 ══════════════════════════════════════
@@ -226,30 +226,30 @@ Report: {friction_report_path}
 ══════════════════════════════════════
 ```
 
-## 一時ファイルのクリーンアップ
+## Cleaning up temporary files
 
-Phase 完了時（正常終了・エラー問わず）に `.claude/tmp/skill-improve-{datetime}/` を削除する。
-ただし `friction-report.md` は保持する（ユーザーが後で参照できるように）。
+On phase completion (whether it ends normally or with an error), delete `.claude/tmp/skill-improve-{datetime}/`.
+Keep `friction-report.md`, however (so the user can refer to it later).
 
-## エラーハンドリング
+## Error handling
 
-### Phase 1 のエラー
+### Errors in Phase 1
 
-- **Python 未インストール**: エラーメッセージを表示して中断
-- **collect.py 実行失敗**: stderr を表示して中断
-- **セッションデータなし**: 警告を表示して中断
+- **Python not installed**: display an error message and abort
+- **collect.py failed**: display stderr and abort
+- **No session data**: display a warning and abort
 
-### Phase 2 のエラー
+### Errors in Phase 2
 
-- **エージェント spawn 失敗（2名以上成功）**: 成功したエージェントの結果のみで続行
-- **エージェント spawn 失敗（1名以下）**: 中断
+- **Agent spawn failed (two or more succeeded)**: continue with the results of the agents that succeeded only
+- **Agent spawn failed (one or fewer)**: abort
 
-### Phase 4 のエラー
+### Errors in Phase 4
 
-- **iterate/cycle 失敗**: エラー内容を表示。friction-report.md は保持
+- **iterate/cycle failed**: display the error. friction-report.md is kept
 
 ## References
 
-- 摩擦分析エージェントロール: [references/analysis-roles.md](references/analysis-roles.md)
-- 摩擦スキーマ定義: [references/friction-schema.md](references/friction-schema.md)
-- スコアリング基準: [references/scoring-guide.md](references/scoring-guide.md)
+- Friction analysis agent roles: [references/analysis-roles.md](references/analysis-roles.md)
+- Friction schema definition: [references/friction-schema.md](references/friction-schema.md)
+- Scoring criteria: [references/scoring-guide.md](references/scoring-guide.md)
