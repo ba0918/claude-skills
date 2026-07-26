@@ -1,48 +1,48 @@
-# Measurement Identity — Shared Contract（計測の結合キー統一）
+# Measurement Identity — Shared Contract (unifying the join key for measurement)
 
-> **⚠️ Warning:** 本契約は「ループは良くなっているか」に答えるための計測結合キーを定義する。
-> スキーマ・enum・写像表の変更は全 writer（polling 両 adapter / skill-regression / trigger-eval）と
-> 全 reader（skill-improve 等）に影響する。変更時は参照スキルを同一 PR で同期更新すること。
+> **⚠️ Warning:** This contract defines the measurement join key needed to answer "is the loop getting better?".
+> Changing the schema, the enums, or the mapping table affects every writer (both polling adapters / skill-regression / trigger-eval)
+> and every reader (skill-improve and others). When changing it, update the referencing skills in the same PR.
 
 ---
 
-## 1. 問題 — 計測系のサイロ化
+## 1. The problem — siloed measurement systems
 
-本リポジトリには 5 つの計測系があるが、互いに結合キーを持たない:
+This repository has five measurement systems, and none of them share a join key:
 
-| 系 | 計るもの | 既存ストア | 限界 |
+| System | What it measures | Existing store | Limitation |
 |---|---|---|---|
-| polling TickResult | tick の成否カウンタ | なし（揮発） | tick が終わると消える |
-| skill-regression | 挙動面の検証イベント | `ledger.json` | 最新 1 件のみ（履歴なし） |
-| trigger-eval | 発火精度メトリクス | なし（レポートのみ） | 実行間比較ができない |
-| skill-improve | セッション摩擦 | session JSONL（読み取り） | 逸話単位、instruction 版と未結合 |
-| cycle 結果 | plan 実行の成果 | `.agents/artifacts/plans/results` | 自由文、機械集計不能 |
+| polling TickResult | Success/failure counters of a tick | None (volatile) | Disappears when the tick ends |
+| skill-regression | Behavioral verification events | `ledger.json` | Only the latest entry (no history) |
+| trigger-eval | Trigger-accuracy metrics | None (report only) | Cannot compare across runs |
+| skill-improve | Session friction | session JSONL (read) | Anecdote-level, not joined to the instruction version |
+| cycle results | The outcome of a plan run | `.agents/artifacts/plans/results` | Free-form text, not machine-aggregatable |
 
-このままでは「SKILL.md のこの改稿は成功率を上げたのか」に原理的に答えられない。
-**新しいサイロを足すことは解決ではない** — 結合キーの統一が解決である。
+As things stand, "did this revision of SKILL.md raise the success rate?" cannot be answered even in principle.
+**Adding another silo is not the solution** — unifying the join key is.
 
 ---
 
 ## 2. Identity Triple
 
-すべての計測イベントは以下の 3 キーで識別する:
+Every measurement event is identified by these three keys:
 
-| キー | 定義 | SSOT |
+| Key | Definition | SSOT |
 |---|---|---|
-| `skill` | その実行の挙動を司ったスキル名（ディレクトリ名） | `skills/<name>/` |
-| `surface_sha256` | 実行時点の挙動面 fingerprint | `skills/skill-regression/scripts/dep_graph.py` の挙動面定義 + `ledger.py fingerprint()`（**再実装禁止**、必ず同一実装を呼ぶ） |
-| `run_id` | 実行イベントの UUID | [polling-pattern.md §7](polling-pattern.md#7-tick-result-schema) の `run_id` と同一系（失敗 issue frontmatter とも相関可能） |
+| `skill` | The name (directory name) of the skill that governed the behavior of that run | `skills/<name>/` |
+| `surface_sha256` | The behavior-surface fingerprint at the time of the run | The behavior-surface definition in `skills/skill-regression/scripts/dep_graph.py` + `ledger.py fingerprint()` (**re-implementation is forbidden**; always call the same implementation) |
+| `run_id` | The UUID of the run event | The same family as `run_id` in [polling-pattern.md §7](polling-pattern.md#7-tick-result-schema) (it can also be correlated with the frontmatter of a failed issue) |
 
-`surface_sha256` が **instruction のバージョン番号**として機能する。改稿前後の比較は
-「hash A の期間の成績 vs hash B の期間の成績」の比較である。
+`surface_sha256` functions as **the version number of the instruction**. Comparing before and after a revision means
+comparing "the results during the period of hash A vs the results during the period of hash B".
 
 ---
 
 ## 3. Event Record Schema
 
-`.agents/runtime/loop/events.jsonl` に 1 行 1 イベントで append する（runtime 領域 =
-gitignore・commit 対象外・migration 対象外。単一ホスト前提は polling と同じ。runtime の定義は
-[artifact-store.md「Runtime area」](artifact-store.md#runtime-area)）。**構造化フィールドのみ・自由文禁止・secret 禁止**（TickResult §7 の哲学を継承）。
+Append one event per line to `.agents/runtime/loop/events.jsonl` (the runtime area =
+gitignored, outside commits, outside migration. The single-host premise is the same as polling. The runtime area is defined in
+[artifact-store.md "Runtime area"](artifact-store.md#runtime-area)). **Structured fields only; no free-form text; no secrets** (inheriting the philosophy of TickResult §7).
 
 ```
 Event {
@@ -52,60 +52,60 @@ Event {
   skill:          str
   surface_sha256: hex64
   run_id:         UUID | null
-  outcome:        object   # system 別（§4）。数値・enum のみ
+  outcome:        object   # per system (§4). Numbers and enums only
 }
 ```
 
-- `system` / `event` は閉じた enum。追加は本契約の改訂として行う（**No new silos rule**:
-  新しい計測を追加するときは新ストアを作らず本スキーマを拡張する）
-- append は atomic write でなくてよい（追記 1 行、単一ホスト・単一プロセス前提）
+- `system` / `event` are closed enums. Additions are made as a revision of this contract (**No new silos rule**:
+  when adding a new measurement, extend this schema rather than creating a new store)
+- The append does not need to be an atomic write (one appended line, single host, single process)
 
 ---
 
-## 4. 既存系の写像表
+## 4. Mapping table for the existing systems
 
-| system | event | outcome フィールド | append タイミング |
+| system | event | outcome fields | When to append |
 |---|---|---|---|
-| `polling-fs` / `polling-label` | `tick` | `{claimed, done, failed_transient, failed_permanent, halt_reason?}`（TickResult §7 と同一） | tick の TickResult 出力直後（各 SKILL.md の最終 Step）。`skill` = issue / github-issue、`surface_sha256` は tick 開始時に算出 |
-| `skill-regression` | `verification` | `{result: "pass" \| "accepted-without-run", scenarios?: int}` | `ledger.py --update` 実行直後（ledger.json は最新のみ・events は履歴） |
-| `trigger-eval` | `eval` | `{recall, precision, stability}`（対象スキル別に 1 行ずつ） | Tier 1/2 計測完了時（推奨） |
-| `empirical` | `tuning` | `{iterations, scenario_count, converged, final_precision, precision_delta, prompt_bytes_delta}` | 収束完了時（`exit_verdict == "converged"`）。**対象が repo skill の場合のみ配線**（対象が任意プロンプト / CLAUDE.md 節等の場合は `surface_sha256` が算出不能のため配線スキップ。代わりに `instruction_fingerprint` を iteration JSON に記録） |
+| `polling-fs` / `polling-label` | `tick` | `{claimed, done, failed_transient, failed_permanent, halt_reason?}` (identical to TickResult §7) | Immediately after the tick emits its TickResult (the final Step of each SKILL.md). `skill` = issue / github-issue, and `surface_sha256` is computed at the start of the tick |
+| `skill-regression` | `verification` | `{result: "pass" \| "accepted-without-run", scenarios?: int}` | Immediately after running `ledger.py --update` (ledger.json holds only the latest; events hold the history) |
+| `trigger-eval` | `eval` | `{recall, precision, stability}` (one line per target skill) | On completing the Tier 1/2 measurement (recommended) |
+| `empirical` | `tuning` | `{iterations, scenario_count, converged, final_precision, precision_delta, prompt_bytes_delta}` | On convergence (`exit_verdict == "converged"`). **Wired only when the target is a repo skill** (when the target is an arbitrary prompt, a CLAUDE.md section, and so on, `surface_sha256` cannot be computed, so the wiring is skipped. Record `instruction_fingerprint` in the iteration JSON instead) |
 
-読み取り専用の系:
+Read-only systems:
 
-- **skill-improve**: writer ではなく reader。session JSONL の摩擦と events を `run_id` /
-  `skill` × `surface_sha256` で相関させ、「どの instruction 版で摩擦が増えたか」を分析できる
-- **cycle（手動実行）**: v1 対象外。polling 経由の cycle 成否は `tick` イベントが捕捉している。
-  手動 cycle の計測は将来拡張（本契約の改訂として行う）
+- **skill-improve**: a reader, not a writer. It correlates the friction in the session JSONL with the events by `run_id` /
+  `skill` × `surface_sha256`, so it can analyze "under which instruction version did friction increase"
+- **cycle (run manually)**: out of scope for v1. The success or failure of a cycle run through polling is captured by the `tick` event.
+  Measuring a manual cycle is a future extension (to be made as a revision of this contract)
 
 ---
 
-## 5. 結合クエリ（1 コマンド）
+## 5. The join query (one command)
 
 ```bash
 python3 skills/shared/scripts/measurement_identity.py report --skill issue \
   [--events .agents/runtime/loop/events.jsonl]
 ```
 
-- surface_sha256 別に `{ticks, done, failed, success_rate, first_ts, last_ts}` を集計し、
-  時系列順のテーブルで表示する
-- 直近 2 つの surface の成功率差分（= 最後の改稿の効果）を明示する
-- 集計は純関数（`aggregate_by_surface` / `surface_delta`）で行い、unittest で検証する
+- Aggregates `{ticks, done, failed, success_rate, first_ts, last_ts}` per surface_sha256 and
+  displays it as a table in chronological order
+- States the success-rate difference between the two most recent surfaces (= the effect of the last revision)
+- The aggregation is done by pure functions (`aggregate_by_surface` / `surface_delta`) and verified by unittests
 
 ---
 
-## 6. 運用
+## 6. Operations
 
-- `.agents/runtime/loop/events.jsonl` は肥大化したら `.agents/runtime/loop/archives/YYYY-MM.jsonl` へ月次で移動してよい
-  （polling の archive パターンと同じ。report は `--events` 複数指定で跨げる）
-- 旧既定パス `.agents/artifacts/loop/events.jsonl`（runtime 分離前）に events が残っている場合、
-  `report` / `emit` を既定パスで実行すると actionable な警告を出す（新パスへの `mv` コマンド提示）。
-  `--events` を明示指定すればそのパスを最優先で使う（後方互換）
-- イベントの**削除・書き換えは禁止**（append-only。誤記録はそのまま残し、次の正しいイベントで上書きせず補正もしない — 計測の改竄可能性を構造的に排除する）
-- writer の追加・変更は本契約の写像表（§4）の更新とセットで行う
+- When `.agents/runtime/loop/events.jsonl` grows large, it may be moved monthly to `.agents/runtime/loop/archives/YYYY-MM.jsonl`
+  (the same archive pattern as polling; report can span them by passing `--events` several times)
+- If events remain at the old default path `.agents/artifacts/loop/events.jsonl` (before the runtime split),
+  running `report` / `emit` with the default path emits an actionable warning (presenting the `mv` command to the new path).
+  Passing `--events` explicitly gives that path top priority (backward compatibility)
+- **Deleting or rewriting an event is forbidden** (append-only. A mis-recorded event stays as it is; do not overwrite it with the next correct event and do not amend it — this structurally eliminates the possibility of tampering with the measurements)
+- Adding or changing a writer is done together with an update of this contract's mapping table (§4)
 
-## 7. 参照
+## 7. References
 
-- [polling-pattern.md](polling-pattern.md) — run_id / TickResult の定義元
-- [loop-engineering.md](loop-engineering.md) — 供給側ループ（finding_id は別軸の identity。混同しない: finding_id は「問題」の同一性、本契約は「実行」の同一性）
-- `skills/skill-regression/` — 挙動面と fingerprint の SSOT
+- [polling-pattern.md](polling-pattern.md) — where run_id / TickResult are defined
+- [loop-engineering.md](loop-engineering.md) — the supply-side loop (finding_id is an identity on a different axis. Do not conflate them: finding_id is the identity of a "problem", this contract is the identity of a "run")
+- `skills/skill-regression/` — the SSOT for the behavior surface and the fingerprint

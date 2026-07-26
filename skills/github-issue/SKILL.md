@@ -99,12 +99,12 @@ The headless tick called periodically from `/loop github-issue-polling`. When se
 > **Persisting the safety brake (`--stateless`)**: a call from `/loop` or cron is one invocation = one tick and the process dies each time, so the
 > `max_iter` / `max_wallclock` / `failed_streak` counters cannot survive in process memory. When running on a timer, pass
 > `--stateless` and persist the counters to `<state_root>/session.json` per shared contract
-> [`§6.5 Tick Session`](../shared/references/polling-pattern.md#65-tick-session-ステートレス実行の-safety-brake-永続化)
+> [`§6.5 Tick Session`](../shared/references/polling-pattern.md#65-tick-session-persisting-the-safety-brakes-for-stateless-execution)
 > (the `failed_streak` halt is sticky — it does not resume until `session.json` is deleted).
 
 ### Workflow structure
 
-This workflow is **a thin orchestrator conforming to the tick() pseudocode in shared contract [`../shared/references/polling-pattern.md §5 Tick Orchestration`](../shared/references/polling-pattern.md#5-tick-orchestration-pseudocode-型宣言レベル)**. The state machine (§2), the pure functions (§4), the safety brake (§6), and the Tick Schema (§7) live in the shared contract; this file describes only the order in which adapter methods are called.
+This workflow is **a thin orchestrator conforming to the tick() pseudocode in shared contract [`../shared/references/polling-pattern.md §5 Tick Orchestration`](../shared/references/polling-pattern.md#5-tick-orchestration-pseudocode-declaration-level)**. The state machine (§2), the pure functions (§4), the safety brake (§6), and the Tick Schema (§7) live in the shared contract; this file describes only the order in which adapter methods are called.
 
 Label adapter implementation details — the three-stage claim defence, state_root resolution, error_kind classification, the five-stage rollback — are hidden inside [`references/polling-adapter.md`](references/polling-adapter.md) (SKILL.md only calls `claim(slug)`).
 
@@ -130,7 +130,7 @@ Label adapter implementation details — the three-stage claim defence, state_ro
 12. **Emit TickResult**: return the structured counters conforming to shared contract §7 Tick Schema — `{run_id, tick_started_at, claimed, done, failed_transient, failed_permanent, halt_reason?}`. All seven fields including `run_id` and `tick_started_at` are invariant (see shared contract §7)
 13. **On the first successful tick**: create `<state_root>/.polling-initialized` with `write_atomic` (which lifts the forced dry-run from the next tick on)
 14. **Session persist (`--stateless` only)**: compute the counter update and the halt decision with `next_session_state(session, tick_result)`, then persist with `adapter.save_session()` (shared contract §6.5)
-15. **Measurement event append**: append the TickResult counters as a measurement event ([measurement-identity.md §4](../shared/references/measurement-identity.md#4-既存系の写像表)): `python3 skills/shared/scripts/measurement_identity.py emit --system polling-label --event tick --skill github-issue --repo-root {repo_root} --run-id {run_id} --outcome '{TickResult カウンタ JSON}'`. A failure here only warns; it never blocks the tick
+15. **Measurement event append**: append the TickResult counters as a measurement event ([measurement-identity.md §4](../shared/references/measurement-identity.md#4-mapping-table-for-the-existing-systems)): `python3 skills/shared/scripts/measurement_identity.py emit --system polling-label --event tick --skill github-issue --repo-root {repo_root} --run-id {run_id} --outcome '{TickResult カウンタ JSON}'`. A failure here only warns; it never blocks the tick
 
 ### Snapshot boundary
 
