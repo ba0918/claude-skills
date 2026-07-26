@@ -1,145 +1,150 @@
-# Decision Protocol（意思決定プロトコル v1）
+# Decision Protocol (decision-making protocol v1)
 
-アーキテクチャ・技術選定の意思決定を「憲法より判例集」方式で運用するための共有契約。
-普遍的な正解規範を先に書くのではなく、実判断の判例を蓄積し、複数判例で反復した棄却理由だけを
-暫定規範へ昇格させる帰納的な建て付けを採る。
+The shared contract for operating architecture and technology-selection decisions in a "case law rather than a constitution" style.
+Instead of writing universal normative rules up front, it accumulates precedents from real decisions and promotes to a
+provisional norm only those rejection reasons that recur across several precedents — an inductive construction.
 
-この文書の全条項は **「規範」ではなく「プロセス仮説 v1」** である。同一人物の 5 案件（後ろ向きの
-判例聞き取り）から生成された、次に反証可能な形で試す仮説にすぎない。前向き適用（新規プロジェクトで
-実際に使い、予測が当たるか観測する）で検証されるまで「規範」と呼ばない。件数を支持票として数えない
-（標本は独立でなく、同一人物・近接時期・同一の開発環境というケース系列である）。
+Every clause of this document is **a "process hypothesis v1", not a "norm"**. It was generated from five cases from a single
+person (a retrospective interview of precedents) and is no more than a hypothesis to be tried next in a falsifiable form.
+Do not call it a norm until it has been validated by prospective application (actually using it on a new project and observing
+whether its predictions hold). Do not count the number of cases as supporting votes
+(the samples are not independent; they are a case series from the same person, a nearby period, and the same development environment).
 
-## 位置づけ — 並置であって上位ではない
+## Positioning — juxtaposed, not superordinate
 
-このプロトコルは [design-principles.md](./design-principles.md)（テスタビリティ）・
-[testing-anti-patterns.md](./testing-anti-patterns.md)・
-[information-placement.md](../../../rules/information-placement.md)（情報配置 4 象限）の **上位階層ではない**。
-適用局面が違う並置の契約である。相互参照はするが階層化しない。
+This protocol is **not a layer above** [design-principles.md](./design-principles.md) (testability),
+[testing-anti-patterns.md](./testing-anti-patterns.md), or
+[information-placement.md](../../../rules/information-placement.md) (the four quadrants of information placement).
+It is a juxtaposed contract that applies in a different situation. They cross-reference each other but are not layered.
 
-- コード哲学（design-principles）は「テスタビリティ」という単一目的関数からの演繹で機能する
-  （高頻度・低コンテキスト・演繹可能）。
-- 意思決定は真逆で、低頻度・高コンテキスト・演繹不可能である。同じ形式の「意思決定 Iron Laws」は
-  抽象的すぎて決定力ゼロか、誤った absolute 化かの二択になる。だからこのプロトコルは Iron Law を
-  持たず、**悪い賭けの事前棄却と反証可能性の保証**だけを最小核にする。
-- 発端は情報配置 4 象限（Code=How / Tests=What / Commit log=Why / Comments=Why not）に収まらない
-  architectural rationale のホームレス問題である。これは第 5 のホーム（判例／決定記録）を必要とする。
+- Code philosophy (design-principles) works by deduction from the single objective function of "testability"
+  (high frequency, low context, deducible).
+- Decision-making is the exact opposite: low frequency, high context, not deducible. "Decision Iron Laws" in the same form
+  would be either too abstract to decide anything or a mistaken absolutization. This protocol therefore has no Iron Law;
+  its minimal core is only **the up-front rejection of bad bets and the guarantee of falsifiability**.
+- Its origin is the homelessness of architectural rationale, which does not fit the four quadrants of information placement
+  (Code=How / Tests=What / Commit log=Why / Comments=Why not). That calls for a fifth home (precedents / decision records).
 
-## 常駐させない（instruction dilution 対策）
+## Do not keep it resident (a countermeasure to instruction dilution)
 
-このプロトコル本文・判例・言語別補遺は **常駐コンテキストに載せない**。必要時にロードする。
-常駐させてよいのは、次のようなルータ 1〜2 行だけである（各プロジェクトの `AGENTS.md` 等へ貼る想定）。
+The body of this protocol, the precedents, and the per-language addenda **must not be placed in resident context**. Load them when needed.
+The only thing that may be resident is a one- or two-line router such as the following (intended to be pasted into each project's `AGENTS.md` or equivalent).
 
-> 技術選定・アーキテクチャの賭けを裁可する前に decision-protocol.md の 3 通過条件と着手前 1 行
-> プロトコルを 1 度だけ照合する。低賭け金なら記録は数行でよい。
+> Before ruling on a technology-selection or architectural bet, collate it once against the three passing conditions and the
+> one-line pre-start protocol of decision-protocol.md. For a low-stakes bet, a few lines of record are enough.
 
-本文全体を常駐させると他の常駐指示を希釈し、かえって照合精度を下げる。
+Keeping the whole body resident dilutes the other resident instructions and lowers collation accuracy instead.
 
-## プロセス仮説
+## Process hypotheses
 
-### 1. 着手前 1 行プロトコル — 成功基準を宣言する
+### 1. The one-line pre-start protocol — declare the success criterion
 
-着手前に成功基準を **「遊び / 学習 / 製品 / 事業」** の 4 分類から 1 つ選び、1 行残す。
-これは同じ自然消滅が「失敗」にも「正当な探索」にもなってしまうのを防ぐための符号化である。
-成功基準を事前に固定しないと、事後にどちらの物語にも書けてしまい、判断品質の評価が不能になる。
+Before starting, pick one success criterion from the four categories **"play / learning / product / business"** and leave one line about it.
+This is an encoding that prevents the same quiet abandonment from becoming either "a failure" or "legitimate exploration".
+If the success criterion is not fixed in advance, either narrative can be written after the fact, and the quality of the decision becomes impossible to evaluate.
 
-- 選択肢は 4 つに保つ（過剰な分類は着手摩擦になる）。
-- 個人プロジェクトの最重要生存変数はモチベーションであり、「楽しそうか」は正当な第一級基準である。
-  「遊び」宣言は劣位ではない。低賭け金の好奇心選択はそれ自体で成立しうる。
+- Keep the options at four (excessive classification becomes friction at start).
+- The most important survival variable of a personal project is motivation, and "does it look fun" is a legitimate first-class criterion.
+  Declaring "play" is not inferior. A low-stakes choice made out of curiosity can stand on its own.
 
-### 2. 製品目的なら成立条件を最安の E2E スパイクで先行検証する
+### 2. For a product purpose, validate the enabling condition up front with the cheapest E2E spike
 
-成功基準が「製品」または「事業」なら、その製品の **不可欠な成立条件**（それが成り立たなければ製品が
-無意味になる前提）を、最も安い end-to-end スパイクで先に検証する。楽しい／即時報酬の高い作業
-（ゲーム部分・凝った設計）へ投資が偏り、成立条件を検証しないまま目的を見失う失敗を避ける。
+If the success criterion is "product" or "business", validate the product's **indispensable enabling condition**
+(the premise without which the product is meaningless) up front, with the cheapest end-to-end spike. This avoids the failure in which
+investment skews toward enjoyable, immediately rewarding work (the game part, elaborate design) and the goal is lost
+while the enabling condition goes unvalidated.
 
-- スパイクには段階合格条件を設ける: 1 回取得 → E2E → 連続・再起動 → 環境差・長時間。
-  「一度動いた」と「安定成立」を混同しない。
-- 環境依存ツール（OS・表示基盤を跨ぐ等）では、言語の詳細設計より先に実データを境界越しに通す
-  スパイクを置く。ただし「言語選定は常に重要度が低い」は過剰一般化である（反例: ハードリアルタイム、
-  メモリ安全性が本質の常駐サービス、特定 SDK 依存、採用・引き継ぎが支配的な業務システム）。
+- Give the spike staged pass conditions: one fetch → E2E → repeated runs and restarts → environment differences and long durations.
+  Do not confuse "it worked once" with "it holds stably".
+- For environment-dependent tooling (crossing operating systems or display stacks), put a spike that pushes real data across the
+  boundary before detailed language-level design. That said, "language selection is always low in importance" is an over-generalization
+  (counterexamples: hard real time, resident services where memory safety is the essence, dependence on a specific SDK,
+  business systems where hiring and handover dominate).
 
-### 3. 3 通過条件（正解の唯一性は要求しない）
+### 3. The three passing conditions (uniqueness of the right answer is not required)
 
-賭けが通過すべき条件は次の 3 つ。**通過した案の間に唯一の正解がないことは受け入れる**
-（事前に唯一の最適解を証明することは要求しない）。
+A bet must pass the following three conditions. **Accept that there is no unique right answer among the options that pass**
+(proving a unique optimum in advance is not required).
 
-1. **生存可能性** — 失敗しても損失が許容内に収まる（後悔の上限が引かれている）。
-2. **検証可能性** — 期限内に成否を観測できる（観測手段と期限がある）。
-3. **退出可能性** — 撤退の時間・費用・主体が明示されている。
+1. **Survivability** — even on failure the loss stays within tolerance (a ceiling on regret is drawn).
+2. **Verifiability** — success or failure can be observed within a deadline (there is a means of observation and a deadline).
+3. **Exitability** — the time, cost, and owner of withdrawal are stated explicitly.
 
-制約不充足・現状維持案との未比較・観測手段なし・撤退条件なし、といった **悪い賭けはこの 3 条件で
-事前に棄却できる**。可逆性そのものを最大化目標にはしない（交換可能性のための抽象層・二重運用・
-意思決定の先送りを生み、意図的な不可逆性＝特定技術への深い最適化の便益を説明できないため）。
-可逆性は一時点の属性ではなく時間とともに減る量（固定化の速度）として扱う。
+**Bad bets can be rejected up front by these three conditions** — unmet constraints, no comparison against the status-quo option,
+no means of observation, no withdrawal condition. Do not make reversibility itself the maximization goal
+(it breeds abstraction layers for interchangeability, dual operation, and deferred decisions, and it cannot account for the benefit of
+deliberate irreversibility — deep optimization for a specific technology).
+Treat reversibility not as a property at a point in time but as a quantity that decreases over time (the speed of lock-in).
 
-### 4. 非対称設計 — 選定理由は感覚でよい、棄却条件だけは反証可能にする
+### 4. Asymmetric design — the reason for choosing may be intuitive; only the rejection condition must be falsifiable
 
-- **選定理由**は感覚（好奇心・楽しさ）でよい。低賭け金・撤退可能な場合はとくに。
-- **棄却条件**だけは観測可能・反証可能にする。何が観測されたらこの賭けを降りるかを事前に書く。
+- **The reason for choosing** may be intuitive (curiosity, enjoyment). Especially when the stakes are low and withdrawal is possible.
+- **Only the rejection condition** must be observable and falsifiable. Write in advance what observation would make you walk away from this bet.
 
-この非対称が核心である。理由の質を問い詰めるのではなく、外れたと分かる条件を先に固定する。
+This asymmetry is the heart of it. Rather than interrogating the quality of the reason, fix in advance the condition under which you will know it went wrong.
 
-### 5. クローズ手順 — 二択にしない
+### 5. The closing procedure — do not make it binary
 
-終了を「継続か廃棄か」の二択にしない。二択構造は未練（切り捨てるには惜しいという停滞）を強める。
-選択肢に次を含める。
+Do not reduce the ending to "continue or discard". A binary structure strengthens attachment (the stagnation of "too good to throw away").
+Include the following among the options.
 
-- **縮退**（内部ライブラリ化など規模を落として残す）
-- **凍結 + 再評価日**（明示的な日付を置いて一旦止める）
-- **部分回収**（技術資産・失敗ケースだけ保存し機能を無効化する）
+- **Shrink** (keep it at a smaller scale, e.g. as an internal library)
+- **Freeze + a re-evaluation date** (stop for now, with an explicit date)
+- **Partial salvage** (keep only the technical assets and the failure cases, and disable the functionality)
 
-そして **終了時に 1 行メモ**を残す: なぜ止めたか・再開条件。決断の瞬間がないフェードアウトでは
-「何を根拠に見送ったか・再開条件」が残らず、終了知識が失われる（判例で反復観測された確かな損失）。
+And **leave a one-line note at the end**: why it was stopped, and the condition for resuming. In a fade-out with no moment of decision,
+"on what grounds it was set aside, and the condition for resuming" is not left behind, and the knowledge of the ending is lost
+(a definite loss observed repeatedly in the precedents).
 
-- 再評価トリガーは対条件つきにする: 「この閾値を超えなければ再び止める」。品質改善は棄却理由を
-  自動的に無効化しない。棄却理由が「品質」でなく「頻度・慣れ」なら、新バージョン登場は常用復帰の
-  根拠にならない（弱いベット）。棄却理由の記録を再開トリガーの評価にそのまま使う。
+- Make the re-evaluation trigger paired with a condition: "if this threshold is not exceeded, stop again". A quality improvement does not
+  automatically invalidate the rejection reason. If the rejection reason was not "quality" but "frequency, familiarity", the arrival of a new
+  version is not grounds for returning to regular use (a weak bet). Use the recorded rejection reason directly when evaluating the resumption trigger.
 
-### 6. 従属言語の 1 問
+### 6. The one question about a subordinate language
 
-上位選定（フレームワーク・依存）が言語を従属的に連れてくるとき、着手前に 1 問だけ挟む:
-**「その言語と長時間過ごせるか・自分の学習資産になるか」**。
+When an upper-level choice (framework, dependency) drags a language along with it, insert exactly one question before starting:
+**"can I spend long hours with that language, and will it become an asset to my own learning?"**
 
-従属言語との相性コストは選定時に評価されず、使い始めてから顕在化する。個人プロジェクトの技術選定は
-「このプロジェクトのため」と「自分の学習資産のため」の複合目的であり、学習意義の欠如が継続コスト
-（モチベーション毀損）になりうる。言語は*技術的成否*を握らなくても、動機経路を通じて*継続*に影響する。
+The cost of compatibility with a subordinate language is not evaluated at selection time; it surfaces only after use begins. Technology selection in a
+personal project has the composite purpose of "for this project" and "for my own learning assets", and a lack of learning value can become a continuation cost
+(damage to motivation). Even when a language does not determine *technical* success or failure, it affects *continuation* through the motivational path.
 
-### 7. 射程の明示 — 個人 Pj と企業 Pj を分ける
+### 7. Making the scope explicit — separate personal projects from corporate ones
 
-昇格させる仮説には **射程（個人／企業）を必ず明示する**。生存変数が異なるためである。
+A hypothesis being promoted **must always state its scope (personal / corporate)**, because the survival variables differ.
 
-- **個人プロジェクト**: 生存変数はモチベーション。中断が通常条件（放置耐性・再学習費用が選定軸になる）。
-- **企業プロジェクト**: 生存変数は運用・採用・引き継ぎ可能な人員。外部強制が継続を保証するため
-  「止まらない」が、モチベーションの影響は消えるのではなく品質・速度・保守の質へ出力先が変わる（仮説）。
+- **Personal projects**: the survival variable is motivation. Interruption is the normal condition (tolerance to being left alone and the cost of relearning become selection axes).
+- **Corporate projects**: the survival variable is operations, hiring, and personnel to whom it can be handed over. External compulsion guarantees continuation, so it "does not stop",
+  but the influence of motivation does not disappear — its output shifts to the quality of the work, the speed, and the quality of maintenance (hypothesis).
 
-**統一仮説（HYPOTHESIS）**: 技術選定が問うているのは「このシステムを継続させる人的資源が枯渇しない
-選定か」— 個人ではモチベーション、企業では運用可能な人員。ただし射程を跨いだ一般化は禁止する。
+**Unified hypothesis (HYPOTHESIS)**: what technology selection is really asking is "is this a choice under which the human resources that keep this system going will not run dry" —
+motivation for an individual, operable personnel for a company. Generalizing across the two scopes is nevertheless forbidden.
 
-## 記録の分離原則
+## The separation principle for records
 
-判例・決定記録を書くときは次を混ぜない（詳細な欄構成は decision-journal スキルの
-[decision-record-template.md](../../decision-journal/references/decision-record-template.md) を参照）。
+When writing a precedent or a decision record, do not mix the following (for the detailed field layout, see
+[decision-record-template.md](../../decision-journal/references/decision-record-template.md) of the decision-journal skill).
 
-- **判断品質と結果品質を分離する**。たまたま成功した無謀な賭けを模範事例にしない。
-- **予測と事後評価を分離する（二時点記録）**。選定時は候補・賭け金・期待・懸念・棄却条件だけを残し、
-  結果と損失は後日追記する。
-- **理由の由来を必須欄にする**: 当時明示 / 当時の痕跡あり / 事後回想 / 現在の推測。
-  **「復元不能」を正式な結論として認める**（空欄を推測で埋めた瞬間、考古学は事後合理化に変質する）。
-- **成否をプロジェクト単位の一値で判定しない**。機能・チャネル単位で残存価値と撤退判断を分けて記録する。
+- **Separate decision quality from outcome quality**. Do not make a reckless bet that happened to succeed into a model case.
+- **Separate the prediction from the after-the-fact evaluation (a two-point record)**. At selection time, leave only the candidates, the stakes, the expectations, the concerns,
+  and the rejection conditions; append the outcome and the losses later.
+- **Make the provenance of the reason a required field**: stated at the time / traces from the time / recalled afterwards / a present-day guess.
+  **Accept "unrecoverable" as a legitimate conclusion** (the moment a blank is filled with a guess, archaeology turns into after-the-fact rationalization).
+- **Do not judge success or failure with a single value per project**. Record residual value and the withdrawal decision separately, per feature and per channel.
 
-記録義務は賭け金で発火する。賭け金はコード規模でなく影響軸（データ機密性・外部影響・撤退可能性・
-書き直し工数）で判定する。低賭け金は数行メモか無記録を許す。
+The obligation to record is triggered by the stakes. Judge the stakes not by the size of the code but by the impact axes (data sensitivity, external impact, exitability,
+the effort to rewrite). Low stakes may be recorded in a few lines, or not at all.
 
-## 保存先
+## Where records are stored
 
-決定記録は Agent Artifact Store の `decisions` kind（`decisions/` ディレクトリ、local visibility・
-Git 管理外）に保存する。パス解決は必ず [artifact-store.md](./artifact-store.md) の契約を通す。
-`docs/` パスを埋め込まない。
+Decision records are stored in the `decisions` kind of the Agent Artifact Store (the `decisions/` directory, local visibility,
+outside Git management). Always resolve the path through the contract of [artifact-store.md](./artifact-store.md).
+Do not embed `docs/` paths.
 
-## 参照
+## References
 
-- 記録・聞き取りの手順とテンプレート: decision-journal スキル（`skills/decision-journal/SKILL.md`）
-- 保存先契約: [artifact-store.md](./artifact-store.md)
-- 並置する哲学: [design-principles.md](./design-principles.md) /
+- Procedures and templates for recording and interviewing: the decision-journal skill (`skills/decision-journal/SKILL.md`)
+- The storage contract: [artifact-store.md](./artifact-store.md)
+- Juxtaposed philosophies: [design-principles.md](./design-principles.md) /
   [testing-anti-patterns.md](./testing-anti-patterns.md) /
   [information-placement.md](../../../rules/information-placement.md)

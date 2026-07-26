@@ -1,44 +1,43 @@
 # Polling Pattern — Shared Contract
 
-> **⚠️ Warning:** 本契約の変更は、これを参照する全 state adapter 実装（`skills/issue/`、将来の `skills/github-issue/` 等）に影響する。状態・遷移・interface・純関数シグネチャを変更する場合は、全 adapter の references と SKILL.md を同期更新すること。
+> **⚠️ Warning:** A change to this contract affects every state adapter implementation that references it (`skills/issue/`, the future `skills/github-issue/`, and so on). When changing the states, the transitions, the interface, or the pure-function signatures, update the references and SKILL.md of every adapter in sync.
 >
-> **Drift Prevention Rule:** 各 adapter の `SKILL.md` と `references/polling-*.md` は、本契約の章見出しに**直リンク**し、固有部分（FS 構造、Label 名、rollback 手順等）のみを local references で記述する。共通仕様を local references に複製してはならない。
+> **Drift Prevention Rule:** each adapter's `SKILL.md` and `references/polling-*.md` must **link directly** to the section headings of this contract, and describe in their local references only the parts specific to them (the FS layout, label names, rollback procedures, and so on). The shared specification must never be duplicated into local references.
 
 ---
 
 ## 1. Overview
 
-本契約は「単一プロセスが kill されるまで ready キューを延々消化し続ける」ラルフループ型 polling の共通仕様を定義する。責務境界は以下:
+This contract defines the shared specification for Ralph-loop-style polling, in which "a single process keeps consuming the ready queue endlessly until it is killed". The responsibility boundaries are:
 
-| Layer | 責務 | 純関数? |
+| Layer | Responsibility | Pure? |
 |---|---|---|
-| Pure Functions | 状態遷移・分類・判定 | ✅ |
-| State Adapter | I/O を伴う永続化（FS / Label / DB）| ❌ |
-| Tick Orchestrator | adapter と純関数を合成して 1 tick を実行 | ❌ |
-| Loop Controller | `--loop` 時の繰り返し・safety brake 監視 | ❌ |
-| Command | フラグ解析 + orchestrator 起動 | ❌ |
+| Pure Functions | State transitions, classification, decisions | ✅ |
+| State Adapter | Persistence involving I/O (FS / Label / DB) | ❌ |
+| Tick Orchestrator | Composes the adapter and the pure functions to run one tick | ❌ |
+| Loop Controller | Repetition under `--loop`, and monitoring the safety brakes | ❌ |
+| Command | Flag parsing + starting the orchestrator | ❌ |
 
-**tick は純関数ではない**。真の純関数は §4 の 4 つのみ。
+**tick is not a pure function.** The only genuinely pure functions are the four in §4.
 
-### Roots: state_root と runtime_root
+### Roots: state_root and runtime_root
 
-polling adapter は 2 つの永続化ルートを持つ。制御・セッションファイルを成果物ストアに
-混ぜないための分離である:
+A polling adapter has two persistence roots. The separation keeps control and session files out of the artifact store:
 
-| Root | 保持するもの | 共有可能性 |
+| Root | What it holds | Shareability |
 |---|---|---|
-| `<state_root>` | queue 本体（`ready` / `running` / `done` / `failed` / `archives` とその index） | adapter 依存。FS adapter では project artifact（成果物 = 共有・migration の対象になりうる） |
-| `<runtime_root>` | マシン固有の制御・セッションファイル: kill file（`.STOP` / `.STOP.hard`）、初回ポリシーマーカー（`.polling-initialized`）、月次キャッシュ（`.last_archive_month`）、tick session（`session.json`） | 常にマシン固有。**いかなる visibility でも共有・migration の対象外** |
+| `<state_root>` | The queue itself (`ready` / `running` / `done` / `failed` / `archives` and their index) | Adapter-dependent. In the FS adapter it is a project artifact (an artifact — it can become the subject of sharing and migration) |
+| `<runtime_root>` | Machine-specific control and session files: the kill files (`.STOP` / `.STOP.hard`), the first-run policy marker (`.polling-initialized`), the monthly cache (`.last_archive_month`), the tick session (`session.json`) | Always machine-specific. **Never the subject of sharing or migration, at any visibility** |
 
-- **state_root が成果物を含む adapter は `runtime_root` を state_root の外へ分離しなければならない**。
-  FS adapter は queue 本体が project artifact（Artifact Store 配下）なので、制御・セッション
-  ファイルを混ぜず `runtime_root` を成果物ストアの外に置く（本リポジトリでは
-  [`.agents/runtime/`](artifact-store.md#runtime-area)）。
-- **state_root 自体がマシン固有・非共有な adapter は `runtime_root == state_root` としてよい**。
-  例: XDG ベースの Label adapter は state_root（FS）に既に全制御ファイルを置くため、
-  分離は不要で、`<state_root>` = `<runtime_root>` とみなす。
-- 両 root とも**絶対パス解決必須**（cwd 依存禁止）。以降 §6.1 / §6.5 / §9 / §10 が
-  `<runtime_root>` と書く箇所は、後者の adapter では state_root と読み替えてよい。
+- **An adapter whose state_root contains artifacts must separate `runtime_root` out of state_root.**
+  In the FS adapter the queue itself is a project artifact (under the Artifact Store), so the control and session
+  files are not mixed in and `runtime_root` is placed outside the artifact store (in this repository,
+  [`.agents/runtime/`](artifact-store.md#runtime-area)).
+- **An adapter whose state_root is itself machine-specific and unshared may set `runtime_root == state_root`.**
+  Example: the XDG-based Label adapter already places all control files in its state_root (FS), so no
+  separation is needed and `<state_root>` = `<runtime_root>`.
+- Both roots **must be resolved to absolute paths** (no dependence on cwd). Wherever §6.1 / §6.5 / §9 / §10 below write
+  `<runtime_root>`, adapters of the latter kind may read it as state_root.
 
 ---
 
@@ -46,14 +45,14 @@ polling adapter は 2 つの永続化ルートを持つ。制御・セッショ�
 
 ### States
 
-| State | 意味 |
+| State | Meaning |
 |---|---|
-| `ready` | claim 可能 |
-| `running` | claim 済み、cycle 実行中 |
-| `done` | cycle 成功、archive 待機 |
-| `failed/transient` | 一時エラー（retry 可能） |
-| `failed/permanent` | 恒久エラー（人間判断待ち） |
-| `archives` | 月次アーカイブ済み |
+| `ready` | Claimable |
+| `running` | Claimed, cycle in progress |
+| `done` | Cycle succeeded, awaiting archival |
+| `failed/transient` | A temporary error (retryable) |
+| `failed/permanent` | A permanent error (awaiting human judgment) |
+| `archives` | Archived monthly |
 
 ### Transition Table
 
@@ -66,85 +65,85 @@ polling adapter は 2 つの永続化ルートを持つ。制御・セッショ�
 | `failed/permanent` | — | — | — | — | — | — | — | — |
 | `archives` | — | — | — | — | — | — | — | — |
 
-**未定義のセルは `InvalidTransition` エラーを返す**。`—` は「到達しえない」遷移、`❌` は「契約違反」。
+**An undefined cell returns an `InvalidTransition` error.** `—` marks a transition that cannot be reached; `❌` marks a contract violation.
 
 ---
 
-## 3. Interface Table (State Adapter 契約)
+## 3. Interface Table (the State Adapter contract)
 
-全 state adapter は以下のメソッドを実装しなければならない。戻り値型は宣言レベル。
+Every state adapter must implement the following methods. The return types are at the declaration level.
 
-| Method | Signature | 備考 |
+| Method | Signature | Notes |
 |---|---|---|
-| `list_ready(limit)` | `(int) -> list[Slug]` | **early termination 必須**。全件スキャン禁止、`limit` 件見つかり次第返す |
-| `claim(slug)` | `(Slug) -> ClaimResult` | atomic。失敗は `ClaimFailed{reason}` |
+| `list_ready(limit)` | `(int) -> list[Slug]` | **Early termination is required.** Scanning everything is forbidden; return as soon as `limit` entries are found |
+| `claim(slug)` | `(Slug) -> ClaimResult` | Atomic. Failure is `ClaimFailed{reason}` |
 | `release(slug)` | `(Slug) -> None` | running → ready rollback |
 | `mark_done(slug)` | `(Slug) -> None` | running → done |
-| `mark_failed(slug, kind)` | `(Slug, FailureKind) -> None` | kind ∈ {transient, permanent}。失敗状態に保存するのは `error_kind` enum、`retry_count` (int)、`run_id` (tick/loop セッションの UUID)、`failed_at` (ISO8601) のみ（構造化形式）。自由文エラーメッセージ / stack trace / 標準出力は **保存禁止**（context 膨張・PII 防止）。`run_id` + `failed_at` により後付けで cycle ログ（別ストレージ）との相関取得を可能にする |
-| `retry_count(slug)` | `(Slug) -> int` | transient retry カウンタ取得 |
-| `increment_retry(slug)` | `(Slug) -> int` | 新しいカウント値を返す |
-| `kill_file_path()` | `() -> (AbsPath, AbsPath)` | `<runtime_root>` 基準の `(.STOP.hard, .STOP)` 絶対パス。**戻り順 = チェック順**（hard 優先。graceful を先に返す旧仕様は誤読による hard kill 検出漏れリスクがあったため廃止） |
-| `load_session()` | `() -> Session \| None` | `<runtime_root>/session.json`（§6.5 の tick session）を読む。無ければ `None` |
-| `save_session(session)` | `(Session) -> None` | `<runtime_root>/session.json`（§6.5 の tick session）を atomic write（tmp → rename）で永続化 |
-| `archive_month_boundary()` | `() -> ArchivedCount` | `<runtime_root>/.last_archive_month` キャッシュ経由で O(1) チェック、境界跨ぎのみ `<state_root>` 内で移動実行 |
-| `rollback_orphans(now)` | `(Timestamp) -> list[Slug]` | `running/{slug}/.claim` の pid 死活確認 → ready 戻し |
-| `sanitize_slug(raw)` | `(str) -> Slug` | §5 の純関数（adapter が純関数を呼ぶだけ） |
+| `mark_failed(slug, kind)` | `(Slug, FailureKind) -> None` | kind ∈ {transient, permanent}. The only things saved into the failed state are the `error_kind` enum, `retry_count` (int), `run_id` (the UUID of the tick/loop session), and `failed_at` (ISO8601) — a structured form. Free-form error messages, stack traces, and standard output **must not be saved** (to prevent context bloat and PII). `run_id` + `failed_at` make it possible to correlate with the cycle logs (in separate storage) after the fact |
+| `retry_count(slug)` | `(Slug) -> int` | Gets the transient retry counter |
+| `increment_retry(slug)` | `(Slug) -> int` | Returns the new count |
+| `kill_file_path()` | `() -> (AbsPath, AbsPath)` | The absolute `(.STOP.hard, .STOP)` paths relative to `<runtime_root>`. **The return order = the check order** (hard first. The old specification, which returned graceful first, was abolished because misreading it risked missing a hard kill) |
+| `load_session()` | `() -> Session \| None` | Reads `<runtime_root>/session.json` (the tick session of §6.5). `None` if absent |
+| `save_session(session)` | `(Session) -> None` | Persists `<runtime_root>/session.json` (the tick session of §6.5) by atomic write (tmp → rename) |
+| `archive_month_boundary()` | `() -> ArchivedCount` | An O(1) check via the `<runtime_root>/.last_archive_month` cache; the move is performed inside `<state_root>` only when a boundary is crossed |
+| `rollback_orphans(now)` | `(Timestamp) -> list[Slug]` | Checks whether the pid in `running/{slug}/.claim` is alive → returns the slug to ready |
+| `sanitize_slug(raw)` | `(str) -> Slug` | The pure function of §5 (the adapter merely calls the pure function) |
 
 ---
 
 ## 4. Pure Function Signatures
 
-本契約で「真に純粋」な関数は以下 4 つのみ。全て副作用なし、time / random / I/O 不使用（`now` は引数注入）。
+Only the following four functions are "genuinely pure" in this contract. All are free of side effects and use no time / random / I/O (`now` is injected as an argument).
 
 | Function | Signature |
 |---|---|
-| `transition(state, event) -> NextState \| InvalidTransition` | §2 の Transition Table に基づく match |
-| `classify_failure(error_kind) -> Transient \| Permanent` | network/timeout/lock/rate_limit → Transient、test/compile/abort → Permanent |
+| `transition(state, event) -> NextState \| InvalidTransition` | A match based on the Transition Table of §2 |
+| `classify_failure(error_kind) -> Transient \| Permanent` | network/timeout/lock/rate_limit → Transient; test/compile/abort → Permanent |
 | `should_promote_to_permanent(retry_count, limit) -> bool` | `retry_count >= limit` |
-| `month_boundary_crossed(now, last_check) -> bool` | 年月比較のみ |
+| `month_boundary_crossed(now, last_check) -> bool` | Compares year and month only |
 
-**補助純関数（adapter 間で共有）:**
+**Auxiliary pure functions (shared across adapters):**
 
-| Function | Signature | 備考 |
+| Function | Signature | Notes |
 |---|---|---|
-| `sanitize_slug(raw) -> Slug` | `(str) -> str` | ホワイトリスト `[a-zA-Z0-9._-]` 以外は `_`、`..` は `__`、空文字拒否、シンボリックリンク示唆文字列拒否 |
-| `session_resume_action(prev, now, config) -> Resume \| StartNew \| Halt{reason}` | `(Session \| None, Timestamp, Config) -> Action` | §6.5 tick session の再開判定。`failed_streak` halt は sticky（自動再開しない） |
-| `next_session_state(session, tick_result) -> Session` | `(Session, TickResult) -> Session` | §6.5 tick session のカウンタ更新（iter_count / failed_streak） |
+| `sanitize_slug(raw) -> Slug` | `(str) -> str` | Anything outside the whitelist `[a-zA-Z0-9._-]` becomes `_`, `..` becomes `__`, an empty string is rejected, and strings suggesting a symbolic link are rejected |
+| `session_resume_action(prev, now, config) -> Resume \| StartNew \| Halt{reason}` | `(Session \| None, Timestamp, Config) -> Action` | The resume decision for the §6.5 tick session. A `failed_streak` halt is sticky (it never resumes automatically) |
+| `next_session_state(session, tick_result) -> Session` | `(Session, TickResult) -> Session` | Updates the counters of the §6.5 tick session (iter_count / failed_streak) |
 
 ---
 
-## 5. Tick Orchestration Pseudocode (型宣言レベル)
+## 5. Tick Orchestration Pseudocode (declaration level)
 
-> **Note:** 本擬似コードは型フローの図示であり、実装差異は adapter 側の自由とする。`for` ループや counter 加算等の制御構造は概念図として読むこと（言語固有の慣用表現に置換可）。
+> **Note:** this pseudocode illustrates the type flow; implementation differences are left to the adapter. Read control structures such as the `for` loop and counter increments as a conceptual diagram (they may be replaced with language-specific idioms).
 >
-> **不変条件:** `TickResult` のフィールド集合は不変（§7 Schema 準拠）。制御フロー（`for` / `while` / counter 加算等）のみ adapter が言語固有表現に置換可能であり、フィールドの追加・削除・改名は契約違反とする。
+> **Invariant:** the field set of `TickResult` is invariant (conforming to the §7 Schema). Only the control flow (`for` / `while` / counter increments and the like) may be replaced with a language-specific expression by the adapter; adding, removing, or renaming a field is a contract violation.
 
 ```
 tick(adapter: StateAdapter, config: Config, now: Timestamp) -> TickResult:
-    # 1. Safety brakes (kill file 最優先)
-    (stop_hard, stop) = adapter.kill_file_path()   # 戻り順 = チェック順 (hard 優先、§3)
+    # 1. Safety brakes (the kill file takes top priority)
+    (stop_hard, stop) = adapter.kill_file_path()   # return order = check order (hard first, §3)
     if exists(stop_hard): return TickResult(halt_reason="stop.hard")
     if exists(stop):      return TickResult(halt_reason="stop.graceful")
 
-    # 2. Orphan recovery (クラッシュ復旧)
+    # 2. Orphan recovery (recovery from a crash)
     adapter.rollback_orphans(now)
 
-    # 3. Archive (month boundary キャッシュ経由 O(1))
+    # 3. Archive (O(1) via the month-boundary cache)
     adapter.archive_month_boundary()
 
     # 4. List ready (limit = max_parallel, early termination)
     ready_slugs = adapter.list_ready(config.max_parallel)
     if empty(ready_slugs): return TickResult()
 
-    # 5. Atomic claim (失敗分はスキップ)
+    # 5. Atomic claim (skip the ones that fail)
     claimed = [s for s in ready_slugs if adapter.claim(s).ok]
 
-    # 6. Dry run: cycle を呼ばず claim だけ返す
+    # 6. Dry run: return the claims without calling cycle
     if config.dry_run:
         for s in claimed: adapter.release(s)
         return TickResult(claimed=len(claimed), halt_reason="dry_run")
 
-    # 7. Delegate to parallel-cycle (worktree 並行)
+    # 7. Delegate to parallel-cycle (parallel worktrees)
     results = parallel_cycle_delegate(claimed)
 
     # 8. Classify & persist
@@ -165,133 +164,133 @@ tick(adapter: StateAdapter, config: Config, now: Timestamp) -> TickResult:
     return TickResult(claimed=len(claimed), **counter)
 ```
 
-**`tick` は I/O を行うため純関数ではない**。`transition` / `classify_failure` / `should_promote_to_permanent` / `month_boundary_crossed` のみが純関数。
+**`tick` performs I/O and is therefore not a pure function.** Only `transition` / `classify_failure` / `should_promote_to_permanent` / `month_boundary_crossed` are pure.
 
 ---
 
 ## 6. Safety Brakes
 
-### 6.1 Kill File (2 ファイル方式)
+### 6.1 Kill File (the two-file scheme)
 
-| File | 挙動 | 用途 |
+| File | Behavior | Purpose |
 |---|---|---|
-| `<runtime_root>/.STOP` | graceful: 新規 claim のみ停止、実行中 cycle は完走 | 通常の停止要求 |
-| `<runtime_root>/.STOP.hard` | hard: 実行中 cycle にも SIGTERM を送り、claim を rollback | 緊急停止 |
+| `<runtime_root>/.STOP` | graceful: stops only new claims; a cycle already running finishes | An ordinary stop request |
+| `<runtime_root>/.STOP.hard` | hard: sends SIGTERM to the running cycle as well, and rolls the claim back | Emergency stop |
 
-- パスは **`<runtime_root>` 絶対パス解決必須**（cwd 依存禁止。runtime_root の定義は §1「Roots」）
-- tick の最初に `.STOP.hard` → `.STOP` の順でチェック
+- The paths **must be resolved as absolute paths under `<runtime_root>`** (no dependence on cwd. runtime_root is defined in §1 "Roots")
+- Check them at the very start of the tick, in the order `.STOP.hard` → `.STOP`
 
-### 6.2 Bounded Execution (3 重ガード)
+### 6.2 Bounded Execution (a triple guard)
 
-| Config | Default | 意味 |
+| Config | Default | Meaning |
 |---|---|---|
-| `max_iter` | 10 | `--loop` 時の tick 回数上限 |
-| `max_wallclock` | 1h | loop 全体の経過時間上限 |
-| `failed_streak` | 3 | 連続失敗の上限。超えたら halt |
+| `max_iter` | 10 | The maximum number of ticks under `--loop` |
+| `max_wallclock` | 1h | The maximum elapsed time of the whole loop |
+| `failed_streak` | 3 | The maximum consecutive failures. Halt once exceeded |
 
-### 6.2.1 責務境界の注意
+### 6.2.1 A note on the responsibility boundary
 
-§6.2 の 3 重ガードのカウンタ（tick 回数 / loop 開始時刻 / 連続失敗数）は Loop Controller の**プロセスメモリ**に置かれる。
-これは「単一プロセスが `--loop` で回り続ける」前提でのみ有効であり、cron / scheduler から
-**1 invocation = 1 tick** で起動するステートレス実行ではプロセスが毎回死ぬためカウンタが毎回リセットされ、
-3 重ガードが実質無効化される。ステートレス実行では §6.5 の Tick Session を必ず使うこと。
+The counters of the §6.2 triple guard (tick count / loop start time / consecutive failures) live in the Loop Controller's **process memory**.
+That is valid only under the premise that "a single process keeps running under `--loop`". In stateless execution started from cron or a scheduler as
+**one invocation = one tick**, the process dies every time, so the counters reset every time and
+the triple guard is effectively disabled. In stateless execution, always use the Tick Session of §6.5.
 
 ### 6.3 SIGINT / SIGTERM Trap
 
-- Loop controller が trap を設定し、現在の claim を adapter.release で rollback してから exit
-- Trap 不発時（SIGKILL / crash）は次回 tick 冒頭の `rollback_orphans(now)` で回収
+- The loop controller installs a trap, rolls the current claim back with adapter.release, and then exits
+- If the trap does not fire (SIGKILL / crash), the claim is recovered by `rollback_orphans(now)` at the start of the next tick
 
 ### 6.4 Orphan Recovery
 
-- adapter は `running/{slug}/.claim`（FS）または claim metadata（Label 等）に **pid + started_at** を記録
-- FS adapter の `.claim` ファイルはマルチユーザー環境を想定し **permission mode `0600`** で作成する **SHOULD**（pid 漏洩防止）。WSL / macOS / Linux で mode が完全反映されないケース（例: noexec/DrvFs マウント、ACL 付き FS）では adapter は best-effort で続行し、warn ログを出して処理を止めない
-- `rollback_orphans(now)` は死亡 pid を検出し該当 slug を ready に戻す
+- The adapter records **pid + started_at** in `running/{slug}/.claim` (FS) or in the claim metadata (Label and others)
+- The FS adapter **SHOULD** create the `.claim` file with **permission mode `0600`**, assuming a multi-user environment (to prevent pid leakage). Where the mode is not fully honored on WSL / macOS / Linux (e.g. a noexec/DrvFs mount, a filesystem with ACLs), the adapter continues on a best-effort basis, emitting a warn log rather than stopping
+- `rollback_orphans(now)` detects a dead pid and returns the corresponding slug to ready
 
-### 6.5 Tick Session (ステートレス実行の safety brake 永続化)
+### 6.5 Tick Session (persisting the safety brakes for stateless execution)
 
-cron / scheduler 起動（1 invocation = 1 tick、プロセスは tick ごとに死ぬ）でも §6.2 と同一の
-3 重ガード保証を維持するための永続 session。`--stateless` モードの tick が使用する。
-**`--loop` と `--stateless` は排他**（in-process カウンタと永続カウンタの二重管理を禁止する）。
+A persistent session that maintains the same triple-guard guarantee as §6.2 even when started from cron or a scheduler
+(one invocation = one tick, with the process dying each tick). Used by ticks in `--stateless` mode.
+**`--loop` and `--stateless` are mutually exclusive** (double bookkeeping of an in-process counter and a persistent counter is forbidden).
 
 #### Session Schema
 
-`<runtime_root>/session.json`（atomic write: tmp → rename。mode は adapter の state file 規約に従う）:
+`<runtime_root>/session.json` (atomic write: tmp → rename. The mode follows the adapter's state-file convention):
 
 ```
 Session {
-  session_id:     UUID      # session 開始時に 1 度だけ発行
-  started_at:     ISO8601   # session 開始時刻（max_wallclock の起点）
-  iter_count:     int       # この session で完了した tick 数
-  failed_streak:  int       # 連続失敗 tick 数
+  session_id:     UUID      # issued exactly once, when the session starts
+  started_at:     ISO8601   # the session start time (the origin for max_wallclock)
+  iter_count:     int       # the number of ticks completed in this session
+  failed_streak:  int       # the number of consecutive failed ticks
   last_tick_at:   ISO8601
   halt_reason:    "max_iter" | "max_wallclock" | "failed_streak" | null
 }
 ```
 
-#### 純関数（§4 補助純関数）
+#### Pure functions (the §4 auxiliary pure functions)
 
 **`session_resume_action(prev, now, config) -> Resume | StartNew | Halt{reason}`**
 
-| `prev` の状態 | Action |
+| State of `prev` | Action |
 |---|---|
-| `None`（session 無し） | `StartNew` |
-| `halt_reason == "failed_streak"` | `Halt{failed_streak}` — **sticky**。期限切れでも自動再開せず、人間が `session.json` を削除するまで tick を拒否する（連続失敗は人間判断待ち、fail-safe） |
-| `halt_reason ∈ {max_iter, max_wallclock}` かつ `now - started_at <= max_wallclock` | `Halt{halt_reason}` — 期限内は再開しない（cron 連打による実質無限ループ防止） |
-| `halt_reason ∈ {max_iter, max_wallclock}` かつ期限切れ | `StartNew` |
-| `halt_reason == null` かつ `now - started_at > max_wallclock` | `StartNew`（前 session は自然満了） |
-| `halt_reason == null` かつ期限内 | `Resume` |
+| `None` (no session) | `StartNew` |
+| `halt_reason == "failed_streak"` | `Halt{failed_streak}` — **sticky**. It does not resume automatically even once the deadline passes; it refuses ticks until a human deletes `session.json` (consecutive failures await human judgment; fail-safe) |
+| `halt_reason ∈ {max_iter, max_wallclock}` and `now - started_at <= max_wallclock` | `Halt{halt_reason}` — no resumption within the window (preventing an effectively infinite loop from cron firing repeatedly) |
+| `halt_reason ∈ {max_iter, max_wallclock}` and the window has passed | `StartNew` |
+| `halt_reason == null` and `now - started_at > max_wallclock` | `StartNew` (the previous session expired naturally) |
+| `halt_reason == null` and within the window | `Resume` |
 
 **`next_session_state(session, tick_result) -> Session`**
 
-| tick の結果 | `failed_streak` | `iter_count` |
+| Result of the tick | `failed_streak` | `iter_count` |
 |---|---|---|
-| 失敗 tick（`failed_transient + failed_permanent > 0` かつ `done == 0`） | `+1` | `+1` |
-| 成功 tick（`done > 0`） | `0` にリセット | `+1` |
-| no-op tick（`claimed == 0` または `halt_reason == "dry_run"`） | **変更なし**（空キューで streak がリセットされるとブレーキが永遠に発火しない） | `+1` |
+| A failed tick (`failed_transient + failed_permanent > 0` and `done == 0`) | `+1` | `+1` |
+| A successful tick (`done > 0`) | Reset to `0` | `+1` |
+| A no-op tick (`claimed == 0` or `halt_reason == "dry_run"`) | **Unchanged** (if an empty queue reset the streak, the brake would never fire) | `+1` |
 
-> adapter 固有の非カウント規約（例: Label adapter の `error_kind = "lock"`）は TickResult のカウンタに
-> 反映される前段で処理される。本純関数は TickResult のみを入力とし、adapter 事情を知らない。
+> Adapter-specific non-counting conventions (e.g. the Label adapter's `error_kind = "lock"`) are handled before they
+> reach the TickResult counters. These pure functions take only a TickResult as input and know nothing of adapter specifics.
 
-#### Tick への組み込み
+#### Incorporation into the tick
 
-`--stateless` の tick は §5 の手順に対して以下を追加する:
+A `--stateless` tick adds the following to the procedure of §5:
 
-1. Step 1（kill file check）の**直後**に `load_session()` → `session_resume_action(prev, now, config)` を評価
-   - `Halt{reason}` → `TickResult(halt_reason=reason)` で即終了（claim しない）
-   - `StartNew` → 新 session を発行して続行 / `Resume` → 続行
-2. tick 完了後（TickResult 確定後）に `next_session_state(session, tick_result)` を計算し、
-   `session_halt` 判定（`iter_count >= max_iter` → `"max_iter"`、`now - started_at > max_wallclock` → `"max_wallclock"`、
-   `failed_streak >= failed_streak_limit` → `"failed_streak"`。優先順は `failed_streak` > `max_wallclock` > `max_iter`）を
-   `halt_reason` に書いてから `save_session()` する
+1. **Immediately after** Step 1 (the kill file check), evaluate `load_session()` → `session_resume_action(prev, now, config)`
+   - `Halt{reason}` → finish immediately with `TickResult(halt_reason=reason)` (claiming nothing)
+   - `StartNew` → issue a new session and continue / `Resume` → continue
+2. After the tick completes (once the TickResult is settled), compute `next_session_state(session, tick_result)`,
+   write the `session_halt` decision (`iter_count >= max_iter` → `"max_iter"`, `now - started_at > max_wallclock` → `"max_wallclock"`,
+   `failed_streak >= failed_streak_limit` → `"failed_streak"`, in the precedence `failed_streak` > `max_wallclock` > `max_iter`) into
+   `halt_reason`, and then `save_session()`
 
-kill file は session より常に優先される（Step 1 が先）。単一ホスト前提は §6.4 と同じく不変。
+The kill file always takes precedence over the session (Step 1 comes first). The single-host premise is invariant, as in §6.4.
 
 ---
 
 ## 7. Tick Result Schema
 
-**構造化カウンタのみ**。自由文・ログ・詳細メッセージは禁止（context 膨張防止）。
+**Structured counters only.** Free-form text, logs, and detailed messages are forbidden (to prevent context bloat).
 
 ```
 TickResult {
-  run_id:             UUID  # tick または loop セッションの一意 ID（失敗 issue の frontmatter に記録される値と一致）
+  run_id:             UUID  # the unique ID of the tick or loop session (matching the value recorded in the frontmatter of a failed issue)
   tick_started_at:    ISO8601
-  claimed:            int   # 今 tick で claim 成功した数
-  done:               int   # 成功した数
-  failed_transient:   int   # transient に分類された数
-  failed_permanent:   int   # permanent に分類された数
+  claimed:            int   # how many were claimed successfully in this tick
+  done:               int   # how many succeeded
+  failed_transient:   int   # how many were classified as transient
+  failed_permanent:   int   # how many were classified as permanent
   halt_reason?:       "stop.graceful" | "stop.hard" | "max_iter" | "max_wallclock" | "failed_streak" | "dry_run"
 }
 ```
 
-`run_id` は `mark_failed` が失敗 issue frontmatter に保存する値と同一であり、postmortem で両者を相関取得する唯一のキーとなる。
+`run_id` is identical to the value that `mark_failed` saves into the frontmatter of a failed issue, and is the only key by which the two can be correlated in a postmortem.
 
-**早期 halt 時の `run_id`**: kill file（§6.1）または tick session（§6.5）により run_id 生成ステップより前に halt した tick では、`run_id` は未生成のまま `null` でよい（claim が発生していないため相関対象が存在しない）。
+**`run_id` on an early halt**: for a tick that halted before the run_id generation step because of the kill file (§6.1) or the tick session (§6.5), `run_id` may remain ungenerated and be `null` (no claim occurred, so there is nothing to correlate with).
 
-Loop controller はこのカウンタのみを集計し、人間向けサマリは最終出力時に組み立てる。
+The loop controller aggregates only these counters, and assembles the human-facing summary at final output time.
 
-`--stateless`（§6.5）では `max_iter` / `max_wallclock` / `failed_streak` の halt_reason は
-プロセスメモリではなく `session.json` 由来で報告される。フィールド集合は不変。
+Under `--stateless` (§6.5), the halt_reason for `max_iter` / `max_wallclock` / `failed_streak` is reported from
+`session.json` rather than from process memory. The field set is invariant.
 
 ---
 
@@ -299,25 +298,25 @@ Loop controller はこのカウンタのみを集計し、人間向けサマリ�
 
 | Failure Kind | Policy |
 |---|---|
-| `transient` (general) | **固定 30s** 後に次 tick で ready 再投入 |
+| `transient` (general) | Re-enqueued to ready on the next tick after **a fixed 30s** |
 | `transient` (rate_limit) | **Exponential backoff** (30s → 60s → 120s → cap 10 min) |
-| `permanent` | Retry しない。人間判断待ち |
+| `permanent` | No retry. Awaits human judgment |
 
-`retry_count >= transient_retry_limit` で `failed/permanent` に昇格（§4 `should_promote_to_permanent`）。
+At `retry_count >= transient_retry_limit` it is promoted to `failed/permanent` (§4 `should_promote_to_permanent`).
 
 ---
 
 ## 9. Cleanup / Archive
 
-- `done/{slug}` は月末跨ぎで `archives/YYYY-MM/{slug}` に移動
-- 月跨ぎ判定は `month_boundary_crossed(now, last_check)` 純関数
-- **キャッシュ不在（初回起動）は移動を行わずキャッシュのみ作成する**（移動先の過去月が特定できないため。`archives/{空文字}/` のような不正パスを構造的に防ぐ）
-- adapter は `<runtime_root>/.last_archive_month` (または同等) に `YYYY-MM` をキャッシュし、同月内の tick では **O(1)** で早期 return
-- 境界跨ぎ時のみ `done/` をスキャンして移動
+- `done/{slug}` is moved to `archives/YYYY-MM/{slug}` when a month boundary is crossed
+- The month-boundary decision is the pure function `month_boundary_crossed(now, last_check)`
+- **When the cache is absent (the first run), create the cache only and perform no move** (the past month to move into cannot be determined. This structurally prevents an invalid path such as `archives/{empty string}/`)
+- The adapter caches `YYYY-MM` in `<runtime_root>/.last_archive_month` (or an equivalent) and returns early in **O(1)** for ticks within the same month
+- Only when a boundary is crossed does it scan `done/` and move entries
 
 ---
 
-## 10. Default Config (保守的初期値)
+## 10. Default Config (conservative initial values)
 
 ```yaml
 max_parallel: 4
@@ -327,18 +326,18 @@ failed_streak_limit: 3
 transient_retry_limit: 3
 tick_interval_loop_mode: 30s
 rate_limit_backoff: exponential  # 30s, 60s, 120s, cap=10m
-dry_run: false                    # 初回起動時は強制 true
+dry_run: false                    # forced to true on the first run
 ```
 
-**初回起動ポリシー**: `<runtime_root>/.polling-initialized` が存在しない場合、`--dry-run` を強制する（ユーザーが 1 度 polling パターンを理解してから実運用に入るため）。
+**First-run policy**: when `<runtime_root>/.polling-initialized` does not exist, `--dry-run` is forced (so that the user understands the polling pattern once before entering real operation).
 
 ---
 
 ## 11. Drift Prevention Rules
 
-1. 各 adapter の SKILL.md は本ファイル § 番号を**直リンク参照**する（本文複製禁止）
-2. Transition Table / Interface Table / 純関数シグネチャを local references で**再定義してはならない**
-3. 固有部分のみ local references に記述:
-   - FS: ディレクトリレイアウト、atomic rename 手順、sanitize の実装詳細
-   - Label: ラベル名、GraphQL クエリ、3 段防御
-4. 本契約を変更する PR は、全 adapter references の同期更新を同一 PR に含めること
+1. Each adapter's SKILL.md **links directly** to the § numbers of this file (duplicating the body is forbidden)
+2. The Transition Table, the Interface Table, and the pure-function signatures **must not be redefined** in local references
+3. Only the specific parts go in local references:
+   - FS: the directory layout, the atomic rename procedure, the implementation details of sanitize
+   - Label: label names, GraphQL queries, the three-stage defense
+4. A PR that changes this contract must include the synchronized update of every adapter's references in the same PR

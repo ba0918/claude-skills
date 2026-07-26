@@ -220,7 +220,7 @@ Close (archive) an issue.
 Self-driving loop: a Ralph-loop style workflow that keeps consuming `ready/` until killed. Uses the filesystem as the state adapter and follows the shared contract.
 
 **Shared contract (required reading, direct links):** [../shared/references/polling-pattern.md](../shared/references/polling-pattern.md)
-- [§3 Interface Table](../shared/references/polling-pattern.md#3-interface-table-state-adapter-契約)
+- [§3 Interface Table](../shared/references/polling-pattern.md#3-interface-table-the-state-adapter-contract)
 - [§6 Safety Brakes](../shared/references/polling-pattern.md#6-safety-brakes)
 - [§7 Tick Result Schema](../shared/references/polling-pattern.md#7-tick-result-schema)
 **FS adapter spec:** [references/polling-state.md](references/polling-state.md)
@@ -278,7 +278,7 @@ When passing issue bodies into LLM context, **always** wrap them in these delimi
 12. **Persist** — feed Step 11's result into adapter I/O: `adapter.mark_done(slug)` / `adapter.mark_failed(slug, kind)` persist the state transition (contract §3)
 13. **Emit TickResult** — output structured counters only (contract §7, no free text). Keyed by `run_id` + `tick_started_at` for later correlation with external logs
 14. **Session persist (`--stateless` only)** — compute counter updates + halt judgment with `next_session_state(session, tick_result)` and persist via `adapter.save_session()` (contract §6.5)
-15. **Measurement event append** — append the TickResult counters as a measurement event ([measurement-identity.md §4](../shared/references/measurement-identity.md#4-既存系の写像表)):
+15. **Measurement event append** — append the TickResult counters as a measurement event ([measurement-identity.md §4](../shared/references/measurement-identity.md#4-mapping-table-for-the-existing-systems)):
     ```bash
     python3 skills/shared/scripts/measurement_identity.py emit \
       --system polling-fs --event tick --skill issue --repo-root {repo_root} \

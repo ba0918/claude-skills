@@ -1,6 +1,6 @@
 # Configuration Defaults
 
-> **SSOT Note**: 共通契約 [`polling-pattern.md §10 Default Config`](../../shared/references/polling-pattern.md#10-default-config-保守的初期値) にある値（`max_parallel` / `max_iter` / `max_wallclock` / `failed_streak_limit` / `transient_retry_limit` / `tick_interval_loop_mode` / `dry_run` 等）は共通契約側を SSOT として参照し、本ファイルでは再定義しない。本ファイルには **GitHub 固有の config のみ** を記載する。
+> **SSOT Note**: 共通契約 [`polling-pattern.md §10 Default Config`](../../shared/references/polling-pattern.md#10-default-config-conservative-initial-values) にある値（`max_parallel` / `max_iter` / `max_wallclock` / `failed_streak_limit` / `transient_retry_limit` / `tick_interval_loop_mode` / `dry_run` 等）は共通契約側を SSOT として参照し、本ファイルでは再定義しない。本ファイルには **GitHub 固有の config のみ** を記載する。
 
 すべての値は引数 `--config key=value` で上書き可能。
 
@@ -50,7 +50,7 @@ schedule create --cron "*/10 * * * *" --command "/github-issue-polling --statele
 
 > **必ず `--stateless` を付けること**: cron 起動は 1 invocation = 1 tick でプロセスが毎回死ぬため、
 > `--stateless` なしでは `max_iter` / `max_wallclock` / `failed_streak` の 3 重ガードが毎回リセットされ実質無効になる
-> （共通契約 [`§6.5 Tick Session`](../../shared/references/polling-pattern.md#65-tick-session-ステートレス実行の-safety-brake-永続化) 参照）。
+> （共通契約 [`§6.5 Tick Session`](../../shared/references/polling-pattern.md#65-tick-session-persisting-the-safety-brakes-for-stateless-execution) 参照）。
 
 ## Override Example
 

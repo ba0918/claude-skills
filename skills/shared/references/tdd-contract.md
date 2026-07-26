@@ -1,7 +1,7 @@
-# TDD 共通契約
+# TDD Shared Contract
 
-cycle / iterate / test-driven-development スキルが共有する TDD (Test-Driven Development) の契約。
-実装フェーズで Agent プロンプトに注入し、テストファースト開発を強制する。
+The TDD (Test-Driven Development) contract shared by the cycle / iterate / test-driven-development skills.
+Inject it into the agent prompt during the implementation phase to enforce test-first development.
 
 ## The Iron Law
 
@@ -9,84 +9,84 @@ cycle / iterate / test-driven-development スキルが共有する TDD (Test-Dri
 NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 ```
 
-テストより先にコードを書いた場合は削除してやり直す。例外なし。
+If code was written before the test, delete it and start over. No exceptions.
 
-- 「参考」として残さない
-- テストを書きながら「適応」しない
-- 見ない。削除する。テストから新たに実装する。
+- Do not keep it around "for reference"
+- Do not "adapt" it while writing the test
+- Do not look at it. Delete it. Implement anew from the test.
 
-## RED-GREEN-REFACTOR サイクル
+## The RED-GREEN-REFACTOR cycle
 
 ```
-RED    → 失敗するテストを1つ書く → 失敗を確認 (Bash で実行)
-GREEN  → テストを通す最小限のコードを書く → 全パスを確認 (Bash で実行)
-REFACTOR → テストが緑のまま改善する → 全パスを確認 (Bash で実行)
+RED    → write one failing test → confirm it fails (run it with Bash)
+GREEN  → write the minimum code that passes the test → confirm everything passes (run it with Bash)
+REFACTOR → improve while the tests stay green → confirm everything passes (run it with Bash)
 ```
 
-### RED — 失敗するテストを書く
+### RED — write a failing test
 
-- 1つの振る舞いに対して1つのテスト
-- 明確なテスト名（何をテストしているかが名前でわかる）
-- 可能な限り実コードを使う（モックは最小限）
+- One test per behavior
+- A clear test name (the name says what is being tested)
+- Use real code wherever possible (keep mocks to a minimum)
 
-**必須**: テスト実行し、**失敗することを確認する**。
-- コンパイルエラー（未実装の型・関数）は許容
-- 失敗理由が「機能未実装」であることを確認
-- テストが通ってしまったら、既存の振る舞いをテストしている → テストを修正
+**Required**: run the test and **confirm that it fails**.
+- A compile error (an unimplemented type or function) is acceptable
+- Confirm that the reason for failure is "the feature is not implemented"
+- If the test passes, it is testing existing behavior → fix the test
 
-### GREEN — 最小限の実装
+### GREEN — the minimum implementation
 
-- テストを通すために必要な**最小限のコード**のみ書く
-- 過剰な抽象化、先回り実装、YAGNI 違反をしない
-- 「ついでに」他のコードを改善しない
+- Write **only the minimum code** needed to pass the test
+- No over-abstraction, no speculative implementation, no YAGNI violations
+- Do not improve other code "while you are here"
 
-**必須**: テスト実行し、**全パスを確認する**。
-- 新しいテストが通ること
-- 既存テストが壊れていないこと
+**Required**: run the tests and **confirm that everything passes**.
+- The new test passes
+- No existing test broke
 
-### REFACTOR — 整理する
+### REFACTOR — tidy up
 
-- GREEN を達成した後のみ実行可能
-- 重複の排除、命名改善、ヘルパー抽出
-- 新しい振る舞いの追加は禁止
+- Runnable only after GREEN has been reached
+- Remove duplication, improve naming, extract helpers
+- Adding new behavior is forbidden
 
-**必須**: テスト実行し、**全パスが維持されていることを確認する**。
+**Required**: run the tests and **confirm that everything still passes**.
 
-## 合理化テーブル（上位5つ）
+## Rationalization table (top 5)
 
-| 言い訳 | 反論 |
+| Excuse | Rebuttal |
 |--------|------|
-| 「今回だけスキップ」 | それは合理化。TDD に例外はない |
-| 「もう正しいことがわかっている」 | 自信はエビデンスではない。テストで証明する |
-| 「テストを書くのは後で」 | 「後で」は「しない」の同義語 |
-| 「このコードはテストしにくい」 | テストしにくい = 設計が悪い。先に設計を直す |
-| 「プロトタイプだからテスト不要」 | プロトタイプのつもりが本番になるのは定番 |
+| "Just skip it this once" | That is rationalization. TDD has no exceptions |
+| "I already know it is correct" | Confidence is not evidence. Prove it with a test |
+| "I will write the test later" | "Later" is a synonym for "never" |
+| "This code is hard to test" | Hard to test = bad design. Fix the design first |
+| "It is a prototype, so it needs no tests" | A prototype turning into production is the classic outcome |
 
-## Red Flags（TDD 違反の兆候）
+## Red Flags (signs of a TDD violation)
 
-- テストファイルより先にプロダクションコードが変更されている
-- テスト実行せずに GREEN を宣言している
-- 1つのテストで複数の振る舞いを検証している
-- テストが通る前にリファクタリングしている
-- 「テストは後で追加する」と言っている
-- モックのセットアップがテストロジックより複雑
+- Production code was changed before the test file
+- GREEN is declared without running the tests
+- One test verifies several behaviors
+- Refactoring happens before the tests pass
+- Someone says "I will add the tests later"
+- The mock setup is more complex than the test logic
 
-## cycle / iterate からの参照パス
+## Reference paths from cycle / iterate
 
-- cycle の Agent プロンプトに注入: 「実装時は tdd-contract.md に従い、テストファースト（RED → GREEN → REFACTOR）で進めること」
-- iterate の Phase 3 Agent プロンプトに注入: 同上
-- test-driven-development スキルは本契約をユーザー対話型で適用するフロントエンド
+- Injected into cycle's agent prompt: "When implementing, follow tdd-contract.md and proceed test-first (RED → GREEN → REFACTOR)"
+- Injected into iterate's Phase 3 agent prompt: the same
+- The test-driven-development skill is the front end that applies this contract interactively with the user
 
-## テストフレームワーク自動検出
+## Automatic test-framework detection
 
-Agent は以下の順序でテストフレームワークを検出する:
+The agent detects the test framework in the following order:
 
-| ファイル | テストコマンド |
+| File | Test command |
 |---------|-------------|
 | `package.json` (scripts.test) | `npm test` or `npx vitest` / `npx jest` |
 | `Cargo.toml` | `cargo test` |
 | `go.mod` | `go test ./...` |
 | `pyproject.toml` / `setup.py` / `pytest.ini` | `pytest` |
-| `Makefile` (test ターゲット) | `make test` |
+| `Makefile` (a test target) | `make test` |
 
-検出失敗時はユーザーにテストコマンドを確認する。
+If detection fails, confirm the test command with the user.

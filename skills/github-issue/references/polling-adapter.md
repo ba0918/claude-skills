@@ -22,7 +22,7 @@
 
 ## Interface Table
 
-共通契約 [§3 Interface Table](../../shared/references/polling-pattern.md#3-interface-table-state-adapter-契約) の 13 メソッドをすべて実装する。下表は Label adapter の実装マッピング詳細版。
+共通契約 [§3 Interface Table](../../shared/references/polling-pattern.md#3-interface-table-the-state-adapter-contract) の 13 メソッドをすべて実装する。下表は Label adapter の実装マッピング詳細版。
 
 | Interface (§3) | Label adapter 実装 |
 |---|---|

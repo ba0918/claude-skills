@@ -57,7 +57,7 @@ runs the regression evaluation only against the skills whose behavior surface ch
    Do not turn a failing fixture into an asset as-is (the later regression evaluations would always be red and the ledger would lose its meaning)
 4. **Record in the ledger**: `python3 {skill_dir}/scripts/ledger.py --update <skill> {repo_root}`
 5. **Append a measurement event**: because the ledger holds only the latest entry, append the history of verification events
-   following [measurement-identity.md §4](../shared/references/measurement-identity.md#4-既存系の写像表):
+   following [measurement-identity.md §4](../shared/references/measurement-identity.md#4-mapping-table-for-the-existing-systems):
    `python3 skills/shared/scripts/measurement_identity.py emit --system skill-regression --event verification --skill <skill> --repo-root {repo_root} --outcome '{"result":"pass","scenarios":N}'` (with `--accept`, use `"result":"accepted-without-run"`)
 
 ## run — regression evaluation

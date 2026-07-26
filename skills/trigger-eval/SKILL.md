@@ -107,7 +107,7 @@ python3 skills/trigger-eval/scripts/aggregate_metrics.py \
 
 Compute recall / precision / specificity / stability / confusion matrix / invalid_rate with the formulas of `metrics-spec.md`. **Never mix the two modes' results**: selection is authoritative for the convergence and regression guards, and autonomous is a reference series ("The mode axis" of `metrics-spec.md`).
 
-On completing a measurement (the selection series of each iteration), append a measurement event per target skill so that runs can be compared ([measurement-identity.md §4](../shared/references/measurement-identity.md#4-既存系の写像表), recommended):
+On completing a measurement (the selection series of each iteration), append a measurement event per target skill so that runs can be compared ([measurement-identity.md §4](../shared/references/measurement-identity.md#4-mapping-table-for-the-existing-systems), recommended):
 `python3 skills/shared/scripts/measurement_identity.py emit --system trigger-eval --event eval --skill <対象スキル> --repo-root {repo_root} --outcome '{"recall":R,"precision":P,"stability":S}'`
 
 ### Phase 5: Revision
