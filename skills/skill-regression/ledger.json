@@ -418,12 +418,12 @@
       "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
       "skills/sweep-fix/SKILL.md": "249b6b70d63581eaaf89e12a3fdd1239ba2bdd3ed5791a312bd609d48b6faf52",
-      "skills/sweep-fix/fixtures.json": "f07e823ff6bd09c86ca01b773fb4ff73b2040e95373363781c5d856b308261a3",
+      "skills/sweep-fix/fixtures.json": "90273d725ac8a89d41a45e94eb51edd9bea4c614d266b5e7759ccf76896bcae3",
       "skills/sweep-fix/references/context-verification.md": "2c1955b9ffa171c4bffb4123a7137e442924ea25c6546754f98e4abb5ce17f5c",
       "skills/sweep-fix/references/pattern-extraction.md": "511c23c087da40c08406630106dab9b37687a96bb386e025eddea7a720fee417"
     },
-    "note": "issue #36 (1)(2) 対応後の非劣化 run。変更前に pass していた critical/非critical を 1 つも落としていない（sf-001 7/7 → 追加要件込み 8/8、sf-002 5/5、sf-003 3/3、critical は 4+3+3 全 pass）。sf-001 は grep フォールバック（ast-grep 未検出）で候補 4 件を集め api/cache/loader を修正、意図明記コメントのある shutdown.py を FALSE_POSITIVE 除外（CONFIRMED 3 / FP 1 / UNCERTAIN 0）。編集有無は baseline sha256 で機械照合し、shutdown.py・parse.py の未編集と api/cache の編集を裏取り済み。テストは make 経由で Ran 1 test OK を再現。sf-002 は編集 0 件・中間ファイル不在で早期終了、sf-003 は Phase 0 で範囲未指定を検出して中断（いずれも baseline ハッシュ一致）。注意: 今回の run では Phase 5 の rm -rf が権限ゲートに拒否されず正常完了したため、追加した要件 8 が実測できたのは『レポート確定後に削除する』順序の側だけで、拒否時に残存パスを申告して完了する分岐は未踏。過去 2 セッション（07-25 / 07-26）では拒否されており、環境依存で分岐する。",
-    "result": "pass",
+    "note": "issue #36 (1)(2) 対応後の非劣化 run（2026-07-26）で 3 シナリオ全て pass。変更前に pass していた critical/非critical を 1 つも落としていない（sf-001 7/7 → 追加要件込み 8/8、sf-002 5/5、sf-003 3/3、critical は 4+3+3 全 pass）。sf-001 は grep フォールバック（ast-grep 未検出）で候補 4 件を集め api/cache/loader を修正、意図明記コメントのある shutdown.py を FALSE_POSITIVE 除外（CONFIRMED 3 / FP 1 / UNCERTAIN 0）。編集有無は baseline sha256 で機械照合済み。sf-002 は編集 0 件・中間ファイル不在で早期終了、sf-003 は Phase 0 で範囲未指定を検出して中断。注意: この run では Phase 5 の rm -rf が権限ゲートに拒否されず正常完了したため、追加した要件 8 が実測できたのは『レポート確定後に削除する』順序の側だけで、拒否時に残存パスを申告して完了する分岐は未踏。過去 2 セッション（07-25 / 07-26）では拒否されており、環境依存で分岐する。マージ前レビューで fixtures.json の sf-001 notes を 1 箇所訂正（『拒否されるのが常態』という断定が同 run の実測と矛盾していたため、環境依存で分岐する旨に改めた）。実行者へ渡る setup / prompt / requirements は不変で、変更は採点者・著者が読むメタ記述のみのため再走不要と判断。上記 run の実測はそのまま有効。",
+    "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md",
@@ -433,7 +433,7 @@
       "skills/sweep-fix/references/context-verification.md",
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
-    "surface_sha256": "61eed94b7032b531986d9332abf4fa335d94446f29286f15fc1d71797468693e",
+    "surface_sha256": "9d68154ab43f94fb1cfff90bab0f5b148c3f01de68b2ca1e386ea53df3c3c92d",
     "verified": "2026-07-26"
   },
   "systematic-debugging": {
