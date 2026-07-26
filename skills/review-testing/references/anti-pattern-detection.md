@@ -1,89 +1,89 @@
-# Anti-Pattern Detection — 5 鉄則の執行仕様
+# Anti-Pattern Detection — the enforcement spec for the 5 iron laws
 
-[testing-anti-patterns.md](../../shared/references/testing-anti-patterns.md) の 5 鉄則を、検出述語・証拠要件・三値判定に変換した執行仕様。
-ルール本文の複製ではなく「テストコードから機械的に候補を拾い、文脈で確定する」ための手順を定義する。
+The enforcement spec that turns the 5 iron laws of [testing-anti-patterns.md](../../shared/references/testing-anti-patterns.md) into detection predicates, evidence requirements, and three-valued verdicts.
+Rather than duplicating the rule text, it defines the procedure for "collecting candidates mechanically from the test code and settling them with context".
 
-各述語の判定は [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) の
-CONFIRMED / FALSE_POSITIVE / UNCERTAIN に従う。**根拠（call site 一覧・データフロー）を書けない
-CONFIRMED は UNCERTAIN に降格する**。判定できなかった領域は
-[coverage-ledger.md](../../shared/references/coverage-ledger.md) の `inconclusive` に載せる。
+Each predicate's verdict follows the CONFIRMED / FALSE_POSITIVE / UNCERTAIN of
+[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md). **A CONFIRMED whose grounds
+(the call site list, the data flow) cannot be written is demoted to UNCERTAIN.** Areas that could not be decided go into
+`inconclusive` in [coverage-ledger.md](../../shared/references/coverage-ledger.md).
 
-各述語には positive（検出すべき）/ negative（誤検出してはならない）の
-[fixtures](fixtures/) が対応する。**検出述語または fixture 自体を変更したときの回帰確認**に使う。
-通常のプロジェクトレビューでは対象コードへ述語を直接適用し、同梱 fixture の再評価は必須ではない。
+Each predicate has a corresponding positive (must be detected) / negative (must not be a false positive) pair in
+[fixtures](fixtures/). Use them **for regression checking when a detection predicate or a fixture itself changes**.
+In an ordinary project review, apply the predicates directly to the target code; re-evaluating the bundled fixtures is not required.
 
-## 共通手順
+## Common procedure
 
 ```
-1. 候補抽出: 述語ごとの grep / AST パターンでテストファイルから候補を集める
-2. 文脈検証: データフロー・call site 全列挙で「本当に該当するか」を確認する
-3. 三値判定: 根拠付きで CONFIRMED / 字面一致だが非該当なら FALSE_POSITIVE / 根拠不足なら UNCERTAIN
-4. 保守ゲート（述語 / fixture 変更時のみ）: fixtures の positive を検出し negative を検出しないことを照合する
+1. Candidate extraction: collect candidates from the test files with the grep / AST pattern of each predicate
+2. Context verification: confirm "does it really apply" by enumerating the data flow and every call site
+3. Three-valued verdict: CONFIRMED with grounds / FALSE_POSITIVE if it matches textually but does not apply / UNCERTAIN if the grounds are insufficient
+4. Maintenance gate (only when a predicate / fixture changes): check that the fixtures' positives are detected and the negatives are not
 ```
 
-## AP1: モックの振る舞いをテストしている
+## AP1: testing the behavior of a mock
 
-**鉄則**: モック要素の存在をアサートしない。実コンポーネントの振る舞いを検証する。
+**Iron law**: never assert the existence of a mock element. Verify the behavior of the real component.
 
-- **候補抽出**: `*-mock` / `mock` を含む testid・要素へのアサーション、モックの戻り値をそのまま検証するアサーション。
-- **証拠要件**: そのアサーションが「モックが動いたこと」しか保証しておらず、実装の振る舞いに触れていないことを、
-  アサーション対象の出所（モック定義）まで辿って示す。
-- **三値**: モック存在の確認だと辿れた → CONFIRMED / 実要素も併せて検証している → FALSE_POSITIVE /
-  モックか実体か判別する材料が無い → UNCERTAIN。
+- **Candidate extraction**: assertions on testids or elements containing `*-mock` / `mock`, and assertions that verify a mock's return value as-is.
+- **Evidence requirement**: show, by tracing the asserted value back to its origin (the mock definition), that the assertion
+  only guarantees "the mock ran" and never touches the implementation's behavior.
+- **Three-valued**: traced to be a check of the mock's existence → CONFIRMED / a real element is verified alongside → FALSE_POSITIVE /
+  no material to tell mock from real → UNCERTAIN.
 - **fixtures**: [positive](fixtures/ap1-mock-behavior.positive.test.ts) / [negative](fixtures/ap1-mock-behavior.negative.test.ts)
 
-## AP2: プロダクトコードにテスト専用メソッド
+## AP2: a test-only method in production code
 
-**鉄則**: テストからしか呼ばれないメソッドを production クラスに置かない。
+**Iron law**: never put a method called only from tests into a production class.
 
-- **候補抽出**: production コードのメソッドで、参照元がテストファイルのみのもの（`destroy` / `reset` / `_forTest` 等が兆候）。
-- **証拠要件**: **call site を全列挙**し、production 経路からの呼び出しがゼロであることを示す。
-  1 箇所でも production 呼び出しがあれば該当しない。
-- **三値**: call site 全列挙で production 呼び出しゼロを示せた → CONFIRMED /
-  production からも使われている → FALSE_POSITIVE /
-  ライブラリの公開 API で外部呼び出しが観測範囲外 → UNCERTAIN（公開 API は罰しない）。
-  **export された class / method は、対象内 call site がテストだけでも外部利用を否定できないため UNCERTAIN**。
+- **Candidate extraction**: methods in production code referenced only from test files (`destroy` / `reset` / `_forTest` and the like are signs).
+- **Evidence requirement**: **enumerate every call site** and show that there are zero calls from a production path.
+  Even one production call means it does not apply.
+- **Three-valued**: every call site enumerated, showing zero production calls → CONFIRMED /
+  it is used from production too → FALSE_POSITIVE /
+  it is a library's public API and external calls are outside the observable scope → UNCERTAIN (never punish a public API).
+  **An exported class / method is UNCERTAIN, because even if every in-scope call site is a test, external use cannot be ruled out.**
 - **fixtures**: [positive](fixtures/ap2-test-only-method.positive.ts) / [negative](fixtures/ap2-test-only-method.negative.ts)
 
-## AP3: 理解していない依存をモックしている
+## AP3: mocking a dependency you do not understand
 
-**鉄則**: テストが依存する副作用をモックで消さない。
+**Iron law**: never let a mock erase a side effect the test depends on.
 
-- **候補抽出**: モック対象が、同じテストが結果として依存している副作用（ファイル書き込み・重複検出・キャッシュ登録等）を持つケース。
-- **証拠要件**: モックした対象の実メソッドが持つ副作用を列挙し、そのうちテストのアサーションが依存しているものを特定する。
-  依存する副作用をモックが消しているなら該当。
-- **三値**: 「テストが依存する副作用をモックが消している」とデータフローで示せた → CONFIRMED /
-  モックしたのは真に外部・低速な処理だけ（副作用は本物が実行される）→ FALSE_POSITIVE /
-  依存関係が追い切れない → UNCERTAIN。
+- **Candidate extraction**: cases where the mocked target holds a side effect the same test ends up depending on (file writes, duplicate detection, cache registration, and so on).
+- **Evidence requirement**: enumerate the side effects of the real methods of the mocked target, and identify which of them the test's assertions depend on.
+  If the mock erases a side effect that is depended upon, it applies.
+- **Three-valued**: shown via the data flow that "the mock erases a side effect the test depends on" → CONFIRMED /
+  only genuinely external or slow processing was mocked (the side effects still run for real) → FALSE_POSITIVE /
+  the dependencies cannot be traced fully → UNCERTAIN.
 - **fixtures**: [positive](fixtures/ap3-mock-understanding.positive.test.ts) / [negative](fixtures/ap3-mock-understanding.negative.test.ts)
 
-## AP4: 不完全なモック
+## AP4: an incomplete mock
 
-**鉄則**: 知っているフィールドだけの部分モックを作らない。実 API の完全なスキーマを再現する。
+**Iron law**: never build a partial mock of only the fields you know about. Reproduce the real API's complete schema.
 
-- **候補抽出**: モックレスポンスのオブジェクトと、それを消費する production コードが参照するフィールド集合の差分。
-- **証拠要件**: 実 API のレスポンススキーマ（型定義・ドキュメント・サンプル）に対しモックが欠くフィールドを列挙し、
-  そのうち downstream が参照するものを示す。参照されるフィールドが欠けていれば「テストは通るが統合で壊れる」。
-- **三値**: downstream が参照するフィールドの欠落を示せた → CONFIRMED /
-  欠落フィールドはどこからも参照されない → FALSE_POSITIVE /
-  実スキーマが不明で欠落を確定できない → UNCERTAIN。
+- **Candidate extraction**: the difference between the mock response object and the set of fields the consuming production code references.
+- **Evidence requirement**: against the real API's response schema (type definitions, documentation, samples), enumerate the fields the mock lacks,
+  and show which of them downstream code references. If a referenced field is missing, "the test passes but integration breaks".
+- **Three-valued**: a missing field referenced downstream was shown → CONFIRMED /
+  the missing fields are referenced from nowhere → FALSE_POSITIVE /
+  the real schema is unknown so the omission cannot be established → UNCERTAIN.
 - **fixtures**: [positive](fixtures/ap4-incomplete-mock.positive.test.ts) / [negative](fixtures/ap4-incomplete-mock.negative.test.ts)
 
-## AP5: 後付けのテスト（TDD 逸脱）
+## AP5: tests written after the fact (a TDD deviation)
 
-**鉄則**: テストは実装の後付けにしない（TDD 先行）。ただし検出は慎重に扱う。
+**Iron law**: tests are not bolted on after the implementation (TDD comes first). But treat detection carefully.
 
-- **候補抽出**: 実装コミットの後にテストが追加された痕跡（同一ファイルの追加順・PR 差分）。
-- **証拠要件**: git 履歴だけは squash / rebase で崩れる**弱い証拠**。cycle の RED/GREEN 実行ログがあれば強い証拠。
-- **三値**: RED/GREEN ログで先行が確認できた（順守 or 逸脱）→ CONFIRMED /
-  既存バグへの回帰テスト後付けと分かる → FALSE_POSITIVE（**罰しない**。安全網追加を阻害しないため）/
-  git 履歴のみで判断 → **UNCERTAIN 止まり**。
-- **別軸の分離**: 「今回 TDD だったか」（本述語）と「テストが今有効か」（AP1–AP4・三層評価）は別軸。
-  後付けでも現在有効なテストは層 1・層 2 で正当に評価する。
+- **Candidate extraction**: traces of tests added after the implementation commit (the order of additions to the same file, the PR diff).
+- **Evidence requirement**: git history alone is **weak evidence** — squash / rebase distorts it. A cycle's RED/GREEN execution log is strong evidence.
+- **Three-valued**: precedence confirmed from the RED/GREEN log (compliance or deviation) → CONFIRMED /
+  identifiable as a regression test added after the fact for an existing bug → FALSE_POSITIVE (**never punish it**, so as not to discourage adding to the safety net) /
+  judged from git history alone → **stops at UNCERTAIN**.
+- **Separating the axes**: "was TDD followed this time" (this predicate) and "is the test effective now" (AP1-AP4, the three layers) are different axes.
+  A test written after the fact but effective now is evaluated fairly by layers 1 and 2.
 - **fixtures**: [positive](fixtures/ap5-tests-after-fact.positive.md) / [negative](fixtures/ap5-tests-after-fact.negative.md)
 
-## 検出できない限界（明記する）
+## Limits of detection (state them)
 
-- 動的に組み立てられるモック・メタプログラミングされたテストは静的抽出をすり抜ける → その領域は `inconclusive`。
-- 外部ライブラリの公開 API がテスト専用に見えるケースは常に UNCERTAIN（外部呼び出しは観測範囲外）。
-- これらの限界を coverage ledger に明示し、「検出述語が届かなかった」ことを「問題なし」と混同しない。
+- Dynamically assembled mocks and metaprogrammed tests slip past static extraction → that area is `inconclusive`.
+- A case where an external library's public API looks test-only is always UNCERTAIN (external calls are outside the observable scope).
+- State these limits in the coverage ledger, and never confuse "the detection predicates did not reach it" with "no problems".
