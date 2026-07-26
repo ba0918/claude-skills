@@ -9,93 +9,93 @@ description: >
   DESIGN.md / mockup HTML を持つプロジェクトで使用する。
 ---
 
-# Mockup Diff — モックアップ vs アプリの視覚差分検出・修正
+# Mockup Diff — Detect and Fix Visual Differences Between Mockup and App
 
-## design-validate との棲み分け
+## Boundary with design-validate
 
 | | design-validate | mockup-diff |
 |--|----------------|-------------|
-| **比較対象** | baseline スクショ vs 実装コード | モックアップ HTML vs 実行中アプリ |
-| **検出するもの** | トークン直書き、未定義トークン使用、pixel diff | spacing ズレ、フォント崩れ、動的状態のレイアウトバグ |
-| **位置づけ** | 機械的ルール準拠の検証 | 実装品質のラストワンマイル |
-| **パイプライン上** | design-generate の後 | アプリへの落とし込み後 |
+| **Compared** | baseline screenshots vs implementation code | mockup HTML vs the running app |
+| **Detects** | hardcoded tokens, use of undefined tokens, pixel diff | spacing drift, broken fonts, layout bugs in dynamic states |
+| **Role** | verification of mechanical rule compliance | the last mile of implementation quality |
+| **In the pipeline** | after design-generate | after porting into the app |
 
 ```
 design-guide → design-scaffold → design-generate
          ↓                              ↓
     [HUMAN APPROVAL]               mockups/base/*.html
          ↓                              ↓
-    baseline 確定              アプリに実装
+    baseline fixed              implemented in app
          ↓                              ↓
     design-validate            mockup-diff ← ★
 ```
 
-## ワークフロー概要
+## Workflow Overview
 
 ```
-Phase 0: SETUP    — プロジェクト調査 + 比較スクリプト自動生成（初回のみ）
-Phase 1: CAPTURE  — 生成スクリプトでモック + アプリの両方をスクショ撮影
-Phase 2: COMPARE  — スクショを並べて目視比較
-Phase 3: ANALYZE  — CSS / コンポーネント / フォントの差分原因を特定
-Phase 4: FIX      — コード修正 + テスト更新
-Phase 5: VERIFY   — 再スクショで差分解消を確認
+Phase 0: SETUP    — investigate the project + generate the compare script (first run only)
+Phase 1: CAPTURE  — screenshot both the mockup and the app with the generated script
+Phase 2: COMPARE  — put the screenshots side by side and compare visually
+Phase 3: ANALYZE  — pin down the cause of CSS / component / font differences
+Phase 4: FIX      — fix the code + update tests
+Phase 5: VERIFY   — re-screenshot and confirm the differences are gone
 ```
 
 ---
 
-## Phase 0: SETUP（初回 or 設定変更時）
+## Phase 0: SETUP (first run or when settings change)
 
-`.design/mockup-diff/config.json` が存在しない場合、または `$ARGUMENTS` に `setup` が含まれる場合に実行する。
-既に config.json が存在し setup 指示もない場合は Phase 1 にスキップする。
+Run this when `.design/mockup-diff/config.json` does not exist, or when `$ARGUMENTS` contains `setup`.
+If config.json already exists and no setup instruction was given, skip to Phase 1.
 
-### Step 1: プロジェクト調査
+### Step 1: Project Investigation
 
-以下を自動検出する:
+Auto-detect the following:
 
-#### 1-1. フレームワーク・ビルドツール検出
+#### 1-1. Framework and build tool detection
 
-ファイル検索・パターン検索で以下を調査:
+Investigate with file search and pattern search:
 
-| ファイル | 検出対象 |
+| File | What to detect |
 |---------|---------|
-| `package.json` | dependencies/devDependencies からフレームワーク（React, Vue, Svelte, Next.js 等） |
-| `Cargo.toml` → `tauri` | Tauri アプリ |
-| `vite.config.*` | Vite 使用 |
-| `next.config.*` | Next.js 使用 |
-| `webpack.config.*` | webpack 使用 |
+| `package.json` | framework from dependencies/devDependencies (React, Vue, Svelte, Next.js, ...) |
+| `Cargo.toml` → `tauri` | a Tauri app |
+| `vite.config.*` | uses Vite |
+| `next.config.*` | uses Next.js |
+| `webpack.config.*` | uses webpack |
 
-#### 1-2. Dev server 起動方法の特定
+#### 1-2. Identify how to start the dev server
 
-`package.json` の `scripts` セクションから dev server 起動コマンドを特定:
-- `dev`, `start`, `serve` 等のスクリプト名を確認
-- ポート番号を推定（Vite: 5173, Next.js: 3000, CRA: 3000 等）
+Identify the dev server start command from the `scripts` section of `package.json`:
+- Check script names such as `dev`, `start`, `serve`
+- Infer the port number (Vite: 5173, Next.js: 3000, CRA: 3000, ...)
 
-#### 1-3. モックアップ HTML の DOM 構造解析
+#### 1-3. Analyze the DOM structure of the mockup HTML
 
-モックアップファイルを読み込み:
-- ページ切替の仕組み（CSS class toggle, hash routing, 個別 HTML ファイル等）
-- ナビゲーション要素のセレクタ
-- ページコンテナのセレクタ・ID パターン
+Read the mockup file and extract:
+- the page-switching mechanism (CSS class toggle, hash routing, separate HTML files, ...)
+- selectors for navigation elements
+- selector / ID patterns for page containers
 
-#### 1-4. アプリ側のナビゲーション構造
+#### 1-4. Navigation structure on the app side
 
-アプリのソースコードをパターン検索で調査:
-- ルーティング方法（React Router, file-based routing 等）
-- ナビゲーションコンポーネントのセレクタ
-- ページ遷移の方法（リンクボタン、タブ等）
+Investigate the app source code with pattern search:
+- the routing approach (React Router, file-based routing, ...)
+- selectors for navigation components
+- how page transitions happen (link buttons, tabs, ...)
 
-#### 1-5. API モック要件の特定
+#### 1-5. Identify API mocking requirements
 
-| フレームワーク | モック方式 |
+| Framework | Mocking approach |
 |-------------|----------|
-| Tauri | `tauri-invoke` — `window.__TAURI_INTERNALS__` を注入 |
-| Next.js (API routes) | `fetch-intercept` — Playwright の `page.route()` |
-| MSW 導入済み | `msw` — プロジェクト既存の MSW 設定を活用 |
-| 静的ページ / SSG | `none` — モック不要 |
+| Tauri | `tauri-invoke` — inject `window.__TAURI_INTERNALS__` |
+| Next.js (API routes) | `fetch-intercept` — Playwright's `page.route()` |
+| MSW already installed | `msw` — reuse the project's existing MSW setup |
+| Static pages / SSG | `none` — no mocking needed |
 
-### Step 2: config.json 生成
+### Step 2: Generate config.json
 
-調査結果を基に config.json のドラフトを作成し、ユーザーに確認する。
+Draft config.json from the investigation results and confirm it with the user.
 
 ```
 header: "config 確認"
@@ -105,7 +105,7 @@ options:
   - "修正したい箇所がある"
 ```
 
-設定の表示例:
+Example of how to display the settings:
 ```
 📋 Mockup Diff 設定
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -118,9 +118,9 @@ Mockup:      mockups/base/{page}.html
 Output:      .design/mockup-diff/screenshots
 ```
 
-確認後、`.design/mockup-diff/config.json` に保存する。
+After confirmation, save it to `.design/mockup-diff/config.json`.
 
-**config.json のスキーマ:**
+**config.json schema:**
 
 ```json
 {
@@ -162,42 +162,42 @@ Output:      .design/mockup-diff/screenshots
 }
 ```
 
-### Step 3: 比較スクリプト生成
+### Step 3: Generate the compare script
 
-[references/script-requirements.md](references/script-requirements.md) の要件に**厳密に準拠**して、
-プロジェクト固有の比較スクリプトを生成する。
+Generate the project-specific compare script in **strict conformance** with the requirements in
+[references/script-requirements.md](references/script-requirements.md).
 
-出力先: `.design/mockup-diff/compare.mjs`
+Output: `.design/mockup-diff/compare.mjs`
 
-**生成時の原則:**
+**Generation principles:**
 
-1. script-requirements.md の全必須要件を満たすこと
-2. config.json の値をハードコードするのではなく、config.json を読み込んで動的に使用すること
-3. `apiMock.type` に応じた API モック注入パターンを script-requirements.md から選択すること
-4. `apiMock.type` が `tauri-invoke` または `fetch-intercept` の場合、`apiMock.responsesFile` からモックレスポンスを読み込むこと
-5. エラーハンドリング・クリーンアップを script-requirements.md の要件通りに実装すること
-6. Playwright の解決に `createRequire` を使い、プロジェクトの `node_modules` から動的にロードすること
+1. Satisfy every mandatory requirement in script-requirements.md
+2. Do not hardcode config.json values — read config.json and use them dynamically
+3. Pick the API mock injection pattern matching `apiMock.type` from script-requirements.md
+4. When `apiMock.type` is `tauri-invoke` or `fetch-intercept`, load the mock responses from `apiMock.responsesFile`
+5. Implement error handling and cleanup exactly as script-requirements.md requires
+6. Resolve Playwright with `createRequire` and load it dynamically from the project's `node_modules`
 
-### Step 4: API モックレスポンスファイル生成（該当する場合）
+### Step 4: Generate the API mock response file (when applicable)
 
-`apiMock.type` が `none` 以外の場合:
+When `apiMock.type` is anything other than `none`:
 
-1. アプリのソースコードから API コール（invoke, fetch 等）をパターン検索で検出
-2. 各 API エンドポイントに対する決定論的なダミーレスポンスを生成
-3. `.design/mockup-diff/mock-responses.json` に保存
-4. ユーザーに確認を取ってレスポンスの内容を確認
+1. Detect API calls (invoke, fetch, ...) in the app source code with pattern search
+2. Generate a deterministic dummy response for each API endpoint
+3. Save them to `.design/mockup-diff/mock-responses.json`
+4. Confirm the response contents with the user
 
-### Step 5: 動作確認（dry run）
+### Step 5: Smoke check (dry run)
 
 ```bash
 cd <project-root>
 node .design/mockup-diff/compare.mjs --help
 ```
 
-ヘルプが正常に表示されることを確認する。
-エラーが出た場合は原因を調査し、スクリプトを修正する。
+Confirm the help text is displayed correctly.
+If an error appears, investigate the cause and fix the script.
 
-### SETUP 完了メッセージ
+### SETUP completion message
 
 ```
 ✅ Mockup Diff セットアップ完了！
@@ -215,75 +215,75 @@ node .design/mockup-diff/compare.mjs --help
 
 ## Phase 1: CAPTURE
 
-### 前提チェック
+### Preconditions
 
-1. `.design/mockup-diff/config.json` の存在確認
-   - なければ「Phase 0: SETUP を先に実行してください」と案内
-2. `.design/mockup-diff/compare.mjs` の存在確認
-   - なければ同上
+1. Confirm `.design/mockup-diff/config.json` exists
+   - If missing, tell the user 「Phase 0: SETUP を先に実行してください」
+2. Confirm `.design/mockup-diff/compare.mjs` exists
+   - Same as above if missing
 
-### スクリプト実行
+### Run the script
 
 ```bash
 cd <project-root>
 node .design/mockup-diff/compare.mjs
 ```
 
-オプションで特定ページのみ実行:
+Optionally run only specific pages:
 ```bash
 node .design/mockup-diff/compare.mjs --pages today,report
 ```
 
-### 実行結果の確認
+### Check the result
 
-スクリプトの exit code を確認:
-- `0`: 正常終了 → Phase 2 へ
-- 非ゼロ: エラーメッセージを確認し、原因を調査・修正
+Check the script's exit code:
+- `0`: success → go to Phase 2
+- non-zero: read the error message, investigate the cause, and fix it
 
 ---
 
 ## Phase 2: COMPARE
 
-スクショ画像を読み込んで並べて確認する。config.json の `output` と `pages` を参照して全ページ分を確認する:
+Load the screenshot images and review them side by side. Cover every page, using `output` and `pages` from config.json:
 
 ```
 {output}/mockup-{page}.png
 {output}/app-{page}.png
 ```
 
-**全ページ分を確認するまで次に進まない。**
+**Do not move on until every page has been reviewed.**
 
-各ページについて以下を観察:
-- 全体的なレイアウトの一致度
-- 色・フォント・spacing の差異
-- コンポーネントの表示状態の差異
-- 明らかなレイアウト崩れ
+For each page, observe:
+- how well the overall layout agrees
+- differences in color, font, and spacing
+- differences in component display state
+- obvious layout breakage
 
 ---
 
 ## Phase 3: ANALYZE
 
-差分を以下のカテゴリに分類してユーザーに報告する。
+Classify the differences into the categories below and report them to the user.
 
-### 視覚バグ（修正対象）
+### Visual bugs (to be fixed)
 
-| カテゴリ | 例 |
+| Category | Example |
 |---------|-----|
-| **色** | ステータスドットの色が間違い |
-| **スペーシング** | padding/margin がモックと不一致 |
-| **フォント** | font-weight 欠損で faux bold、サイズ不一致 |
-| **アニメーション** | CSS animation/transition の欠落 |
-| **インタラクション** | hover / disabled / focus スタイル欠落 |
-| **レイアウト** | flex / grid / 幅 / 位置の不一致 |
-| **レスポンシブ** | ブレークポイントでの崩れ |
+| **Color** | the status dot has the wrong color |
+| **Spacing** | padding/margin does not match the mockup |
+| **Font** | missing font-weight causing faux bold, size mismatch |
+| **Animation** | missing CSS animation/transition |
+| **Interaction** | missing hover / disabled / focus styles |
+| **Layout** | mismatched flex / grid / width / position |
+| **Responsive** | breakage at breakpoints |
 
-### 修正対象外
+### Not to be fixed
 
-- **データ差分**: モックデータの値の違い（名前、数値等はダミーデータの差）
-- **既知 issue**: 未実装機能、意図的な差異
-- **レンダリングエンジン差**: CDN フォント vs self-hosted woff2 の微差（許容範囲）
+- **Data differences**: differing mock data values (names, numbers, etc. are just dummy-data differences)
+- **Known issues**: unimplemented features, intentional differences
+- **Rendering engine differences**: slight differences between CDN fonts and self-hosted woff2 (acceptable)
 
-### レポート形式
+### Report format
 
 ```
 📊 差分分析レポート
@@ -308,32 +308,32 @@ node .design/mockup-diff/compare.mjs --pages today,report
 
 ## Phase 4: FIX
 
-差分ごとに:
+For each difference:
 
-1. モックアップの CSS/HTML とアプリの対応コードを比較し原因特定
-2. CSS / TSX / Vue / フォントファイル等を修正
-3. 影響を受けるテスト（unit / E2E / visual）を更新
-4. プロジェクトのテストコマンドで regression 確認
+1. Compare the mockup CSS/HTML with the corresponding app code and pin down the cause
+2. Fix the CSS / TSX / Vue / font files, etc.
+3. Update the affected tests (unit / E2E / visual)
+4. Check for regressions with the project's test command
 
-### よくある差分パターン
+### Common difference patterns
 
-| パターン | 修正方針 |
+| Pattern | How to fix |
 |---------|---------|
-| padding/margin 不一致 | CSS 値をモックに合わせる。tokens.json 定義値を使用 |
-| font-weight 欠損 | woff2 追加 + @font-face 宣言追加 |
-| 条件付き CSS クラス欠落 | TSX/Vue で className/class を動的切替 |
-| animation 未実装 | @keyframes + animation プロパティ追加 |
-| hover/disabled 欠落 | 疑似クラスセレクタ追加 |
-| flex/grid 崩れ | レイアウトプロパティを調整 |
+| padding/margin mismatch | Match the CSS values to the mockup. Use the values defined in tokens.json |
+| missing font-weight | Add the woff2 + an @font-face declaration |
+| missing conditional CSS class | Toggle className/class dynamically in TSX/Vue |
+| animation not implemented | Add @keyframes + the animation property |
+| missing hover/disabled | Add pseudo-class selectors |
+| broken flex/grid | Adjust the layout properties |
 
 ---
 
 ## Phase 5: VERIFY
 
-1. Phase 1 と同じ手順で再度スクリプト実行
-2. 新しいスクショとモックの画像を読み込んで再比較
-3. 全ての修正必須差分が解消されたことを確認
-4. 結果をユーザーに報告
+1. Run the script again, following the same steps as Phase 1
+2. Load the new screenshots and the mockup images and compare again
+3. Confirm every must-fix difference is resolved
+4. Report the result to the user
 
 ```
 ✅ 差分検証完了！
@@ -346,33 +346,33 @@ node .design/mockup-diff/compare.mjs --pages today,report
   - [データ] Provider 名の違い（モックデータ差）
 ```
 
-差分が残っている場合は Phase 3 に戻り、追加修正を行う。
+If differences remain, go back to Phase 3 and fix them.
 
 ---
 
-## ファイル構造
+## File Structure
 
-ターゲットプロジェクトに生成されるファイル:
+Files generated in the target project:
 
 ```
 .design/mockup-diff/
-├── config.json             # プロジェクト固有の設定
-├── compare.mjs             # 生成された比較スクリプト
-├── mock-responses.json     # API モックレスポンス（該当時）
-└── screenshots/            # スクリーンショット出力
+├── config.json             # project-specific settings
+├── compare.mjs             # the generated compare script
+├── mock-responses.json     # API mock responses (when applicable)
+└── screenshots/            # screenshot output
     ├── mockup-{page}.png
     ├── app-{page}.png
     └── comparison.html
 ```
 
-## 注意事項
+## Cautions
 
-- Playwright (Chromium) と Tauri WebView / 各ブラウザのレンダリング差は本スクリプトでは検出不可。Playwright 同士の比較に限定される
-- CDN フォント（モック）vs self-hosted woff2（アプリ）の微差は許容範囲
-- dev server が既に別プロセスで起動中の場合、スクリプトはポート使用中エラーを出す。事前に停止するか、`--port` で別ポートを指定する
-- `config.json` や `compare.mjs` は `.gitignore` に追加するかはプロジェクトの判断に委ねる（チーム共有する場合はコミット推奨）
+- Rendering differences between Playwright (Chromium) and the Tauri WebView / individual browsers cannot be detected by this script. Comparison is limited to Playwright vs Playwright
+- Slight differences between CDN fonts (mockup) and self-hosted woff2 (app) are acceptable
+- If a dev server is already running in another process, the script fails with a port-in-use error. Stop it beforehand, or specify another port with `--port`
+- Whether to add `config.json` and `compare.mjs` to `.gitignore` is left to the project (committing is recommended when sharing with a team)
 
 ## References
 
-- **スクリプト要件:** [references/script-requirements.md](references/script-requirements.md)
-- **共有契約:** [shared/references/design-system-contract.md](../shared/references/design-system-contract.md)
+- **Script requirements:** [references/script-requirements.md](references/script-requirements.md)
+- **Shared contract:** [shared/references/design-system-contract.md](../shared/references/design-system-contract.md)
