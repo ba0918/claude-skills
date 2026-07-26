@@ -337,6 +337,38 @@ review-deps / skill-regression の各 SKILL.md）の鉤括弧引用も英語見�
   spec-verify 4）は、参照元 SKILL.md が別ブランチで英語化されており、アンカー更新が
   衝突するため次バッチへ送った
 
+共有契約 10 本（S2 レーン）を英語化し、影響する 17 スキル・55 シナリオの回帰評価を完走した。
+S2 は「訳すと fixture 保有スキルへ波及する」で切った区分で、難易度ではなく後始末のコストが
+理由。critical 要件の落ちはゼロで、スキル側の劣化は検出されなかった。
+
+`polling-pattern` と `measurement-identity` だけ扱いを分けた。見出しが外部からのアンカー
+参照の実体になっており（18 箇所 + 4 箇所、計 9 ファイルから）、訳すとリンクが壊れる一方で
+`validate_repo.py` はリンク検証でアンカーを落とすため CI は緑のまま通る。つまり黙って壊れる。
+本文の翻訳と参照元の更新を同一コミットに収める必要があり、他の 8 本から分離した。訳語を選ぶ
+際は「英語のみで構成された見出しは変えない」を優先し、参照更新を 5 箇所に抑えた。
+
+回帰評価で観測した制約と綻びは `skill-regression` の台帳 note に残した。次に同じ環境で回す人が
+同じ停止を劣化と誤読しないためで、所在が実行基盤側と fixture 側に分かれる。
+
+- 実行基盤: 実行者の最終出力が呼び出し側に届かない（報告経路の明示で解消）。実行者が張った
+  入れ子委譲は起動には成功するが子の完了通知が実行者ではなく呼び出し側へ届き、`cycle` の
+  fixture がこれで待機に入った。契約どおり事実のみの照会で復帰させ、解き方は渡していない
+- fixture: `doc-write` の `env` 宣言はハーネスが強制せず、`decision-journal` の `setup` は
+  空で前提が散文にしかない。いずれも前提が実体化されず、要件の検証が宣言頼みになっている
+- fixture: `plan-implement` の要件 1 件が status 更新のコミットを求めるが、SKILL.md は
+  artifacts が Git 追跡外なら commit 対象外と定めており、要件文が契約と食い違う
+
+- `skills/shared/references/`: verification-gate / fix-action-taxonomy / tdd-contract /
+  codex-integration / severity-and-verdicts / human-readable-summary / decision-protocol /
+  checkpoint-pattern / measurement-identity / polling-pattern を英語化
+- `skills/issue/` `skills/github-issue/` `skills/goal-loop/` `skills/trigger-eval/`
+  `skills/skill-regression/` `commands/github-issue-polling.md`: 日本語見出しを指す
+  アンカー参照 22 箇所を英語見出しへ差し替え
+- `skills/skill-regression/ledger.json`: 17 スキルの検証記録を更新
+- `human-readable-summary.md` の before/after 例示ブロックは日本語のまま据え置いた。
+  利用者が画面で読む完了報告そのもので、契約が「主観基準のアンカー」と位置づけている実物の
+  ため、訳すと基準が指す対象がずれる
+
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の

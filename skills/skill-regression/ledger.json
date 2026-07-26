@@ -113,7 +113,7 @@
       "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
       "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a"
     },
-    "note": "S2 英語化（tdd-contract / verification-gate）後の再走。3 シナリオとも critical 全 ○。cy-001 は refine の入れ子委譲に成功したが子の完了通知が実行者ではなく呼び出し側へ届く既知制約に当たり待機。契約どおり上位ウォッチドッグとして事実のみの照会（委譲先は完了済み・通知は届かない）を送り復帰、Phase 2-3 を完走した。照会 2 回（うち 1 回は報告回収要求）。cy-001 の判定は自己申告ではなく成果物（result ファイル・status.md・session-history.md・git log）から行った。R5（CYCLE COMPLETE 表示）は表示物のため未観測、R6 は fixture の .gitignore が /.agents/artifacts/ を含み成果物を commit できないため非該当。いずれも非 critical。",
+    "note": "S2 英語化（tdd-contract / verification-gate）後の再走。3 シナリオとも critical 全 ○。cy-001 は refine の入れ子委譲を 1 回試行したが、実行者からは結果ファイルも完了通知も観測できず inline mode の fallback へ落ちた（呼び出し側には子の完了通知が届き、結果ファイルも後から実在した。つまり委譲自体は動くが通知経路が実行者へ返らない）。呼び出し側は契約どおり事実のみの照会（委譲先は完了済み・通知は届かない）を送り、解き方は渡していない。照会 2 回（うち 1 回は報告回収要求）。cy-001 の判定は成果物（result ファイル・status.md・session-history.md・git log）から先に確定させ、後着の自己申告と矛盾がないことを確認した。R6 は fixture の .gitignore が /.agents/artifacts/ を除外しており Phase 3 成果物を commit できないため達成不能（非 critical）。cy-003 は完了済み plan をスキップして未完了を選択し、status.md 不在を phase3_failures に記録して完走した。",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
