@@ -256,6 +256,36 @@ Iron Laws は英訳してよく、利用者が読む REPORT テンプレート�
 - `.github/workflows/validate.yml`: checkout に `fetch-depth: 0` を追加。既定の shallow clone では
   `origin/main` が存在せず、比較元リビジョンを解決できずに skip して CI で黙って無効化される
 
+fixture 未保有 references の残り 10 本のうち 8 本を英語化した（mockup-diff 1 /
+empirical-prompt-tuning 5 / spec-verify 2）。到達は 77 → 85 / 163 ファイル、BLOCK は 0 件。
+参照元 SKILL.md の鉤括弧参照も 2 箇所更新し、handoff から引き継いだ「未翻訳 references を
+指す参照 7 箇所」は 6 箇所が解消した。
+
+**`clause-schema.md` と `evidence-manifest.md` の 2 本は着手せず据え置いた**。この 2 本は
+散文ではなく**機械パースされる正本**であり、翻訳が単独では閉じないことが判明したため。
+
+- `test_spec_lint.py` / `test_trace_matrix.py` の同期テストが**日本語の節見出しをキーに
+  表を引いている**（`sections["共通 envelope"]`、`sections["実行 observation"]`、
+  `sections["識別子・digest の形式規則"]` 等）。行ラベルも
+  `patterns["\`test_id\` パターン"]` のように日本語を含む。見出しを訳すとテスト定数の
+  同時更新が要る
+- 見出しはアンカーの実体でもあり、`spec-verify/SKILL.md` から 5 箇所、
+  `pbt-binding-guide.md` から 3 箇所が `#保証レベル` などで参照している。さらに
+  **`shared/references/agreement-ledger.md` からも 2 箇所参照されている** —
+  shared 契約は `self_modification_risk: high` で独立コミット + 影響 4 スキルの
+  再検証が要る別フェーズの対象であり、references バッチの副作用として触れるべきではない
+- `validate_repo.py` はリンク検証時にアンカーを落として存在確認のみ行う（73 行目）。
+  つまり**アンカーが陳腐化しても CI は赤にならず、静かに壊れる**。検出されないぶん、
+  まとめて計画的に直す必要がある
+
+したがってこの 2 本は「翻訳 + テスト定数更新 + アンカー更新（shared 契約を含む）」を
+1 つの単位として、shared 契約フェーズと合わせて扱う。
+
+- `skills/mockup-diff/references/script-requirements.md` の `Bash` は、AGENTS.md の
+  プラットフォーム非依存ルールに照らすと本来は除去対象だが、翻訳コミットで意味を変えないため
+  原文どおり残した（センサーも identifier 消失として BLOCK した）。除去は
+  skill-interface-audit の SI-S004 で別途扱う
+
 fixture 未保有 SKILL.md の英語化を完了させた（mockup-diff / design-scaffold /
 empirical-prompt-tuning / spec-verify）。これで **fixture 未保有スキルの SKILL.md は全て英語**になり、
 到達は 77 / 163 ファイル。BLOCK は本バッチも 0 件で、センサー導入後の通算でも 0 件を維持している。

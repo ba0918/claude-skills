@@ -136,7 +136,7 @@ No API mock is needed (a static page, SSG, and so on). Inject nothing.
 ## Security notes
 
 - Never put production API keys, tokens, or personal information into `mock-responses.json`
-- The generated script runs through the user's permission gate via a shell command
+- The generated script is executed through the user's permission gate via the `Bash` tool
 - Because the dev server start command is read from config.json, the user should review the contents of config.json so that no unintended command is executed
 
 ## Non-requirements (things not to put in the script)
