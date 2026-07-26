@@ -1,77 +1,76 @@
-# Similarity Detection — 検出ツールの役割別使い分け
+# Similarity Detection — choosing detection tools by role
 
-refactor Phase 3（SWEEP）で使用する。Phase 2 の各 `REFACTOR_CANDIDATE` の類似事例を
-コードベースから探すためのツール選択・存在確認・フォールバック手順。
+Used in refactor Phase 3 (SWEEP). The procedure for choosing a tool, confirming it exists, and falling back, when searching the codebase for cases similar to each `REFACTOR_CANDIDATE` from Phase 2.
 
-## 設計方針: 役割で選ぶ（純粋な段階フォールバックではない）
+## Design policy: choose by role (not a pure staged fallback)
 
-ツールは目的が異なる。候補の**性質**と**言語**で選ぶ。
-検索は広め（偽陰性防止）、絞り込みは Phase 4（文脈検証）の責務。
+The tools have different purposes. Choose by the **nature** of the candidate and by the **language**.
+Search broadly (avoiding false negatives); narrowing down is the responsibility of Phase 4 (context verification).
 
-| ツール | 役割 | 対応言語 | 選ぶ場面 |
+| Tool | Role | Supported languages | When to choose it |
 |--------|------|---------|---------|
-| `similarity-ts` / `similarity-rs` | 重複ブロック・コードクローンの**構造的**検出 | TS/JS（ts）、Rust（rs）のみ | 重複ロジック（C7）・コピペブロックを構造で拾いたい |
-| `ast-grep` | 既知の**構文パターン**の全インスタンス列挙 | 多言語（言語指定） | ネスト三項（C3）・boolean フラグ（C4）等の構文形が明確 |
-| `Grep` | 広めの**字面**検索 | 全言語 | 上記が使えない、または字面トークンで十分 |
+| `similarity-ts` / `similarity-rs` | **Structural** detection of duplicated blocks and code clones | TS/JS (ts) and Rust (rs) only | You want to pick up duplicated logic (C7) or copy-pasted blocks by structure |
+| `ast-grep` | Enumerating every instance of a known **syntactic pattern** | Multilingual (specify the language) | The syntactic form is clear, such as nested ternaries (C3) or boolean flags (C4) |
+| `Grep` | A broad **literal** search | Every language | The above are unusable, or literal tokens suffice |
 
-## 存在確認とフォールバック
+## Existence check and fallback
 
-外部 CLI を可用性の前提にしない。**`which` で存在確認 → なければフォールバック**を必ず行う。
+Never presume an external CLI is available. Always **confirm existence with `which` → fall back if absent**.
 
 ```bash
 which similarity-ts || echo "NOT_AVAILABLE"
 which ast-grep || echo "NOT_AVAILABLE"
 ```
 
-フォールバックの優先順位:
+The fallback priority:
 
 ```
-similarity-*（構造的クローン検出）
-  └─ なし → ast-grep（構文パターン）
-       └─ なし → Grep（字面）
+similarity-* (structural clone detection)
+  └─ absent → ast-grep (syntactic patterns)
+       └─ absent → Grep (literal)
 ```
 
-- フォールバックが発生したら `fallback_reason` を記録し REPORT に載せる
-  （例: `"tool": "grep", "fallback_reason": "similarity-ts not installed; ast-grep unavailable"`）
+- When a fallback occurs, record `fallback_reason` and put it in the REPORT
+  (for example, `"tool": "grep", "fallback_reason": "similarity-ts not installed; ast-grep unavailable"`)
 
-## 言語カバレッジの非対称性（重要）
+## The asymmetry of language coverage (important)
 
-| 言語 | similarity-* | ast-grep | 横展開の運用 |
+| Language | similarity-* | ast-grep | How the sweep is operated |
 |------|:---:|:---:|------|
-| TS / JS | ✅ similarity-ts | ✅ | 構造検出が使えるため通常運用 |
-| Rust | ✅ similarity-rs | ✅ | 同上 |
-| Python / Go / PHP / Dart 等 | ❌ | ✅（言語対応時） | 字面 or 構文検索のみ。**偽陽性リスクが上がるため保守的に運用** |
+| TS / JS | ✅ similarity-ts | ✅ | Structural detection is available, so normal operation |
+| Rust | ✅ similarity-rs | ✅ | The same |
+| Python / Go / PHP / Dart, etc. | ❌ | ✅ (where the language is supported) | Only literal or syntactic search. **Operate conservatively, because the false-positive risk rises** |
 
-**similarity-* 非対応言語では**:
-- 構造的クローン検出が使えないため、Grep / ast-grep の結果は偽陽性を多く含む前提で扱う
-- Phase 4 の検証をより慎重に行い、UNCERTAIN を厚めに出す（fail-safe）
-- `fallback_reason` に「similarity-* 非対応言語のため字面検索」と明記する
+**In languages without similarity-\* support**:
+- Because structural clone detection is unavailable, treat Grep / ast-grep results on the premise that they contain many false positives
+- Perform the Phase 4 verification more carefully and emit UNCERTAIN more generously (fail-safe)
+- State explicitly in `fallback_reason` that a literal search was used because the language lacks similarity-* support
 
-## 検索範囲の限定
+## Limiting the search range
 
-- **Phase 0 スコープと同一言語・関連ディレクトリに限定**する。「コードベース全体」を無条件に走査しない
-  （巨大 monorepo での similarity-* 全体走査は重く、無関係言語の候補はノイズ）
-- 除外: `.git/` / `node_modules/` / ビルド成果物 / ロックファイル / vendored コード
-- テストコードは除外しない（テスト内の同種改善も候補価値がある）
+- **Limit it to the same language and related directories as the Phase 0 scope.** Never sweep "the whole codebase" unconditionally
+  (a full similarity-* sweep of a huge monorepo is heavy, and candidates in unrelated languages are noise)
+- Excluded: `.git/` / `node_modules/` / build artifacts / lockfiles / vendored code
+- Do not exclude test code (a similar improvement inside tests has candidate value too)
 
-## コマンド例（すべて読み取り専用）
+## Example commands (all read-only)
 
 ```bash
-# similarity-ts: 重複ブロック検出（--threshold で類似度、書き込みフラグは使わない）
+# similarity-ts: duplicate block detection (--threshold sets the similarity; no write flags are used)
 similarity-ts --threshold 0.85 "src/services"
 
-# ast-grep: 構文パターンの列挙（--pattern。rewrite 系フラグは Phase 3 では使わない）
+# ast-grep: enumerating a syntactic pattern (--pattern. Rewrite flags are not used in Phase 3)
 ast-grep --pattern '$C ? $A : $B ? $D : $E' --lang ts "src"
 
-# Grep: 字面フォールバック（固有部分は汎化）
-# origin: doExport(true)  → フラグ引数呼び出しを広く拾う
+# Grep: the literal fallback (generalize the specific parts)
+# origin: doExport(true)  → picks up flag-argument calls broadly
 grep -rEn 'doExport\((true|false)\)' src
 ```
 
-> Phase 3 は**検出のみ**。`ast-grep` の `--rewrite` / `-U` 等の書き換えフラグはここでは使わない
-> （機械的変換は Phase 5 の Rule of 500 で条件付き使用）。
+> Phase 3 is **detection only**. Rewrite flags such as `ast-grep`'s `--rewrite` / `-U` are not used here
+> (mechanical transformation is used conditionally in Phase 5's Rule of 500).
 
-## 候補リストの構造
+## The structure of the candidate list
 
 ```json
 {
@@ -79,7 +78,7 @@ grep -rEn 'doExport\((true|false)\)' src
   "pattern_used": "doExport\\((true|false)\\)",
   "tool": "grep",
   "fallback_reason": "similarity-ts not installed",
-  "scope": "src/services（同一言語 TS に限定）",
+  "scope": "src/services (limited to the same language, TS)",
   "origin": { "file": "src/services/order.ts", "line": 42 },
   "sweep_candidates": [
     { "file": "src/services/invoice.ts", "line": 88, "excerpt": "doExport(true)" }
@@ -87,5 +86,4 @@ grep -rEn 'doExport\((true|false)\)' src
 }
 ```
 
-`pattern_used` / `tool` / `fallback_reason` は必ず記録する — REPORT で検索の再現性と
-カバレッジの限界（非対応言語での保守運用）をユーザが事後検証できるようにするため。
+Always record `pattern_used` / `tool` / `fallback_reason` — so that from the REPORT the user can verify after the fact both the reproducibility of the search and the limits of its coverage (the conservative operation in unsupported languages).

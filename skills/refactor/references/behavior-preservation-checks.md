@@ -1,111 +1,111 @@
-# Behavior Preservation Checks — 動作保持の文脈検証チェックリスト
+# Behavior Preservation Checks — the context-verification checklist for preserving behavior
 
-refactor Phase 4（VERIFY）で使用する判定基準。横展開検索（Phase 3）が拾った候補
-（`origin` / `sweep_candidates` の両方）に対し、
-「**同じ変換を、動作を保持したまま、この箇所に安全に適用できるか**」を文脈で検証する。
+The judgment criteria used in refactor Phase 4 (VERIFY). Against the candidates picked up by the sweep search (Phase 3)
+(both `origin` and `sweep_candidates`),
+verify from context whether "**the same transformation can be applied safely at this site while preserving behavior**".
 
-> sweep-fix の `context-verification.md` は「同じ**バグ**が成立するか」を問う設計。
-> 本チェックリストは「同じ**変換**を**動作保持**で適用できるか」を問う。問いが逆向きなので流用しない。
-> 3値判定の**定義**は共有契約 severity-and-verdicts.md（SKILL.md からリンク済み）に準拠する。
+> sweep-fix's `context-verification.md` is designed to ask "does the same **bug** hold here".
+> This checklist asks "can the same **transformation** be applied while **preserving behavior**". The questions run in opposite directions, so do not reuse one for the other.
+> The **definitions** of the 3-valued verdict conform to the shared contract severity-and-verdicts.md (already linked from SKILL.md).
 
-## 判定の定義（refactor 文脈）
+## The definitions of the verdicts (in the refactor context)
 
-| 判定 | 定義 | 成立条件 |
+| Verdict | Definition | The condition for it to hold |
 |------|------|---------|
-| **CONFIRMED** | 動作を保持したまま同じ変換を安全に適用できる | 下記チェックリスト全項目で「安全に適用できる」側に倒れ、根拠を 1-2 文で書ける |
-| **FALSE_POSITIVE** | 表面上似ているが文脈が違う（適用不可・不要） | いずれかの項目で「適用できない/すべきでない」ことが確認できた。除外理由を必ず記録 |
-| **UNCERTAIN** | 適用可否が文脈依存で判断材料が不足 | どちらとも確認できない。修正せずユーザに委ねる |
+| **CONFIRMED** | The same transformation can be applied safely while preserving behavior | Every item of the checklist below falls on the "can be applied safely" side, and the grounds can be written in 1-2 sentences |
+| **FALSE_POSITIVE** | It resembles the origin on the surface but the context differs (inapplicable or unnecessary) | Some item confirmed that it cannot or should not be applied. Always record the reason for exclusion |
+| **UNCERTAIN** | Whether it can be applied is context-dependent and the evidence is insufficient | Neither could be confirmed. Do not fix it; leave it to the user |
 
-> フレーム（3値・Iron Law・fail-safe）の定義元は共通契約
-> [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) の
-> 「文脈検証の3値判定」。本ファイルは refactor 固有の検証述語（動作保持）を特殊化する。
+> The frame (the 3 values, the Iron Law, fail-safe) is defined in the shared contract
+> [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md), section
+> "The 3-valued verdict of context verification". This file specializes the refactor-specific verification predicate (behavior preservation).
 
 ## The Iron Law
 
 ```
-根拠を書けない CONFIRMED は存在しない。書けなければ UNCERTAIN に降格する。
-UNCERTAIN → CONFIRMED への昇格は禁止（逆の降格は常に許可）。
+A CONFIRMED whose grounds cannot be written does not exist. If they cannot be written, demote it to UNCERTAIN.
+Promotion from UNCERTAIN to CONFIRMED is forbidden (the reverse demotion is always permitted).
 ```
 
-## チェックリスト
+## The checklist
 
-候補箇所ごとに、該当ファイルを **Read で実際に読んで**（excerpt だけで判定しない）以下を確認する:
+For each candidate site, **actually read the file with Read** (never judge from the excerpt alone) and confirm the following:
 
-### 1. 挙動契約の同一性
+### 1. Identity of the behavioral contract
 
-変換後、入出力・副作用・エラー挙動・実行順序が**完全に同一**に保てるか。
+After the transformation, can the inputs/outputs, side effects, error behavior, and execution order be kept **completely identical**?
 
-- 戻り値・例外の型と条件が変わらないか
-- 副作用（I/O・状態変更・ログ）の**回数と順序**が変わらないか
-- 短絡評価・遅延評価の順序が保たれるか
-- いずれか一つでも変わるなら **FALSE_POSITIVE**（それは refactor ではなく behavior change）
+- Do the types and conditions of the return value and exceptions stay unchanged?
+- Do the **count and order** of side effects (I/O, state changes, logging) stay unchanged?
+- Is the order of short-circuit and lazy evaluation preserved?
+- If even one of these changes, it is **FALSE_POSITIVE** (that is not a refactor but a behavior change)
 
-### 2. 呼び出し文脈の同質性（origin との比較）
+### 2. Homogeneity of the calling context (comparison against the origin)
 
-sweep_candidate の呼び出し文脈が origin と同質か。
+Is the calling context of the sweep_candidate homogeneous with the origin?
 
-- 同じ変換（例: フラグ引数の分割）が呼び出し元全件に同じ意味で適用できるか
-- 片方だけ公開 API・シリアライズ境界・リフレクション対象なら **FALSE_POSITIVE / UNCERTAIN**
-- 呼び出し元は候補行の周辺だけでなく、**関数の入口と全呼び出し元まで**遡って確認する
+- Can the same transformation (for example, splitting a flag argument) be applied with the same meaning at every call site?
+- If only one side is a public API, a serialization boundary, or a reflection target, it is **FALSE_POSITIVE / UNCERTAIN**
+- Confirm the call sites not just around the candidate line but **all the way back to the function's entry and every caller**
 
-### 3. 意図的な差異の痕跡
+### 3. Traces of a deliberate difference
 
-その書き方が意図的であることを示す証拠がないか。
+Is there evidence that this way of writing it is deliberate?
 
-- コメントで理由が説明されている（`// 意図的に〜` / `// NOTE:` / パフォーマンス注記）
-- 将来分岐予定・後方互換のための冗長さ（migration shim 等）
-- 挙動を固定するテストが「その形」を前提にしている
-- 該当すれば **FALSE_POSITIVE**（意図的設計）または **UNCERTAIN**（意図は読めるが改善余地も残る）
+- A comment explains the reason (`// deliberately ...` / `// NOTE:` / a performance note)
+- Redundancy for a planned future branch or for backward compatibility (a migration shim and the like)
+- A test that pins the behavior presupposes "that shape"
+- If any applies, it is **FALSE_POSITIVE** (a deliberate design) or **UNCERTAIN** (the intent is legible but room for improvement remains)
 
-### 4. 証明手段の有無（動作保持の検証可能性）
+### 4. Whether a means of proof exists (the verifiability of behavior preservation)
 
-変換後に「動作が変わっていない」ことを**証明できる**か。
+After the transformation, can you **prove** that "the behavior has not changed"?
 
-- 既存テスト・型検査・lint・実行可能な characterization probe のいずれかがこの箇所をカバーするか
-- **いずれもカバーしない → UNCERTAIN**（証明手段なしの動作保持主張は verification-gate 違反）
-- headless 実行で characterization test を新規生成できない箇所も **UNCERTAIN**
+- Does an existing test, type check, lint, or a runnable characterization probe cover this site?
+- **None of them covers it → UNCERTAIN** (claiming behavior preservation without a means of proof violates the verification gate)
+- A site where a characterization test cannot be newly generated under headless execution is also **UNCERTAIN**
 
-### 5. パフォーマンス感度
+### 5. Performance sensitivity
 
-この箇所がホットパス・ベンチマーク対象・計測コメント付きでないか。
+Is this site on a hot path, a benchmark target, or annotated with measurements?
 
-- 「シンプルな版」が遅くなる可能性があり、計測なしに書き換えられない → **UNCERTAIN**
-- **ホットパスかどうか不明な場合も UNCERTAIN に倒す**（fail-safe の完結）
+- The "simpler version" may be slower, and it cannot be rewritten without measurement → **UNCERTAIN**
+- **When it is unknown whether it is a hot path, fall to UNCERTAIN as well** (completing the fail-safe)
 
-### 6. 慣例との整合
+### 6. Consistency with convention
 
-変換がプロジェクトの慣例（周辺コードのスタイル・イディオム）と整合するか。
+Is the transformation consistent with the project's conventions (the style and idioms of the surrounding code)?
 
-- 慣例を壊す「簡素化」は churn。周辺との一貫性が優先 → 整合しないなら **FALSE_POSITIVE**
+- A "simplification" that breaks convention is churn. Consistency with the surroundings wins → if inconsistent, it is **FALSE_POSITIVE**
 
-## Fail-safe 原則
+## The fail-safe principle
 
-- 誤変換（動作が変わる/文脈に合わない変換を適用してしまう）のコストは、保留（真の改善を見送る）のコストより大きい
-- 迷ったら直さない。「表面上同じに見えるが文脈が違う」を FALSE_POSITIVE または UNCERTAIN に落とす
+- The cost of a wrong transformation (applying one that changes behavior or does not fit the context) is greater than the cost of holding back (passing on a genuine improvement)
+- When in doubt, do not fix it. Drop "looks the same on the surface but the context differs" into FALSE_POSITIVE or UNCERTAIN
 
-## 判定例
+## Examples of verdicts
 
-**改善（origin）**: `doExport(true)` という boolean フラグ引数を、意図が読める `doExportAsPdf()` / `doExportAsCsv()` の2関数に分割する（C4）
+**The improvement (origin)**: split the boolean flag argument `doExport(true)` into the two functions `doExportAsPdf()` / `doExportAsCsv()`, whose intent is legible (C4)
 
-| 候補 | 文脈 | 判定 | 根拠 |
+| Candidate | Context | Verdict | Grounds |
 |------|------|------|------|
-| `services/order.ts:42`（origin） | 内部呼び出し3件、全て意味が一意、テストあり | CONFIRMED | 呼び出し元全件が同じ意味で分割可能、既存テストが挙動を固定している |
-| `services/invoice.ts:88` の `doExport(true)` | 同じユーティリティを内部で呼ぶ。テストあり | CONFIRMED | 呼び出し文脈が origin と同質、挙動契約を保てる |
-| `api/public_export.ts:12` の `doExport(flag)` | `flag` は外部 API のクエリパラメータ由来 | UNCERTAIN | 引数が実行時の外部入力で、2関数分割が公開 API シグネチャ変更に波及しうる |
-| `legacy/report.ts:30` の `doExport(true)` | 直前に `// TODO: remove after v2 migration` | FALSE_POSITIVE | 削除予定の一時コード。労力を割く対象外（Phase 0 一時コード除外に該当） |
+| `services/order.ts:42` (the origin) | 3 internal calls, each unambiguous in meaning, tests exist | CONFIRMED | Every call site can be split with the same meaning, and existing tests pin the behavior |
+| `doExport(true)` at `services/invoice.ts:88` | Calls the same utility internally. Tests exist | CONFIRMED | The calling context is homogeneous with the origin, and the behavioral contract can be preserved |
+| `doExport(flag)` at `api/public_export.ts:12` | `flag` originates in an external API query parameter | UNCERTAIN | The argument is external input at runtime, and splitting into 2 functions could ripple into a public API signature change |
+| `doExport(true)` at `legacy/report.ts:30` | Immediately preceded by `// TODO: remove after v2 migration` | FALSE_POSITIVE | Temporary code scheduled for deletion. Not worth the effort (covered by the Phase 0 exclusion of temporary code) |
 
-## 記録フォーマット
+## The recording format
 
 ```json
 {
   "improvement_id": "R1",
   "verdicts": [
     { "file": "services/invoice.ts", "line": 88, "role": "sweep_candidate",
-      "verdict": "CONFIRMED", "reason": "呼び出し文脈が origin と同質で挙動契約を保てる" },
+      "verdict": "CONFIRMED", "reason": "the calling context is homogeneous with the origin and the behavioral contract can be preserved" },
     { "file": "api/public_export.ts", "line": 12, "role": "sweep_candidate",
-      "verdict": "UNCERTAIN", "reason": "引数が外部入力で公開 API シグネチャ変更に波及しうる" }
+      "verdict": "UNCERTAIN", "reason": "the argument is external input and could ripple into a public API signature change" }
   ]
 }
 ```
 
-`reason` は必須。空の reason を持つ verdict は不正データとして扱い、その候補を UNCERTAIN で再判定する。
+`reason` is required. A verdict with an empty reason is treated as invalid data, and that candidate is re-judged as UNCERTAIN.

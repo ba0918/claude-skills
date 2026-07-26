@@ -57,7 +57,7 @@ Phase 6: REPORT     — report the results + present proposed issue-creation com
 
 1. Interpret the scope from `$ARGUMENTS`:
    - File path / directory / glob / class name / function name
-   - A git period expression (「直近5コミット」「今週の変更」 → expand to the set of target files with `git log --since=...` / `git diff HEAD~N --name-only`)
+   - A git period expression ("the last 5 commits", "this week's changes" → expand to the set of target files with `git log --since=...` / `git diff HEAD~N --name-only`)
 2. **Quote rigorously**: when a path or argument contains whitespace or shell metacharacters, always wrap it in quotes when assembling the command (`git diff HEAD~5 --name-only -- "src/my dir"`)
 3. **With no argument**: present the changed files of the most recent commit (`git diff HEAD~1 --name-only`) as the default scope and confirm it
 4. **Existence check**: confirm that the expanded target paths exist with `ls` / by listing files. Abort with an error immediately if they do not
@@ -94,7 +94,7 @@ Phase 6: REPORT     — report the results + present proposed issue-creation com
    | `ALREADY_CLEAN` | Already simple and highly readable | Do nothing |
 
 3. **The boundary rule with sweep-fix**: when a candidate's improvement value is grounded in correctness / security / data loss / behavior mismatch, it is not a refactor candidate but a `BUG_FOUND`. If fixing the bug is the goal, use sweep-fix
-4. Apply the test 「**新しいチームメンバーが元より速く理解できるか？**」 to each `REFACTOR_CANDIDATE`
+4. Apply the test "**can a new team member understand it faster than before?**" to each `REFACTOR_CANDIDATE`
 5. **Gate: already-clean** — zero improvement candidates, or every candidate is "low value" → **finish with a no-op**. Report "already simple and highly readable" as a legitimate result (do not force an application). In this case no change occurs, so the verification gate (running tests) is **not mandatory** (running the existing tests once, read-only, to grasp the behavioral contract is not precluded). Print an abbreviated report (scope / verdict summary / reasons only. The rule for choosing the format is at the top of Phase 6) in the conversation
 6. **Gate: performance-critical** — for a hot path, a benchmark target, or a site with a measurement comment, state that the "simpler version" may be slower, and do not rewrite it without measurement. **When it is unclear whether it is a hot path, fall to UNCERTAIN as well** (completing the fail-safe)
 
@@ -166,39 +166,39 @@ Print the full structure in the conversation in the following form:
 REFACTOR REPORT
 ══════════════════════════════════════
 
-## 1. 実施した改善（スコープ: {scope}）
+## 1. The improvements carried out (scope: {scope})
 
-| improvement_id | 対象 | before/after 要旨 | テスト結果 |
+| improvement_id | Target | The gist of before/after | Test result |
 |----------------|------|-------------------|-----------|
 
-## 2. 横展開の結果
+## 2. The results of the sweep
 
-| improvement_id | 検出ツール | origin | sweep 候補数 | CONFIRMED | FALSE_POSITIVE | UNCERTAIN | fallback_reason |
+| improvement_id | Detection tool | origin | Sweep candidates | CONFIRMED | FALSE_POSITIVE | UNCERTAIN | fallback_reason |
 |----------------|-----------|--------|-------------|-----------|----------------|-----------|-----------------|
 
-## 3. no-op / スキップ / 除外
+## 3. no-op / skipped / excluded
 
-{OUT_OF_SCOPE / ALREADY_CLEAN の一覧と unknown_reason }
+{the list of OUT_OF_SCOPE / ALREADY_CLEAN with their unknown_reason}
 
-## 4. 判断保留（UNCERTAIN）
+## 4. Held for judgment (UNCERTAIN)
 
-{file:line と、ユーザが判断するために必要な材料}
+{file:line, plus the material the user needs in order to judge}
 
-## 5. report-only に留めた sweep_candidates（スコープ外・要 opt-in）
+## 5. The sweep_candidates kept report-only (outside the scope, opt-in required)
 
-{file:line と変換内容。ユーザ確認待ち}
+{file:line and the transformation. Awaiting the user's confirmation}
 
-## 6. 発見したバグ（BUG_FOUND）— 修正していません
+## 6. The bugs found (BUG_FOUND) — not fixed
 
-各バグにつき issue 化コマンド案を提示する（実行はユーザ判断）:
+For each bug, present a proposed issue-creation command (running it is the user's call):
 
-  /claude-skills:issue-create "{タイトル案}"
-  本文案: {症状 / 該当箇所 file:line / 再現条件の下書き}
+  /claude-skills:issue-create "{a proposed title}"
+  A proposed body: {the symptom / the site file:line / a draft of the reproduction conditions}
 
-## 7. 検証エビデンス
+## 7. Verification evidence
 
-- テスト: {実行コマンドと結果。未実行なら理由を明記}
-- diff: {git diff --stat の要約}
+- Tests: {the command run and its result. If not run, state the reason}
+- diff: {a summary of git diff --stat}
 ```
 
 **The rule for section attribution**: a `sweep_candidates` entry judged UNCERTAIN is recorded primarily in §4 (held for judgment). §5 carries only the candidates that are **CONFIRMED and awaiting the user's opt-in**. When one candidate falls under several reasons for non-application (e.g. no means of verification + outside the scope), give priority to the more fundamental reason, UNCERTAIN (§4), and **note the other reasons on the same line in §4** (no duplicate listing in §5. One candidate always appears in exactly one section).
