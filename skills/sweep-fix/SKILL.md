@@ -29,7 +29,7 @@ Phase 1: ANALYZE — detect problems in the specified scope
 Phase 2: SWEEP   — generalize into patterns and sweep the whole codebase (read-only)
 Phase 3: VERIFY  — verify context, eliminate false positives ★ where the quality is decided
 Phase 4: FIX     — fix CONFIRMED sites only + verification gate
-Phase 5: REPORT  — structured report + delete intermediate files
+Phase 5: REPORT  — structured report, then delete intermediate files
 ```
 
 ## Phase 0: SCOPE — Fix the Target Scope
@@ -126,7 +126,11 @@ Fix **CONFIRMED sites only**. Do not create any path by which a change touches a
 
 ## Phase 5: REPORT — Structured Report
 
-Print a report in the conversation with the structure below, then delete the intermediate files at the end (`rm -rf .claude/tmp/sweep-fix`).
+Print a report in the conversation with the structure below, then delete the intermediate files (`rm -rf .claude/tmp/sweep-fix`).
+
+**The order is a requirement, not a preference: delete only after the report has been printed.** `.claude/tmp/sweep-fix/verdicts.json` holds the only record of each verdict's basis, so the FALSE_POSITIVE exclusion reasons (section 4) and the UNCERTAIN decision material (section 5) must already be transcribed into the report before anything is deleted. Delete first and they are unrecoverable.
+
+**When the deletion is refused or fails** (a permission gate, a mount constraint): do not force it through by another route. State the surviving path in the report and finish normally — the run counts as complete. The leftovers are inert intermediate files, not an unfinished fix.
 
 ```
 ══════════════════════════════════════
@@ -171,6 +175,8 @@ SWEEP-FIX REPORT
 | "Narrow the search pattern and verification becomes unnecessary" | A narrowed search only increases false negatives. Searching wide and narrowing by verification is the design |
 | "There are no tests, so skip the verification gate" | If no test is detected, state 「未検出」 in the report. Do not skip it silently |
 | "There are many sites to fix, so bulk-replace with sed" | Adapting to each site's context is Phase 4's responsibility. Mechanical replacement destroys context |
+| "The intermediate-file deletion was refused, so remove it by another route" | Bypassing a refused deletion is forbidden. Record the surviving path in the report and finish |
+| "Delete the intermediate files first to keep the workspace clean, then write the report" | verdicts.json is the only record of the verdict bases. Deleting before transcription destroys the evidence |
 
 ## Red Flags — Signs the Skill Is Not Being Followed
 
