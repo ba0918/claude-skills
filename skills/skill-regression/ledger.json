@@ -113,7 +113,7 @@
       "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
       "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a"
     },
-    "note": "S2 英語化（tdd-contract / verification-gate）後の再走。3 シナリオとも critical 全 ○。cy-001 は refine の入れ子委譲を 1 回試行したが、実行者からは結果ファイルも完了通知も観測できず inline mode の fallback へ落ちた（呼び出し側には子の完了通知が届き、結果ファイルも後から実在した。つまり委譲自体は動くが通知経路が実行者へ返らない）。呼び出し側は契約どおり事実のみの照会（委譲先は完了済み・通知は届かない）を送り、解き方は渡していない。照会 2 回（うち 1 回は報告回収要求）。cy-001 の判定は成果物（result ファイル・status.md・session-history.md・git log）から先に確定させ、後着の自己申告と矛盾がないことを確認した。R6 は fixture の .gitignore が /.agents/artifacts/ を除外しており Phase 3 成果物を commit できないため達成不能（非 critical）。cy-003 は完了済み plan をスキップして未完了を選択し、status.md 不在を phase3_failures に記録して完走した。",
+    "note": "S2 英語化（tdd-contract / verification-gate）後の再走。3 シナリオとも critical 全 ○。cy-001 の委譲は最後まで動いた: relay ファイル .agents/runtime/delegation/20260721100000_refine.md が 01:46:02 に着弾している（呼び出し側にも子の完了通知が届いた）。ただし完了通知は実行者へは返らないため、実行者は relay ファイルのポーリングで検知する必要がある。cy-001 は wait discipline の予算（480 秒）を使い切らず約 1 分で watchdog を止めたため着弾を取りこぼし inline fallback へ落ちた（01:46:01 に Phase 2 の Step 1 を commit 済み）。設計の欠陥ではなく運用の早期打ち切り。残る曖昧さは『委譲を諦めて inline へ切り替える待ち時間の基準が cycle Phase 1/2 に明示されていない』こと。事後到着した委譲先の判定はインライン判定と結論一致（全観点 PASS）だが、レビュー対象が inline 修正後の版だったため独立検証ではない。呼び出し側の照会は 2 回（報告回収要求 + 事実のみの通知）。判定は成果物から先に確定させ、後着の自己申告 2 通と矛盾がないことを確認した。R6 は fixture の .gitignore が /.agents/artifacts/ を除外しており Phase 3 成果物を commit できないため達成不能（非 critical）。",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
