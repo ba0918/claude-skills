@@ -1,10 +1,10 @@
 # Scoring Guide
 
-摩擦スコアリング基準。collect.py の出力から各スキルの摩擦スコアを計算し、改善アクションを決定する。
+The friction scoring criteria. Compute each skill's friction score from the output of collect.py and decide the improvement action.
 
-## 摩擦スコア計算式
+## Friction score formula
 
-各スキルの摩擦スコア（0-10）は以下の重み付き合算で計算する:
+Each skill's friction score (0-10) is a weighted sum:
 
 ```
 friction_score = min(10, (
@@ -15,57 +15,57 @@ friction_score = min(10, (
 ))
 ```
 
-### レート計算
+### Rate calculation
 
-| レート | 計算式 | 説明 |
+| Rate | Formula | Description |
 |--------|--------|------|
-| retry_rate | retry_count / invocation_count | リトライ率（0-1） |
-| correction_rate | correction_turns / (invocation_count × 5) | 修正率（5ターン以上で飽和） |
-| abandonment_rate | session_abandoned_count / invocation_count | 離脱率（0-1） |
-| error_rate | tool_error_count / max(total_turns_to_completion, 1) | エラー率（0-1、1で飽和） |
+| retry_rate | retry_count / invocation_count | retry rate (0-1) |
+| correction_rate | correction_turns / (invocation_count × 5) | correction rate (saturates at 5 turns or more) |
+| abandonment_rate | session_abandoned_count / invocation_count | abandonment rate (0-1) |
+| error_rate | tool_error_count / max(total_turns_to_completion, 1) | error rate (0-1, saturates at 1) |
 
-### invocation_count が 0 の場合
+### When invocation_count is 0
 
-invocation_count が 0（呼び出しなし）のスキルはスコア計算対象外とする。
+A skill with invocation_count 0 (never invoked) is excluded from score calculation.
 
-## 閾値テーブル
+## Threshold table
 
-| スコア範囲 | 判定 | 意味 |
+| Score range | Verdict | Meaning |
 |-----------|------|------|
-| 0.0 - 0.9 | **Excellent** | 摩擦なし。改善不要 |
-| 1.0 - 1.9 | **Good** | 軽微な摩擦。監視のみ |
-| 2.0 - 2.9 | **Acceptable** | 許容範囲内。レポートに記録 |
-| 3.0 - 4.9 | **Needs Attention** | 改善推奨。iterate Small で対応可能 |
-| 5.0 - 6.9 | **Problematic** | 改善必須。iterate で対応 |
-| 7.0 - 10.0 | **Critical** | 緊急対応。cycle で根本改善 |
+| 0.0 - 0.9 | **Excellent** | No friction. No improvement needed |
+| 1.0 - 1.9 | **Good** | Minor friction. Monitor only |
+| 2.0 - 2.9 | **Acceptable** | Within tolerance. Record it in the report |
+| 3.0 - 4.9 | **Needs Attention** | Improvement recommended. A Small iterate can handle it |
+| 5.0 - 6.9 | **Problematic** | Improvement required. Handle with iterate |
+| 7.0 - 10.0 | **Critical** | Urgent. Fix at the root with cycle |
 
-## アクション対応表
+## Action mapping
 
-| 摩擦スコア | アクション | 委譲先 |
+| Friction score | Action | Delegate to |
 |-----------|-----------|--------|
-| 0 - 2 | レポートのみ | なし（friction-report.md を出力して終了） |
-| 3 - 5 | Small 改善 | `claude-skills:iterate` に委譲 |
-| 6+ | Large 改善 | 改善仮説から plan を作成 → `claude-skills:cycle` に委譲 |
+| 0 - 2 | report only | none (emit friction-report.md and finish) |
+| 3 - 5 | Small improvement | delegate to `claude-skills:iterate` |
+| 6+ | Large improvement | build a plan from the improvement hypothesis → delegate to `claude-skills:cycle` |
 
-## Dry-run ルール
+## Dry-run rule
 
-**全レベルで Dry-run を必ず実行する。**
+**Always perform a dry-run at every level.**
 
-Dry-run では以下を表示し、実際の変更は行わない:
+A dry-run displays the following and makes no actual change:
 
-1. 改善対象のスキルファイル一覧
-2. 変更内容の概要（差分プレビュー）
-3. 期待される摩擦スコアの変化
+1. the list of skill files targeted for improvement
+2. an outline of the changes (a diff preview)
+3. the expected change in the friction score
 
-`improve` モード時のみ Dry-run 表示後に実際の実装に進む。
-`analyze` モードでは Dry-run 表示で終了。
+Only in `improve` mode does it proceed to the actual implementation after the dry-run display.
+In `analyze` mode it ends at the dry-run display.
 
-## 信頼度の考慮
+## Accounting for confidence
 
-| invocation_count | 信頼度 | 注記 |
+| invocation_count | Confidence | Note |
 |-----------------|--------|------|
-| 1-2 | Low | サンプル不足。スコアは参考値 |
-| 3-9 | Medium | 傾向は見えるが統計的に不十分 |
-| 10+ | High | 信頼できるスコア |
+| 1-2 | Low | Insufficient sample. The score is indicative only |
+| 3-9 | Medium | A tendency is visible but statistically insufficient |
+| 10+ | High | A trustworthy score |
 
-信頼度が Low のスキルは改善対象から除外し、レポートにのみ記載する。
+Skills with Low confidence are excluded from improvement targets and only recorded in the report.

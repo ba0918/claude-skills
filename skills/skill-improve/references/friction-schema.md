@@ -1,8 +1,8 @@
 # Friction Schema
 
-collect.py の出力 JSON スキーマと friction-report.md のスキーマ定義。
+The output JSON schema of collect.py, and the schema definition of friction-report.md.
 
-## collect.py 出力 JSON スキーマ
+## collect.py output JSON schema
 
 ```json
 {
@@ -32,38 +32,38 @@ collect.py の出力 JSON スキーマと friction-report.md のスキーマ定�
   ],
   "friction_signals": {
     "{skill_name}": {
-      "retry_count": "integer — 同一スキルの連続呼び出し回数",
-      "correction_turns": "integer — スキル実行後の修正指示ターン数",
-      "session_abandoned_count": "integer — セッション離脱回数",
-      "tool_error_count": "integer — ツール実行エラー回数",
-      "total_turns_to_completion": "integer — スキル完了までの総ターン数",
-      "invocation_count": "integer — 呼び出し回数"
+      "retry_count": "integer — consecutive invocations of the same skill",
+      "correction_turns": "integer — correction-instruction turns after the skill ran",
+      "session_abandoned_count": "integer — session abandonments",
+      "tool_error_count": "integer — tool execution errors",
+      "total_turns_to_completion": "integer — total turns until the skill completed",
+      "invocation_count": "integer — invocations"
     }
   },
   "secret_warnings": [
     {
       "type": "string (aws_key | private_key | jwt | prefix_token | email | home_path | generic_secret | generic_long_key)",
-      "masked": "string — 常に [REDACTED:kind] の完全マスク（部分開示なし）"
+      "masked": "string — always the full mask [REDACTED:kind] (no partial disclosure)"
     }
   ]
 }
 ```
 
-**masked 形式**: `[REDACTED:{type}]` の完全マスク（旧 first4+last4 の部分開示は廃止）。masked は opaque string なので friction-schema の契約は維持される。同一 type の secret_warnings は dedup キー `{type}:{masked}` で1件に集約される。`prefix_token` は既知プレフィックストークン（ghp_ / github_pat_ / xoxb- / sk- / sk-ant- / AIza）を引用符の有無を問わず検出する。
+**masked format**: the full mask `[REDACTED:{type}]` (the old partial disclosure of first4+last4 is gone). Because masked is an opaque string, the friction-schema contract still holds. secret_warnings of the same type are collapsed into one entry by the dedup key `{type}:{masked}`. `prefix_token` detects the known prefix tokens (ghp_ / github_pat_ / xoxb- / sk- / sk-ant- / AIza) whether or not they are quoted.
 
-## --capture-prompts 出力スキーマ（opt-in / trigger-eval 用）
+## --capture-prompts output schema (opt-in / for trigger-eval)
 
-`--capture-prompts` 指定時のみ生成される JSONL。1 行 = 1 レコード。本文を含むため `--output` は `cwd/.claude/tmp` 配下 かつ git-ignored に機械的制限（fail-closed）。
+A JSONL generated only when `--capture-prompts` is given. 1 line = 1 record. Because it contains message bodies, `--output` is mechanically restricted (fail-closed) to a path under `cwd/.claude/tmp` that is also git-ignored.
 
 ```json
-{"ts": "ISO 8601 string | null", "project": "string", "user_text_masked": "string — mask_secrets 適用済み", "fired_skill": "string (bare skill name) | null", "signals": ["string — slash_fired / correction_after_skill 等"]}
+{"ts": "ISO 8601 string | null", "project": "string", "user_text_masked": "string — mask_secrets applied", "fired_skill": "string (bare skill name) | null", "signals": ["string — slash_fired / correction_after_skill, etc."]}
 ```
 
-## friction-report.md スキーマ
+## friction-report.md schema
 
-friction-report.md は以下のセクションを含む Markdown ドキュメント。
+friction-report.md is a Markdown document containing the following sections.
 
-**重要: 生テキスト（セッション内容の原文）を含めてはならない。数値・分類・スコアのみ許可。**
+**Important: it must never contain raw text (the original text of session content). Only figures, classifications, and scores are allowed.**
 
 ```markdown
 # Friction Report: {project}
@@ -103,12 +103,12 @@ friction-report.md は以下のセクションを含む Markdown ドキュメン
 - **Confidence:** High / Medium / Low
 ```
 
-## 禁止フィールド
+## Forbidden fields
 
-以下のフィールドは friction-report.md に **含めてはならない**:
+The following **must never** be included in friction-report.md:
 
-- ユーザーのメッセージ原文
-- アシスタントの応答原文
-- セッション ID
-- ファイルパスに含まれるユーザー名以外の個人情報
-- シークレット（マスク済みであっても friction-report には含めない）
+- the original text of user messages
+- the original text of assistant responses
+- session IDs
+- personal information other than the username contained in file paths
+- secrets (never include them in friction-report even when masked)

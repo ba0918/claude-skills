@@ -1,113 +1,111 @@
-# 白紙実行者の起動契約と判定規則
+# The launch contract for a blank-slate executor, and the verdict rules
 
-run ワークフローで fixture のシナリオを実行する subagent の契約。
-評価の信頼性は「実行者が白紙であること」に全面的に依存する。
+The contract for the subagent that runs a fixture's scenarios in the run workflow.
+The reliability of the evaluation depends entirely on the executor being a blank slate.
 
-## 原則
+## Principles
 
-- **毎回新規 dispatch**: 同一 agent の再利用は前回の文脈を学習しており白紙でない。
-  自己再読（呼び出し側が SKILL.md を読んで「大丈夫」と判断する）も同様に禁止
-- **並行実行**: 複数シナリオは単一メッセージ内の複数サブエージェント呼び出しで並べる
-- **tier 明示**: fixture の `executor_tier`（省略時 `standard`）をサブエージェント呼び出しに明示する
-- **隔離**: `isolation: worktree` のシナリオは使い捨て git worktree を作り、
-  `setup.files` を配置してから実行者を起動する。終了後 worktree は破棄する。
-  - 「編集させない」の境界: **隔離領域（worktree）内は自由に編集・commit してよい**
-    （commit スキル等の fixture はこれで成立する）。禁止はリポジトリ本体（worktree 外）の編集
-  - **非 git 環境のフォールバック**: 対象リポジトリで git worktree が使えない場合は、
-    使い捨てディレクトリに `setup.files` を配置する方式で隔離を代替してよい
-    （fixtures.json の `isolation: worktree` 表記はそのまま維持する）
-  - **編集ゼロの裏取り**: 実行前に `setup.files` の sha256 ベースラインを記録し、実行後に
-    照合する。読み取り専用系 critical 要件の判定は自己申告でなくこのハッシュ照合を根拠にする
-  - **後片付け**: 破棄（deregister + 削除）が権限・マウント制約で拒否されたら、
-    **別ツールで削除を迂回しない**。git-ignored 領域の不活性残骸として報告に記録し、
-    人間に掃除コマンド（例: `git worktree prune && rm -rf <path>`）を提示する
+- **Dispatch fresh every time**: reusing the same agent means it has learned the previous context and is not a blank slate.
+  Self-rereading (the caller reads SKILL.md and decides "this is fine") is forbidden for the same reason
+- **Concurrent execution**: line up multiple scenarios as multiple subagent invocations inside a single message
+- **State the tier**: state the fixture's `executor_tier` (`standard` when omitted) explicitly in the subagent invocation
+- **Isolation**: for a scenario with `isolation: worktree`, create a disposable git worktree,
+  place `setup.files`, and then launch the executor. Discard the worktree afterwards.
+  - The boundary of "do not let it edit": **inside the isolated area (the worktree), editing and committing freely is allowed**
+    (this is what makes fixtures for skills like commit work). What is forbidden is editing the repository proper (outside the worktree)
+  - **Fallback in a non-git environment**: when git worktree is unavailable in the target repository, isolation may be
+    substituted by placing `setup.files` into a disposable directory
+    (keep the `isolation: worktree` notation in fixtures.json as it is)
+  - **Corroborating zero edits**: record a sha256 baseline of `setup.files` before the run and compare afterwards.
+    Base the verdict for read-only critical requirements on this hash comparison, not on self-report
+  - **Cleanup**: when discarding (deregister + delete) is refused by a permission or mount constraint,
+    **do not route around the deletion with another tool**. Record it in the report as inert debris in a
+    git-ignored area, and offer the human a cleanup command (e.g. `git worktree prune && rm -rf <path>`)
 
-## 実行者プロンプト構造
+## The structure of the executor prompt
 
 ```
-あなたは <skill 名> スキルの SKILL.md を初見で読む実行者です。
+You are an executor reading the SKILL.md of the <skill name> skill for the first time.
 
-## 対象スキル
-<skills/<skill>/SKILL.md への絶対パス。references もそこから辿って良いと明記>
+## Target skill
+<the absolute path to skills/<skill>/SKILL.md. State that references may be followed from there>
 
-## 作業ディレクトリ
-<setup.files を配置した隔離領域の絶対パス。実行者はこの中だけで作業すると明記>
+## Working directory
+<the absolute path of the isolated area where setup.files were placed. State that the executor works only inside it>
 
-## 状況
-<scenario.prompt をそのまま>
+## Situation
+<scenario.prompt verbatim>
 
-## タスク
-1. 対象スキルの指示に従って上記の状況に対応し、成果物を生成する。
-2. 終了時に必ず下記のレポート構造だけで返答する。
+## Task
+1. Follow the target skill's instructions to handle the situation above and produce the artifact.
+2. On completion, always reply with nothing but the report structure below.
 
-## レポート構造
-- 成果物: <生成物の要約 or 実行結果>
-- 実行経路: <多段委譲スキルのみ。各フェーズを委譲で実行したかインライン代行かを 1 行で>
-- 要件表: 以下の各項目に ○ / × / 部分的 と 1 行の根拠
-  <requirements を番号付きで列挙。critical タグは実行者に見せない>
-- 不明瞭点: SKILL.md で解釈に迷った箇所（箇条書き、なければ「なし」)
-- 裁量補完: 指示に無く自分の判断で埋めた箇所（箇条書き、なければ「なし」)
+## Report structure
+- Artifact: <a summary of what was produced, or the execution result>
+- Execution path: <multi-stage delegation skills only. One line on whether each phase ran by delegation or by inline substitution>
+- Requirement table: ○ / × / partial for each item below, plus a one-line rationale
+  <enumerate the requirements with numbers. Never show the critical tags to the executor>
+- Ambiguities: places in SKILL.md where the interpretation was unclear (bulleted; "none" if there are none)
+- Discretionary fills: places not in the instructions that you filled in with your own judgment (bulleted; "none" if there are none)
 ```
 
-**実行経路を報告させる**のは、同じ fixture・同じ前提でも実行者の環境認識次第で経路が
-分かれ、片方だけが外部介入なしに完走しないため（実測: cycle は委譲経路で状況照会 4 回、
-インライン代行で 0 回）。台帳に `pass` とだけ残すと、この差が次に回す者から見えない。
+**The execution path is reported** because, with the same fixture and the same premises, the path forks depending on how the
+executor perceives its environment, and only one of them runs to completion without external intervention (measured: cycle
+made 4 status queries on the delegation path and 0 with inline substitution). Leaving only `pass` in the ledger hides that
+difference from whoever runs it next.
 
-**critical タグを実行者に見せない**のは、実行者が critical 項目だけ優先して
-取り繕うバイアスを避けるため。判定は呼び出し側で行う。
+**The critical tags are hidden from the executor** to avoid the bias of the executor prioritizing and papering over just the
+critical items. The verdict is made by the caller.
 
-環境制約への対処（sandbox の gitconfig 読み取り拒否等）は「環境セットアップ」節として
-プロンプトに注入してよい。ただし**シナリオの解き方のヒントを含めない**こと（その旨を注入文に明記する）。
+Workarounds for environment constraints (the sandbox refusing to read gitconfig, and so on) may be injected into the prompt as
+an "environment setup" section. But **it must contain no hint about how to solve the scenario** (state that explicitly in the injected text).
 
-### 実測で判明した環境制約（2026-07-25、10 スキル / 21 シナリオ）
+### Environment constraints found by measurement (2026-07-25, 10 skills / 21 scenarios)
 
-いずれも fixture やスキルの欠陥ではなく、実行基盤側の性質。知らずに run すると
-「スキルが落ちた」と誤読するため、起動前に対処を織り込む。
+None of these are defects of a fixture or a skill; they are properties of the execution platform. Running without knowing them
+gets misread as "the skill failed", so build the workarounds in before launching.
 
-- **報告経路を明示しないと結果が回収できない**: バックグラウンドで起動した実行者の
-  通常のテキスト出力は呼び出し側に届かない。プロンプトのタスク節に「終了時は
-  メッセージ送信手段で報告する（通常の出力は届かない）」と具体的な呼び出し形を書く。
-  明示しなかった初回バッチでは 9 件中 4 件が結果本文なしで待機状態に入った
-- **実行者は名前付きの入れ子委譲ができない**: 実行者がさらにサブエージェントを起動する
-  場合、名前付き起動は拒否されることがある。匿名で起動すると今度は**完了通知が
-  実行者に返らない**。cycle のような多段委譲スキルの fixture は、この二重の制約により
-  フェーズ境界ごとに停止する
-  - 対処: 呼び出し側が**上位 watchdog** を担う。実行者が停止したら、成果物
-    （結果ファイル・コミット・生成物）を直接検分して進行状況を判断し、**事実のみ**を
-    伝える状況照会を送る。照会は再委譲ではないのでリトライ予算を消費しない
-    （[orchestration-patterns.md](../../shared/references/orchestration-patterns.md) の wait discipline）
-  - **解法のヒントを与えない**: 「結果ファイルを読め」ではなく「委譲先は既に終了しており
-    通知は届かない」という事実だけを伝える。停止からの復帰手順自体がスキルの測定対象
-  - 実測では cycle の 1 シナリオが完走までに 4 回の照会を要した。スキルの判断ロジックは
-    毎回正しく動いた（結果ファイル読解による遷移・リトライ時の再実装回避・部分失敗の許容）
-  - 台帳には**照会回数を併記する**（`ledger.py --update <skill> --note "..."`）。
-    素の `pass` だけ残すと、次に同じ環境で回す者が同じ停止を回帰と誤認して原因を掘り直す
-- **後片付けが権限で拒否されることがある**: 委譲結果ファイルの削除がサンドボックスに
-  拒否され、共有契約の cleanup が実行できない。原則どおり**別手段で削除を迂回せず**、
-  不活性な残骸として報告に記録する
-- **機微な名前のファイルは宣言どおりに実体化されない**: サンドボックスが `.env` 等に
-  デバイスファイル（`/dev/null`）を被せることがあり、`setup.files` の書き込みが黙って
-  捨てられる。`fixture_setup.py --materialize` の出力 `unmaterialized` が非空なら
-  そのパスは宣言と実体が食い違っている。**内容に依存する要件をそのシナリオに書かない**
-  （名前・種別で判定する要件なら成立する）。報告に記録し、内容前提を要件にしていた場合は
-  fixture 側を直す
-- **隔離領域に基盤由来のファイルが混入する**: 読み取り不能なファイルや通常ファイルでない
-  エントリが作業ディレクトリに現れ、`git status` を汚す。commit を自動検出に任せる
-  シナリオでは、実行者がこれらを巻き込む危険がある。「clean な作業ツリー」を要件にする
-  シナリオでは、run 手順で隔離領域に初期コミットを作り、基準状態を確定させる
+- **Results cannot be collected unless the reporting path is stated**: the ordinary text output of an executor launched in the
+  background does not reach the caller. In the task section of the prompt, write the concrete invocation form: "on completion,
+  report via the message-sending mechanism (ordinary output does not reach us)".
+  In the first batch, where this was not stated, 4 of 9 entered a waiting state with no result body
+- **An executor cannot do named nested delegation**: when an executor launches a further subagent, a named launch may be
+  refused. Launch it anonymously and then **the completion notification does not come back to the executor**. Because of this
+  double constraint, fixtures for multi-stage delegation skills such as cycle stall at every phase boundary
+  - Workaround: the caller acts as **the upper watchdog**. When the executor stalls, inspect the artifacts
+    (result files, commits, generated output) directly to judge the progress, and send a status query conveying **facts only**.
+    A query is not a re-delegation, so it does not consume the retry budget
+    (the wait discipline of [orchestration-patterns.md](../../shared/references/orchestration-patterns.md))
+  - **Give no hint about the solution**: not "read the result file" but only the fact that "the delegate has already finished
+    and the notification will not arrive". Recovering from a stall is itself part of what the skill is measured on
+  - In the measurements, one cycle scenario needed 4 queries to run to completion. The skill's decision logic worked correctly
+    every time (transitioning by reading the result file, avoiding re-implementation on retry, tolerating partial failure)
+  - **Record the number of queries in the ledger** (`ledger.py --update <skill> --note "..."`).
+    Leaving a bare `pass` makes the next person in the same environment mistake the same stall for a regression and re-dig the cause
+- **Cleanup is sometimes refused by permissions**: deleting the delegation result file is refused by the sandbox and the shared
+  contract's cleanup cannot run. As the principle says, **do not route around the deletion by another means** — record it in the report as inert debris
+- **Files with sensitive-looking names are not materialized as declared**: the sandbox sometimes overlays a device file
+  (`/dev/null`) onto `.env` and the like, and the `setup.files` write is silently discarded. If the `unmaterialized` output of
+  `fixture_setup.py --materialize` is non-empty, the declaration and the reality diverge for those paths. **Do not put a
+  requirement that depends on the contents into such a scenario** (a requirement judged by name or kind still holds). Record it
+  in the report, and if a requirement assumed the contents, fix the fixture side
+- **Platform-derived files leak into the isolated area**: unreadable files and entries that are not regular files appear in the
+  working directory and dirty `git status`. In a scenario that leaves commit to auto-detection, the executor risks sweeping them
+  in. For a scenario whose requirement is "a clean working tree", create an initial commit in the isolated area during the run
+  procedure to fix the reference state
 
-## 判定規則
+## Verdict rules
 
-- シナリオ合格 = `critical: true` の全要件が **○**（部分的は × 扱い）
-- スキル合格 = 全シナリオ合格。台帳 `--update` はスキル合格時のみ
-- 非 critical 要件の × は合否に影響しないが、報告には必ず載せる（劣化の早期シグナル）
-- 実行者の要件表の自己申告が成果物と食い違う場合（○ と書いたが成果物に根拠がない等）は
-  自己申告を採らず、成果物側を根拠に呼び出し側が判定し直す。
-  判断が割れる・成果物から判定できない場合のみ、判定専用のサブエージェント
-  （tier: high、成果物と要件だけを渡し実行過程は渡さない）を追加起動する
-- 判定に迷った要件は × に倒す（fail-safe。合格を甘くすると台帳の意味が消える）
+- Scenario pass = every `critical: true` requirement is **○** (partial counts as ×)
+- Skill pass = every scenario passes. `--update` on the ledger happens only on a skill pass
+- A × on a non-critical requirement does not affect the verdict, but always put it in the report (an early signal of degradation)
+- When the executor's self-reported requirement table contradicts the artifact (it wrote ○ but the artifact gives no grounds),
+  do not take the self-report — the caller re-judges from the artifact.
+  Only when judgment splits, or the artifact cannot settle it, additionally launch a dedicated judging subagent
+  (tier: high, handed only the artifact and the requirements, never the execution process)
+- When in doubt about a requirement, fall to × (fail-safe. Making passes lenient empties the ledger of meaning)
 
-## 報告フォーマット
+## Report format
 
 ```
 ## skill-regression run — <対象スキル>
@@ -122,5 +120,5 @@ run ワークフローで fixture のシナリオを実行する subagent の契
 - fixture を持たない影響スキル: <名前列挙。capture 推奨として提示>
 ```
 
-不合格時は「スキル側の回帰」か「fixture の陳腐化（仕様が意図的に変わった）」かの
-切り分けを、根拠（どのコミット・どの編集が原因か）付きで添える。
+On a failure, attach the separation of "a regression on the skill side" versus "the fixture going stale (the spec changed
+deliberately)", with grounds (which commit or which edit caused it).

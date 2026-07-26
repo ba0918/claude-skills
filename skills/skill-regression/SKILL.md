@@ -47,7 +47,7 @@ runs the regression evaluation only against the skills whose behavior surface ch
 ## capture — turning acceptance criteria into assets
 
 1. **Identify the material**: confirm where the target skill's acceptance criteria come from. In order of preference:
-   (a) The fixture.json of the most recent [empirical tuning](../empirical-prompt-tuning/SKILL.md) session (measured, and therefore best; for the conversion guide see the 「素材別の変換ガイド」 section of [fixture-schema.md](references/fixture-schema.md))
+   (a) The fixture.json of the most recent [empirical tuning](../empirical-prompt-tuning/SKILL.md) session (measured, and therefore best; for the conversion guide see the "Conversion guide by source material" section of [fixture-schema.md](references/fixture-schema.md))
    (b) The acceptance criteria of the corresponding plan under `.agents/artifacts/plans/`
    (c) If neither exists, design new ones following the design guidelines of [references/fixture-schema.md](references/fixture-schema.md)
 2. **Create fixtures.json**: write `skills/<skill>/fixtures.json` following the schema.

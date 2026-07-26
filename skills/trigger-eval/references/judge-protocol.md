@@ -1,32 +1,32 @@
-# judge-protocol — 判定エージェント契約
+# judge-protocol — the judging agent contract
 
-Tier 1 選択シミュレーションの判定エージェント（Agent ツール、**model: sonnet 明示**、新規 subagent）の入出力契約。バイアス対策の一般則（自分の結論を渡さない / 敵対的フレーミング等）は `skills/shared/references/codex-integration.md` の既存ドクトリンを参照し、ここでは再記述しない。
+The input/output contract for the Tier 1 selection simulation's judging agent (a subagent delegation, **model: sonnet stated explicitly**, a fresh subagent). For the general anti-bias rules (never hand over your own conclusion, adversarial framing, and so on), see the existing doctrine in `skills/shared/references/codex-integration.md`; it is not restated here.
 
-## 2 つの判定モード（selection / autonomous）
+## The 2 judging modes (selection / autonomous)
 
-判定は 2 つの独立したモードで実施する。**入出力スキーマは共通**だが、判定エージェントに渡すフレーミングだけが異なる。
+Judging is run in 2 independent modes. **The input/output schema is shared**; only the framing handed to the judging agent differs.
 
-- **selection モード**（従来の既定挙動）: 「与えられた指示に最も適合するスキルを一覧から選べ。適合するものが無ければ `none` を返せ」= description 一覧の弁別性を測る。スキル起動を暗に前提とするフレーミング。
-- **autonomous モード**（新設）: 「あなたは Claude Code アシスタントである。このユーザ指示に普通に応答するか、スキルを起動するか自分で決めよ。起動する場合のみスキル名を返し、普通に応答すべきなら `none` を返せ」= スキル起動を**強制しない**。実運用でモデルが「わざわざスキルを起動するに値するか」を自己判断する salience（想起）に近い分布を測る。
+- **selection mode** (the traditional default behavior): "Pick the skill from the list that best fits the given instruction. If none fits, return `none`" = measures the discriminability of the description list. A framing that implicitly assumes a skill will be launched.
+- **autonomous mode** (new): "You are a Claude Code assistant. Decide for yourself whether to respond to this user instruction normally or to launch a skill. Return a skill name only if you launch one; return `none` if you should respond normally" = does **not** force a skill launch. It measures a distribution closer to the salience with which a model decides in real use whether something "is worth launching a skill for".
 
-両モードとも同じ入力スキーマ・同じケースバッチを使い、**モードごとに独立した判定結果 JSON を生成する**（`judged-{mode}-iterN.json`）。結果を混合してはならない（下の妥当性限界を参照）。
+Both modes use the same input schema and the same case batches, and **produce an independent judgment result JSON per mode** (`judged-{mode}-iterN.json`). The results must never be mixed (see the validity limits below).
 
-## 判定エージェントに渡すもの / 渡さないもの
+## What is and is not handed to the judging agent
 
-- **渡す**: description 一覧（`{name, description}` の JSON）＋ 架空指示のケースバッチ（`{case_id, text}` の配列）。
-- **渡さない**: SKILL.md 本文。本文を見せると実発火時のモデルの視界と乖離し false positive を生む（empirical-prompt-tuning Iteration 0 と同じ思想）。これは実発火時にモデルが description しか見ないことの再現。
-- **ツール禁止**: プロンプトに明示するツール禁止の文言は**配布方法に合わせて切り替える**（矛盾した契約を渡さない）。インライン渡しでは「ツールは一切使うな・与えられた入力のみで判定せよ」、ファイル渡しでは「指定した 2 ファイルのみ Read してよい。それ以外のツール使用・ファイル読取は一切禁止」。いずれも prompt-level の **soft guarantee** であり、ツールアクセスを機械的に剥奪するものではない（この限界を明記する）。
+- **Handed over**: the description list (JSON of `{name, description}`) plus the batch of fictional instruction cases (an array of `{case_id, text}`).
+- **Not handed over**: the body of SKILL.md. Showing the body diverges from what the model sees at real firing time and produces false positives (the same thinking as empirical-prompt-tuning Iteration 0). This reproduces the fact that at real firing time the model sees only the description.
+- **Tool prohibition**: **switch the tool-prohibition wording in the prompt to match the distribution method** (never hand over a self-contradictory contract). For inline delivery: "use no tools at all; judge only from the given input". For file delivery: "you may read only the 2 files specified. Any other tool use or file read is forbidden". Either way it is a prompt-level **soft guarantee** and does not mechanically strip tool access (state this limit explicitly).
 
-### 入力の配布方法（正式契約）
+### Input distribution methods (the formal contract)
 
-判定エージェントへの入力は次の 2 通りのいずれかに限る:
+Input to the judging agent is limited to one of these 2 forms:
 
-1. **インライン渡し**: description 一覧とケースバッチをプロンプト本文に直接埋め込む。追加のファイル読取は発生しない。
-2. **ファイル渡し**: `skills.json`（description 一覧）とケースバッチファイルの **2 ファイルのみ Read を許可**する。この 2 ファイル以外のツール・ファイル読取は禁止する。
+1. **Inline delivery**: embed the description list and the case batch directly in the prompt body. No additional file read occurs.
+2. **File delivery**: allow reading **only 2 files** — `skills.json` (the description list) and the case batch file. Any tool use or file read beyond those 2 files is forbidden.
 
-いずれの場合も **SKILL.md 本文・その他ソースへのアクセスは禁止**（soft guarantee）。ファイル渡しでは「許可した 2 ファイル以外は読むな」をプロンプトに明示する。
+In both cases, **access to SKILL.md bodies and other sources is forbidden** (a soft guarantee). For file delivery, state "do not read anything but the 2 permitted files" explicitly in the prompt.
 
-## 入力スキーマ
+## Input schema
 
 ```json
 {
@@ -35,42 +35,42 @@ Tier 1 選択シミュレーションの判定エージェント（Agent ツー�
 }
 ```
 
-- **バッチは 1 呼び出し最大 20 ケース**にチャンク分割する。複数バッチは並行 dispatch（最大 4 並行）。
-- ケース順はシャッフルする（位置バイアス対策）。
+- **Chunk the batches to at most 20 cases per call.** Dispatch multiple batches concurrently (at most 4 in parallel).
+- Shuffle the case order (to counter position bias).
 
-## 出力スキーマ
+## Output schema
 
-判定エージェントは各ケースについて 1 つのラベルを返す:
+The judging agent returns one label per case:
 
 ```json
 {"judgments": [{"case_id": "c001", "choice": "commit"}, {"case_id": "c002", "choice": "none"}, ...]}
 ```
 
-- `choice` は description 一覧のいずれかの skill 名、または `none`（どのスキルも発火しないのが正しい）。
-- **単一ラベルのみ**。複数スキルを挙げてはならない。
+- `choice` is one of the skill names in the description list, or `none` (firing no skill is correct).
+- **A single label only.** Never list several skills.
 
-## 回収時の検証（駆動側の責務）
+## Validation on collection (the driver's responsibility)
 
-1. **「判定数 == ケース数」を検証**する。
-2. `choice` の正規化（bare name 化）: plugin prefix が付いていたら除去し、Phase 0 と同じ namespace に揃える。
-3. **INVALID の生成**（本書所掌）:
-   - バッチ応答全体がパース不能 → **バッチ内全 case_id を 1 回だけ再判定**。それでも不正なら全 case_id を `predicted=INVALID` として実体化。
-   - 個別 choice が (a) パース不能、(b) 一覧外のスキル名、(c) 複数スキル → その case を 1 回だけ再判定。それでも不正なら `INVALID`。
-   - INVALID の**カウント方法**は `metrics-spec.md` 所掌（正解スキルの FN に数え、どの FP にも数えない）。
+1. **Verify that "the number of judgments == the number of cases".**
+2. Normalize `choice` (reduce to a bare name): strip any plugin prefix and align it to the same namespace as Phase 0.
+3. **Producing INVALID** (owned by this document):
+   - The whole batch response is unparseable → **re-judge every case_id in the batch exactly once**. If it is still malformed, materialize every case_id as `predicted=INVALID`.
+   - An individual choice is (a) unparseable, (b) a skill name outside the list, or (c) several skills → re-judge that case exactly once. If it is still malformed, `INVALID`.
+   - **How INVALID is counted** is owned by `metrics-spec.md` (counted as an FN for the correct skill, and as an FP for nothing).
 
-## stability 計測
+## Measuring stability
 
-同一ケースを独立に 2 判定する（j1, j2）。イテレーション 2 回目以降はデフォルトで**固定サンプル 20–30 ケースに縮約**する。サンプルは 1 回だけ決定的に選んで台帳に記録し、全イテレーションで同一のものを使う（`--full-stability` で全数に戻せる）。
+Judge the same case independently twice (j1, j2). From the second iteration onward, **reduce by default to a fixed sample of 20-30 cases**. Choose the sample deterministically once, record it in the ledger, and use the same one across every iteration (`--full-stability` restores the full set).
 
-## Tier 2（E2E 実発火）でのスキル名抽出・正規化
+## Skill name extraction and normalization in Tier 2 (real E2E firing)
 
-Tier 2 は `run_eval.py` 方式の stream 検出（`--output-format stream-json --include-partial-messages`、`content_block_start` → tool_use 検出、`CLAUDECODE` env 除去、最初の Skill tool_use 検出で即プロセス終了）。run_eval が boolean 検出なのに対し、本スキルは **Skill tool_use の `input` からスキル名を抽出して Phase 0 と同じ bare name に正規化する**（confusion 帰属のため）。**permission-mode は指定しない**（plan mode の system prompt が発火分布を変えキャリブレーションを汚染するため）。
+Tier 2 uses the stream detection of the `run_eval.py` approach (`--output-format stream-json --include-partial-messages`, `content_block_start` → tool_use detection, removing the `CLAUDECODE` env var, terminating the process as soon as the first Skill tool_use is detected). Where run_eval does boolean detection, this skill **extracts the skill name from the Skill tool_use `input` and normalizes it to the same bare name as Phase 0** (for confusion attribution). **Do not specify a permission mode** (plan mode's system prompt changes the firing distribution and contaminates the calibration).
 
-## 妥当性限界（明記事項 / knob）
+## Validity limits (things to state / knobs)
 
-- Tier 1 の判定エージェントは「選ぶこと」を指示された**選択器**であり、自律発火（何も発火せず直接回答する）とは分布が異なる。
-- **selection は弁別性の上界、autonomous は想起 (salience) の近似。両者の分布は異なるため結果を混合してはならない。** selection は「起動する前提でどれが最適か」を測るため recall/precision の上界を与え、autonomous は「そもそも起動に値するか」を含むため実運用の想起に近い。混合すると両者の異なる母集団を平均してしまい、どちらの信号も損なう。
-- 判定モデル（軽量モデル）は実運用のセッションモデルと異なる。
-- したがって Tier 1 の recall/precision は **軽量モデル選択器相対の指標**であり、Tier 2 実発火との**乖離率がキャリブレーション信号**になる。
-- 「判定モデル」「Tier 2 の実行条件（`--max-turns` / timeout / worktree）」は knob である。
-- 判定エージェントのツール禁止は prompt-level の **soft guarantee** である。
+- The Tier 1 judging agent is a **selector** instructed to "pick one", and its distribution differs from autonomous firing (firing nothing and answering directly).
+- **selection is an upper bound on discriminability; autonomous is an approximation of salience. Their distributions differ, so the results must never be mixed.** selection measures "given that something will be launched, which fits best" and therefore gives an upper bound on recall/precision, while autonomous includes "is this worth launching at all" and is closer to real-world salience. Mixing them averages two different populations and damages both signals.
+- The judging model (a lightweight model) differs from the session model in real use.
+- Therefore Tier 1 recall/precision is **a metric relative to a lightweight-model selector**, and **its divergence from Tier 2 real firing is the calibration signal**.
+- "The judging model" and "the Tier 2 execution conditions (`--max-turns` / timeout / worktree)" are knobs.
+- The judging agent's tool prohibition is a prompt-level **soft guarantee**.

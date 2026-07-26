@@ -1,12 +1,12 @@
-# AP5 NEGATIVE — 罰してはならない後付けテスト
+# AP5 NEGATIVE — a test written after the fact that must not be punished
 
-## シナリオ
+## Scenario
 
-- `fix: reject whitespace-only username` の修正と同時に、その挙動を固定する回帰テストを追加した。
-- これは既存バグへの安全網追加であり、TDD 逸脱として罰してはならない。
+- Along with the fix `fix: reject whitespace-only username`, a regression test pinning that behavior was added.
+- This is adding to the safety net for an existing bug, and must not be punished as a TDD deviation.
 
-## 期待される扱い
+## Expected handling
 
-- **FALSE_POSITIVE**（後付けだが回帰テストとして正当）。
-- 罰すると「バグ修正時の安全網追加」を萎縮させるため、AP5 では検出対象にしない。
-- テスト自体の有効性は層 1（欠陥検出力）で評価する。
+- **FALSE_POSITIVE** (written after the fact, but legitimate as a regression test).
+- Punishing it would chill "adding to the safety net when fixing a bug", so AP5 does not target it.
+- The effectiveness of the test itself is evaluated by layer 1 (defect detection power).

@@ -1,96 +1,96 @@
-# Evaluation Criteria — 三層評価（+ 補助層）
+# Evaluation Criteria — the three layers (+ an auxiliary layer)
 
-review-testing の評価基準。中核は 3 層（層 1〜3）で、補助層として可読性（層 4）を持つ。
-SKILL.md から参照される。各 finding は
-[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) の
-三値判定（CONFIRMED / FALSE_POSITIVE / UNCERTAIN）と重大度（BLOCK / WARN / INFO）で扱い、
-評価範囲は [coverage-ledger.md](../../shared/references/coverage-ledger.md) に記録する。
+The evaluation criteria of review-testing. The core is 3 layers (layers 1-3), with readability (layer 4) as an auxiliary layer.
+Referenced from SKILL.md. Each finding is handled with the three-valued verdict
+(CONFIRMED / FALSE_POSITIVE / UNCERTAIN) and the severity (BLOCK / WARN / INFO) of
+[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md),
+and the evaluation scope is recorded in [coverage-ledger.md](../../shared/references/coverage-ledger.md).
 
-**総合点を出さないことの帰結**: 各層は独立に findings を生む。層をまたいだ加重平均や
-「テスト品質スコア」は作らない。層ごとに「何を見て」「何が inconclusive だったか」を ledger に残す。
+**The consequence of emitting no overall score**: each layer produces findings independently. Never build a weighted
+average across layers or a "test quality score". Per layer, leave "what was looked at" and "what was inconclusive" in the ledger.
 
-## 重大度の既定（テスト欠落）
+## Default severity (missing tests)
 
-重大度は「テストが何件ないか」ではなく、**未検証のまま壊れたときの契約影響**で決める。
+Severity is decided not by "how many tests are missing" but by **the contract impact if it breaks while unverified**.
 
-| 未検証の契約 | 既定 severity |
+| The unverified contract | Default severity |
 |---|---|
-| 認証・認可、データ喪失、金銭計算、外部公開 API 全体など、破壊時に重大障害となる境界 | BLOCK |
-| 公開 API の一分岐、入力拒否、状態遷移、将来時刻依存など、局所的な欠陥を見逃す穴 | WARN |
-| 命名・説明性など、欠陥検出結果を直接変えない補助的問題 | INFO |
+| A boundary whose breakage is a serious incident: authentication/authorization, data loss, monetary calculation, an entire public API | BLOCK |
+| A hole that lets a local defect slip through: one branch of a public API, input rejection, a state transition, dependence on a future time | WARN |
+| An auxiliary problem that does not directly change the defect detection result, such as naming or explanatory power | INFO |
 
-- テスト 0 件という事実だけで自動的に BLOCK にしない。対象プロダクトの契約を列挙して影響を示す。
-- 影響範囲を判断する仕様・利用文脈が無ければ、severity は保守的に WARN、verdict は必要に応じて UNCERTAIN とする。
-- 同じ根因（テストスイート不在）を「全体 BLOCK」と「全分岐 WARN」で重複計上せず、代表 finding と内訳をまとめる。
+- Never make it BLOCK automatically from the mere fact that there are 0 tests. Enumerate the target product's contracts and show the impact.
+- Without the specification or usage context needed to judge the blast radius, keep the severity conservatively at WARN and use UNCERTAIN for the verdict as needed.
+- Do not double-count the same root cause (no test suite) as both "BLOCK overall" and "WARN on every branch" — consolidate into a representative finding plus a breakdown.
 
-## 層 1: 欠陥検出力（P0）
+## Layer 1: defect detection power (P0)
 
-「テストが実際にバグを捕まえる力があるか」。カバレッジが高くてもアサーションが弱ければ検出力はゼロ。
+"Do the tests actually have the power to catch bugs?" Even with high coverage, weak assertions mean zero detection power.
 
-### 検出述語
+### Detection predicates
 
-- **アサーションの空虚さ**: テストが対象を呼ぶだけで振る舞いを検証していない（アサーション皆無、
-  もしくは `expect(fn).not.toThrow()` のみで戻り値・状態遷移を検証しない）。→ CONFIRMED（証拠: 当該テスト本体）
-- **mutation sensitivity（半自動・重要契約に限定）**: 重要契約（後述の層 2 が列挙する公開 API・境界）に対し、
-  意味を変える mutant を注入したときテストが落ちるか。**意味のある survivor のみ finding**。
-  - 手順: 契約 1 つを選ぶ → **対象外の使い捨てコピーまたは変更を対象外へ閉じ込める mutation runner** で、
-    分岐条件・境界・戻り値のいずれかを 1 箇所反転する → 対応テストを隔離実行する → 落ちなければ
-    「その契約に対する検出力の穴」を finding にする。レビュー対象そのものへ mutant を書き込まない。
-  - mutation score（生存率の点数）は**出さない**。フル mutation testing は非対象（v1 は重要契約に絞った半自動）。
-    runner が無い、またはテスト副作用を隔離できなければこの述語は `unsupported` として ledger に載せる。
-- **恒真アサーション**: `expect(true).toBe(true)`、モック戻り値をそのまま検証する等、
-  実装を変えても絶対に落ちないアサーション。→ CONFIRMED（証拠: アサーション式）
+- **Vacuous assertions**: the test merely calls the target without verifying behavior (no assertions at all,
+  or only `expect(fn).not.toThrow()` without verifying the return value or state transition). → CONFIRMED (evidence: the test body)
+- **mutation sensitivity (semi-automated, limited to important contracts)**: for an important contract (a public API or boundary enumerated by layer 2 below),
+  does the test fail when a meaning-changing mutant is injected? **Only meaningful survivors are findings.**
+  - Procedure: pick one contract → using **a throwaway copy outside the target, or a mutation runner that confines changes outside the target**,
+    invert exactly one branch condition, boundary, or return value → run the corresponding tests in isolation → if they do not fail,
+    make "a hole in the detection power for that contract" a finding. Never write a mutant into the reviewed target itself.
+  - **Do not emit a mutation score** (a survival-rate number). Full mutation testing is out of scope (v1 is semi-automated and narrowed to important contracts).
+    If there is no runner, or test side effects cannot be isolated, put this predicate into the ledger as `unsupported`.
+- **Tautological assertions**: assertions that can never fail no matter how the implementation changes, such as `expect(true).toBe(true)`
+  or verifying a mock's return value as-is. → CONFIRMED (evidence: the assertion expression)
 
-### 三値の目安
+### Guidance for the three-valued verdict
 
-- 検出力の穴を実際に mutant / データフローで示せた → CONFIRMED
-- 字面は弱く見えるが、別のテストが同じ契約をカバーしている → FALSE_POSITIVE（理由: 補完テストの所在）
-- 弱く見えるが契約の重要度・補完の有無を判断する材料が無い → UNCERTAIN
+- The hole in detection power was actually shown with a mutant or a data flow → CONFIRMED
+- It reads as weak, but another test covers the same contract → FALSE_POSITIVE (reason: where the complementary test is)
+- It reads as weak, but there is no material for judging the contract's importance or whether it is complemented → UNCERTAIN
 
-## 層 2: 契約検証（P0）
+## Layer 2: contract verification (P0)
 
-「守るべき契約に対応テストがあるか」。ここでの契約 = 公開 API・状態遷移・権限境界・失敗経路。
+"Is there a corresponding test for each contract that must hold?" Contract here = public APIs, state transitions, permission boundaries, failure paths.
 
-### 検出述語
+### Detection predicates
 
-- **公開 API の未検証**: エクスポートされた関数 / メソッドのうち、正常系の対応テストが存在しないもの。
-  → 到達可能性を確認して CONFIRMED（証拠: export 定義と、それを参照するテストの不在）
-- **失敗経路の未検証**: エラーを投げる / Result のエラー枝を返す経路に対応テストが無い。
-  例外・エラー型・拒否理由が仕様に含まれるのにテストが正常系しか触れていない。→ CONFIRMED
-- **状態遷移の穴**: 状態機械・ライフサイクル（生成→更新→破棄等）の遷移のうちテストされていない辺。
-- **権限境界の未検証**: 認可（許可される主体 / 拒否される主体）の両側テストのうち、拒否側が欠けている。
-  「許可されるべきが通る」だけで「拒否されるべきが拒否される」を検証していない。→ CONFIRMED
+- **An unverified public API**: an exported function / method with no corresponding happy-path test.
+  → CONFIRMED after confirming reachability (evidence: the export definition, and the absence of a test referencing it)
+- **An unverified failure path**: no corresponding test for a path that throws an error or returns the error branch of a Result.
+  The exception, error type, or rejection reason is part of the specification, yet the tests touch only the happy path. → CONFIRMED
+- **A hole in the state transitions**: an untested edge among the transitions of a state machine or lifecycle (create → update → destroy, etc.).
+- **An unverified permission boundary**: of the two-sided authorization tests (subjects allowed / subjects denied), the denial side is missing.
+  It only verifies "what should be allowed passes" and never "what should be denied is denied". → CONFIRMED
 
-### カバレッジ率の位置づけ
+### Where the coverage percentage stands
 
-カバレッジ率は**スコアに入れない**。未到達行の一覧を「どの契約がテストされていないか」を
-探すための地図としてのみ使う。100% カバレッジでも層 1（検出力）が空虚なら意味がない。
+The coverage percentage **never enters a score**. Use the list of unreached lines only as a map for finding
+"which contracts are untested". Even 100% coverage means nothing if layer 1 (detection power) is vacuous.
 
-## 層 3: 安全網の安定性（P1）
+## Layer 3: stability of the safety net (P1)
 
-「テストが flaky でないか」。不安定なテストは安全網の穴（落ちても無視される / 再実行で通る）。
+"Are the tests non-flaky?" An unstable test is a hole in the safety net (failures get ignored, or a re-run passes).
 
-### 検出述語（暗黙依存の証拠化）
+### Detection predicates (making implicit dependencies evidential)
 
-- **時刻依存**: `Date.now()` / `new Date()` / 現在時刻を注入せず直接参照し、境界（日付跨ぎ・TZ）で揺れる。
-- **乱数依存**: seed 固定なしの乱数をアサーション対象にしている。
-- **順序依存**: テスト間で共有状態（グローバル・モジュールキャッシュ・DB）を介し、実行順で結果が変わる。
-- **ネットワーク / 実時間依存**: 実 API・実スリープ（`sleep(n)` でのタイミング合わせ）に依存する。
+- **Time dependence**: referencing `Date.now()` / `new Date()` / the current time directly instead of injecting it, so it wobbles at boundaries (date rollover, TZ).
+- **Randomness dependence**: asserting on random values without a fixed seed.
+- **Order dependence**: results change with execution order through shared state between tests (globals, the module cache, a DB).
+- **Network / wall-clock dependence**: depending on a real API or a real sleep (timing alignment via `sleep(n)`).
 
-各述語は「その依存が実在する箇所」を証拠として示せたら CONFIRMED。
-flaky の再現に実行トレースが要る場合は `inconclusive`（領域）として ledger に載せる（個別候補は UNCERTAIN）。
+Each predicate is CONFIRMED once you can show "the place where that dependency actually exists" as evidence.
+When reproducing the flakiness requires an execution trace, put it into the ledger as `inconclusive` (an area), with individual candidates as UNCERTAIN.
 
-## 層 4: 可読性（P2 — 補助層）
+## Layer 4: readability (P2 — auxiliary layer)
 
-- **テスト名が How を語る**: テスト名に内部メソッド名・モック名が現れ、リファクタで壊れる
-  （information-placement の「Tests tell What」違反）。→ INFO 中心。振る舞い記述への書き換えを提案する。
+- **The test name tells How**: an internal method name or mock name appears in the test name, so refactoring breaks it
+  (a violation of information-placement's "Tests tell What"). → mostly INFO. Propose rewriting it as a behavior description.
 
-## design-principles / information-placement との対応
+## Correspondence with design-principles / information-placement
 
-本スキルは以下の常駐ルールを「テストを評価する検出述語」に翻訳したもの。ルール本文は複製せず参照する。
+This skill is a translation of the following resident rules into "detection predicates for evaluating tests". Reference the rule text rather than duplicating it.
 
-| ルール | 本スキルでの執行対象 |
+| Rule | What this skill enforces |
 |--------|---------------------|
-| [design-principles](../../shared/references/design-principles.md)「Testability Above All」 | 層 1・層 2（検出力と契約対応が Testability の実体） |
-| information-placement「Tests tell What」 | 層 4（テスト名が仕様を語るか） |
-| testing-anti-patterns 5 鉄則 | [anti-pattern-detection.md](anti-pattern-detection.md)（別ファイルで執行） |
+| [design-principles](../../shared/references/design-principles.md) "Testability Above All" | Layers 1 and 2 (detection power and contract correspondence are what Testability actually is) |
+| information-placement "Tests tell What" | Layer 4 (does the test name tell the spec?) |
+| The 5 iron laws of testing-anti-patterns | [anti-pattern-detection.md](anti-pattern-detection.md) (enforced in a separate file) |

@@ -1,67 +1,68 @@
-# Supply-Chain Signals — 検出述語と限界
+# Supply-Chain Signals — detection predicates and their limits
 
-scanner が出せない相関的なサプライチェーン信号の検出述語。判定は
-[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) の
-CONFIRMED / FALSE_POSITIVE / UNCERTAIN に従い、検出できない領域は
-[coverage-ledger.md](../../shared/references/coverage-ledger.md) の `unsupported` / `inconclusive` に載せる。
+Detection predicates for the correlation-based supply chain signals a scanner cannot emit. Verdicts follow the
+CONFIRMED / FALSE_POSITIVE / UNCERTAIN of
+[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md), and areas that cannot be detected go into
+`unsupported` / `inconclusive` in [coverage-ledger.md](../../shared/references/coverage-ledger.md).
 
-各述語には positive / negative の [fixtures](fixtures/) が対応する（回帰確認用）。
+Each predicate has a corresponding positive / negative pair in [fixtures](fixtures/) (for regression checking).
 
-**大原則**: hash / 署名の正当性はエージェントが読んで判断しない。機械検証の結果のみ採用する。
-本ファイルの述語は「機械が正誤を出せない、文脈依存の異常」を対象にする。
+**The overarching principle**: the agent never reads and judges the validity of a hash or a signature. Only the result of
+mechanical verification is adopted. The predicates in this file target "context-dependent anomalies a machine cannot rule on".
 
-**証拠の裏取り**: finding の証拠として書く具体値（取得元 URL・書込先パス・環境変数名・resolved ホスト等の
-IOC）は、対象ファイルの**該当行を実際に読んで正確に転記する**。記憶・推測・「ありがちな値」で埋めない。
-特に書込先パスは「一時領域か永続領域か（`/tmp` か `$HOME` 配下か）」で脅威の性質が変わるため、
-setup.js 等の該当行を引用して裏取りする。裏取りできない項目は具体値を創作せず「未確認」と明記する。
+**Corroborating the evidence**: the concrete values written as a finding's evidence (the IOCs — fetch URL, write destination
+path, environment variable name, resolved host, etc.) must be **transcribed accurately from the actual line of the target file**.
+Never fill them in from memory, guesswork, or "the value it usually is". The write destination in particular changes the nature
+of the threat depending on whether it is ephemeral or persistent (`/tmp` versus under `$HOME`), so corroborate it by quoting the
+relevant line of setup.js or the like. For any item you cannot corroborate, never invent a concrete value — state "unconfirmed".
 
-## 信号 1: lockfile diff の異常
+## Signal 1: lockfile diff anomaly
 
-- **候補抽出**: lockfile diff で、resolved URL がレジストリ外（別ホスト・git URL・file: 参照）に変わった、
-  integrity hash が同一バージョンのまま変化した、直接依存が増えていないのに transitive が大量に入れ替わった。
-- **証拠要件**: 同一バージョン指定なのに integrity が変わった等の「manifest の意図と lockfile の実体の乖離」を diff で示す。
-  integrity hash 値そのものの正誤は判断せず、「同一バージョンで hash が変わった」という**機械的事実**を証拠にする。
-- **三値**: 乖離を diff で示せた → CONFIRMED / 正当な理由（レジストリ移行・バージョン更新に伴う変化）が説明できる → FALSE_POSITIVE /
-  diff だけでは意図が読めない → UNCERTAIN。
+- **Candidate extraction**: in the lockfile diff, a resolved URL changed to something outside the registry (a different host,
+  a git URL, a file: reference), an integrity hash changed while the version stayed the same, or transitives were swapped en masse without any direct dependency being added.
+- **Evidence requirement**: show with the diff a "divergence between the manifest's intent and the lockfile's reality", such as the integrity changing under the same version specifier.
+  Do not judge whether the integrity hash value itself is right or wrong — the evidence is the **mechanical fact** that "the hash changed for the same version".
+- **Three-valued**: the divergence is shown in the diff → CONFIRMED / a legitimate reason can be explained (a registry migration, a change accompanying a version update) → FALSE_POSITIVE /
+  the intent cannot be read from the diff alone → UNCERTAIN.
 - **fixtures**: [positive](fixtures/lockfile-anomaly.positive.json) / [negative](fixtures/lockfile-anomaly.negative.json)
 
-## 信号 2: install script（lifecycle script）
+## Signal 2: install script (lifecycle script)
 
-- **候補抽出**: manifest の `postinstall` / `preinstall` / `install`（npm）、`build.rs`（cargo）等の
-  lifecycle hook。特に外部ネットワークアクセス・エンコードされたペイロード・別ファイルの実行を含むもの。
-- **証拠要件**: script の**内容**が何をするかを、次の 4 項目をすべて埋める形で構造化して説明する
-  （どれか 1 つでも欠けたら証拠不足として finding を UNCERTAIN に降格する）:
-  1. **取得元** — 何を外部から取ってくるか（URL・ホスト・取得するバイナリ/コード）。無ければ「なし」と明記。
-  2. **書込先** — どこに何を書くか（ホームディレクトリ・システムパス・実行権限付与の有無）。無ければ「なし」と明記。
-  3. **参照する秘匿情報** — 読み取る環境変数・認証情報・鍵（値は転記せず名前と送出有無のみ）。
-     `process.env` 等で全環境を列挙・送出する場合は「全環境変数（個別名はコード上限定されない）」と書く。
-     無ければ「なし」と明記。
-  4. **実行するコマンド** — subprocess・eval・chmod+x での実行など。無ければ「なし」と明記。
+- **Candidate extraction**: lifecycle hooks in the manifest such as `postinstall` / `preinstall` / `install` (npm) or
+  `build.rs` (cargo). Especially those involving external network access, an encoded payload, or executing another file.
+- **Evidence requirement**: explain what the script's **contents** do, in a structured form filling in all 4 items below
+  (if even one is missing, the evidence is insufficient and the finding is demoted to UNCERTAIN):
+  1. **Fetch source** — what it pulls from outside (URL, host, the binary/code fetched). State "none" if there is none.
+  2. **Write destination** — what it writes where (home directory, a system path, whether it grants the execute bit). State "none" if there is none.
+  3. **Secrets referenced** — the environment variables, credentials, and keys it reads (never transcribe the values, only the names and whether they are sent out).
+     When it enumerates and exfiltrates the whole environment via `process.env` or similar, write "all environment variables (individual names are not bounded by the code)".
+     State "none" if there is none.
+  4. **Commands executed** — subprocesses, eval, execution via chmod+x, and so on. State "none" if there is none.
 
-  「意味づけ」がエージェントの役割。ただし script を**実行して**確かめてはならない（静的に読む）。
-- **三値**: 危険な挙動（データ送出・任意コード取得）をコード上で示せた → CONFIRMED /
-  正当なビルド処理（ネイティブモジュールのコンパイル等）と説明できる → FALSE_POSITIVE /
-  難読化で意図が読み切れない → UNCERTAIN（`inconclusive` 領域として ledger にも記録）。
+  "Assigning meaning" is the agent's role. But never **run** the script to check (read it statically).
+- **Three-valued**: dangerous behavior (data exfiltration, fetching arbitrary code) can be shown in the code → CONFIRMED /
+  it can be explained as legitimate build processing (compiling a native module, etc.) → FALSE_POSITIVE /
+  obfuscation makes the intent unreadable → UNCERTAIN (also recorded in the ledger as an `inconclusive` area).
 - **fixtures**: [positive](fixtures/install-script.positive.json) / [negative](fixtures/install-script.negative.json)
 
-## 信号 3: typosquat
+## Signal 3: typosquat
 
-- **候補抽出**: 著名パッケージ名との編集距離が小さい依存名（`lodahs` vs `lodash`、
-  スコープ偽装 `@types-node` vs `@types/node`、ハイフン/アンダースコア差異）。
-- **証拠要件**: 正規パッケージ名との差分と、当該依存が正規のものでない（別メンテナ・低ダウンロード・最近公開）ことを示す。
-  レジストリ metadata が無い環境では「名前の類似」までしか言えない → UNCERTAIN 止まり。
-- **三値**: 類似名 + 別出所を示せた → CONFIRMED / 正規のスコープ/別名だと確認できた → FALSE_POSITIVE /
-  metadata 無しで名前類似のみ → UNCERTAIN。
+- **Candidate extraction**: dependency names at a small edit distance from a well-known package name (`lodahs` vs `lodash`,
+  scope spoofing such as `@types-node` vs `@types/node`, hyphen/underscore differences).
+- **Evidence requirement**: show the difference from the legitimate package name, and that this dependency is not the legitimate one (a different maintainer, low download count, recently published).
+  In an environment without registry metadata, all you can say is "the names are similar" → it stops at UNCERTAIN.
+- **Three-valued**: a similar name plus a different origin can be shown → CONFIRMED / it is confirmed to be a legitimate scope or alias → FALSE_POSITIVE /
+  name similarity only, with no metadata → UNCERTAIN.
 - **fixtures**: [positive](fixtures/typosquat.positive.json) / [negative](fixtures/typosquat.negative.json)
 
-## 信号 4: メンテナ交代 / 保守状態（限界の明記）
+## Signal 4: maintainer change / maintenance state (stating the limit)
 
-- **候補**: 短期間での publish 権限者の変更、長期未更新後の突然のメジャー更新、メンテナ数の急減。
-- **限界**: これらはレジストリ metadata（publish 履歴・オーナー情報）が無ければ**判定不能**。
-  ネットワーク不可・metadata 非公開の環境では必ず `unsupported` に載せる。エージェントが憶測で CONFIRMED にしない。
+- **Candidates**: a change of who holds publish rights within a short period, a sudden major update after a long dormancy, a sharp drop in the number of maintainers.
+- **Limit**: these are **undecidable** without registry metadata (publish history, owner information).
+  In an environment with no network or with private metadata, always put them into `unsupported`. The agent never marks them CONFIRMED on speculation.
 
-## 検出できない限界（必ず ledger に残す）
+## Limits of detection (always leave these in the ledger)
 
-- 難読化された install script の真意 → `inconclusive`。
-- レジストリ metadata を要する信号（typosquat の出所確認・メンテナ交代）→ metadata 無しなら `unsupported`。
-- transitive 依存の到達可能性は、呼び出しグラフ解析が無ければ保守的に「到達し得る」とし、断定は避ける。
+- The true intent of an obfuscated install script → `inconclusive`.
+- Signals requiring registry metadata (confirming a typosquat's origin, maintainer changes) → `unsupported` without metadata.
+- Without call-graph analysis, treat the reachability of a transitive dependency conservatively as "may be reachable" and avoid asserting otherwise.

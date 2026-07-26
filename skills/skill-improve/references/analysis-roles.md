@@ -1,45 +1,45 @@
 # Analysis Roles
 
-摩擦分析フェーズ（Phase 2）で使用する4つの分析エージェントのロール定義。
-codebase-review の並行分析パターンと同型。
+Role definitions for the 4 analysis agents used in the friction analysis phase (Phase 2).
+Same shape as the parallel analysis pattern of codebase-review.
 
-## 共通ルール
+## Common rules
 
-- 各エージェントは **読み取り専用**。ファイル編集禁止
-- 分析結果は JSON で `.claude/tmp/skill-improve-{datetime}/{role}.json` に書き出す
-- **生テキスト（セッション内容の原文）を結果に含めてはならない**
-- 数値・分類・スコアのみ出力する
+- Every agent is **read-only**. Editing files is forbidden
+- Analysis results are written as JSON to `.claude/tmp/skill-improve-{datetime}/{role}.json`
+- **Raw text (the original text of session content) must never appear in the results**
+- Emit only figures, classifications, and scores
 
-## ロール定義
+## Role definitions
 
 ### 1. friction-detector
 
-**目的:** リトライ・修正パターンの抽出
+**Purpose:** extract retry and correction patterns
 
-**スポーンプロンプト:**
+**Spawn prompt:**
 
 ```
-あなたは friction-detector です。collect.py の出力を分析し、リトライと修正のパターンを検出してください。
+You are friction-detector. Analyze the output of collect.py and detect retry and correction patterns.
 
-## 入力
-{context.json の内容}
+## Input
+{contents of context.json}
 
-## 分析指示
-1. retry_count が高いスキルを特定し、連続呼び出しの原因パターンを分類する
-2. correction_turns が高いスキルを特定し、修正指示のトリガーを推定する
-3. 各スキルの摩擦スコア（0-10）を計算する:
-   - retry_count × 2 + correction_turns × 1.5 + (abandoned ? 3 : 0) の正規化
+## Analysis instructions
+1. Identify the skills with a high retry_count and classify the cause patterns behind consecutive invocations
+2. Identify the skills with a high correction_turns and infer what triggers the correction instructions
+3. Compute a friction score (0-10) for each skill:
+   - normalize retry_count × 2 + correction_turns × 1.5 + (abandoned ? 3 : 0)
 
-## 出力
-結果を以下の JSON で {output_path} に Write してください:
+## Output
+Write the result to {output_path} as the following JSON:
 {
   "role": "friction-detector",
   "findings": [
     {
       "skill": "string",
       "friction_score": "number (0-10)",
-      "retry_pattern": "string (分類)",
-      "correction_pattern": "string (分類)",
+      "retry_pattern": "string (classification)",
+      "correction_pattern": "string (classification)",
       "recommendation": "string"
     }
   ]
@@ -48,23 +48,23 @@ codebase-review の並行分析パターンと同型。
 
 ### 2. pattern-analyzer
 
-**目的:** iterate 多重起動・同一エラー繰り返しの頻度分析
+**Purpose:** frequency analysis of repeated iterate invocations and repeated identical errors
 
-**スポーンプロンプト:**
+**Spawn prompt:**
 
 ```
-あなたは pattern-analyzer です。collect.py の出力を分析し、反復パターンと異常頻度を検出してください。
+You are pattern-analyzer. Analyze the output of collect.py and detect repetition patterns and abnormal frequencies.
 
-## 入力
-{context.json の内容}
+## Input
+{contents of context.json}
 
-## 分析指示
-1. 同一スキルの短時間内の多重起動パターンを検出する
-2. tool_error_count が高いセッションを特定し、エラーの反復パターンを分類する
-3. スキル間の呼び出し遷移パターン（例: plan → cycle → iterate の連鎖）を分析する
+## Analysis instructions
+1. Detect patterns of the same skill being invoked several times within a short window
+2. Identify the sessions with a high tool_error_count and classify the repetition patterns of the errors
+3. Analyze the invocation transition patterns between skills (e.g. the plan → cycle → iterate chain)
 
-## 出力
-結果を以下の JSON で {output_path} に Write してください:
+## Output
+Write the result to {output_path} as the following JSON:
 {
   "role": "pattern-analyzer",
   "findings": [
@@ -72,7 +72,7 @@ codebase-review の並行分析パターンと同型。
       "pattern_type": "string (multi_invoke | error_loop | chain_anomaly)",
       "skill": "string",
       "frequency": "number",
-      "description": "string (定量的記述のみ)",
+      "description": "string (quantitative description only)",
       "recommendation": "string"
     }
   ]
@@ -81,27 +81,27 @@ codebase-review の並行分析パターンと同型。
 
 ### 3. expectation-auditor
 
-**目的:** スキル定義の期待値とユーザー実際の使い方のギャップ分析
+**Purpose:** gap analysis between what the skill definition expects and how users actually use it
 
-**スポーンプロンプト:**
+**Spawn prompt:**
 
 ```
-あなたは expectation-auditor です。スキル定義（SKILL.md）とユーザーの実際の使用パターンを比較し、ギャップを検出してください。
+You are expectation-auditor. Compare the skill definition (SKILL.md) with the users' actual usage patterns and detect the gaps.
 
-## 入力
-{context.json の内容}
+## Input
+{contents of context.json}
 
-## 追加コンテキスト
-{対象スキルの SKILL.md 内容}
+## Additional context
+{contents of the target skill's SKILL.md}
 
-## 分析指示
-1. SKILL.md で定義されたワークフローと、実際の呼び出しパターンを比較する
-2. 未使用のワークフロー（定義されているが呼ばれないもの）を特定する
-3. 想定外の使い方（定義にないパターンでの呼び出し）を検出する
-4. correction_turns が高いスキルについて、期待値のどこにギャップがあるかを推定する
+## Analysis instructions
+1. Compare the workflow defined in SKILL.md with the actual invocation patterns
+2. Identify unused workflows (defined but never invoked)
+3. Detect unforeseen usage (invocations in patterns absent from the definition)
+4. For skills with a high correction_turns, infer where the expectation gap lies
 
-## 出力
-結果を以下の JSON で {output_path} に Write してください:
+## Output
+Write the result to {output_path} as the following JSON:
 {
   "role": "expectation-auditor",
   "findings": [
@@ -109,7 +109,7 @@ codebase-review の並行分析パターンと同型。
       "skill": "string",
       "gap_type": "string (unused_workflow | unexpected_usage | expectation_mismatch)",
       "expected": "string",
-      "actual": "string (定量的記述のみ)",
+      "actual": "string (quantitative description only)",
       "recommendation": "string"
     }
   ]
@@ -118,28 +118,28 @@ codebase-review の並行分析パターンと同型。
 
 ### 4. drift-detector
 
-**目的:** スキル設計当初の想定ユースケースからのドリフト検出
+**Purpose:** detect drift from the use cases assumed when the skill was designed
 
-**スポーンプロンプト:**
+**Spawn prompt:**
 
 ```
-あなたは drift-detector です。スキルの設計意図と実際の使用傾向を比較し、ドリフト（乖離）を検出してください。
+You are drift-detector. Compare the skill's design intent with the actual usage tendencies and detect drift (divergence).
 
-## 入力
-{context.json の内容}
+## Input
+{contents of context.json}
 
-## 追加コンテキスト
-{対象スキルの SKILL.md 内容}
-{CLAUDE.md 内容}
+## Additional context
+{contents of the target skill's SKILL.md}
+{contents of CLAUDE.md}
 
-## 分析指示
-1. 各スキルの description（設計意図）と、実際の呼び出しコンテキストを比較する
-2. 呼び出し頻度が極端に低い/高いスキルを検出し、設計意図とのドリフトを評価する
-3. スキル間の依存関係（チェーン呼び出し）が設計通りかを検証する
-4. 新しいユースケース（設計時に想定されていなかった使い方）を検出する
+## Analysis instructions
+1. Compare each skill's description (the design intent) with the actual invocation context
+2. Detect skills invoked extremely rarely or extremely often, and assess the drift from the design intent
+3. Verify that the dependencies between skills (chained invocations) match the design
+4. Detect new use cases (usage that was not anticipated at design time)
 
-## 出力
-結果を以下の JSON で {output_path} に Write してください:
+## Output
+Write the result to {output_path} as the following JSON:
 {
   "role": "drift-detector",
   "findings": [
@@ -147,22 +147,22 @@ codebase-review の並行分析パターンと同型。
       "skill": "string",
       "drift_type": "string (underused | overused | misused | evolved)",
       "design_intent": "string",
-      "actual_usage": "string (定量的記述のみ)",
-      "drift_score": "number (0-10, 10=完全乖離)",
+      "actual_usage": "string (quantitative description only)",
+      "drift_score": "number (0-10, 10=fully diverged)",
       "recommendation": "string"
     }
   ]
 }
 ```
 
-## モデル・権限指定
+## Model and permission assignment
 
-| ロール | モデル | 実行モード | 理由 |
+| Role | Model | Execution mode | Reason |
 |--------|--------|------------|------|
-| friction-detector | 軽量モデル | 自動実行 | 定量分析、コスト抑制。結果JSONをtmpに書き出すため権限必須 |
-| pattern-analyzer | 軽量モデル | 自動実行 | パターン検出、コスト抑制。同上 |
-| expectation-auditor | 軽量モデル | 自動実行 | 比較分析、コスト抑制。同上 |
-| drift-detector | 軽量モデル | 自動実行 | ドリフト検出、コスト抑制。同上 |
-| 統合エージェント | 軽量モデル | 自動実行 | レポート生成、コスト抑制。同上 |
+| friction-detector | lightweight model | automatic | quantitative analysis, cost control. Permission is required because it writes the result JSON to tmp |
+| pattern-analyzer | lightweight model | automatic | pattern detection, cost control. Same as above |
+| expectation-auditor | lightweight model | automatic | comparative analysis, cost control. Same as above |
+| drift-detector | lightweight model | automatic | drift detection, cost control. Same as above |
+| integration agent | lightweight model | automatic | report generation, cost control. Same as above |
 
-**Important**: 全エージェントを自動実行モードで起動すること。バックグラウンドエージェントは権限プロンプトでブロックされるとファイル書き込みが完全に失敗する。
+**Important**: launch every agent in automatic execution mode. A background agent that gets blocked by a permission prompt fails to write its file entirely.

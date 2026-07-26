@@ -1,13 +1,13 @@
-# AP5 POSITIVE — TDD 逸脱の候補（判定は UNCERTAIN 止まり）
+# AP5 POSITIVE — a TDD deviation candidate (the verdict stops at UNCERTAIN)
 
-## シナリオ
+## Scenario
 
-- コミット順: `feat: add discount calc`（実装のみ、テストなし）→ 3 コミット後に
-  `test: add discount tests`（テスト追加）。
-- cycle の RED/GREEN 実行ログは**存在しない**。
+- Commit order: `feat: add discount calc` (implementation only, no tests) → 3 commits later,
+  `test: add discount tests` (tests added).
+- A cycle RED/GREEN execution log **does not exist**.
 
-## 期待される扱い
+## Expected handling
 
-- git 履歴だけが根拠なので **UNCERTAIN**（squash / rebase で順序は崩れうる）。
-- CONFIRMED に昇格するには cycle の RED/GREEN 実行ログが必要。
-- 「現在このテストが有効か」は別軸として層 1・層 2 で正当に評価する（後付けでも有効なら価値がある）。
+- git history is the only grounds, so **UNCERTAIN** (squash / rebase can distort the order).
+- Promotion to CONFIRMED requires a cycle RED/GREEN execution log.
+- "Is this test effective now" is a separate axis and is evaluated fairly by layers 1 and 2 (a test written after the fact still has value if it is effective).

@@ -1,95 +1,96 @@
-# Scanner Integration — ecosystem scanner の実行と degradation
+# Scanner Integration — running an ecosystem scanner, and degradation
 
-既知脆弱性の照合は ecosystem scanner が正本。本ファイルは「存在検出 → 実行 → 構造化出力の解釈 →
-不在時 unsupported」の graceful degradation フローと、隔離実行の前提を定義する。
-評価範囲は [coverage-ledger.md](../../shared/references/coverage-ledger.md) に記録する。
+The ecosystem scanner is the canon for matching known vulnerabilities. This file defines the graceful
+degradation flow of "detect presence → run → interpret the structured output → unsupported when absent",
+and the prerequisites for isolated execution.
+Record the evaluation scope in [coverage-ledger.md](../../shared/references/coverage-ledger.md).
 
-## エコシステム別 scanner
+## Scanners by ecosystem
 
-| エコシステム | scanner（例） | 出力 | 備考 |
+| Ecosystem | Scanner (example) | Output | Notes |
 |-------------|--------------|------|------|
-| npm / pnpm / yarn | `npm audit --json` / osv-scanner | JSON | lockfile 必須 |
+| npm / pnpm / yarn | `npm audit --json` / osv-scanner | JSON | lockfile required |
 | Rust / cargo | `cargo audit --json` | JSON | RustSec advisory DB |
 | Python | `pip-audit -f json` / osv-scanner | JSON | requirements / lock |
-| Go | `govulncheck -json` / osv-scanner | JSON | 到達可能性解析付き |
-| 汎用 | `osv-scanner --format json` | JSON | 複数エコシステム横断 |
+| Go | `govulncheck -json` / osv-scanner | JSON | includes reachability analysis |
+| Generic | `osv-scanner --format json` | JSON | spans several ecosystems |
 
-具体的なコマンド名はプラットフォーム・環境に依存する。ここでは「advisory DB と照合する scanner を
-シェルコマンドで実行し、構造化出力を解釈する」という抽象手順を定義する。
+The concrete command names depend on the platform and the environment. What is defined here is the abstract
+procedure: "run a scanner that matches against an advisory DB with a shell command, and interpret its structured output".
 
-## degradation フロー
+## The degradation flow
 
 ```
-1. 存在検出: scanner バイナリと advisory DB / ネットワークが利用可能か確認する
-     └ 無い → その照合を coverage ledger の `unsupported` に載せる（何があれば昇格するか併記）。エージェントは代替判定しない
-2. 実行: scanner の動作種別を判定し、下記「隔離実行」の条件を満たす環境で実行する
-3. 構造化出力の解釈: JSON を読み、advisory ID・深刻度・影響バージョン・修正版を抽出する
-4. 相関へ受け渡し: 抽出した事実に、依存経路・dev/prod・到達可能性を重ねて優先順位付けする
-     （優先順位付けはエージェント、脆弱性の存在判定は scanner が正本）
+1. Detect presence: check whether the scanner binary and the advisory DB / network are available
+     └ absent → put that match into `unsupported` in the coverage ledger (noting what would promote it). The agent never substitutes its own verdict
+2. Run: determine the scanner's behavior class and run it in an environment satisfying the "isolated execution" conditions below
+3. Interpret the structured output: read the JSON and extract advisory IDs, severities, affected versions, and fixed versions
+4. Hand over to correlation: overlay dependency path, dev/prod, and reachability onto the extracted facts and prioritize
+     (prioritization belongs to the agent; the scanner is the canon for whether a vulnerability exists)
 ```
 
-- **scanner の結果を書き換えない**: エージェントは advisory の真偽を判断しない。scanner が「脆弱」と言えば脆弱、
-  出せなければ `unsupported`。false positive の可能性を注記するのは可だが、判定を覆さない。
-- **ネットワーク不可**: advisory DB へアクセスできない環境では既知脆弱性照合は成立しない → `unsupported`。
-  ローカルにキャッシュされた DB があればそのスナップショット時点である旨を注記して `reviewed`（鮮度は注記）。
+- **Never rewrite the scanner's results**: the agent does not judge whether an advisory is true. If the scanner says
+  "vulnerable", it is vulnerable; if it cannot report, it is `unsupported`. Noting the possibility of a false positive is fine, but never overturn the verdict.
+- **No network**: in an environment with no access to the advisory DB, known-vulnerability matching does not hold → `unsupported`.
+  If a locally cached DB exists, it is `reviewed` with a note that it reflects that snapshot (note the freshness).
 
-## 隔離実行（install script を走らせない）
+## Isolated execution (do not run install scripts)
 
-scanner をまず次の 2 種に分類する。コマンド名だけで決めず、help / 公式仕様または隔離観測で確認する。
+First classify the scanner into these 2 kinds. Do not decide from the command name alone — confirm from the help output, the official specification, or an isolated observation.
 
-- **audit-only**: 既存 manifest / lockfile を読み、advisory DB と照合するだけで依存解決・hook 実行をしない。
-- **再解決型**: パッケージ取得・依存解決・build / lifecycle hook を起動し得る。
+- **audit-only**: reads the existing manifest / lockfile and only matches against the advisory DB; performs no dependency resolution and runs no hooks.
+- **re-resolving**: may fetch packages, resolve dependencies, and trigger build / lifecycle hooks.
 
-共通して次を前提とする。
+The following are prerequisites for both.
 
-- **script 無効化**: 再解決型は `--ignore-scripts` 相当で lifecycle script を止める。audit-only は、
-  hook を実行しないことを仕様または隔離観測で確認できれば当該オプションを要求しない。
-- **隔離**: 書き込みを対象外へ閉じ込める。ネットワークは advisory DB / registry metadata の読取先だけを
-  許可し、package の install script や取得物を実行しない。必要な接続先を限定できなければオフラインの
-  cache / DB を使い、その鮮度を注記する。どちらも成立しなければ `unsupported`。
-- **出力先を対象ツリー外にする**: scanner の stdout/stderr・JSON 出力・ログは、レビュー対象ディレクトリの
-  **外**（作業用スクラッチ領域）へ書く。対象ツリー内へのリダイレクト（`> audit.json` 等を対象ディレクトリで
-  実行する、`--output` を対象配下に向ける）は read-only 契約違反になる。カレントディレクトリを対象ツリーに
-  置いたままリダイレクトすると一時ファイルが残るため、出力パスは常に対象外の絶対パスで指定する。
-- **無効化できないとき**: そのスキャンは**実行せず** `unsupported` に倒す（レビューのために任意コードを走らせない）。
-- lockfile / manifest の静的解析（[supply-chain-signals.md](supply-chain-signals.md) の述語）は
-  コードを実行しないため、scanner が使えない環境でも成立する。scanner 不在時の主戦力はこちら。
+- **Disable scripts**: a re-resolving scanner stops lifecycle scripts with the equivalent of `--ignore-scripts`. An audit-only
+  scanner does not require that option if you can confirm from the specification or an isolated observation that it runs no hooks.
+- **Isolation**: confine writes outside the target. Allow the network only to read the advisory DB / registry metadata, and
+  never execute a package's install script or fetched artifacts. If you cannot restrict the destinations, use an offline
+  cache / DB and note its freshness. If neither holds, it is `unsupported`.
+- **Put the output outside the target tree**: the scanner's stdout/stderr, JSON output, and logs go **outside** the directory
+  under review (a scratch working area). Redirecting into the target tree (running `> audit.json` and the like in the target
+  directory, or pointing `--output` under it) violates the read-only contract. Redirecting while the current directory is still
+  inside the target tree leaves temporary files behind, so always specify the output path as an absolute path outside the target.
+- **When it cannot be disabled**: **do not run** that scan and fall back to `unsupported` (never run arbitrary code for the sake of a review).
+- Static analysis of the lockfile / manifest (the predicates of [supply-chain-signals.md](supply-chain-signals.md)) does not
+  execute code, so it holds even where a scanner is unavailable. It is the main force when no scanner is present.
 
-## 構造化出力の最小スキーマ（解釈の指針）
+## The minimum schema of the structured output (interpretation guidance)
 
-scanner JSON から最低限拾う項目（実 API のフィールドは scanner ごとに異なるため、
-[coverage-ledger.md](../../shared/references/coverage-ledger.md) に「解釈できなかったフィールド」を残す）:
+The minimum items to pick out of the scanner JSON (the actual fields differ per scanner, so leave
+"the fields that could not be interpreted" in [coverage-ledger.md](../../shared/references/coverage-ledger.md)):
 
-- advisory ID（照合の一意キー）
-- 深刻度（scanner の分類。severity へのマップは下記「深刻度のマッピング」に従う）
-- 影響パッケージ名 / バージョン範囲 / 修正版
-- 依存経路（direct / transitive。scanner が出さなければエージェントが lockfile から補完する）
+- advisory ID (the unique key for matching)
+- severity (the scanner's classification. The map to severity follows "Severity mapping" below)
+- affected package name / version range / fixed version
+- dependency path (direct / transitive. When the scanner does not emit it, the agent fills it in from the lockfile)
 
-## 深刻度のマッピング（scanner の分類 → 重大度）
+## Severity mapping (the scanner's classification → severity)
 
-scanner の深刻度ラベル（critical / high / moderate / low / info 等、体系は scanner ごとに異なる）を
-[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) の BLOCK / WARN / INFO へ写像する。
+Map the scanner's severity labels (critical / high / moderate / low / info, etc.; the system differs per scanner) onto the
+BLOCK / WARN / INFO of [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md).
 
-**所有権**: 「脆弱性が存在するか」の判定は scanner が正本でエージェントは覆さない。一方
-「重大度（BLOCK/WARN/INFO）」は、存在を前提に**到達可能性・dev/prod を重ねた相関判断**であり
-エージェントが所有する。scanner の深刻度ラベルは**出発点**として使い、調整したら理由を注記する。
+**Ownership**: the verdict of "does a vulnerability exist" is canonical to the scanner and the agent never overturns it.
+"Severity (BLOCK/WARN/INFO)", on the other hand, is a **correlation judgment overlaying reachability and dev/prod** on top of
+existence, and the agent owns it. Use the scanner's severity label as **the starting point**, and note the reason whenever you adjust it.
 
-**既定の出発点**（調整前）:
+**The default starting point** (before adjustment):
 
-| scanner 深刻度 | 出発点の重大度 |
+| Scanner severity | Starting severity |
 |---------------|---------------|
 | critical / high | BLOCK |
 | moderate | WARN |
 | low / info | INFO |
 
-**調整ルール**（出発点から上下させる根拠。適用したら finding に理由を書く）:
+**Adjustment rules** (grounds for moving up or down from the starting point. Write the reason into the finding whenever applied):
 
-- **dev-only 依存で prod ランタイム非到達**が確認できる → 1 段下げる（例: critical の devDependency → WARN）。
-  非到達を確認できない場合は下げない（保守的に据え置く）。
-- **install-time 発火**（postinstall / build.rs 等、import されなくても `install` で走る）→ 下げない。
-  コード到達可能性に関係なく発火するため、dev/prod による減衰を適用しない。
-- **任意コード実行・認証情報の外部送出・既知 malware** → scanner 深刻度に関わらず **BLOCK 固定**（下げない）。
-- 修正版が存在しない（`fixAvailable=false` 等）ことは重大度を上げる要素ではないが、対応困難として注記する。
+- **A dev-only dependency confirmed unreachable from the prod runtime** → lower by one step (e.g. a critical devDependency → WARN).
+  When unreachability cannot be confirmed, do not lower it (stay conservative).
+- **Fires at install time** (postinstall, build.rs, etc.; runs on `install` even without being imported) → do not lower.
+  It fires regardless of code reachability, so no dev/prod attenuation applies.
+- **Arbitrary code execution, exfiltration of credentials, or known malware** → **fixed at BLOCK** regardless of the scanner severity (never lower).
+- The absence of a fixed version (`fixAvailable=false`, etc.) is not a reason to raise the severity, but note it as hard to remediate.
 
-深刻度を写像できない（scanner が独自ラベルを出す等）場合は、その旨を
-[coverage-ledger.md](../../shared/references/coverage-ledger.md) に残し、出発点表に最も近い段を注記付きで使う。
+When the severity cannot be mapped (the scanner emits its own labels, etc.), leave a note to that effect in
+[coverage-ledger.md](../../shared/references/coverage-ledger.md), and use the nearest step of the starting-point table with a note.
