@@ -35,7 +35,7 @@ The leading keyword of $ARGUMENTS selects the workflow:
 ### Phase 1: Requirements
 
 1. **Confirm the intended audience** (mandatory question)
-   - Always ask the user: 「このドキュメントの想定読者は誰ですか？（例: 自分用メモ / チームメンバー / 外部発表）」
+   - Always ask the user: "who is the intended reader of this document? (for example: notes for yourself / a team member / an external presentation)"
    - Adjust granularity and how much terminology you explain to that audience
 
 2. **Identify the theme**
@@ -50,8 +50,8 @@ The leading keyword of $ARGUMENTS selects the workflow:
      $ARGUMENTS or from the user)
    - **(c) Web research**: researching a given theme and documenting it
      - Judge the depth from context:
-       - 「調べて」「まとめて」 → light research (a few primary sources)
-       - 「徹底的に調べて」「深く調査して」 → deep research (comprehensive, multiple sources)
+       - "look it up", "summarize it" → light research (a few primary sources)
+       - "research it thoroughly", "investigate it deeply" → deep research (comprehensive, multiple sources)
      - **When web research fails**: notify the user and propose switching to manual input
 
 4. **Select the template automatically**
@@ -78,16 +78,16 @@ The leading keyword of $ARGUMENTS selects the workflow:
 
 1. Show an outline of the generated document:
    ```
-   📄 ドキュメントを生成しました: docs/writings/{slug}.md
+   📄 Document generated: docs/writings/{slug}.md
 
-   ## 構成
-   {見出し一覧}
+   ## Structure
+   {the list of headings}
 
-   修正・追加したい点はありますか？（「OK」で確定）
+   Anything to change or add? (reply OK to confirm)
    ```
 2. Take the user's feedback
 3. If there is feedback, revise and confirm again (loop)
-4. End the loop on 「OK」「問題ない」「大丈夫」 or similar
+4. End the loop on "OK", "looks good", "fine" or similar
 5. Completion message. Lead with a summary block per the
    [human-readable summary contract](../shared/references/human-readable-summary.md),
    summary-first, stating in one plain line what this document explains (the outline was
@@ -96,7 +96,7 @@ The leading keyword of $ARGUMENTS selects the workflow:
    ```
    📝 In short: {one plain line conveying what this document explains, reaching someone who has not read it}
 
-   ✅ ドキュメントを保存しました!
+   ✅ Document saved!
    📄 File: docs/writings/{slug}.md
    ```
 
@@ -116,7 +116,7 @@ The leading keyword of $ARGUMENTS selects the workflow:
    - A file path: load that file
    - A slug: load `docs/writings/{slug}.md`
    - Nothing specified: list the files under `docs/writings/` and have the user choose
-   - `docs/writings/` does not exist, or holds no files: show 「まだドキュメントがありません」 and stop
+   - `docs/writings/` does not exist, or holds no files: state that no document exists yet and stop
    - The specified file does not exist: show the file list under `docs/writings/` and exit
      with an error
 
@@ -124,11 +124,11 @@ The leading keyword of $ARGUMENTS selects the workflow:
 
 3. Summarise the document and show it:
    ```
-   📄 ドキュメント "{title}" を読み込みました。
-   👥 想定読者: {audience}
-   📝 テンプレート: {template}
+   📄 Loaded the document "{title}".
+   👥 Intended reader: {audience}
+   📝 Template: {template}
 
-   何を修正・追加しますか？
+   What would you like to change or add?
    ```
 
 4. Take the user's revision instructions

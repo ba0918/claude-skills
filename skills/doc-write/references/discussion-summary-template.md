@@ -8,32 +8,32 @@ updated: "{{YYYY-MM-DD HH:MM:SS}}"
 
 # {{TITLE}}
 
-## 概要
+## Overview
 
-{{議論の目的と結論の要約}}
+{{a summary of the discussion's purpose and its conclusion}}
 
-## 議論の経緯
+## How the discussion went
 
-{{主要な論点とその展開}}
+{{the main points and how they developed}}
 
-### 論点 1: {{テーマ}}
+### Point 1: {{theme}}
 
-{{議論の内容、賛否、結論}}
+{{the substance of the discussion, the arguments for and against, the conclusion}}
 
-### 論点 2: {{テーマ}}
+### Point 2: {{theme}}
 
-{{議論の内容、賛否、結論}}
+{{the substance of the discussion, the arguments for and against, the conclusion}}
 
-## 合意事項
+## What was agreed
 
-- {{合意した内容}}
+- {{the agreed content}}
 
-## 未解決事項
+## What remains open
 
-- {{残った課題や次回持ち越しの論点}}
+- {{the remaining issues and the points carried over}}
 
-## アクションアイテム
+## Action items
 
-| アクション | 担当 | 期限 |
+| Action | Owner | Due |
 |-----------|------|------|
-| {{内容}} | {{担当}} | {{期限}} |
+| {{content}} | {{owner}} | {{due}} |

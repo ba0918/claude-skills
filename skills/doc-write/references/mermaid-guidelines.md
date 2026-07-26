@@ -1,49 +1,49 @@
-# Mermaid 図ガイドライン
+# Mermaid diagram guidelines
 
-LLM が生成する Mermaid 図の品質を保つためのルール。
+The rules for keeping the quality of the Mermaid diagrams an LLM generates.
 
-## 基本ルール
+## Basic rules
 
-### ノード数制限
+### The node-count limit
 
-- **1つの図あたり最大 12 ノード** — これを超えると配置が崩壊しやすい
-- 12 ノードを超える場合は図を分割する
+- **At most 12 nodes per diagram** — beyond that, the layout tends to collapse
+- When it would exceed 12 nodes, split the diagram
 
-### 分割戦略
+### The splitting strategy
 
-- レイヤーごとに図を分ける（例: アーキテクチャ全体図 + 各レイヤー詳細図）
-- フロー図が長い場合はフェーズごとに分割する
-- 分割した図には連番とタイトルを付ける（例: `図1: 全体フロー`, `図2: 認証フェーズ詳細`）
+- Split the diagram by layer (for example, a whole-architecture diagram + a detail diagram per layer)
+- When a flow diagram runs long, split it by phase
+- Give the split diagrams sequential numbers and titles (for example, `Figure 1: the overall flow`, `Figure 2: the authentication phase in detail`)
 
-### ラベル短縮
+### Shortening labels
 
-- ノードラベルは **最大 20 文字** を目安にする
-- 長い説明はノードの外（テキスト説明）に書く
-- 略語は初出時に正式名称を併記する
+- Aim for **at most 20 characters** in a node label
+- Write long explanations outside the node (in the surrounding text)
+- Give the full name alongside an abbreviation at its first appearance
 
-## 図の種類と使い分け
+## The kinds of diagram and when to use them
 
-| 図の種類 | 用途 | 推奨ノード数 |
+| Diagram kind | Purpose | Recommended node count |
 |----------|------|-------------|
-| `flowchart` | プロセス・ワークフロー | 5-10 |
-| `sequenceDiagram` | API・コンポーネント間のやり取り | 3-6 参加者 |
-| `classDiagram` | データモデル・クラス構造 | 4-8 |
-| `stateDiagram-v2` | 状態遷移 | 4-8 |
-| `erDiagram` | DB スキーマ | 4-8 |
-| `graph TD` | 依存関係・階層構造 | 6-12 |
+| `flowchart` | A process or workflow | 5-10 |
+| `sequenceDiagram` | Exchanges between APIs or components | 3-6 participants |
+| `classDiagram` | A data model or class structure | 4-8 |
+| `stateDiagram-v2` | State transitions | 4-8 |
+| `erDiagram` | A DB schema | 4-8 |
+| `graph TD` | Dependencies or a hierarchy | 6-12 |
 
-## アンチパターン
+## Anti-patterns
 
-- ノード内に改行や長文を入れない
-- サブグラフの入れ子は 2 階層まで
-- 矢印のラベルは最小限（ラベルなしで意味が通るなら省略）
-- 色分けは 3-4 色まで（多すぎると逆にわかりづらい）
+- Do not put a line break or a long sentence inside a node
+- Nest subgraphs at most 2 levels deep
+- Keep arrow labels minimal (omit one when the meaning carries without it)
+- Use at most 3-4 colors (too many makes it harder to read, not easier)
 
-## 検証ポイント
+## Verification points
 
-生成後に以下をセルフチェック:
+After generating, self-check the following:
 
-1. ノード数が制限内か
-2. ラベルが短く読みやすいか
-3. 図だけで大意が伝わるか（詳細はテキストに委ねてよい）
-4. Mermaid の構文エラーがないか
+1. Is the node count within the limit?
+2. Are the labels short and readable?
+3. Does the diagram alone convey the gist (the details may be left to the text)?
+4. Are there any Mermaid syntax errors?
