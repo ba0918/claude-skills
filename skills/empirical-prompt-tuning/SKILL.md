@@ -5,218 +5,218 @@ description: agent 向けテキスト指示（skill / slash command / task プ�
 
 # Empirical Prompt Tuning
 
-プロンプトの品質は書いた本人には分からない。書き手が「明瞭だ」と思うものほど、別エージェントが読むと詰まる。**バイアスを排した 3 役分離で実際に動かし、固定タクソノミと純関数で評価して反復する** のが本 skill の核。改善が頭打ちになるまで止めない。
-## いつ使うか
+The quality of a prompt is invisible to the person who wrote it. The very passages the author considers "clear" are where another agent gets stuck. The core of this skill is to **actually run it under an unbiased 3-role separation, evaluate with a fixed taxonomy and pure functions, and iterate**. Do not stop until improvement plateaus.
+## When to Use
 
-- skill / slash command / タスクプロンプトを新規作成・大幅改訂した直後
-- エージェントが期待通り動かず、原因を指示側の曖昧さに求めたいとき
-- 重要度の高い指示（頻繁に使う skill、自動化の中核プロンプト）を堅牢化したいとき
-- CLAUDE.md 節 / rules が実際に守られているか確認したいとき
+- Right after newly creating or substantially revising a skill / slash command / task prompt
+- When an agent does not behave as expected and you want to trace the cause to ambiguity on the instruction side
+- When you want to harden a high-importance instruction (a frequently used skill, a prompt at the core of automation)
+- When you want to confirm that a CLAUDE.md section / rules are actually being followed
 
-使わない場面:
-- 一回限りの使い捨てプロンプト（評価コストが割に合わない）
-- 成功率の改善が目的ではなく、書き手の主観的好みを反映したいだけのとき
+When not to use:
+- A one-off throwaway prompt (the evaluation cost does not pay off)
+- When the goal is not improving the success rate but merely reflecting the author's subjective taste
 
-## 対象タイプの判定（最初に行う）
+## Determining the Target Type (do this first)
 
-| 対象の性質 | eval_strategy | 評価手法 |
+| Nature of the target | eval_strategy | Evaluation method |
 |-----------|---------------|----------|
-| 実行すると成果物が生まれる（skill / command / task） | `task_scenario` | タスクシナリオ実行 |
-| 行動を制約する（rules / CLAUDE.md 節 / ガイドライン） | `compliance_probe` | 違反誘惑シナリオで遵守率測定 |
+| Running it produces an artifact (skill / command / task) | `task_scenario` | run task scenarios |
+| It constrains behavior (rules / CLAUDE.md sections / guidelines) | `compliance_probe` | measure the compliance rate with violation-tempting scenarios |
 
-迷ったら `task_scenario`。詳細は [references/compliance-probe.md](references/compliance-probe.md)。
+When in doubt, use `task_scenario`. Details in [references/compliance-probe.md](references/compliance-probe.md).
 
-## ワークフロー
+## Workflow
 
-### Iteration 0 — description と body の整合チェック（静的、dispatch 不要）
+### Iteration 0 — description/body consistency check (static, no dispatch)
 
-- frontmatter `description` が謳う trigger / 用途と body がカバーする範囲を突合
-- 乖離があれば iter 1 に進む前に description か body を合わせる
-- これを飛ばすと実行者は description に合わせて body を「再解釈」し、false positive が出る
+- Cross-check the triggers / use cases the frontmatter `description` claims against the range the body covers
+- If they diverge, align either the description or the body before moving on to iter 1
+- Skip this and the executor "reinterprets" the body to match the description, producing false positives
 
-### Phase 1 — ベースライン準備
+### Phase 1 — Baseline preparation
 
-1. **対象プロンプトを確定**し、`compute_instruction_fingerprint()` で fingerprint を記録
-2. **評価シナリオ** 2〜3 種を設計:
-   - `task_scenario`: 中央値タスク 1 + edge 1〜2
-   - `compliance_probe`: 違反誘惑シナリオ 1〜2 + 正常遵守 1（詳細は [compliance-probe.md](references/compliance-probe.md)）
-3. **要件チェックリスト** を各シナリオに 3〜7 項目で設計:
-   - `[critical]` を最低 1 つ含める（0 件だと成功判定が vacuous になる）
-   - 要件は観測可能な形で書く（「正しく動く」ではなく具体的な検証条件）
-   - **事前に固定し、以後動かさない**
-4. **到達可能性を検算**（工程 / 環境 / 契約整合の 3 軸、詳細は [requirement-reachability.md](references/requirement-reachability.md)）:
-   - 要件表より先に、この環境でワークフローを止めうる停止条件を列挙する
-   - 到達不能な要件を残すと、指示どおり振る舞った実行者が減点され、測定が無効になる
-5. シナリオ + チェックリストを JSON 正規化して **sha256 をロック**（`verify_checklist_integrity()`）。
-   プロンプト側で到達性を解除する設計を採った場合は prompt もハッシュ対象に含める
+1. **Fix the target prompt** and record its fingerprint with `compute_instruction_fingerprint()`
+2. **Design 2-3 evaluation scenarios**:
+   - `task_scenario`: 1 median task + 1-2 edge cases
+   - `compliance_probe`: 1-2 violation-tempting scenarios + 1 normal-compliance scenario (details in [compliance-probe.md](references/compliance-probe.md))
+3. **Design a requirement checklist** of 3-7 items per scenario:
+   - Include at least one `[critical]` (with zero, the success verdict becomes vacuous)
+   - Write each requirement in observable form (not "works correctly" but a concrete verification condition)
+   - **Fix them in advance and never move them afterwards**
+4. **Verify reachability** (3 axes: process / environment / contract consistency; details in [requirement-reachability.md](references/requirement-reachability.md)):
+   - Before the requirement table, enumerate the stop conditions that could halt the workflow in this environment
+   - Leaving an unreachable requirement penalizes an executor that behaved exactly as instructed, invalidating the measurement
+5. Normalize the scenarios + checklist to JSON and **lock the sha256** (`verify_checklist_integrity()`).
+   If the design releases reachability on the prompt side, include the prompt in the hash target as well
 
-### Phase 2 — 実行（3 役分離）
+### Phase 2 — Execution (3-role separation)
 
-**2a. 実行者 サブエージェント を dispatch**
+**2a. Dispatch the executor subagent**
 
-新規サブエージェントを毎回作成する（前回の改善を学習したエージェントは再利用しない）。並列で複数シナリオを同時実行する場合は単一メッセージ内で複数サブエージェント呼び出しを並べる。
-
-```
-あなたは <対象プロンプト名> を白紙で読む実行者です。
-
-## 対象プロンプト
-<対象プロンプトの本文を全文貼る or ファイルパスを指定して読ませる>
-
-## シナリオ
-<シナリオの状況設定>
-
-## タスク
-1. 対象プロンプトに従ってシナリオを実行し、成果物を生成する。
-2. 終了時に下記レポートを返す。
-
-## 摩擦報告
-指示で詰まった箇所を以下の分類で報告してください:
-- ambiguous_term: 複数解釈可能な語句
-- missing_premise: 暗黙の前提知識が必要
-- contradictory: 指示間の矛盾
-- over_specified: 不必要に厳密
-- rationalization_hook: 合理化で回避できる指示
-- self_containment_gap: 外部参照なしでは完結しない
-
-## レポート構造
-- 成果物: <生成物 or 実行結果サマリ>
-- 摩擦: [{ "category": "<分類>", "detail": "<詳細>" }, ...]
-- 裁量補完: 指示で決まっておらず自分の判断で埋めた箇所（箇条書き）
-- 再試行: 同じ判断をやり直した回数とその理由
-```
-
-> **注意**: 要件チェックリストは実行者に渡さない。自己採点バイアスの排除。
-
-**2b. Checker サブエージェント を dispatch**
-
-実行者とは別の新規 サブエージェント。詳細は [references/checker-protocol.md](references/checker-protocol.md)。
+Create a new subagent every time (never reuse an agent that has learned the previous improvement). To run multiple scenarios in parallel, line up multiple subagent invocations inside a single message.
 
 ```
-あなたは独立した採点者です。成果物が要件チェックリストを満たしているかを判定します。
+You are an executor reading <target prompt name> with fresh eyes.
 
-## 成果物
-<実行者の成果物>
+## Target prompt
+<paste the full body of the target prompt, or give a file path to read>
 
-## 要件チェックリスト
-<要件一覧>
+## Scenario
+<the situational setup of the scenario>
 
-## タスク
-各要件を pass/fail/partial で採点し、根拠を 1 行添えて JSON で返してください。
+## Task
+1. Follow the target prompt to execute the scenario and produce the artifact.
+2. Return the report below when you finish.
+
+## Friction report
+Report the places where the instructions tripped you up, using these categories:
+- ambiguous_term: wording open to multiple interpretations
+- missing_premise: implicit background knowledge is required
+- contradictory: contradiction between instructions
+- over_specified: unnecessarily strict
+- rationalization_hook: an instruction that can be dodged by rationalizing
+- self_containment_gap: does not stand alone without external references
+
+## Report structure
+- artifact: <the produced output or a summary of the execution result>
+- friction: [{ "category": "<category>", "detail": "<detail>" }, ...]
+- discretionary fills: places the instructions left undecided that you filled in with your own judgment (bulleted)
+- retries: how many times you redid the same decision, and why
 ```
 
-> **注意**: 対象プロンプト本文は checker に渡さない。プロンプトへの甘い解釈を排除。
+> **Note**: do not hand the requirement checklist to the executor. This removes self-scoring bias.
 
-### Phase 3 — 両面評価
+**2b. Dispatch the checker subagent**
 
-戻ってきた結果から以下を記録（`iterations.jsonl` に append）:
-
-**checker の採点（定量）:**
-- 成功/失敗: `[critical]` 要件が全 pass のとき成功
-- 精度: `pass=1.0, partial=0.5, fail=0.0` で算出、要件数で割る
-- 失敗時は「どの [critical] 要件が落ちたか」を記録
-
-**実行者の自己申告（定性）:**
-- 摩擦報告（固定タクソノミで分類済み。詳細は [friction-taxonomy.md](references/friction-taxonomy.md)）
-- 裁量補完箇所
-- 再試行回数
-
-**実行メトリクス:**
-- ステップ数（ツール使用回数 `tool_uses`）
-- 所要時間（`duration_ms`）
-
-**収束判定:**
-- `convergence.py` の `resolve_exit_verdict()` を呼び、verdict を記録
-
-**重み付け**: 摩擦報告（定性）を主、メトリクス（定量）を補助とする。時間短縮だけ追いかけるとプロンプトが痩せすぎる。
-
-### Phase 4 — 差分適用
-
-不明瞭点を潰す最小修正をプロンプトに入れる。1 イテレーション 1 テーマ（関連する複数修正は OK、無関係な修正は次回に回す）。
-
-修正前に:
-1. **この修正が要件チェックリストのどの項目に効くか**を明示する
-2. **checklist の sha256 が変わっていないこと**を `verify_checklist_integrity()` で verify
-
-### Phase 5 — 再評価
-
-新しい サブエージェント で Phase 2〜4 を繰り返す。`exit_verdict` が `continue` 以外になるまで回す。
-
-## k-run 統計的採択ゲート
-
-デフォルトは k=1（原本互換、コスト最小）。精密な評価が必要な場合:
+A new subagent, separate from the executor. Details in [references/checker-protocol.md](references/checker-protocol.md).
 
 ```
---k-run 2   # 各シナリオ 2 並列実行
+You are an independent grader. Judge whether the artifact satisfies the requirement checklist.
+
+## Artifact
+<the executor's artifact>
+
+## Requirement checklist
+<the list of requirements>
+
+## Task
+Grade each requirement as pass/fail/partial, attach a one-line rationale, and return JSON.
 ```
 
-- k≥2 の場合、各シナリオの precision を k 回測定し中央値を採用
-- 改善判定: 前回中央値と今回中央値の差が noise_band（run 間差の半分）を超えたときのみ「改善」と認定
-- 「運が良かった run」での誤採択を機械的に排除
+> **Note**: do not hand the target prompt body to the checker. This removes lenient interpretation of the prompt.
 
-**非劣化 A/B（baseline と候補を並べる形）のゲートは差分形式で書く。**
+### Phase 3 — Two-sided evaluation
+
+Record the following from the returned results (append to `iterations.jsonl`):
+
+**Checker grading (quantitative):**
+- success/failure: success when every `[critical]` requirement passes
+- precision: computed as `pass=1.0, partial=0.5, fail=0.0`, divided by the requirement count
+- on failure, record which [critical] requirement was dropped
+
+**Executor self-report (qualitative):**
+- the friction report (already classified with the fixed taxonomy; details in [friction-taxonomy.md](references/friction-taxonomy.md))
+- the discretionary fills
+- the retry count
+
+**Execution metrics:**
+- step count (tool invocation count, `tool_uses`)
+- elapsed time (`duration_ms`)
+
+**Convergence verdict:**
+- Call `resolve_exit_verdict()` in `convergence.py` and record the verdict
+
+**Weighting**: the friction report (qualitative) is primary, the metrics (quantitative) are supporting. Chasing time reduction alone starves the prompt.
+
+### Phase 4 — Applying the diff
+
+Put the minimal fix that removes the ambiguity into the prompt. One theme per iteration (multiple related fixes are fine; unrelated fixes wait for the next round).
+
+Before fixing:
+1. State **which checklist item this fix acts on**
+2. Verify with `verify_checklist_integrity()` that **the checklist sha256 has not changed**
+
+### Phase 5 — Re-evaluation
+
+Repeat Phase 2-4 with a new subagent. Keep going until `exit_verdict` is anything other than `continue`.
+
+## k-run Statistical Acceptance Gate
+
+The default is k=1 (compatible with the original, minimal cost). When a precise evaluation is needed:
 
 ```
-NG: 候補アームで critical が pass すること
-OK: baseline が pass していた critical を候補が落としていないこと
+--k-run 2   # run each scenario twice in parallel
 ```
 
-絶対述語で書くと、baseline 自身がその critical を落としている場合に候補が何であっても成立せず、
-**定数 false を返して候補を弁別しなくなる**。baseline の欠陥を候補の責任にしないこと
-（実測と判別基準は [requirement-reachability.md](references/requirement-reachability.md)
-「判定ルールの誤りは『緩和』ではない」節）。
+- With k≥2, measure each scenario's precision k times and take the median
+- Improvement verdict: count it as "improved" only when the gap between the previous and current medians exceeds the noise_band (half the run-to-run difference)
+- Mechanically rules out false acceptance on a "lucky run"
 
-## Protocol failure と candidate failure の分離
+**Write the gate for non-degradation A/B (baseline and candidate side by side) in differential form.**
 
-checker/harness 側の逸脱（malformed 出力、要件と grade の不整合、成果物以外を
-読みに行った isolation_violation、統合 fixture で入力範囲が欠落した
-input_range_violation 等）は **candidate failure と混同しない**。
+```
+NG: the critical requirement passes in the candidate arm
+OK: the candidate does not drop a critical that the baseline was passing
+```
 
-- 逸脱を検出したら `scenarios[].harness_error` に type と detail を記録し、
-  当該 iteration の precision 集計・収束/発散判定から除外する
-- `resolve_exit_verdict()` は `halt` を返し、`halt_reason` は
-  `checker_protocol_failure` になる
-- 検証用純関数: [scripts/convergence.py](scripts/convergence.py) の
-  `validate_input_range()`（dispatch 直前）/ `validate_checker_output()`（返答後）/
-  `has_protocol_failure()`（記録後）。分類は全て純関数側が emit するので
-  harness で自前検出を書かない
-- 詳細と分類は [references/checker-protocol.md](references/checker-protocol.md)
-  「Protocol failure と candidate failure の分離」節を参照
+Written as an absolute predicate, it never holds when the baseline itself drops that critical, whatever the
+candidate is — **it returns constant false and stops discriminating between candidates**. Do not make the
+baseline's defect the candidate's responsibility (measurements and the discrimination criteria are in
+[requirement-reachability.md](references/requirement-reachability.md), section 「判定ルールの誤りは『緩和』ではない」).
 
-統合 fixture（複数 artifact をまたぐ handoff 評価等）を扱う場合は、fixture 側で
-`input_range_required` を宣言し、harness は dispatch 直前に `validate_input_range()`
-で突合する。欠落があれば candidate failure ではなく `input_range_violation` として
-halt する。checker 返答の検証には `fixture_kind="integration"` を渡し、
-`isolation_note` の明示を必須にする。
+## Separating Protocol Failure from Candidate Failure
 
-## 収束判定（純関数 — `scripts/convergence.py`）
+Deviations on the checker/harness side (malformed output, inconsistency between requirement and grade,
+an isolation_violation where something other than the artifact was read, an input_range_violation where
+the input range was missing in an integration fixture, ...) **must not be confused with candidate failure**.
 
-判定はすべて `convergence.py` の純関数で行う。チューナーの主観判断は介入しない。
+- On detecting a deviation, record the type and detail in `scenarios[].harness_error` and
+  exclude that iteration from the precision aggregate and the convergence/divergence verdict
+- `resolve_exit_verdict()` returns `halt`, and `halt_reason` becomes
+  `checker_protocol_failure`
+- Verification pure functions, in [scripts/convergence.py](scripts/convergence.py):
+  `validate_input_range()` (just before dispatch) / `validate_checker_output()` (after the reply) /
+  `has_protocol_failure()` (after recording). Every classification is emitted by the pure functions, so
+  do not write your own detection in the harness
+- For details and the classification, see [references/checker-protocol.md](references/checker-protocol.md),
+  section 「Protocol failure と candidate failure の分離」
 
-| 判定 | 条件 | 優先順位 |
+When handling an integration fixture (a handoff evaluation spanning multiple artifacts, etc.), declare
+`input_range_required` on the fixture side, and have the harness cross-check it with `validate_input_range()`
+just before dispatch. If anything is missing, halt with `input_range_violation` rather than treating it as
+a candidate failure. Pass `fixture_kind="integration"` when validating the checker reply, which makes
+stating `isolation_note` mandatory.
+
+## Convergence Verdict (pure functions — `scripts/convergence.py`)
+
+Every verdict is produced by the pure functions in `convergence.py`. The tuner's subjective judgment never intervenes.
+
+| Verdict | Condition | Priority |
 |------|------|----------|
-| `halt` | max_iter / max_wallclock / kill_file / checklist_tampered | 最高 |
-| `diverged` | 同一摩擦カテゴリが threshold 回連続 | 高 |
-| `bloat_advisory` | prompt_bytes が前回比 max_growth_pct 超 | 中（advisory） |
-| `converged` | 連続 window 回で新規摩擦ゼロ + メトリクス飽和 | 低 |
-| `continue` | 上記いずれにも該当しない | 最低 |
+| `halt` | max_iter / max_wallclock / kill_file / checklist_tampered | highest |
+| `diverged` | the same friction category recurs threshold times in a row | high |
+| `bloat_advisory` | prompt_bytes exceeds max_growth_pct over the previous round | medium (advisory) |
+| `converged` | zero new friction for window consecutive rounds + metrics saturated | low |
+| `continue` | none of the above | lowest |
 
-パラメータ:
-- `window`: 2（連続クリア判定回数。重要度高は 3）
-- `precision_delta_eps`: 0.03（精度飽和の閾値）
-- `steps_tolerance_pct`: 0.10（ステップ数飽和の許容幅）
-- `duration_tolerance_pct`: 0.15（所要時間飽和の許容幅）
-- `max_iter`: 10（デフォルト。重要度高は 15 まで引き上げ可）
-- `max_wallclock`: 3600s（1 時間）
+Parameters:
+- `window`: 2 (number of consecutive clears required; 3 for high-importance targets)
+- `precision_delta_eps`: 0.03 (threshold for precision saturation)
+- `steps_tolerance_pct`: 0.10 (tolerance for step-count saturation)
+- `duration_tolerance_pct`: 0.15 (tolerance for elapsed-time saturation)
+- `max_iter`: 10 (default; can be raised to 15 for high-importance targets)
+- `max_wallclock`: 3600s (1 hour)
 
-## チェックリストのハッシュロック
+## Hash-locking the Checklist
 
-baseline 確定時に scenarios + requirements を JSON 正規化して sha256 を記録。毎 iteration 開始時に `verify_checklist_integrity()` で verify し、hash 不一致は `checklist_tampered` halt。
+When the baseline is fixed, normalize scenarios + requirements to JSON and record the sha256. At the start of every iteration, verify with `verify_checklist_integrity()`; a hash mismatch is a `checklist_tampered` halt.
 
-意図的にチェックリストを変更する場合は「baseline リセット」として iteration 0 からやり直す。これにより「修正が通らないからチェックリストを緩める」操作に明示的なコスト（全イテレーションの破棄）を課す。
+To change the checklist intentionally, treat it as a "baseline reset" and start over from iteration 0. This puts an explicit cost (discarding every iteration) on the move of "loosening the checklist because the fix will not pass".
 
-## 検収 fixture の資産化
+## Turning the Acceptance Fixture into an Asset
 
-収束完了時（`exit_verdict == "converged"`）、最終 iteration のシナリオ + [critical] 要件 + instruction fingerprint を可搬 JSON として出力:
+On convergence (`exit_verdict == "converged"`), emit the final iteration's scenarios + [critical] requirements + instruction fingerprint as portable JSON:
 
 ```json
 {
@@ -242,35 +242,35 @@ baseline 確定時に scenarios + requirements を JSON 正規化して sha256 �
 }
 ```
 
-出力先: `.claude/tmp/empirical/{ts}/fixture.json`
+Output: `.claude/tmp/empirical/{ts}/fixture.json`
 
-この fixture は:
-- 将来プロンプトを編集したとき、再実行して回帰検出に使える
-- 本リポジトリでは `skill-regression` の `fixtures.json` に手動移送可能（[fixture-schema.md](../skill-regression/references/fixture-schema.md) の変換ガイド参照）
+This fixture:
+- can be re-run for regression detection when the prompt is edited later
+- can be transferred by hand into `skill-regression`'s `fixtures.json` in this repository (see the conversion guide in [fixture-schema.md](../skill-regression/references/fixture-schema.md))
 
-## `tool_uses` の質的解釈
+## Qualitative Interpretation of `tool_uses`
 
-精度だけ見ると指示の構造的問題が隠れる。`tool_uses` を **シナリオ間の相対値** として使うと欠陥が見える:
+Looking at precision alone hides structural problems in the instructions. Using `tool_uses` as a **relative value across scenarios** makes the defects visible:
 
-- シナリオ間で他シナリオ比 **3-5 倍以上** なら、その指示は自己完結性が低いサイン
-- 典型例: 全シナリオ `tool_uses` が 1-3 なのに 1 シナリオだけ 15+ → そのシナリオ用の recipe が inline にない
-- 対処: iter 2 で「最小完成例 inline」や「いつ references を読むかの指針」を追加
+- **3-5x or more** than the other scenarios is a sign that instruction has low self-containment
+- Typical case: every scenario has `tool_uses` of 1-3 but one is 15+ → there is no inline recipe for that scenario
+- Remedy: in iter 2, add a "minimal complete example inline" or guidance on when to read the references
 
-精度 100% でも `tool_uses` の偏りがあれば iter 2 発動の根拠になる。
+Even at 100% precision, a skew in `tool_uses` is grounds for triggering iter 2.
 
-## 環境制約
+## Environment Constraints
 
-新規サブエージェントを起動できない環境では本 skill は **適用しない**。
-- 対象が重要度高で、ユーザーが別セッション起動や別エージェント依頼を明示的に許可しているなら、親セッションのユーザーに別セッションを起動して依頼する
-- それ以外、またはこのターンで評価を完了できない場合は、評価を諦め「empirical evaluation skipped: dispatch unavailable」と明示報告する
-- どちらの場合も評価結果・採点・収束判定・fixture は生成しない
-- **NG**: 自己再読で代替する（バイアスが入るので評価結果を信じてはいけない）
+**Do not apply** this skill in an environment where new subagents cannot be launched.
+- If the target is high-importance and the user has explicitly permitted launching another session or delegating to another agent, ask the user in the parent session to launch a separate session
+- Otherwise, or when the evaluation cannot be completed in this turn, give up on the evaluation and report explicitly: "empirical evaluation skipped: dispatch unavailable"
+- In either case, do not produce evaluation results, grades, convergence verdicts, or fixtures
+- **NG**: substituting a self-reread (bias creeps in, so the results must not be trusted)
 
-サブエージェントの起動上限（セッション累計で数え、完了しても枠は戻らない）に達した場合は、実行者 / checker を別プロセスへ外出しできる。3 役分離が要求するのは「独立した文脈でのモデル呼び出し」であってサブエージェントそのものではないため、成果物ファイルの有無と妥当性だけで合否を判定できるユニットに限り [process-delegation.md](../shared/references/process-delegation.md) のランナーで代替できる。work キューとプロンプトの生成（producer 側）はハーネスごとの責務であり、共有資産には含まれない。
+When the subagent launch cap is hit (counted cumulatively per session; a slot is not returned when one finishes), the executor / checker can be moved out into a separate process. What the 3-role separation requires is "a model invocation in an independent context", not a subagent as such, so the runner in [process-delegation.md](../shared/references/process-delegation.md) can substitute — but only for units whose pass/fail can be judged from the existence and validity of artifact files alone. Generating the work queue and the prompts (the producer side) is each harness's own responsibility and is not part of the shared assets.
 
-**構造審査モード**: 実行ではなくテキスト整合性だけをチェックしたい場合は、サブエージェント への依頼に「構造審査モード: 実行ではなくテキスト整合性チェック」と明記する。構造審査は empirical の代替ではなく補助（収束クリア判定には使えない）。
+**Structural review mode**: when you want to check only textual consistency rather than execution, state "structural review mode: text consistency check, not execution" explicitly in the request to the subagent. Structural review is a supplement to the empirical run, not a substitute (it cannot be used for the convergence clear verdict).
 
-## 提示フォーマット
+## Presentation Format
 
 ```
 ## Iteration N
@@ -298,38 +298,38 @@ baseline 確定時に scenarios + requirements を JSON 正規化して sha256 �
 （exit_verdict: continue | 収束まであと X 回クリア必要）
 ```
 
-## Red flags（合理化に注意）
+## Red Flags (watch for rationalizations)
 
-| 出てくる合理化 | 実態 |
+| The rationalization that shows up | The reality |
 |---|---|
-| 「自分で読み直せば同じ効果がある」 | 直前に書いた文章を客観視はできない。必ず新規サブエージェントを起動する |
-| 「1 シナリオで充分」 | 1 シナリオは過適合する。最低 2、できれば 3 |
-| 「不明瞭点ゼロが 1 回出たから終わり」 | 偶然なこともある。連続 2 回で確定判定（`is_converged` が制御） |
-| 「複数の不明瞭点を一気に潰そう」 | 何が効いたか分からなくなる。1 イテレーション 1 テーマ |
-| 「関連する微修正も純粋に 1 件ずつ別 iter に分けよう」 | 逆方向の罠。"1 テーマ" は意味単位。関連する 2-3 件の微修正は 1 iter にまとめて良い |
-| 「メトリクスが良いから摩擦報告は無視」 | 時間短縮は痩せすぎのサインにもなる。定性を主に |
-| 「書き直した方が早い」 | 3 回以上同一分類の摩擦が減らないなら正解（`is_diverged`）。それ以前は逃げ |
-| 「同じサブエージェントを使い回そう」 | 前回の改善を学習している。毎回新規に起動する |
-| 「チェックリストが厳しすぎるから緩めよう」 | baseline リセット（iteration 0 からやり直し）が必要。ハッシュロックが強制する |
-| 「checker の採点が間違っている」 | checker に不服がある場合は要件の書き方を改善する（次 baseline で）。今の iteration では checker の判定が final |
+| "Rereading it myself has the same effect" | You cannot see text you just wrote objectively. Always launch a new subagent |
+| "One scenario is enough" | One scenario overfits. Two at minimum, three if you can |
+| "Zero ambiguities came up once, so we are done" | It can be luck. The verdict is settled by two consecutive rounds (`is_converged` controls this) |
+| "Let's crush several ambiguities at once" | You lose track of what worked. One theme per iteration |
+| "Then split even the related micro-fixes strictly one per iter" | The opposite trap. "One theme" is a unit of meaning. 2-3 related micro-fixes may share one iter |
+| "The metrics look good, so ignore the friction report" | A shorter runtime can also be a sign of starvation. Keep the qualitative side primary |
+| "Rewriting from scratch would be faster" | Correct only when the same friction category has not shrunk for 3+ rounds (`is_diverged`). Before that, it is an escape |
+| "Let's reuse the same subagent" | It has learned the previous improvement. Launch a new one every time |
+| "The checklist is too strict, let's loosen it" | That requires a baseline reset (start over from iteration 0). The hash lock enforces it |
+| "The checker's grading is wrong" | If you object to the checker, improve how the requirement is written (in the next baseline). For the current iteration the checker's verdict is final |
 
-## よくある失敗
+## Common Failures
 
-- **シナリオが楽すぎる / 難しすぎる**: どちらもシグナルが出ない。中央値 1 + edge 1 が基本
-- **メトリクスだけ見る**: 時間短縮しか追わないとプロンプトが痩せすぎる
-- **イテレーションごとに変更多すぎ**: どの修正が効いたか追えなくなる。1 テーマ 1 iter
-- **シナリオを修正に合わせてチューニング**: チェックリストの sha256 が変わって halt する（設計通り）
-- **checker に対象プロンプトを見せる**: 甘い解釈バイアスが復活する。絶対に渡さない
-- **到達不能な要件をロックする**: 環境要因で手前で停止する工程を採点すると、正しく振る舞った実行者が
-  減点され、両アーム同一の失敗として現れる。実測で 3 回再発している（[requirement-reachability.md](references/requirement-reachability.md)）
+- **Scenarios too easy / too hard**: neither produces a signal. One median + one edge is the baseline
+- **Watching only the metrics**: chasing runtime alone starves the prompt
+- **Too many changes per iteration**: you cannot trace which fix worked. One theme, one iter
+- **Tuning the scenario to fit the fix**: the checklist sha256 changes and it halts (by design)
+- **Showing the target prompt to the checker**: lenient interpretation bias comes back. Never hand it over
+- **Locking an unreachable requirement**: grading a step that stops earlier for environmental reasons penalizes an
+  executor that behaved correctly, and shows up as an identical failure in both arms. Observed recurring 3 times ([requirement-reachability.md](references/requirement-reachability.md))
 
-## 関連
+## Related
 
-- [trigger-eval](../trigger-eval/SKILL.md) — 選択層（description→発火）の姉妹スキル。本スキルが本文実行の質を測るのに対し、trigger-eval は発火精度を測る
-- [skill-regression](../skill-regression/SKILL.md) — 本スキルの収束成果（fixture.json）を回帰資産に変換可能
-- [skill-improve](../skill-improve/SKILL.md) — 受動分析（過去 JSONL）。本スキルは能動テスト
-- [references/checker-protocol.md](references/checker-protocol.md) — checker サブエージェント 起動契約
-- [references/requirement-reachability.md](references/requirement-reachability.md) — ロック前の到達可能性検算（工程 / 環境 / 契約整合）
-- [references/iteration-schema.md](references/iteration-schema.md) — iteration JSON レコード schema
-- [references/friction-taxonomy.md](references/friction-taxonomy.md) — 摩擦の 6 分類
-- [references/compliance-probe.md](references/compliance-probe.md) — 受動的制約の評価手法
+- [trigger-eval](../trigger-eval/SKILL.md) — the sister skill for the selection layer (description→firing). This skill measures the quality of body execution; trigger-eval measures firing accuracy
+- [skill-regression](../skill-regression/SKILL.md) — this skill's convergence output (fixture.json) can be converted into a regression asset
+- [skill-improve](../skill-improve/SKILL.md) — passive analysis (past JSONL). This skill is active testing
+- [references/checker-protocol.md](references/checker-protocol.md) — the checker subagent launch contract
+- [references/requirement-reachability.md](references/requirement-reachability.md) — pre-lock reachability verification (process / environment / contract consistency)
+- [references/iteration-schema.md](references/iteration-schema.md) — the iteration JSON record schema
+- [references/friction-taxonomy.md](references/friction-taxonomy.md) — the 6 friction categories
+- [references/compliance-probe.md](references/compliance-probe.md) — the evaluation method for passive constraints

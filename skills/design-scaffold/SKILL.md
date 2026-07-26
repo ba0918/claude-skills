@@ -5,26 +5,26 @@ description: DESIGN.md から machine-readable なデザインシステム（tok
 
 # Design Scaffold
 
-DESIGN.md から machine-readable なデザインシステムファイル群を生成するスキル。
-design-guide が生成した「人間可読な値の辞書」を、**機械的に検証可能な schema ベースのシステム** に変換する。
+A skill that generates machine-readable design system files from DESIGN.md.
+It converts the "human-readable dictionary of values" produced by design-guide into a **schema-based system that can be verified mechanically**.
 
-**共有契約:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md) を参照。
+**Shared contract:** see [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md).
 
-## 前提条件
+## Preconditions
 
-1. プロジェクトルートに `DESIGN.md` が存在すること
-   - なければ「DESIGN.md が見つかりません。`/claude-skills:design-guide` で作成してください」と表示して終了
-2. DESIGN.md を読み込み、全セクションの構造を把握
+1. `DESIGN.md` exists at the project root
+   - If it does not, display 「DESIGN.md が見つかりません。`/claude-skills:design-guide` で作成してください」 and stop
+2. Read DESIGN.md and grasp the structure of every section
 
 ## Workflow
 
-### Step 1: DESIGN.md パース
+### Step 1: Parse DESIGN.md
 
-DESIGN.md を読み込み、各セクションを内部データ構造にマッピングする。
+Read DESIGN.md and map each section onto an internal data structure.
 
-**パースルール（テーブル → JSON マッピング）:**
+**Parse rules (table → JSON mapping):**
 
-| DESIGN.md セクション | テーブルカラム | tokens.json パス |
+| DESIGN.md section | Table columns | tokens.json path |
 |---------------------|-------------|-----------------|
 | Color Palette | Role, Value | `colors.{camelCase(role)}` |
 | Dark Mode Overrides | Role, Value | `colorsDark.{camelCase(role)}` |
@@ -37,45 +37,45 @@ DESIGN.md を読み込み、各セクションを内部データ構造にマッ�
 | Depth & Elevation | Level, Name, Usage, Shadow | `depth.{name}` |
 | Responsive Behavior | Breakpoint, Name, Min Width, Behavior | `responsive.breakpoints.{breakpoint}` |
 
-**テーブルパース手順:**
-1. `|` で区切られた行を検出
-2. ヘッダー行とセパレータ行 (`|---|`) を識別
-3. データ行を各カラムに分割し、前後の空白をトリム
-4. カラム名と値を対応づけ
+**Table parse procedure:**
+1. Detect rows delimited by `|`
+2. Identify the header row and the separator row (`|---|`)
+3. Split data rows into columns and trim the surrounding whitespace
+4. Associate column names with values
 
-**Font Family パース:**
-- Typography テーブルの Font Family カラムからフォント名を抽出
-- `- **Heading font:**` 等のプレーンテキスト行からもフォールバック込みのスタックを抽出
-- 両方が存在する場合はプレーンテキスト行を優先（フォールバック情報が含まれるため）
+**Font Family parsing:**
+- Extract font names from the Font Family column of the Typography table
+- Also extract the stack including fallbacks from plain-text lines such as `- **Heading font:**`
+- When both exist, prefer the plain-text line (it carries the fallback information)
 
-### Step 2: tokens.json 生成
+### Step 2: Generate tokens.json
 
-パースしたデータを [references/tokens-schema.json](references/tokens-schema.json) に準拠する JSON に変換。
+Convert the parsed data into JSON conforming to [references/tokens-schema.json](references/tokens-schema.json).
 
-1. `version` は `"1.0.0"` で初期化
-2. 全カラー値を hex 6桁に正規化（`#FFF` → `#FFFFFF`）
-3. Typography scale の各レベルに `fontKey` を設定（Heading フォント使用 → `"headingFont"`, Body → `"bodyFont"`, Code → `"codeFont"`）
-4. spacing scale をソート済み配列として構築
-5. `.design/` ディレクトリを作成（`mkdir -p .design`）
-6. `.design/tokens.json` に保存
+1. Initialize `version` to `"1.0.0"`
+2. Normalize every color value to 6-digit hex (`#FFF` → `#FFFFFF`)
+3. Set `fontKey` on each Typography scale level (uses the Heading font → `"headingFont"`, Body → `"bodyFont"`, Code → `"codeFont"`)
+4. Build the spacing scale as a sorted array
+5. Create the `.design/` directory (`mkdir -p .design`)
+6. Save to `.design/tokens.json`
 
-**生成後の自己検証:**
-- 生成した tokens.json を読み込み、schema の required フィールドが全て存在することを確認
-- カラー値が全て `#[0-9a-fA-F]{6}` パターンに一致することを確認
-- spacing.scale が昇順ソートされていることを確認
+**Self-verification after generation:**
+- Read the generated tokens.json back and confirm every required field of the schema is present
+- Confirm every color value matches the `#[0-9a-fA-F]{6}` pattern
+- Confirm spacing.scale is sorted in ascending order
 
-### Step 3: tokens.css 生成
+### Step 3: Generate tokens.css
 
-tokens.json → CSS custom properties への変換。
-design-system-contract の **CSS Custom Properties 命名規則** に厳密に従う。
+Convert tokens.json into CSS custom properties.
+Follow the **CSS custom property naming rules** of design-system-contract strictly.
 
-**変換プロセス:**
-1. tokens.json を読み込む
-2. 全トークンを CSS custom properties に変換
-3. セクションごとにコメントで区切り
-4. `.design/tokens.css` に保存
+**Conversion process:**
+1. Read tokens.json
+2. Convert every token into a CSS custom property
+3. Separate the sections with comments
+4. Save to `.design/tokens.css`
 
-**生成テンプレート:**
+**Generation template:**
 
 ```css
 /* =================================================================
@@ -109,11 +109,11 @@ design-system-contract の **CSS Custom Properties 命名規則** に厳密に�
   --font-size-display: {typography.scale.display.size}px;
   --font-weight-display: {typography.scale.display.weight};
   --line-height-display: {typography.scale.display.lineHeight};
-  /* ... 全レベルについて size, weight, lineHeight, letterSpacing を出力 ... */
+  /* ... emit size, weight, lineHeight, letterSpacing for every level ... */
 
   /* ── Spacing ── */
   --spacing-base: {spacing.baseUnit}px;
-  /* spacing.scale の各値を --spacing-0, --spacing-1, ... として出力 */
+  /* emit each spacing.scale value as --spacing-0, --spacing-1, ... */
 
   /* ── Component Radii ── */
   --radius-button: {components.buttons.borderRadius}px;
@@ -128,8 +128,8 @@ design-system-contract の **CSS Custom Properties 命名規則** に厳密に�
 }
 ```
 
-**ダークモード:**
-`colorsDark` が存在する場合、`@media (prefers-color-scheme: dark)` ブロックも出力:
+**Dark mode:**
+When `colorsDark` exists, also emit a `@media (prefers-color-scheme: dark)` block:
 ```css
 @media (prefers-color-scheme: dark) {
   :root {
@@ -140,14 +140,14 @@ design-system-contract の **CSS Custom Properties 命名規則** に厳密に�
 }
 ```
 
-### Step 4: React/Preact Theme 生成（フレームワーク検出時）
+### Step 4: Generate the React/Preact theme (when the framework is detected)
 
-プロジェクトが React/Preact を使用している場合（`package.json` に `react` or `preact` が存在）、TypeScript theme object を生成する。
+When the project uses React/Preact (`react` or `preact` present in `package.json`), generate a TypeScript theme object.
 
-1. `components/{framework}/` ディレクトリを作成
-2. `components/{framework}/theme.ts` に保存
+1. Create the `components/{framework}/` directory
+2. Save it to `components/{framework}/theme.ts`
 
-**生成テンプレート:**
+**Generation template:**
 ```typescript
 // Auto-generated from .design/tokens.json
 // DO NOT EDIT MANUALLY. Run design-scaffold to regenerate.
@@ -156,7 +156,7 @@ export const theme = {
   colors: {
     primary: '{colors.primary}',
     primaryHover: '{colors.primaryHover}',
-    // ... 全カラートークン
+    // ... all color tokens
   },
   typography: {
     headingFont: "{typography.headingFont}",
@@ -164,7 +164,7 @@ export const theme = {
     codeFont: "{typography.codeFont}",
     scale: {
       display: { size: {size}, weight: {weight}, lineHeight: {lh} },
-      // ... 全レベル
+      // ... all levels
     },
   },
   spacing: {
@@ -188,11 +188,11 @@ export const theme = {
 export type Theme = typeof theme;
 ```
 
-### Step 5: lint-config.json 生成
+### Step 5: Generate lint-config.json
 
-デフォルトの lint 設定を `.design/lint-config.json` に生成。
+Generate the default lint settings at `.design/lint-config.json`.
 
-**デフォルト値:**
+**Defaults:**
 ```json
 {
   "include": ["src/**/*.{tsx,jsx,ts,css}"],
@@ -213,12 +213,12 @@ export type Theme = typeof theme;
 }
 ```
 
-**フレームワーク検出による調整:**
-- React/Preact: `include` に `"**/*.tsx"`, `"**/*.jsx"` を追加
-- Flutter: lint は非対応（将来の adapter で対応）→ `lint-config.json` は生成しない
-- VanillaJS: `include` に `"**/*.js"`, `"**/*.css"` を設定
+**Adjustments by detected framework:**
+- React/Preact: add `"**/*.tsx"`, `"**/*.jsx"` to `include`
+- Flutter: lint is not supported (a future adapter will cover it) → do not generate `lint-config.json`
+- VanillaJS: set `include` to `"**/*.js"`, `"**/*.css"`
 
-### Step 6: 完了レポート
+### Step 6: Completion report
 
 ```
 ✅ Design scaffold を生成しました！
@@ -241,24 +241,24 @@ export type Theme = typeof theme;
   1. `/claude-skills:design-lint` でコードベースの準拠状況を確認
 ```
 
-### Step 7: Component Catalog 生成
+### Step 7: Generate the component catalog
 
-DESIGN.md の Component Stylings セクションから、[references/catalog-schema.json](references/catalog-schema.json) に準拠する `component-catalog.json` を生成する。
+From the Component Stylings section of DESIGN.md, generate `component-catalog.json` conforming to [references/catalog-schema.json](references/catalog-schema.json).
 
-#### 7-1. DESIGN.md からのコンポーネント抽出
+#### 7-1. Extract components from DESIGN.md
 
-Component Stylings セクションの各サブセクションをコンポーネント定義にマッピング:
+Map each subsection of Component Stylings onto a component definition:
 
-| DESIGN.md サブセクション | コンポーネント名 | カテゴリ |
+| DESIGN.md subsection | Component name | Category |
 |------------------------|---------------|---------|
 | Buttons | `Button` | `action` |
 | Cards | `Card` | `container` |
 | Inputs | `Input` | `input` |
 | Navigation | `Nav` | `navigation` |
 
-#### 7-2. Button コンポーネント生成例
+#### 7-2. Example of generating the Button component
 
-DESIGN.md の Buttons テーブル:
+The Buttons table in DESIGN.md:
 ```
 | Variant | Background | Text | Border | Border Radius | Padding |
 ```
@@ -376,40 +376,40 @@ DESIGN.md の Buttons テーブル:
 }
 ```
 
-#### 7-3. 同様に Card, Input, Nav も生成
+#### 7-3. Generate Card, Input, and Nav the same way
 
-各コンポーネントの DESIGN.md 定義から同じ手順で catalog エントリを生成。
-全スタイル値は `$tokens.*` 参照で表現し、直書き値は CSS キーワード（`none`, `transparent`, `inherit`）のみ許可。
+Generate a catalog entry from each component's DESIGN.md definition with the same procedure.
+Express every style value as a `$tokens.*` reference; hardcoded values are allowed only for CSS keywords (`none`, `transparent`, `inherit`).
 
-#### 7-4. catalog.json の自己検証
+#### 7-4. Self-verification of catalog.json
 
-生成後:
-1. 全 `$tokens.*` 参照が tokens.json に存在することを確認
-2. 各コンポーネントの variants が DESIGN.md の定義と 1:1 対応することを確認
-3. props の型が TypeScript として妥当であることを確認
+After generation:
+1. Confirm every `$tokens.*` reference exists in tokens.json
+2. Confirm each component's variants correspond 1:1 with the DESIGN.md definitions
+3. Confirm the props types are valid TypeScript
 
-#### 7-5. `.design/component-catalog.json` に保存
+#### 7-5. Save to `.design/component-catalog.json`
 
-### Step 8: React/Preact コンポーネント生成
+### Step 8: Generate React/Preact components
 
-フレームワークが React/Preact の場合、catalog.json からコンポーネント実装を自動生成する。
+When the framework is React/Preact, generate the component implementations from catalog.json.
 
-#### 生成ルール
+#### Generation rules
 
-1. **CSS は tokens.css の custom properties 経由でのみスタイリング**
+1. **Style only through the custom properties in tokens.css**
    - `$tokens.colors.primary` → `var(--color-primary)`
    - `$tokens.components.buttons.borderRadius` → `var(--radius-button)`
-2. **Props は catalog.json の props 定義に完全準拠**
-   - TypeScript 型を自動生成
-   - default 値を設定
-3. **Variants は catalog.json の variants のみ**
-   - variant prop で切り替え、CSS クラスで実装
-4. **States は catalog.json の states のみ**
+2. **Props conform exactly to the props definitions in catalog.json**
+   - Generate the TypeScript types automatically
+   - Set the default values
+3. **Only the variants listed in catalog.json**
+   - Switch with the variant prop, implement with CSS classes
+4. **Only the states listed in catalog.json**
    - CSS pseudo-class + JS event handler
-5. **a11y 要件を HTML 属性として自動付与**
+5. **Attach the a11y requirements automatically as HTML attributes**
    - role, aria-*, keyboard navigation
 
-#### 生成テンプレート（Button の例）
+#### Generation template (Button example)
 
 ```typescript
 // components/react/Button.tsx — Auto-generated from .design/component-catalog.json
@@ -465,7 +465,7 @@ export const Button: React.FC<ButtonProps> = ({
   padding: var(--spacing-/* paddingY */) var(--spacing-/* paddingX */);
 }
 
-/* ... 各 variant, state, size のスタイル ... */
+/* ... styles for each variant, state, and size ... */
 
 .btn:hover:not(:disabled) { /* hover styles */ }
 .btn:focus-visible { box-shadow: 0 0 0 2px var(--color-focus-ring); outline: none; }
@@ -473,7 +473,7 @@ export const Button: React.FC<ButtonProps> = ({
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 ```
 
-#### index.ts 生成
+#### Generate index.ts
 
 ```typescript
 // components/react/index.ts — Auto-generated
@@ -487,9 +487,9 @@ export { Nav } from './Nav';
 export type { NavProps } from './Nav';
 ```
 
-### Step 9: 完了レポート（拡張）
+### Step 9: Completion report (extended)
 
-Step 6 の完了レポートに catalog 情報を追加:
+Add the catalog information to the Step 6 completion report:
 
 ```
 📊 コンポーネント:
@@ -507,38 +507,38 @@ Step 6 の完了レポートに catalog 情報を追加:
   components/{framework}/index.ts
 ```
 
-### Step 10: Layout Rules 生成
+### Step 10: Generate layout rules
 
-DESIGN.md の Layout Principles + Do's/Don'ts セクションから、[references/layout-schema.json](references/layout-schema.json) に準拠する `layout-rules.json` を生成する。
+From the Layout Principles + Do's/Don'ts sections of DESIGN.md, generate `layout-rules.json` conforming to [references/layout-schema.json](references/layout-schema.json).
 
 #### 10-1. Layout Principles → grid / spacing
 
-| DESIGN.md フィールド | layout-rules.json パス |
+| DESIGN.md field | layout-rules.json path |
 |---------------------|----------------------|
 | Grid: {columns} columns, {gap}px gap | `grid.columns`, `grid.gap` |
 | Max content width: {width}px | `grid.maxWidth` |
-| Base unit: {unit}px | (spacing.baseUnit は tokens.json 側) |
+| Base unit: {unit}px | (spacing.baseUnit lives in tokens.json) |
 | Section spacing: {spacing}px | `spacing.sectionGap` |
-| White space philosophy: {description} | constraints に変換 |
+| White space philosophy: {description} | converted into constraints |
 
-#### 10-2. Do's/Don'ts → constraints 変換
+#### 10-2. Do's/Don'ts → constraints conversion
 
-DESIGN.md の Do / Don't リストを [references/layout-schema.json](references/layout-schema.json) の `constraintDef` 形式に変換する。
+Convert the Do / Don't lists in DESIGN.md into the `constraintDef` form of [references/layout-schema.json](references/layout-schema.json).
 
-**変換ルール:**
-1. 各 Do / Don't を読み取り
-2. 機械検証可能な条件に翻訳（自然言語 → 正規表現 or 数値範囲）
-3. enforcement を判定:
-   - CSS プロパティの値に関するルール → `lint`
-   - 視覚的な配置・バランスに関するルール → `visual`
-   - 全体的な印象・統一感に関するルール → `rubric`
-4. ID を `LC001` から連番で付与
+**Conversion rules:**
+1. Read each Do / Don't
+2. Translate it into a mechanically verifiable condition (natural language → regular expression or numeric range)
+3. Decide the enforcement:
+   - rules about CSS property values → `lint`
+   - rules about visual placement and balance → `visual`
+   - rules about overall impression and consistency → `rubric`
+4. Assign IDs sequentially starting at `LC001`
 
-#### 10-3. `.design/layout-rules.json` に保存
+#### 10-3. Save to `.design/layout-rules.json`
 
-### Step 11: ページ定義のテンプレート生成
+### Step 11: Generate page definition templates
 
-ユーザーに選択肢を提示してプロジェクトの主要ページを質問:
+Present options to the user and ask about the project's main pages:
 
 ```
 header: "主要ページ"
@@ -551,13 +551,13 @@ options:
   - "フォームページ"
 ```
 
-選択されたページに対して:
-1. layout-rules.json の `patterns` から推奨レイアウトパターンを取得
-2. catalog.json のコンポーネントから各セクションの推奨配置を構築
-3. [references/page-schema.json](references/page-schema.json) に準拠するページ定義を生成
-4. `.design/pages/{page-name}.json` に保存
+For each selected page:
+1. Get the recommended layout pattern from `patterns` in layout-rules.json
+2. Build the recommended placement for each section from the components in catalog.json
+3. Generate a page definition conforming to [references/page-schema.json](references/page-schema.json)
+4. Save it to `.design/pages/{page-name}.json`
 
-### Step 12: 最終完了レポート
+### Step 12: Final completion report
 
 ```
 📊 レイアウト:
@@ -573,22 +573,22 @@ options:
   2. Base Design の承認フローへ進む
 ```
 
-## 既存 .design/ の上書き確認
+## Overwrite Confirmation for an Existing .design/
 
-`.design/tokens.json` が既に存在する場合:
+When `.design/tokens.json` already exists:
 
-1. 既存の `version` を読み取り
-2. ユーザーに選択肢を提示して確認:
+1. Read the existing `version`
+2. Present options to the user and confirm:
    - "上書きする（version をインクリメント）"
    - "キャンセル"
-3. 上書き時は `version` のパッチバージョンをインクリメント
+3. On overwrite, increment the patch version of `version`
 
-## 絶対的な制約
+## Absolute Constraints
 
-- DESIGN.md に定義されていない値を tokens.json に **追加してはならない**
-- tokens.json は schema に 100% 準拠すること（schema 違反は即修正）
-- CSS custom property 名は design-system-contract の命名規則に **厳密に** 従うこと
-- 生成ファイルの先頭に「Auto-generated, DO NOT EDIT MANUALLY」コメントを必ず含めること
+- **Never add** a value to tokens.json that is not defined in DESIGN.md
+- tokens.json must conform to the schema 100% (fix schema violations immediately)
+- CSS custom property names must follow the design-system-contract naming rules **strictly**
+- Always include an "Auto-generated, DO NOT EDIT MANUALLY" comment at the top of generated files
 
 ## References
 
@@ -597,4 +597,4 @@ options:
 - **Page Schema:** [references/page-schema.json](references/page-schema.json)
 - **Layout Schema:** [references/layout-schema.json](references/layout-schema.json)
 - **Rubric Schema:** [references/rubric-schema.json](references/rubric-schema.json)
-- **共有契約:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md)
+- **Shared contract:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md)
