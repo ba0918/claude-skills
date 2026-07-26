@@ -256,6 +256,30 @@ Iron Laws は英訳してよく、利用者が読む REPORT テンプレート�
 - `.github/workflows/validate.yml`: checkout に `fetch-depth: 0` を追加。既定の shallow clone では
   `origin/main` が存在せず、比較元リビジョンを解決できずに skip して CI で黙って無効化される
 
+fixture 未保有 SKILL.md の英語化を完了させた（mockup-diff / design-scaffold /
+empirical-prompt-tuning / spec-verify）。これで **fixture 未保有スキルの SKILL.md は全て英語**になり、
+到達は 77 / 163 ファイル。BLOCK は本バッチも 0 件で、センサー導入後の通算でも 0 件を維持している。
+
+4 本とも `ledger.py --impact` で影響範囲を確認してから着手した。empirical-prompt-tuning だけは
+skill-regression / trigger-eval にも波及するが、3 スキルとも fixture 未保有のため再検証は発生せず、
+`ledger --check` は緑のままである。
+
+WARN（フェンス内の日本語行の減少）は 4 本とも実行者向けフェンスに限定した。判断の内訳:
+
+- mockup-diff 40→29: ワークフロー概要・パイプライン図・生成ファイルツリーのコメント。
+  利用者が読む差分分析レポート / 完了メッセージ / 設問の選択肢は原文のまま
+- design-scaffold 29→24: すべて生成テンプレート内の「ここに全レベルを出力せよ」型の生成器向け
+  コメント。生成物の様式（catalog.json の description 値、完了レポート、上書き確認の選択肢）は不変
+- empirical-prompt-tuning 45→14: 実行者 / checker サブエージェントへ渡す dispatch プロンプト本体。
+  これらは LLM しか読まないうえ、レポート構造のキーを英語化しても受け手は同じスキル内のハーネス
+  なので閉じている。**利用者に見せる「提示フォーマット」の 14 行は原文のまま残した**
+- spec-verify 7→6: `--baseline` の引数プレースホルダ 1 行のみ。完了報告フォーマットは不変
+
+- 未翻訳の references を指す参照が 4 箇所増えた（spec-verify → clause-schema.md の
+  配置規約 / exit code 契約アンカー、evidence-manifest.md のマトリクス行スキーマ / v1 の信頼境界
+  アンカー）。リンクアンカーは日本語見出しのままなので、参照先を訳す際に参照元とセットで
+  更新する必要がある
+
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の
