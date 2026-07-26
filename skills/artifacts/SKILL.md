@@ -5,107 +5,108 @@ description: Agent Artifact Store の初期化・状態診断・旧 docs 成果�
 
 # Artifacts
 
-Agent-generated working state を `.agents/artifacts/` で LLM 非依存に管理する。全 workflow で先に
-[Artifact Store contract](../shared/references/artifact-store.md) を読み、配布位置基準の
-`../shared/scripts/artifact_store.py` を使う。手作業で設定解決や移行を再実装しない。
+Manage agent-generated working state under `.agents/artifacts/` in an LLM-independent way. In every workflow, first
+read the [Artifact Store contract](../shared/references/artifact-store.md) and use
+`../shared/scripts/artifact_store.py`, resolved relative to the distribution location. Never re-implement configuration
+resolution or migration by hand.
 
 ## Workflow selection
 
-先頭引数で workflow を選ぶ。
+Select the workflow with the leading argument.
 
-- `init` → safe local store を初期化
-- `status` または引数なし → 設定と store を読み取り専用で診断
-- `migrate` → legacy `docs/{plans,issues,ideas,loop,handoff,reviews}` を inventory・分類・段階移行
+- `init` → initialize a safe local store
+- `status` or no argument → diagnose the configuration and the store, read-only
+- `migrate` → inventory, classify, and incrementally migrate legacy `docs/{plans,issues,ideas,loop,handoff,reviews}`
 
-`{artifact_store.py}` はこのスキルディレクトリから
-`../shared/scripts/artifact_store.py` を解決したパスとする。
+`{artifact_store.py}` is the path obtained by resolving
+`../shared/scripts/artifact_store.py` from this skill's directory.
 
 ## Status workflow
 
-1. 次を実行する。
+1. Run the following.
 
    ```bash
    python3 {artifact_store.py} status --repo .
    ```
 
-2. `policy`、`root`、`state`、`legacy_roots`、`errors`、`writable` を表示する。
-3. `legacy` なら migrate、`split-brain` なら新規書き込み停止を案内する。
-4. status 中はファイルを変更しない。
+2. Display `policy`, `root`, `state`, `legacy_roots`, `errors`, and `writable`.
+3. On `legacy`, guide the user to migrate; on `split-brain`, guide them to stop new writes.
+4. Change no files during status.
 
 ## Init workflow
 
-1. status を実行する。
-2. legacy root があれば初期化を中止し、migrate へ誘導する。空の新 store を作らない。
-3. legacy root がなければ次を実行する。
+1. Run status.
+2. If a legacy root exists, abort the initialization and steer the user to migrate. Do not create an empty new store.
+3. If no legacy root exists, run the following.
 
    ```bash
    python3 {artifact_store.py} init --repo .
    ```
 
-4. `.agents/artifacts.yml`、`.gitignore`、標準サブディレクトリを確認する。
-5. status を再実行し、`errors: []` かつ `writable: true` を完了条件とする。
+4. Confirm `.agents/artifacts.yml`, `.gitignore`, and the standard subdirectories.
+5. Re-run status and treat `errors: []` together with `writable: true` as the completion condition.
 
-`public` または `shared-private` は init で暗黙選択しない。管理者の明示的な
-policy 変更と検査なしに visibility を広げない。
+Never select `public` or `shared-private` implicitly during init. Do not widen visibility without an
+administrator's explicit policy change and inspection.
 
 ## Migrate workflow
 
 ### 1. Inventory
 
-必ず最初に dry-run report を作る。リポジトリ内に report を保存しない。
+Always produce a dry-run report first. Do not save the report inside the repository.
 
 ```bash
 python3 {artifact_store.py} migrate-check --repo . --output {temporary_decisions_json}
 ```
 
-report の各 `entries[].action` は初期値 `review` である。各 entry を文脈で確認し、次のいずれかへ変更する。
+Each `entries[].action` in the report starts at `review`. Check every entry in context and change it to one of the following.
 
-- `move`: canonical store へ移し、finalize で legacy source を除去
-- `copy`: canonical store へ複製し、legacy source も残す
-- `keep`: reader-facing 公開文書として legacy 側だけに残す
-- `skip`: この store の管理対象外
+- `move`: move it to the canonical store and remove the legacy source at finalize
+- `copy`: duplicate it into the canonical store and keep the legacy source as well
+- `keep`: leave it only on the legacy side as a reader-facing public document
+- `skip`: not managed by this store
 
-`review` が1件でも残っていれば次へ進まない。公開文書をカテゴリ単位で
-一括 `move` しない。
+Do not proceed while even one `review` remains. Do not bulk-`move` public documents
+by category.
 
 ### 2. Stage
 
-分類完了後に次を実行する。
+Once classification is complete, run the following.
 
 ```bash
 python3 {artifact_store.py} migrate-stage --repo . --decisions {temporary_decisions_json}
 ```
 
-stage は `move/copy` 対象を複製して hash を検査するが、source を削除しない。
+Stage duplicates the `move/copy` targets and checks their hashes, but does not delete the sources.
 
 ### 3. Verify
 
-1. stage 出力と `.agents/artifacts/.migration-state.json` を確認する。
-2. 件数、hash、相対リンク、producer/consumer の新 root 対応を検査する。
-3. 検証中は legacy source を削除しない。
+1. Check the stage output and `.agents/artifacts/.migration-state.json`.
+2. Inspect the counts, the hashes, the relative links, and the producer/consumer correspondence to the new root.
+3. Do not delete legacy sources during verification.
 
 ### 4. Finalize
 
-source 削除と公開履歴の残存をユーザーが明示承認した場合のみ、次を実行する。
+Only when the user has explicitly approved both the source deletion and the retention of public history, run the following.
 
 ```bash
 python3 {artifact_store.py} migrate-finalize --repo . \
   --confirm-remove-source --confirm-public-history
 ```
 
-finalize 後に status を再実行する。`copy/keep/skip` で legacy root が残る場合は、
-canonical writer との split-brain ではないことを人間が確認するまで書き込みを再開しない。
+Re-run status after finalize. When a legacy root survives because of `copy/keep/skip`,
+do not resume writes until a human has confirmed that this is not a split-brain against the canonical writer.
 
 ## Blocking conditions
 
-次の場合は自動修復や別 root への fallback を行わず停止する。
+In the following cases, stop without attempting automatic repair or falling back to a different root.
 
-- unknown schema、policy parse error、未知の設定キー
-- root 逸脱または symlink
-- local store の Git 追跡・ignore 不整合
-- legacy/canonical split-brain
-- inventory 後の source hash 変化
-- stage destination の衝突
-- unresolved `review`
+- Unknown schema, policy parse error, or an unknown configuration key
+- Escaping the root, or a symlink
+- Git tracking / ignore inconsistency for a local store
+- A legacy/canonical split-brain
+- A source hash change after inventory
+- A collision at a stage destination
+- An unresolved `review`
 
-停止時は status とエラーを表示し、どのファイルも削除しない。
+On stopping, display the status and the errors, and delete no files.

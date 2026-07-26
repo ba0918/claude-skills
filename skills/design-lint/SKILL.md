@@ -5,31 +5,31 @@ description: プロジェクトのコードベースを .design/tokens.json に�
 
 # Design Lint
 
-プロジェクトのコードベースを `.design/tokens.json` に基づいて lint し、デザイントークン違反を機械的に検出する。
+Lint the project's codebase against `.design/tokens.json` and detect design-token violations mechanically.
 
-**共有契約:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md) を参照。
-**lint ルール仕様:** [references/lint-contract.md](references/lint-contract.md) を参照。
+**Shared contract:** see [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md).
+**Lint rule specification:** see [references/lint-contract.md](references/lint-contract.md).
 
-## 前提条件
+## Prerequisites
 
-1. `.design/tokens.json` が存在すること
-   - なければ「tokens.json が見つかりません。`/claude-skills:design-scaffold` で生成してください」と表示して終了
-2. `.design/lint-config.json` が存在すること（省略時はデフォルト設定を使用）
+1. `.design/tokens.json` must exist
+   - If it does not, print 「tokens.json が見つかりません。`/claude-skills:design-scaffold` で生成してください」 and stop
+2. `.design/lint-config.json` must exist (the default configuration is used when it is omitted)
 
 ## Workflow
 
-lint 本体は実行スクリプト `scripts/design_lint.py` に実装されている。エージェントは
-スクリプトを実行して結果を解釈するだけで、ルール適用ロジックを自分で再現しない
-（再現すると lint-contract とのドリフトが生じる）。
+The lint itself is implemented in the executable script `scripts/design_lint.py`. The agent only
+runs the script and interprets its result; it never reproduces the rule-application logic itself
+(reproducing it introduces drift against lint-contract).
 
-### Step 1: 前提確認
+### Step 1: Check the prerequisites
 
-1. `.design/tokens.json` の存在を確認（なければ design-scaffold を案内して終了）
-2. `.design/lint-config.json` は任意（なければスクリプトがデフォルト設定を使用）
+1. Confirm that `.design/tokens.json` exists (if not, guide the user to design-scaffold and stop)
+2. `.design/lint-config.json` is optional (the script uses the default configuration when it is absent)
 
-### Step 2: スクリプト実行
+### Step 2: Run the script
 
-シェルでこのスキルの `scripts/design_lint.py` を実行する:
+Run this skill's `scripts/design_lint.py` in a shell:
 
 ```bash
 python3 {skill_base_dir}/scripts/design_lint.py \
@@ -37,24 +37,24 @@ python3 {skill_base_dir}/scripts/design_lint.py \
   --output .design/lint-report.json --json
 ```
 
-- `{skill_base_dir}` はこのスキルのベースディレクトリ（起動時に提示される）
-- 終了コード: `0` = PASS / `1` = FAIL（error あり）/ `2` = tokens.json 不在
-- ルールの適用範囲はスクリプトが自動判定する:
-  - DL001-006 は常時（tokens.json のみで有効）
-  - DL101-103 は `.design/component-catalog.json` 存在時
-  - DL201-203 は `.design/pages/` 存在時、DL204 は `.design/layout-rules.json` 存在時
+- `{skill_base_dir}` is this skill's base directory (presented at invocation time)
+- Exit codes: `0` = PASS / `1` = FAIL (errors present) / `2` = tokens.json absent
+- The script decides on its own which rules apply:
+  - DL001-006 always (valid with tokens.json alone)
+  - DL101-103 when `.design/component-catalog.json` exists
+  - DL201-203 when `.design/pages/` exists, and DL204 when `.design/layout-rules.json` exists
 
-### Step 3: 結果報告
+### Step 3: Report the result
 
-JSON 出力の `summary` と `violations` を解釈して報告する。
+Interpret `summary` and `violations` in the JSON output and report them.
 
-**全 PASS の場合:**
+**When everything passes:**
 ```
 ✅ Design Lint: PASS
 全ファイルがデザイントークンに準拠しています！
 ```
 
-**FAIL の場合:**
+**On FAIL:**
 ```
 ❌ Design Lint: FAIL
 {errors} 件のエラーが検出されました。
@@ -67,31 +67,31 @@ JSON 出力の `summary` と `violations` を解釈して報告する。
 直書き値を CSS 変数 (var(--*)) に置き換えてください。
 ```
 
-- violations が 20 件以下ならファイル名・行番号・値・修正提案まで表示する
-- 20 件超ならルール別サマリーのみ表示し、`.design/lint-report.json` を案内する
-- 違反ごとの `suggestion`（最も近いトークン: カラーは RGB 距離、spacing/radius は
-  数値差で算出）があれば修正提案として提示する
+- With 20 violations or fewer, show the file name, line number, value, and suggested fix
+- With more than 20, show only the per-rule summary and point at `.design/lint-report.json`
+- When a violation carries a `suggestion` (the nearest token: RGB distance for colors, numeric
+  difference for spacing/radius), present it as the suggested fix
 
-### CI への組み込み
+### CI integration
 
-スクリプトは自己完結（標準ライブラリのみ・依存なし）なので、そのまま CI に載せられる:
+The script is self-contained (standard library only, no dependencies), so it can go into CI as-is:
 
 ```yaml
 - name: Design lint
   run: python3 path/to/design_lint.py --root . && echo PASS
 ```
 
-## 絶対的な制約
+## Absolute Constraints
 
-- lint はファイルを **読むだけ**。修正は行わない（スクリプトは書き込みを
-  `--output` のレポート保存以外行わない）
-- 検出は正規表現ベースで行い、AST パーサは使用しない（言語非依存性を確保）
-- ルールの判定ロジックをエージェントが暗算で再現しない。必ずスクリプトを実行する
-- コメント内の値は無視する（スクリプトが処理）
-- `node_modules/` は常に除外
-- `.design/` 自体は lint 対象外
+- The lint **only reads** files. It performs no fixes (the script writes nothing other than
+  saving the report to `--output`)
+- Detection is regex-based; no AST parser is used (this keeps it language-independent)
+- The agent never reproduces the rule logic in its head. Always run the script
+- Values inside comments are ignored (the script handles this)
+- `node_modules/` is always excluded
+- `.design/` itself is out of lint scope
 
 ## References
 
-- **lint ルール仕様:** [references/lint-contract.md](references/lint-contract.md)
-- **共有契約:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md)
+- **Lint rule specification:** [references/lint-contract.md](references/lint-contract.md)
+- **Shared contract:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md)
