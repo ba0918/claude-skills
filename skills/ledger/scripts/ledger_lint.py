@@ -89,7 +89,7 @@ DELEGATION_FIELDS = {
     "revocation": ("string", True),
 }
 
-# Batch approval manifest (agreement-ledger.md「batch 承認 manifest」節). Persisted
+# Batch approval manifest (agreement-ledger.md "Batch Approval Manifest"). Persisted
 # as the top-level optional key `batch_manifests` so the linter can verify the
 # batch_digest and the high-risk-in-batch prohibition (§B).
 BATCH_MANIFEST_FIELDS = {
@@ -168,7 +168,7 @@ def compute_digest(row):
 
 def compute_batch_digest(row_digests, summary_digest):
     """Deterministic digest binding a batch's constituent row digests to the
-    displayed summary (agreement-ledger.md「batch 承認 manifest」節). If any
+    displayed summary (agreement-ledger.md "Batch Approval Manifest"). If any
     constituent digest or the summary changes, this digest changes and the
     recorded batch approval no longer matches — the tamper-evidence for a batch.
 

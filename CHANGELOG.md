@@ -395,6 +395,39 @@ S2 は「訳すと fixture 保有スキルへ波及する」で切った区分�
   利用者が画面で読む完了報告そのもので、契約が「主観基準のアンカー」と位置づけている実物の
   ため、訳すと基準が指す対象がずれる
 
+共有契約の残り 6 本（S1 レーン）と、機械パース正本 2 本を英語化した。これで
+`skills/shared/references/` と `skills/spec-verify/references/` の日本語文書はなくなった。
+S1 は影響スキルが fixture 非保有（`ledger.py --coverage` で 6 スキルすべて uncovered）のため
+回帰評価は発生しない区分だが、代わりに**本文の表をテストがパースしている**という別種の結合が
+あり、そちらが実質的な難所だった。
+
+節見出しがテストのハッシュキーになっている箇所が 3 ファイル・19 個ある。
+`test_ledger_lint.py` は agreement-ledger.md の 8 節、`test_spec_lint.py` は clause-schema.md の
+5 節、`test_trace_matrix.py` は evidence-manifest.md の 6 節を見出し文字列で引き当て、表の各行を
+コード内定数と突合している。見出しはアンカーの実体でもあり、20 箇所から参照されている。
+`validate_repo.py` はリンク検証でアンカーを落とすため、ここを取りこぼすと CI は緑のまま
+リンクだけが静かに壊れる。本文・テスト定数・アンカーを 1 コミットに収めたのはこのため。
+
+表の中身にもパース対象の日本語リテラルが埋まっていた。clause-schema.md の
+`transitions` 説明セルは「`from` / `event` / `to`（必須、string）」という prose 形式で
+ネスト規則を宣言しており、`test_spec_lint.py` の `_NESTED_RULE_PROSE` がこれを正規表現で
+読んでいる。同様に `1 要素以上` が `MIN_ITEMS` の、`` `id` パターン `` `` `test_id` パターン ``
+が ID/digest パターンの突合キーになっていた。訳文に合わせて正規表現とキー文字列も改めた。
+
+- `skills/shared/references/`: context-vocabulary / convergence-pattern / loop-engineering /
+  skill-authoring / goal-decomposition-pattern / agreement-ledger を英語化
+- `skills/spec-verify/references/`: clause-schema / evidence-manifest を英語化
+- `skills/ledger/scripts/test_ledger_lint.py` `skills/spec-verify/scripts/test_spec_lint.py`
+  `skills/spec-verify/scripts/test_trace_matrix.py`: 見出しキー 19 個、表セルのリテラル 4 個、
+  ネスト規則 prose の正規表現を英語見出しへ追随。同期テストは全 green
+- `skills/spec-verify/SKILL.md` `skills/spec-verify/references/pbt-binding-guide.md`
+  `skills/goal-loop/SKILL.md`: 日本語見出しを指すアンカー参照 20 箇所を差し替え
+- `README.md` `AGENTS.md`: skill-authoring.md の節名参照を「When Prompt Compression Works」へ
+- 語彙固有状態の enum（`確定` / `暫定` / `競合中` / `廃語`）は原文のまま残した。
+  `ledger_lint.py` が `UNSTABLE_TERM_STATES` として直に持つデータ値で、訳すと lint が
+  沈黙して壊れる。skill-authoring.md のトリガー語例「『◯◯』『◯◯』で起動」も同様に、
+  日本語スキルが description に書くべき literal そのものなので据え置いた
+
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の

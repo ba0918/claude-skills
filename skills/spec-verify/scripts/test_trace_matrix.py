@@ -812,19 +812,19 @@ class TestManifestSchemaSyncMdToCode(unittest.TestCase):
         cls.sections = tsl._md_sections(EVIDENCE_MANIFEST_MD)
 
     def test_toplevel_table_matches_code_constants(self):
-        rows = tsl._table_rows(self.sections["マニフェストのファイル構造"])
+        rows = tsl._table_rows(self.sections["Manifest File Structure"])
         self.assertEqual(tsl._field_table(rows), tm.MANIFEST_TOPLEVEL_FIELDS)
 
     def test_binding_table_matches_code_constants(self):
-        rows = tsl._table_rows(self.sections["binding 宣言"])
+        rows = tsl._table_rows(self.sections["binding Declarations"])
         self.assertEqual(tsl._field_table(rows), tm.BINDING_FIELDS)
 
     def test_observation_table_matches_code_constants(self):
-        rows = tsl._table_rows(self.sections["実行 observation"])
+        rows = tsl._table_rows(self.sections["Execution observation"])
         self.assertEqual(tsl._field_table(rows), tm.OBSERVATION_FIELDS)
 
     def test_evidence_kind_enum_in_md_matches_code(self):
-        rows = tsl._table_rows(self.sections["実行 observation"])
+        rows = tsl._table_rows(self.sections["Execution observation"])
         desc = next(cells[3] for cells in rows
                     if tsl._BACKTICK_TOKEN.match(cells[0]).group(1)
                     == "evidence_kind")
@@ -833,16 +833,16 @@ class TestManifestSchemaSyncMdToCode(unittest.TestCase):
             desc.split("enum:")[1])), tm.EVIDENCE_KINDS)
 
     def test_test_id_and_digest_patterns_in_md_match_code(self):
-        rows = tsl._table_rows(self.sections["識別子・digest の形式規則"])
+        rows = tsl._table_rows(self.sections["Format Rules for Identifiers and digests"])
         patterns = {cells[0]: tsl._BACKTICK_TOKEN.match(cells[1]).group(1)
                     for cells in rows}
         self.assertEqual(
-            patterns["`test_id` パターン"], tm.TEST_ID_PATTERN)
+            patterns["`test_id` pattern"], tm.TEST_ID_PATTERN)
         self.assertEqual(
-            patterns["`payload_digest` 形式"], tm.DIGEST_PATTERN)
+            patterns["`payload_digest` format"], tm.DIGEST_PATTERN)
 
     def test_detection_table_matches_code_check_lists(self):
-        rows = tsl._table_rows(self.sections["検出項目"])
+        rows = tsl._table_rows(self.sections["Detection Items"])
         md = {tsl._BACKTICK_TOKEN.match(cells[0]).group(1):
               tsl._BACKTICK_TOKEN.match(cells[1]).group(1)
               for cells in rows}
@@ -854,7 +854,7 @@ class TestManifestSchemaSyncMdToCode(unittest.TestCase):
             set(tm.WARNING_CHECKS))
 
     def test_matrix_row_schema_table_matches_actual_row_keys(self):
-        rows = tsl._table_rows(self.sections["マトリクス行スキーマ"])
+        rows = tsl._table_rows(self.sections["Matrix Row Schema"])
         documented = {tsl._BACKTICK_TOKEN.match(cells[0]).group(1)
                       for cells in rows}
         result = run_trace([make_clause()], manifest())
