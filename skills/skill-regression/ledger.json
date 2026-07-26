@@ -319,8 +319,8 @@
   },
   "plan-implement": {
     "file_sha256": {
-      "skills/plan-implement/SKILL.md": "c644ca37e118f4b891b6994418439cac31ebdc1db3b08774d52d24359ed65392",
-      "skills/plan-implement/fixtures.json": "1389dd43e17505f726d3cb7efe674279ff5785ec862007845f69a72bf3ed0626",
+      "skills/plan-implement/SKILL.md": "f9229a798736f707b8aaab0843f5e01c8a1e7b7b17b57291886f708e4bbaefcf",
+      "skills/plan-implement/fixtures.json": "2840fcbc704e213fcd50d5d492a96e6e8c4aabb525ab6bd94210ff6d87adaf89",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
       "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
@@ -328,8 +328,8 @@
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
     },
-    "note": "実行せず再評価不要と判断。変更は setup.files['.gitignore'] への Agent Artifact Store 無視宣言（/.agents/artifacts/ と /.agents/runtime/）の追加のみで、SKILL.md および実行者へ渡すプロンプトは不変。plan-implement の isolation は worktree であり、これまでもハーネスリポジトリ自身の .gitignore が同じ無視を提供していたため、実行者から見える環境は前後で同じ（#26 が指摘した「周囲のリポジトリに偶然依存する非決定性」を fixture 自身の宣言へ明示化した形）。pi-003 のみ setup に .gitignore ファイルが新規に存在するようになるが、ビルド生成物（__pycache__ / *.pyc）の ignore は意図的に含めていないため、critical 要件「ビルド生成物を追跡対象から外す ignore 設定を整備してからコミットしている」の検証力は保持される。",
-    "result": "accepted-without-run",
+    "note": "白紙実行者（tier: standard）で pi-001/002/003 を再実行し全 critical 合格（5/5・3/3・3/3、非 critical も 3/3・3/3・1/1）。3 シナリオとも入れ子委譲の完了通知が届かない制約により全フェーズをインライン代行（SKILL.md 冒頭の許可条項どおり）で、外部からの状況照会は 0 回。今回の追加要件のうち REFACTOR 不要時の根拠記録は pi-001 で実測できたが、指摘ゼロ回のイテレーション計上は 3 シナリオとも初回レビューが BLOCK/WARN ゼロで収束したため上限付近の数え方までは踏んでいない。",
+    "result": "pass",
     "surface": [
       "skills/plan-implement/SKILL.md",
       "skills/plan-implement/fixtures.json",
@@ -340,7 +340,7 @@
       "skills/shared/references/testing-anti-patterns.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "dff354a2c7927f0d5b33fb4c598fa136efd0398b23c0c389ba6f10582505d494",
+    "surface_sha256": "ba58f456e588e1e57df93a908519b925e90ac293f141716a872bc9816dac80df",
     "verified": "2026-07-26"
   },
   "plan-reviewer": {
