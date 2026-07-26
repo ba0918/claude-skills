@@ -5,11 +5,11 @@ description: スキルセットの description 発火精度（recall / precision
 
 # trigger-eval
 
-スキル数増加で劣化した「自然言語指示からの自発的スキル発火」を、description の品質として実測・改善するメタスキル。判定エージェントに **description 一覧しか渡さない**（実発火時のモデルの視界を再現）ことで、recall / precision / stability / confusion matrix を機械的に計測し、改稿→再評価を収束まで回す。
+A meta-skill that measures and improves, as a property of description quality, the "spontaneous skill triggering from natural-language instructions" that degrades as the number of skills grows. By passing the judging agent **nothing but the list of descriptions** (reproducing the model's field of view at real triggering time), it measures recall / precision / stability / confusion matrix mechanically and runs the revise→re-evaluate loop to convergence.
 
-**位置づけ**: [`empirical-prompt-tuning`](../empirical-prompt-tuning/SKILL.md) が「本文実行の質」を測るのに対し、trigger-eval は「選択層（description → 発火）」を測る。`validate_repo.py` チェック10（トリガー語の静的存在チェック）とは静的/動的の補完関係。
+**Positioning**: where [`empirical-prompt-tuning`](../empirical-prompt-tuning/SKILL.md) measures "the quality of executing the body", trigger-eval measures "the selection layer (description → triggering)". It stands in a static/dynamic complementary relation to `validate_repo.py` check 10 (the static presence check for trigger words).
 
-## 最小実行レシピ
+## Minimal execution recipes
 
 ```
 trigger-eval                # 本リポジトリの skills/ を対象に Phase 0→6
@@ -19,50 +19,50 @@ trigger-eval --no-e2e       # Tier 2 実発火検証をスキップ（デフォ�
 trigger-eval --selection-only  # Tier 1 を selection モードのみ計測（デフォルトは selection + autonomous）
 ```
 
-command は作らない（skills-first 方針。single-workflow のため名前付き入口も不要）。
+No command is created (the skills-first policy; being single-workflow, it needs no named entry point either).
 
-## アーキテクチャ: 静的プレパス + 2 層評価
+## Architecture: a static pre-pass plus two evaluation tiers
 
-| 層 | 方式 | コスト |
+| Tier | Method | Cost |
 |----|------|--------|
-| Phase 1.5 静的衝突プレパス | description の語彙 Jaccard で全ペア衝突候補を決定的に算出（`static_collisions.py`、LLM 不使用） | ほぼゼロ |
-| Tier 1 選択シミュレーション | バイアス排除サブエージェントに description 一覧 + 架空指示バッチだけを渡し、使うスキル(or none)を JSON で選ばせる | 低（軽量モデル、1 呼び出し ≤20 ケース、並行 dispatch） |
-| Tier 2 E2E 実発火検証 | `claude -p` に架空指示を素で渡し stream-json から Skill tool_use を検出。**使い捨て git worktree で実行** | 高（合計 6 セッション上限を駆動側 Bash ループで強制） |
+| Phase 1.5 static collision pre-pass | Compute all pairwise collision candidates deterministically from the vocabulary Jaccard of the descriptions (`static_collisions.py`, no LLM) | Nearly zero |
+| Tier 1 selection simulation | Pass a bias-free subagent only the description list plus a batch of fictional instructions, and have it choose the skill to use (or none) as JSON | Low (a lightweight model, ≤20 cases per call, dispatched in parallel) |
+| Tier 2 E2E real-triggering verification | Pass the fictional instructions raw to `claude -p` and detect the Skill tool_use from the stream-json. **Run it in a throwaway git worktree** | High (a total cap of 6 sessions, enforced by a driving-side shell loop) |
 
-判定・集計の詳細契約は参照資料に分離する（Progressive disclosure）:
+The detailed contracts for judging and aggregation are split into reference material (progressive disclosure):
 
-- 判定エージェント契約: [references/judge-protocol.md](references/judge-protocol.md)
-- ケース設計指針: [references/testcase-design.md](references/testcase-design.md)
-- メトリクス厳密定義: [references/metrics-spec.md](references/metrics-spec.md)
+- The judging agent's contract: [references/judge-protocol.md](references/judge-protocol.md)
+- Case design guidelines: [references/testcase-design.md](references/testcase-design.md)
+- The strict definition of the metrics: [references/metrics-spec.md](references/metrics-spec.md)
 
-バイアス対策の一般則は `skills/shared/references/codex-integration.md`、サブエージェント呼び出しのモデル階層は `skills/shared/references/orchestration-patterns.md` を参照（再記述しない）。
+For the general rules on countering bias see `skills/shared/references/codex-integration.md`, and for the model tiers of subagent invocation see `skills/shared/references/orchestration-patterns.md` (do not restate them).
 
-## ワークフロー
+## Workflow
 
-### Phase 0: 対象収集
+### Phase 0: Collect the targets
 
 ```bash
 python3 skills/trigger-eval/scripts/collect_descriptions.py --dir skills \
   --output .claude/tmp/trigger-eval-{ts}/skills.json
 ```
 
-- `{name, description}` 一覧を JSON 化。引数省略時はカレントリポジトリの `skills/*/SKILL.md`。`--user-scope` / `--dir PATH` で汎用適用。
-- **スキル名は plugin prefix を除いた bare name に正規化**し、以後 cases の正解ラベル・判定選択肢・集計で同一 namespace を使う。
-- **bare name 重複は fail-fast**（v1 は重複 namespace 非対応）。
-- **v1 スコープ外**: プラグインキャッシュのハッシュ付きネスト構造（`~/.claude/plugins/cache/<mp>/<plugin>/<hash>/skills/`）。必要になったら glob を追加する。
+- Turn the `{name, description}` list into JSON. With no argument, the current repository's `skills/*/SKILL.md`. Apply it generally with `--user-scope` / `--dir PATH`.
+- **Normalize the skill names to the bare name with the plugin prefix removed**, and use that same namespace thereafter for the cases' correct labels, the judging choices, and the aggregation.
+- **Duplicate bare names are fail-fast** (v1 does not support duplicate namespaces).
+- **Out of scope for v1**: the hashed nested structure of the plugin cache (`~/.claude/plugins/cache/<mp>/<plugin>/<hash>/skills/`). Add the glob when it becomes necessary.
 
-### Phase 1: 実データ種採取（任意）
+### Phase 1: Harvest real-data seeds (optional)
 
 ```bash
 python3 skills/skill-improve/scripts/collect.py --capture-prompts --days N \
   --output .claude/tmp/trigger-eval-{ts}/prompts.jsonl
 ```
 
-- 発火実績と発火漏れ候補（`correction_after_skill` シグナル + マスク済み `user_text_masked`）を採取。出力は `.claude/tmp/trigger-eval-{ts}/` のみ。
-- collect.py 側が**書き込み前に `git check-ignore --quiet <解決済み実出力パス>` で ignore 済みを検証し、非 0 なら拒否**（fail-closed。root .gitignore の文字列走査は使わない）。
-- **マスキングは denylist であり完全ではない**ため、採取済み本文ファイルは「マスク後も機微」として扱う（Phase 6 で削除）。
+- Harvest the triggering record and the missed-triggering candidates (the `correction_after_skill` signal plus the masked `user_text_masked`). The output goes only under `.claude/tmp/trigger-eval-{ts}/`.
+- collect.py itself **verifies before writing that the path is ignored, via `git check-ignore --quiet <the resolved actual output path>`, and refuses on a non-zero result** (fail-closed; it does not scan the root .gitignore as a string).
+- **The masking is a denylist and is not complete**, so treat a harvested body file as sensitive even after masking (delete it in Phase 6).
 
-### Phase 1.5: 静的衝突プレパス
+### Phase 1.5: Static collision pre-pass
 
 ```bash
 python3 skills/trigger-eval/scripts/static_collisions.py \
@@ -70,29 +70,29 @@ python3 skills/trigger-eval/scripts/static_collisions.py \
   --output .claude/tmp/trigger-eval-{ts}/collisions.json
 ```
 
-上位ペアは (a) hard-negative 生成の「隣接スキル」定義、(b) 改稿優先度、(c) 判定不要の自明な統合候補、に使う。
+The top pairs are used for (a) defining the "neighboring skills" for hard-negative generation, (b) prioritizing revisions, and (c) obvious merge candidates that need no judging.
 
-### Phase 2: テストケース生成・事前固定
+### Phase 2: Generate the test cases and freeze them in advance
 
-**生成者は改稿担当と分離した専用サブエージェント（軽量モデル）**。[testcase-design.md](references/testcase-design.md) に従う:
+**The generator is a dedicated subagent (a lightweight model) separate from the reviser**. Follow [testcase-design.md](references/testcase-design.md):
 
-- positive 2 / hard-negative 1–2 / none 全体の 25% 以上。単一正解ラベル。
-- 1 呼び出し ≤10 スキル、**出力ケース数 == 期待数を検証**。
-- **`cases.json`（train）と `cases_holdout.json`（holdout 20%、両側 none 25% 以上の層化分割）に固定**。以後差し替え禁止。holdout は改稿ループに見せない。
-- **固定前に匿名化三重ゲート**（masker 再適用 / raw seed 近似一致棄却 / 高エントロピートークン screen）を適用。
+- 2 positives / 1-2 hard negatives / at least 25% none overall. A single correct label.
+- ≤10 skills per call, and **verify that the number of emitted cases == the expected number**.
+- **Freeze them into `cases.json` (train) and `cases_holdout.json` (a 20% holdout, stratified so that both sides hold at least 25% none)**. No substitution thereafter. Never show the holdout to the revision loop.
+- **Apply the triple anonymization gate before freezing** (re-apply the masker / reject near-matches against the raw seeds / screen for high-entropy tokens).
 
-### Phase 3: 判定ラウンド
+### Phase 3: Judging round
 
-判定エージェント（**軽量モデル明示**、新規サブエージェント）に description 一覧 + ケースバッチを渡し JSON 回答を回収する。[judge-protocol.md](references/judge-protocol.md) に従う:
+Pass the judging agent (**a lightweight model, stated explicitly**, a fresh subagent) the description list plus a batch of cases, and collect its JSON answers. Follow [judge-protocol.md](references/judge-protocol.md):
 
-- **判定は 2 モードで実施する**（`judge-protocol.md` の selection / autonomous）。**デフォルトは selection + autonomous の両方を計測**し、`--selection-only` で従来動作（selection のみ）に戻す。入出力スキーマは共通で、フレーミングだけが異なる。モードごとに `judged-{mode}-iterN.json` を別々に生成する（混合禁止）。
-- 入力の配布は **インライン渡し、または `skills.json` + バッチファイルの 2 ファイルのみ読み取り許可**のいずれか（`judge-protocol.md`「入力の配布方法」）。
-- バッチ ≤20 ケース、並行 dispatch（最大 4）。ケース順シャッフル。
-- 回収時に**「判定数 == ケース数」を検証**。バッチ不正は 1 回だけ再判定 → なお不正なら `INVALID` 実体化。
-- stability のため同一ケースを独立に 2 判定（イテレーション 2 回目以降は固定サンプル 20–30 ケースに縮約、`--full-stability` で全数）。
-- 判定プロンプトで「ツールは一切使うな・与えられた入力のみで判定せよ」を明示（soft guarantee）。ファイル渡し時は許可した 2 ファイル以外を読まないことも明示。
+- **Judge in two modes** (selection / autonomous of `judge-protocol.md`). **The default measures both selection and autonomous**, and `--selection-only` restores the former behavior (selection only). The input and output schemas are shared and only the framing differs. Generate `judged-{mode}-iterN.json` separately per mode (never mix them).
+- Distributing the input is either **inline passing, or read access to exactly two files: `skills.json` plus the batch file** (「入力の配布方法」 of `judge-protocol.md`).
+- Batches of ≤20 cases, dispatched in parallel (at most 4). Shuffle the case order.
+- On collection, **verify that "the number of judgments == the number of cases"**. Re-judge a malformed batch exactly once → if it is still malformed, materialize it as `INVALID`.
+- For stability, judge the same case independently twice (from the second iteration onward, reduce this to a fixed sample of 20-30 cases; `--full-stability` for all of them).
+- State explicitly in the judging prompt that "no tools may be used, and the judgment must come from the given input alone" (a soft guarantee). When passing files, state explicitly as well that no file other than the two permitted ones may be read.
 
-### Phase 4: 集計
+### Phase 4: Aggregation
 
 ```bash
 # モードごとに同じスクリプトを別々に通す（aggregate_metrics.py は無改修）
@@ -105,71 +105,71 @@ python3 skills/trigger-eval/scripts/aggregate_metrics.py \
   --output .claude/tmp/trigger-eval-{ts}/metrics-autonomous-iterN.json
 ```
 
-`metrics-spec.md` の式で recall / precision / specificity / stability / confusion matrix / invalid_rate を算出。**2 モードの結果は混合せず**、収束・悪化ガードは selection を正・autonomous は参考系列（`metrics-spec.md`「モード軸」）。
+Compute recall / precision / specificity / stability / confusion matrix / invalid_rate with the formulas of `metrics-spec.md`. **Never mix the two modes' results**: selection is authoritative for the convergence and regression guards, and autonomous is a reference series (「モード軸」 of `metrics-spec.md`).
 
-計測完了時（各 iter の selection 系列）、対象スキルごとに計測イベントを追記して実行間比較を可能にする（[measurement-identity.md §4](../shared/references/measurement-identity.md#4-既存系の写像表)、推奨）:
+On completing a measurement (the selection series of each iteration), append a measurement event per target skill so that runs can be compared ([measurement-identity.md §4](../shared/references/measurement-identity.md#4-既存系の写像表), recommended):
 `python3 skills/shared/scripts/measurement_identity.py emit --system trigger-eval --event eval --skill <対象スキル> --repo-root {repo_root} --outcome '{"recall":R,"precision":P,"stability":S}'`
 
-### Phase 5: 改稿
+### Phase 5: Revision
 
-- ワースト（confusion 上位ペア or recall 最低スキル）に絞って description を改稿（**1 イテレーション 1 テーマ**）。
-- `skill-authoring.md` の frontmatter 契約（トリガー語必須・1024 字上限・ワークフロー要約禁止）に準拠し、**`validate_repo.py` 合格を改稿の完了条件**にする。
-- **改稿時は SKILL.md 本文との整合を目視確認**（発火率のために本文の能力を超える約束を書かない）。
-- **改稿は 1 スキル = 1 git 単位**。再評価で悪化・validate 不合格なら該当 description を改稿前に revert（ロールバックパス）。
+- Narrow the revision to the worst offenders (the top confusion pair, or the skill with the lowest recall) and revise its description (**one theme per iteration**).
+- Conform to the frontmatter contract of `skill-authoring.md` (trigger words mandatory, a 1024-character cap, no workflow summaries), and make **passing `validate_repo.py` the completion condition for a revision**.
+- **When revising, visually confirm consistency with the SKILL.md body** (do not promise capabilities beyond the body for the sake of the trigger rate).
+- **One revision = one git unit per skill.** If re-evaluation regresses or validation fails, revert that description to its pre-revision state (the rollback path).
 
-### Phase 6: 再評価 → 収束判定
+### Phase 6: Re-evaluation → convergence judgment
 
-Phase 3–5 を反復。停止条件の判定は **selection モードの系列を正とする**（autonomous は参考系列・キャリブレーション信号であり、収束・悪化判定に混ぜない。metrics-spec.md のモード軸を参照）。停止条件は次のいずれか:
+Repeat Phases 3-5. **The selection-mode series is authoritative** for judging the stopping conditions (autonomous is a reference series and a calibration signal; never mix it into the convergence or regression judgment. See the mode axis of metrics-spec.md). The stopping conditions are any of:
 
-1. **収束**: 連続 2 イテレーションで macro recall / precision の改善が +1pt 未満。
-2. **ハードキャップ**: `max_iterations = 5`。
-3. **悪化ガード**: いずれかのスキルの recall / precision、もしくは specificity / invalid_rate が前イテレーション比 **5pt 超悪化** → 直前改稿を revert して停止（precision の defined↔undefined 遷移は non-comparison、metrics-spec.md 参照）。
+1. **Convergence**: the improvement in macro recall / precision is under +1pt for two consecutive iterations.
+2. **Hard cap**: `max_iterations = 5`.
+3. **Regression guard**: any skill's recall / precision, or specificity / invalid_rate, regresses by **more than 5pt** against the previous iteration → revert the last revision and stop (a defined↔undefined transition in precision is a non-comparison; see metrics-spec.md).
 
-停止後:
+After stopping:
 
-- (a) **holdout 判定（必須・採用ゲート）**: holdout の macro recall / precision がループ開始前 baseline 比で**非劣化でなければ、最後に採用した改稿を revert し「holdout FAIL」としてレポートに明記**。
-- (b) **Tier 2 実発火検証**（層化固定 6 セッション、駆動側 Bash ループで上限強制、**デフォルト実行**、`--no-e2e` でスキップ可）。Tier1↔Tier2 乖離率を記録。
+- (a) **The holdout judgment (mandatory, an adoption gate)**: if the holdout's macro recall / precision is not non-degraded against the pre-loop baseline, **revert the last adopted revision and state "holdout FAIL" explicitly in the report**.
+- (b) **Tier 2 real-triggering verification** (a stratified, fixed 6 sessions, with the cap enforced by a driving-side shell loop, **run by default**, skippable with `--no-e2e`). Record the Tier1↔Tier2 divergence rate.
 
-**Tier 2 の層化配分（固定）**: 改稿対象 positive 2 / 未改稿ワースト positive 1 / none 1 / hard-negative 1 / 全ケースからランダム 1。**採用改稿が無い場合（即収束 / holdout FAIL で全 revert）は改稿対象枠を recall ワースト positive に振り替える**。乖離率レポートには「層化小標本であり全体推定ではない」注記を必ず付す。
+**Tier 2's stratified allocation (fixed)**: 2 positives for the revised skill / 1 positive for the worst unrevised skill / 1 none / 1 hard negative / 1 at random from all cases. **When no revision was adopted (immediate convergence, or everything reverted by a holdout FAIL), reallocate the revised-skill slots to positives for the worst-recall skill.** Always attach a note to the divergence-rate report that it is a stratified small sample and not an estimate of the whole.
 
-### レポート
+### Report
 
-`.claude/tmp/trigger-eval-{ts}/report.md` に出力:
+Emit to `.claude/tmp/trigger-eval-{ts}/report.md`:
 
-- メトリクス推移 / confusion 上位（**全行列ダンプではなく非ゼロセル・上位 N ペアのみ**、raw と正規化率 `confusion(A,B)/related_cases(A,B)` を併記）
-- **selection / autonomous のモード別併記**（`--selection-only` 時は selection のみ）。selection を主指標、autonomous を参考系列として並べ、両者の乖離を salience 信号として記す。**混合値は出さない**
-- 改稿差分 / Tier1↔Tier2 乖離率 / holdout 判定
-- **統合 / 棲み分け再設計候補ペア**（静的プレパス上位 + 改稿 2 回で confusion が解消しないペア）
-- 実行メタデータ（判定モデル / 日付 / `cases.json` と `cases_holdout.json` の sha256 / stability サンプル台帳）
+- The metric trajectory / the top confusions (**only the non-zero cells and the top N pairs, not a full matrix dump**, listing both the raw value and the normalized rate `confusion(A,B)/related_cases(A,B)`)
+- **The selection / autonomous modes side by side** (selection only under `--selection-only`). Place selection as the primary metric and autonomous as a reference series, and note the divergence between them as a salience signal. **Never emit a mixed value**
+- The revision diffs / the Tier1↔Tier2 divergence rate / the holdout judgment
+- **Candidate pairs for merging or redesigned separation** (the top of the static pre-pass, plus pairs whose confusion does not resolve after two revisions)
+- Execution metadata (the judging model / the date / the sha256 of `cases.json` and `cases_holdout.json` / the stability sample ledger)
 
-**保持するのは report.md / cases.json / cases_holdout.json / 各イテレーションのメトリクス JSON**（再現・run 間比較のアンカー）。**raw プロンプト本文を含む採取ファイル（--capture-prompts 出力）は削除**。過去の `trigger-eval-*` ディレクトリは 30 日超で削除を促す。report.md に載せる失敗例は**匿名化検査済みケースのみ**（raw seed 転記禁止）。
+**What is retained is report.md / cases.json / cases_holdout.json / the metrics JSON of each iteration** (the anchors for reproduction and cross-run comparison). **The harvest files containing raw prompt bodies (the `--capture-prompts` output) are deleted.** Prompt deletion of `trigger-eval-*` directories older than 30 days. The failure examples put into report.md are **only cases that passed the anonymization inspection** (transcribing a raw seed is forbidden).
 
-## リソース上限の四点セット
+## The four-part set of resource caps
 
-無制限な次元を残さない:
+Leave no dimension unbounded:
 
-1. 判定バッチ ≤20 ケース/呼び出し + 判定数==ケース数検証
-2. ケース生成 ≤10 スキル/呼び出し + 件数検証
-3. 改稿ループ `max_iterations = 5` ハードキャップ + 悪化ガード
-4. JSONL は mtime 事前フィルタ + 行単位ストリーミング、Tier 2 は 6 セッション × (`--max-turns 2` + 180s timeout)
+1. Judging batches of ≤20 cases per call, plus the judgments==cases verification
+2. Case generation of ≤10 skills per call, plus the count verification
+3. The `max_iterations = 5` hard cap on the revision loop, plus the regression guard
+4. JSONL is pre-filtered by mtime and streamed line by line; Tier 2 is 6 sessions × (`--max-turns 2` + a 180s timeout)
 
-## 合理化防止
+## Preventing rationalization
 
-| 言い訳 | 現実 |
+| Excuse | Reality |
 |--------|------|
-| 「description を盛れば直る」 | 1024 字上限・トリガー語規約・本文整合チェックが上限。validate_repo.py 合格が完了条件 |
-| 「ケースを後から差し替えたい」 | 事前固定原則違反。holdout ゲートで過適合が検出される |
-| 「Tier 2 は高いから常にスキップ」 | デフォルト実行。スキップは `--no-e2e` の明示指定のみ |
-| 「収束しないからもう 1 周」 | max_iterations=5 のハードキャップ |
-| 「悪化したが平均は改善している」 | per-skill recall/precision + specificity/invalid_rate の 5pt 悪化ガードで revert |
-| 「holdout が悪いが train は良いので採用」 | holdout は採用ゲート。FAIL なら revert |
-| 「本文を判定に見せれば精度が上がる」 | 実発火時のモデルの視界と乖離し false positive を生む。description-only は仕様 |
+| "Padding the description will fix it" | The 1024-character cap, the trigger-word convention, and the body-consistency check are the ceiling. Passing validate_repo.py is the completion condition |
+| "I want to swap the cases out afterwards" | That violates the freeze-in-advance principle. The holdout gate detects the overfitting |
+| "Tier 2 is expensive, so always skip it" | It runs by default. Skipping requires an explicit `--no-e2e` |
+| "It is not converging, so let us do one more round" | The `max_iterations=5` hard cap |
+| "It regressed, but the average improved" | The 5pt regression guard on per-skill recall/precision plus specificity/invalid_rate reverts it |
+| "The holdout is bad but train is good, so adopt it" | The holdout is an adoption gate. On FAIL, revert |
+| "Showing the body to the judge would raise accuracy" | That diverges from the model's field of view at real triggering time and produces false positives. description-only is the specification |
 
-## Red Flags（trigger-eval 違反の兆候）
+## Red flags (signs of a trigger-eval violation)
 
-- 判定エージェントに SKILL.md 本文を渡している
-- cases を固定後に編集している / holdout を改稿ループに見せている
-- 悪化ガード・holdout ゲートを「レポートに書いたから」で revert せず採用している
-- `--capture-prompts` 出力を保持成果物に残している
-- Tier 2 を理由なく常にスキップしている
-- 改稿 description が SKILL.md 本文の能力を超える約束をしている
+- Passing the SKILL.md body to the judging agent
+- Editing the cases after freezing them / showing the holdout to the revision loop
+- Adopting despite the regression guard or the holdout gate on the grounds that "it is written in the report", without reverting
+- Leaving the `--capture-prompts` output among the retained artifacts
+- Always skipping Tier 2 without a reason
+- A revised description promising capabilities beyond the SKILL.md body

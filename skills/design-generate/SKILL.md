@@ -5,19 +5,19 @@ description: ページ定義（.design/pages/*.json）+ コンポーネントカ
 
 # Design Generate
 
-ページ定義 + コンポーネントカタログに基づいて、**制約付き** でページを生成する。
-LLM の自由度を「承認済みコンポーネントの組み立て」と「セクション内コンテンツ」に限定し、デザインの再現性を構造的に保証する。
+Generate a page **under constraints**, based on a page definition plus the component catalog.
+Restricting the LLM's freedom to "assembling approved components" and "the content inside a section" structurally guarantees that the design is reproducible.
 
-**共有契約:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md) を参照。
+**Shared contract:** see [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md).
 
-## 前提条件
+## Prerequisites
 
-1. `.design/tokens.json` が存在すること
-2. `.design/tokens.css` が存在すること
-3. `.design/component-catalog.json` が存在すること
-4. `.design/pages/` に1つ以上のページ定義が存在すること
+1. `.design/tokens.json` must exist
+2. `.design/tokens.css` must exist
+3. `.design/component-catalog.json` must exist
+4. At least one page definition must exist under `.design/pages/`
 
-いずれかが欠けている場合:
+When any of them is missing:
 ```
 ❌ 必要なファイルが見つかりません:
   {欠けているファイル一覧}
@@ -27,10 +27,10 @@ LLM の自由度を「承認済みコンポーネントの組み立て」と「�
 
 ## Workflow
 
-### Step 1: 生成対象の決定
+### Step 1: Decide what to generate
 
-$ARGUMENTS にページ名が指定されている場合はそのページを生成。
-未指定の場合は ユーザーに選択肢を提示して質問:
+If a page name is given in $ARGUMENTS, generate that page.
+If none is given, present the user with options and ask:
 
 ```
 header: "生成するページ"
@@ -39,65 +39,65 @@ options:
   - "全ページ一括生成"
 ```
 
-### Step 2: 定義ファイル読み込み
+### Step 2: Read the definition files
 
-1. `.design/tokens.json` を読み込む
-2. `.design/tokens.css` を読み込む
-3. `.design/component-catalog.json` を読み込む
-4. `.design/pages/{target}.json` を読み込む
-5. `.design/layout-rules.json` を読み込む（存在する場合）
+1. Read `.design/tokens.json`
+2. Read `.design/tokens.css`
+3. Read `.design/component-catalog.json`
+4. Read `.design/pages/{target}.json`
+5. Read `.design/layout-rules.json` (when it exists)
 
-### Step 3: 制約の構築
+### Step 3: Build the constraints
 
-ページ定義から以下の制約を構築:
+Build the following constraints from the page definition:
 
-#### コンポーネント制約
-- `allowedComponents` が定義されている場合 → そのリスト内のコンポーネントのみ使用可
-- 未定義の場合 → catalog 全体を許可
-- 各コンポーネントは catalog の定義通りの props / variants / states のみ使用
+#### Component constraints
+- When `allowedComponents` is defined → only the components in that list may be used
+- When it is undefined → the whole catalog is permitted
+- Each component may use only the props / variants / states exactly as the catalog defines them
 
-#### レイアウト制約
-- `layout.type` に従ったページ構造（single-column, sidebar, grid 等）
-- `sections` の順序を厳守（`order` フィールドで制御）
-- 各セクションの `layout`（direction, gap, columns）に従う
+#### Layout constraints
+- The page structure follows `layout.type` (single-column, sidebar, grid, and so on)
+- Adhere strictly to the order of `sections` (controlled by the `order` field)
+- Follow each section's `layout` (direction, gap, columns)
 
-#### トークン制約
-- 全ての色 → `var(--color-*)`
-- 全てのフォント → `var(--font-*)`
-- 全ての spacing → `var(--spacing-*)`
-- 全ての角丸 → `var(--radius-*)`
-- 全ての shadow → `var(--shadow-*)`
+#### Token constraints
+- Every color → `var(--color-*)`
+- Every font → `var(--font-*)`
+- Every spacing → `var(--spacing-*)`
+- Every corner radius → `var(--radius-*)`
+- Every shadow → `var(--shadow-*)`
 
-### Step 4: ページ生成
+### Step 4: Generate the page
 
-#### 生成プロセス
+#### The generation process
 
-1. **ページシェル生成**: layout.type に基づいた HTML/JSX の外枠を構築
-2. **セクション配置**: sections 定義の order 順にセクションを配置
-3. **コンポーネント配置**: 各セクションの components 定義に従い、catalog のコンポーネントをインポート・配置
-4. **コンテンツ注入**: 各コンポーネントの props にコンテンツ（テキスト・画像パス等）を設定
-5. **スタイリング**: tokens.css の CSS 変数のみを使用してスタイリング
-6. **レスポンシブ**: responsive 定義に従ったブレークポイント対応
+1. **Generate the page shell**: build the outer HTML/JSX frame based on layout.type
+2. **Place the sections**: place the sections in the order given by the sections definition
+3. **Place the components**: following each section's components definition, import and place the catalog's components
+4. **Inject the content**: set the content (text, image paths, and so on) into each component's props
+5. **Styling**: style using only the CSS variables of tokens.css
+6. **Responsive**: handle the breakpoints per the responsive definition
 
-#### LLM の自由度
+#### The LLM's freedom
 
-**許可:**
-- セクション内のコンテンツ（テキスト・画像の **内容**）
-- アニメーション・トランジション（DESIGN.md / schema 未定義の領域）
-- コンテンツの文言・ダミーデータ
-- 画像の placeholder（`<img src="https://placehold.co/..." />`）
+**Permitted:**
+- The content inside a section (the **contents** of text and images)
+- Animations and transitions (an area left undefined by DESIGN.md / the schema)
+- The wording of the content and dummy data
+- Image placeholders (`<img src="https://placehold.co/..." />`)
 
-**禁止:**
-- コンポーネントの追加・変更・削除
-- tokens にない値の使用
-- セクション構成の変更
-- allowedComponents 外のコンポーネント使用
-- inline style でのトークン対象プロパティ上書き
-- カスタム CSS クラスでのトークン値直書き
+**Forbidden:**
+- Adding, changing, or removing a component
+- Using a value that is not in the tokens
+- Changing the section composition
+- Using a component outside allowedComponents
+- Overriding a token-governed property with an inline style
+- Writing a token value literally in a custom CSS class
 
-#### 生成コードの構造
+#### The structure of the generated code
 
-**React/Preact の場合:**
+**For React/Preact:**
 ```typescript
 // pages/{PageName}.tsx — Generated from .design/pages/{name}.json
 import { Button, Card, Input, Nav } from '../components/react';
@@ -115,7 +115,7 @@ export const {PageName}: React.FC = () => {
 };
 ```
 
-**HTML スタンドアロンの場合:**
+**For standalone HTML:**
 ```html
 <!DOCTYPE html>
 <html lang="ja">
@@ -136,20 +136,20 @@ export const {PageName}: React.FC = () => {
 </html>
 ```
 
-### Step 5: 自動 Lint 実行
+### Step 5: Run the lint automatically
 
-生成完了後、即座に design-lint を実行して違反を検出:
+As soon as generation completes, run design-lint to detect violations:
 
-1. 生成されたファイルに対して DL001-006 + DL101-103 を適用
-2. 違反が検出された場合:
-   - 自動修正（var(--*) への置換等）を試みる
-   - 修正不能な違反はエラーとしてレポート
-3. 全ルール PASS を確認してから出力
+1. Apply DL001-006 + DL101-103 to the generated files
+2. When violations are detected:
+   - Attempt an automatic fix (replacing with var(--*), and so on)
+   - Report violations that cannot be fixed as errors
+3. Confirm that every rule PASSes before emitting the output
 
-### Step 6: 出力と確認
+### Step 6: Output and confirmation
 
-**生成先:**
-- React: `src/pages/{PageName}.tsx`（ユーザーに選択肢を提示して出力先を確認）
+**Where it is written:**
+- React: `src/pages/{PageName}.tsx` (present the user with options and confirm the output location)
 - HTML: `mockups/{page-name}.html`
 
 ```
@@ -167,15 +167,15 @@ export const {PageName}: React.FC = () => {
 修正したい場合はフィードバックを教えてください。
 ```
 
-ユーザーに選択肢を提示して追加調整を確認:
-- 「OK」→ 終了
-- 修正フィードバック → コードを修正 → 再 lint → 再確認（ループ）
+Present the user with options and confirm any further adjustment:
+- 「OK」 → finish
+- Correction feedback → fix the code → re-lint → confirm again (a loop)
 
-## ページ定義の対話的作成
+## Creating a page definition interactively
 
-`.design/pages/` が空の場合、または新しいページを追加したい場合:
+When `.design/pages/` is empty, or when the user wants to add a new page:
 
-1. ユーザーに選択肢を提示してページの種類を質問:
+1. Present the user with options and ask for the page type:
    ```
    header: "ページタイプ"
    options:
@@ -184,24 +184,24 @@ export const {PageName}: React.FC = () => {
      - "一覧ページ"
      - "フォームページ"
    ```
-2. layout-rules.json の `patterns` から推奨パターンを提案
-3. ユーザーに選択肢を提示してセクション構成を確認
-4. catalog.json のコンポーネントリストから各セクションの配置を決定
-5. `.design/pages/{name}.json` に保存
-6. 続けてページ生成に進む
+2. Propose a recommended pattern from the `patterns` of layout-rules.json
+3. Present the user with options and confirm the section composition
+4. Decide the placement for each section from the component list of catalog.json
+5. Save it to `.design/pages/{name}.json`
+6. Continue on to generating the page
 
-## 絶対的な制約
+## Absolute Constraints
 
-- **ページ定義なしの生成は禁止**。必ず `.design/pages/*.json` を経由する
-- 生成コードは **design-lint の全ルールに PASS** しなければならない
-- コンポーネントのインポートは catalog 生成ファイルからのみ（自前定義禁止）
-- CSS 値は全て CSS custom properties 経由（直書き値禁止）
-- page-def の `sections.order` を変更してはならない
+- **Generating without a page definition is forbidden.** Always go through `.design/pages/*.json`
+- The generated code must **PASS every rule of design-lint**
+- Import components only from the catalog-generated files (defining your own is forbidden)
+- Every CSS value goes through a CSS custom property (literal values are forbidden)
+- Never change the page definition's `sections.order`
 
 ## References
 
-- **生成制約の詳細:** [references/generation-constraints.md](references/generation-constraints.md) — 制約の階層 / 許可される自由度 / 禁止事項と対応 lint ルール
+- **Details of the generation constraints:** [references/generation-constraints.md](references/generation-constraints.md) — the constraint hierarchy / the permitted degrees of freedom / the prohibitions and their corresponding lint rules
 - **Page Schema:** [../design-scaffold/references/page-schema.json](../design-scaffold/references/page-schema.json)
 - **Layout Schema:** [../design-scaffold/references/layout-schema.json](../design-scaffold/references/layout-schema.json)
 - **Catalog Schema:** [../design-scaffold/references/catalog-schema.json](../design-scaffold/references/catalog-schema.json)
-- **共有契約:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md)
+- **Shared contract:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md)
