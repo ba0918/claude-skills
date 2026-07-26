@@ -13,18 +13,18 @@ For each significant turning point, pick up the initial judgment, the new fact t
 Write a single narrative for a general engineer as the reader, in the following order.
 
 ```markdown
-# {機能・領域名} オリエンテーション（使い捨て・未署名）
+# {feature / area name} orientation (disposable, unsigned)
 
-この文書は裁定の文脈を回復するための読み物です。権威はありません。確定した合意は台帳が正本です。
+This document is a read-through for recovering the context behind adjudications. It carries no authority. The ledger is the source of truth for settled agreements.
 
-## これは何か（文脈）
-{機能が何のために始まり、最初にどの案を採ったか}
+## What this is (context)
+{why the feature started, and which option was taken first}
 
-## どう決まってきたか（決定）
-{新事実や制約により判断がどう変わったか。重要な変更は理由とともに厚く書く}
+## How it got decided (decisions)
+{how judgments shifted as new facts or constraints arrived. Write the important changes at length, with their reasons}
 
-## いま何が効いているか（帰結）
-{現在利用者が観測する振る舞いと、まだ裁定が必要な論点}
+## What is in effect now (consequences)
+{the behavior users observe today, and the points that still need adjudication}
 ```
 
 Use general engineering terms as they are, add a short gloss to specialist terms, and expand project-specific words only when the input defines them. Avoid empty phrases, uniformly shaped bullet lists, and writing that gives every decision the same weight.
@@ -33,7 +33,7 @@ Use general engineering terms as they are, add a short gloss to specialist terms
 
 The output is disposable, unsigned, and non-authoritative; never let it stand in for the ledger. Unspecified matters may be named in the consequences, but do not decide values or create state transitions.
 
-orient owns only the narrative of provenance. Do not generate the static field table enumerating current behavior, the `⚠️未規定` bullet list, or the correspondence table against ledger rows — the current-spec reference of extract owns those.
+orient owns only the narrative of provenance. Do not generate the static field table enumerating current behavior, the `⚠️ unspecified` bullet list, or the correspondence table against ledger rows — the current-spec reference of extract owns those.
 
 ## 4. Gate any write
 

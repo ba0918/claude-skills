@@ -29,13 +29,13 @@ Pick exactly one with the first argument.
 
 status does not modify the ledger. Because this section contains everything required, emit a short human-facing decision view in the following order without reading the schema source of truth, the vocabulary source of truth, the templates, or any other workflow.
 
-1. 「停止要因」 — high-risk undecided items that block implementation
-2. 「高リスク未裁定の上位」 — the top high-risk undecided items
-3. 「期限切れ委任」 — expired delegations
-4. 「次の一手」 — the next move
-5. 「再開地点」 — where to resume
+1. "Blockers" — high-risk undecided items that block implementation
+2. "Top high-risk undecided items" — the top high-risk undecided items
+3. "Expired delegations" — expired delegations
+4. "Next move" — the next move
+5. "Resume point" — where to resume
 
-Open with 「未裁定 N 件 / 高リスク M 件」 and defer the full list of agreed items and the history to a detail view. Keep the whole thing within one or two scrolls. Do not expose internal state words as-is: rephrase them for humans, `UNDECIDED` as 「未裁定」 and `DELEGATED` as 「任せた（範囲: …）」. If the input contains no claims, do not invent content — show only the counts and what information is missing.
+Open with "N undecided / M high-risk" and defer the full list of agreed items and the history to a detail view. Keep the whole thing within one or two scrolls. Do not expose internal state words as-is: rephrase them for humans — `UNDECIDED` as "not decided yet" and `DELEGATED` as "delegated (scope: …)". If the input contains no claims, do not invent content — show only the counts and what information is missing.
 
 ## Completion
 

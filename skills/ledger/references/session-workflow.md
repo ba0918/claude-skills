@@ -27,7 +27,7 @@ Before confirmation, all you may present is an "interpretation proposal" for eac
 - expressions that read as already settled, such as "recording it" or "marking it agreed"
 - planned records whose value is `AGREED` / `REJECTED` / `DELEGATED`
 
-Instead, state the meaning of the candidate in natural language, as in 「UI-042 は OK という理解で合っていますか」. When there is an ambiguous demonstrative or a `任せる`, state explicitly that what it refers to is ambiguous, and only then offer the interpretation proposal. Keep every target row in its current state until the human explicitly confirms the interpretation proposal.
+Instead, state the meaning of the candidate in natural language, as in "is it correct to read UI-042 as OK?". When there is an ambiguous demonstrative or a `任せる`, state explicitly that what it refers to is ambiguous, and only then offer the interpretation proposal. Keep every target row in its current state until the human explicitly confirms the interpretation proposal.
 
 When `任せる` is involved, present once a minimal delegation proposal covering the subject, the target operation, the scope (the current plan by default), the deadline, and revocation, and confirm which row or part of the judgment the delegation applies to.
 
