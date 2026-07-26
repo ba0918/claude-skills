@@ -337,6 +337,29 @@ review-deps / skill-regression の各 SKILL.md）の鉤括弧引用も英語見�
   spec-verify 4）は、参照元 SKILL.md が別ブランチで英語化されており、アンカー更新が
   衝突するため次バッチへ送った
 
+`skills/shared/references/tool-mapping.md` を削除した。英語化の対象として棚卸ししたところ、
+文書の中心である Claude Code ↔ Codex CLI のツール名対応表は、1.40.0 でスキル本文から固有
+API 名を排除した時点で前提を失っていた。ツール固有語彙の取り締まりは skill-interface-audit
+の SI-S004 が自前の検出語彙で担っており、この文書を参照していない。参照元の
+`skills/shared/SKILL.md` 自身が「歴史的参考」と断っていたことも、役目の終了を裏づける。
+訳す前に存続可否を裁定するという判断（前セッションの引き継ぎで課題として残されていた）に対し、
+「終えている」と結論した。
+
+ただし全体が死んでいたわけではなく、他のどこにも記述がない 2 つの生きた規約を
+`skill-authoring.md` の「クロスツール互換性の注意」へ移設してから削除した。1 つは共有契約の
+可搬性判定（tool-agnostic / platform-aware / platform-specific）、もう 1 つは対話によるユーザー
+確認がランタイムによっては特定モードでしか使えないという実測制約と、非対話実行時に安全側
+デフォルトへ降格する義務。後者は移設にあたり固有 API 名を落とし、AGENTS.md のプラットフォーム
+非依存表現の規約に合わせた。
+
+- `skills/shared/references/tool-mapping.md`: 削除。fixture 保有スキルへの影響は 0（`ledger.py
+  --impact` が空）で、回帰評価は発生しない
+- `skills/shared/references/skill-authoring.md`: 可搬性の 3 段階と対話確認 fallback を追記し、
+  削除した文書への案内を差し替え
+- `skills/shared/SKILL.md`: 歴史的参考としての参照を、可搬性基準の所在（skill-authoring.md）へ差し替え
+- `.codex-plugin/plugin.json`: longDescription の "with tool-mapping for cross-platform
+  compatibility" を、実態である「プラットフォーム非依存の自然言語で記述」へ改めた
+
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の
