@@ -5,9 +5,10 @@
       "skills/brainstorm/fixtures.json": "3ecf16bb90f0039fc71569eb90d213b69dfd7b7337580823ac73b296333695e5",
       "skills/brainstorm/references/idea-template.md": "6c5bd8a88f69f97cd4e42fe00bb86bedf25060ee0f2227902d96bea51ef61b21",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
-      "skills/shared/references/human-readable-summary.md": "f3dba0207381c14d9d73c0e72c1ed249843b48596c38edcb8de3c90f4e1ecc26"
+      "skills/shared/references/codex-integration.md": "aa850f8efe9d355cd8300f223b2ae7dcee77eb9e06f47ecc7e7e0a8e9489bdb4",
+      "skills/shared/references/human-readable-summary.md": "c0c6a954f59c70b1b1ae4b0284e2652a10a42d34ba96dbcdaf888d667309ce47"
     },
+    "note": "S2 英語化（codex-integration / human-readable-summary）後の再走。報告回収に照会 1 回/シナリオ（bs-002/003 は不要）。3 シナリオ全 pass。bs-003 は git 未初期化のため mtime ナノ秒比較で無改変を裏取り。",
     "result": "pass",
     "surface": [
       "skills/brainstorm/SKILL.md",
@@ -17,8 +18,8 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "e089ca06891bce863d6408ff13d3fd47739347505e4bd6d4881b61f4a5efc774",
-    "verified": "2026-07-22"
+    "surface_sha256": "c056ab85a1b4170dc5198c3c130bc5c822c379e2515a6e2c5d1c8c8fa1860dba",
+    "verified": "2026-07-27"
   },
   "brief": {
     "file_sha256": {
@@ -54,17 +55,17 @@
     "file_sha256": {
       "skills/commit/SKILL.md": "8a3c4ce0d6b38b19ac25b7f96ca6514ec6f328121ff3407cddf12df8aacd6d28",
       "skills/commit/fixtures.json": "695f26893f3762173ca414166f83058d22e6d2d02164b738813f55efed74dbbd",
-      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
+      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a"
     },
-    "note": "3 シナリオ実走 pass。branch=fixture-work / ベースラインは .gitignore のみ追跡、という宣言で実体化。cm-002 の .env はサンドボックスが /dev/null を被せるため内容は未実体化（判定は名前・種別ベースで成立）。状況照会 0 回",
+    "note": "S2 英語化（verification-gate）後の再走。実行者の最終出力が呼び出し側に届かず、idle 後に報告送信を照会して回収（照会 1 回/シナリオ）。3 シナリオ全 pass。",
     "result": "pass",
     "surface": [
       "skills/commit/SKILL.md",
       "skills/commit/fixtures.json",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "fc58efb7a761c315b58ddb6e6988cbd56621b196b980acb742935be7cb323210",
-    "verified": "2026-07-25"
+    "surface_sha256": "f2abb831231038caab83142c7d54f3e893e3b32761a5afe40c582b4f4a1f2c9e",
+    "verified": "2026-07-27"
   },
   "context-audit": {
     "file_sha256": {
@@ -78,11 +79,11 @@
       "skills/context-audit/scripts/collect_targets.py": "aa6a60a70f3c7c3b4c161c0ca080d428fe4b3fa9ff4169af7707f74b2fe5957e",
       "skills/context-audit/scripts/static_checks.py": "87d54d880ddfe445e4872378b0024893a848efc6592cef19255afde7179b9216",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/fix-action-taxonomy.md": "49a3b802152849216ecbbab13f6287e7ecc5003bb3510e89e4ade8bfd99065bb",
-      "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
-      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
+      "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
+      "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
+      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a"
     },
-    "note": "3 シナリオ実走 pass。target-project は全件 sha256 一致で無改変、非対話フォールバックで baseline 未書き込み。状況照会 0 回",
+    "note": "S2 英語化（fix-action-taxonomy / severity-and-verdicts / verification-gate）後の再走。報告回収に照会 1 回/シナリオ。3 シナリオ全 pass。非対話 first-run は (c) フルレポートに倒れ baseline 未書込を機械確認。",
     "result": "pass",
     "surface": [
       "skills/context-audit/SKILL.md",
@@ -99,8 +100,8 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "18442c9a0f874e58562550dd06033dd07e4b0e10810c674718fdf675e3afbd89",
-    "verified": "2026-07-25"
+    "surface_sha256": "d49b61955486cccf66f3cd0ef509c64f5565783f2183d379ecfad7a280cf03a3",
+    "verified": "2026-07-27"
   },
   "cycle": {
     "file_sha256": {
@@ -109,10 +110,10 @@
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
-      "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
-      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
+      "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
+      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a"
     },
-    "note": "Phase 3 ガード修正（PR #27 / issue #18）の run と、fixture の artifact store 契約是正（PR #26 / issue #17）の run を統合した記録。PR #27 の実走時点で issue #17 は未マージだったが、実行者が .agents/ の gitignore 宣言を run 時に補って実体化しており、#26 マージ後の環境と実質同条件で評価している（fixture 本体は #26 が正式化）。cy-001/002/003 の critical を 3/3 合格。cy-001/003 は Phase 1/2 を委譲（配下は再委譲不可でインライン代行）・Phase 3 は直接実行、状況照会 0 回。Phase 3 の判別は checker ではなく機械オラクル（session-history.md の当該行数 == 1 かつ Current Session が終端状態）で採点し、未実行ワークスペースに対して 0 合格を返すことで判別力も検証済み。cy-001 の非 critical R6（Phase 3 成果物のコミット）は 部分的 — store が契約どおり Git 無視のため result/status/session-history は構造的にコミット対象外。cy-001・cy-003 の実行者が独立に同じ矛盾（cycle Phase 3 step 4 と artifact-store invariant 3）を指摘しており、要設計判断として据え置き。",
+    "note": "S2 英語化（tdd-contract / verification-gate）後の再走。3 シナリオとも critical 全 ○。cy-001 は refine の入れ子委譲に成功したが子の完了通知が実行者ではなく呼び出し側へ届く既知制約に当たり待機。契約どおり上位ウォッチドッグとして事実のみの照会（委譲先は完了済み・通知は届かない）を送り復帰、Phase 2-3 を完走した。照会 2 回（うち 1 回は報告回収要求）。cy-001 の判定は自己申告ではなく成果物（result ファイル・status.md・session-history.md・git log）から行った。R5（CYCLE COMPLETE 表示）は表示物のため未観測、R6 は fixture の .gitignore が /.agents/artifacts/ を含み成果物を commit できないため非該当。いずれも非 critical。",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -123,8 +124,8 @@
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "62cfb79f437a87de0cc1ebf0083e00d467291886de821fe2c19cad3b252bd860",
-    "verified": "2026-07-26"
+    "surface_sha256": "f427b6cf31a3fe3264c81dd10c95efc8c0381c52a3293e00d3b689d29a78152d",
+    "verified": "2026-07-27"
   },
   "decision-journal": {
     "file_sha256": {
@@ -133,9 +134,9 @@
       "skills/decision-journal/references/decision-record-template.md": "80cf07e4d5d511905dd5cc8c9dc3a9feba5be316e88f6640823e246125e569de",
       "skills/decision-journal/references/interview-guide.md": "e7f855049d051bba9500bbe45df5b83ca690c41d2411a07f3d7ea938b5e87207",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/decision-protocol.md": "9eff7d16008b37d7e45c16a07dfe85a7667aa1927f4e59057a3dd82e2db4ba05"
+      "skills/shared/references/decision-protocol.md": "9385ac847f75b4b23daaba710f72faee1f5319e88ef57ab45058c3d1a5db9629"
     },
-    "note": "dj-003 baseline リセット後の計測: 4 シナリオを本番同等モデルの実行者 16 体 + 独立採点者 16 体で日英両版に実行（争点の dj-003 / dj-004 は k=3）。JA 平均 0.982 → EN 平均 1.000、全 16 run で critical failure ゼロ、封印セクション不改変は sha256 で機械検証済み。旧チェックリスト b9145a0b の dj-003 は Interview 全工程を 1 ターンで測っており、復元不能の確定・証拠強度ラベル・途中保存の 3 要件が構造的に到達不能だった。実行者への照会 0 回。",
+    "note": "S2 英語化（decision-protocol）後の再走。4 シナリオ全 pass。dj-004 は fixture の setup が空で「封印セクションのみのファイルが存在する」前提が散文宣言に留まるため、実行者が自分で封印を起こしてから不改変を実演する形になった（capture 時と同条件なので回帰比較は成立するが、検証の独立性は弱い）。dj-002 の認証情報検出→3 択提示は正しく発火。報告回収に照会 1 回/シナリオ。",
     "result": "pass",
     "surface": [
       "skills/decision-journal/SKILL.md",
@@ -145,8 +146,8 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/decision-protocol.md"
     ],
-    "surface_sha256": "9e2cc291e400a3174f1f8cc752db735dea4f9cf5132a28306bf3a990ef36be07",
-    "verified": "2026-07-25"
+    "surface_sha256": "44b008b8522545db53b6bcdd8ecda8227d31f1637f926f85bb84d47ed0b0ee2c",
+    "verified": "2026-07-27"
   },
   "design-guide": {
     "file_sha256": {
@@ -155,9 +156,9 @@
       "skills/design-guide/references/anti-patterns.md": "3c61f4579e582f5346c7f442d0a9434142b75abde5dded51552eb019b4e0a6b5",
       "skills/design-guide/references/design-md-template.md": "f429ad90dfc1650e1efe49fceee49ffba3b261be385e0c50487e24ca701fbf81",
       "skills/design-guide/references/discovery-questions.md": "aafdbb1c088d828c7b9da66e78afb9570632b686533afa06d901d9d98008bc9a",
-      "skills/shared/references/human-readable-summary.md": "f3dba0207381c14d9d73c0e72c1ed249843b48596c38edcb8de3c90f4e1ecc26"
+      "skills/shared/references/human-readable-summary.md": "c0c6a954f59c70b1b1ae4b0284e2652a10a42d34ba96dbcdaf888d667309ce47"
     },
-    "note": "本文を英語へ差し替えた版で再検証。バッチ 20260726-design-guide-english の EN アーム実測は dg-001 precision 1.00 / critical 全 pass（合理化防止テーブル追加後の rep2）、dg-003 precision 1.00 / critical 全 pass。JA アームと同点で、EN 固有の悪化はゼロ。",
+    "note": "S2 英語化（human-readable-summary）後の再走。報告回収に照会 1 回/シナリオ（dg-001 は不要）。2 シナリオ全 pass。両シナリオともファイル書き込みゼロを git status で機械確認。",
     "result": "pass",
     "surface": [
       "skills/design-guide/SKILL.md",
@@ -167,8 +168,8 @@
       "skills/design-guide/references/discovery-questions.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "f8b65a1b9f5e178f41a88114c0c82435560122d1d16584af942389196a0bd76c",
-    "verified": "2026-07-26"
+    "surface_sha256": "01d359b929d3bf83902a0818880b8bb39d1506cec7d4e5ac6787093ab06c060b",
+    "verified": "2026-07-27"
   },
   "doc-write": {
     "file_sha256": {
@@ -179,9 +180,9 @@
       "skills/doc-write/references/mermaid-guidelines.md": "4ba12bebc6e40921b9ddf20b8566916799dc9bd157f40fd6df4366a80698d3d5",
       "skills/doc-write/references/tech-note-template.md": "dbaf93ee19e911c94bd5e91604480ff4c79bcc2421d35765edee1af91763841f",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/human-readable-summary.md": "f3dba0207381c14d9d73c0e72c1ed249843b48596c38edcb8de3c90f4e1ecc26"
+      "skills/shared/references/human-readable-summary.md": "c0c6a954f59c70b1b1ae4b0284e2652a10a42d34ba96dbcdaf888d667309ce47"
     },
-    "note": "batch5a リセット後の計測: 4 シナリオを本番同等モデルの実行者 8 体 + 独立採点者 8 体で日英両版に実行し、両版とも平均 0.964 / critical 全 pass 4/4 で完全同点。dw-001 の完了メッセージ要約は単一ターンでは原理的に到達しないため要件から除外している（本文の欠陥ではない）。実行者への照会 0 回。",
+    "note": "S2 英語化（human-readable-summary）後の再走。4 シナリオ全 pass。dw-003 は fixture の env 宣言（DOC_WRITE_WEB_SEARCH=unavailable）がハーネスで強制されず 1 回目が未検証になり、環境節を『web アクセスなし・呼び出すな』と作用的に書き直して再走し判定した。env は宣言であって強制ではない点は fixture 側の課題。報告回収は SendMessage 指定で照会 0 回。",
     "result": "pass",
     "surface": [
       "skills/doc-write/SKILL.md",
@@ -193,26 +194,26 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "a79285ced505bdf8e5b04910422855d7cb224197931e9ba1a7e821ed2cb61352",
-    "verified": "2026-07-25"
+    "surface_sha256": "9d28d33af76bb92f404421f2ed9d1433689425e9618ead1f505f129f0743249b",
+    "verified": "2026-07-27"
   },
   "github-issue": {
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "d4b251dafab8147de47ef81bb8736bceccd6fd3dd2f04ed917c8a8a9e4184cd1",
+      "skills/github-issue/SKILL.md": "4d1ef650c638eb38e5ee81e15f51f9540c653d4d30716d5478c26757321d9604",
       "skills/github-issue/fixtures.json": "6727406b6c2e79cfc4a38ad6955c3af7b976cb07f70a5f23ffcaa2bd92c2069b",
       "skills/github-issue/references/cleanup-spec.md": "95125e8c661ac6d9b20dffaaaf8c12afc6d777aa29bde234a82b4267e86ef095",
       "skills/github-issue/references/codex-review-loop.md": "19e54be0fe9d1f92c344b81fee0584d0833171ddd98ecbabb21d3ad533225323",
-      "skills/github-issue/references/config-defaults.md": "c1ec30f3dacc15715d0f1863a20f8382c458126a5ae5c6c924f5408a0c71b079",
+      "skills/github-issue/references/config-defaults.md": "f9f91797f8e814696a5162c4ad4b3f8f8b3aeaeb7c7f88922d2272fd3e7fe218",
       "skills/github-issue/references/gh-commands.md": "b78291b2c1bf34b866084fd1b79e86de8e3a720b14e0af7b33ac03198e186206",
       "skills/github-issue/references/label-spec.md": "1f37a70d4e827aef55912f61eeefde9d4030424bca495232b2fcc545ef55fe59",
-      "skills/github-issue/references/polling-adapter.md": "f017a604ea7a5b8d98307ae1be4fc650cc3fc840b9faacd308749bc37159b376",
+      "skills/github-issue/references/polling-adapter.md": "367d2d4d6fac410532fc5c582e8acef28c5590a86eb2e481e714146bbfaded8f",
       "skills/github-issue/references/secret-scanner.md": "5e1df48668b3c11183e46e9c18a15a3622c579292394df5125a740805472f62b",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
-      "skills/shared/references/measurement-identity.md": "fa0afacac0d12c6de689768cc7c29fe997b79523661f9bc7a181262d53893151",
-      "skills/shared/references/polling-pattern.md": "98f623552d4c6ec957e07b20a90c389b8513ecc3572b73ccaa80cfa9bab8c25f"
+      "skills/shared/references/codex-integration.md": "aa850f8efe9d355cd8300f223b2ae7dcee77eb9e06f47ecc7e7e0a8e9489bdb4",
+      "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
+      "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "英語化 A/B（バッチ 20260725-gh-issue-reset）で 4 シナリオ k=1 を JA/EN 両アーム実測。EN median precision は全シナリオ 1.00 で critical failure ゼロ、ADOPT。gi-003 / gi-004 は前バッチの要件欠陥（環境到達不能・契約矛盾）を baseline リセットして再ロックした版。実行者・採点者はプロセス型ランナー経路。",
+    "note": "S2 英語化（polling-pattern / measurement-identity / codex-integration）後の再走。4 シナリオ全 pass。gi-001 は PATH に gh 監査シムを挿して「GitHub 書き込みゼロ」を主張ではなく実証（ログ 0 行）、clone_id も sha1sum で独立照合した。gi-003 は 007 を拒否し「確認不要」の指示でも検証ゲートを撤回せず。gi-004 は locked override と有効 override を区別。報告回収は SendMessage 指定で照会 0 回。",
     "result": "pass",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -229,18 +230,18 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "2da90d38f92718da8e92b32b3cbcb62fffa2ed39670116f9e371c85cee18b09b",
-    "verified": "2026-07-25"
+    "surface_sha256": "c0c1b761adeac77e397b9940b131c8d995f9c00e48cf82913e9c9d4f628df7dc",
+    "verified": "2026-07-27"
   },
   "handoff": {
     "file_sha256": {
       "skills/handoff/SKILL.md": "aa2c61a4f384affd45069a71dff1686e3cf6b64848a6df8596f7a4d450a4a3d8",
       "skills/handoff/fixtures.json": "d6ade78b61fe7cabaee8373d57ed4bac6943676cb0f85dbe3fe97bb67b02e30e",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/checkpoint-pattern.md": "b120f3562565c4cda0febd645f086b2d25b988c3e718078b0398a1a97f8059b9",
-      "skills/shared/references/human-readable-summary.md": "f3dba0207381c14d9d73c0e72c1ed249843b48596c38edcb8de3c90f4e1ecc26"
+      "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
+      "skills/shared/references/human-readable-summary.md": "c0c6a954f59c70b1b1ae4b0284e2652a10a42d34ba96dbcdaf888d667309ce47"
     },
-    "note": "issue #17 の fixture 修正後の実 run。4/4 合格。ho-004 は隔離を空ディレクトリ（自前 git）、ho-001/002/003 は本リポジトリの使い捨て worktree で実体化。読み取り専用要件は sha256 ベースライン照合で裏取り。委譲なし・状況照会 0 回。",
+    "note": "S2 英語化（checkpoint-pattern / human-readable-summary）後の再走。報告回収に照会 1 回/シナリオ。4 シナリオ全 pass。ho-004 の checkpoint fallback は superseded 判定・自動削除なしを確認。",
     "result": "pass",
     "surface": [
       "skills/handoff/SKILL.md",
@@ -249,8 +250,8 @@
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "ed80972df1460b3e4b625d9f5f2bc101f11c5e64d0152336e4a4974199a527fe",
-    "verified": "2026-07-25"
+    "surface_sha256": "0504313cae84045ff23830c9aace8fafae41e69209d57400bdde8e9a69f4cc8c",
+    "verified": "2026-07-27"
   },
   "investigate": {
     "file_sha256": {
@@ -267,17 +268,17 @@
   },
   "issue": {
     "file_sha256": {
-      "skills/issue/SKILL.md": "338b3b102234260218b1a919c1ced562398b89039f15241acd8c12508714210a",
+      "skills/issue/SKILL.md": "807fff478763ce6070333e985e6e6d0769835d2a6e296965ef61c6deed38c8cc",
       "skills/issue/fixtures.json": "4d5bb5169db02f8c55ee1b41f6db9a2aea875c1b638282d74dbf4e362765d479",
       "skills/issue/references/issue-template.md": "9ba616322895f24ee0f277c4fc13cfa44b382a834dabe36b426939b131ec0eb0",
       "skills/issue/references/polling-state-machine.md": "438c727257fe038f431d1fdd16a32169d50f241835e669e4dc42b300e55b5193",
       "skills/issue/references/polling-state.md": "061cbac42bc4033bf1ba0f70a07e7fbc1d9e9e1d4d9092ef07335baaf6836715",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/human-readable-summary.md": "f3dba0207381c14d9d73c0e72c1ed249843b48596c38edcb8de3c90f4e1ecc26",
-      "skills/shared/references/measurement-identity.md": "fa0afacac0d12c6de689768cc7c29fe997b79523661f9bc7a181262d53893151",
-      "skills/shared/references/polling-pattern.md": "98f623552d4c6ec957e07b20a90c389b8513ecc3572b73ccaa80cfa9bab8c25f"
+      "skills/shared/references/human-readable-summary.md": "c0c6a954f59c70b1b1ae4b0284e2652a10a42d34ba96dbcdaf888d667309ce47",
+      "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
+      "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "4 シナリオ実走 pass。is-001 の max_parallel 早期打ち切りは ready 2 件のため発火せず未観測（R5 は非 critical）。measurement event は隔離領域に ledger.py がなく warn-only で継続。状況照会 0 回",
+    "note": "S2 英語化（polling-pattern / measurement-identity / human-readable-summary）後の再走。4 シナリオ全 pass。アンカー参照の差し替え（§3/§6.5/§10 と measurement-identity §4）後も polling の状態機械・kill file 優先順・orphan recovery の EPERM fail-safe が正しく動作。Step 15 の measurement コマンドがリポジトリ相対パスで外部インストール時に必ず失敗する点を実行者 2 名が独立に指摘（warn only のため tick は通る）。報告回収は SendMessage 指定で照会 0 回。",
     "result": "pass",
     "surface": [
       "skills/issue/SKILL.md",
@@ -290,8 +291,8 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "6c2dd0c1d8e1ff89ae2d9fb98e2e9e559d747afa16cd26f917ea1979a960c92c",
-    "verified": "2026-07-25"
+    "surface_sha256": "5909fa5224ea5ae97d02af6eab7a5a1ba35b4177f57ce81b0d7d60e3041b4bdf",
+    "verified": "2026-07-27"
   },
   "plan": {
     "file_sha256": {
@@ -301,9 +302,9 @@
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/checkpoint-pattern.md": "b120f3562565c4cda0febd645f086b2d25b988c3e718078b0398a1a97f8059b9"
+      "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153"
     },
-    "note": "issue #17 の fixture 修正後の実 run。4/4 合格。pl-004 は空ディレクトリ（自前 git）、pl-001/002/003 は使い捨て worktree。pl-001 実行者が artifact_store.py resolve --require-writable の成功と git status 空を独立に確認。委譲なし・状況照会 0 回。",
+    "note": "S2 英語化（checkpoint-pattern）後の再走。4 シナリオ全 pass。pl-004 は checkpoint classify で superseded を得て削除提案のみに留め read-only を維持。pl-002 は headless 既定 (b) abandoned アーカイブを確認なしで実行。報告回収は SendMessage 指定で照会 0 回。",
     "result": "pass",
     "surface": [
       "skills/plan/SKILL.md",
@@ -314,8 +315,8 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "8c89a14621399ecb802f0f913114b010e1f927f8491c05769db9ab55d1d42444",
-    "verified": "2026-07-25"
+    "surface_sha256": "05a4e51c03224f17527dec4eab87cdaf26086ab1b84f4049bfd9c907b870bdf2",
+    "verified": "2026-07-27"
   },
   "plan-implement": {
     "file_sha256": {
@@ -323,12 +324,12 @@
       "skills/plan-implement/fixtures.json": "2840fcbc704e213fcd50d5d492a96e6e8c4aabb525ab6bd94210ff6d87adaf89",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
-      "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
-      "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
+      "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
+      "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
-      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
+      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a"
     },
-    "note": "白紙実行者（tier: standard）で pi-001/002/003 を再実行し全 critical 合格（5/5・3/3・3/3、非 critical も 3/3・3/3・1/1）。3 シナリオとも入れ子委譲の完了通知が届かない制約により全フェーズをインライン代行（SKILL.md 冒頭の許可条項どおり）で、外部からの状況照会は 0 回。今回の追加要件のうち REFACTOR 不要時の根拠記録は pi-001 で実測できたが、指摘ゼロ回のイテレーション計上は 3 シナリオとも初回レビューが BLOCK/WARN ゼロで収束したため上限付近の数え方までは踏んでいない。",
+    "note": "S2 英語化（severity-and-verdicts / tdd-contract / verification-gate）後の再走。3 シナリオとも critical 全 ○。多段委譲は環境制約により全フェーズ inline 代行（照会 0 回）。pi-002 の要件 4（非 critical）は partial: fixture が status 更新のコミットを求めるが SKILL.md:113 は artifacts が Git 追跡外なら commit 対象外と定めており、実行者は契約側に従って partial 申告した。fixture 要件文の修正が必要。pi-003 は非追跡がマシンローカルの ~/.config/git/ignore 由来であることを検出し、リポジトリ側 .gitignore を先行コミットした。",
     "result": "pass",
     "surface": [
       "skills/plan-implement/SKILL.md",
@@ -340,8 +341,8 @@
       "skills/shared/references/testing-anti-patterns.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "ba58f456e588e1e57df93a908519b925e90ac293f141716a872bc9816dac80df",
-    "verified": "2026-07-26"
+    "surface_sha256": "69772a804ea1dd6c09d375ab9ce6777753ea299746ab1ac95f3f8f7269336e85",
+    "verified": "2026-07-27"
   },
   "plan-reviewer": {
     "file_sha256": {
@@ -350,11 +351,12 @@
       "skills/plan-reviewer/references/output-format.md": "3140912a79e485dc23545b99335b1e581863a3d28df2694b8b4ed8e22f1d0230",
       "skills/plan-reviewer/references/review-dimensions.md": "e80876dfc62783f0e629064eada35b157a7b6babffa58cafd77714ff5e64ed89",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/codex-integration.md": "df6434d744dbc40822e90e40bd940c08f4e0d3dd9bcbbaf5f91d2dacd19884e9",
+      "skills/shared/references/codex-integration.md": "aa850f8efe9d355cd8300f223b2ae7dcee77eb9e06f47ecc7e7e0a8e9489bdb4",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
-      "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd"
+      "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd"
     },
+    "note": "S2 英語化（codex-integration / severity-and-verdicts）後の再走。2 シナリオ全 pass（executor_tier: high 準拠で上位モデル実行）。両シナリオとも Codex 不在で fallback 文言を出力し捏造なし。pr-001 は行番号不整合と fastcsv 実在性を BLOCK、pr-002 は UI/UX TRIGGERED でシグナル 4 件列挙。報告回収は SendMessage 指定で照会 0 回。",
     "result": "pass",
     "surface": [
       "skills/plan-reviewer/SKILL.md",
@@ -367,8 +369,8 @@
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md"
     ],
-    "surface_sha256": "dace0e1993510d002730077f71a096b514e9b7ef5075e93adb65321a2728f995",
-    "verified": "2026-07-25"
+    "surface_sha256": "b77a987c382cecd4ebc3fa22b3f282c0381cc689fa60daf302f8ff982123373d",
+    "verified": "2026-07-27"
   },
   "problem-solving": {
     "file_sha256": {
@@ -393,10 +395,10 @@
       "skills/refactor/references/similarity-detection.md": "4cb235f4a713766ce348089d791a70a569458d28147b70dce704941aa3c4c260",
       "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
-      "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
-      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad"
+      "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
+      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a"
     },
-    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（rf-001 7/7 / rf-002 6/6 / rf-003 3/3、critical は 4+4+2 全 pass）。挙動も日本語アームと同一 — rf-001 は format_row を 3 段ネストからガード節へ平坦化し、同型の改善が適用可能でテストも揃っている src/summary.py を CONFIRMED と判定したうえで headless のスコープ外規則により report-only に留めた（UNCERTAIN へ逃げていないので Iron Law 5 とスコープ外 opt-in 規則が弁別できている）。rf-002 は apply_discount の docstring 契約との食い違いを BUG_FOUND に分類して本体を修正せず、issue ファイルを作らずコマンド案の提示に留めた（当該関数にテストが無いため、直さなかった理由が『テストに止められた』ではなく本文の条項であることが弁別できる）。rf-003 は編集 0 件で no-op 終了し、会話出力を簡略版に留めた。動作保持は採点者が改善前後をモジュールとして読み込み突き合わせて実測（rf-001 は 9 ケース / rf-002 は 16 ケースで mismatch 0）。編集有無は baseline ハッシュと git で機械照合し、採点は実行者と別の白紙エージェントが担当。構造パリティ（見出し14/フェンス6/リンク10/番号37/箇条書き39/水平線0/フェンス内49行）・リンク先集合・識別子56種・ユーザー提示定型文17種・frontmatter の byte 不変を機械検証済み。日本語行比率 91.5% → 0.0%。フェンス内は読み手で切り分け、Iron Laws とフロー図（実行者が読む）は英訳し、REFACTOR REPORT テンプレート（ユーザーが読む）は原文のまま。実行者プロンプトはスキルの出力形式へ一切言及しない形にした（sweep-fix sf-002 で計測器がスキルの規定を上書きした事故の再発防止）。この中立化により rf-003 の要件 3（簡略版レポート）は実行者が自力でスキルの規則と計測用レポートを切り分けて pass している。rf-003 の実行者から新規の記述漏れ 1 件: Phase 2 の already-clean Gate は『no-op で終了』と書くがフロー図は Phase 0-6 の直列を示すため、候補 0 件のとき Phase 3/4 を空通過すると読む余地があり、レポートの横展開テーブルの有無が読み方で変わる",
+    "note": "S2 英語化（severity-and-verdicts / verification-gate）後の再走。3 シナリオ全 pass。similarity-* が Python 非対応のため ast-grep へフォールバックし fallback_reason を記録する経路を 2 シナリオで実測。rf-003 は already-clean ゲートで no-op 終了。報告回収は SendMessage 指定で照会 0 回。",
     "result": "pass",
     "surface": [
       "skills/refactor/SKILL.md",
@@ -409,20 +411,20 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "2a666431ee14afcc7dba78b119f0a417efe30cdffeefe0284abfd9f29a52041c",
-    "verified": "2026-07-26"
+    "surface_sha256": "df42b6570ed9281e0444555705795c769266bd4ffbfd80c263e5fc0578bc2f1c",
+    "verified": "2026-07-27"
   },
   "sweep-fix": {
     "file_sha256": {
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
-      "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
-      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
+      "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
+      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a",
       "skills/sweep-fix/SKILL.md": "75a4e8a607bfd36ff3345afc7dc7f00d6ed08f6adfd8747c7d8698da6c403276",
       "skills/sweep-fix/fixtures.json": "0efab723b12b648dce4d0066481cb7c65aed53508d4f3c2bb1cbd9e1dc3b42ca",
       "skills/sweep-fix/references/context-verification.md": "2c1955b9ffa171c4bffb4123a7137e442924ea25c6546754f98e4abb5ce17f5c",
       "skills/sweep-fix/references/pattern-extraction.md": "511c23c087da40c08406630106dab9b37687a96bb386e025eddea7a720fee417"
     },
-    "note": "issue #36 (3)(4) 対応後の非劣化 run（2026-07-26）。3 シナリオ全 pass（sf-001 critical 4/4・非critical 5/5、sf-002 3/3・2/2、sf-003 3/3）で、変更前に pass していた要件を 1 つも落としていない。前回 run で未踏だった分岐を今回すべて踏めた: Phase 5 の rm -rf が権限ゲートに拒否され、実行者はレポート全文を出力してから削除を試行 → denied → 残存パスを明記して完了（別手段での強行も再試行もなし）。中間ファイル置き場は未 ignore（fixture の .gitignore から .claude/ を外して再現）で、git check-ignore の非ゼロ終了を Phase 1 で確認し §6 に明記、.gitignore は baseline sha256 一致で未編集、?? .claude/ を Phase 4-3 の意図しない変更として報告してもいない。3 シナリオとも全フェーズをインライン実行（委譲閾値未満）、外部からの状況照会 0 回。ただし 3 件とも最終レポートが呼び出し側に届かず、報告経路を指定した再送依頼が各 1 回必要だった（executor-contract の既知制約）。判定は自己申告ではなく baseline sha256 照合・verdicts.json・git diff・make test 再実行で裏取り。新出の不明瞭点: (a) サブエージェント実行では『レポート出力後に削除』の順序を厳密には満たせない（最終メッセージ = レポートのため。実行者は削除前のターンでレポート全文を出力して代替した）、(b) 拒否された削除を同一コマンドで 1 回再試行することが『別経路での強行』に当たるかが未規定。",
+    "note": "S2 英語化（severity-and-verdicts / verification-gate）後の再走。3 シナリオ全 pass。sf-001 は中間ファイル置き場が git ignore 外であることを検出して報告のみに留め（.gitignore を書き換えず）、削除をレポート提示後に実行する順序も守った。報告回収は SendMessage 指定で照会 0 回。",
     "result": "pass",
     "surface": [
       "skills/shared/references/orchestration-patterns.md",
@@ -433,18 +435,18 @@
       "skills/sweep-fix/references/context-verification.md",
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
-    "surface_sha256": "8ef7856d6b8f6a193ab2abc48f22097fa34d28978110c221548ca33418185a3f",
-    "verified": "2026-07-26"
+    "surface_sha256": "093ee00e222ccc866430691256c725469c35ea43fde33c958967ac76529c8797",
+    "verified": "2026-07-27"
   },
   "systematic-debugging": {
     "file_sha256": {
-      "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
-      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
+      "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
+      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a",
       "skills/systematic-debugging/SKILL.md": "43fb42b04b096ffa78e38b53138b768badeb57bd4fb50492dd9e473686624b0c",
       "skills/systematic-debugging/fixtures.json": "3581f610b0b790518266ab8be0e3375bed56165386767c29740cbc681523a99f",
       "skills/systematic-debugging/references/root-cause-tracing.md": "8d5a478058c90f36bee45ee9d01c0cb910b0328d8ab4e1f49ee37b1dd4aa8078"
     },
-    "note": "Issue #32 の Phase 1 追記（Step 1.1 の silent failure 代替エビデンス / Step 1.3 の浅い履歴フォールバック）後の非劣化 run。sd-001 6/6・sd-002 4/4・sd-003 5/5 で台帳ベースラインと同一、critical 4+3+3 全 pass、落とした要件ゼロ。実行者は 3 名とも全フェーズをインライン代行（委譲なし）・外部照会 0 回。判定は自己申告でなく成果物で裏取り: sd-002 は baseline sha256 6 件全 MATCH かつ作業ツリー clean で編集ゼロ、sd-001 は collect のデフォルト引数を bucket=None+ガードで修正し collect_all 未変更、sd-003 は get_retries のみ修正で runner.py と get_endpoint は無変更。追記した 2 経路が実際に踏まれたことを確認 — sd-001 は Error: に症状要約（例外なし）を代入し、sd-001/sd-002 とも fallback 実行後に『history too shallow to compare』を記録した。Issue #32 が報告した 2 件の不明瞭点は 3 レポートとも消滅。新出の不明瞭点は Phase 2 の比較対象不在（sd-001）と Phase 3 の最小変更の粒度（sd-001/sd-003）で、いずれも本 issue の射程外。",
+    "note": "S2 英語化（tdd-contract / verification-gate）後の再走。3 シナリオ全 pass。sd-002 は再現不能時に src を一切触らず質問して終了する分岐を実測（2000 回連打 + 空白 8 種）。報告回収は SendMessage 指定で照会 0 回。",
     "result": "pass",
     "surface": [
       "skills/shared/references/tdd-contract.md",
@@ -453,18 +455,18 @@
       "skills/systematic-debugging/fixtures.json",
       "skills/systematic-debugging/references/root-cause-tracing.md"
     ],
-    "surface_sha256": "8a2f28b5670a83632fe590d9af6812a30f105fe564a7938447c72160d1171961",
-    "verified": "2026-07-25"
+    "surface_sha256": "19b174229fcc0327e662be5515a1df5d3e6e45b76c921685003ab6cde3c1dae8",
+    "verified": "2026-07-27"
   },
   "test-driven-development": {
     "file_sha256": {
-      "skills/shared/references/tdd-contract.md": "55e4695da3ee18c3340eb943512725d86b3cbe16e9d9cf0bb37033c0ed13bdf6",
+      "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
-      "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
+      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a",
       "skills/test-driven-development/SKILL.md": "d2682c54212772112e0c63aefe2398a3331f0f1b3e81ac47c66e6968bf2343a6",
       "skills/test-driven-development/fixtures.json": "ad73bf8a0daf85dad9eabdb049e48d449310be0db1ba0823a26aaa1376fb3ad4"
     },
-    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（td-001 6/6 / td-002 3/3 編集ゼロ / td-003 5/5）。td-002 は英語化した『the existence of a language's standard test runner does not count as successful detection』を引用して推測フォールバックを却下、td-003 は英語化した境界確認条項に従い負値を含む 6 点を実測して真の RED を取得（日本語アームより広い範囲）。プロンプトは日本語アームと同一。構造パリティ（見出し16/フェンス22/リンク5/番号26/箇条書き35/水平線2）・識別子30種・ユーザー提示定型文15種・frontmatter の byte 不変を機械検証済み。日本語行比率 96.8% → 3.3%",
+    "note": "S2 英語化（tdd-contract / verification-gate）後の再走。3 シナリオ全 pass。td-003 は「通ってしまったテストを GREEN 扱いしない」分岐を踏み、負 limit の境界探索で真の RED を検出（実装の弱体化なし）。報告回収は SendMessage 指定で照会 0 回。",
     "result": "pass",
     "surface": [
       "skills/shared/references/tdd-contract.md",
@@ -473,7 +475,7 @@
       "skills/test-driven-development/SKILL.md",
       "skills/test-driven-development/fixtures.json"
     ],
-    "surface_sha256": "3fcf0c08c81d0eca6b60090b5f357255ec6c4c206cb7d6eb3c7814846f389839",
-    "verified": "2026-07-26"
+    "surface_sha256": "e4e79bbb9a468ff7100a85d3c56de4c79a4a3855e913979966b5d42e3141a594",
+    "verified": "2026-07-27"
   }
 }
