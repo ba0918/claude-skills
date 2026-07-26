@@ -34,10 +34,10 @@ Phase 5: REPORT  — structured report, then delete intermediate files
 
 ## Phase 0: SCOPE — Fix the Target Scope
 
-1. Parse from `$ARGUMENTS` the target scope (file / directory / glob / function name) and, if present, the aspect to focus on (e.g. 「エラーハンドリング」「null 安全性」)
+1. Parse from `$ARGUMENTS` the target scope (file / directory / glob / function name) and, if present, the aspect to focus on (e.g. "error handling", "null safety")
 2. When no scope is specified:
    - **Interactive mode**: present the user with choices and confirm the target scope
-   - **headless / Auto mode**: do not guess a scope and continue. Report 「対象範囲が未指定」 and abort (a whole-codebase scan with no scope is codebase-review's territory)
+   - **headless / Auto mode**: do not guess a scope and continue. Report that the target scope is unspecified and abort (a whole-codebase scan with no scope is codebase-review's territory)
 3. Confirm that the specified paths exist (`ls` / list the files). Abort with an error immediately if they do not
 
 > Do not create the intermediate-file location `.claude/tmp/sweep-fix/` at this point. Create it at the moment the first file is saved (the problem list in Phase 1) — so that finishing early with zero problems leaves no litter.
@@ -56,10 +56,10 @@ Analyze the code in the specified scope and build a problem list.
    - Why it is a problem (the basis. If it is a guess, say so)
    - The proposed fix (the direction of the code change)
    - **Generalizability** — is this problem a structure that can occur elsewhere? If it is specific to that site (a spec local to it), drop it from the sweep
-4. **When there are zero problems (the early-exit path)**: report 「指定範囲に問題は検出されなかった」 and finish normally. Do not manufacture findings
+4. **When there are zero problems (the early-exit path)**: report that no problem was detected in the specified range and finish normally. Do not manufacture findings
    - Do not create intermediate files (if you already created them, delete them with `rm -rf .claude/tmp/sweep-fix`)
    - The report is not Phase 5's full version but an abbreviated one — the "problems detected" section plus the basis of the analysis — printed in the conversation
-   - No fix happened, so the verification gate (running tests) is unnecessary. 「変更なしのため検証対象なし」 suffices
+   - No fix happened, so the verification gate (running tests) is unnecessary. "nothing to verify because nothing changed" suffices
 5. Save the problem list: **before creating the directory, check whether the intermediate-file location is ignored by the VCS** (`git check-ignore -q .claude/tmp/sweep-fix`. If the check itself cannot be run, treat the state as unknown and handle it the same as not-ignored). Then run `mkdir -p .claude/tmp/sweep-fix` and write `.claude/tmp/sweep-fix/problems.json`
    - **When it is not ignored**: do not move the location, and do not edit the project's ignore settings on your own (rewriting the user's repository setup is outside this skill's scope). Proceed as is and **state in the report that the intermediate files are visible to the VCS at that path**. Whether to add an ignore entry is the user's call
    - The point of the check is not to change where the files go. It is so that Phase 4-3 does not misreport them as an unintended change, and so that leftovers surviving a refused deletion in Phase 5 do not get swept into the user's next commit unnoticed
@@ -142,33 +142,33 @@ Print a report in the conversation with the structure below, then delete the int
 SWEEP-FIX REPORT
 ══════════════════════════════════════
 
-## 1. 検出した問題（指定範囲: {scope}）
+## 1. The problems detected (the specified range: {scope})
 
-| ID | 重大度 | 問題 | 元箇所 |
+| ID | Severity | Problem | The original site |
 |----|--------|------|--------|
 
-## 2. 横展開検索の結果
+## 2. The results of the sweep search
 
-| 問題ID | 検索ツール | 候補数 | CONFIRMED | FALSE_POSITIVE | UNCERTAIN |
+| Problem ID | Search tool | Candidates | CONFIRMED | FALSE_POSITIVE | UNCERTAIN |
 |--------|-----------|--------|-----------|----------------|-----------|
 
-## 3. 修正した箇所
+## 3. The sites fixed
 
-{file:line と変更概要の一覧}
+{the list of file:line and a summary of each change}
 
-## 4. 除外した箇所（FALSE_POSITIVE）
+## 4. The sites excluded (FALSE_POSITIVE)
 
-{file:line と除外理由の一覧 — なぜ字面が似ていて問題にならないのか}
+{the list of file:line and the reason for exclusion — why it looks alike textually yet is not a problem}
 
-## 5. 判断保留（UNCERTAIN）
+## 5. Held for judgment (UNCERTAIN)
 
-{file:line と、ユーザが判断するために必要な材料}
+{file:line, plus the material the user needs in order to judge}
 
-## 6. 検証エビデンス
+## 6. Verification evidence
 
-- テスト: {実行コマンドと結果。未実行なら「テストコマンド未検出」と明記}
-- diff: {git diff --stat の要約}
-- 中間ファイル: {削除済み / 削除を試みたが拒否された場合は残存パスと理由。置き場が VCS の ignore 対象外だった場合はその旨と、手動削除または ignore 追加の依頼}
+- Tests: {the command run and its result. If not run, state explicitly that no test command was detected}
+- diff: {a summary of git diff --stat}
+- Intermediate files: {deleted / if deletion was attempted and refused, the remaining path and the reason. If the location was outside the VCS ignore rules, say so and ask for manual deletion or an ignore entry}
 ```
 
 ## Rationalization Guard
@@ -179,7 +179,7 @@ SWEEP-FIX REPORT
 | "I can judge it from the excerpt" | A verdict reached without reading the surrounding context from the file is a guess. The guard condition lives outside the excerpt |
 | "Too many UNCERTAIN makes this useless, so promote them to CONFIRMED" | The damage from one wrong fix exceeds ten held-back items. fail-safe is the specification |
 | "Narrow the search pattern and verification becomes unnecessary" | A narrowed search only increases false negatives. Searching wide and narrowing by verification is the design |
-| "There are no tests, so skip the verification gate" | If no test is detected, state 「未検出」 in the report. Do not skip it silently |
+| "There are no tests, so skip the verification gate" | If no test is detected, state "not detected" in the report. Do not skip it silently |
 | "There are many sites to fix, so bulk-replace with sed" | Adapting to each site's context is Phase 4's responsibility. Mechanical replacement destroys context |
 | "The intermediate-file deletion was refused, so remove it by another route" | Bypassing a refused deletion is forbidden. Record the surviving path in the report and finish |
 | "Delete the intermediate files first to keep the workspace clean, then write the report" | verdicts.json is the only record of the verdict bases. Deleting before transcription destroys the evidence |
