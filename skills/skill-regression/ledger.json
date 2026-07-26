@@ -417,12 +417,12 @@
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
       "skills/shared/references/severity-and-verdicts.md": "f29207af0e80eb957a4e0f1d1d31ed4faf05257194938cf7ec6fc04c8b495cfd",
       "skills/shared/references/verification-gate.md": "52d655c4377e0a391c9a79517f722f13847b9e277639650790f0c2cc8ad935ad",
-      "skills/sweep-fix/SKILL.md": "1e79fe8af2f6ca14108ad67bedab3a35b1df5e111b88dc8a2a44fe669bcea893",
+      "skills/sweep-fix/SKILL.md": "a1b1b2428d930e9fd4fafe6921b441cf0c9018f2ac6816c7b4c583d40dae1a02",
       "skills/sweep-fix/fixtures.json": "f2527daf33f8e4cbc12b74b40470337f2a142917d100bf646a6be12a33e1e7d4",
       "skills/sweep-fix/references/context-verification.md": "2c1955b9ffa171c4bffb4123a7137e442924ea25c6546754f98e4abb5ce17f5c",
       "skills/sweep-fix/references/pattern-extraction.md": "511c23c087da40c08406630106dab9b37687a96bb386e025eddea7a720fee417"
     },
-    "note": "英語化後の非劣化 A/B: 日本語アームで pass していた critical を英語アームが 1 つも落としていない（sf-001 7/7 / sf-002 5/5（再走）/ sf-003 3/3、critical は 4+3+3 全 pass）。挙動も日本語アームと同一 — sf-001 は広めの grep + ast-grep で候補 5 件を集めてから api/cache を修正し、意図明記コメントのある shutdown.py と narrow な parse.py を根拠つきで FALSE_POSITIVE 除外（CONFIRMED 3 / FP 2 / UNCERTAIN 0）。sf-002 は編集 0 件・中間ファイル不在で早期終了。sf-003 は範囲未指定を検出して Phase 0 で中断（日本語アームは範囲照会を 1 往復したが、英語アームは照会せず中断まで到達。要件 3 は or 条件のためどちらも pass）。編集有無は baseline ハッシュと git で機械照合し、採点は実行者と別の白紙エージェントが担当。構造パリティ（見出し12/フェンス4/リンク6/番号26/箇条書き33/水平線0/フェンス内36行）・リンク先集合・識別子31種・ユーザー提示定型文18種・frontmatter の byte 不変を機械検証済み。日本語行比率 96.8% → 0.0%。フェンス内は読み手で切り分け、フロー図と候補リスト JSON のプレースホルダ説明（実行者が読む）は英訳し、SWEEP-FIX REPORT テンプレート（ユーザーが読む）は原文のまま。初回 sf-002 は要件 5 を落としたが原因は翻訳ではなく実行者プロンプトの汚染で、レポート形式へ言及しない中立プロンプトで再走して 5/5 に回復した（経緯は fixtures.json の sf-002 notes に記録。今回の更新で fixtures.json の変更は当該 notes のみで setup/prompt/requirements は不変）。sf-001 の中間ファイル削除は権限システムに拒否され残存（ハーネス制約。迂回削除はしていない）",
+    "note": "sf-001 は実行者が 2 度ターンを終えて無報告停止したため、環境制約として「問い合わせ手段なし・途中でターンを終えない」を注入し白紙で再 dispatch した（解法のヒントは与えていない）。sf-002/sf-003 は初回で完走。",
     "result": "pass",
     "surface": [
       "skills/shared/references/orchestration-patterns.md",
@@ -433,7 +433,7 @@
       "skills/sweep-fix/references/context-verification.md",
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
-    "surface_sha256": "4a3cd94071f4def918788a5d991bc8d79493d1ce49983d59b1c4a399151ed138",
+    "surface_sha256": "af04cea092e3270a0a4cd8a39502eab0075ba9c068c5a3a147d542eef391e9fa",
     "verified": "2026-07-26"
   },
   "systematic-debugging": {
