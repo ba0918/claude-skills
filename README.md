@@ -196,7 +196,7 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 
 ## プロンプト設計方針
 
-Fable 5 世代モデルに沿って「短く柔らかい」を志向するが、無条件の削減は行わない。`empirical-prompt-tuning` による実測（plan / cycle スキルで 6 iteration 検証）に基づく判断基準を [skill-authoring.md § プロンプト圧縮の効果条件](skills/shared/references/skill-authoring.md) に集約している。
+Fable 5 世代モデルに沿って「短く柔らかい」を志向するが、無条件の削減は行わない。`empirical-prompt-tuning` による実測（plan / cycle スキルで 6 iteration 検証）に基づく判断基準を [skill-authoring.md § When Prompt Compression Works](skills/shared/references/skill-authoring.md) に集約している。
 
 要約:
 
