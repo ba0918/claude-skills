@@ -9,7 +9,12 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth: 0 が必要。既定の shallow clone では origin/main が存在せず、
+      # scripts/check_translation_parity.py が比較元リビジョンを解決できずに skip し、
+      # 翻訳劣化ゲートが CI で黙って無効化される。
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # チェックの正本は scripts/run_checks.sh。pre-push hook (githooks/pre-push)
       # も同じスクリプトを呼ぶため、ローカルと CI の検証内容は常に一致する。
