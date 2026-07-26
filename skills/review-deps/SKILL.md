@@ -47,7 +47,7 @@ In an environment without a scanner, matching against known vulnerabilities is `
 **Ownership of severity**: the judgment of whether a vulnerability **exists** belongs to the scanner and is never overturned. The **severity** of a finding
 (BLOCK/WARN/INFO), by contrast, is decided by the agent as a correlation judgment that layers reachability and dev/prod on top of that existence.
 The mapping rule from the scanner's severity labels and the grounds for adjusting it follow
-the 「深刻度のマッピング」 section of [references/scanner-integration.md](references/scanner-integration.md).
+the "Severity mapping" section of [references/scanner-integration.md](references/scanner-integration.md).
 
 ## Workflow
 
