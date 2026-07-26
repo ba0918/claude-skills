@@ -47,7 +47,7 @@ Additional instruction → Scope analysis → Size judgment ─→ Small → Imp
 
 ## Phase 1: Scope Analysis
 
-探索型サブエージェントに委譲して調査する:
+Delegate the investigation to an exploratory subagent:
 
 1. Compare the additional instructions against existing code and estimate the impact scope
 2. List files that need to be changed
@@ -73,7 +73,7 @@ Count `N = (number of ## Additional Changes sections found) + 1` (current call i
   ```
   ℹ️ This is the 2nd iterate call in this session.
   ```
-- **N >= 3 (3rd+ call)** → Trigger cumulative Large warning（ユーザーに選択肢を提示して確認）:
+- **N >= 3 (3rd+ call)** → Trigger cumulative Large warning (present the user with options and confirm):
   ```
   ⚠️ Cumulative iterate detected ({N}th call this session)
   Multiple consecutive iterate calls may indicate the task exceeds iterate's scope.
@@ -99,7 +99,7 @@ Proceed to Phase 3.
 
 ### If Large
 
-ユーザーに選択肢を提示して判断を仰ぐ:
+Present the user with options and ask for a decision:
 
 ```
 ── Scope: Large ──
@@ -117,9 +117,9 @@ Options:
 
 ## Phase 3: Implementation
 
-実装サブエージェントを起動する。Phase 2 のサイズ判定に応じてモデルを選択: **Small** なら軽量モデル（スコープが小さく検証ゲートがあるため安全）、**Large** なら高性能モデル。See [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering.
+Launch an implementation subagent. Choose the model according to the Phase 2 size judgment: a lightweight model for **Small** (safe because the scope is small and a verification gate follows), a high-capability model for **Large**. See [orchestration-patterns.md](../shared/references/orchestration-patterns.md) § Model Tiering.
 
-**委譲結果の受渡し**: Phase 3 / Phase 4 の委譲は [delegation result relay](../shared/references/orchestration-patterns.md) に従う。完了報告メッセージの配達は非決定的で、作業完遂 + 報告なし + 待機通知のみ、という停滞が実測されているため、結果の正本はファイル・報告は通知として扱う。`{run_id}` は Phase 0 で読み込んだ計画ファイルのタイムスタンプ（プランがない fallback 経路では現在時刻 `YYYYMMDDHHMMSS`）を使う。
+**Handing over delegated results**: the delegations in Phase 3 and Phase 4 follow the [delegation result relay](../shared/references/orchestration-patterns.md). Delivery of the completion report message is non-deterministic, and a stall has been measured in which the work completed but no report arrived and only a wait notification came through, so treat the file as the source of truth for the result and the report as a mere notification. For `{run_id}`, use the timestamp of the plan file loaded in Phase 0 (or the current time as `YYYYMMDDHHMMSS` on the no-plan fallback path).
 
 Instructions to the agent:
 - Implement the additional instructions
@@ -135,11 +135,11 @@ Instructions to the agent:
 
 After the agent finishes, read `.agents/runtime/delegation/{run_id}_iterate-impl.md` on either the completion report or a stop / wait notification. If the file is missing or incomplete, inspect the artifacts directly (`git diff HEAD` / `git status` / changed files) and reconcile each instruction item against the actual change to detect partial omissions before proceeding to Phase 4.
 
-## Phase 4: Review + Codex セカンドオピニオン
+## Phase 4: Review + a Codex second opinion
 
 See [references/light-review.md](references/light-review.md) for detailed review perspectives.
 
-**レビュー / Codex エージェントを起動する前に**: iterate のメインコンテキストで diff を一度取得し、両エージェントに同じ入力を渡す。
+**Before launching the review / Codex agents**: obtain the diff once in iterate's main context and hand the same input to both agents.
 ```bash
 git diff HEAD           # uncommitted changes, to be committed shortly
 # or
@@ -147,37 +147,37 @@ git diff <base>..HEAD   # if the implementation agent already committed
 ```
 Store the diff output and inline it into both agent prompts. If the diff exceeds ~50KB, substitute `git diff --stat` + a list of changed files + selected critical hunks instead. Never hand raw source files to Codex — diff only.
 
-**結果ファイルの受渡し（Phase 4）**: 並行起動する両エージェントには、[delegation result relay](../shared/references/orchestration-patterns.md) に従い、**完了報告を送る前に**結果をファイルへ書かせる — レビューエージェントは findings（BLOCK / WARN / PASS 分類つき）を `.agents/runtime/delegation/{run_id}_iterate-review.md` へ、Codex エージェントは指摘を `.agents/runtime/delegation/{run_id}_iterate-codex.md` へ。iterate のメインコンテキストは、各エージェントの完了報告または停止・待機通知のどちらでも該当ファイルを読む。ファイルが欠落・不完全なときは、既に取得済みの diff を安全網として自分でレビュー観点を適用し、Codex 分は unavailable 扱いにフォールバックする。読了後、結果ファイルは削除する。
+**Handing over the result files (Phase 4)**: following the [delegation result relay](../shared/references/orchestration-patterns.md), have both concurrently launched agents write their results to a file **before sending the completion report** — the review agent writes its findings (classified BLOCK / WARN / PASS) to `.agents/runtime/delegation/{run_id}_iterate-review.md`, and the Codex agent writes its remarks to `.agents/runtime/delegation/{run_id}_iterate-codex.md`. iterate's main context reads those files on either agent's completion report or on a stop / wait notification. When a file is missing or incomplete, use the already-obtained diff as the safety net, apply the review perspectives yourself, and fall back to treating the Codex portion as unavailable. Delete the result files once they have been read.
 
 ### If Small
 
-**2 つのサブエージェントを並行起動する**（同一メッセージで同時に発行）:
-1. **レビューエージェント**（高性能モデル）:
-   - Security + Implementation Quality の 2 観点でレビュー
-   - `.claude/review-rules.md` があれば追加基準として使用
-   - `skills/shared/references/verification-gate.md` Gate Function を適用: テスト実行証拠なしで PASS を出さない
-     - **例外 — 非実行的変更**（Phase 3 で定義したドキュメントのみの変更）: 既存テストスイートがパスすること、または実行コードへの影響がないことの明示的宣言で Gate Function を満たす。レビューエージェントはどちらのパスを適用するか明記する
-   - Findings を BLOCK / WARN / PASS に分類
-2. **Codex セカンドオピニオンエージェント**（シェルコマンドのみ使用可能）:
-   - change diff (`git diff`) とユーザーの指示をプロンプトに直接提供
-   - diff が ~50KB を超える場合は要約 diff（ファイルリスト + `git diff --stat` + 重要な hunks）を渡す
-   - 設計上の問題、エッジケース、代替アプローチを求める
-   - セキュリティ制約: diff のみを渡し、生のソースファイルは渡さない
+**Launch two subagents in parallel** (issued simultaneously in the same message):
+1. **The review agent** (a high-capability model):
+   - Review along the 2 perspectives Security + Implementation Quality
+   - Use `.claude/review-rules.md` as an additional criterion if it exists
+   - Apply the `skills/shared/references/verification-gate.md` Gate Function: never emit PASS without evidence of a test run
+     - **Exception — non-executable changes** (the documentation-only changes defined in Phase 3): the Gate Function is satisfied by the existing test suite passing, or by an explicit declaration that there is no impact on executable code. The review agent states which path it applied
+   - Classify the findings as BLOCK / WARN / PASS
+2. **The Codex second-opinion agent** (may use shell commands only):
+   - Provide the change diff (`git diff`) and the user's instructions directly in the prompt
+   - When the diff exceeds ~50KB, hand over a summarized diff (a file list + `git diff --stat` + the important hunks)
+   - Ask for design problems, edge cases, and alternative approaches
+   - Security constraint: hand over the diff only, never the raw source files
 
 ### If Large (user chose to continue)
 
-**2 つのサブエージェントを並行起動する**（同一メッセージで同時に発行）:
-1. **レビューエージェント**（高性能モデル）:
-   - Security + Implementation Quality + Architecture + Completeness の 4 観点でレビュー
-   - `.claude/review-rules.md` があれば追加基準として使用
-   - `skills/shared/references/verification-gate.md` Gate Function を適用: テスト実行証拠なしで PASS を出さない
-     - **例外 — 非実行的変更**（Phase 3 で定義したドキュメントのみの変更）: 既存テストスイートがパスすること、または実行コードへの影響がないことの明示的宣言で Gate Function を満たす。レビューエージェントはどちらのパスを適用するか明記する
-   - Findings を BLOCK / WARN / PASS に分類
-2. **Codex セカンドオピニオンエージェント**（シェルコマンドのみ使用可能）:
-   - change diff (`git diff`) とユーザーの指示をプロンプトに直接提供
-   - diff が ~50KB を超える場合は要約 diff（ファイルリスト + `git diff --stat` + 重要な hunks）を渡す
-   - 設計上の問題、エッジケース、代替アプローチを求める
-   - セキュリティ制約: diff のみを渡し、生のソースファイルは渡さない
+**Launch two subagents in parallel** (issued simultaneously in the same message):
+1. **The review agent** (a high-capability model):
+   - Review along the 4 perspectives Security + Implementation Quality + Architecture + Completeness
+   - Use `.claude/review-rules.md` as an additional criterion if it exists
+   - Apply the `skills/shared/references/verification-gate.md` Gate Function: never emit PASS without evidence of a test run
+     - **Exception — non-executable changes** (the documentation-only changes defined in Phase 3): the Gate Function is satisfied by the existing test suite passing, or by an explicit declaration that there is no impact on executable code. The review agent states which path it applied
+   - Classify the findings as BLOCK / WARN / PASS
+2. **The Codex second-opinion agent** (may use shell commands only):
+   - Provide the change diff (`git diff`) and the user's instructions directly in the prompt
+   - When the diff exceeds ~50KB, hand over a summarized diff (a file list + `git diff --stat` + the important hunks)
+   - Ask for design problems, edge cases, and alternative approaches
+   - Security constraint: hand over the diff only, never the raw source files
 
 ### Codex Result Integration
 
@@ -233,7 +233,7 @@ Common patterns: [../shared/references/codex-integration.md](../shared/reference
 - Codex Second Opinion: {PASS|WARN|unavailable}
 ```
 
-2. `claude-skills:commit` スキルを呼び出して変更をコミットする
+2. Invoke the `claude-skills:commit` skill to commit the changes
 
 ## Phase 6: Completion Report
 
@@ -252,7 +252,7 @@ Plan updated: {plan_file_path}
 - **Judge size by actual code impact** — Do not be swayed by the user's expressions like "just a small thing"
 - **Do not block on Large judgment** — Always present options to the user
 - **If unexpected impact is discovered during implementation, halt and report**. Return path when halted in Phase 3:
-  1. If the newly discovered impact pushes the scope from Small → Large, re-enter Phase 2 with the updated scope and present the Large options to the user（選択肢を提示して確認）.
+  1. If the newly discovered impact pushes the scope from Small → Large, re-enter Phase 2 with the updated scope and present the Large options to the user (present the options and confirm).
   2. If the impact is ambiguous or crosses module boundaries in unforeseen ways, escalate to the user directly (do not auto-resume). Suggest `/claude-skills:plan-create` as the fallback.
   3. Never silently continue past a halt.
 - **Headless operation**: Do not prompt for confirmation except for user choice on Large judgment and halt escalations

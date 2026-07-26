@@ -7,45 +7,45 @@ description: リポジトリの問題をセンサー（validate_repo / ledger --
 
 Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
-センサーが検出した finding を、人手を介さず安全に polling キューへ供給する。
-**共通契約（必読・直リンク）:** [../shared/references/loop-engineering.md](../shared/references/loop-engineering.md)
+Supply the findings detected by the sensors into the polling queue safely and without human intervention.
+**Shared contract (required reading, direct link):** [../shared/references/loop-engineering.md](../shared/references/loop-engineering.md)
 
-- Finding Schema / Identity / Admission 表 / 自己修飾ゲートの定義はすべて契約側にある。
-  本 SKILL.md は薄い orchestrator であり、契約の複製を書かない
-- 分類軸の定義元: [fix-action-taxonomy.md](../shared/references/fix-action-taxonomy.md) /
+- The Finding Schema, Identity, the Admission table, and the definition of the self-modification gate all live in the contract.
+  This SKILL.md is a thin orchestrator and never duplicates the contract
+- Where the classification axes are defined: [fix-action-taxonomy.md](../shared/references/fix-action-taxonomy.md) /
   [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md)
-- キューの消化側は [issue polling](../issue/SKILL.md)（[polling-pattern.md](../shared/references/polling-pattern.md) 準拠）
+- The consuming side of the queue is [issue polling](../issue/SKILL.md) (conforming to [polling-pattern.md](../shared/references/polling-pattern.md))
 
-## 不変条件（契約 §1 / §6）
+## Invariants (contract §1 / §6)
 
-1. **Triage は修正しない**。生成するのは issue ファイル / inbox 追記 / digest のみ
-2. `REPORT_ONLY` はいかなる条件でも enqueue しない
-3. 1 実行の enqueue は `--max-enqueue`（default 5）まで。超過は inbox 降格 + 明示報告（silent cap 禁止）
-4. ルーティングは純関数（`admission.py`）の判定に従う。LLM の裁量で昇格しない
+1. **Triage never fixes anything.** All it produces are issue files, inbox appends, and digests
+2. `REPORT_ONLY` is never enqueued under any condition
+3. One run enqueues at most `--max-enqueue` (default 5). The excess is demoted to the inbox and reported explicitly (a silent cap is forbidden)
+4. Routing follows the judgment of a pure function (`admission.py`). Never promote at the LLM's discretion
 
-## 実行契約
+## Execution contract
 
-- スクリプトは絶対パスで呼ぶ: `python3 {skill_dir}/scripts/<name>.py`。`{skill_dir}` は本 SKILL.md のディレクトリ、`{repo_root}` はリポジトリ root（通常 cwd）
-- 中間 JSON は `.claude/tmp/loop-triage/{datetime}/` に置く（git-ignored）
-- baseline は `.claude/loop-baseline.json`（commit 対象、opaque ID のみ。契約 §3.3）
+- Call the scripts by absolute path: `python3 {skill_dir}/scripts/<name>.py`. `{skill_dir}` is this SKILL.md's directory and `{repo_root}` is the repository root (usually the cwd)
+- Put intermediate JSON under `.claude/tmp/loop-triage/{datetime}/` (git-ignored)
+- The baseline is `.claude/loop-baseline.json` (committed; opaque IDs only, contract §3.3)
 
-## ワークフロー選択
+## Workflow selection
 
-| 入力 | ワークフロー |
+| Input | Workflow |
 |------|-------------|
-| 「トリアージして」「センサー回して」（引数なし / `run`） | run |
-| `--dry-run` | run（Step 5 以降をスキップし decisions のみ提示） |
-| `--context-audit PATH` | run のオプション（context-audit findings JSON を追加取り込み） |
-| `--max-enqueue N` | run のオプション（enqueue 上限、default 5） |
-| `baseline`（「現状を意図的差分として確定して」） | baseline |
-| `status`（「inbox 見せて」「キュー状況は」） | status |
+| 「トリアージして」「センサー回して」 (no argument / `run`) | run |
+| `--dry-run` | run (skips Step 5 onward and presents only the decisions) |
+| `--context-audit PATH` | an option of run (additionally ingests a context-audit findings JSON) |
+| `--max-enqueue N` | an option of run (the enqueue cap, default 5) |
+| `baseline` (「現状を意図的差分として確定して」) | baseline |
+| `status` (「inbox 見せて」「キュー状況は」) | status |
 
-run は常に機械センサー（validate_repo / ledger --check）を実行する。`--context-audit` は
-**追加**取り込みであり、「context-audit の findings だけを対象にする」限定モードは存在しない。
+run always executes the machine sensors (validate_repo / ledger --check). `--context-audit` is an
+**additional** ingestion; there is no restricted mode that targets only the findings of context-audit.
 
-## run — センサー → トリアージ → 投入
+## run — sensors → triage → enqueue
 
-### Step 1: 準備
+### Step 1: Preparation
 
 ```bash
 TS=$(date +%Y%m%d%H%M%S)
@@ -53,17 +53,17 @@ OUT=.claude/tmp/loop-triage/$TS
 mkdir -p $OUT
 ```
 
-### Step 2: 機械センサー実行
+### Step 2: Run the machine sensors
 
 ```bash
 python3 {skill_dir}/scripts/sensors.py --repo-root {repo_root} --out $OUT/findings-mech.json
 ```
 
-LLM センサーの取り込み（opt-in）: `--context-audit PATH` が指定された場合、context-audit の
-findings JSON を `sensors.py` の `map_context_audit` で写像して結合する。**loop-triage が
-context-audit 等を自動起動することはない**（センサーの実行タイミングは人間または各スキルの運用に従う）。
+Ingesting LLM sensors (opt-in): when `--context-audit PATH` is given, map the context-audit
+findings JSON through `sensors.py`'s `map_context_audit` and merge it. **loop-triage never launches
+context-audit or the like automatically** (when a sensor runs is up to a human or to each skill's operation).
 
-### Step 3: トリアージ判定
+### Step 3: Triage decision
 
 ```bash
 python3 {skill_dir}/scripts/triage.py $OUT/findings-*.json \
@@ -71,40 +71,40 @@ python3 {skill_dir}/scripts/triage.py $OUT/findings-*.json \
   --out $OUT/decisions.json [--max-enqueue 5]
 ```
 
-`triage.py` は薄い合成層で、判定はすべて純関数（`finding_identity.py` / `admission.py`）が行う。
-自己修飾ゲートの影響スキル解決は `skills/skill-regression/scripts/ledger.py --impact` に委譲される。
+`triage.py` is a thin composition layer; every judgment is made by pure functions (`finding_identity.py` / `admission.py`).
+Resolving the affected skills for the self-modification gate is delegated to `skills/skill-regression/scripts/ledger.py --impact`.
 
-### Step 4: decisions の確認
+### Step 4: Review the decisions
 
-`decisions.json` の各エントリ: `{finding, finding_id, route, reason?, gate?, affected_skills?, missing_fixtures?}`。
-`--dry-run` の場合はここで route 別サマリを提示して終了する。
+Each entry of `decisions.json`: `{finding, finding_id, route, reason?, gate?, affected_skills?, missing_fixtures?}`.
+With `--dry-run`, present a per-route summary here and stop.
 
-### Step 5: enqueue（route = "enqueue" のみ）
+### Step 5: enqueue (route = "enqueue" only)
 
-各 enqueue 対象について [issue の Slug 定義](../issue/SKILL.md#slug-definition)に従い issue を生成する:
+For each enqueue target, generate an issue following [the Slug definition of issue](../issue/SKILL.md#slug-definition):
 
-1. slug: `{yyyymmddhhmmss}_{suggested_title の英語 kebab 化}`（非 ASCII は意味ベース英訳）
-2. `.agents/artifacts/issues/ready/{slug}.md` を [issue-template](../issue/references/issue-template.md) 準拠で作成し、
-   frontmatter を以下のとおりにする:
+1. slug: `{yyyymmddhhmmss}_{suggested_title の英語 kebab 化}` (non-ASCII is translated to English by meaning)
+2. Create `.agents/artifacts/issues/ready/{slug}.md` conforming to [issue-template](../issue/references/issue-template.md), with
+   the frontmatter as follows:
    ```yaml
    finding_id: {finding_id}          # 新規キーとして追加
    tags: loop-triage,{sensor}        # テンプレート既存の tags: 行に値として設定（行を重複追加しない）
    gate: skill-regression            # decisions に gate がある場合のみ新規キーとして追加
    ```
-   本文の概要 = what + why、備考 = 受け入れ条件（finding の解消を機械的に確認する方法。例: 該当センサーの再実行で当該 finding_id が消えること）
-3. `.agents/artifacts/issues/issue-status.md` に行を追加（存在しなければ issue スキルのテンプレで新規作成。
-   Issue 列のリンクは実ファイル位置に合わせ `ready/{slug}.md` とする（テンプレ例の直下パスのままにしない）。
-   Summary 列には finding の what（先頭 1 文）を使う。パイプ・改行エスケープ規則は
-   [issue SKILL.md](../issue/SKILL.md) Create Workflow Step 7 に従う）
+   The body's overview = what + why, and the notes = the acceptance condition (a way to confirm mechanically that the finding is resolved; for example, that the finding_id disappears when the sensor is re-run)
+3. Add a row to `.agents/artifacts/issues/issue-status.md` (create it from the issue skill's template if it does not exist.
+   Match the Issue column's link to the real file location, `ready/{slug}.md`, rather than leaving the template's example path.
+   Use the finding's what (its first sentence) for the Summary column. The escaping rules for pipes and newlines follow
+   [issue SKILL.md](../issue/SKILL.md) Create Workflow Step 7).
 
-書き出す前に全文を secret チェックに通す — `skills/shared/scripts/secret_detect.py` は
-CLI を持たないモジュールなので、`detect_secrets` を import して適用する
-（例: `python3 -c "import sys; sys.path.insert(0, 'skills/shared/scripts'); from secret_detect import detect_secrets; ..."`）。
-検出があればその finding を enqueue せず inbox に降格する（理由: "secret-suspect"）。
+Run the whole text through a secret check before writing it out — `skills/shared/scripts/secret_detect.py` is
+a module without a CLI, so import `detect_secrets` and apply it
+(for example: `python3 -c "import sys; sys.path.insert(0, 'skills/shared/scripts'); from secret_detect import detect_secrets; ..."`).
+On a detection, do not enqueue that finding and demote it to the inbox (reason: "secret-suspect").
 
-### Step 6: inbox（route = "inbox"）
+### Step 6: inbox (route = "inbox")
 
-`.agents/artifacts/loop/inbox.md` に追記する（無ければ見出し `# Loop Inbox` で新規作成）:
+Append to `.agents/artifacts/loop/inbox.md` (creating it with the heading `# Loop Inbox` if absent):
 
 ```markdown
 ## {YYYY-MM-DD HH:MM} {finding_id} [{sensor}/{rule}] {suggested_title}
@@ -114,7 +114,7 @@ CLI を持たないモジュールなので、`detect_secrets` を import して
 - 対応方法: 人間が判断 → 対応するなら `/claude-skills:issue-create` で issue 化、意図的差分なら loop-triage baseline へ
 ```
 
-### Step 7: 報告（summary-first）
+### Step 7: Report (summary-first)
 
 ```
 ## Loop Triage 結果
@@ -130,30 +130,30 @@ CLI を持たないモジュールなので、`detect_secrets` を import して
 - 次の一手: enqueue 分は issue polling が消化する（/claude-skills:issue-polling）
 ```
 
-## baseline — 意図的差分の確定
+## baseline — fixing the intentional differences
 
-現在の findings を suppress リストに確定する（契約 §3.3。opaque ID のみ・first-run 時の一括受け入れ用途）:
+Fix the current findings into the suppress list (contract §3.3; opaque IDs only, intended for a bulk accept on the first run):
 
 ```bash
 python3 {skill_dir}/scripts/triage.py $OUT/findings-*.json \
   --repo-root {repo_root} --update-baseline .claude/loop-baseline.json
 ```
 
-実行前にユーザーに確認して「何件を baseline 化するか」の承認を必ず取る（自走文脈では baseline 化しない）。
+Before running it, always confirm with the user and obtain approval for how many findings are to be baselined (never baseline in a self-driving context).
 
-## status — 棚卸し
+## status — taking stock
 
-- `.agents/artifacts/loop/inbox.md` の未処理エントリ数（`## ` 見出し = 1 エントリ、全件を未処理とみなす）と、
-  `.agents/artifacts/issues/ready|running|failed` の件数を提示する（存在しないディレクトリは 0 扱い）
-- `finding_id` 付き issue（loop-triage 由来）とそれ以外を区別して数える
-- 読み取りのみ（ファイルの作成・変更・削除をしない）。報告フォーマットは run Step 7 と同じ
-  summary-first（テーブル + 一言サマリ）に準拠する
+- Present the number of unprocessed entries in `.agents/artifacts/loop/inbox.md` (a `## ` heading = one entry; treat all of them as unprocessed) together with
+  the counts under `.agents/artifacts/issues/ready|running|failed` (a directory that does not exist counts as 0)
+- Count issues carrying a `finding_id` (those originating from loop-triage) separately from the rest
+- Read-only (never create, change, or delete a file). The report format conforms to the same
+  summary-first shape as run Step 7 (a table plus a one-line summary)
 
-## 合理化防止
+## Preventing rationalization
 
-| 言い訳 | 現実 |
+| Excuse | Reality |
 |--------|------|
-| 「この finding は明らかに直せるから NEEDS_JUDGMENT でも enqueue しよう」 | 昇格は禁止（契約 §4 不変条件 2）。判断が要るなら inbox が正しい置き場 |
-| 「fixture が無いスキルだけど軽微な変更だから通そう」 | ゲート降格は網の有無で機械判定する。軽微かどうかの判断こそ人間の仕事 |
-| 「digest ばかりで成果が無いから閾値を緩めよう」 | 成果はキュー投入数ではなく偽陽性ゼロの供給。緩めるなら契約改訂として明示的に行う |
-| 「重複っぽいが微妙に違うので投入しよう」 | finding_id が違えば投入される。同 ID は duplicate — 迷う余地はない |
+| "This finding is obviously fixable, so let us enqueue it even though it is NEEDS_JUDGMENT" | Promotion is forbidden (contract §4, invariant 2). If judgment is required, the inbox is the right place |
+| "The skill has no fixture, but the change is minor, so let it through" | The gate demotion is decided mechanically by whether a net exists. Judging whether something is minor is exactly a human's job |
+| "It is all digests and there are no results, so let us loosen the threshold" | The result is not the number of queue insertions but a supply with zero false positives. If you loosen it, do so explicitly as a revision of the contract |
+| "It looks like a duplicate but differs slightly, so let us insert it" | If the finding_id differs it gets inserted. The same ID is a duplicate — there is no room to hesitate |

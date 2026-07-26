@@ -5,34 +5,34 @@ description: デザインシステム準拠の多段階検証ゲート。Static 
 
 # Design Validate
 
-デザインシステム準拠の **多段階検証ゲート**。
-Static Lint → Visual Regression Test → Rubric Judge の順で検証し、全ゲート合格でコード反映を承認する。
+A **multi-stage verification gate** for design-system conformance.
+It verifies in the order Static Lint → Visual Regression Test → Rubric Judge, and approves reflecting the code once every gate passes.
 
-**共有契約:**
-- [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md) — デザインシステム検証の共通契約
-- [../shared/references/verification-gate.md](../shared/references/verification-gate.md) — 完了前検証ゲート共通契約
+**Shared contracts:**
+- [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md) — the shared contract for design-system verification
+- [../shared/references/verification-gate.md](../shared/references/verification-gate.md) — the shared contract for the pre-completion verification gate
 
-**パイプライン仕様:** [references/validation-pipeline.md](references/validation-pipeline.md) を参照。
+**Pipeline specification:** see [references/validation-pipeline.md](references/validation-pipeline.md).
 
-## 前提条件
+## Prerequisites
 
-1. `.design/tokens.json` が存在すること（必須）
-2. `.design/lint-config.json` が存在すること（省略時デフォルト使用）
-3. `.design/component-catalog.json` が存在すること（DL101-103 に必要）
-4. `.design/rubric.json` が存在すること（省略時デフォルト rubric を使用）
-5. `.design/baseline/` が存在すること（visual test に必要。なければ lint のみ実行）
+1. `.design/tokens.json` must exist (required)
+2. `.design/lint-config.json` must exist (the default is used when omitted)
+3. `.design/component-catalog.json` must exist (required by DL101-103)
+4. `.design/rubric.json` must exist (the default rubric is used when omitted)
+5. `.design/baseline/` must exist (required by the visual test; without it, only the lint runs)
 
 ## Workflow
 
-### Step 1: 環境チェック
+### Step 1: Environment check
 
-1. 必要ファイルの存在確認
-2. baseline の hash 検証（approval.json の tokensHash / catalogHash）
-3. 利用可能な検証レベルを判定:
-   - tokens.json あり → Level 1 (lint) 利用可能
-   - baseline あり + Playwright あり → Level 3 (visual) 利用可能
-   - rubric.json あり → Level 4 (rubric) 利用可能
-4. 環境サマリーを表示:
+1. Confirm the required files exist
+2. Verify the baseline hashes (tokensHash / catalogHash in approval.json)
+3. Determine which verification levels are available:
+   - tokens.json present → Level 1 (lint) available
+   - baseline present + Playwright present → Level 3 (visual) available
+   - rubric.json present → Level 4 (rubric) available
+4. Display the environment summary:
    ```
    🔍 Validation Environment
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -47,20 +47,20 @@ Static Lint → Visual Regression Test → Rubric Judge の順で検証し、全
 
 ### Step 2: Stage 1 — Baseline Check
 
-validation-pipeline.md の Stage 1 に従い、baseline の整合性を検証。
+Following Stage 1 of validation-pipeline.md, verify the integrity of the baseline.
 
-- hash 一致 → 続行
-- hash 不一致 → 警告表示し、再承認への導線を提示。lint のみ実行モードに切り替え
+- Hashes match → continue
+- Hashes differ → display a warning and present the path to re-approval. Switch to lint-only mode
 
 ### Step 3: Stage 2 — Static Lint
 
-design-lint スキルと同じロジックを内部実行。
+Run the same logic as the design-lint skill internally.
 
-1. 全対象ファイルをスキャン
-2. DL001-006 (Token) + DL101-103 (Component) + DL201-204 (Page/Layout) を適用
-3. 結果を R001, R002, R003 にマッピング
+1. Scan every target file
+2. Apply DL001-006 (Token) + DL101-103 (Component) + DL201-204 (Page/Layout)
+3. Map the results onto R001, R002, R003
 
-**短絡評価:** いずれかの mechanical 項目が FAIL → Stage 3, 4 をスキップし即 FAIL
+**Short-circuit evaluation:** any mechanical item FAILs → skip Stages 3 and 4 and FAIL immediately
 
 ```
 ❌ Stage 2: Static Lint — FAIL
@@ -80,16 +80,16 @@ Visual / Rubric ステージはスキップされました。
 
 ### Step 4: Stage 3 — Visual Regression
 
-baseline スクリーンショットとの比較。
+Comparison against the baseline screenshots.
 
-1. Storybook ビルド確認（`npx storybook build` が可能か）
-   - 不可能 → skip、weight 再配分
-2. Playwright でスクリーンショット撮影
-3. baseline/screenshots/ の対応するファイルと pixel-level 比較
-4. `maxDiffPixelRatio` 以下 → pass
-5. 結果を R004, R007 にマッピング
+1. Confirm the Storybook build (whether `npx storybook build` is possible)
+   - Not possible → skip and redistribute the weight
+2. Take screenshots with Playwright
+3. Compare pixel by pixel against the corresponding files in baseline/screenshots/
+4. At or below `maxDiffPixelRatio` → pass
+5. Map the results onto R004, R007
 
-**未導入時の graceful degradation:**
+**Graceful degradation when it is not installed:**
 ```
 ⚠️ Stage 3: Visual Regression — SKIPPED
 Storybook / Playwright が未導入のため、visual test はスキップされました。
@@ -98,28 +98,28 @@ R004, R007 の weight は他の項目に再配分されます。
 
 ### Step 5: Stage 4 — Rubric Judge
 
-独立した judge サブエージェントを起動する。
+Launch an independent judge subagent.
 
-1. 対象のスクリーンショットを準備（Stage 3 で撮影済み、または baseline を使用）
-2. DESIGN.md の Do's/Don'ts セクションを読み込む
-3. rubric.json の `llm-judge` 項目のプロンプトを構築
-4. サブエージェントを起動し、構造化された評価を取得
-5. 結果を R005, R006 にマッピング
+1. Prepare the target screenshots (already taken in Stage 3, or use the baseline)
+2. Read the Do's/Don'ts sections of DESIGN.md
+3. Build the prompt for the `llm-judge` items of rubric.json
+4. Launch the subagent and obtain a structured evaluation
+5. Map the results onto R005, R006
 
-**重要:** judge サブエージェントは **読み取り専用**。ファイル編集は一切行わない。
+**Important:** the judge subagent is **read-only**. It never edits a file.
 
-### Step 6: Aggregation + 最終判定
+### Step 6: Aggregation and the final verdict
 
-validation-pipeline.md の Stage 5 に従い:
+Following Stage 5 of validation-pipeline.md:
 
-1. 全項目の weighted average を算出
-2. `passingScore` と比較
-3. evidence JSON を構築
-4. `.design/validate-report.json` に保存
+1. Compute the weighted average of every item
+2. Compare against `passingScore`
+3. Build the evidence JSON
+4. Save it to `.design/validate-report.json`
 
-### Step 7: 結果表示
+### Step 7: Display the result
 
-**PASS の場合:**
+**On PASS:**
 ```
 ✅ Design Validation: PASS (Score: 93.5/100)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -139,7 +139,7 @@ validation-pipeline.md の Stage 5 に従い:
 コード反映 OK！ ✅
 ```
 
-**FAIL の場合:**
+**On FAIL:**
 ```
 ❌ Design Validation: FAIL (Score: 65.0/100, required: 80)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -153,27 +153,27 @@ validation-pipeline.md の Stage 5 に従い:
 📄 Evidence: .design/validate-report.json
 ```
 
-## $ARGUMENTS による実行モード
+## Execution modes via $ARGUMENTS
 
-| 引数 | 動作 |
+| Argument | Behavior |
 |------|------|
-| (なし) | 全ステージ実行 |
-| `lint` | Stage 2 のみ（lint only） |
-| `visual` | Stage 2 + Stage 3（lint + visual） |
-| `full` | 全ステージ（デフォルトと同じ） |
-| `report` | 最新の validate-report.json を表示 |
+| (none) | Run every stage |
+| `lint` | Stage 2 only (lint only) |
+| `visual` | Stage 2 + Stage 3 (lint + visual) |
+| `full` | Every stage (the same as the default) |
+| `report` | Display the most recent validate-report.json |
 
-## 絶対的な制約
+## Absolute Constraints
 
-- 検証結果は **捏造しない**。全てのスコアは実際のツール実行結果に基づく
-- evidence は verification-gate 契約に準拠した形式で出力する
-- LLM judge は生成した LLM とは **別のサブエージェント** で実行する
-- baseline なしで visual test を「pass」と判定してはならない
-- lint のみの場合でも evidence を残す（partial evidence として）
+- **Never fabricate** a verification result. Every score is based on the actual output of a tool run
+- Emit the evidence in the form prescribed by the verification-gate contract
+- Run the LLM judge in a **subagent separate** from the LLM that generated the design
+- Never judge a visual test as "pass" without a baseline
+- Leave evidence even in the lint-only case (as partial evidence)
 
 ## References
 
-- **パイプライン仕様:** [references/validation-pipeline.md](references/validation-pipeline.md)
+- **Pipeline specification:** [references/validation-pipeline.md](references/validation-pipeline.md)
 - **Rubric Schema:** [../design-scaffold/references/rubric-schema.json](../design-scaffold/references/rubric-schema.json)
-- **共有契約:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md)
-- **検証ゲート:** [../shared/references/verification-gate.md](../shared/references/verification-gate.md)
+- **Shared contract:** [../shared/references/design-system-contract.md](../shared/references/design-system-contract.md)
+- **Verification gate:** [../shared/references/verification-gate.md](../shared/references/verification-gate.md)
