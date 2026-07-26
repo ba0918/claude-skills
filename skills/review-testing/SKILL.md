@@ -5,86 +5,86 @@ description: テストスイート自体の欠陥検出力・契約検証・安�
 
 # Review: Testing Quality
 
-テストスイートを「それ自体が安全網として機能しているか」という観点で評価する focused レビュー。
-コードベースの設計原則が Testability 最優先である以上、テストの品質は最重要の検証対象だが、
-`codebase-review` は `*.test.*` を対象から構造的に除外している。本スキルがその空白を埋める。
+A focused review that evaluates a test suite from the viewpoint of "does it function as a safety net in its own right".
+Given that the codebase's design principles put Testability first, test quality is the most important thing to verify, yet
+`codebase-review` structurally excludes `*.test.*` from its scope. This skill fills that gap.
 
-**対象**: テストファイルと、それが守るべきプロダクトコードの対応関係。テストコードを第一級入力として読む。
-**非対象**: 依存ライブラリの健全性（→ `review-deps`）、攻撃シナリオ（→ `attack-review`）、
-プロダクトコード自体の品質スコアリング（→ `codebase-review`）。
+**In scope**: test files and their correspondence to the production code they are supposed to protect. Test code is read as first-class input.
+**Out of scope**: the health of dependency libraries (→ `review-deps`), attack scenarios (→ `attack-review`),
+quality scoring of the production code itself (→ `codebase-review`).
 
-**スコープ境界**: プロダクトコードは「どの契約をテストが守るべきか」を抽出するために読む。
-そこで実装バグを発見しても、単独の production-code finding や `CHANGES_REQUESTED` 等のコードレビュー判定へ
-切り替えない。そのバグを捕捉するテストが無い場合だけ「契約検証 / 欠陥検出力の穴」として報告する。
+**Scope boundary**: production code is read in order to extract "which contracts the tests ought to protect".
+Even when you find an implementation bug there, do not switch to a standalone production-code finding or to a code-review verdict such as `CHANGES_REQUESTED`.
+Report it only when no test captures that bug, and then as a hole in contract verification / defect-detection power.
 
-## 契約（最初に宣言する）
+## Contract (declare this first)
 
-- **read-only**: ファイル編集・テストの書き換え・自動修正は一切行わない。指摘は findings として出力し、
-  修正は既存の修正系ワークフロー（tdd / iterate / sweep-fix 等）へ渡す。
-  **レビュー対象ディレクトリへの書き込みも禁止する**。テスト・coverage・mutation runner が cache、
-  snapshot、coverage 出力、DB、ログ等を対象配下へ作る可能性がある場合は、対象外の使い捨てコピーまたは
-  書き込み先を対象外へ固定できる隔離環境でだけ実行する。隔離できなければ動的評価は実行せず
-  `unsupported` に倒す。遵守は実行前後の対象ツリーが不変であることを機械確認して判定する。
-- **総合点を出さない**: 「テスト品質 82 点」型のスコアは出さない。成果物は findings と
-  [coverage ledger](../shared/references/coverage-ledger.md)。総合点は「何を測れなかったか」を隠すため。
-- **三値判定**: 各 finding は
-  [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md) の
-  CONFIRMED / FALSE_POSITIVE / UNCERTAIN で検証する。根拠を書けない CONFIRMED は UNCERTAIN に降格する。
-- **評価範囲を必ず台帳化する**: 見た領域を `reviewed`、意図的に外した領域を `skipped`、
-  ツール未対応で見られない領域を `unsupported`、証拠不足で結論できない領域を `inconclusive` として
-  [coverage-ledger.md](../shared/references/coverage-ledger.md) の様式で報告する。
-  finding が 0 件でも「問題なし」と「見ていない」を混同しない。
+- **read-only**: never edit files, rewrite tests, or apply automatic fixes. Emit the findings as findings and
+  hand the fixing over to an existing fix-oriented workflow (tdd / iterate / sweep-fix, etc.).
+  **Writing into the directory under review is also forbidden.** When a test, coverage, or mutation runner may create a cache,
+  snapshots, coverage output, a DB, or logs under the target, run it only against a throwaway copy outside the target or in an
+  isolated environment whose write destination can be pinned outside the target. If isolation is impossible, do not run the dynamic
+  evaluation and fall back to `unsupported`. Compliance is judged by mechanically confirming that the target tree is unchanged before and after the run.
+- **Do not produce an overall score**: never emit a score of the 「テスト品質 82 点」 kind. The deliverables are findings and a
+  [coverage ledger](../shared/references/coverage-ledger.md). An overall score hides what could not be measured.
+- **Three-way verdict**: verify every finding with the
+  CONFIRMED / FALSE_POSITIVE / UNCERTAIN values of
+  [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md). Demote to UNCERTAIN any CONFIRMED whose grounds you cannot write down.
+- **Always record the evaluated range in a ledger**: report the areas you looked at as `reviewed`, the areas you deliberately left out as `skipped`,
+  the areas you cannot see because tooling does not support them as `unsupported`, and the areas where the evidence is too thin to conclude as `inconclusive`,
+  in the form defined by [coverage-ledger.md](../shared/references/coverage-ledger.md).
+  Even with zero findings, do not conflate "no problems" with "not looked at".
 
-## 三層評価（+ 補助層）
+## Three-layer evaluation (plus an auxiliary layer)
 
-テスト品質を独立した 3 つの中核層（1〜3）で評価し、補助層として可読性（4）を見る。
-各層の詳細な判定基準は
-[references/evaluation-criteria.md](references/evaluation-criteria.md) を参照する。
+Evaluate test quality in three independent core layers (1-3), with readability (4) as an auxiliary layer.
+For the detailed criteria of each layer, see
+[references/evaluation-criteria.md](references/evaluation-criteria.md).
 
-1. **欠陥検出力（P0）**: 重要な契約を壊す変更に対してテストが反応するか。
-   意味のある mutant（契約を変える改変）が生存するなら finding。mutation score の点数化はしない。
-2. **契約検証（P0）**: 公開 API・状態遷移・権限境界・失敗経路に対応テストがあるか。
-   カバレッジ率はスコアに入れず、未到達領域の探索補助にのみ使う。
-3. **安全網の安定性（P1）**: 時刻・乱数・順序・ネットワークへの暗黙依存を証拠化する（flaky の芽）。
-4. **可読性（P2）**: テスト名から仕様（What）が読めるか（information-placement の原則）。
+1. **Defect-detection power (P0)**: do the tests react to a change that breaks an important contract?
+   If a meaningful mutant (a modification that changes a contract) survives, that is a finding. Do not turn the mutation score into a number.
+2. **Contract verification (P0)**: is there a corresponding test for each public API, state transition, permission boundary, and failure path?
+   Coverage percentage does not enter the score; use it only as an aid for exploring unreached areas.
+3. **Stability of the safety net (P1)**: evidence implicit dependencies on time, randomness, ordering, and the network (the seeds of flakiness).
+4. **Readability (P2)**: can the specification (the What) be read from the test names (the information-placement principle)?
 
-## アンチパターン執行
+## Anti-pattern enforcement
 
-[testing-anti-patterns.md](../shared/references/testing-anti-patterns.md) の 5 鉄則を、検出述語・証拠要件・三値判定に変換した執行仕様を
-[references/anti-pattern-detection.md](references/anti-pattern-detection.md) が所有する。
-候補抽出（grep / AST）→ データフロー確認 → 三値判定の順で、各述語に
-positive / negative の [fixtures](references/fixtures/) を対応させて回帰確認できる状態にしてある。
+The enforcement specification that converts the five iron laws of [testing-anti-patterns.md](../shared/references/testing-anti-patterns.md) into detection predicates, evidence requirements, and three-way verdicts is owned by
+[references/anti-pattern-detection.md](references/anti-pattern-detection.md).
+It runs in the order candidate extraction (grep / AST) → data-flow confirmation → three-way verdict, and each predicate is paired with
+positive / negative [fixtures](references/fixtures/) so that regressions can be checked.
 
-## TDD 後付けの扱い（誤検出防止）
+## Handling retrofitted TDD (avoiding false positives)
 
-「今回 TDD だったか」と「テストが今有効か」は別軸。git 履歴だけからの TDD 後付け推定は
-squash / rebase で崩れる弱い証拠なので UNCERTAIN 止まりにする。cycle の RED/GREEN 実行ログがあれば
-CONFIRMED に昇格できる。既存バグへ後から足した回帰テスト自体は罰しない（安全網の追加を阻害するため）。
+"Was TDD followed this time" and "are the tests effective now" are separate axes. Inferring retrofitted TDD from git history alone is weak evidence that
+collapses under squash / rebase, so cap it at UNCERTAIN. With a RED/GREEN execution log from cycle it can be promoted to
+CONFIRMED. Do not penalize a regression test added later for an existing bug (that would discourage adding to the safety net).
 
-## ワークフロー
+## Workflow
 
-1. **対象決定**: 引数（ディレクトリ / glob / 差分）からテストファイル集合とその対応プロダクトを特定する。
-   テストが 1 件も無ければ、検索した範囲を `reviewed` として台帳化し、「テスト不在」を契約検証層の
-   finding にするかをプロダクトの公開契約と照合する。存在しないテストの品質 finding は捏造しない。
-2. **候補抽出**: anti-pattern-detection.md の検出述語で候補を機械的に集める（シェルコマンドでの検索・AST 走査）。
-3. **文脈検証**: 各候補をデータフロー・call site で検証し、CONFIRMED / FALSE_POSITIVE / UNCERTAIN を付ける。
-   規模が大きい場合はサブエージェントに層ごと（欠陥検出力 / 契約検証 / 安定性）の分析を委譲し、
-   結果ファイルだけを**対象ツリー外のスクラッチ領域**へ保存して集約する（メインコンテキスト節約）。
-4. **三層評価**: evaluation-criteria.md に沿って各層を評価し、意味のある finding のみ残す。
-5. **レポート**: [references/report-template.md](references/report-template.md) の様式で findings + coverage ledger を出力する。
+1. **Determine the target**: from the arguments (a directory / glob / diff), identify the set of test files and their corresponding production code.
+   If there is not a single test, record the searched range as `reviewed` in the ledger and check against the production code's public contracts whether
+   "absence of tests" should become a finding of the contract-verification layer. Do not fabricate quality findings for tests that do not exist.
+2. **Extract candidates**: gather candidates mechanically with the detection predicates of anti-pattern-detection.md (searching with shell commands, AST traversal).
+3. **Context verification**: verify each candidate through its data flow and call sites, and assign CONFIRMED / FALSE_POSITIVE / UNCERTAIN.
+   At larger scale, delegate the per-layer analysis (defect-detection power / contract verification / stability) to subagents and aggregate,
+   saving only the result files to a **scratch area outside the target tree** (this conserves the main context).
+4. **Three-layer evaluation**: evaluate each layer along evaluation-criteria.md and keep only the meaningful findings.
+5. **Report**: emit findings plus the coverage ledger in the form defined by [references/report-template.md](references/report-template.md).
 
-### 完了ゲート
+### Completion gate
 
-次をすべて満たすまでレビュー完了を宣言しない。
+Do not declare the review complete until all of the following hold.
 
-- レポートの findings はテスト品質（またはテスト不在）を主語にしており、production bug 単独の指摘になっていない。
-- テスト 0 件でも、探索範囲を `reviewed` とした Coverage Ledger と、公開契約との照合結果がある。
-- コードレビュー用の合否判定（`CHANGES_REQUESTED` 等）や総合点を出していない。
-- 対象ツリーの実行前後不変を機械確認している。
+- The findings in the report take test quality (or the absence of tests) as their subject, and are not standalone production-bug reports.
+- Even with zero tests, there is a Coverage Ledger marking the searched range as `reviewed`, together with the result of checking against the public contracts.
+- No code-review pass/fail verdict (`CHANGES_REQUESTED` and the like) and no overall score has been emitted.
+- The target tree has been mechanically confirmed unchanged before and after the run.
 
-## セキュリティ
+## Security
 
-- read-only を厳守する（テストの書き換え・スナップショット更新・`--update` 系の実行を禁止）。
-- テスト内のフィクスチャに含まれる秘匿値（トークン・鍵・認証情報）を finding の証拠にそのまま転記しない。
-- テストの実行が必要な場合も、外部 API・永続 DB 等への副作用を遮断でき、対象外の使い捨て環境である場合に限る。
-  安全性を確認できなければ実行せず、該当する動的評価領域を `unsupported` とする。
+- Adhere strictly to read-only (rewriting tests, updating snapshots, and running `--update`-style commands are forbidden).
+- Do not transcribe secret values contained in test fixtures (tokens, keys, credentials) directly into the evidence for a finding.
+- Even when running the tests is necessary, do so only where side effects on external APIs, persistent DBs, and the like can be cut off and the environment is a throwaway one outside the target.
+  If safety cannot be confirmed, do not run them and mark the corresponding dynamic-evaluation area as `unsupported`.

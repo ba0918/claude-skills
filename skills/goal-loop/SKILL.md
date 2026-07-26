@@ -5,20 +5,20 @@ description: 機械検証可能な条件（oracle コマンド）が真になる
 
 # Goal Loop
 
-**共通契約（必読・直リンク）:** [../shared/references/convergence-pattern.md](../shared/references/convergence-pattern.md)
+**Shared contract (required reading, direct link):** [../shared/references/convergence-pattern.md](../shared/references/convergence-pattern.md)
 
-oracle（判定コマンド）が真になるまで修正を自律反復する。本 SKILL.md は薄い orchestrator であり、
-oracle 整合・収束判定・安全ブレーキの仕様は契約側を参照する（複製しない）。
+Autonomously iterate fixes until the oracle (the deciding command) becomes true. This SKILL.md is a thin orchestrator;
+the specifications for oracle integrity, convergence judgment, and the safety brakes live in the contract (do not duplicate them).
 
-## 不変条件（契約 §3 / §5）
+## Invariants (contract §3 / §5)
 
-1. **oracle はコントローラ（あなた）が実行する**。implementer の「通りました」は採らない
-2. **oracle_files はハッシュロック**し、毎イテレーションの oracle 実行直前に verify する。
-   改変検出 = `oracle_tampered` で即 halt（実装の巻き戻しはせず、人間に報告）
-3. ループ内で manifest を更新しない。oracle の変更はループ外で人間が行う
-4. 安全ブレーキ（max_iter=8 / max_wallclock=30m / kill file 2 系統）なしで回さない。
-   kill file の意味論（`.STOP` graceful / `.STOP.hard` hard、絶対パス解決）は
-   [polling-pattern.md §6](../shared/references/polling-pattern.md#6-safety-brakes) に従う
+1. **The controller (you) runs the oracle.** Never accept the implementer's "it passed"
+2. **oracle_files are hash-locked**, and verified immediately before every iteration's oracle run.
+   Detected tampering = `oracle_tampered`, halt immediately (do not roll the implementation back; report to a human)
+3. Never update the manifest inside the loop. Changing the oracle is something a human does outside the loop
+4. Never run without the safety brakes (max_iter=8 / max_wallclock=30m / two kinds of kill file).
+   The semantics of the kill files (`.STOP` graceful / `.STOP.hard` hard, resolved as absolute paths) follow
+   [polling-pattern.md §6](../shared/references/polling-pattern.md#6-safety-brakes)
 
 ## Argument Format
 
@@ -29,19 +29,19 @@ goal-loop "<goal の自然言語記述>" [--oracle "COMMAND"] [--oracle-files PA
 
 ## Steps
 
-### Step 1: Oracle の確定
+### Step 1: Fix the oracle
 
-1. `--oracle` があればそれ。無ければ goal 記述とプロジェクト構成から判定コマンドを推定する。
-   推定はプロジェクトが**公式に案内する入口を優先**する（README 記載のコマンド >
-   Makefile / package.json scripts の test ターゲット > 生のテストランナー直叩き）
-2. `--oracle-files` があればそれ。無ければ oracle が読む検証定義（テストディレクトリ全体・
-   lint 設定・検証スクリプト）を列挙する。**狭めない** — テストディレクトリは全体を含めるのが既定（契約 §2）。
-   oracle コマンドを**定義する**ファイル（Makefile の test ターゲット等）も含めるのを推奨
-   （コマンド書き換えによる gaming も遮断できる）。ただし implementer が正当に触り得る
-   ファイル（package.json 全体等）は誤 halt の元なので判断して除外してよい。
-   ビルド生成物（`__pycache__` / `*.pyc`）は lock がスクリプト側で自動除外する
-3. ユーザーに確認して oracle（コマンド + files + expected_exit）を 1 度だけ承認する。
-   ヘッドレス文脈（cycle 内等）では推定値をそのまま採用し、報告に明記する
+1. Use `--oracle` if given. Otherwise infer the deciding command from the goal description and the project layout.
+   The inference **prefers the entry point the project officially advertises** (a command documented in the README >
+   a test target in a Makefile / package.json scripts > invoking the raw test runner directly)
+2. Use `--oracle-files` if given. Otherwise enumerate the verification definitions the oracle reads (the whole test directory,
+   lint configuration, verification scripts). **Do not narrow this** — including the entire test directory is the default (contract §2).
+   Including the files that **define** the oracle command (a Makefile test target, etc.) is recommended
+   (that also blocks gaming by rewriting the command). However, files the implementer may legitimately touch
+   (package.json as a whole, etc.) are a source of false halts, so you may judge them out.
+   Build products (`__pycache__` / `*.pyc`) are excluded automatically by the locking script
+3. Confirm with the user and get the oracle (command + files + expected_exit) approved exactly once.
+   In a headless context (inside cycle, etc.), adopt the inferred values as-is and state them explicitly in the report
 
 ### Step 2: Lock
 
@@ -50,52 +50,52 @@ TS=$(date +%Y%m%d%H%M%S); WORK=$(pwd)/.claude/tmp/goal-loop/$TS; mkdir -p $WORK
 python3 {skill_dir}/scripts/goal_loop.py lock {oracle_files...} --out $WORK/manifest.json
 ```
 
-`$WORK` は**絶対パスで確定させ、以降の全ステップで同じ値を使い続ける**（Bash 呼び出しは
-ステートレスなので、確定した WORK の絶対パスを自分のコンテキストに控えておく。
-再取得の仕組みは作らない — TS を跨いで解決しようとするとロック対象がずれる）。
+**Fix `$WORK` as an absolute path and keep using that same value in every later step** (shell invocations are
+stateless, so keep the settled absolute path of WORK in your own context.
+Do not build a mechanism to re-derive it — trying to resolve it across a different TS shifts the lock targets).
 
-manifest のパスは **lock 実行時の cwd 相対**で記録・解決される。lock / verify は必ず
-**プロジェクトルート（同じ cwd）**で実行すること — 別ディレクトリから verify を叩くと
-ファイルが見つからず偽 tamper（exit 2）になる。
+The paths in the manifest are recorded and resolved **relative to the cwd at lock time**. Always run lock / verify
+**at the project root (the same cwd)** — invoking verify from another directory fails to find the files and produces a
+false tamper (exit 2).
 
-### Step 3: Iteration Loop（契約 §5 の擬似コードに準拠）
+### Step 3: Iteration loop (conforms to the pseudocode of contract §5)
 
-各イテレーション i = 1..max_iter で:
+For each iteration i = 1..max_iter:
 
-1. **Kill file check**: `$WORK/.STOP`（graceful）/ `$WORK/.STOP.hard` を確認、存在で即 halt。
-   kill file の基準ディレクトリは**絶対パスの $WORK**（polling-pattern §6 の「絶対パス解決」は
-   これで満たす — 相対パスで別の場所を見ない）
-2. **Wallclock check**: 開始からの経過が max_wallclock（既定 30m）を超えていたら
-   `halt_reason="max_wallclock"` で終了
+1. **Kill file check**: check `$WORK/.STOP` (graceful) / `$WORK/.STOP.hard`, and halt immediately if either exists.
+   The base directory for kill files is **the absolute `$WORK`** (this is how "absolute path resolution" of polling-pattern §6 is
+   satisfied — do not look at a different location via a relative path)
+2. **Wallclock check**: if the time elapsed since the start exceeds max_wallclock (30m by default), finish with
+   `halt_reason="max_wallclock"`
 3. **Integrity verify**: `python3 {skill_dir}/scripts/goal_loop.py verify $WORK/manifest.json`
-   - exit 2 なら `halt_reason="oracle_tampered"`。改変パスを報告して**即終了**（修正もロールバックもしない）
-4. **Oracle 実行**: oracle command を Bash で実行し、出力を `$WORK/iter-{i}.log` に保存
-   - `expected_exit` と一致 → **収束**。Step 4 へ（収束した iter の signature は積まない）
-5. **Signature 記録と収束不能判定**（両方 CLI で機械実行 — 暗算・目視判定をしない）:
+   - On exit 2, `halt_reason="oracle_tampered"`. Report the tampered paths and **finish immediately** (do not fix and do not roll back)
+4. **Run the oracle**: run the oracle command in a shell and save its output to `$WORK/iter-{i}.log`
+   - Matches `expected_exit` → **converged**. Go to Step 4 (do not accumulate a signature for the converged iteration)
+5. **Record the signature and judge non-convergence** (run both mechanically through the CLI — no mental arithmetic, no eyeballing):
    ```bash
    python3 {skill_dir}/scripts/goal_loop.py signature < $WORK/iter-{i}.log >> $WORK/history.txt
    python3 {skill_dir}/scripts/goal_loop.py halt $WORK/history.txt
    ```
-   halt の exit code: 0 = 継続 / 3 = stall / 4 = oscillation。3 か 4 なら halt_reason に
-   そのまま採用して終了
-6. **Implementer 委譲**: サブエージェント（軽量モデル、大きな修正のみ高性能モデル）に以下を渡して修正させる。
-   委譲は**同期的に扱う** — implementer の結果を受け取るまでコントローラのターンを終えない
-   （結果待ちのままターンを終えるとループが迷子になる）。implementer が no-op で戻っても、
-   oracle 再実行・signature 記録・halt 判定は**毎イテレーション実行**する（stall 検出の反復を
-   成立させるため。no-op を理由にループを手動で打ち切らない）:
-   - oracle の失敗出力（当該 iter のログ）
-   - 「**oracle_files（{列挙}）の編集は禁止**。テスト・検証定義を変更して通すのは失敗と同義」という明示指示
-   - 「コード内に明示された承認ゲート・制約（『変更には承認が必要』等のコメント / fence）を
-     無断で越えない。**越えなければ修正不能なら何も変更せず、その旨を報告して戻る（no-op）**」という明示指示
-   - 修正対象はプロダクションコードのみ
-7. 次のイテレーションへ
+   halt exit codes: 0 = continue / 3 = stall / 4 = oscillation. On 3 or 4, adopt it as the halt_reason
+   verbatim and finish
+6. **Delegate to the implementer**: hand the following to a subagent (a lightweight model; a high-capability model only for large fixes) and have it fix the code.
+   **Treat the delegation as synchronous** — do not end the controller's turn until the implementer's result is received
+   (ending the turn while still waiting loses the loop). Even when the implementer returns a no-op,
+   **run the oracle again, record the signature, and judge halting on every iteration** (this is what makes the repetition
+   that stall detection needs; do not manually break the loop on the grounds of a no-op):
+   - The oracle's failure output (that iteration's log)
+   - An explicit instruction that **editing oracle_files ({enumeration}) is forbidden**, and that passing by changing tests or verification definitions is equivalent to failure
+   - An explicit instruction not to cross approval gates or constraints stated in the code (comments / fences such as "changes require approval")
+     without permission. **If the fix is impossible without crossing them, change nothing, report that, and return (a no-op)**
+   - The fix targets production code only
+7. Move on to the next iteration
 
-> **収束不能の設計意図**: テスト期待値とプロダクション制約（承認ゲート）が衝突して自律修正が
-> 原理的に不可能な場合、専用の halt_reason は発明しない。implementer が no-op で戻る →
-> 同一失敗が反復 → **stall として機械停止**するのが正規経路。報告にはループ外で人間が
-> 決めるべき選択肢（承認を得て変更 / oracle を定義し直して再 lock・再開始）を申し送りとして含める。
+> **Design intent of non-convergence**: when a test expectation and a production constraint (an approval gate) collide so that autonomous
+> fixing is impossible in principle, do not invent a dedicated halt_reason. The regular path is: the implementer returns a no-op →
+> the same failure repeats → **it stops mechanically as a stall**. Include in the report, as a handover, the options that a human must
+> decide outside the loop (obtain approval and change it / redefine the oracle, re-lock, and restart).
 
-### Step 4: 完了報告（verification-gate 準拠）
+### Step 4: Completion report (conforms to verification-gate)
 
 ```
 ## Goal Loop 結果
@@ -106,19 +106,19 @@ manifest のパスは **lock 実行時の cwd 相対**で記録・解決され�
 - oracle integrity: 全イテレーションで verify 合格 / oracle_tampered（改変パス列挙）
 ```
 
-`converged: true` は**最終 oracle 実行の実出力**を証拠として提示できる場合のみ
-（[verification-gate.md](../shared/references/verification-gate.md) — 証拠なしの完了主張禁止）。
+`converged: true` is allowed only when **the actual output of the final oracle run** can be presented as evidence
+([verification-gate.md](../shared/references/verification-gate.md) — claiming completion without evidence is forbidden).
 
-## 合理化防止
+## Preventing rationalization
 
-| 言い訳 | 現実 |
+| Excuse | Reality |
 |--------|------|
-| 「このテストは仕様と食い違っているから直した方が早い」 | それは oracle の変更であり、ループ外で人間が判断する仕事。ループ内では `oracle_tampered` = 失敗 |
-| 「flaky なテストだけ skip すれば収束する」 | skip の追加は oracle_files の改変。検出されて halt する。flaky の除外は人間が oracle を定義し直してから |
-| 「implementer がテスト通ったと言っている」 | 自己申告は採らない。コントローラが oracle を再実行した結果だけが真 |
-| 「あと 1 回回せば通りそうだから max_iter を増やそう」 | stall / oscillation 検出は「回しても収束しない」の機械判定。増やすのは人間の明示指示があるときだけ |
+| "This test contradicts the specification, so fixing it is faster" | That is a change to the oracle, and it is a human's job outside the loop. Inside the loop it is `oracle_tampered` = failure |
+| "It would converge if I just skipped the flaky test" | Adding a skip modifies oracle_files. It will be detected and halt. Excluding flakiness comes after a human redefines the oracle |
+| "The implementer says the tests passed" | Self-reports are not accepted. Only the result of the controller re-running the oracle is true |
+| "It looks like one more round would pass, so let us raise max_iter" | stall / oscillation detection is the machine's judgment that "more rounds will not converge". Raise it only on an explicit human instruction |
 
-## 使い分け
+## Choosing between skills
 
-条件収束型（本スキル） vs 対話型 TDD vs 指示駆動 iterate vs キュー消化 polling —
-[契約 §7 の使い分け表](../shared/references/convergence-pattern.md#7-使い分け) を参照。
+Condition-convergent (this skill) vs interactive TDD vs instruction-driven iterate vs queue-consuming polling —
+see [the comparison table in contract §7](../shared/references/convergence-pattern.md#7-使い分け).

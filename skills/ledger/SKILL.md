@@ -3,40 +3,40 @@ name: ledger
 description: greenfield の要件・仕様・ドメイン知識を人間と裁定し、現在有効な合意を状態付きの台帳として正本化する。仕様の空白を暗黙補完させず、未裁定事項を可視化したいときに使う。workflow は extract / session / status / orient。「合意台帳」「ledger」「裁定セッション」「台帳を作って」「合意を裁定して」「何が決まって何が未裁定か」で起動する。
 ---
 
-# ledger — 合意台帳
+# ledger — Agreement Ledger
 
-現在有効な合意を状態付きで正本化し、LLM が仕様の空白を暗黙補完することを防ぐ。
+Establish the currently valid agreements as a stateful source of truth, so that the LLM never fills the gaps in a specification implicitly.
 
 ## Core invariants
 
-- LLM は提案者になれるが承認者にはなれない。`AGREED` は、人間が同一 revision の claim に明示回答した承認イベントからのみ生成する。
-- 実装の根拠にできるのは `AGREED` / `DELEGATED` 行だけである。合意がなければ `UNDECIDED` として可視化する。
-- headless で人間の回答が得られない場合、extract は draft preview まで、session は状態遷移なしで止める。status は読み取り専用で実行できる。
+- The LLM may be a proposer but never an approver. `AGREED` is generated only from an approval event in which a human explicitly answered a claim at the same revision.
+- Only `AGREED` / `DELEGATED` rows may serve as grounds for implementation. Where no agreement exists, surface it as `UNDECIDED`.
+- When running headless with no human answer available, extract stops at the draft preview and session stops without any state transition. status remains runnable because it is read-only.
 
 ## Workflow routing
 
-第1引数で一つだけ選ぶ。
+Pick exactly one with the first argument.
 
-| 引数 | 実行方法 |
+| Argument | How to run |
 |---|---|
-| `extract` | 実行前に [extract-workflow.md](references/extract-workflow.md) だけを完全に読み、その手順に従う |
-| `session` | 実行前に [session-workflow.md](references/session-workflow.md) だけを完全に読み、その手順に従う |
-| `orient` | 実行前に [orient-workflow.md](references/orient-workflow.md) だけを完全に読み、その手順に従う |
-| `status` | 下記 fast path だけで完結する。参照先を含む他ファイルを読まない |
-| なし | 台帳がなければ extract を案内し、あれば status fast path を実行する |
+| `extract` | Before running, read only [extract-workflow.md](references/extract-workflow.md) in full and follow its procedure |
+| `session` | Before running, read only [session-workflow.md](references/session-workflow.md) in full and follow its procedure |
+| `orient` | Before running, read only [orient-workflow.md](references/orient-workflow.md) in full and follow its procedure |
+| `status` | Completes with the fast path below alone. Do not read any other file, including referenced ones |
+| (none) | If no ledger exists, guide the user to extract; if one exists, run the status fast path |
 
 ## status fast path
 
-status は台帳を変更しない。この節が必要事項をすべて含むため、スキーマ正本、語彙正本、テンプレート、他workflowを読まず、人間向けの短い裁定ビューを次の順で出す。
+status does not modify the ledger. Because this section contains everything required, emit a short human-facing decision view in the following order without reading the schema source of truth, the vocabulary source of truth, the templates, or any other workflow.
 
-1. 停止要因（実装を止める高リスク未裁定）
-2. 高リスク未裁定の上位
-3. 期限切れ委任
-4. 次の一手
-5. 再開地点
+1. 「停止要因」 — high-risk undecided items that block implementation
+2. 「高リスク未裁定の上位」 — the top high-risk undecided items
+3. 「期限切れ委任」 — expired delegations
+4. 「次の一手」 — the next move
+5. 「再開地点」 — where to resume
 
-冒頭は「未裁定 N 件 / 高リスク M 件」とし、合意済み全件と履歴は詳細送りにする。全体は1〜2スクロールに収める。内部状態語はそのまま見せず、`UNDECIDED` は「未裁定」、`DELEGATED` は「任せた（範囲: …）」のように人間向けに言い換える。入力に claim がなければ内容を補完せず、件数と不足情報だけを示す。
+Open with 「未裁定 N 件 / 高リスク M 件」 and defer the full list of agreed items and the history to a detail view. Keep the whole thing within one or two scrolls. Do not expose internal state words as-is: rephrase them for humans, `UNDECIDED` as 「未裁定」 and `DELEGATED` as 「任せた（範囲: …）」. If the input contains no claims, do not invent content — show only the counts and what information is missing.
 
 ## Completion
 
-変更を伴うworkflowは、実行した検証コマンド、exit code、検出件数、変更、未解決事項を報告する。status は読み取り専用であり、状態遷移や承認イベントを生成しない。
+A workflow that makes changes reports the verification commands it ran, their exit codes, the number of detections, the changes made, and any unresolved items. status is read-only and generates neither state transitions nor approval events.

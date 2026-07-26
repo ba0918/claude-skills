@@ -7,83 +7,83 @@ description: 実装計画を plan-reviewer による review → fix ループで
 
 Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
-実装計画を `claude-skills:plan-reviewer` スキルでレビューし、検出された問題に対して
-計画ファイルを直接編集して改善する。これを全観点 PASS になるか、
-最大イテレーション数に達するまでループする。
+Review an implementation plan with the `claude-skills:plan-reviewer` skill and improve it by editing the
+plan file directly in response to the problems found. Loop this until every dimension is PASS or
+the maximum iteration count is reached.
 
-判定の語彙は [plan-reviewer](../plan-reviewer/SKILL.md) の定義に従う。要点: 各観点は 0-100 のスコア
-（最も重い指摘の重さ）を持ち、0-49 = PASS / 50-79 = WARN / 80-100 = BLOCK。
-本スキルでの終了条件「全観点 PASS」は「WARN / BLOCK が 1 件も残っていない」ことと同義。
+The vocabulary of the verdicts follows the definitions in [plan-reviewer](../plan-reviewer/SKILL.md). In short: each dimension carries a score of 0-100
+(the weight of its heaviest finding), where 0-49 = PASS / 50-79 = WARN / 80-100 = BLOCK.
+This skill's termination condition "every dimension PASS" is synonymous with "not a single WARN / BLOCK remaining".
 
-## plan-reviewer 呼び出し境界（委譲結果の受渡し）
+## The plan-reviewer invocation boundary (handing over delegated results)
 
-`claude-skills:plan-reviewer` を（サブエージェント委譲として）起動する場合、その結果は
-[delegation result relay](../shared/references/orchestration-patterns.md) に従ってファイル経由で受け取る。
-配下で並行起動したレビューの判定が集約側へ戻らず停滞する到達性問題が実測されているため、
-報告メッセージの配達に結果を依存させない。plan-reviewer は各観点の判定を
-`.agents/runtime/delegation/{run_id}_review-{dim}.md` へ書き、それを集約する。refine 役は
-plan-reviewer の完了報告または停止・待機通知のどちらでも結果を回収し、報告が届かなくても次の順で
-成果物検分にフォールバックする: (1) plan-reviewer の集約結果 → (2) 各観点のレビュー結果ファイル群
-`{run_id}_review-{dim}.md` → (3) 計画ファイル本文（refine 自身が編集する対象）。
-`{run_id}` は計画ファイル冒頭の Cycle ID（なければファイル名のタイムスタンプ）を使う。
+When launching `claude-skills:plan-reviewer` (as a subagent delegation), receive its result through a file, following
+the [delegation result relay](../shared/references/orchestration-patterns.md).
+Because a reachability problem has been measured in which the verdicts of reviews launched concurrently underneath fail to return to the aggregator and stall,
+do not make the result depend on the delivery of a report message. plan-reviewer writes each dimension's verdict to
+`.agents/runtime/delegation/{run_id}_review-{dim}.md`, and those are aggregated. The refine role collects the result from either
+plan-reviewer's completion report or its stop/wait notification, and even when no report arrives it falls back to inspecting the
+artifacts in this order: (1) plan-reviewer's aggregated result → (2) the per-dimension review result files
+`{run_id}_review-{dim}.md` → (3) the body of the plan file (the very thing refine edits).
+For `{run_id}`, use the Cycle ID at the top of the plan file (or the timestamp in the file name if there is none).
 
-refine は plan-reviewer を起動しつつ cycle からは委譲先でもある**中間オーケストレーター**として
-待機し、この位置で報告未達の停滞が実測されている。待つ間は
-[待機規範（wait discipline）](../shared/references/orchestration-patterns.md)に従う: 通知非依存で
-結果ファイルディレクトリを再検分し、最後の到着から一定時間（既定 10 分）無到着なら上記フォールバック
-検分に切り替える。自分自身が cycle 配下で停滞した場合の回収は、親（cycle）が張る柱 3 の watchdog に
-委ねる。
+refine waits as an **intermediate orchestrator** — launching plan-reviewer while itself being a delegate of cycle — and
+stalls from undelivered reports have been measured at exactly this position. While waiting, follow the
+[wait discipline](../shared/references/orchestration-patterns.md): re-inspect the result file directory without depending on
+notifications, and once nothing has arrived for a set period after the last arrival (10 minutes by default), switch to the fallback
+inspection above. Recovery for the case where refine itself stalls underneath cycle is left to the pillar-3 watchdog that the
+parent (cycle) sets up.
 
-plan-reviewer をスキルとして起動できない環境では、以下のインラインレビュー代行をフォールバックとして使う。
-このとき plan-reviewer の **SKILL.md 本体と references の両方**
-（観点定義・UI/UX の条件付きトリガー判定・フォールバック規定・出力形式を含む）を読み、
-同じ観点・同じ判定基準で自分がインラインでレビューを実施する。
-インライン代行では結果はすべて同一コンテキストに集約されるため、ファイル受渡しは不要である。
-インライン代行ではレビュアーと修正者が同一になるため、次の 2 点でバイアスを抑える:
-- レビュー時は自分の直前の編集を前提とせず、計画本文だけを読み直して採点する
-- 修正後の再レビューで判定を引き上げる場合、解消の根拠（該当する変更箇所の引用）を添える。根拠なく PASS にしない
+In an environment where plan-reviewer cannot be launched as a skill, use the following inline review substitute as a fallback.
+In that case read **both plan-reviewer's SKILL.md body and its references**
+(including the dimension definitions, the conditional UI/UX trigger judgment, the fallback provisions, and the output format), and
+conduct the review inline yourself with the same dimensions and the same criteria.
+In the inline substitute every result is aggregated into the same context, so no file handover is needed.
+Because the inline substitute makes the reviewer and the fixer the same actor, suppress bias in the following two ways:
+- When reviewing, do not take your own immediately preceding edit as given — re-read the plan body alone and score that
+- When raising a verdict in a re-review after a fix, attach the grounds for the resolution (a quotation of the corresponding change). Never mark PASS without grounds
 
-## パラメータ
+## Parameters
 
-- 引数の最初の数値: 最大イテレーション数（デフォルト: 3）
-- 引数のファイルパス: 対象計画ファイル。省略時は `.agents/artifacts/plans/` 直下の `*.md` を
-  **ファイル名のタイムスタンプ降順**で並べた先頭を選ぶ（mtime は編集で入れ替わるため使わない）
+- The first number in the arguments: the maximum iteration count (default: 3)
+- A file path in the arguments: the target plan file. When omitted, choose the head of the `*.md` files directly under
+  `.agents/artifacts/plans/` sorted by **descending file-name timestamp** (do not use mtime, since edits reorder it)
 
-## フロー
+## Flow
 
-### Iteration 1（フルレビュー）
+### Iteration 1 (full review)
 
-1. スキル `claude-skills:plan-reviewer` を起動（7観点フルレビュー、UI/UX は条件付き）
-   - 対象ファイルは引数で指定。省略時は `.agents/artifacts/plans/` 内の最新を自動選択
-   - 対象ファイルのパスを記憶しておく（以降のイテレーションで再利用）
-2. 結果が全て PASS → 終了（完了報告へ）
-3. WARN/BLOCK がある場合:
-   a. 各指摘を検討し、計画ファイルを直接編集して改善
-   b. **そのイテレーションで改善した箇所**の diff（変更ハンクまたはその要約）を表示する。
-      全イテレーション分をまとめた累積 stat 1 回だけで済ませるのは不可。
-      変更追跡ができないファイルでは変更前後の要約で代替する
-   c. 次のイテレーションへ
+1. Launch the `claude-skills:plan-reviewer` skill (a full review of the 7 dimensions, UI/UX being conditional)
+   - Specify the target file in the arguments. When omitted, the newest file in `.agents/artifacts/plans/` is selected automatically
+   - Remember the path of the target file (it is reused in later iterations)
+2. Every result PASS → finish (go to the completion report)
+3. When there are WARN/BLOCK findings:
+   a. Consider each finding and improve the plan by editing the plan file directly
+   b. Show the diff (the changed hunks or a summary of them) of **what was improved in that iteration**.
+      Getting by with a single cumulative stat covering all iterations is not acceptable.
+      For files where change tracking is unavailable, substitute a before/after summary
+   c. Move on to the next iteration
 
-### Iteration 2+（差分レビュー）
+### Iteration 2+ (differential review)
 
-1. 前回 WARN/BLOCK だった観点のみ再レビューする
-   - `claude-skills:plan-reviewer` へ対象観点を明示して依頼する。観点の部分指定を受け付けない場合は
-     フルレビューを依頼し、**前回 WARN/BLOCK だった観点の結果のみ**を判定に使う
-   - 同じ対象ファイルを引数で明示的に渡す（自動選択に頼らない）
-   - PASS だった観点はスキップ（コンテキスト消費を抑える）
-2. 結果が全て PASS → 終了
-3. まだ WARN/BLOCK がある場合 → 改善して次へ
+1. Re-review only the dimensions that were WARN/BLOCK last time
+   - Ask `claude-skills:plan-reviewer` with the target dimensions stated explicitly. When it does not accept a partial dimension list,
+     request a full review and use **only the results for the dimensions that were WARN/BLOCK last time** for the verdict
+   - Pass the same target file explicitly in the arguments (do not rely on automatic selection)
+   - Skip the dimensions that were PASS (this holds down context consumption)
+2. Every result PASS → finish
+3. Still WARN/BLOCK → improve and continue
 
-### 終了条件
+### Termination conditions
 
-- 全観点 PASS
-- 最大イテレーション数に到達 → 残りの WARN/BLOCK を一覧表示して終了
+- Every dimension PASS
+- The maximum iteration count is reached → list the remaining WARN/BLOCK findings and finish
 
-### 完了報告
+### Completion report
 
-ユーザーに以下を提示:
+Present the following to the user:
 
-- 実行したイテレーション数（レビュー 1 回＝1 イテレーションと数える。修正の有無は問わず、最終のレビューのみの回も含む）
-- 各イテレーションで改善した項目のサマリー
-- 最終的な各観点のスコアと判定
-- 残存する WARN/BLOCK があればその一覧
+- The number of iterations executed (one review counts as one iteration, regardless of whether a fix followed, including a final review-only round)
+- A summary of the items improved in each iteration
+- The final score and verdict for each dimension
+- A list of any WARN/BLOCK findings that remain

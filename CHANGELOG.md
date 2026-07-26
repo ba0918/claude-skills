@@ -220,6 +220,42 @@ noise_band をぎりぎり超える程度で確立できず、品質劣化も観
 - issue #36 の (3)（中間ファイル置き場が未 ignore のプロジェクトでの扱い）は、退避先を作るか
   Phase 4-3 の確認から除外するかで設計が分かれるため、人間の裁定待ちとして触れていない
 
+翻訳による構造劣化を機械検出する `sensor:translation-damage` を実装し、`run_checks.sh` の
+ゲートに入れた。skills/ 全文書の英語化は残り 106 ファイルあるが、fixture を持つスキルは
+20 / 48 しかなく、残り 26 スキルは非劣化 A/B が原理的に走らせられない。dossier
+`frag:translation-damage-sensor` が「この sensor が唯一の劣化検出手段になる断片が存在する」と
+判定しているのはそのためで、この実装が無い間は fixture 未保有スキルを 1 本も訳せなかった。
+1 本ずつ fixture を作ってから訳す従来手順は 26 スキル × 12〜16 プロセスを要し、翻訳そのものの
+コストではなく検証手段の不在が律速になっていた。
+
+検出対象と severity は、リポジトリの過去の翻訳コミット 41 ペアで校正して決めた。BLOCK は
+構造パリティ（見出し / フェンス / リンク / 番号 / 箇条書き / 表の行 / 水平線の件数）・識別子と
+契約語彙の消失・frontmatter の byte 不変の 3 rule。`user_facing_template_preservation` だけ
+WARN に留めたのは、「フェンスの中身は読み手で切り分ける」裁定（実行者しか読まないフロー図や
+Iron Laws は英訳してよく、利用者が読む REPORT テンプレートは原文のまま）が機械判定できないため。
+どちらの読み手向けかを機械が決められない状態で BLOCK にすると、正しい翻訳を止めてゲートごと
+無効化される。fix action は dossier の findings_policy どおり全 rule で NEEDS_JUDGMENT とし、
+消失識別子の自動復元は行わない（訳文の構文を壊しうる）。
+
+- 実測: 過去の翻訳コミット 41 ペアで校正し、BLOCK が出たのは 8 ペアのみ。8 件はいずれも
+  件名が「プロンプトを軽量化する」「実測摩擦を明示化する」等で翻訳以外の改変を併せて行った
+  コミットであり、フェーズ 1 で非劣化 A/B を通した純粋な翻訳 5 本（test-driven-development /
+  systematic-debugging / sweep-fix / plan-implement / refactor）は全て BLOCK 0 だった
+- 校正で 2 つの偽陽性源を潰した。(a) 日本語を含むインラインコード（`{観点}`、
+  `#1-feasibility---実現可能性`）は訳文で中身も訳されるのが正しいため識別子から除外、
+  (b) 消失判定を集合差分から本文の部分文字列一致に変更（`(none)` → `branch: (none)` のような
+  括り直しが消失と報告されていた）。この 2 つで identifier_preservation の報告は 26 件から 3 件へ減り、
+  残る 3 件はいずれも実際に文字列が変化していた
+- `scripts/check_translation_parity.py`: 新規。`--pair` で 2 ファイル直接比較、`--baseline` で
+  git リビジョン比較、`--force` で遷移判定の省略、`--strict` で WARN も exit 1 に含める
+- `scripts/test_translation_parity.py`: 新規 37 テスト。「壊れているものを検出する」側と
+  「正しい翻訳を止めない」側を同じ重みで検証する
+- `scripts/run_checks.sh`: Translation parity を ledger check の後に追加。日本語行比率が閾値
+  以上から未満へ**遷移した**ファイルだけを検証するため、日本語のままの通常編集では対象 0 件の
+  no-op になる（遷移を条件にしないと、節を書き換えて見出しが 1 つ増えるだけでゲートが赤になる）
+- `.github/workflows/validate.yml`: checkout に `fetch-depth: 0` を追加。既定の shallow clone では
+  `origin/main` が存在せず、比較元リビジョンを解決できずに skip して CI で黙って無効化される
+
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の

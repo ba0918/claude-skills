@@ -5,65 +5,65 @@ description: manifest・lockfile・依存差分を第一級入力として、既
 
 # Review: Dependency Health
 
-依存ライブラリの健全性を継続的ヘルスの観点でレビューする focused スキル。
-既知脆弱性の照合は機械（scanner）が正本で、エージェントの価値は**相関分析**にある。
-`codebase-review` が構造的に除外する lockfile・manifest・依存 diff を第一級入力として扱う。
+A focused skill that reviews the health of dependency libraries from a continuous-health viewpoint.
+For known vulnerabilities the machine (a scanner) is the source of truth; the agent's value lies in **correlation analysis**.
+It treats the lockfiles, manifests, and dependency diffs that `codebase-review` structurally excludes as first-class input.
 
-**対象**: manifest（package.json / Cargo.toml 等）・lockfile・依存の更新差分・install script。
-**非対象**: 攻撃シナリオの網羅（→ `attack-review`）、テスト品質（→ `review-testing`）、
-アプリケーションコードの品質（→ `codebase-review`）。
+**In scope**: manifests (package.json / Cargo.toml, etc.), lockfiles, dependency update diffs, install scripts.
+**Out of scope**: exhaustive attack scenarios (→ `attack-review`), test quality (→ `review-testing`),
+application code quality (→ `codebase-review`).
 
-## 契約（最初に宣言する）
+## Contract (declare this first)
 
-- **read-only**: `npm audit fix` / `cargo update` / lockfile 再生成のコミット等、依存を変更する操作は禁止。
-  findings として出力し、修正は既存の修正系ワークフローへ渡す。
-  **レビュー対象ディレクトリへの書き込みも一切禁止する**（依存の変更だけでなく、scanner の出力ファイル・
-  一時ファイル・ログを対象ツリー内に作ることも含む）。scanner の stdout/stderr は必ず対象外の作業領域
-  （スクラッチディレクトリ）へリダイレクトする。read-only の遵守は「レポートでそう宣言したか」ではなく
-  「対象ディレクトリの状態が実行前後で不変か」で判定される — 一時ファイルの取り残しも違反にあたる。
-- **機械が正本、エージェントは相関**: 既知事実（advisory 照合・checksum・署名検証）は scanner と
-  機械検証の結果のみを採用する。**hash / 署名の正当性をエージェントが「読んで判断」してはならない**。
-  エージェントは scanner が出せない相関（依存経路・到達可能性・dev/prod・diff の意味づけ）を担う。
-- **総合点を出さない**: 「依存健全性 80 点」型のスコアは出さない。成果物は findings と
-  [coverage ledger](../shared/references/coverage-ledger.md)。
-- **三値判定**: 各 finding は
-  [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md) の
-  CONFIRMED / FALSE_POSITIVE / UNCERTAIN で検証する。
-- **評価範囲を必ず台帳化する**: scanner で確認できた領域を `reviewed`、対象外にした依存群を `skipped`、
-  scanner 不在・ネットワーク不可・レジストリ metadata 無しで見られない領域を `unsupported`、
-  候補はあるが証拠不足の領域を `inconclusive` として
-  [coverage-ledger.md](../shared/references/coverage-ledger.md) の様式で報告する。
+- **read-only**: operations that change dependencies — `npm audit fix`, `cargo update`, committing a regenerated lockfile — are forbidden.
+  Emit them as findings and hand the fixing over to an existing fix-oriented workflow.
+  **Writing anything into the directory under review is also entirely forbidden** (this covers not only dependency changes but also
+  creating scanner output files, temporary files, or logs inside the target tree). Always redirect scanner stdout/stderr to a working area
+  outside the target (a scratch directory). Compliance with read-only is judged not by "whether the report declared it"
+  but by "whether the target directory's state is unchanged before and after the run" — leaving a temporary file behind is a violation too.
+- **The machine is the source of truth, the agent supplies correlation**: for known facts (advisory matching, checksums, signature verification) adopt only the results of the scanner and
+  of machine verification. **The agent must never "read and judge" the validity of a hash or a signature.**
+  The agent owns the correlations a scanner cannot produce: dependency paths, reachability, dev/prod, and the meaning of a diff.
+- **Do not produce an overall score**: never emit a score of the 「依存健全性 80 点」 kind. The deliverables are findings and a
+  [coverage ledger](../shared/references/coverage-ledger.md).
+- **Three-way verdict**: verify every finding with the
+  CONFIRMED / FALSE_POSITIVE / UNCERTAIN values of
+  [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md).
+- **Always record the evaluated range in a ledger**: report the areas the scanner could confirm as `reviewed`, the dependency groups you put out of scope as `skipped`,
+  the areas you cannot see because a scanner is missing, the network is unavailable, or registry metadata is absent as `unsupported`,
+  and the areas where a candidate exists but the evidence is insufficient as `inconclusive`, in the form defined by
+  [coverage-ledger.md](../shared/references/coverage-ledger.md).
 
-## 役割分担
+## Division of Roles
 
-| 担当 | 領域 | 根拠 |
+| Owner | Area | Basis |
 |------|------|------|
-| **scanner（正本）** | 既知脆弱性の advisory 照合、checksum / integrity 検証 | [references/scanner-integration.md](references/scanner-integration.md) |
-| **エージェント（相関）** | 優先順位付け（dev/prod・到達可能性）、install script の意味づけ、lockfile diff 異常、typosquat・メンテナ交代 | [references/supply-chain-signals.md](references/supply-chain-signals.md) |
+| **Scanner (source of truth)** | Advisory matching for known vulnerabilities, checksum / integrity verification | [references/scanner-integration.md](references/scanner-integration.md) |
+| **Agent (correlation)** | Prioritization (dev/prod, reachability), interpreting install scripts, lockfile diff anomalies, typosquatting, maintainer handover | [references/supply-chain-signals.md](references/supply-chain-signals.md) |
 
-scanner が出した advisory を、エージェントが「この依存は dev のみ / テスト経路からしか到達しない」等の
-文脈で優先順位付けする。scanner が無い環境では既知脆弱性照合は `unsupported`（エージェントは代替しない）。
+The agent prioritizes the advisories the scanner emitted using context such as "this dependency is dev-only" or "it is reachable only from a test path".
+In an environment without a scanner, matching against known vulnerabilities is `unsupported` (the agent does not substitute for it).
 
-**深刻度の所有権**: 脆弱性の**存在**判定は scanner が正本で覆さない。一方 finding の**重大度**
-（BLOCK/WARN/INFO）は、存在を前提に到達可能性・dev/prod を重ねた相関判断としてエージェントが決める。
-scanner 深刻度ラベルからの写像ルールと調整根拠は
-[references/scanner-integration.md](references/scanner-integration.md) の「深刻度のマッピング」に従う。
+**Ownership of severity**: the judgment of whether a vulnerability **exists** belongs to the scanner and is never overturned. The **severity** of a finding
+(BLOCK/WARN/INFO), by contrast, is decided by the agent as a correlation judgment that layers reachability and dev/prod on top of that existence.
+The mapping rule from the scanner's severity labels and the grounds for adjusting it follow
+the 「深刻度のマッピング」 section of [references/scanner-integration.md](references/scanner-integration.md).
 
-## ワークフロー
+## Workflow
 
-1. **入力特定**: manifest / lockfile / 依存 diff を集める。エコシステム（npm / cargo / pip / go 等）を判定する。
-2. **scanner 実行（graceful degradation）**: 「存在検出 → 実行 → 構造化出力の解釈 → 不在時 unsupported」。
-   詳細と隔離実行の前提は [references/scanner-integration.md](references/scanner-integration.md)。
-3. **相関分析**: scanner の advisory に依存経路・到達可能性・dev/prod を重ねて優先順位を付ける。
-   lockfile diff・install script・typosquat・メンテナ交代の信号を
-   [references/supply-chain-signals.md](references/supply-chain-signals.md) の述語で検証する。
-4. **三値判定**: 各候補を CONFIRMED / FALSE_POSITIVE / UNCERTAIN に振る。検出できない限界は明記する。
-5. **レポート**: [references/report-template.md](references/report-template.md) の様式で findings + coverage ledger を出力する。
+1. **Identify the input**: collect the manifests, lockfiles, and dependency diffs. Determine the ecosystem (npm / cargo / pip / go, etc.).
+2. **Run the scanner (graceful degradation)**: detect presence → run → interpret the structured output → mark `unsupported` when absent.
+   The details and the prerequisites for isolated execution are in [references/scanner-integration.md](references/scanner-integration.md).
+3. **Correlation analysis**: prioritize by layering dependency paths, reachability, and dev/prod on top of the scanner's advisories.
+   Verify the signals from lockfile diffs, install scripts, typosquatting, and maintainer handover with the predicates in
+   [references/supply-chain-signals.md](references/supply-chain-signals.md).
+4. **Three-way verdict**: assign each candidate to CONFIRMED / FALSE_POSITIVE / UNCERTAIN. State the limits of what could not be detected.
+5. **Report**: emit findings plus the coverage ledger in the form defined by [references/report-template.md](references/report-template.md).
 
-## セキュリティ
+## Security
 
-- **install script を走らせない前提で scanner を実行する**: 依存の再解決・スキャンは postinstall 等の
-  install script を実行し得る。script 無効化（`--ignore-scripts` 相当）・隔離実行を
-  scanner-integration.md で前提化する。無効化できない場合はその領域を実行せず `unsupported` に倒す。
-- **秘匿情報をレポートに混入させない**: レジストリ認証情報・トークン・環境変数を findings の証拠に転記しない。
-- **hash / 署名の正当性判断をエージェントに委ねない**: 機械検証（scanner / clean 環境での再生成）の結果のみを採用する。
+- **Run the scanner on the premise that install scripts are not executed**: re-resolving or scanning dependencies can execute install scripts such as
+  postinstall. scanner-integration.md makes script disabling (the equivalent of `--ignore-scripts`) and isolated execution a prerequisite.
+  When they cannot be disabled, do not run that area and fall back to `unsupported`.
+- **Do not let secrets leak into the report**: never transcribe registry credentials, tokens, or environment variables into the evidence for a finding.
+- **Do not delegate the validity of a hash or signature to the agent**: adopt only the results of machine verification (a scanner, or regeneration in a clean environment).

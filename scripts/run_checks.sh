@@ -23,4 +23,13 @@ python3 scripts/validate_repo.py
 echo "=== Regression ledger check"
 python3 skills/skill-regression/scripts/ledger.py --check .
 
+# 翻訳による構造劣化（sensor:translation-damage）。fixture を持たないスキルでは
+# これが唯一の劣化検出手段なので、翻訳を含む push / PR では必ず通す。
+# 日本語行比率が閾値以上→未満へ遷移したファイルだけを見るため、通常の編集では
+# 対象 0 件の no-op になる。baseline は origin/$GITHUB_BASE_REF → origin/main →
+# main の順に解決し、どれも無い checkout では skip を明示出力して pass する
+# （CI の checkout は fetch-depth: 0 が必要 — .github/workflows/validate.yml 参照）。
+echo "=== Translation parity"
+python3 scripts/check_translation_parity.py
+
 echo "=== All checks passed"
