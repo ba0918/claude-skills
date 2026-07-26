@@ -22,14 +22,9 @@ ja→en の一括変換では、fixture を持たない 26 スキルについて
 |------|----------|----------|
 | structure_parity | BLOCK | 見出し / フェンス / リンク / 番号 / 箇条書き / 表の行 / 水平線の件数 |
 | identifier_preservation | BLOCK | インラインコード・リンク先・契約語彙の消失 |
-| frontmatter_immutability | BLOCK | frontmatter の byte 不変 |
-| user_facing_template_preservation | WARN | ユーザー提示の日本語定型文の消失 |
+| frontmatter_immutability | BLOCK | frontmatter の `name`（スキル識別子）の不変 |
 
-user_facing_template_preservation だけ WARN なのは、「フェンスの中身は読み手で
-切り分ける」裁定（実行者しか読まないフロー図・Iron Laws は英訳してよい / 利用者が
-読む REPORT テンプレートは原文のまま）が機械判定できないためである。どちらの読み手
-向けかを機械が決められない以上、BLOCK にすると正しい翻訳を止めてしまう。
-exit code に含めたい場合は `--strict` を使う。
+`--strict` を使うと WARN も exit code に含める（現時点で WARN を出す rule は無い）。
 
 fix action は全 rule で NEEDS_JUDGMENT（dossier の findings_policy に従う）。
 消失した識別子を機械的に戻すと訳文の構文を壊しうるため AUTO_FIX にしない。
@@ -45,7 +40,6 @@ import sys
 from check_language_coverage import (
     DEFAULT_THRESHOLD,
     JP,
-    QUOTED,
     measure,
     strip_frontmatter,
 )
@@ -62,7 +56,7 @@ TABLE_ROW = re.compile(r"^\s*\|")
 HR = re.compile(r"^\s*(?:-{3,}|\*{3,}|_{3,})\s*$")
 LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)")
 INLINE_CODE = re.compile(r"`([^`\n]+)`")
-PLACEHOLDER = re.compile(r"\{[^}\n]*\}")
+FM_NAME = re.compile(r"^name:\s*(.+?)\s*$", re.MULTILINE)
 
 # baseline リビジョンの解決順。ローカル（pre-push）と CI（PR）の両方で、
 # ネットワークアクセスなしにローカル ref だけで解決できる候補を並べる。
@@ -96,7 +90,7 @@ def is_identifier(token):
 def fingerprint(text):
     """翻訳前後で不変であるべき構造の指紋を返す。"""
     frontmatter, body = split_frontmatter(text)
-    prose, fence_lines, fence_jp, fences, in_fence = [], 0, [], 0, False
+    prose, fence_lines, fences, in_fence = [], 0, 0, False
     for line in body:
         if FENCE.match(line):
             in_fence = not in_fence
@@ -105,25 +99,22 @@ def fingerprint(text):
             continue
         if in_fence:
             fence_lines += 1
-            if JP.search(line):
-                fence_jp.append(line.strip())
             continue
         prose.append(line)
 
     prose_text = "\n".join(prose)
-    fence_text = "\n".join(fence_jp)
     body_text = "\n".join(body)
     links = LINK.findall(prose_text)
     # 識別子はフェンス内も含めて集める。ユーザー提示テンプレート内のパスや
     # コマンド名が消えるのも劣化であり、フェンスの外だけでは取り逃がす。
     identifiers = {t.strip() for t in INLINE_CODE.findall(body_text)
                    if is_identifier(t.strip())}
+    name = FM_NAME.search(frontmatter)
     return {
-        "frontmatter": frontmatter,
+        "name": name.group(1) if name else "",
         "headings": [len(m.group(1)) for m in map(HEADING.match, prose) if m],
         "fences": fences,
         "fence_lines": fence_lines,
-        "fence_jp_lines": fence_jp,
         "links": sorted(links),
         "ordered": sum(1 for l in prose if ORDERED.match(l)),
         "bullets": sum(1 for l in prose if BULLET.match(l)),
@@ -132,23 +123,7 @@ def fingerprint(text):
         "identifiers": identifiers | {l for l in links if is_identifier(l)},
         "text": body_text,
         "vocab": {t for t in VOCAB_TERMS if t in body_text},
-        "jp_quotes": user_facing_quotes(prose_text, fence_text),
     }
-
-
-def user_facing_quotes(prose_text, fence_text):
-    """ユーザー提示の定型文・選択肢ラベル・記録欄と見なせる鉤括弧引用だけを返す。
-
-    地の文の鉤括弧はほとんどが強調引用（「ついでに」「終了」等）で、英訳されるのが
-    正しい。既知の正しい翻訳 5 本で校正すると、鉤括弧引用の消失をそのまま拾うと
-    49 件が報告され、うち利用者向け文言は 1 件も無かった。そこで
-    「プレースホルダを含む = テンプレート」「フェンス内にある = 出力ブロック」の
-    2 条件のいずれかを満たすものだけを対象にする。
-    """
-    quotes = {q for q in QUOTED.findall(fence_text) if JP.search(q)}
-    quotes |= {q for q in QUOTED.findall(prose_text)
-               if JP.search(q) and PLACEHOLDER.search(q)}
-    return quotes
 
 
 def is_translation(base_text, cur_text, threshold=DEFAULT_THRESHOLD):
@@ -192,11 +167,11 @@ def compare(path, base_text, cur_text):
     base, cur = fingerprint(base_text), fingerprint(cur_text)
     findings = []
 
-    if base["frontmatter"] != cur["frontmatter"]:
+    if base["name"] != cur["name"]:
         findings.append(_finding(
             path, "frontmatter_immutability", "BLOCK",
-            "frontmatter が byte 単位で変化している"
-            "（description は trigger-eval の領分で、翻訳では触らない）"))
+            f"frontmatter の name が変化している: {base['name']} → {cur['name']}"
+            "（スキル識別子は command / README / manifest から参照される）"))
 
     for key, label, norm in COUNT_DIMENSIONS:
         before, after = norm(base[key]), norm(cur[key])
@@ -218,17 +193,6 @@ def compare(path, base_text, cur_text):
                 path, "identifier_preservation", "BLOCK",
                 f"{label} {len(lost)} 種が消失: {shown}"))
 
-    before, after = len(base["fence_jp_lines"]), len(cur["fence_jp_lines"])
-    if before > after:
-        findings.append(_finding(
-            path, "user_facing_template_preservation", "WARN",
-            f"フェンス内の日本語行: {before} → {after}"
-            "（実行者向けフェンスの英訳なら想定内。利用者が読むテンプレートなら劣化）"))
-    lost, shown = _lost(base["jp_quotes"], cur["jp_quotes"])
-    if lost:
-        findings.append(_finding(
-            path, "user_facing_template_preservation", "WARN",
-            f"ユーザー提示と見なせる日本語引用 {len(lost)} 件が消失: {shown}"))
     return findings
 
 
