@@ -1,100 +1,100 @@
 # Severity & Verdicts
 
-コードレビューで使用する重大度定義と判定基準、および
-find-then-verify 型スキルの文脈検証3値判定。
-sweep-fix / refactor / iterate / context-audit 等が参照する共通リソース。
-finding の「修正の自動化可否」は直交する別軸
-[fix-action-taxonomy.md](fix-action-taxonomy.md) が定義する。
-finding の「評価範囲（何をどこまで見たか）」もまた直交する別軸
-[coverage-ledger.md](coverage-ledger.md) が定義する。
+The severity definitions and verdict criteria used in code review, plus
+the three-valued context verification used by find-then-verify skills.
+A shared resource referenced by sweep-fix / refactor / iterate / context-audit and others.
+Whether a finding's fix can be automated is a separate, orthogonal axis defined by
+[fix-action-taxonomy.md](fix-action-taxonomy.md).
+A finding's evaluation coverage (what was examined and how far) is likewise a separate, orthogonal axis defined by
+[coverage-ledger.md](coverage-ledger.md).
 
-## 重大度定義
+## Severity definitions
 
-| 重大度 | 意味 | 使い分け基準 | 例 |
+| Severity | Meaning | Criteria for choosing it | Examples |
 |--------|------|-------------|-----|
-| **BLOCK** | 進行不可。このまま進めると重大な問題が発生する | セキュリティ脆弱性、データ喪失リスク、根本的な設計欠陥 | SQL インジェクション未対策、認証バイパス、レイヤー逆転依存 |
-| **WARN** | 要検討。対処しなくても致命的ではないが改善すべき | パフォーマンス懸念、保守性の低下、エッジケース未対応 | O(n^2) アルゴリズム（n が小さい場合）、DRY 違反、エラーメッセージ不足 |
-| **INFO** | 参考情報。対応は任意 | スタイル提案、将来の改善案、代替アプローチの紹介 | 命名改善提案、ライブラリ推奨、将来のリファクタリング候補 |
-| **PASS** | 問題なし | 該当観点で問題が検出されなかった | - |
+| **BLOCK** | Cannot proceed. Continuing as-is causes a serious problem | Security vulnerability, risk of data loss, fundamental design defect | Unmitigated SQL injection, authentication bypass, inverted layer dependency |
+| **WARN** | Needs consideration. Not fatal if unaddressed, but should be improved | Performance concern, reduced maintainability, unhandled edge case | An O(n^2) algorithm (when n is small), a DRY violation, insufficient error messages |
+| **INFO** | For reference. Acting on it is optional | Style suggestion, future improvement idea, introduction of an alternative approach | Naming suggestions, library recommendations, future refactoring candidates |
+| **PASS** | No problem | No problem was detected for the aspect in question | - |
 
-> **`PASS` の多義に注意**: 重大度の PASS（観点単位で問題なし）と、後述のコードレビュー判定の
-> PASS（レビュー全体の合格）は別の軸。文脈でどちらかを明示すること。
-> さらに [coverage-ledger.md](coverage-ledger.md) の評価範囲軸とも直交する:
-> 重大度 PASS は「評価した（reviewed）結果、問題が無かった」であり、`reviewed` の部分集合。
-> 見ていない領域（skipped / unsupported / inconclusive）を PASS と報告してはならない。
+> **Beware the ambiguity of `PASS`**: the severity PASS (no problem for a given aspect) and the
+> code-review verdict PASS described below (the review as a whole passed) are different axes. Make clear from context which one is meant.
+> It is also orthogonal to the coverage axis of [coverage-ledger.md](coverage-ledger.md):
+> severity PASS means "it was evaluated (reviewed) and no problem was found", and is a subset of `reviewed`.
+> An area that was not examined (skipped / unsupported / inconclusive) must never be reported as PASS.
 
-### スコアバンド用法（plan-reviewer 方言）
+### Score-band usage (the plan-reviewer dialect)
 
-plan-reviewer はリスクスコア（0-100）を BLOCK（80-100）/ WARN（50-79）/ PASS（0-49）の
-バンドにマップする。ラベルは重大度と同じだが入力はスコアであり、「高リスク帯 = BLOCK」という
-本表の意味に整合するマッピングとして承認済みの方言（別の重大度体系を新設しない）。
+plan-reviewer maps a risk score (0-100) onto the bands BLOCK (80-100) / WARN (50-79) / PASS (0-49).
+The labels match the severities but the input is a score. It is an approved dialect whose mapping is
+consistent with this table's meaning ("the high-risk band = BLOCK"); it does not introduce a separate severity system.
 
-## 計画レビュー判定
+## Plan review verdicts
 
-| 判定 | 条件 | アクション |
+| Verdict | Condition | Action |
 |------|------|-----------|
-| **APPROVED** | BLOCK なし。全問題が解消済み | 次フェーズ（実装）へ進む |
-| **APPROVED WITH CONCERNS** | BLOCK なし。WARN レベルの残存リスクあり | 残存リスクを記録して次フェーズへ |
-| **REJECTED** | BLOCK が解消不可。根本的な設計変更が必要 | 中断。ユーザーに報告 |
+| **APPROVED** | No BLOCK. Every problem is resolved | Proceed to the next phase (implementation) |
+| **APPROVED WITH CONCERNS** | No BLOCK. WARN-level residual risk remains | Record the residual risk and proceed to the next phase |
+| **REJECTED** | A BLOCK cannot be resolved. A fundamental design change is required | Stop. Report to the user |
 
-## コードレビュー判定
+## Code review verdicts
 
-| 判定 | 条件 | アクション |
+| Verdict | Condition | Action |
 |------|------|-----------|
-| **PASS** | 問題なし、または INFO のみ | 続行 |
-| **PASS WITH NOTES** | WARN レベルの指摘あり。致命的ではない | 指摘を記録して続行 |
-| **NEEDS FIX** | BLOCK レベルの問題あり | 修正指示を出して再実装 → 再レビュー（最大1回リトライ） |
+| **PASS** | No problems, or INFO only | Continue |
+| **PASS WITH NOTES** | WARN-level findings exist. Not fatal | Record the findings and continue |
+| **NEEDS FIX** | A BLOCK-level problem exists | Issue fix instructions and re-implement → re-review (at most one retry) |
 
-### NEEDS FIX 時の処理
+### Handling NEEDS FIX
 
-- **通常モード**: 修正指示を Agent に渡して再実装 → 再レビュー（最大1回リトライ）
-- **headless モード**: ユーザーにレビュー結果を出力し処理を中断（ユーザーが次のアクションを判断）
+- **Normal mode**: pass the fix instructions to the agent and re-implement → re-review (at most one retry)
+- **Headless mode**: output the review result to the user and stop processing (the user decides the next action)
 
-## 文脈検証の3値判定
+## Three-valued context verification
 
-横展開検索・類似検出で見つけた候補を「本当に対処してよいか」文脈で検証するときの共通フレーム。
-sweep-fix / refactor / skill-regression 等の find-then-verify 型スキルが使用する。
-**本節がフレーム（3値・Iron Law・fail-safe）の定義元**。
+The shared frame for verifying, in context, whether a candidate found by a sweep search or similarity detection
+may actually be acted on. Used by find-then-verify skills such as sweep-fix / refactor / skill-regression.
+**This section is where the frame (the three values, the Iron Law, the fail-safe) is defined.**
 
-| verdict | 意味 | 扱い |
+| verdict | Meaning | Handling |
 |---------|------|------|
-| **CONFIRMED** | 検証述語を根拠付きで満たす | 対処してよい |
-| **FALSE_POSITIVE** | 字面は一致するが文脈上は該当しない | 対処しない（理由を記録する） |
-| **UNCERTAIN** | 判断に必要な文脈・根拠が不足 | 対処しない（fail-safe）。報告のみ |
+| **CONFIRMED** | The verification predicate is satisfied, with grounds | May be acted on |
+| **FALSE_POSITIVE** | It matches textually but does not apply in context | Do not act (record the reason) |
+| **UNCERTAIN** | The context or grounds needed to decide are missing | Do not act (fail-safe). Report only |
 
-- **The Iron Law**: 根拠を書けない CONFIRMED は存在しない。書けなければ UNCERTAIN に降格する
-- 迷ったら UNCERTAIN に倒す。UNCERTAIN を対処対象に含めない（偽陽性の混入より取りこぼしの方が安全）
-- **CONFIRMED の検証述語はスキルごとに特殊化する（意図的差分）**:
-  sweep-fix は「同じ問題が同じ理由で成立する」（`skills/sweep-fix/references/context-verification.md`）、
-  refactor は「動作を保持したまま安全に適用できる」（`skills/refactor/references/behavior-preservation-checks.md`）。
-  述語の定義は各スキル側、フレームは本節が所有する
+- **The Iron Law**: a CONFIRMED whose grounds cannot be written down does not exist. If they cannot be written, demote it to UNCERTAIN
+- When in doubt, fall to UNCERTAIN. Never include UNCERTAIN among the targets to act on (missing something is safer than letting a false positive through)
+- **The verification predicate for CONFIRMED is specialized per skill (a deliberate difference)**:
+  sweep-fix uses "the same problem holds for the same reason" (`skills/sweep-fix/references/context-verification.md`),
+  refactor uses "it can be applied safely while preserving behavior" (`skills/refactor/references/behavior-preservation-checks.md`).
+  The predicate is defined on the skill side; this section owns the frame
 
-> **`UNCERTAIN`（finding 検証軸）と `inconclusive`（評価範囲軸）は別軸**:
-> `UNCERTAIN` は個々の finding 候補に付き「この候補を対処してよいか判断できない」を意味する（本節）。
-> 一方 [coverage-ledger.md](coverage-ledger.md) の `inconclusive` は**領域**に付き
-> 「この領域を結論づける証拠が足りない」を意味する。ある領域が `reviewed` でも個別候補が
-> `UNCERTAIN` であることは両立する。両者を混同しないこと。
+> **`UNCERTAIN` (the finding-verification axis) and `inconclusive` (the coverage axis) are different axes**:
+> `UNCERTAIN` attaches to an individual finding candidate and means "it cannot be decided whether this candidate may be acted on" (this section).
+> By contrast, `inconclusive` in [coverage-ledger.md](coverage-ledger.md) attaches to an **area** and means
+> "there is not enough evidence to conclude anything about this area". An area can be `reviewed` while an individual candidate in it
+> is `UNCERTAIN`. Do not conflate the two.
 
-## メタレビュー規則
+## Meta-review rules
 
-メタレビューは議論品質を担保するための追加チェック機構。
+Meta-review is an additional checking mechanism that safeguards the quality of the discussion.
 
-### 発火条件
+### Trigger conditions
 
-- 議論の合意形成時に **BLOCK が1つでもあった場合のみ** 自動発火
-- 全論点が WARN 以下で収束した場合はスキップ
+- Fires automatically **only when there was at least one BLOCK** at the point where the discussion reached agreement
+- Skipped when every point converged at WARN or below
 
-### 制約
+### Constraints
 
-| 制約 | 内容 |
+| Constraint | Content |
 |------|------|
-| **最大回数** | 1回のみ。無限ループ防止 |
-| **入力** | 合意結果の修正差分 + 合意サマリーのみ。計画全文の再送は禁止（トークン節約） |
-| **対象メンバー** | BLOCK/WARN を出したメンバーのみに修正確認を求める（全員に再送しない） |
-| **Lead の最終判断権** | メタレビューで新たな BLOCK が出ても Lead が最終判断を下す |
+| **Maximum count** | Once only. Prevents infinite loops |
+| **Input** | Only the fix diff of the agreed result plus the agreement summary. Resending the full plan is forbidden (token economy) |
+| **Target members** | Ask for fix confirmation only from the members who raised a BLOCK/WARN (do not resend to everyone) |
+| **The Lead's final authority** | Even if meta-review raises a new BLOCK, the Lead makes the final call |
 
-### チェック項目
+### Check items
 
-- **クロスカッティングリスク**: 複数提案の組み合わせで発生するリスク（例: Performance の並列化提案が Security の入力検証をバイパスする経路を作る）
-- **修正の整合性**: BLOCK 対応の修正が他の合意事項と矛盾していないか
-- **見落とし検出**: 個別レビューでは見えなかった全体的なリスク
+- **Cross-cutting risk**: risk arising from the combination of several proposals (e.g. a Performance parallelization proposal creates a path that bypasses Security's input validation)
+- **Consistency of fixes**: whether the fix addressing a BLOCK contradicts other agreed items
+- **Oversight detection**: overall risks that individual reviews could not see

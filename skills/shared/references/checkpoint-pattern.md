@@ -1,196 +1,194 @@
-# Checkpoint Pattern — 共通契約
+# Checkpoint Pattern — Shared Contract
 
-checkpoint は worktree 内容のバックアップではなく、現在の git 状態と照合して使う restore ガイド。復元するのは「plan 再読込では埋まらない実行状態の細部」— 未コミット dirty の意味、plan からの逸脱判断、次の一手。dirty ファイル本文は worktree に既にあるので checkpoint は複製しない。
+A checkpoint is not a backup of the worktree contents; it is a restore guide used by collating it against the current git state. What it restores are "the details of execution state that reloading the plan does not fill in" — the meaning of the uncommitted dirty state, the judgment of deviation from the plan, and the next move. The bodies of dirty files are already in the worktree, so the checkpoint does not duplicate them.
 
-## スコープと前提
+## Scope and premises
 
-- **単一ホスト・単一 writer 前提**（polling-pattern と同じ宣言）。複数プロセスが同一 checkpoint を
-  同時に書く状況は v1 の対象外。書き込みは `mkdir -p` + temp ファイル → atomic rename で行う。
-- **hook なし・スキル規律のみの v1**。明示ワークフロー（handoff save / plan status update）を通らずに
-  終わるセッション（突然の中断・/clear）では checkpoint は書かれない。これは既知の限界（下記 v2 スコープ）。
-- v1 で実際に emit するのは `owner: manual-session` のみ。`precompact` は分類器のみ実装し fixture で凍結。
+- **Single host, single writer** (the same declaration as polling-pattern). A situation in which several processes write the
+  same checkpoint concurrently is out of scope for v1. Writing is done with `mkdir -p` + a temp file → atomic rename.
+- **v1 has no hooks; skill discipline only**. For a session that ends without going through an explicit workflow
+  (handoff save / plan status update) — a sudden interruption, /clear — no checkpoint is written. This is a known limitation (the v2 scope below).
+- The only thing actually emitted in v1 is `owner: manual-session`. For `precompact`, only the classifier is implemented and frozen by a fixture.
 
-## 置き場と ID 文法
+## Location and ID grammar
 
-- パス: `.agents/artifacts/plans/checkpoints/{cycle_id}.md`（plan 1 つに 1 ファイル、上書き運用）。
-- checkpoint ファイル自身と `.agents/artifacts/plans/checkpoints/` 配下は dirty set / fingerprint 計算から**除外**（自己ノイズ防止）。
-- v1 の `cycle_id` は `[0-9]{14}` のみ受理（`re.fullmatch`）。
-- 契約は将来の parallel-cycle 用に `checkpoint_id` 文法 `[0-9]{14}(-[a-z0-9-]+)?` を**予約のみ**する。
-  v1 では suffix 付き（`-branch` 等）は拒否する。
+- Path: `.agents/artifacts/plans/checkpoints/{cycle_id}.md` (one file per plan, overwritten in place).
+- The checkpoint file itself and everything under `.agents/artifacts/plans/checkpoints/` are **excluded** from the dirty set and the fingerprint calculation (to prevent self-noise).
+- v1 accepts only `[0-9]{14}` for `cycle_id` (`re.fullmatch`).
+- The contract **reserves only** the `checkpoint_id` grammar `[0-9]{14}(-[a-z0-9-]+)?` for a future parallel-cycle.
+  v1 rejects a suffixed form (`-branch` and the like).
 
-## フォーマット（契約に固定）
+## Format (fixed by the contract)
 
 ```markdown
 ---
 cycle_id: "20260708012132"
-owner: manual-session        # manual-session | precompact（v1 emit は manual-session のみ）
-mode: normal                 # normal | degraded（owner: precompact と一致必須）
+owner: manual-session        # manual-session | precompact (v1 emits manual-session only)
+mode: normal                 # normal | degraded (must agree with owner: precompact)
 written_at: 2026-07-08T01:30:00+09:00
-base_head: abc1234...        # 書いた時点の HEAD sha（hex）
-dirty_fingerprint: sha256:...  # porcelain=v1 -z + diff HEAD 全文 + untracked content hash
+base_head: abc1234...        # the HEAD sha at the time of writing (hex)
+dirty_fingerprint: sha256:...  # porcelain=v1 -z + the full text of diff HEAD + untracked content hash
 dirty_files:
-  - path/to/file1.py         # porcelain から機械生成（secret_detect.mask_secrets 通過後）
-verify_on_restore:           # 構造化配列のみ。restore 側は表示専用・自動実行禁止
+  - path/to/file1.py         # machine-generated from porcelain (after passing through secret_detect.mask_secrets)
+verify_on_restore:           # a structured array only. The restore side displays it; automatic execution is forbidden
   - cmd: python3
     args: ["-m", "unittest", "skills/shared/scripts/test_checkpoint.py"]
 ---
 ## decision
-{plan からの逸脱判断を 1 文。逸脱なしなら "none"}
+{One sentence on the judgment of deviation from the plan. "none" if there was no deviation}
 
 ## evidence
-{観測コマンド + タイムスタンプ必須。例: "Observed 01:25: python3 -m unittest ... exited 0"}
+{An observed command plus a timestamp is required. e.g. "Observed 01:25: python3 -m unittest ... exited 0"}
 
 ## next
-{次の一手 1 個だけ}
+{Exactly one next move}
 ```
 
-- 自由文 md は stale 判定が機械化できないため不採用。固定キー + 短文のみ。
-- **機械判定は frontmatter のみに依存**。本文セクションは見出し（`## decision` 等）の存在チェックまで —
-  本文の意味解析には依存しない。
-- degraded 版は `mode: degraded` / `decision: unknown` / `next: reconstruct_from_diff` を明示
-  （git status の羅列が判断記録に見える誤読を遮断）。
+- Free-form md is not adopted, because staleness cannot then be judged mechanically. Fixed keys plus short text only.
+- **Mechanical judgment depends on the frontmatter alone**. For the body sections it goes only as far as checking that the headings (`## decision` and so on) exist —
+  it does not depend on semantic analysis of the body.
+- The degraded variant states `mode: degraded` / `decision: unknown` / `next: reconstruct_from_diff` explicitly
+  (blocking the misreading in which a list from git status looks like a record of judgment).
 
-## 純関数シグネチャ（正本 — SKILL.md は参照のみ）
+## Pure-function signatures (canonical — SKILL.md only references them)
 
-`checkpoint.py` の判定ロジックは全て文字列/bytes 入力の純関数。git 呼び出しは CLI 層のみ（DI 原則準拠）。
+Every decision routine in `checkpoint.py` is a pure function over string/bytes input. git invocation lives only in the CLI layer (following the DI principle).
 
-| 関数 | シグネチャ | 役割 |
+| Function | Signature | Role |
 |------|-----------|------|
-| `compute_fingerprint` | `(porcelain_z: bytes, diff_text: str, untracked_hashes: dict[str,str]) -> str` | `sha256:...` を返す。`.agents/artifacts/plans/checkpoints/` 配下を除外・エントリソートで順序非依存 |
-| `parse_checkpoint` | `(text: str, filename_cycle_id: str) -> CheckpointMeta`（strict） | 重複キー・リスト構文・malformed delimiter・未知 owner/mode・不一致・cycle_id 形式違反を検出し `ParseError` |
-| `classify` | `(meta, current_head, current_fingerprint, *, current_dirty_files=None, conflict_marker=False) -> Verdict` | parse 済み meta に対する semantic 5 分類。`conflict_marker` は上書き競合痕の入力（v1 では呼び出し側が設定しない — 下記 §信頼モデル） |
-| `build_skeleton` | `(porcelain_z, head, fingerprint, owner, cycle_id, written_at) -> str` | 機械フィールドの骨格生成（dirty_files はマスク済み）。叙述は LLM が後埋め |
-| `verdict_exit_code` | `(verdict: str) -> int` | CLI がスキルに返す verdict 別終了コード |
+| `compute_fingerprint` | `(porcelain_z: bytes, diff_text: str, untracked_hashes: dict[str,str]) -> str` | Returns `sha256:...`. Excludes everything under `.agents/artifacts/plans/checkpoints/` and sorts entries so it is order-independent |
+| `parse_checkpoint` | `(text: str, filename_cycle_id: str) -> CheckpointMeta` (strict) | Detects duplicate keys, list syntax, a malformed delimiter, an unknown owner/mode, a mismatch, or a cycle_id format violation and raises `ParseError` |
+| `classify` | `(meta, current_head, current_fingerprint, *, current_dirty_files=None, conflict_marker=False) -> Verdict` | The semantic five-way classification over parsed meta. `conflict_marker` is the input for traces of an overwrite race (in v1 the caller does not set it — see the §trust model below) |
+| `build_skeleton` | `(porcelain_z, head, fingerprint, owner, cycle_id, written_at) -> str` | Generates the skeleton of the machine fields (dirty_files already masked). The narrative is filled in afterwards by the LLM |
+| `verdict_exit_code` | `(verdict: str) -> int` | The per-verdict exit code the CLI returns to the skill |
 
-- git 呼び出しは CLI 層のみ・`subprocess.run([...], capture_output=True, timeout=...)`
-  （index lock ハング対策の timeout 必須）。出力は **bytes のまま受け取り `surrogateescape` で decode** する
-  （`text=True` にしない — `-z` の NUL 区切り・非 UTF-8 パスを壊さないため）。ファイル I/O は `with open()`。
-- sibling 収集は `.agents/artifacts/plans/checkpoints/` の **flat listing のみ**（`.agents/artifacts/plans/` 全体の再帰走査をしない）。
+- git invocation lives only in the CLI layer, via `subprocess.run([...], capture_output=True, timeout=...)`
+  (the timeout is required as a countermeasure to an index-lock hang). **Receive the output as bytes and decode it with `surrogateescape`**
+  (do not set `text=True` — it would break the NUL separators of `-z` and non-UTF-8 paths). File I/O uses `with open()`.
+- Sibling collection is a **flat listing of `.agents/artifacts/plans/checkpoints/` only** (no recursive walk of all of `.agents/artifacts/plans/`).
 
-### CLI 呼び出し規約（スキル側の作法）
+### CLI invocation conventions (the discipline on the skill side)
 
-- **`--repo` を常に明示する**（`--repo .` を含む）。cwd = 対象プロジェクトを暗黙仮定しない —
-  スクリプト実体はスキル配布位置（本リポジトリでは `skills/shared/scripts/checkpoint.py`、
-  plugin 利用時は plugin キャッシュ）にあり、対象プロジェクトと同居しているとは限らない。
-- 対象プロジェクトが cwd と異なる場合は、スクリプトを**絶対パス**で起動し
-  `--repo {対象プロジェクトルート}` を渡す。`--file` のパスも対象プロジェクト側を指すこと。
-- **checkpoint 生成はセッション最後の書き込み**: skeleton 実行は他の全ファイル書き込み
-  （status.md / handoff 本体等、tracked / untracked を問わず）を確定させた後に行う。
-  生成後にファイルを書くと fingerprint が即 stale になる（除外は `.agents/artifacts/plans/checkpoints/` 配下のみ）。
-- classify の `dirty_overlap:` 行は overlap があるときだけ出力される（行が無ければ重なりなし）。
+- **Always state `--repo` explicitly** (including `--repo .`). Do not implicitly assume cwd = the target project —
+  the script itself lives where the skill is distributed (in this repository `skills/shared/scripts/checkpoint.py`,
+  or the plugin cache when used as a plugin), which is not necessarily alongside the target project.
+- When the target project differs from cwd, launch the script by **absolute path** and pass
+  `--repo {target project root}`. The path given to `--file` must also point into the target project.
+- **Generating the checkpoint is the last write of the session**: run the skeleton after every other file write
+  (status.md, the handoff body, and so on, tracked or untracked) has been finalized.
+  Writing a file after generating it immediately makes the fingerprint stale (the only exclusion is everything under `.agents/artifacts/plans/checkpoints/`).
+- classify emits the `dirty_overlap:` line only when there is an overlap (no line means no overlap).
 
-## fingerprint の正規化（契約）
+## Normalization of the fingerprint (contract)
 
-- 入力: `LC_ALL=C git status --porcelain=v1 -z`（NUL 区切り・quoting/locale 非依存）
-  + `LC_ALL=C git diff HEAD` **全文** + untracked ファイルの per-file content sha256。
-- `--stat` は行数カウント衝突（同一 stat・異なる編集で false valid）のため hash 入力に使わない。
-- **保存**フィールドはパスと stat のみ（diff 本文は保存しない）。「diff 本文禁止」は保存の制約であり
-  hash 入力の制約ではない。
-- rename（`R old -> new` の -z 2 パス形式）・パス内空白 / Unicode / 改行は `-z` パースで正しく扱う。
-- untracked は per-file content sha256 を入力に含める（untracked の内容変更も stale に落ちる）。
-- エントリをソートし `.agents/artifacts/plans/checkpoints/` 配下を除外してから hash（順序非依存）。
+- Input: `LC_ALL=C git status --porcelain=v1 -z` (NUL-separated, independent of quoting and locale)
+  + the **full text** of `LC_ALL=C git diff HEAD` + a per-file content sha256 for untracked files.
+- `--stat` is not used as hash input, because line counts collide (identical stats from different edits give a false valid).
+- The **stored** fields are only paths and stats (the diff body is not stored). "No diff body" is a constraint on storage,
+  not on hash input.
+- Renames (the two-path `-z` form of `R old -> new`), and whitespace / Unicode / newlines inside paths, are handled correctly by the `-z` parse.
+- For untracked files, a per-file content sha256 is included in the input (so a content change to an untracked file also falls to stale).
+- Sort the entries and exclude everything under `.agents/artifacts/plans/checkpoints/` before hashing (order-independent).
 
-## restore 判定 — parse ゲート + 5 分類
+## The restore decision — a parse gate plus a five-way classification
 
-### Phase 0（parse ゲート、classify より先に必ず実行）
+### Phase 0 (the parse gate, always run before classify)
 
-`parse_checkpoint` が以下を検出したら、HEAD 状態に関わらず terminal **conflict**（semantic 分類に入らない）:
-frontmatter 不成立 / 必須キー欠落・重複キー / 未知 owner・mode / owner⇔mode 不一致 /
-cycle_id 形式違反 / ファイル名⇔frontmatter の cycle_id 不一致 / hash 形式不正 /
-`verify_on_restore` が `{cmd, args}` 構造でない（自由文シェル文字列）。
+If `parse_checkpoint` detects any of the following, the result is a terminal **conflict** regardless of the HEAD state (it never enters the semantic classification):
+frontmatter that does not hold / a missing required key or a duplicate key / an unknown owner or mode / an owner⇔mode mismatch /
+a cycle_id format violation / a cycle_id mismatch between the filename and the frontmatter / a malformed hash /
+a `verify_on_restore` that is not of `{cmd, args}` structure (a free-form shell string).
 
-`superseded > conflict` の優先順位は parse 済み checkpoint にのみ適用される — `base_head` が読めない
-checkpoint は superseded 判定できないため、この層分離は論理的必然。
+The `superseded > conflict` precedence applies only to a parsed checkpoint — a checkpoint whose `base_head` cannot be read
+cannot be judged superseded, so this layer separation is a logical necessity.
 
-### Phase 1（semantic 5 分類、parse 済みに対して）
+### Phase 1 (the semantic five-way classification, over parsed content)
 
-| verdict | 条件 | restore の振る舞い |
+| verdict | Condition | Behavior of restore |
 |---------|------|-------------------|
-| `superseded` | `base_head` ≠ 現在 HEAD（HEAD が前進） | checkpoint を破棄・削除**提案**（ユーザー確認つき、自動削除しない）。コミットが ground truth。ただし現 dirty set と `dirty_files` に重なりがある場合はその旨を併記（amend / rebase / 無関係コミット直後でも文脈を黙って捨てない） |
-| `conflict`（semantic） | 上書き競合痕（読んだ時点と異なる written_at / fingerprint）等、parse は通るが整合しない状態 | 自動判断せず人間照会（fail-safe） |
-| `degraded` | `owner: precompact`（`mode: degraded`） | dirty set と HEAD 以外信用しない。`decision: unknown` / `next: reconstruct_from_diff` を明示。v1 では emit されない（分類器のみ実装し fixture で凍結） |
-| `stale` | HEAD 一致 & `dirty_fingerprint` ≠ 現在値 | 叙述は参考扱い。現在の diff から状態を再構成 |
-| `valid` | HEAD 一致 & fingerprint 一致 | 叙述を復元の起点にする。ただし fingerprint は**変更検知であり改竄検知ではない**（repo 書込権があれば再計算できる）ため、valid でも verification-gate はスキップしない。verify_on_restore は提示のみ |
+| `superseded` | `base_head` ≠ the current HEAD (HEAD moved forward) | Discard the checkpoint and **propose** deletion (with user confirmation; never delete automatically). The commits are ground truth. However, when the current dirty set overlaps `dirty_files`, note that as well (do not silently throw away the context, even right after an amend / rebase / unrelated commit) |
+| `conflict` (semantic) | A state that parses but is inconsistent, such as traces of an overwrite race (a written_at / fingerprint different from what was read) | No automatic judgment; consult a human (fail-safe) |
+| `degraded` | `owner: precompact` (`mode: degraded`) | Trust nothing but the dirty set and HEAD. State `decision: unknown` / `next: reconstruct_from_diff` explicitly. Not emitted in v1 (only the classifier is implemented, frozen by a fixture) |
+| `stale` | HEAD matches & `dirty_fingerprint` ≠ the current value | Treat the narrative as reference material. Reconstruct the state from the current diff |
+| `valid` | HEAD matches & the fingerprint matches | Use the narrative as the starting point for restoring. Note that the fingerprint is **change detection, not tamper detection** (anyone with write access to the repo can recompute it), so even at valid the verification-gate is not skipped. verify_on_restore is displayed only |
 
-**判定優先順位（parse 済みに対して）**: `superseded > conflict > degraded > stale > valid`。
+**Decision precedence (over parsed content)**: `superseded > conflict > degraded > stale > valid`.
 
-### 呼び出し側の非対称（契約）
+### The asymmetry of the callers (contract)
 
-- **plan resume**: checkpoint は補助情報 — parse conflict は「警告して無視・通常 resume 続行」
-  （壊れた補助ファイルが正常な resume をブロックしない）。
-- **handoff restore fallback**: checkpoint が唯一の情報源のため conflict は人間照会で停止。
+- **plan resume**: the checkpoint is auxiliary information — a parse conflict means "warn, ignore, and continue the normal resume"
+  (a broken auxiliary file must not block a healthy resume).
+- **handoff restore fallback**: the checkpoint is the only source of information, so a conflict stops for human consultation.
 
-この非対称を破ってはならない。
+This asymmetry must not be broken.
 
-## checkpoint と handoff の境界
+## The boundary between checkpoint and handoff
 
-| 軸 | checkpoint | handoff |
+| Axis | checkpoint | handoff |
 |----|-----------|---------|
-| トリガー | dirty のまま終わる時だけ（出口条件） | コンテキスト圧迫時の明示保存 |
-| ライフサイクル | plan ごと 1 ファイル上書き・HEAD 前進で自然失効・restore は read-only | セッションごと複数・restore で読了後削除 |
-| キー | cycle_id（plan サイドカー） | タイムスタンプ（セッション単位） |
-| 検証 | fingerprint による機械的 staleness 判定あり | なし（叙述のみ） |
+| Trigger | Only when ending while dirty (an exit condition) | An explicit save when context is under pressure |
+| Lifecycle | One file per plan, overwritten; expires naturally when HEAD advances; restore is read-only | Several per session; deleted after being read on restore |
+| Key | cycle_id (a plan sidecar) | A timestamp (per session) |
+| Verification | Mechanical staleness judgment via the fingerprint | None (narrative only) |
 
-handoff restore の fallback で checkpoint を読む場合も checkpoint を**削除しない**（handoff の削除
-セマンティクスを checkpoint に波及させない）。将来「handoff frontmatter への統合」に倒す場合の判断材料として
-この境界表を残す。
+Even when a checkpoint is read through the handoff restore fallback, **do not delete it** (do not propagate handoff's deletion
+semantics to checkpoints). This boundary table is kept as material for the judgment if "integration into the handoff frontmatter" is ever chosen.
 
-## 所有境界（4 項目のみ）
+## Ownership boundary (four items only)
 
-checkpoint が持つのは 4 つのみ:
+A checkpoint holds only four things:
 
-1. 未コミット dirty 状態（機械生成 `dirty_files` + `dirty_fingerprint`）
-2. plan からの逸脱判断（`decision`、1 文）
-3. evidence（過去観測の事実 — 観測コマンド + タイムスタンプ必須）
-4. next（次の一手 1 個）
+1. The uncommitted dirty state (machine-generated `dirty_files` + `dirty_fingerprint`)
+2. The judgment of deviation from the plan (`decision`, one sentence)
+3. evidence (facts observed in the past — an observed command plus a timestamp is required)
+4. next (exactly one next move)
 
-plan Progress / status.md / result と**重複させない**。
+**Do not duplicate** the plan Progress / status.md / result.
 
-### 禁止事項（契約で明示）
+### Prohibitions (stated in the contract)
 
-- 完了済みステップ一覧の転記
-- 最終結果サマリー
-- 長いテストログの転記
-- diff 本文の保存（hash 入力にのみ使用）
+- Transcribing the list of completed steps
+- A final result summary
+- Transcribing long test logs
+- Storing the diff body (it is used as hash input only)
 
-### evidence と verify_on_restore の分離
+### Separating evidence from verify_on_restore
 
-- `evidence`（過去に観測した事実）は**観測コマンド + タイムスタンプ必須**
-  （例: `Observed 01:25: python3 -m unittest ... exited 0`）。
-- `verify_on_restore`（復元後に再実行必須のコマンド）は構造化配列（`{cmd, args}`）。
-- restore 出力は再検証まで全 evidence を **historical** と明示ラベルする（verification-gate 違反を構造 + 書式で防ぐ）。
+- `evidence` (facts observed in the past) **requires an observed command plus a timestamp**
+  (e.g. `Observed 01:25: python3 -m unittest ... exited 0`).
+- `verify_on_restore` (commands that must be re-run after restoring) is a structured array (`{cmd, args}`).
+- The restore output labels all evidence **historical** until it is re-verified (preventing a verification-gate violation by structure plus presentation).
 
-## セキュリティ規約（コードで強制、テストで証明）
+## Security conventions (enforced in code, proven by tests)
 
-[design-principles.md](design-principles.md) §9（single canonical validator, reused everywhere）に従い、以下は `checkpoint.py`
-内で強制し `test_checkpoint.py` で証明する:
+Following §9 of [design-principles.md](design-principles.md) (single canonical validator, reused everywhere), the following are enforced inside
+`checkpoint.py` and proven by `test_checkpoint.py`:
 
-- **実行面**: `verify_on_restore` は `{cmd, args}` 構造化のみ・自由文シェル禁止（parse で拒否）。
-  restore はどの verdict でも**自動実行しない**（表示のみ）。headless / bypassPermissions 環境
-  （cycle / polling 系）では確認プロンプトすら出さず表示のみ — 「人間の確認」を前提にした緩和は
-  無人ループで無効化されるため、**実行自体を仕様から外す**。
-- **parse 面**: PyYAML 不使用（`yaml.load` 系のデシリアライズ RCE を構造的に排除）。strict parser は
-  タグ / アンカーを解釈しない（全フィールドが enum / regex で strict 検証されるため payload は inert かつ拒否）。
-  共有 `frontmatter.py` は重複キーを黙って上書きするため**使わない**。
-- **path 面**: `re.fullmatch(r"[0-9]{14}", cycle_id)` を parse 内で強制 + checkpoint パス / sibling glob を
-  realpath containment（symlink 拒否）で `.agents/artifacts/plans/checkpoints/` に限定（dossier_lint の containment 手法を踏襲）。
-- **秘密情報面**: `build_skeleton` が生成する**機械フィールド `dirty_files` は `secret_detect.mask_secrets`
-  を必ず通す**（パス自体が秘密になり得る — home path / email パターン）。これはコードで強制。
-  一方、`decision` / `next` / `evidence` の**叙述本文は LLM が骨格生成後に直接編集して書く**ため、
-  叙述のマスクは**コード強制ではなくスキル規律**（SKILL.md で mask を指示）である点を正直に区別する
-  （骨格が masking するのは機械フィールドとプレースホルダのみ）。diff 本文は保存しない。
-- **上書き競合（overwrite-race）**: 「既存 checkpoint の written_at / fingerprint が自分の読んだ時点と
-  異なれば上書きせず conflict」という anti-overwrite 規律は、v1 では**単一 writer・単一ホスト前提に依存した
-  スキル規律であってコード強制ではない**（`build_skeleton --output` は既存を無条件に atomic rename する）。
-  `classify` の `conflict_marker` はこの検出を将来コード化するための v2 wire point で、v1 では呼び出し側が
-  設定しない（分類器の優先順位を凍結するため unittest のみが行使する）。多重 writer への拡張は契約改訂級（v2）。
-- **信頼モデル**: fingerprint / base_head は**変更検知であり改竄検知ではない**。valid でも叙述は
-  「復元の起点」であって verification-gate の代替にしない。
+- **Execution**: `verify_on_restore` is structured `{cmd, args}` only; a free-form shell string is forbidden (rejected at parse).
+  restore **never executes automatically** at any verdict (display only). In headless / bypassPermissions environments
+  (cycle and polling), not even a confirmation prompt appears — display only. A relaxation premised on "human confirmation"
+  is nullified in an unattended loop, so **execution itself is removed from the specification**.
+- **Parsing**: PyYAML is not used (structurally eliminating deserialization RCE via `yaml.load` and friends). The strict parser
+  does not interpret tags or anchors (every field is strictly validated by an enum or a regex, so a payload is inert and rejected).
+  The shared `frontmatter.py` silently overwrites duplicate keys, so it **is not used**.
+- **Paths**: `re.fullmatch(r"[0-9]{14}", cycle_id)` is enforced inside parse, and the checkpoint path and the sibling glob are
+  confined to `.agents/artifacts/plans/checkpoints/` by realpath containment (rejecting symlinks), following the containment technique of dossier_lint.
+- **Secrets**: **the machine field `dirty_files` that `build_skeleton` generates is always passed through `secret_detect.mask_secrets`**
+  (a path itself can be a secret — home paths, email patterns). This is enforced in code.
+  By contrast, the **narrative bodies of `decision` / `next` / `evidence` are written by the LLM editing directly after skeleton generation**,
+  so masking the narrative is **skill discipline, not code enforcement** (SKILL.md instructs the masking) — keep that distinction honest
+  (the skeleton masks only the machine fields and the placeholders). The diff body is not stored.
+- **Overwrite race**: the anti-overwrite discipline "if the existing checkpoint's written_at / fingerprint differ from what you read,
+  do not overwrite — conflict" is, in v1, **skill discipline that leans on the single-writer, single-host premise, not code enforcement**
+  (`build_skeleton --output` unconditionally atomic-renames over an existing file).
+  `classify`'s `conflict_marker` is the v2 wire point for encoding that detection later; in v1 the caller does not set it
+  (only the unittests exercise it, to freeze the classifier's precedence). Extending to multiple writers is a contract-revision-level change (v2).
+- **Trust model**: the fingerprint and base_head are **change detection, not tamper detection**. Even at valid, the narrative is
+  "the starting point for restoring" and not a substitute for the verification-gate.
 
-## owner enum（契約）
+## The owner enum (contract)
 
-- v1 enum は `manual-session` | `precompact` の 2 値。
-- `precompact` は verdict 意味論（degraded）が定義済みなので予約する（v1 で書くのは manual-session のみ・emit しない）。
-- `cycle-phase2` は書き手と verdict 挙動が同時に入る v2 で追加（bare token の先行予約はしない）。
-- 未知 owner は parse 段階で conflict。`mode: degraded` ⇔ `owner: precompact` は一致必須、不一致は parse conflict。
-
+- The v1 enum has two values: `manual-session` | `precompact`.
+- `precompact` is reserved because its verdict semantics (degraded) are already defined (v1 writes only manual-session and does not emit it).
+- `cycle-phase2` will be added in v2, when the writer and the verdict behavior arrive together (no pre-reservation of a bare token).
+- An unknown owner is a conflict at the parse stage. `mode: degraded` ⇔ `owner: precompact` must agree; a mismatch is a parse conflict.
