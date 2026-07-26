@@ -180,17 +180,17 @@ Once you have attempted a fix three or more times and failed, **do not continue 
 Present the choices to the user and consult them:
 
 ```
-⚠️ 3回の修正試行が失敗しました。根本的な設計の問題の可能性があります。
+⚠️ 3 fix attempts have failed. This may be a fundamental design problem.
 
-これまでの試行:
-1. {試行1の概要} → {失敗理由}
-2. {試行2の概要} → {失敗理由}
-3. {試行3の概要} → {失敗理由}
+The attempts so far:
+1. {a summary of attempt 1} → {why it failed}
+2. {a summary of attempt 2} → {why it failed}
+3. {a summary of attempt 3} → {why it failed}
 
-選択肢:
-1. アーキテクチャの問題を一緒に検討する（推奨）
-2. 別のアプローチで修正を試す
-3. 調査結果をレポートとして出力し中断する
+Options:
+1. Examine the architectural problem together (recommended)
+2. Try a fix with a different approach
+3. Emit the investigation results as a report and stop
 ```
 
 - 「1」 selected → move on to the architecture discussion
@@ -212,7 +212,7 @@ The path through which investigate's output arrives:
 
 ```
 /claude-skills:investigate {problem}
-  → 調査レポートを確認
+  → review the investigation report
   → /claude-skills:debug {investigate_report_summary}
 ```
 

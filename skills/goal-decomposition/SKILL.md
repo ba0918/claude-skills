@@ -34,8 +34,8 @@ The entry point that compiles a natural-language high-level goal into a machine-
 
 | Input | Workflow |
 |------|-------------|
-| A natural-language high-level goal (「〜をループに乗せたい」「自走できる状態にして」) | compile |
-| Inspecting an existing dossier (「dossier を lint して」「validate」) | validate |
+| A natural-language high-level goal ("I want this on a loop", "get it to a self-driving state") | compile |
+| Inspecting an existing dossier ("lint the dossier", "validate") | validate |
 
 ## compile — goal → dossier draft
 
@@ -70,10 +70,10 @@ its `wire_to` (goal-loop / loop-triage / inbox / plan / reject). After wiring, f
 
 Do not bombard them with questions. Ask the human only these three (with fixed wording):
 
-1. **Confirm the non-goals**: 「このゴールに含めない範囲（自動化に載せない断片）は？ 例: {推定した non-goals}」
-2. **Approve the proxy's limits**: only when a proxy oracle is used — 「{oracle} は真の完了条件ではなく下限ゲートです。
-   差分『{gap}』を承知で下限として承認しますか？」
-3. **Approve the routing proof's gaps**: 「{断片} を {wire_to} に配線しました（根拠: {proof}）。この配線でよいですか？」
+1. **Confirm the non-goals**: "what range is excluded from this goal (the fragments kept off automation)? For example: {the inferred non-goals}"
+2. **Approve the proxy's limits**: only when a proxy oracle is used — "{oracle} is not the true completion condition but a lower-bound gate.
+   Do you approve it as the lower bound, knowing the gap '{gap}'?"
+3. **Approve the routing proof's gaps**: "{fragment} was wired to {wire_to} (grounds: {proof}). Is this wiring acceptable?"
 
 **When headless, skip the confirmation with the user and emit the draft**, recording the unresolved approval items as an inbox entry plus
 `blocked_by` (the state gate guarantees human approval, so compile does not block on dialogue).
@@ -99,19 +99,19 @@ On success, place it into `.agents/artifacts/loop/dossiers/`; on detection, dele
 ### Step 6: Report (summary-first)
 
 ```
-## Goal Decomposition 結果: {slug}
-| wire_to | 件数 |
+## Goal Decomposition result: {slug}
+| wire_to | Count |
 |---------|------|
 | goal-loop | N |
 | loop-triage | N |
 | inbox | N |
 | plan / reject | N / N |
 
-- inbox / blocked_by: {件数}
-- secret チェック: {pass / 中止（該当フィールド）}
-- lint: {全チェック合格 / error N・warn N}
+- inbox / blocked_by: {count}
+- Secret check: {pass / aborted (the affected field)}
+- lint: {all checks passed / error N, warn N}
 - status: draft
-- 次の一手: md（.agents/artifacts/loop/dossiers/{slug}.md）を読んで、承認するなら JSON を直接編集して status を approved に上げる
+- The next move: read the md (.agents/artifacts/loop/dossiers/{slug}.md), and to approve it, edit the JSON directly and raise status to approved
 ```
 
 ## validate — inspecting a dossier

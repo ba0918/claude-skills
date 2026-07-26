@@ -1,34 +1,34 @@
 # Root Cause Tracing
 
-バグを後方にトレースし、症状ではなく根本原因を見つける手法。
+The technique of tracing a bug backwards to find the root cause rather than the symptom.
 
 ## Core Principle
 
 ```
-症状を修正するな。根本原因を見つけてから修正しろ。
+Do not fix the symptom. Find the root cause first, then fix.
 ```
 
-## トレースプロセス
+## The tracing process
 
-### 1. 症状を観察する
+### 1. Observe the symptom
 
-エラーメッセージ、スタックトレース、異常な出力を正確に記録する。
+Record the error message, the stack trace, and the abnormal output exactly.
 
 ```
 Error: git init failed in /Users/user/project/packages/core
 ```
 
-### 2. 直接原因を特定する
+### 2. Identify the direct cause
 
-このエラーを直接引き起こしたコードは何か？
+What code caused this error directly?
 
 ```typescript
 await execFileAsync('git', ['init'], { cwd: projectDir });
 ```
 
-### 3. さらに上流をたどる
+### 3. Trace further upstream
 
-「何がこの関数をこの引数で呼んだか？」を繰り返す。
+Repeat the question "what called this function with these arguments?".
 
 ```
 WorktreeManager.createSessionWorktree(projectDir, sessionId)
@@ -37,60 +37,60 @@ WorktreeManager.createSessionWorktree(projectDir, sessionId)
       → test: Project.create()
 ```
 
-### 4. 上流をたどり続ける
+### 4. Keep tracing upstream
 
-各レイヤーで渡された値を検証する:
+Verify the value passed at each layer:
 
-- `projectDir = ''` (空文字列！)
-- 空文字列の `cwd` → `process.cwd()` に解決される
-- つまりソースコードディレクトリ内で git init が実行された
+- `projectDir = ''` (an empty string!)
+- An empty `cwd` → resolves to `process.cwd()`
+- That is, git init ran inside the source-code directory
 
-### 5. 根本原因を発見する
+### 5. Discover the root cause
 
 ```typescript
-const context = setupCoreTest(); // { tempDir: '' } を返す
-Project.create('name', context.tempDir); // beforeEach の前にアクセス！
+const context = setupCoreTest(); // returns { tempDir: '' }
+Project.create('name', context.tempDir); // accessed before beforeEach!
 ```
 
-根本原因: トップレベルの変数初期化が空値にアクセスしている。
+The root cause: a top-level variable initialization is accessing an empty value.
 
-## 多層システムでの診断インストルメンテーション
+## Diagnostic instrumentation in a multi-layer system
 
-システムが複数コンポーネントから構成される場合、各コンポーネント境界にログを追加して、**どこで壊れるか**を特定する。
+When a system is composed of several components, add logging at each component boundary to identify **where it breaks**.
 
-### パターン
+### The pattern
 
 ```
-各コンポーネント境界で:
-  - 入力データをログ
-  - 出力データをログ
-  - 環境・設定の伝播を検証
-  - 各レイヤーの状態を確認
+At each component boundary:
+  - log the input data
+  - log the output data
+  - verify the propagation of the environment and the configuration
+  - confirm the state at each layer
 
-1回実行してエビデンスを収集
-→ どの境界で壊れているかを分析
-→ その特定コンポーネントを調査
+Run it once and collect the evidence
+→ analyze which boundary it breaks at
+→ investigate that specific component
 ```
 
-### 具体例
+### A concrete example
 
 ```bash
-# Layer 1: ワークフロー
+# Layer 1: the workflow
 echo "=== Secrets available: ==="
 echo "API_KEY: ${API_KEY:+SET}${API_KEY:-UNSET}"
 
-# Layer 2: ビルドスクリプト
+# Layer 2: the build script
 echo "=== Env vars in build: ==="
 env | grep API_KEY || echo "API_KEY not in environment"
 
-# Layer 3: アプリケーション
+# Layer 3: the application
 echo "=== Config loaded: ==="
 cat config.json | jq '.apiKey'
 ```
 
-## スタックトレースの追加
+## Adding a stack trace
 
-手動でトレースできない場合、インストルメンテーションを追加する:
+When you cannot trace it by hand, add instrumentation:
 
 ```typescript
 async function riskyOperation(directory: string) {
@@ -101,28 +101,28 @@ async function riskyOperation(directory: string) {
     nodeEnv: process.env.NODE_ENV,
     stack,
   });
-  // 本来の処理
+  // the actual work
 }
 ```
 
-**テスト中は `console.error()` を使う**（ロガーはテストで抑制されることがある）。
+**Use `console.error()` during tests** (a logger can be suppressed in tests).
 
 ## Defense-in-Depth
 
-根本原因を修正した後、各レイヤーにバリデーションを追加して同じバグが再発不可能にする:
+After fixing the root cause, add validation at each layer so the same bug cannot recur:
 
-1. **Layer 1**: 入力バリデーション（空文字列チェック等）
-2. **Layer 2**: 環境ガード（テスト環境なら tmpdir 外での操作を拒否等）
-3. **Layer 3**: ログ追加（危険な操作の前にログを出力）
-4. **Layer 4**: 回帰テスト（この特定のバグを再現するテストを追加）
+1. **Layer 1**: input validation (an empty-string check, and so on)
+2. **Layer 2**: an environment guard (in a test environment, refuse operations outside tmpdir, and so on)
+3. **Layer 3**: added logging (emit a log before a dangerous operation)
+4. **Layer 4**: a regression test (add a test reproducing this specific bug)
 
 ## Key Principle
 
 ```
-直接原因を見つけた → 1つ上のレイヤーをたどれるか？
-  たどれる → さらに上流へ
-  たどれない → ここが根本原因
-    → 根本原因を修正
-    → 各レイヤーにバリデーションを追加
-    → バグが構造的に再発不可能になる
+You found the direct cause → can you trace one layer up?
+  You can → go further upstream
+  You cannot → this is the root cause
+    → fix the root cause
+    → add validation at each layer
+    → the bug becomes structurally unable to recur
 ```
