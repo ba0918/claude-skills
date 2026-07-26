@@ -679,8 +679,8 @@ class ContextLoadTests(unittest.TestCase):
             p = self._write(
                 tmp,
                 '{"schema_version":1,"terms":[{"id":"T-1","term":"a",'
-                '"state":"確定"}]}')
-            self.assertEqual(ll.load_context_terms(p), {"T-1": "確定"})
+                '"state":"settled"}]}')
+            self.assertEqual(ll.load_context_terms(p), {"T-1": "settled"})
 
     def test_context_membership_survives_dict_form(self):
         # term_refs membership (undefined-term) must still work when the
@@ -689,10 +689,10 @@ class ContextLoadTests(unittest.TestCase):
             p = self._write(
                 tmp,
                 '{"schema_version":1,"terms":[{"id":"T-1","term":"a",'
-                '"state":"競合中"}]}')
+                '"state":"conflicting"}]}')
             terms = ll.load_context_terms(p)
             self.assertIn("T-1", terms)
-            self.assertEqual(terms["T-1"], "競合中")
+            self.assertEqual(terms["T-1"], "conflicting")
 
 
 class BaselineLoadTests(unittest.TestCase):
@@ -883,35 +883,72 @@ class ComputeBatchDigestTests(unittest.TestCase):
 class PendingVocabularyTests(unittest.TestCase):
     def test_agreed_undefined_term_escalated_to_pending_vocabulary(self):
         row = make_agreed_row(term_refs=["T-UNKNOWN"])
-        result = lint_obj(make_file([row]), context_terms={"T-1": "確定"})
+        result = lint_obj(make_file([row]), context_terms={"T-1": "settled"})
         cs = checks(result)
         self.assertIn("pending-vocabulary", cs)   # (a) confirmed escalation
         self.assertIn("undefined-term", cs)       # all-state check still fires
 
     def test_undecided_undefined_term_not_escalated(self):
         row = make_row(term_refs=["T-UNKNOWN"])   # UNDECIDED
-        result = lint_obj(make_file([row]), context_terms={"T-1": "確定"})
+        result = lint_obj(make_file([row]), context_terms={"T-1": "settled"})
         cs = checks(result)
         self.assertIn("undefined-term", cs)
         self.assertNotIn("pending-vocabulary", cs)
 
     def test_agreed_conflicting_term_is_advisory_only(self):
         row = make_agreed_row(term_refs=["T-C"])
-        result = lint_obj(make_file([row]), context_terms={"T-C": "競合中"})
+        result = lint_obj(make_file([row]), context_terms={"T-C": "conflicting"})
         self.assertIn("unstable-term-dependency", advisory_checks(result))
         self.assertEqual(result["findings"], [])   # (b) does not gate
 
     def test_agreed_deprecated_term_is_advisory_only(self):
         row = make_agreed_row(term_refs=["T-D"])
-        result = lint_obj(make_file([row]), context_terms={"T-D": "廃語"})
+        result = lint_obj(make_file([row]), context_terms={"T-D": "retired"})
         self.assertIn("unstable-term-dependency", advisory_checks(result))
         self.assertEqual(result["findings"], [])
 
     def test_agreed_confirmed_term_no_finding_no_advisory(self):
         row = make_agreed_row(term_refs=["T-OK"])
-        result = lint_obj(make_file([row]), context_terms={"T-OK": "確定"})
+        result = lint_obj(make_file([row]), context_terms={"T-OK": "settled"})
         self.assertEqual(result["findings"], [])
         self.assertEqual(result["advisories"], [])
+
+    def test_agreed_tentative_term_is_not_unstable(self):
+        # tentative is inside the enum but not unstable: no advisory at all.
+        row = make_agreed_row(term_refs=["T-T"])
+        result = lint_obj(make_file([row]), context_terms={"T-T": "tentative"})
+        self.assertEqual(result["findings"], [])
+        self.assertEqual(result["advisories"], [])
+
+    def test_out_of_enum_state_is_reported_not_silently_ignored(self):
+        # The whole point of unknown-term-state: an unrecognised state must not
+        # drop out of the unstable check without a word.
+        row = make_agreed_row(term_refs=["T-X"])
+        result = lint_obj(make_file([row]), context_terms={"T-X": "whatever"})
+        self.assertIn("unknown-term-state", advisory_checks(result))
+        self.assertEqual(result["findings"], [])   # report-only, never gates
+
+    def test_pre_v1_japanese_state_is_reported_as_unknown(self):
+        # The pre-v1 vocabulary states were Japanese. They are out of the enum
+        # now, so a stale vocabulary file surfaces instead of going quiet.
+        row = make_agreed_row(term_refs=["T-L"])
+        result = lint_obj(make_file([row]), context_terms={"T-L": "競合中"})
+        cs = advisory_checks(result)
+        self.assertIn("unknown-term-state", cs)
+        self.assertNotIn("unstable-term-dependency", cs)
+
+    def test_unknown_state_does_not_fire_for_undecided_rows(self):
+        row = make_row(term_refs=["T-X"])          # UNDECIDED
+        result = lint_obj(make_file([row]), context_terms={"T-X": "whatever"})
+        self.assertNotIn("unknown-term-state", advisory_checks(result))
+
+    def test_set_form_context_terms_emit_no_state_advisory(self):
+        # Callers passing a plain id set carry no state; _term_state returns
+        # None for every term and must not be mistaken for an out-of-enum value.
+        row = make_agreed_row(term_refs=["T-1"])
+        result = lint_obj(make_file([row]), context_terms={"T-1"})
+        self.assertEqual(result["advisories"], [])
+        self.assertEqual(result["findings"], [])
 
     def test_advisories_key_present_on_clean_ledger(self):
         row = make_row(term_refs=["T-1"])  # clean row with term_refs
@@ -950,7 +987,7 @@ class TermRefsEmptyTests(unittest.TestCase):
 
     def test_term_refs_empty_works_with_context(self):
         row = make_row(term_refs=[])
-        result = lint_obj(make_file([row]), context_terms={"T-1": "確定"})
+        result = lint_obj(make_file([row]), context_terms={"T-1": "settled"})
         self.assertIn("term-refs-empty", advisory_checks(result))
 
     def test_invalid_type_is_schema_validations_responsibility(self):
@@ -1021,7 +1058,7 @@ class AdvisoryGateTests(unittest.TestCase):
             ctx = os.path.join(tmp, "ctx.json")
             with open(ctx, "w", encoding="utf-8") as f:
                 json.dump({"schema_version": 1, "terms": [
-                    {"id": "T-C", "term": "x", "state": "競合中"}]}, f)
+                    {"id": "T-C", "term": "x", "state": "conflicting"}]}, f)
             ledger = os.path.join(tmp, "ledger.json")
             with open(ledger, "w", encoding="utf-8") as f:
                 json.dump(make_file([make_agreed_row(term_refs=["T-C"])]), f)
@@ -1033,7 +1070,7 @@ class AdvisoryGateTests(unittest.TestCase):
             ctx = os.path.join(tmp, "ctx.json")
             with open(ctx, "w", encoding="utf-8") as f:
                 json.dump({"schema_version": 1, "terms": [
-                    {"id": "T-C", "term": "x", "state": "廃語"}]}, f)
+                    {"id": "T-C", "term": "x", "state": "retired"}]}, f)
             ledger = os.path.join(tmp, "ledger.json")
             with open(ledger, "w", encoding="utf-8") as f:
                 json.dump(make_file([make_agreed_row(term_refs=["T-C"])]), f)

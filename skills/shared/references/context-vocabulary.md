@@ -16,7 +16,7 @@ CONTEXT.md notation of rigortype/rigor):
 - The **term** and an **entry ID** (the stable ID that `term_refs` references)
 - A **usage / behaviour declaration**: separates "a promise about how the word is used" from
   "a definition of behaviour"
-- **Vocabulary-specific state**: `確定` / `暫定` / `競合中` / `廃語` (next section)
+- **Vocabulary-specific state**: `settled` / `tentative` / `conflicting` / `retired` (next section)
 - A **Trapped terms section**: explicitly quarantines words whose meaning splits easily or is
   prone to misreading
 - An **implementation-reality flag**: attached to words where the definition and the current
@@ -27,10 +27,10 @@ CONTEXT.md notation of rigortype/rigor):
 
 | State | Meaning |
 |------|------|
-| `確定` | The meaning has been ruled on. Safe to depend on |
-| `暫定` | A tentative meaning. Still open to reconsideration |
-| `競合中` | Multiple meanings are in conflict and unresolved. Claims depending on this word are unstable |
-| `廃語` | A retired word. References to it should be resolved away |
+| `settled` | The meaning has been ruled on. Safe to depend on |
+| `tentative` | A tentative meaning. Still open to reconsideration |
+| `conflicting` | Multiple meanings are in conflict and unresolved. Claims depending on this word are unstable |
+| `retired` | A retired word. References to it should be resolved away |
 
 ## Machine-readable Vocabulary File (the format `ledger_lint` reads)
 
@@ -52,14 +52,23 @@ Each `terms[]` entry:
 |-----------|-----|------|------|
 | `id` | `string` | `required` | Vocabulary entry ID. A ledger row's `term_refs` references this ID |
 | `term` | `string` | `required` | The word itself |
-| `state` | `string` | `required` | Vocabulary-specific state. enum: `確定` / `暫定` / `競合中` / `廃語` |
+| `state` | `string` | `required` | Vocabulary-specific state. enum: `settled` / `tentative` / `conflicting` / `retired` |
 
 Given a vocabulary file, `ledger_lint` verifies via O(1) membership that each ledger row's
 `term_refs` is contained in the set of vocabulary `id`s (when `--context PATH` is not given,
 `term_refs` verification is skipped). Beyond the vocabulary `id`, the lint also reads `state`
-(the vocabulary-specific state) and treats an `AGREED` row that depends on a `競合中` / `廃語`
+(the vocabulary-specific state) and treats an `AGREED` row that depends on a `conflicting` / `retired`
 word as a derived detection of pending-vocabulary (see the pending-vocabulary section and the
 dual-state consistency rule in [agreement-ledger.md](agreement-ledger.md)).
+
+**Enforcement of the `state` enum**: the loader does not reject an out-of-enum value. A
+vocabulary file is auxiliary input, and one bad state must not abort the whole ledger run.
+Instead the enum is enforced **at the point of use**: when an `AGREED` row depends on a term
+whose `state` falls outside the enum, `ledger_lint` emits the `unknown-term-state` advisory
+(report-only). Without this check an unrecognised state would drop out of the unstable-dependency
+detection silently, and the vocabulary layer would look clean precisely where it is unreadable.
+The advisory is also the migration path off the pre-v1 Japanese state values
+(`確定` / `暫定` / `競合中` / `廃語`), which are no longer part of the enum.
 
 ## Vocabulary Generation Flow (a by-product of extract — one pass, two streams)
 
@@ -97,7 +106,7 @@ the vocabulary are automated**:
 - **Repurpose the undefined-word detection of `ledger_lint --context` for candidate harvesting**
   (an undefined reference is a signal of "a load-bearing word not yet turned into vocabulary").
 - Automatically mark **retirement candidates by reference record** (words no longer `term_refs`-ed
-  by any ledger row) and **`競合中` candidates by divergence between definition and reality**.
+  by any ledger row) and **`conflicting` candidates by divergence between definition and reality**.
 
 However, **what may be automated stops at "candidates (tentative) and freshness"**. Finalizing
 vocabulary is **always done by a human** (even for vocabulary, the LLM is a proposer and cannot
@@ -108,7 +117,7 @@ threshold tuning; adjust them with iterate after pilot measurements
 
 ## Dual-state Consistency Rule (PROVISIONAL)
 
-An `AGREED` row referencing a `競合中` / `廃語` word cannot be protected from drift by
+An `AGREED` row referencing a `conflicting` / `retired` word cannot be protected from drift by
 cross-references alone, so **lint / status detect it as a re-ruling candidate** (derived
 detection (b) of pending-vocabulary; see the pending-vocabulary section of
 [agreement-ledger.md](agreement-ledger.md)). This detection rule is PROVISIONAL in v1 and
