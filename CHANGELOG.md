@@ -31,6 +31,18 @@ raise は exit 2 = 入力破損の意味を持つ）。この advisory は v1 �
 enum と衝突するため。両者は別軸（語の状態 / 主張の状態）なので、同じ語が 2 つの層に現れると
 読み手がどちらの層の話か判別できない。
 
+この enum がどの層を縛るのかを契約に明記した。書いていなかったため「対象プロジェクトのデータ
+なのだから日本語も受理すべきでは」という論点が起きた。実際には投影（機械可読 JSON）の `state`
+の値集合を定めているだけで、人間向け CONTEXT.md の散文が状態を何語で呼ぼうと自由である。
+案件の言語で書かれるのは語彙そのもの（`term`、自由文のドメイン語）であり、`state` は
+同じファイル族の他の機械 enum（台帳行の `AGREED` / `DELEGATED`、`actor_kind: human`、
+`risk: high`）と同列に置かれる。
+
+日英両方の綴りを受理する案は検討して棄却した。写像はどこかに必要で、投影の生成時（人間向け
+正本を変換する工程）に置けば追加コストはない。一方 linter に置くと、全ての利用側が比較前の
+正規化を義務づけられ、`unknown-term-state` が塞いだはずのサイレント見逃しの類型が戻る。
+旧トークンは alias 表ではなく advisory で浮上させる。
+
 - `skills/ledger/scripts/ledger_lint.py`: `VOCAB_STATES` を新設、`UNSTABLE_TERM_STATES` を
   英語値へ、`_check_pending_vocabulary` に派生検出 (d) を追加
 - `skills/shared/references/context-vocabulary.md`: enum の英語化と、enum を利用時に
