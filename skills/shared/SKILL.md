@@ -13,7 +13,7 @@ Shared contracts, references, and utility scripts used by other skills in the cl
 
 This skill collection uses platform-agnostic natural language for all instructions. Skills describe operations (e.g., "read the file", "run a shell command", "delegate to a subagent") without referencing specific tool API names. Each agent platform should map these descriptions to its native tools.
 
-For historical reference, [references/tool-mapping.md](references/tool-mapping.md) documents the mapping between common platform tool names.
+The portability criteria that shared contracts are held to live in [references/skill-authoring.md](references/skill-authoring.md).
 
 ## Installation
 
