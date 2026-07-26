@@ -60,6 +60,10 @@ Launch an implementation agent as a subagent. Make it **strictly observe** the T
 5. Tidy the code while the tests pass
    - Remove duplication, improve naming, separate responsibilities
    - **Confirm that all tests still pass** after the refactoring as well
+   - When there is nothing to tidy (no duplication to remove, no naming to improve, no responsibility to separate),
+     **record that basis and move on to the next step** — REFACTOR has an explicit exit for "no change needed".
+     Do not move the structure just to have performed a REFACTOR (that is a YAGNI violation).
+     Recording only "REFACTOR done" without stating what was changed, or what made a change unnecessary, is not acceptable
 
 **Verification Gate**: check the test execution results at every step and follow the Gate Function of [verification-gate.md](../shared/references/verification-gate.md). Include the evidence that all tests pass (the command output) in the result file.
 
@@ -93,6 +97,8 @@ Receive the implementation result.
 2. When BLOCK/WARN remain, launch a fix agent and address them
 3. After the fix, run the Step B review again
 4. **Repeat this loop until no BLOCK remains** (count one round trip of Step B review → Step C fix as one iteration, up to 3 iterations **per step**)
+   - A review round that produced **zero findings is not counted as an iteration** — an iteration is a round trip that
+     actually incorporated a fix. A review with nothing to fix ends the loop instead of consuming the iteration budget
 
 ### Step D: Status Update and Commit (mandatory — must not be skipped)
 
