@@ -1,6 +1,6 @@
 ---
 name: skill-improve
-description: セッションデータからスキル使用時の摩擦を検出・分析し、データ駆動でスキル改善を実行するメタスキル。「skill-improve」「スキル改善」「摩擦分析」で起動。
+description: A meta skill that detects and analyzes friction in skill usage from session data and drives skill improvements from that data. Use when the user says "skill-improve", "improve the skills", or "analyze the friction".
 ---
 
 # Skill Improve
@@ -115,16 +115,16 @@ generate `.claude/tmp/skill-improve-{datetime}/friction-report.md`.
 
 The integrating agent's prompt:
 ```
-.claude/tmp/skill-improve-{datetime}/ 配下の 4つの JSON ファイルを読み込み、
-摩擦レポートを friction-report.md として書き出してください。
+Read the 4 JSON files under .claude/tmp/skill-improve-{datetime}/ and
+write out the friction report as friction-report.md.
 
-フォーマット:
+Format:
 # Friction Report: {project}
 
 ## Executive Summary
-{1-3行の要約}
+{a 1-3 line summary}
 
-## Skill Rankings (摩擦スコア順)
+## Skill Rankings (by friction score)
 | Skill | Score | Top Issue | Recommendation |
 
 ## Detailed Findings

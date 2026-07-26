@@ -1,6 +1,6 @@
 ---
 name: artifacts
-description: Agent Artifact Store の初期化・状態診断・旧 docs 成果物の安全な移行を行う。「artifacts init」「artifact status」「成果物を .agents へ移行」「artifact migrate」「保存先設定を確認」で起動。
+description: Initialize the Agent Artifact Store, diagnose its state, and safely migrate legacy docs artifacts into it. Use when the user says "artifacts init", "artifact status", "artifact migrate", "move artifacts into .agents", or asks to check where artifacts are stored.
 ---
 
 # Artifacts

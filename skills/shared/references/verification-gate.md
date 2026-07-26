@@ -29,13 +29,18 @@ Skipping any step = guessing, not verifying
 
 ## Forbidden expressions
 
-The following must not be used before a verification command has been run:
+Before a verification command has been run, do not state or imply that the work is correct.
+This is a rule about what the claim means, not about its wording: it holds in whatever language
+the session speaks, and the examples below are illustrative, not the complete set of banned
+phrasings. A rephrasing that carries the same claim is equally forbidden.
 
-- "should work" / "should pass" / 「通るはず」
-- "probably" / "seems to" / 「おそらく」
-- "Done!" / "Perfect!" / "Great!" / 「完了！」（before verification）
-- "I'm confident" / 「自信がある」
-- "looks correct" / 「正しそう」
+Forbidden classes of claim, with English and Japanese examples:
+
+- Predicting the result of a command that has not run — "should work" / "should pass" / 「通るはず」
+- Asserting success with a hedge attached — "probably" / "seems to" / 「おそらく」
+- Declaring completion before there is evidence — "Done!" / "Perfect!" / "Great!" / 「完了！」
+- Offering personal confidence in place of evidence — "I'm confident" / 「自信がある」
+- Judging correctness from reading alone — "looks correct" / 「正しそう」
 
 ## Verification pattern table
 

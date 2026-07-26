@@ -1,6 +1,6 @@
 ---
 name: problem-solving
-description: 行き詰まった時の思考ツール集。5つのサブワークフロー（simplify/collide/invert/scale/pattern）で多角的にアプローチする。brainstorm セッションからも呼び出し可能。「problem-solving」「行き詰まった」「思考ツール」で起動。
+description: A toolbox of thinking tools for when you are stuck, approaching the problem from several angles through 5 sub-workflows (simplify/collide/invert/scale/pattern). It can also be called from a brainstorm session. Use when the user says "problem-solving", "I am stuck", "I cannot think of a good approach", or "thinking tools".
 ---
 
 # Problem Solving
@@ -56,12 +56,12 @@ The leading keyword of `$ARGUMENTS` selects the workflow:
 Ask the user to identify the kind of impasse:
 
 ```
-どのような行き詰まりですか？
-1. 問題が複雑すぎて分解できない → simplify を提案
-2. 新しいアイデアが出ない → collide を提案
-3. 前提や制約が正しいか疑問 → invert を提案
-4. スケールしたときの問題が見えない → scale を提案
-5. 似たパターンを他で見た気がする → pattern を提案
+What kind of impasse is this?
+1. The problem is too complex to decompose → suggest simplify
+2. No new ideas are coming → suggest collide
+3. Doubt about whether the premises or constraints are right → suggest invert
+4. The problems at scale are invisible → suggest scale
+5. A feeling of having seen a similar pattern elsewhere → suggest pattern
 ```
 
 Run the sub-workflow matching the user's choice.
@@ -233,9 +233,9 @@ Extract a universal principle from a pattern that appears in three or more domai
 At the end of every sub-workflow, ask the user which next action to take:
 
 ```
-💡 発見を次にどう活かしますか？
-1. brainstorm でさらにアイデアを発散する → /claude-skills:brainstorm
-2. plan を作成して実装に進む → /claude-skills:plan-create
-3. 別の思考ツールを試す → /claude-skills:problem-solving
-4. ここで終了する
+💡 How do you want to use what you found?
+1. Diverge further with brainstorm → /claude-skills:brainstorm
+2. Create a plan and move to implementation → /claude-skills:plan-create
+3. Try another thinking tool → /claude-skills:problem-solving
+4. Stop here
 ```

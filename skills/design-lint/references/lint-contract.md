@@ -60,8 +60,8 @@ The following files must exist before lint runs:
   "line": 42,
   "column": 15,
   "value": "#FF6B6B",
-  "message": "直書きカラーコード '#FF6B6B' を検出。tokens.json に定義された色または CSS 変数 var(--color-*) を使用してください。",
-  "suggestion": "最も近いトークン: colors.error (#DC2626)"
+  "message": "Hard-coded color code '#FF6B6B' detected. Use a color defined in tokens.json or the CSS variable var(--color-*).",
+  "suggestion": "Nearest token: colors.error (#DC2626)"
 }
 ```
 
@@ -129,7 +129,7 @@ A rule above DL001-005: even when the hardcoded value **matches** a value define
   "file": "src/components/Button.tsx",
   "line": 15,
   "value": "#2563EB",
-  "message": "トークン値 '#2563EB' が直書きされています。var(--color-primary) を使用してください。"
+  "message": "The token value '#2563EB' is hard-coded. Use var(--color-primary)."
 }
 ```
 

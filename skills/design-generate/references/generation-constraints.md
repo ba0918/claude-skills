@@ -44,8 +44,8 @@ The Do's/Don'ts in DESIGN.md are natural language. Convert them into a mechanica
 
 | Do/Don't (natural language) | constraint (mechanically verifiable) |
 |---------------------|---------------------|
-| "左揃えを基本にする" | `LC001: text-align: center is allowed on h1, h2 only` |
-| "余白を十分に取る" | `LC002: section gap must be one of the top 3 values of spacing.scale` |
-| "3カラム以上のグリッドを使わない" | `LC003: grid-template-columns column count ≤ 3` |
-| "モバイルではカードを縦積みにする" | `LC004: flex-direction: column at the sm breakpoint` |
-| "全要素に角丸をつける" | `LC005: border-radius: 0 is forbidden (except the allowRawValues exclusions)` |
+| "Left-align by default" | `LC001: text-align: center is allowed on h1, h2 only` |
+| "Leave generous whitespace" | `LC002: section gap must be one of the top 3 values of spacing.scale` |
+| "Do not use grids with 3 or more columns" | `LC003: grid-template-columns column count ≤ 3` |
+| "Stack cards vertically on mobile" | `LC004: flex-direction: column at the sm breakpoint` |
+| "Round the corners of every element" | `LC005: border-radius: 0 is forbidden (except the allowRawValues exclusions)` |

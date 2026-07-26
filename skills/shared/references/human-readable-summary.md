@@ -26,7 +26,7 @@ The summary block satisfies the following.
 
 1. **Utterance-sized bullets on what was made / done** — state the core of the artifact in one to a few lines.
 2. **Explicit points the human should confirm or rule on** — list the points needing approval or judgment, and what is undecided.
-   If there are none, state 「確認事項: なし」 explicitly (do not omit it).
+   If there are none, state "To confirm: none" explicitly (do not omit it).
 3. **It must be a plain, digestible explanation** — not a pile of technical terms, internal abbreviations, or file paths;
    write it in words that let someone who has not read the artifact grasp "so what is it" in one read.
    This is the **acceptance criterion** for the summary, and the before/after worked example below
@@ -37,7 +37,7 @@ The summary block satisfies the following.
 
 ## Shared presentation and placement (summary-first)
 
-- The summary block begins with the fixed label **`📝 つまり:`**.
+- The summary block begins with the fixed label **`📝 In short:`**.
 - Place it at the **very top** of the completion display (before file paths and Next Steps). The placement is
   visually unified across the six skills (the summary-first placement contract).
 
@@ -49,7 +49,7 @@ built into the contract to calibrate the implementers of the six skills onto the
 **Before (boilerplate only — the substance does not reach the human):**
 
 ```
-✅ アイデアを保存しました!
+✅ Idea saved!
 📄 File: .agents/artifacts/ideas/20260721_foo.md
 📋 Index: .agents/artifacts/ideas/idea-status.md
 ```
@@ -57,11 +57,12 @@ built into the contract to calibrate the implementers of the six skills onto the
 **After (with a summary — someone who has not read it can grasp "so what is it"):**
 
 ```
-📝 つまり: 完了報告を「✅ + パス」だけにせず、生成物の中身を数行で人間に
-   伝える案。承認が儀式化して中身が読まれない問題への対策。
-   確認してほしい点: 対象スキルを 6 個に絞ってよいか。
+📝 In short: a proposal to stop making the completion report just "✅ + a path", and instead
+   convey the substance of the artifact to the human in a few lines. A countermeasure to
+   approval becoming a ritual in which the substance goes unread.
+   To confirm: is narrowing the target skills down to 6 acceptable?
 
-✅ アイデアを保存しました!
+✅ Idea saved!
 📄 File: .agents/artifacts/ideas/20260721_foo.md
 📋 Index: .agents/artifacts/ideas/idea-status.md
 ```
@@ -72,7 +73,7 @@ words, and leaves the file paths after the summary block as before.
 ## Rules for degradation and missing material
 
 - When there is little substance to summarize, **fold it short** rather than filling up to the limit (a corollary of the ban on padding with boilerplate).
-- Do not fabricate items that cannot be filled; state 「なし / 未決定」 explicitly.
+- Do not fabricate items that cannot be filled; state "none / undecided" explicitly.
 - If summary generation fails, do not emit a success summary.
 - An echo is a **safe paraphrase**, not a verbatim transcription. Secret-looking values (tokens, keys,
   personal data) are kept out of the summary — omit them or replace them with a category name.

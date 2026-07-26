@@ -24,7 +24,7 @@
           "critical": true
         },
         {
-          "text": "完了メッセージが summary-first: 「📝 つまり:」で始まる要約ブロックがファイルパス表示（✅ / 📄 / 📋 行）より前に置かれ、未決定点（TOML 書き込みライブラリの要否 / 設定ウィザードの是非に相当する内容）が明示されている",
+          "text": "完了メッセージが summary-first: 共有契約 human-readable-summary.md の固定ラベルで始まる要約ブロックがファイルパス表示（✅ / 📄 / 📋 行）より前に置かれ、未決定点（TOML 書き込みライブラリの要否 / 設定ウィザードの是非に相当する内容）が明示されている",
           "critical": true
         },
         {
@@ -100,7 +100,7 @@
           "critical": true
         },
         {
-          "text": "Codex 連携が利用不可の環境で「⚠️ Codex unavailable — proceeding with Claude only」の初回警告が表示され、かつ Codex の意見を捏造した「💡 Codex の視点:」セクションを出力していない",
+          "text": "Codex 連携が利用不可の環境で「⚠️ Codex unavailable — proceeding with Claude only」の初回警告が表示され、かつ Codex の意見を捏造した「💡 Codex's perspective:」セクションを出力していない",
           "critical": true
         },
         {

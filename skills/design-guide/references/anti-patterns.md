@@ -1,11 +1,11 @@
-# Anti-Patterns: AIっぽいUIを避けるためのガードレール
+# Anti-Patterns: guardrails against AI-looking UI
 
-frontend-design スキルおよびデザインコミュニティの知見から抽出した禁止事項。
-DESIGN.md 生成時およびレビュー時に照合する。
+Prohibitions distilled from the frontend-design skill and from the knowledge of the design community.
+Check against them when generating DESIGN.md and when reviewing.
 
-## 禁止フォント
+## Forbidden fonts
 
-以下のフォントは AI が安易に選びがちで没個性的。使用禁止:
+The following fonts are the ones an AI reaches for too readily, and they lack character. Do not use them:
 
 - Inter
 - Roboto
@@ -16,49 +16,49 @@ DESIGN.md 生成時およびレビュー時に照合する。
 - Montserrat
 - Poppins
 - Space Grotesk
-- system-ui / sans-serif（具体フォント指定なしのフォールバックのみでの使用）
+- system-ui / sans-serif (using only the fallback, with no concrete font specified)
 
-## 禁止カラーパターン
+## Forbidden color patterns
 
-- **パープルグラデーション on ホワイト背景** — AIっぽさの象徴。紫 → 青のグラデーションは特に避ける
-- **インディゴ + ホワイト** — 無個性な SaaS テンプレート感
-- **#6366F1（Indigo-500）をプライマリに** — Tailwind デフォルトのまま使っている感
-- **#8B5CF6（Violet-500）をアクセントに** — 同上
-- **全面グレースケール + 彩度ゼロのアクセント** — 意図的なモノクロデザインを除き、手抜き感
+- **A purple gradient on a white background** — the emblem of AI-ness. Avoid the purple → blue gradient in particular
+- **Indigo + white** — the feel of a characterless SaaS template
+- **#6366F1 (Indigo-500) as the primary** — the feel of leaving the Tailwind default as-is
+- **#8B5CF6 (Violet-500) as the accent** — the same
+- **All-over grayscale + a zero-saturation accent** — outside a deliberately monochrome design, it feels lazy
 
-## 禁止レイアウトパターン
+## Forbidden layout patterns
 
-- **中央寄せ Hero + 3カラムカード + CTA** — テンプレートそのまま感
-- **左サイドバー + 右コンテンツのみ** — 何の工夫もないダッシュボード
-- **完全対称グリッド** — 非対称・グリッドブレイク要素を少なくとも1つ入れる
-- **全セクション同じパディング** — セクション間で緩急をつける
+- **A centered hero + 3-column cards + a CTA** — the feel of a template used verbatim
+- **A left sidebar and nothing but content on the right** — a dashboard with no thought in it
+- **A perfectly symmetric grid** — put in at least one asymmetric or grid-breaking element
+- **The same padding for every section** — vary the pace between sections
 
-## 禁止コンポーネントパターン
+## Forbidden component patterns
 
-- **全ボタン同じサイズ・同じスタイル** — プライマリ / セカンダリ / ゴーストの差別化必須
-- **hover で opacity 変更のみ** — より意図的なインタラクション（色変化、scale、translateY 等）を使う
-- **border-radius: 8px を全要素統一** — 要素の役割に応じて変える
-- **全カード同じ shadow** — エレベーション階層を意識する
+- **Every button the same size and the same style** — differentiating primary / secondary / ghost is mandatory
+- **Changing only opacity on hover** — use a more deliberate interaction (a color change, scale, translateY, and so on)
+- **`border-radius: 8px` unified across every element** — vary it with the element's role
+- **The same shadow on every card** — be conscious of the elevation hierarchy
 
-## やるべきこと（Positive Patterns）
+## What to do (Positive Patterns)
 
-### 差別化のポイント
+### The points of differentiation
 
-- **フォントペアリング**: 見出しと本文でコントラストを作る
-- **アクセントカラーの使い方**: 支配的な色 + 鋭いアクセントが平坦なパレットに勝る
-- **空間の緩急**: セクション間で余白を変える。密なエリアとゆったりしたエリアのリズム
-- **微細なディテール**: グレイン・ノイズテクスチャ、装飾的ボーダー、カスタムカーソル等
-- **非対称要素**: グリッドの一部を壊す、オーバーラップ、斜め配置
-- **意図的な選択**: ミニマルでもマキシマルでも、意図が明確であること。中途半端が最悪
+- **Font pairing**: create contrast between headings and body
+- **How the accent color is used**: a dominant color + a sharp accent beats a flat palette
+- **The pace of space**: vary the margins between sections. A rhythm of dense areas and roomy ones
+- **Fine detail**: grain and noise textures, decorative borders, a custom cursor, and the like
+- **Asymmetric elements**: break part of the grid, overlap, place things on a diagonal
+- **Deliberate choices**: whether minimal or maximal, the intent must be clear. Half-hearted is the worst outcome
 
-### 独自性チェックリスト
+### The distinctiveness checklist
 
-DESIGN.md 生成後、以下を確認:
+After generating DESIGN.md, confirm the following:
 
-1. フォントは禁止リストに含まれていないか？
-2. プライマリカラーは Tailwind / Material のデフォルト値そのままでないか？
-3. 角丸が全要素で同じ値になっていないか？
-4. hover 状態が opacity だけに頼っていないか？
-5. レイアウトに少なくとも1つの非対称・グリッドブレイク要素があるか？
-6. シャドウ階層が定義されているか（フラットデザインの場合はボーダー階層）？
-7. 色の組み合わせが他のプロジェクトと被っていないか？
+1. Is the font absent from the forbidden list?
+2. Is the primary color something other than a Tailwind / Material default value left as-is?
+3. Is the corner radius something other than the same value on every element?
+4. Does the hover state rely on more than opacity alone?
+5. Does the layout have at least one asymmetric or grid-breaking element?
+6. Is a shadow hierarchy defined (a border hierarchy in the case of flat design)?
+7. Does the color combination avoid overlapping with other projects?

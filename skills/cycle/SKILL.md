@@ -1,6 +1,6 @@
 ---
 name: cycle
-description: 実装計画に対して refine（計画品質ゲート）と implement（TDD 自動実装）をサブエージェント委譲で自律実行し、最後にメインコンテキストでサマリー生成・ステータス更新・コミットまで行う。ユーザー確認なしのヘッドレス実行に対応。「cycle」「サイクル回して」「計画を自動実装して」「全自動で実装」で起動。
+description: Run refine (the plan quality gate) and implement (automated TDD implementation) autonomously against an implementation plan by delegating to subagents, then generate the summary, update status, and commit from the main context at the end. Supports headless execution with no user confirmation. Use when the user says "cycle", "run the cycle", "implement the plan automatically", or "implement it fully automatically".
 ---
 
 # Cycle
@@ -33,7 +33,7 @@ launched, perform its core action yourself following that skill's documented pro
      in filename-timestamp descending order and pick the first **incomplete** plan (one whose
      Status is not ✅/Completed). Do not use mtime (`ls -t`) — the filename timestamp is
      authoritative; mtime gets reshuffled by edits
-   - If there is no incomplete plan: display 「実装対象の計画がない」 and abort the cycle
+   - If there is no incomplete plan: display "No plan to implement" and abort the cycle
      (never run a no-op cycle on completed plans)
 1.5. Validate the path
    - Confirm the plan file is a `.md` file **directly under** `.agents/artifacts/plans/`
@@ -119,7 +119,7 @@ Display:
 ```
 ── Phase 1: Refine ── {PASS|WARN|BLOCK}
 Iterations: {N}
-{各観点のスコアサマリー（1行ずつ）}
+{score summary per dimension, one line each}
 ```
 
 ## Phase 1.5: BLOCK fallback (auto-fix)
@@ -148,8 +148,8 @@ Display:
 ```
 ── Phase 1.5: Fallback ── {RESOLVED|UNRESOLVED}
 BLOCKs addressed: {N}/{total}
-{RESOLVED の場合: Proceeding to Phase 2}
-{UNRESOLVED の場合: Cycle aborted — remaining BLOCKs listed above}
+{when RESOLVED: Proceeding to Phase 2}
+{when UNRESOLVED: Cycle aborted — remaining BLOCKs listed above}
 ```
 
 ## Phase 2: Implement (auto-implementation)
@@ -218,19 +218,19 @@ Artifact paths follow the Agent Artifact Store contract.
 ## Refine
 - Iterations: {N}
 - Final verdict: {PASS|WARN}
-- {残存 WARN があれば一覧}
+- {list of remaining WARNs, if any}
 
 ## Implementation
 - Steps completed: {N}/{total}
 - Files changed: {N}
 - Tests added: {N}
-- Commits: {N}（Phase 2 の実装コミット数。Phase 3 の成果物コミットは含まない）
+- Commits: {N} (implementation commits from Phase 2; Phase 3 artifact commits are excluded)
 
 ## Commits
-{git log --oneline のコミット一覧}
+{the commit list from git log --oneline}
 
 ## Notes
-{特記事項があれば}
+{anything noteworthy}
 ```
 
 3. Mark status.md as completed:
@@ -287,12 +287,12 @@ CYCLE COMPLETE
 Feature: {feature_name}
 Refine: {verdict} ({iterations} rounds)
 Implement: {steps_done}/{steps_total} steps
-Commits: {N}（サイクル全体で作成したコミット数。Phase 3 の成果物コミットを含む）
+Commits: {N} (all commits created across the cycle, including Phase 3 artifact commits)
 Result: {result_file_path}
 Session: {archived → session-history.md / already archived / ⚠️ update failed}
 Issue: {closed ✅ / ⚠️ close failed: {slug} — manual close required / (none)}
-{phase3_failures が空でない場合:}
-⚠️ Phase 3 partial failures: {phase3_failures をカンマ区切りで表示}
+{when phase3_failures is not empty:}
+⚠️ Phase 3 partial failures: {phase3_failures, comma-separated}
 ──────────────────────────────────────
 💡 Need tweaks? Use /iterate for quick fixes and polish.
 ══════════════════════════════════════

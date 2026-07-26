@@ -1,6 +1,6 @@
 ---
 name: plan-reviewer
-description: 実装計画を7観点（実現可能性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・代替手法・UI/UX）で徹底レビューし、信頼スコアで判定する。「計画をレビュー」「plan review」「計画を確認」「実装計画をチェック」「プランレビュー」で起動。計画作成後の品質ゲートとして使用。
+description: Review an implementation plan thoroughly across 7 dimensions (feasibility, security, performance/memory, architecture, completeness, alternative approaches, and UI/UX) and judge it with a confidence score. Use when the user says "review the plan", "plan review", "check the plan", or "check the implementation plan". Use it as the quality gate right after a plan is created.
 ---
 
 # Plan Reviewer
@@ -162,7 +162,7 @@ Output format: [output-format.md](references/output-format.md)
 
 > BLOCK / WARN / PASS here are the score-band dialect of the shared severity scale —
 > see [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md)
-> §スコアバンド用法（plan-reviewer 方言）. Do not introduce a separate severity system.
+> §Score-band usage (the plan-reviewer dialect). Do not introduce a separate severity system.
 
 ### Step 5: Output Review Report
 

@@ -1,12 +1,6 @@
 ---
 name: mockup-diff
-description: >
-  承認済みモックアップ HTML と実アプリのスクリーンショットを Playwright で自動取得し、
-  並べて比較 → 差分を特定 → コードを修正する一連のワークフロー。
-  初回は SETUP でプロジェクトを自動調査し、テーラーメイドの比較スクリプトを生成する。
-  「モックアップと比較」「mockup diff」「見た目の差分」「デザイン差分チェック」
-  「モックと実装が違う」「スクショ比較」で起動。
-  DESIGN.md / mockup HTML を持つプロジェクトで使用する。
+description: A workflow that captures screenshots of an approved mockup HTML and of the real app automatically with Playwright, compares them side by side, identifies the differences, and fixes the code. On the first run, SETUP investigates the project automatically and generates a tailor-made comparison script. Use when the user says "compare with the mockup", "mockup diff", "visual difference", "design difference check", "the mock and the implementation differ", or "compare the screenshots". Use it in projects that have a DESIGN.md and mockup HTML.
 ---
 
 # Mockup Diff — Detect and Fix Visual Differences Between Mockup and App
@@ -98,16 +92,16 @@ Investigate the app source code with pattern search:
 Draft config.json from the investigation results and confirm it with the user.
 
 ```
-header: "config 確認"
-question: "以下の設定で比較スクリプトを生成します。修正が必要な箇所はありますか？"
+header: "Confirm config"
+question: "The comparison script will be generated with the settings below. Is anything wrong?"
 options:
-  - "この設定で OK"
-  - "修正したい箇所がある"
+  - "These settings are fine"
+  - "Something needs changing"
 ```
 
 Example of how to display the settings:
 ```
-📋 Mockup Diff 設定
+📋 Mockup Diff settings
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Framework:   Tauri + React (Vite)
 Dev Server:  pnpm dev (port 5173)
@@ -200,15 +194,15 @@ If an error appears, investigate the cause and fix the script.
 ### SETUP completion message
 
 ```
-✅ Mockup Diff セットアップ完了！
+✅ Mockup Diff setup complete!
 
-📁 生成ファイル:
-  .design/mockup-diff/config.json       — 設定ファイル
-  .design/mockup-diff/compare.mjs       — 比較スクリプト
-  .design/mockup-diff/mock-responses.json — API モックデータ（該当時）
+📁 Generated files:
+  .design/mockup-diff/config.json       — config file
+  .design/mockup-diff/compare.mjs       — comparison script
+  .design/mockup-diff/mock-responses.json — API mock data (when applicable)
 
-次のステップ:
-  このまま Phase 1 に進んでスクショ比較を実行するよ。
+Next step:
+  Continue straight to Phase 1 and run the screenshot comparison.
 ```
 
 ---
@@ -218,7 +212,7 @@ If an error appears, investigate the cause and fix the script.
 ### Preconditions
 
 1. Confirm `.design/mockup-diff/config.json` exists
-   - If missing, tell the user 「Phase 0: SETUP を先に実行してください」
+   - If missing, tell the user "Run Phase 0: SETUP first."
 2. Confirm `.design/mockup-diff/compare.mjs` exists
    - Same as above if missing
 
@@ -286,22 +280,22 @@ Classify the differences into the categories below and report them to the user.
 ### Report format
 
 ```
-📊 差分分析レポート
+📊 Difference analysis report
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-## {page} ページ
+## {page} page
 
-### 🔴 修正必須
-1. [スペーシング] .header の top-padding が 24px（モック）vs 16px（アプリ）
-   原因候補: CSS shorthand の展開ミス
-   影響ファイル: src/components/Header.css
+### 🔴 Must fix
+1. [Spacing] .header top-padding is 24px (mockup) vs 16px (app)
+   Likely cause: mistaken expansion of the CSS shorthand
+   Affected file: src/components/Header.css
 
-### 🟡 要確認
-1. [フォント] heading の font-weight が 600（モック）vs 400（アプリ）
-   原因候補: woff2 の weight 600 未組み込み
+### 🟡 Needs confirmation
+1. [Font] heading font-weight is 600 (mockup) vs 400 (app)
+   Likely cause: weight 600 not bundled in the woff2
 
-### ⚪ 許容
-1. [データ] Provider 名が異なる（モックデータの差）
+### ⚪ Acceptable
+1. [Data] the provider name differs (a difference in the mock data)
 ```
 
 ---
@@ -336,14 +330,14 @@ For each difference:
 4. Report the result to the user
 
 ```
-✅ 差分検証完了！
+✅ Difference verification complete!
 
-修正した差分:
-  - [スペーシング] .header top-padding: 16px → 24px ✅
-  - [フォント] heading font-weight: 400 → 600 ✅
+Differences fixed:
+  - [Spacing] .header top-padding: 16px → 24px ✅
+  - [Font] heading font-weight: 400 → 600 ✅
 
-残存する許容差分:
-  - [データ] Provider 名の違い（モックデータ差）
+Remaining acceptable differences:
+  - [Data] the provider name differs (a mock data difference)
 ```
 
 If differences remain, go back to Phase 3 and fix them.

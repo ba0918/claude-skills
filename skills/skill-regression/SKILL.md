@@ -1,6 +1,6 @@
 ---
 name: skill-regression
-description: スキルの「調律済みの挙動」を fixture（シナリオ + 要件チェックリスト）として資産化し、SKILL.md や共有契約の変更時に影響スキルだけへ回帰評価を回すハーネス。empirical tuning で実測した合格基準を使い捨てず、再実行可能な回帰資産に変換する。共有契約 1 ファイルの編集が参照スキル十数個の挙動を無検証で変える問題を、依存グラフ逆引き + 検証台帳 + CI ゲートで機械的に防ぐ。「skill-regression」「回帰評価」「フィクスチャ資産化」「retune」「共有契約の影響確認」「スキルのリグレッション」で起動。本リポジトリ（スキル集リポジトリ）専用。
+description: A harness that turns a skill's tuned behavior into fixtures (a scenario plus a requirements checklist) and, when a SKILL.md or a shared contract changes, runs regression evaluation over only the affected skills. It converts the pass criteria measured during empirical tuning into a re-runnable regression asset instead of discarding them. It mechanically prevents the problem where editing a single shared contract silently changes the behavior of a dozen referring skills, using reverse dependency lookup, a verification ledger, and a CI gate. Use when the user says "skill-regression", "regression evaluation", "turn this into a fixture", "retune", "check the impact of the shared contract", or "skill regression". For this repository (the skill collection repository) only.
 ---
 
 # Skill Regression
@@ -38,10 +38,10 @@ runs the regression evaluation only against the skills whose behavior surface ch
 
 | Input | Workflow |
 |------|-------------|
-| 「fixture 化して」「資産化して」 (right after tuning, or after a plan completes) | capture |
-| 「回帰評価して」「この変更の影響を確認して」 (after editing a contract or a SKILL.md) | run |
-| 「状況見せて」「どれが stale？」 | status |
-| 「fixture が無いのはどれ？」「カバレッジは？」 | status (`--coverage`) |
+| "turn this into a fixture" / "make it an asset" (right after tuning, or after a plan completes) | capture |
+| "run the regression evaluation" / "check the impact of this change" (after editing a contract or a SKILL.md) | run |
+| "show me the status" / "which ones are stale?" | status |
+| "which ones have no fixture?" / "what is the coverage?" | status (`--coverage`) |
 | CI failed with `[stale]` / `[unverified]` | run (targeting the skills in the failure message) |
 
 ## capture — turning acceptance criteria into assets

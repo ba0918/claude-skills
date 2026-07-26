@@ -8,28 +8,28 @@ updated: "{{YYYY-MM-DD HH:MM:SS}}"
 
 # {{TITLE}}
 
-## ステータス
+## Status
 
 {{Proposed / Accepted / Deprecated / Superseded}}
 
-## コンテキスト
+## Context
 
-{{意思決定が必要になった背景・制約}}
+{{the background and constraints that made a decision necessary}}
 
-## 検討した選択肢
+## The options considered
 
-### 選択肢 A: {{名前}}
+### Option A: {{name}}
 
-{{説明、メリット、デメリット}}
+{{the description, the advantages, the disadvantages}}
 
-### 選択肢 B: {{名前}}
+### Option B: {{name}}
 
-{{説明、メリット、デメリット}}
+{{the description, the advantages, the disadvantages}}
 
-## 決定
+## The decision
 
-{{何を選び、なぜそれを選んだか}}
+{{what was chosen, and why it was chosen}}
 
-## 結果
+## Consequences
 
-{{この決定によって生じる影響・トレードオフ}}
+{{the effects and trade-offs this decision brings}}

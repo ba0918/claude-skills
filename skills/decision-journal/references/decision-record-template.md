@@ -1,95 +1,93 @@
-# 決定記録テンプレート
+# The decision-record template
 
-意思決定・技術選定の判例／決定記録の型。プロトコルの正本は
-[decision-protocol.md](../../shared/references/decision-protocol.md) を参照する。
+The form of a precedent / decision record for a decision or a technology choice. For the canonical protocol, see
+[decision-protocol.md](../../shared/references/decision-protocol.md).
 
-この型の目的は **観測・証言・推測を混ぜないこと** である。空欄を推測で埋めた瞬間、記録は考古学から
-事後合理化へ変質する。**「復元不能」は正式な結論として認める**。
+The purpose of this form is **not to mix observation, testimony, and conjecture**. The moment a blank is filled with conjecture, the record turns from archaeology into
+post-hoc rationalization. **"Unrecoverable" is accepted as a legitimate conclusion.**
 
-## 証拠強度ラベル
+## Evidence-strength labels
 
-各欄・各主張に次のいずれかのラベルを付け、証拠の等級を明示する。
+Attach one of the following to each field and each claim, making the grade of the evidence explicit.
 
-- **OBSERVED** — ログ・コミット・物証で直接確認できる事実
-- **REPORTED** — 本人証言（記憶）。当時の記録ではない
-- **INTERPRETATION** — 聞き手・書き手による解釈・分析
-- **HYPOTHESIS** — 仮説。因果未確認。魅力的な物語ほどこのラベルを剥がさない
+- **OBSERVED** — a fact confirmable directly from logs, commits, or physical evidence
+- **REPORTED** — the person's own testimony (memory). Not a record made at the time
+- **INTERPRETATION** — an interpretation or analysis by the interviewer or the writer
+- **HYPOTHESIS** — a hypothesis. Causation unconfirmed. The more attractive the story, the more firmly this label stays on
 
-## 二時点記録
+## Two-point recording
 
-予測と事後評価を混ぜない。**選定時セクション**は着手時に埋め、**結果セクション**は後日追記する。
-Start Workflow は選定時セクションのみを埋め、結果セクションは空で残す。
+Do not mix the prediction with the after-the-fact evaluation. Fill **the selection-time section** when work begins, and append **the outcome section** later.
+The Start Workflow fills only the selection-time section and leaves the outcome section empty.
 
 ---
 
-## テンプレート本体
+## The template proper
 
 ```markdown
-# 決定記録: {タイトル}
+# Decision record: {title}
 
 **Created:** {YYYY-MM-DD HH:MM:SS}
-**成功基準:** {遊び | 学習 | 製品 | 事業 | 未設定（Start 未実施） | 復元不能}
-**射程:** {個人 Pj（生存変数=モチベーション） | 企業 Pj（生存変数=運用可能な人員）}
-**状態:** {選定時のみ | 結果追記済み | クローズ済み}
+**Success criterion:** {play | learning | product | business | unset (Start not run) | unrecoverable}
+**Reach:** {a personal project (survival variable = motivation) | a company project (survival variable = operable headcount)}
+**State:** {selection-time only | outcome appended | closed}
 
-## 封印セクション（Interview Workflow のみ。聴取開始前に固定・聴取結果に関わらず書き換えない）
+## The sealed section (Interview Workflow only. Fixed before the interview begins; never rewritten regardless of what the interview yields)
 
-- **現在の暫定仮説**: {聞き手が聴取前に持っている予想}
-- **反証・限定条件**: {何が語られたら予想を撤回・限定するか}
-- **聴取前に不明な事項**: {これから確かめること}
-- **結末分類の予想**: {外れたら外れたと記録する}
-- **バイアス自覚**: {証言を収斂させたい型・物語への圧力を自覚して書く}
+- **The current tentative hypothesis**: {what the interviewer expects going in}
+- **Refutation and limiting conditions**: {what, if said, would retract or narrow the expectation}
+- **What is unknown before the interview**: {what is to be confirmed}
+- **The predicted ending category**: {if it turns out wrong, record that it was wrong}
+- **Bias self-awareness**: {write down the pressure toward a shape or story you want the testimony to converge on}
 
-## 選定時セクション（着手時に固定・後から書き換えない）
+## The selection-time section (fixed when work begins; never rewritten afterwards)
 
-- **候補**: {挙がった選択肢すべて。現状維持案・不採用案を含む}
-- **制約**: {前提・要件。遊び/学習の投入上限（時間・金額）もここに記録する}
-- **裁可理由**: {なぜこれを選んだか}
-- **理由の由来**: {当時明示 | 当時の痕跡あり | 事後回想 | 現在の推測}
-- **確信度**: {高 | 中 | 低}
-- **賭け金**（影響軸別 — コード規模ではない）:
-  - データ機密性: {…}／外部影響: {…}／撤退可能性: {…}／書き直し工数: {…}
-- **棄却条件（反証可能に）**: {何が観測されたらこの賭けを降りるか。無ければ「未設定」}
-- **従属言語の 1 問**（該当時）: {その言語と長時間過ごせるか・学習資産になるか}
+- **Candidates**: {every option that came up. Include the status-quo option and the rejected ones}
+- **Constraints**: {premises and requirements. Record the investment ceiling (time, money) for play/learning here too}
+- **The reason for the ruling**: {why this one was chosen}
+- **The provenance of the reason**: {stated at the time | traces from the time | recalled afterwards | conjectured now}
+- **Confidence**: {high | medium | low}
+- **The stake** (by axis of impact — not by code size):
+  - Data sensitivity: {…} / External impact: {…} / Ability to withdraw: {…} / Effort to rewrite: {…}
+- **The rejection condition (made refutable)**: {what, if observed, means walking away from this bet. "Unset" if there is none}
+- **The one question about a dependent language** (where applicable): {can you spend long hours with that language; does it become a learning asset}
 
-## 結果セクション（後日追記・予測とは混ぜない）
+## The outcome section (appended later; never mixed with the prediction)
 
-- **outcome vector**（単一の成功/失敗にしない。機能・チャネル単位で分ける）:
-  - {軸1}: {結果}／{軸2}: {結果} …
-- **判断品質と結果品質**: {判断の妥当性と結果の良否を分離して評価。たまたまの成功を模範にしない}
-- **クローズ様式**: {継続 | 縮退 | 凍結+再評価日 | 部分回収 | 自然消滅（明示的決断なし）}
-- **終了時 1 行メモ**: {なぜ止めたか・再開条件}
+- **The outcome vector** (do not collapse it into a single success/failure; split it per feature and per channel):
+  - {axis 1}: {result} / {axis 2}: {result} …
+- **Decision quality vs outcome quality**: {evaluate the soundness of the decision separately from whether the result was good. Do not hold up a lucky success as a model}
+- **The closing form**: {continue | scale down | freeze + a re-evaluation date | partial recovery | natural fade (no explicit decision)}
+- **A one-line note at the end**: {why it was stopped, and the conditions for resuming}
 
-## 判旨・射程・反例
+## The holding, its reach, and counterexamples
 
-- **判旨**: {この判例から取り出せる再利用可能な判断}
-- **射程**: {どの事実が違えば適用されないか}
-- **反例**: {判旨が成り立たない条件・観測された反例}
-- **再評価トリガー（対条件つき）**: {この閾値を超えなければ再び止める、という形で書く}
+- **The holding**: {the reusable judgment extractable from this precedent}
+- **Reach**: {which facts, if different, make it inapplicable}
+- **Counterexamples**: {the conditions under which the holding does not hold, and any counterexample observed}
+- **The re-evaluation trigger (with its counter-condition)**: {write it in the form "unless this threshold is crossed, stop again"}
 
-## 各主張の証拠強度
+## The evidence strength of each claim
 
-{主要な主張ごとに OBSERVED / REPORTED / INTERPRETATION / HYPOTHESIS を付す}
+{attach OBSERVED / REPORTED / INTERPRETATION / HYPOTHESIS to each major claim}
 
-## 未検証事項 / 復元不能
+## Unverified / unrecoverable
 
-- **未検証**: {今後の照合で確認すべき事項}
-- **復元不能**: {記憶・記録が無く埋められない欄。推測で埋めない}
+- **Unverified**: {what should be confirmed by future cross-checking}
+- **Unrecoverable**: {fields with no memory and no record that cannot be filled. Do not fill them with conjecture}
 ```
 
 ---
 
-## 記入の注意
+## Cautions when filling it in
 
-- **封印セクション**は Interview Workflow でのみ使う。Start / Capture では省略する。
-- **状態の選び方**: Interview で結果まで復元した記録は、対象の活動が既に終了していれば
-  「クローズ済み」、継続中なら「結果追記済み」とする。
-- **着手前（技術未選定）の Start 記録**では、「候補」欄には判断対象そのもの（例: 作るか否か、
-  採用 = 作る）を書き、技術候補は「未選定」と記録する。技術選定が決したら capture で追記する。
-  「確信度」など技術選定前提の欄は「該当なし」でよい。
-- **成否をプロジェクト単位の一値で判定しない**。機能・チャネル単位で残存価値と撤退判断を分ける
-  （中心アイデアが棄却されても副次機能が残ることがある）。
-- **品質改善は棄却理由を自動的に無効化しない**。棄却理由が「頻度・慣れ」なら新バージョン登場は
-  常用復帰の根拠にならない。再開トリガーの評価に棄却理由の記録をそのまま使う。
-- 賭け金が低い（損失上限小・撤退点観測可能・外部影響小・機密非曝露・他システムへ固定化しない）なら、
-  この全欄を埋める必要はない。数行メモか無記録を許す。記録義務は賭け金で発火する。
+- **The sealed section** is used only in the Interview Workflow. Omit it in Start / Capture.
+- **How to choose the state**: for a record whose outcome was recovered by an Interview, use
+  "closed" if the activity in question has already ended, and "outcome appended" if it is ongoing.
+- **In a Start record made before work begins (with the technology not yet chosen)**, write the object of the decision itself in the "Candidates" field (for example, whether to build it at all, with adoption = build it), and record the technology candidates as "not yet chosen". Append them with capture once the technology choice is settled.
+  Fields that presuppose a technology choice, such as "Confidence", may be "not applicable".
+- **Do not judge success or failure with a single value at the project level.** Split residual value and the withdrawal decision per feature and per channel
+  (a secondary feature can survive even when the central idea is rejected).
+- **A quality improvement does not automatically invalidate the reason for rejection.** If the reason for rejection was "frequency or familiarity", the arrival of a new version is no grounds for returning to everyday use. Use the recorded reason for rejection as-is when evaluating a resumption trigger.
+- When the stake is low (a small loss ceiling, an observable withdrawal point, little external impact, no exposure of confidential data, no lock-in of other systems),
+  there is no need to fill in every field. A few lines of notes, or no record at all, is permitted. The duty to record is triggered by the stake.

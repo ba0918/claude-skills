@@ -1,6 +1,6 @@
 ---
 name: attack-review
-description: Review the codebase from an attacker's perspective with 6 specialized agents (Injection/AuthN-AuthZ/Client Attack/Data-Secrets/Infra-Supply Chain/Business Logic) + Codex second opinion in parallel, classifying threats via a risk matrix. Use when the user says "attack review", "ペネトレーションレビュー", "攻撃レビュー", "attack-review", "脆弱性レビュー", "セキュリティ攻撃", "pentest review". Three modes — `full` / `server` / `client` (specify `server`/`client` as argument, `full` or any keyword launches all 6 agents, no argument auto-detects from tech stack). Supports language-specific attack vectors.
+description: Review the codebase from an attacker's perspective with 6 specialized agents (Injection/AuthN-AuthZ/Client Attack/Data-Secrets/Infra-Supply Chain/Business Logic) + Codex second opinion in parallel, classifying threats via a risk matrix. Use when the user says "attack review", "attack-review", "penetration review", "vulnerability review", "security attack review", or "pentest review". Three modes are available, `full` / `server` / `client` (pass `server` or `client` as an argument, `full` or any keyword launches all 6 agents, no argument auto-detects from the tech stack). Supports language-specific attack vectors.
 ---
 
 # Attack Review

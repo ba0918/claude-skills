@@ -74,7 +74,7 @@ For each finding, report:
 
 AUTO_FIX / NEEDS_JUDGMENT semantics follow the shared
 [fix-action-taxonomy.md](../../shared/references/fix-action-taxonomy.md)
-(`OK` is doc-check's own value — see its "doc-check の `OK` との差異" section).
+(`OK` is doc-check's own value — see its "Difference from doc-check's `OK`" section).
 This classification is a fix-action axis, not a severity axis.
 
 ### AUTO_FIX (auto-fixable)

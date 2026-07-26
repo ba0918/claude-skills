@@ -1,26 +1,26 @@
 # Codex Review Loop
 
-PR レビューを Codex に委譲するフローと結果 JSON 契約。
+The flow that delegates PR review to Codex, and the result JSON contract.
 
 ## Override Notice (fail-closed)
 
-> **既存 `skills/shared/references/codex-integration.md` の例外**: 通常パターンでは「Codex 失敗時は既存処理で続行」だが、本スキルは **fail-closed**。Codex unavailable / 一時障害が `codex_consecutive_failure_threshold` 回連続発生した場合は **auto merge を禁止し `claude-failed` に遷移する**。これは GitHub 上で merge という不可逆操作を行うため。
+> **An exception to the existing `skills/shared/references/codex-integration.md`**: the usual pattern is "on a Codex failure, continue with the existing processing", but this skill is **fail-closed**. When Codex is unavailable, or a transient failure occurs `codex_consecutive_failure_threshold` times consecutively, **auto merge is forbidden and the issue transitions to `claude-failed`**. This is because merging on GitHub is an irreversible operation.
 
 ### Pre-flight check: `codex_required_for_merge` is locked
 
-ループ開始前に `codex_required_for_merge` の実効値を検査する。ユーザー設定や `--config` で `false` に上書きされていた場合は、警告ログを出して `true` に強制リセットする:
+Before the loop starts, inspect the effective value of `codex_required_for_merge`. If a user setting or `--config` has overridden it to `false`, emit a warning log and force it back to `true`:
 
 ```
 [github-issue] WARN: codex_required_for_merge override ignored — locked to true (fail-closed). See references/config-defaults.md.
 ```
 
-これによりヒューマンエラーや誤設定で Codex バイパスマージが発生することを構造的に防ぐ。
+This structurally prevents a Codex-bypassing merge caused by human error or misconfiguration.
 
 ## normalize_github_error
 
-`classify_failure` は共通契約 [§4 Pure Function Signatures](../../shared/references/polling-pattern.md#4-pure-function-signatures) の純関数なので、外部の GitHub/Codex エラーを直接受け取れない。effectful → pure の変換層を本ファイルで定義する。
+`classify_failure` is a pure function of the shared contract [§4 Pure Function Signatures](../../shared/references/polling-pattern.md#4-pure-function-signatures), so it cannot receive external GitHub/Codex errors directly. The effectful → pure conversion layer is defined in this file.
 
-`mark_failed` 呼び出し側は **常に `classify_failure(normalize_github_error(exc))` の順** で経由する。
+Callers of `mark_failed` **always go through `classify_failure(normalize_github_error(exc))`, in that order**.
 
 ### Exhaustive Match Table
 
@@ -36,7 +36,7 @@ normalize_github_error(raw_exc_or_response) -> error_kind:
     case RateLimitError:                                          return "rate_limit"
     case HTTPStatus(429):                                         return "rate_limit"
     case HTTPStatus(403) if "rate limit" in body:                 return "rate_limit"
-    case HTTPStatus(403):                                         return "security"  # auth 失敗
+    case HTTPStatus(403):                                         return "security"  # auth failure
 
     # Timeout
     case TimeoutError | SubprocessTimeout:                        return "timeout"
@@ -61,29 +61,29 @@ normalize_github_error(raw_exc_or_response) -> error_kind:
     case ExplicitAbort:                                           return "abort"
     case SanitizeRejected:                                        return "sanitize_failed"
 
-    # Fallback (未知は必ず permanent 側に倒す)
+    # Fallback (always fall to the permanent side for the unknown)
     case _:                                                       return "unknown"
 ```
 
 ### Exhaustive match guarantee
 
-`normalize_github_error` は必ずすべての exception path で enum 値を返す（default → `"unknown"`）。`classify_failure` は enum 集合が閉じていることを前提に網羅判定する。
+`normalize_github_error` always returns an enum value on every exception path (default → `"unknown"`). `classify_failure` performs an exhaustive judgment on the premise that the enum set is closed.
 
-**レビュー規約**: 新規 exception 型を追加する PR は必ず `normalize_github_error` の case を追加すること。
+**Review convention**: a PR adding a new exception type must add the corresponding case to `normalize_github_error`.
 
-- `error_kind` enum の定義は [`polling-adapter.md §error_kind Enum`](polling-adapter.md#error_kind-enum) を参照
-- Transient / Permanent 分類は `classify_failure` 純関数（共通契約 §4）が決定する
-- Transient: `{network, rate_limit, timeout, lock}` (4 種)
-- Permanent: `{test, compile, abort, lgtm_parse_fail, sanitize_failed, security, not_found, tool_missing, unknown}` (9 種)
-- `lock` は Transient 分類だが `failed_streak` にはカウントしない特殊規約あり（詳細は [`polling-adapter.md §error_kind Handling Rules`](polling-adapter.md#error_kind-handling-rules)）
+- For the definition of the `error_kind` enum, see [`polling-adapter.md §error_kind Enum`](polling-adapter.md#error_kind-enum)
+- The Transient / Permanent classification is decided by the `classify_failure` pure function (shared contract §4)
+- Transient: `{network, rate_limit, timeout, lock}` (4 kinds)
+- Permanent: `{test, compile, abort, lgtm_parse_fail, sanitize_failed, security, not_found, tool_missing, unknown}` (9 kinds)
+- `lock` is classified as Transient but carries a special rule that it is not counted toward `failed_streak` (for details see [`polling-adapter.md §error_kind Handling Rules`](polling-adapter.md#error_kind-handling-rules))
 
-## Codex 呼び出し方法
+## How Codex Is Invoked
 
-Codex への委譲は [`../../shared/references/codex-integration.md`](../../shared/references/codex-integration.md) で定義された subagent パターンに従う。本スキル内で具体的な subagent 名を直書きするのは下記 Iteration Loop 内 1 箇所のみとし、他のドキュメントからは本セクションを参照すること。スキル外向けのエントリポイントは [`SKILL.md § Codex Review`](../SKILL.md#codex-review) に集約されている。
+Delegation to Codex follows the subagent pattern defined in [`../../shared/references/codex-integration.md`](../../shared/references/codex-integration.md). Within this skill, a concrete subagent name is written out in exactly one place, inside the Iteration Loop below; every other document references this section instead. The entry point for consumers outside the skill is consolidated in [`SKILL.md § Codex Review`](../SKILL.md#codex-review).
 
 ## Result JSON Contract
 
-Codex は必ず以下の構造で返却する。それ以外の形式は parse error として扱い、再試行 1 回のみ実行後に一時障害カウンタをインクリメントする。
+Codex always returns the following structure. Any other form is treated as a parse error; retry exactly once, then increment the transient-failure counter.
 
 ```json
 {
@@ -92,7 +92,7 @@ Codex は必ず以下の構造で返却する。それ以外の形式は parse e
 }
 ```
 
-または
+or
 
 ```json
 {
@@ -103,17 +103,17 @@ Codex は必ず以下の構造で返却する。それ以外の形式は parse e
       "file": "path/to/file.ts",
       "line": 42,
       "category": "security" | "bug" | "design" | "test" | "perf",
-      "message": "具体的な問題説明",
-      "suggestion": "推奨修正"
+      "message": "a concrete description of the problem",
+      "suggestion": "the recommended fix"
     }
   ]
 }
 ```
 
-- **verdict**: `"LGTM"` または `"NEEDS_CHANGES"` の 2 値のみ
-- **findings**: NEEDS_CHANGES の場合は 1 件以上必須
+- **verdict**: only the 2 values `"LGTM"` or `"NEEDS_CHANGES"`
+- **findings**: at least 1 entry is required for NEEDS_CHANGES
 
-## Codex 呼び出しプロンプトテンプレート
+## The Codex Invocation Prompt Template
 
 ```
 You are reviewing a Pull Request for a GitHub issue. Return ONLY a single JSON object
@@ -167,7 +167,7 @@ while iter < max_review_iterations:
 
   # 1. Pre-filter
   diff = gh pr diff <PR>
-  if line_count(diff) > max_diff_lines: → claude-failed (人間引き継ぎ)
+  if line_count(diff) > max_diff_lines: → claude-failed (hand over to a human)
   if secret_scanner.scan(diff).any(): → claude-failed
   if changed_files contains [.env, *.key, *.pem, credentials.*]: → claude-failed
 
@@ -176,21 +176,21 @@ while iter < max_review_iterations:
     result = codex.review(diff, plan, criteria, prev_findings)
     consecutive_codex_failures = 0
   except Exception as exc:
-    # effectful → pure 変換: 必ず normalize_github_error を経由
+    # effectful → pure conversion: always go through normalize_github_error
     kind = normalize_github_error(exc)
-    classification = classify_failure(kind)  # 共通契約 §4 純関数
+    classification = classify_failure(kind)  # the shared contract §4 pure function
     if classification == Transient:
       consecutive_codex_failures += 1
       if consecutive_codex_failures >= codex_consecutive_failure_threshold:
-        → claude-failed (恒久扱い、mark_failed kind=PERMANENT)
+        → claude-failed (treated as permanent, mark_failed kind=PERMANENT)
       else:
-        return RETRY_NEXT_TICK   # polling 次 tick で再開
+        return RETRY_NEXT_TICK   # resume on the next polling tick
     else:
-      → claude-failed (即時 permanent、mark_failed kind=PERMANENT)
+      → claude-failed (immediately permanent, mark_failed kind=PERMANENT)
 
   # 3. Verdict
   if result.verdict == "LGTM":
-    break  # → Auto Merge ゲートへ
+    break  # → on to the Auto Merge gate
   else:
     apply_iterate(result.findings)
     git push
@@ -198,35 +198,35 @@ while iter < max_review_iterations:
     continue
 
 else:
-  # max_review_iterations 到達
+  # max_review_iterations reached
   → claude-failed
   gh issue comment <N> --body "Reached max_review_iterations. Last findings: ..."
 ```
 
 ## Differential Review (iteration 2+)
 
-2 回目以降の Codex 呼び出しでは前回の `findings` と「どのファイル / 行が修正されたか」を併せて渡す。Codex は LGTM 済みファイル（前回 findings に出ていないファイル）を再レビューしないことで token 使用量を抑える。
+From the second Codex invocation onwards, hand over the previous `findings` together with which files and lines were fixed. By not re-reviewing files already marked LGTM (files absent from the previous findings), Codex holds down token usage.
 
 ## Failure Modes
 
-| 状況 | 扱い | 次の動作 |
+| Situation | Handling | Next action |
 |------|------|---------|
-| Codex network error | 一時障害 | カウンタ +1、次 tick で再開 |
-| Codex rate limit | 一時障害 | カウンタ +1、次 tick で再開 |
-| Codex timeout | 一時障害 | カウンタ +1、次 tick で再開 |
-| JSON parse error | 一時障害（1 回再試行後） | カウンタ +1 |
-| Codex 連続失敗 ≥ threshold | 恒久障害 | claude-failed |
-| `verdict: NEEDS_CHANGES` 上限到達 | 確定失敗 | claude-failed |
-| diff > max_diff_lines | 確定失敗 | claude-failed（Codex に渡さない）|
-| secret scanner ヒット | 確定失敗 | claude-failed（Codex に渡さない）|
+| Codex network error | Transient failure | Counter +1, resume on the next tick |
+| Codex rate limit | Transient failure | Counter +1, resume on the next tick |
+| Codex timeout | Transient failure | Counter +1, resume on the next tick |
+| JSON parse error | Transient failure (after 1 retry) | Counter +1 |
+| Consecutive Codex failures ≥ threshold | Permanent failure | claude-failed |
+| `verdict: NEEDS_CHANGES` reached the cap | Definitive failure | claude-failed |
+| diff > max_diff_lines | Definitive failure | claude-failed (not handed to Codex)|
+| Secret scanner hit | Definitive failure | claude-failed (not handed to Codex)|
 
 ## `codex_consecutive_failure_threshold` vs `transient_retry_limit`
 
-**両者は独立したパラメータ**。概念が異なるため alias 統合しない（本スキルの明示的な設計判断）:
+**The two are independent parameters.** Because the concepts differ, they are not unified behind an alias (an explicit design decision of this skill):
 
-| パラメータ | 所在 | 責務 | カウント単位 |
+| Parameter | Where it lives | Responsibility | Counting unit |
 |---|---|---|---|
-| `codex_consecutive_failure_threshold` | `config-defaults.md` (GitHub 固有) | Codex API の連続一時障害回数。Codex 側のヘルスチェック | Codex call 単位（1 issue 内で複数回） |
-| `transient_retry_limit` | 共通契約 §10 | issue 単位の transient retry 累積。`failed/transient → failed/permanent` 昇格判定 | issue 単位（tick を跨いで累積） |
+| `codex_consecutive_failure_threshold` | `config-defaults.md` (GitHub-specific) | The number of consecutive transient failures of the Codex API. A health check on the Codex side | Per Codex call (several times within one issue) |
+| `transient_retry_limit` | Shared contract §10 | The cumulative transient retries per issue. The judgment for promoting `failed/transient → failed/permanent` | Per issue (accumulating across ticks) |
 
-alias 統合すると両者の概念が混ざって無限ループの可能性があるため、**独立保持する**。
+Unifying them behind an alias would mix the two concepts and could produce an infinite loop, so they are **kept independent**.

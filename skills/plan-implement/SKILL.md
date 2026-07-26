@@ -1,6 +1,6 @@
 ---
 name: plan-implement
-description: 実装計画の全ステップを TDD（RED → GREEN → REFACTOR）の implement → review ループで自動実装する。ステップごとにレビュー・ステータス更新・コミットを行う。cycle の Phase 2 としても単体でも使える。「plan-implement」「計画を実装して」「この計画を自動実装」で起動。
+description: Implement every step of an implementation plan automatically through the TDD (RED then GREEN then REFACTOR) implement-review loop, reviewing, updating status, and committing at each step. It works both as Phase 2 of cycle and on its own. Use when the user says "plan-implement", "implement the plan", or "implement this plan automatically".
 ---
 
 # Plan Implement
@@ -83,7 +83,7 @@ Receive the implementation result.
      - Whether there is code duplication or dead code
    - Make it classify findings by severity (BLOCK / WARN / INFO) (definitions per
      [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md))
-   - **Even with zero findings, make it report 「BLOCK / WARN / INFO: なし」 explicitly** (leaving evidence that the classification scheme was applied)
+   - **Even with zero findings, make it report "BLOCK / WARN / INFO: none" explicitly** (leaving evidence that the classification scheme was applied)
 2. Receive the review result
 
 ### Step C: Judgment and Incorporation

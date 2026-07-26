@@ -1,61 +1,59 @@
 ---
 name: context-audit
-description: LLM 向け指示ファイル（CLAUDE.md / AGENTS.md / .claude/rules / プロジェクトメモリ）の老朽化・矛盾・有害指示・クロスツール乖離を監査する棚卸しスキル。純関数ルールエンジン（CA-* ルール体系）で機械検証し、AUTO_FIX / NEEDS_JUDGMENT / REPORT_ONLY の 3 値で扱い、削除は自動化しない。doc-check（code⇔docs）/ doc-audit（docs⇔docs）が見ない「指示としての品質」を所有する。「context-audit」「指示ファイル監査」「CLAUDE.md 棚卸し」「AGENTS.md 監査」「メモリ棚卸し」「指示の腐敗」「指示の陳腐化をチェック」で起動。
+description: An inventory skill that audits LLM instruction files (CLAUDE.md / AGENTS.md / .claude/rules / project memory) for decay, contradiction, harmful instructions, and cross-tool divergence. It verifies mechanically with a pure-function rule engine (the CA-* rule system), handles findings with the 3 values AUTO_FIX / NEEDS_JUDGMENT / REPORT_ONLY, and never automates deletion. It owns "quality as instructions", which neither doc-check (code vs docs) nor doc-audit (docs vs docs) looks at. Use when the user says "context-audit", "audit the instruction files", "take inventory of CLAUDE.md", "audit AGENTS.md", "review the memory files", "the instructions have rotted", or "check whether the instructions are stale".
 ---
 
 # context-audit
 
 Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
-LLM の行動品質は指示層（CLAUDE.md / AGENTS.md / rules / メモリ）の健全性に依存する。
-長期運用でこの層が腐敗（陳腐化した参照・矛盾・破壊的許可・クロスツール乖離）すると LLM の挙動が劣化するが、
-既存の doc-check（docs⇔code）/ doc-audit（docs⇔docs）はこの「**指示としての品質**」を見ておらず、
-プロジェクトメモリはどのスキルの射程にも入っていない。context-audit はこの棚卸しを担う。
+The behavioral quality of an LLM depends on the health of the instruction layer (CLAUDE.md / AGENTS.md / rules / memory).
+When that layer decays over long-term operation (obsolete references, contradictions, destructive permissions, cross-tool divergence), the LLM's behavior degrades — yet the existing doc-check (docs⇔code) and doc-audit (docs⇔docs) do not look at this "**quality as instructions**",
+and project memory falls within the reach of no skill at all. context-audit takes on this stocktaking.
 
-**位置づけ**: doc-check がコード正確性、doc-audit がドキュメント間整合性を所有するのに対し、
-context-audit は instruction-bearing ファイルを「指示品質」として所有する。
+**Positioning**: whereas doc-check owns code accuracy and doc-audit owns consistency among documents,
+context-audit owns instruction-bearing files as "instruction quality".
 
-## アーキテクチャ: 純関数ルール中心
+## Architecture: centered on pure-function rules
 
-trigger-eval / skill-improve と同じ「**純関数は unittest で検証、エージェントは JSON の生成・受け渡しのみ**」の構成。
-監査ロジックは Python スクリプトに集約し、SKILL.md はワークフロー制御・LLM 判断（CA-C001 矛盾の REPORT_ONLY 分類・
-NEEDS_JUDGMENT の提示）・AUTO_FIX の適用のみを担う。決定性は glue（SKILL.md 本文）に漏らさない。
+The same structure as trigger-eval / skill-improve: "**pure functions are verified by unittest; the agent only produces and passes JSON**".
+The audit logic is consolidated into Python scripts, and SKILL.md handles only workflow control, LLM judgment (the REPORT_ONLY classification of CA-C001 contradictions and the presentation of NEEDS_JUDGMENT), and the application of AUTO_FIX. Determinism never leaks into the glue (the body of SKILL.md).
 
-| スクリプト | 役割 |
+| Script | Role |
 |-----------|------|
-| `scripts/collect_targets.py` | 監査対象を path allowlist（決定的）で収集・分類。cwd→memory slug 解決 + reverse-verify |
-| `scripts/static_checks.py` | 純関数ルールエンジン（`RULES` レジストリ・ディスパッチャ）。findings JSON を出力 |
-| `scripts/apply_fixes.py` | AUTO_FIX 適用の純関数（findings + 内容 → 新内容。body byte 不変・idempotent） |
-| `scripts/aggregate_report.py` | findings + baseline → summary-first レポート（suppression 適用・severity 集計） |
-| `scripts/secret_detect.py` の実体 | `skills/shared/scripts/secret_detect.py`（skill-improve と共有、再利用） |
+| `scripts/collect_targets.py` | Collects and classifies the audit targets with a path allowlist (deterministic). Resolves cwd→the memory slug + reverse-verify |
+| `scripts/static_checks.py` | The pure-function rule engine (the `RULES` registry and dispatcher). Emits the findings JSON |
+| `scripts/apply_fixes.py` | The pure function applying AUTO_FIX (findings + content → new content. Body bytes unchanged, idempotent) |
+| `scripts/aggregate_report.py` | findings + baseline → a summary-first report (applying suppression, aggregating severity) |
+| The entity behind `scripts/secret_detect.py` | `skills/shared/scripts/secret_detect.py` (shared with skill-improve, reused) |
 
-参照資料（Progressive disclosure）:
+Reference material (progressive disclosure):
 
-- ルール定義: [references/rule-catalog.md](references/rule-catalog.md)
-- メモリ監査の詳細・プライバシー制約: [references/memory-audit.md](references/memory-audit.md)
-- baseline suppression の schema と運用: [references/baseline-format.md](references/baseline-format.md)
-- fix-action 3 値の定義: [../shared/references/fix-action-taxonomy.md](../shared/references/fix-action-taxonomy.md)
-- severity の定義: [../shared/references/severity-and-verdicts.md](../shared/references/severity-and-verdicts.md)
-- 完了検証: [../shared/references/verification-gate.md](../shared/references/verification-gate.md)
+- The rule definitions: [references/rule-catalog.md](references/rule-catalog.md)
+- The details of memory auditing and the privacy constraints: [references/memory-audit.md](references/memory-audit.md)
+- The schema and operation of baseline suppression: [references/baseline-format.md](references/baseline-format.md)
+- The definition of the 3 fix-action values: [../shared/references/fix-action-taxonomy.md](../shared/references/fix-action-taxonomy.md)
+- The definition of severity: [../shared/references/severity-and-verdicts.md](../shared/references/severity-and-verdicts.md)
+- Completion verification: [../shared/references/verification-gate.md](../shared/references/verification-gate.md)
 
-## 引数
+## Arguments
 
-- 引数なし: カレントリポジトリの指示ファイル + cwd 対応プロジェクトメモリを監査。
-- `--include-global`: `~/.claude/CLAUDE.md` と `~/.claude/rules/*.md` を追加対象化（プライバシー opt-in）。
-- `--update-baseline`: 現在の finding を baseline に確定（以降は新規 finding のみ提示）。実装は `aggregate_report.py --update-baseline PATH`（LLM が ID を手集めしない）。
-- `--interactive`: NEEDS_JUDGMENT の対話プロンプトを再開（1 run の上限を超えた分の続き）。
+- No argument: audit the instruction files of the current repository plus the project memory corresponding to cwd.
+- `--include-global`: additionally target `~/.claude/CLAUDE.md` and `~/.claude/rules/*.md` (a privacy opt-in).
+- `--update-baseline`: fix the current findings into the baseline (thereafter only new findings are presented). The implementation is `aggregate_report.py --update-baseline PATH` (the LLM never gathers IDs by hand).
+- `--interactive`: resume the NEEDS_JUDGMENT interactive prompts (continuing past the cap of a single run).
 
-command は作らない（skills-first 方針。single-workflow のため名前付き入口も不要）。
+No command is created (the skills-first policy; being single-workflow, it needs no named entry point either).
 
-## 実行契約（パス解決・非対話フォールバック）
+## The execution contract (path resolution, the non-interactive fallback)
 
-- **スクリプトのパス解決**: 以下のコマンド例の `{skill_dir}` は**このスキル自身の配置ディレクトリ**（スキル読込時に提示される base directory。plugin インストール時はキャッシュ配下）。スクリプトは**絶対パス**で起動する。`{project_root}` は**ユーザーのプロジェクトルート（cwd）**であり、監査対象の root 引数に渡す（root は memory slug 解決にも使われるため cwd と一致させること）。
-- **非対話フォールバック**: headless / subagent 実行等でユーザーへの対話的確認ができない場合、**最優先はユーザーの事前の明示指示**（選択肢相当の指示があればそれに従う。例:「baseline として確定して」= (a) 相当）。明示指示がなければ状態を変更しない安全側に倒す — first-run は **(c) フルレポート相当**（baseline は書き込まない）、Phase 4 の AUTO_FIX / NEEDS_JUDGMENT は**適用せずレポート送り**（レポートでは NEEDS_JUDGMENT を REPORT_ONLY と混同しない独立枠で提示する）。
-- `{ts}` は `date +%Y%m%d-%H%M%S` で採番し、フェーズ間で同一値を使い回す（既存生成物は上書きしない）。
+- **Resolving script paths**: `{skill_dir}` in the command examples below is **the directory where this skill itself lives** (the base directory presented when the skill is loaded; under a plugin installation it sits inside the cache). Start scripts with an **absolute path**. `{project_root}` is **the user's project root (cwd)** and is passed as the root argument for the audit targets (keep root equal to cwd, because root is also used for memory slug resolution).
+- **The non-interactive fallback**: when interactive confirmation with the user is impossible (headless / subagent execution and the like), **the user's prior explicit instruction takes highest priority** (if an instruction equivalent to one of the options exists, follow it. For example "fix it as the baseline" = the equivalent of (a)). Absent an explicit instruction, fall to the safe side that changes no state — the first run behaves as **the equivalent of (c), the full report** (the baseline is not written), and the AUTO_FIX / NEEDS_JUDGMENT of Phase 4 are **not applied but sent to the report** (in the report, present NEEDS_JUDGMENT in its own independent frame so it is not confused with REPORT_ONLY).
+- `{ts}` is numbered with `date +%Y%m%d-%H%M%S` and the same value is reused across phases (existing artifacts are never overwritten).
 
-## ワークフロー
+## Workflow
 
-出力先はすべて `.claude/tmp/context-audit/`（監査対象プロジェクト配下、git-ignored）。
+Every output goes to `.claude/tmp/context-audit/` (under the audited project, git-ignored).
 
 ### Phase 0: Discovery
 
@@ -64,20 +62,19 @@ python3 {skill_dir}/scripts/collect_targets.py {project_root} \
   --output .claude/tmp/context-audit/targets-{ts}.json
 ```
 
-（`{skill_dir}` はこのスキルの配置ディレクトリ、`{project_root}` はユーザーのプロジェクトルート = cwd。実行契約参照）
+(`{skill_dir}` is the directory where this skill lives, `{project_root}` is the user's project root = cwd. See the execution contract)
 
-- **path allowlist（決定的・純関数）** で対象を収集。対象: root の `CLAUDE.md` / `AGENTS.md`、
-  `.claude/rules/*.md` / `rules/*.md`、`.claude/review-rules.md` + cwd 対応プロジェクトメモリ。
-- 存在しない対象（例: `.claude/rules/` 不在）は graceful-skip（`skipped` に記録、エラーにしない）。
-- ネストしたサブディレクトリの CLAUDE.md/AGENTS.md、`.agents/artifacts/plans/`・`.agents/artifacts/ideas/`・`.claude/tmp/` 等の
-  archival/一時領域は allowlist に含めない（＝除外）。
-- 非 UTF-8 / 読込失敗の 1 ファイルが監査全体を中断しない（`errors='replace'` / skip-and-report）。
-- `--include-global` 指定時のみグローバル設定を追加。
-- **baseline 不在を検知したら first-run フロー**をユーザーに提示して選択を求める: 「(a) 現状を baseline
-  として確定し以降は新規 finding のみ / (b) 重大度上位のみ triage / (c) フルレポート」。初回の overwhelm を回避。
-- レポートに `memory_dir`（解決済み絶対パス）を明示し、どのプロジェクトを読んだか可視化する。
-  （finding 個別の `where` は redaction で home パスがマスクされるため、監査先の開示は
-  この Phase 0 の `memory_dir` フィールドが正）。
+- Collect the targets with a **path allowlist (deterministic, a pure function)**. The targets: the root's `CLAUDE.md` / `AGENTS.md`,
+  `.claude/rules/*.md` / `rules/*.md`, `.claude/review-rules.md`, plus the project memory corresponding to cwd.
+- A nonexistent target (for example, no `.claude/rules/`) is graceful-skipped (recorded in `skipped`, never an error).
+- CLAUDE.md/AGENTS.md in nested subdirectories, and archival/temporary areas such as `.agents/artifacts/plans/`, `.agents/artifacts/ideas/`, and `.claude/tmp/`, are
+  not included in the allowlist (that is, they are excluded).
+- A single non-UTF-8 or unreadable file never interrupts the whole audit (`errors='replace'` / skip-and-report).
+- Global settings are added only when `--include-global` is given.
+- **On detecting that the baseline is absent, present the first-run flow** to the user and ask them to choose: "(a) fix the current state as the baseline and present only new findings thereafter / (b) triage only the top severities / (c) the full report". This avoids overwhelming them on the first run.
+- State `memory_dir` (the resolved absolute path) in the report, making visible which project was read.
+  (Because the per-finding `where` has its home path masked by redaction, the authoritative disclosure of what was audited is
+  this Phase 0 `memory_dir` field.)
 
 ### Phase 1: Static Checks
 
@@ -87,18 +84,17 @@ python3 {skill_dir}/scripts/static_checks.py \
   --output .claude/tmp/context-audit/findings-{ts}.json
 ```
 
-- `RULES` レジストリを一括実行し findings JSON を出力。
-- finding schema は全ルール共通で `id / severity / action / where(file:line) / what / why / how /
-  fix_action(old→new|null)` を必須とする。
-- **secret redaction を全 finding の line-context に適用してから直列化**（`finalize_findings`）。
-  検出値・生 secret 行は JSON にも残さない。
+- Run the `RULES` registry in one pass and emit the findings JSON.
+- The finding schema is common to every rule and requires `id / severity / action / where(file:line) / what / why / how /
+  fix_action(old→new|null)`.
+- **Apply secret redaction to the line-context of every finding before serializing** (`finalize_findings`).
+  Neither detected values nor raw secret lines survive into the JSON.
 
-### Phase 2: LLM Checks（REPORT_ONLY）
+### Phase 2: LLM Checks (REPORT_ONLY)
 
-- `static_checks.py` が抽出した CA-C001 の contradiction candidate（recall 優先の over-generation）を、
-  LLM が「矛盾 / 意図的差分 / 優先順位で解決済み / 不明」に分類する。**修正はしない**。
-- candidate が 0 件の場合、Phase 2 は何もせずスキップしてよい。
-- LLM に渡すのは **redaction 済みの正規化最小 claim テキストのみ**（生のメモリ行・PII を渡さない）。
+- The LLM classifies the CA-C001 contradiction candidates extracted by `static_checks.py` (an over-generation favoring recall) into "a contradiction / an intentional difference / already resolved by precedence / unclear". **It performs no fixes.**
+- When there are 0 candidates, Phase 2 may be skipped entirely.
+- What is handed to the LLM is **only the redacted, normalized minimal claim text** (raw memory lines and PII are never handed over).
 
 ### Phase 3: Aggregate
 
@@ -109,47 +105,47 @@ python3 {skill_dir}/scripts/aggregate_report.py \
   --output .claude/tmp/context-audit/report-{ts}.json
 ```
 
-- baseline suppression を適用し、**summary-first の report skeleton** を決定的に生成
-  （トップ行 `N findings: X AUTO_FIX / Y NEEDS_JUDGMENT / Z REPORT_ONLY; M suppressed`、
-  rule 別グループ → severity 降順ソート）。
-- **action は static_checks.py の出力を尊重し再計算しない**。
-- suppress された finding は件数のみ表示（silent truncation 禁止）。
+- Apply baseline suppression and generate the **summary-first report skeleton** deterministically
+  (the top line `N findings: X AUTO_FIX / Y NEEDS_JUDGMENT / Z REPORT_ONLY; M suppressed`,
+  grouped by rule → sorted by descending severity).
+- **Respect the action emitted by static_checks.py and never recompute it.**
+- A suppressed finding is shown as a count only (silent truncation is forbidden).
 
 ### Phase 4: Apply & Report
 
-- **AUTO_FIX**: `apply_fixes.py` で計算した差分を **unified diff で提示 → バッチ確認**
-  （「N 件の auto-fix を適用しますか？」）の上で適用。
+- **AUTO_FIX**: apply the differences computed by `apply_fixes.py` after **presenting them as a unified diff → a batch confirmation**
+  ("apply N auto-fixes?").
   ```bash
   python3 {skill_dir}/scripts/apply_fixes.py \
     .claude/tmp/context-audit/findings-{ts}.json --write
   ```
-- **NEEDS_JUDGMENT**: fix-type / rule ID でグルーピングしてバッチ提示（「12 件のパス typo 修正を
-  一括適用 / 個別に確認 / スキップ」）。対話プロンプトは 1 run で上限 N 件に cap し、残りはレポート送り
-  （`--interactive` で再開）。
-- **REPORT_ONLY**: what / why / how を含む actionable な構造化レポートで提示
-  （contradiction は 2 箇所の location を併記）。
-- `verification-gate.md` 契約に準拠し、**テスト実行結果のエビデンス**を伴って完了を報告する。
+- **NEEDS_JUDGMENT**: present in batches grouped by fix-type / rule ID ("apply 12 path typo fixes
+  in bulk / confirm individually / skip"). Cap the interactive prompts at N per run, and send the rest to the report
+  (resumable with `--interactive`).
+- **REPORT_ONLY**: present as an actionable structured report containing what / why / how
+  (for a contradiction, record both locations side by side).
+- Conform to the `verification-gate.md` contract and report completion **accompanied by evidence of test execution**.
 
-## 重要なルール
+## Critical Rules
 
-- **削除・本文の意味的書き換えは絶対に自動化しない**。AUTO_FIX はパス修正（edit-distance ≤1 かつ
-  一意候補のみ）と frontmatter 整形正規化（body byte 不変）に限定。迷ったら REPORT_ONLY / NEEDS_JUDGMENT に倒す。
-- **メモリ監査はデフォルト cwd 対応プロジェクトのみ**。グローバル・横断は `--include-global` opt-in。
-  slug 解決は実 Claude Code に一致 + reverse-verify、曖昧なら fail-safe skip。
-- **secret は値を転記せずパターン名 + file:line のみ**。redaction は全 line-context の不変条件。
-- **baseline は commit するが opaque finding ID のみ格納**（検出値・本文を絶対に載せない）。
-  非 git プロジェクトではファイルとして保持するだけでよい。`--update-baseline` は既存 baseline が
-  あっても現状の finding で再確定する（idempotent）。
-- **CA-D002 は `validate_repo.py` 検出時に自動スキップ**（機械的 deconflict、prose 判断に頼らない）。
+- **Never automate deletion or semantic rewriting of the body.** AUTO_FIX is limited to path fixes (only when the edit distance is ≤1 and
+  the candidate is unique) and frontmatter formatting normalization (body bytes unchanged). When in doubt, fall to REPORT_ONLY / NEEDS_JUDGMENT.
+- **Memory auditing covers only the project corresponding to cwd by default.** Global and cross-project coverage is an `--include-global` opt-in.
+  Slug resolution matches the real Claude Code + reverse-verify, and is fail-safe skipped when ambiguous.
+- **For secrets, never transcribe the value — only the pattern name + file:line.** Redaction is an invariant over every line-context.
+- **The baseline is committed but stores only opaque finding IDs** (never carry detected values or body text).
+  In a non-git project it is enough to keep it as a file. `--update-baseline` re-fixes it from the current findings even when a baseline already
+  exists (idempotent).
+- **CA-D002 is automatically skipped when `validate_repo.py` is detected** (a mechanical deconflict, not relying on a prose judgment).
 
-## テスト
+## Tests
 
-純関数は `scripts/test_*.py` の unittest で検証する:
+The pure functions are verified by the unittests in `scripts/test_*.py`:
 
 ```bash
 for t in skills/context-audit/scripts/test_*.py; do python3 "$t"; done
 ```
 
 - `test_collect_targets.py` / `test_static_checks.py` / `test_apply_fixes.py` /
-  `test_aggregate_report.py` / `test_catalog_sync.py`（catalog⇔registry drift 防止）/
-  `test_secret_detect.py`（共有 secret 検出の回帰）。
+  `test_aggregate_report.py` / `test_catalog_sync.py` (preventing catalog⇔registry drift) /
+  `test_secret_detect.py` (the regression of the shared secret detection).

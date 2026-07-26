@@ -1,15 +1,15 @@
 {
   "brainstorm": {
     "file_sha256": {
-      "skills/brainstorm/SKILL.md": "917b8cb9b3b4eb41ae23ce3cfb5b1d8baa9a1d8879a21b156968309b79acb295",
-      "skills/brainstorm/fixtures.json": "3ecf16bb90f0039fc71569eb90d213b69dfd7b7337580823ac73b296333695e5",
+      "skills/brainstorm/SKILL.md": "c22308e7f25bbacb7bc1753af0f276be72a6aeaabd8e8cb7de1676a43d68d7da",
+      "skills/brainstorm/fixtures.json": "d586b9917ed9a7325b167c586873ff8d34a12993aa68d17933463c4f87b9c2dd",
       "skills/brainstorm/references/idea-template.md": "6c5bd8a88f69f97cd4e42fe00bb86bedf25060ee0f2227902d96bea51ef61b21",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/codex-integration.md": "aa850f8efe9d355cd8300f223b2ae7dcee77eb9e06f47ecc7e7e0a8e9489bdb4",
-      "skills/shared/references/human-readable-summary.md": "c0c6a954f59c70b1b1ae4b0284e2652a10a42d34ba96dbcdaf888d667309ce47"
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
+      "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
+      "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "S2 英語化（codex-integration / human-readable-summary）後の再走。報告回収に照会 1 回/シナリオ（bs-002/003 は不要）。3 シナリオ全 pass。bs-003 は git 未初期化のため mtime ナノ秒比較で無改変を裏取り。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/brainstorm/SKILL.md",
       "skills/brainstorm/fixtures.json",
@@ -18,12 +18,12 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "c056ab85a1b4170dc5198c3c130bc5c822c379e2515a6e2c5d1c8c8fa1860dba",
+    "surface_sha256": "1acab75e740d29b699212a5de65c32d52b3606a84ddb623a2af944a3cad90781",
     "verified": "2026-07-27"
   },
   "brief": {
     "file_sha256": {
-      "skills/brief/SKILL.md": "4730935e20c0a85824478352eab527936853bd2ce4c21f704904ee3ccdfc7d22",
+      "skills/brief/SKILL.md": "8fb7ab345939cb3b80ea520b65b51de6ef582e6b6e98007e640bc3fd0d33fbbc",
       "skills/brief/assets/brief.css": "9ef1a533765cd3463be8fcdf0ab59a694983f43143ffce2d33c31647209aa8cd",
       "skills/brief/assets/brief.js": "3448e3dc90bbfe4451e9f2cff5981cdc42ce3b021411ccc3a16c3a52e86bbfc3",
       "skills/brief/assets/tokens.brief.json": "c3b5edd00e3451f313f7dbdb676baa8f2f763652bc7ef179627002dab242e9db",
@@ -32,9 +32,9 @@
       "skills/brief/references/brief-model.md": "5e3adb51c462a65ad7df26e621ebec577c222ffff6e4b23938102deb372e54c4",
       "skills/brief/scripts/brief_collect.py": "6d0e638d5d36e3f62008c27967695e76f42f9cbe2afd659391e7118b4866d986",
       "skills/brief/scripts/brief_render.py": "b4fc93158220b7b1fce0ca7cf0e0cbcdaf644a93ebee1e7f4f39ca9c9dd5eba0",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5"
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96"
     },
-    "note": "実行せず再評価不要と判断（PR #26 マージにより新設された artifact store 契約の静的検査が bf-001 / bf-006 を検出したことへの対応）。変更は setup.files['.gitignore'] への無視宣言（/.agents/artifacts/ と /.agents/runtime/）の追加のみで、SKILL.md・実行者プロンプト・要件は不変。両シナリオの isolation は worktree であり、これまでもハーネスリポジトリ自身の .gitignore が同じ無視を提供していたため、実行者から見える環境は前後で同じ（周囲のリポジトリへの偶然依存を fixture 自身の宣言へ明示化した形）。bf-001 / bf-006 の要件はいずれも対象選択の確認挙動に関するもので .gitignore に依存しないため、検証力への影響もない。plan-implement で同一構造の判断を人間が裁定した先例に従う。",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
     "result": "accepted-without-run",
     "surface": [
       "skills/brief/SKILL.md",
@@ -48,43 +48,43 @@
       "skills/brief/scripts/brief_render.py",
       "skills/shared/references/artifact-store.md"
     ],
-    "surface_sha256": "f4953145c9798c6667dc175e54ab61c3ddd017af7d798f495c240f8782811b97",
-    "verified": "2026-07-26"
+    "surface_sha256": "3951c11b5aae54ae72306d74b3aad535284a1fd68e890184adcf830c66ff1905",
+    "verified": "2026-07-27"
   },
   "commit": {
     "file_sha256": {
-      "skills/commit/SKILL.md": "8a3c4ce0d6b38b19ac25b7f96ca6514ec6f328121ff3407cddf12df8aacd6d28",
+      "skills/commit/SKILL.md": "48dda355509fa476945de1d8e7ffbeb6d435e1d678d0b009617eca8db0184a0b",
       "skills/commit/fixtures.json": "695f26893f3762173ca414166f83058d22e6d2d02164b738813f55efed74dbbd",
-      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a"
+      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "S2 英語化（verification-gate）後の再走。実行者の最終出力が呼び出し側に届かず、idle 後に報告送信を照会して回収（照会 1 回/シナリオ）。3 シナリオ全 pass。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/commit/SKILL.md",
       "skills/commit/fixtures.json",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "f2abb831231038caab83142c7d54f3e893e3b32761a5afe40c582b4f4a1f2c9e",
+    "surface_sha256": "9f45164cd0d53e2510a7bc7e09fc9b3efb1d96648de2cbec1dd96c8701764873",
     "verified": "2026-07-27"
   },
   "context-audit": {
     "file_sha256": {
-      "skills/context-audit/SKILL.md": "e311c1ebb7b0c22222dddfe1d676806d4b859b2d63e6cb99c15d431f47b781e0",
+      "skills/context-audit/SKILL.md": "f07880b8e6d9c5b2df1a04e558264aa8aa3cfa457d268481590e8b15a61bed03",
       "skills/context-audit/fixtures.json": "d2888346fb7abe5d6e908fa0e8fe490d5597e2c860371095652c4af844866464",
-      "skills/context-audit/references/baseline-format.md": "ed998a2c7fbe69f81b54e28e84e57d51e84d3251bbf3293d7335d86c3126ac81",
-      "skills/context-audit/references/memory-audit.md": "40d5ed0808622c68751832f2ac3fb79ecaba2391a099de0ec7394cdcca9270dd",
-      "skills/context-audit/references/rule-catalog.md": "31e3fa9890d457b0ea931f4c9fc6532b6f5445c6eeb412a10c778de81f365167",
+      "skills/context-audit/references/baseline-format.md": "a6bf0d0afc6cbf06e9436b8bc91ac959553abfeb4e053cf0c5408814f0653e18",
+      "skills/context-audit/references/memory-audit.md": "725e2cfc6c00e686959c9856d4badbbc6cb8c5ce183e40cb8487dbd37147016b",
+      "skills/context-audit/references/rule-catalog.md": "4bb4a5bb3633a520ee9f3130d93e085acee0bf748ae17c5a2984ea7e27fc54c3",
       "skills/context-audit/scripts/aggregate_report.py": "9acdb60cbda5dcf18b2d69ccb4a42910852a5ec7723d1abe49a3a253ad4fcb10",
       "skills/context-audit/scripts/apply_fixes.py": "d37bc3064138bf2c8325157edfd2aeb38a14ad70a637835f0616658f77b02231",
       "skills/context-audit/scripts/collect_targets.py": "aa6a60a70f3c7c3b4c161c0ca080d428fe4b3fa9ff4169af7707f74b2fe5957e",
       "skills/context-audit/scripts/static_checks.py": "87d54d880ddfe445e4872378b0024893a848efc6592cef19255afde7179b9216",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
-      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a"
+      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "S2 英語化（fix-action-taxonomy / severity-and-verdicts / verification-gate）後の再走。報告回収に照会 1 回/シナリオ。3 シナリオ全 pass。非対話 first-run は (c) フルレポートに倒れ baseline 未書込を機械確認。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/SKILL.md",
       "skills/context-audit/fixtures.json",
@@ -100,21 +100,21 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "d49b61955486cccf66f3cd0ef509c64f5565783f2183d379ecfad7a280cf03a3",
+    "surface_sha256": "3b9b675e0e87008136794c3081112372bda4ee09c88987efd06ad99c72f6be76",
     "verified": "2026-07-27"
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "58d882b4d6f51f27799f512d1ec7650d27c19bfb4bea8683e6e3859bae86841b",
+      "skills/cycle/SKILL.md": "c9766ac90f9f47b16ec2079648542588948c3b2af03eef29fd6c30e8255f2847",
       "skills/cycle/fixtures.json": "cb405816cc5a28fdc624be8f13842304ec96104025088e5cebd4923a102001d6",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
       "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
-      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a"
+      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "S2 英語化（tdd-contract / verification-gate）後の再走。3 シナリオとも critical 全 ○。cy-001 の委譲は最後まで動いた: relay ファイル .agents/runtime/delegation/20260721100000_refine.md が 01:46:02 に着弾している（呼び出し側にも子の完了通知が届いた）。ただし完了通知は実行者へは返らないため、実行者は relay ファイルのポーリングで検知する必要がある。cy-001 は wait discipline の予算（480 秒）を使い切らず約 1 分で watchdog を止めたため着弾を取りこぼし inline fallback へ落ちた（01:46:01 に Phase 2 の Step 1 を commit 済み）。設計の欠陥ではなく運用の早期打ち切り。残る曖昧さは『委譲を諦めて inline へ切り替える待ち時間の基準が cycle Phase 1/2 に明示されていない』こと。事後到着した委譲先の判定はインライン判定と結論一致（全観点 PASS）だが、レビュー対象が inline 修正後の版だったため独立検証ではない。呼び出し側の照会は 2 回（報告回収要求 + 事実のみの通知）。判定は成果物から先に確定させ、後着の自己申告 2 通と矛盾がないことを確認した。R6 は fixture の .gitignore が /.agents/artifacts/ を除外しており Phase 3 成果物を commit できないため達成不能（非 critical）。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
@@ -124,20 +124,20 @@
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "f427b6cf31a3fe3264c81dd10c95efc8c0381c52a3293e00d3b689d29a78152d",
+    "surface_sha256": "8b98c7f84ded8796c1555b7debb52d8361b6f9e6bab62481650a3abda67552d8",
     "verified": "2026-07-27"
   },
   "decision-journal": {
     "file_sha256": {
-      "skills/decision-journal/SKILL.md": "ee34886577b0523a4065acd2cbeead928a23745d9dde87418ba36b439d44d56e",
+      "skills/decision-journal/SKILL.md": "35e860aa0927307a853e76d843a0e23178857c61c1d614b99179e9437f12a2c2",
       "skills/decision-journal/fixtures.json": "f72c390c8ad36049282da249b32506f205e4ab17654d3df5a00ee425e0001a76",
-      "skills/decision-journal/references/decision-record-template.md": "80cf07e4d5d511905dd5cc8c9dc3a9feba5be316e88f6640823e246125e569de",
-      "skills/decision-journal/references/interview-guide.md": "e7f855049d051bba9500bbe45df5b83ca690c41d2411a07f3d7ea938b5e87207",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/decision-journal/references/decision-record-template.md": "43630f34fc89c487d055d64b2cae9a3d757da3dc443920e3438451ebeca68ac1",
+      "skills/decision-journal/references/interview-guide.md": "6bd1bc4e989833d75637316c2380f4edd4a385a328f9f7a8186348bc330028b6",
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
       "skills/shared/references/decision-protocol.md": "9385ac847f75b4b23daaba710f72faee1f5319e88ef57ab45058c3d1a5db9629"
     },
-    "note": "S2 英語化（decision-protocol）後の再走。4 シナリオ全 pass。dj-004 は fixture の setup が空で「封印セクションのみのファイルが存在する」前提が散文宣言に留まるため、実行者が自分で封印を起こしてから不改変を実演する形になった（capture 時と同条件なので回帰比較は成立するが、検証の独立性は弱い）。dj-002 の認証情報検出→3 択提示は正しく発火。報告回収に照会 1 回/シナリオ。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/decision-journal/SKILL.md",
       "skills/decision-journal/fixtures.json",
@@ -146,20 +146,20 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/decision-protocol.md"
     ],
-    "surface_sha256": "44b008b8522545db53b6bcdd8ecda8227d31f1637f926f85bb84d47ed0b0ee2c",
+    "surface_sha256": "cd131b00b4e2e9791585c8a81f71ea87859afcb6252f186c6b0e4a094f86785d",
     "verified": "2026-07-27"
   },
   "design-guide": {
     "file_sha256": {
-      "skills/design-guide/SKILL.md": "845674b5107d22825fc1ecfbdffa85332cb254b10c40e5fe8825e1e970278c0d",
+      "skills/design-guide/SKILL.md": "9a04df651d13037de2683358bc0392db355f0d1175fcf2db9199a4f0f9c267cc",
       "skills/design-guide/fixtures.json": "dd17b40c38c3e77e1c203326cc150737fd43fbae81682f9bf1962354432110f9",
-      "skills/design-guide/references/anti-patterns.md": "3c61f4579e582f5346c7f442d0a9434142b75abde5dded51552eb019b4e0a6b5",
-      "skills/design-guide/references/design-md-template.md": "f429ad90dfc1650e1efe49fceee49ffba3b261be385e0c50487e24ca701fbf81",
-      "skills/design-guide/references/discovery-questions.md": "aafdbb1c088d828c7b9da66e78afb9570632b686533afa06d901d9d98008bc9a",
-      "skills/shared/references/human-readable-summary.md": "c0c6a954f59c70b1b1ae4b0284e2652a10a42d34ba96dbcdaf888d667309ce47"
+      "skills/design-guide/references/anti-patterns.md": "c6425c16968c81c9c4da81167c8c153e949142a3868aaef39095a7c85fa44ee6",
+      "skills/design-guide/references/design-md-template.md": "c7cd973cdc830319577035215de0cb2097c2dad3ba77d27a7075b661390158c3",
+      "skills/design-guide/references/discovery-questions.md": "1efca8547738730215ccc9dc666cc3b58919c7676166161075f824519ea0fc2e",
+      "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "S2 英語化（human-readable-summary）後の再走。報告回収に照会 1 回/シナリオ（dg-001 は不要）。2 シナリオ全 pass。両シナリオともファイル書き込みゼロを git status で機械確認。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/design-guide/SKILL.md",
       "skills/design-guide/fixtures.json",
@@ -168,22 +168,22 @@
       "skills/design-guide/references/discovery-questions.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "01d359b929d3bf83902a0818880b8bb39d1506cec7d4e5ac6787093ab06c060b",
+    "surface_sha256": "38349448a111bfcdf3105bac54ad22533737c09d5b403f05ea20c3b7ebf24181",
     "verified": "2026-07-27"
   },
   "doc-write": {
     "file_sha256": {
-      "skills/doc-write/SKILL.md": "1f54131634a3fbb4b08b91008509f8a54cc23d6940a5d3afa96bb2021f1d9e25",
+      "skills/doc-write/SKILL.md": "30a5acf30a70b7d754d1a025004ec8ea39a700a823ec695c1caab65e090ab43a",
       "skills/doc-write/fixtures.json": "5cb93e4a2dd5a03deb5fb80501fc8d0c6706712606a26aa23d7d8243b6bb2773",
-      "skills/doc-write/references/adr-template.md": "eb67007a57e6aaeb562e2fd4a1bec2d87272fad78ba93eab4ee99971b7da2831",
-      "skills/doc-write/references/discussion-summary-template.md": "e058f5281e9b6f6481a70c4ab77a159b7243dec3409c497c427268683eda5892",
-      "skills/doc-write/references/mermaid-guidelines.md": "4ba12bebc6e40921b9ddf20b8566916799dc9bd157f40fd6df4366a80698d3d5",
-      "skills/doc-write/references/tech-note-template.md": "dbaf93ee19e911c94bd5e91604480ff4c79bcc2421d35765edee1af91763841f",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/human-readable-summary.md": "c0c6a954f59c70b1b1ae4b0284e2652a10a42d34ba96dbcdaf888d667309ce47"
+      "skills/doc-write/references/adr-template.md": "67384d585ee51ab5093757397be8470cc1c65357b21c9096e61ccc73fe8ee28f",
+      "skills/doc-write/references/discussion-summary-template.md": "130ccf87b8c2bee7840d2bb2611e46454df5addc25e254b8af287bdd12f2faa6",
+      "skills/doc-write/references/mermaid-guidelines.md": "175dbb2f8dfbb7aa88c0d98b7a89f000971b3c7098b4101c306e4763feabfe2e",
+      "skills/doc-write/references/tech-note-template.md": "8f287b7120f738f72ac65a0d17af8683828f14b00afca0eb81009147a9887975",
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
+      "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "S2 英語化（human-readable-summary）後の再走。4 シナリオ全 pass。dw-003 は fixture の env 宣言（DOC_WRITE_WEB_SEARCH=unavailable）がハーネスで強制されず 1 回目が未検証になり、環境節を『web アクセスなし・呼び出すな』と作用的に書き直して再走し判定した。env は宣言であって強制ではない点は fixture 側の課題。報告回収は SendMessage 指定で照会 0 回。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/doc-write/SKILL.md",
       "skills/doc-write/fixtures.json",
@@ -194,27 +194,27 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "9d28d33af76bb92f404421f2ed9d1433689425e9618ead1f505f129f0743249b",
+    "surface_sha256": "35d82d3a9e752a2c85fe411206d115b08ec5ed20f99c93127068c756b1b38e76",
     "verified": "2026-07-27"
   },
   "github-issue": {
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "4d1ef650c638eb38e5ee81e15f51f9540c653d4d30716d5478c26757321d9604",
+      "skills/github-issue/SKILL.md": "dbce3f97e575ea47e8ff58edde051963116ed383dbc47bbfb8c1558de41c27e6",
       "skills/github-issue/fixtures.json": "6727406b6c2e79cfc4a38ad6955c3af7b976cb07f70a5f23ffcaa2bd92c2069b",
-      "skills/github-issue/references/cleanup-spec.md": "95125e8c661ac6d9b20dffaaaf8c12afc6d777aa29bde234a82b4267e86ef095",
-      "skills/github-issue/references/codex-review-loop.md": "19e54be0fe9d1f92c344b81fee0584d0833171ddd98ecbabb21d3ad533225323",
-      "skills/github-issue/references/config-defaults.md": "f9f91797f8e814696a5162c4ad4b3f8f8b3aeaeb7c7f88922d2272fd3e7fe218",
-      "skills/github-issue/references/gh-commands.md": "b78291b2c1bf34b866084fd1b79e86de8e3a720b14e0af7b33ac03198e186206",
-      "skills/github-issue/references/label-spec.md": "1f37a70d4e827aef55912f61eeefde9d4030424bca495232b2fcc545ef55fe59",
-      "skills/github-issue/references/polling-adapter.md": "367d2d4d6fac410532fc5c582e8acef28c5590a86eb2e481e714146bbfaded8f",
-      "skills/github-issue/references/secret-scanner.md": "5e1df48668b3c11183e46e9c18a15a3622c579292394df5125a740805472f62b",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/codex-integration.md": "aa850f8efe9d355cd8300f223b2ae7dcee77eb9e06f47ecc7e7e0a8e9489bdb4",
+      "skills/github-issue/references/cleanup-spec.md": "a141e9524911d46bee62e4cffceeb4da845d23cf1f555905eb6c6a222daa21f7",
+      "skills/github-issue/references/codex-review-loop.md": "616fec7c7da33d18cdecc60b20b02e1be461cb0029eeffbeca19a6b7554755ed",
+      "skills/github-issue/references/config-defaults.md": "536d35ba1412d9b3883bf18d4731d51474f51ec32d9a69bf97306b1cf28ecba5",
+      "skills/github-issue/references/gh-commands.md": "cc3f6ec5bda0d660e5ff86aea58c8bac181c8c660b1a2c405a68f9623b4732e3",
+      "skills/github-issue/references/label-spec.md": "e1479642e0c4716cdac2ddf4f70d69fa6b3dd72cff54bd0baf45c63c1bd80c27",
+      "skills/github-issue/references/polling-adapter.md": "ccc7a861bf1fd27746c6b873d4093854d961afa47d936378a880d5760c1b6cbf",
+      "skills/github-issue/references/secret-scanner.md": "d9a01874b251afdef4501d5a5c0f997a6ec6069f88f27f61e2dcfe2630276668",
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
+      "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "S2 英語化（polling-pattern / measurement-identity / codex-integration）後の再走。4 シナリオ全 pass。gi-001 は PATH に gh 監査シムを挿して「GitHub 書き込みゼロ」を主張ではなく実証（ログ 0 行）、clone_id も sha1sum で独立照合した。gi-003 は 007 を拒否し「確認不要」の指示でも検証ゲートを撤回せず。gi-004 は locked override と有効 override を区別。報告回収は SendMessage 指定で照会 0 回。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/github-issue/SKILL.md",
       "skills/github-issue/fixtures.json",
@@ -230,19 +230,19 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "c0c1b761adeac77e397b9940b131c8d995f9c00e48cf82913e9c9d4f628df7dc",
+    "surface_sha256": "f75233da25eea66788428421cfd37a98657a806e3e59f7633f1bfa24caea7d73",
     "verified": "2026-07-27"
   },
   "handoff": {
     "file_sha256": {
-      "skills/handoff/SKILL.md": "aa2c61a4f384affd45069a71dff1686e3cf6b64848a6df8596f7a4d450a4a3d8",
-      "skills/handoff/fixtures.json": "d6ade78b61fe7cabaee8373d57ed4bac6943676cb0f85dbe3fe97bb67b02e30e",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/handoff/SKILL.md": "f188d6ebe2df8518fba55f284d49599c625d3810487ec2541798d1b12fd66501",
+      "skills/handoff/fixtures.json": "2b5028db210b7dc154d45862acaf9b579fe870ca30275c745bf751627190485f",
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
-      "skills/shared/references/human-readable-summary.md": "c0c6a954f59c70b1b1ae4b0284e2652a10a42d34ba96dbcdaf888d667309ce47"
+      "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "S2 英語化（checkpoint-pattern / human-readable-summary）後の再走。報告回収に照会 1 回/シナリオ。4 シナリオ全 pass。ho-004 の checkpoint fallback は superseded 判定・自動削除なしを確認。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/handoff/SKILL.md",
       "skills/handoff/fixtures.json",
@@ -250,36 +250,37 @@
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "0504313cae84045ff23830c9aace8fafae41e69209d57400bdde8e9a69f4cc8c",
+    "surface_sha256": "f053d88ea352c27a6cafa53c4f8541991f116b6a24a09321862abb119b2afc5c",
     "verified": "2026-07-27"
   },
   "investigate": {
     "file_sha256": {
-      "skills/investigate/SKILL.md": "e3fb76a032c9f614d9ad3993096f55a362b4cf9a64e3e88d2bcd1be4ebcd9160",
-      "skills/investigate/fixtures.json": "a396e3af7b7d59485cc54e7a973e200dbaf64c33e71f98c7f256f045d7d86e11"
+      "skills/investigate/SKILL.md": "05e3447d808972adbe90f75d3d95ab405600810baca341c9a8cac0365cdb3829",
+      "skills/investigate/fixtures.json": "7698fd56a2c19b2d0afda45329015e5cdd555f949a8e542b5b67430c4ec7f6b4"
     },
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/investigate/SKILL.md",
       "skills/investigate/fixtures.json"
     ],
-    "surface_sha256": "87192da9273aa104f97215615c2a6e03a545acfefd914647f0f8701f7f321f41",
-    "verified": "2026-07-23"
+    "surface_sha256": "6a55e2cdf955746129b44c23f9b3f2b523d2bea501f80593e728d1849e9c795d",
+    "verified": "2026-07-27"
   },
   "issue": {
     "file_sha256": {
-      "skills/issue/SKILL.md": "807fff478763ce6070333e985e6e6d0769835d2a6e296965ef61c6deed38c8cc",
-      "skills/issue/fixtures.json": "4d5bb5169db02f8c55ee1b41f6db9a2aea875c1b638282d74dbf4e362765d479",
-      "skills/issue/references/issue-template.md": "9ba616322895f24ee0f277c4fc13cfa44b382a834dabe36b426939b131ec0eb0",
-      "skills/issue/references/polling-state-machine.md": "438c727257fe038f431d1fdd16a32169d50f241835e669e4dc42b300e55b5193",
-      "skills/issue/references/polling-state.md": "061cbac42bc4033bf1ba0f70a07e7fbc1d9e9e1d4d9092ef07335baaf6836715",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/human-readable-summary.md": "c0c6a954f59c70b1b1ae4b0284e2652a10a42d34ba96dbcdaf888d667309ce47",
+      "skills/issue/SKILL.md": "9a9545e0cf42e4e3582f7fff52e2d8785ac03faff05a0a3d4a90bffed9ce72c2",
+      "skills/issue/fixtures.json": "40065f95ee8d35d14806fcc5a922fb9525d75658cac163cd9fc0c8d1ca894ad7",
+      "skills/issue/references/issue-template.md": "6c27174d5b7b8c6fa00b66b69d4a90df0c38af36ebf8c3b90fcef78c57a0715f",
+      "skills/issue/references/polling-state-machine.md": "7c65e6079934335d3a891e49c798e2a8761ce443dc63b6f1600be21a96131d70",
+      "skills/issue/references/polling-state.md": "11c6169d79da16612e1a06dcd8a372570aac6fd2f6b87c30611aebaee7713f0f",
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
+      "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec",
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "S2 英語化（polling-pattern / measurement-identity / human-readable-summary）後の再走。4 シナリオ全 pass。アンカー参照の差し替え（§3/§6.5/§10 と measurement-identity §4）後も polling の状態機械・kill file 優先順・orphan recovery の EPERM fail-safe が正しく動作。Step 15 の measurement コマンドがリポジトリ相対パスで外部インストール時に必ず失敗する点を実行者 2 名が独立に指摘（warn only のため tick は通る）。報告回収は SendMessage 指定で照会 0 回。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/issue/SKILL.md",
       "skills/issue/fixtures.json",
@@ -291,21 +292,21 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "5909fa5224ea5ae97d02af6eab7a5a1ba35b4177f57ce81b0d7d60e3041b4bdf",
+    "surface_sha256": "ad55d03eb88240840a5de8b4eb6157e2359c882a590087b073c9185c52db4364",
     "verified": "2026-07-27"
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "1dfef8514afbe7e939fd50bb4b2543f5cff0c94559b371de98f1af7ec2f43a86",
+      "skills/plan/SKILL.md": "b758b7fb9c394da0a4cd5323a50bf1403b6478f91e64a3829dbddf6f007acdb1",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
       "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153"
     },
-    "note": "S2 英語化（checkpoint-pattern）後の再走。4 シナリオ全 pass。pl-004 は checkpoint classify で superseded を得て削除提案のみに留め read-only を維持。pl-002 は headless 既定 (b) abandoned アーカイブを確認なしで実行。報告回収は SendMessage 指定で照会 0 回。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/plan/SKILL.md",
       "skills/plan/fixtures.json",
@@ -315,22 +316,22 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md"
     ],
-    "surface_sha256": "05a4e51c03224f17527dec4eab87cdaf26086ab1b84f4049bfd9c907b870bdf2",
+    "surface_sha256": "deb74319c1dc2c8bed86747d1ea1d58c764b7d4749b60fd2df0b68465272eda6",
     "verified": "2026-07-27"
   },
   "plan-implement": {
     "file_sha256": {
-      "skills/plan-implement/SKILL.md": "f9229a798736f707b8aaab0843f5e01c8a1e7b7b17b57291886f708e4bbaefcf",
+      "skills/plan-implement/SKILL.md": "ebdd2c45e47d1e1ec629aff1abefc8076d9940e189f4a5a4f84d09dc5a9da0f9",
       "skills/plan-implement/fixtures.json": "2840fcbc704e213fcd50d5d492a96e6e8c4aabb525ab6bd94210ff6d87adaf89",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
       "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
-      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a"
+      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "S2 英語化（severity-and-verdicts / tdd-contract / verification-gate）後の再走。3 シナリオとも critical 全 ○。多段委譲は環境制約により全フェーズ inline 代行（照会 0 回）。pi-002 の要件 4（非 critical）は partial: fixture が status 更新のコミットを求めるが SKILL.md:113 は artifacts が Git 追跡外なら commit 対象外と定めており、実行者は契約側に従って partial 申告した。fixture 要件文の修正が必要。pi-003 は非追跡がマシンローカルの ~/.config/git/ignore 由来であることを検出し、リポジトリ側 .gitignore を先行コミットした。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/plan-implement/SKILL.md",
       "skills/plan-implement/fixtures.json",
@@ -341,23 +342,23 @@
       "skills/shared/references/testing-anti-patterns.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "69772a804ea1dd6c09d375ab9ce6777753ea299746ab1ac95f3f8f7269336e85",
+    "surface_sha256": "dc6b005c40a52512bffa74cea5b0ee36fb57414816cad3a50a8aa16cd2b3b7d2",
     "verified": "2026-07-27"
   },
   "plan-reviewer": {
     "file_sha256": {
-      "skills/plan-reviewer/SKILL.md": "73a6cc3c1e65c04ad6b57a2f413835e3f475ea033f8fef2defcadda68f55a7db",
+      "skills/plan-reviewer/SKILL.md": "beef34802c1cf872c5f451b6a1d6de28ceee1211070e37f2931fd5462335837d",
       "skills/plan-reviewer/fixtures.json": "551e9f86884b8913ac0c80f9daf1f0621d9cd6b5888b86be5f38da4a21278773",
       "skills/plan-reviewer/references/output-format.md": "3140912a79e485dc23545b99335b1e581863a3d28df2694b8b4ed8e22f1d0230",
       "skills/plan-reviewer/references/review-dimensions.md": "e80876dfc62783f0e629064eada35b157a7b6babffa58cafd77714ff5e64ed89",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
-      "skills/shared/references/codex-integration.md": "aa850f8efe9d355cd8300f223b2ae7dcee77eb9e06f47ecc7e7e0a8e9489bdb4",
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
+      "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd"
     },
-    "note": "S2 英語化（codex-integration / severity-and-verdicts）後の再走。2 シナリオ全 pass（executor_tier: high 準拠で上位モデル実行）。両シナリオとも Codex 不在で fallback 文言を出力し捏造なし。pr-001 は行番号不整合と fastcsv 実在性を BLOCK、pr-002 は UI/UX TRIGGERED でシグナル 4 件列挙。報告回収は SendMessage 指定で照会 0 回。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/plan-reviewer/SKILL.md",
       "skills/plan-reviewer/fixtures.json",
@@ -369,37 +370,37 @@
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md"
     ],
-    "surface_sha256": "b77a987c382cecd4ebc3fa22b3f282c0381cc689fa60daf302f8ff982123373d",
+    "surface_sha256": "65b25b61325794fe0cb223cf95bbc825189700d0dc2045fd586a7d5493e0558b",
     "verified": "2026-07-27"
   },
   "problem-solving": {
     "file_sha256": {
-      "skills/problem-solving/SKILL.md": "57f13bc8473e88fbfe86813e717a5d58f128f2bc9881088b29a2eb8e75275019",
+      "skills/problem-solving/SKILL.md": "406850dc04a82af239124802bfb42a8d13a831b1e7302d322e7430879d6c6997",
       "skills/problem-solving/fixtures.json": "805584fb1dacbf7e18fac4fd53cc323faa0db29317f7f814514cc7da1f4d645c"
     },
-    "note": "batch5a 英語化 A/B: 本番同等モデルの実行者 3 体 + 独立採点者 3 体で 3 シナリオ全合格。ps-001 は日英両アーム k=3 で中央値 1.00。ps-003 の読み取り専用遵守は隔離領域のファイル改変ゼロを sha256 照合で裏取り（自己申告に依らず）。実行者への照会 0 回。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/problem-solving/SKILL.md",
       "skills/problem-solving/fixtures.json"
     ],
-    "surface_sha256": "bb32f0e0a5029ca3af748985ca4c0a1254e1edafdfd590f629405620819f43d3",
-    "verified": "2026-07-25"
+    "surface_sha256": "2b3bc1c24590809a4db7e0874d03335b28bcd1fe55114835eb05b6c80124d728",
+    "verified": "2026-07-27"
   },
   "refactor": {
     "file_sha256": {
-      "skills/refactor/SKILL.md": "7f4417155eac0b070000d6bc273abda12d297090ecde6cbcd099844a8bfe6dd9",
+      "skills/refactor/SKILL.md": "edc8ee31a7db7bee1075104bb81e7508d172f855f7976eef3d4c4381d2721a4b",
       "skills/refactor/fixtures.json": "52a1627a3a378531cbda915806f25d8dd7d94815991147a685ef06693b14f795",
-      "skills/refactor/references/behavior-preservation-checks.md": "8288a6c286dd869c55e916329446f1319948a629de1f2b8406c6863d9dfbcd34",
-      "skills/refactor/references/refactoring-catalog.md": "a549836cb8cefa229bcaa7751cbfdd10799bdc2c8ad48b4449bad98080ba6381",
-      "skills/refactor/references/similarity-detection.md": "4cb235f4a713766ce348089d791a70a569458d28147b70dce704941aa3c4c260",
-      "skills/shared/references/artifact-store.md": "4c43e4bd3a1c9589e1b193685a343a5d65f56839e0cf2aa63e12e0159e0b3bf5",
+      "skills/refactor/references/behavior-preservation-checks.md": "57f718e8eaa6dc02ef2c2df1e93207a315209f7f2c2484512d677097b8d3cd23",
+      "skills/refactor/references/refactoring-catalog.md": "90cb3d767e3f0c432c80334dc0f0bf56a59b04777e78d909bd4e60fbc2bf5569",
+      "skills/refactor/references/similarity-detection.md": "a4ef8d314ff0bbeb89126d469eb1c3564b045dec08c4abfed9801ed258f6af33",
+      "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
-      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a"
+      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "S2 英語化（severity-and-verdicts / verification-gate）後の再走。3 シナリオ全 pass。similarity-* が Python 非対応のため ast-grep へフォールバックし fallback_reason を記録する経路を 2 シナリオで実測。rf-003 は already-clean ゲートで no-op 終了。報告回収は SendMessage 指定で照会 0 回。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/refactor/SKILL.md",
       "skills/refactor/fixtures.json",
@@ -411,21 +412,21 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "df42b6570ed9281e0444555705795c769266bd4ffbfd80c263e5fc0578bc2f1c",
+    "surface_sha256": "b4a268f3b1652deda443e31505f5b2bce27748ab1b553e3d51da4620248f534c",
     "verified": "2026-07-27"
   },
   "sweep-fix": {
     "file_sha256": {
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
-      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a",
-      "skills/sweep-fix/SKILL.md": "75a4e8a607bfd36ff3345afc7dc7f00d6ed08f6adfd8747c7d8698da6c403276",
+      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
+      "skills/sweep-fix/SKILL.md": "dce40a8a2370147c3601e0cbb040d6af35ff1a233c1cb1071bcdfafcec20f44c",
       "skills/sweep-fix/fixtures.json": "0efab723b12b648dce4d0066481cb7c65aed53508d4f3c2bb1cbd9e1dc3b42ca",
-      "skills/sweep-fix/references/context-verification.md": "2c1955b9ffa171c4bffb4123a7137e442924ea25c6546754f98e4abb5ce17f5c",
-      "skills/sweep-fix/references/pattern-extraction.md": "511c23c087da40c08406630106dab9b37687a96bb386e025eddea7a720fee417"
+      "skills/sweep-fix/references/context-verification.md": "4f6d79132703095d33642fe7016f455ea7373bd52fdaefd1eac81b7eca3c9af1",
+      "skills/sweep-fix/references/pattern-extraction.md": "8c6bd69ac2318b069abab9d3e8df53eb8e3d753fbd748fef560fffe7643084bb"
     },
-    "note": "S2 英語化（severity-and-verdicts / verification-gate）後の再走。3 シナリオ全 pass。sf-001 は中間ファイル置き場が git ignore 外であることを検出して報告のみに留め（.gitignore を書き換えず）、削除をレポート提示後に実行する順序も守った。報告回収は SendMessage 指定で照会 0 回。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md",
@@ -435,19 +436,19 @@
       "skills/sweep-fix/references/context-verification.md",
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
-    "surface_sha256": "093ee00e222ccc866430691256c725469c35ea43fde33c958967ac76529c8797",
+    "surface_sha256": "c10679d47b6a23fb500a9b3a9cfeb40b1488a81ab4184cc8d634ecca4f8866ed",
     "verified": "2026-07-27"
   },
   "systematic-debugging": {
     "file_sha256": {
       "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
-      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a",
-      "skills/systematic-debugging/SKILL.md": "43fb42b04b096ffa78e38b53138b768badeb57bd4fb50492dd9e473686624b0c",
+      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
+      "skills/systematic-debugging/SKILL.md": "ce3a5e0dc0e6401a8bfb818054f49f9b85a211878a534fa5877d7b50824aba92",
       "skills/systematic-debugging/fixtures.json": "3581f610b0b790518266ab8be0e3375bed56165386767c29740cbc681523a99f",
-      "skills/systematic-debugging/references/root-cause-tracing.md": "8d5a478058c90f36bee45ee9d01c0cb910b0328d8ab4e1f49ee37b1dd4aa8078"
+      "skills/systematic-debugging/references/root-cause-tracing.md": "27fb3aa57781e5fc843a459ab3ec53343a18fb979cd4525010603c2353ccdaef"
     },
-    "note": "S2 英語化（tdd-contract / verification-gate）後の再走。3 シナリオ全 pass。sd-002 は再現不能時に src を一切触らず質問して終了する分岐を実測（2000 回連打 + 空白 8 種）。報告回収は SendMessage 指定で照会 0 回。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md",
@@ -455,19 +456,19 @@
       "skills/systematic-debugging/fixtures.json",
       "skills/systematic-debugging/references/root-cause-tracing.md"
     ],
-    "surface_sha256": "19b174229fcc0327e662be5515a1df5d3e6e45b76c921685003ab6cde3c1dae8",
+    "surface_sha256": "0ce16f08560695aefa3b8b5ada89f369db21f7c7113632d811a354d5b0b5f5f1",
     "verified": "2026-07-27"
   },
   "test-driven-development": {
     "file_sha256": {
       "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
-      "skills/shared/references/verification-gate.md": "60f78844ecb5e8622fcb3a03839572d8789185933906deea7b0d11b4b653718a",
-      "skills/test-driven-development/SKILL.md": "d2682c54212772112e0c63aefe2398a3331f0f1b3e81ac47c66e6968bf2343a6",
+      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
+      "skills/test-driven-development/SKILL.md": "8d7ce1608d7f35ddee6fdf5428ad6d023513eaa61d63386493aa94efbed1004b",
       "skills/test-driven-development/fixtures.json": "ad73bf8a0daf85dad9eabdb049e48d449310be0db1ba0823a26aaa1376fb3ad4"
     },
-    "note": "S2 英語化（tdd-contract / verification-gate）後の再走。3 シナリオ全 pass。td-003 は「通ってしまったテストを GREEN 扱いしない」分岐を踏み、負 limit の境界探索で真の RED を検出（実装の弱体化なし）。報告回収は SendMessage 指定で照会 0 回。",
-    "result": "pass",
+    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/testing-anti-patterns.md",
@@ -475,7 +476,7 @@
       "skills/test-driven-development/SKILL.md",
       "skills/test-driven-development/fixtures.json"
     ],
-    "surface_sha256": "e4e79bbb9a468ff7100a85d3c56de4c79a4a3855e913979966b5d42e3141a594",
+    "surface_sha256": "34942c0a67295d4317e895f52946fa2fd48f5ad1c3cb8b271ace4be14f2cc974",
     "verified": "2026-07-27"
   }
 }

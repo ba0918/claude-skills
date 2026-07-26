@@ -32,4 +32,9 @@ python3 skills/skill-regression/scripts/ledger.py --check .
 echo "=== Translation parity"
 python3 scripts/check_translation_parity.py
 
+# アンカー参照の飛び先。validate_repo.py のリンク検証はパス部分しか見ず `#` 以降を
+# 捨てるため、見出しを改名して参照を取りこぼしても緑のままリンクだけ壊れる。
+echo "=== Anchor references"
+python3 scripts/check_anchors.py
+
 echo "=== All checks passed"

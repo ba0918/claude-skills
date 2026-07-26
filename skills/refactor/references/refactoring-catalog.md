@@ -1,60 +1,60 @@
-# Refactoring Catalog — 改善パターンカタログ
+# Refactoring Catalog — the catalog of improvement patterns
 
-refactor Phase 2 で使用する。動作を保持したまま「理解速度」を上げる表現改善のパターン集。
-**簡潔さの基準は行数ではなく、新しいチームメンバーが元より速く理解できるかどうか。**
+Used in refactor Phase 2. A collection of patterns for improving expression — raising the "speed of understanding" while preserving behavior.
+**The criterion for conciseness is not line count but whether a new team member can understand it faster than before.**
 
-## 支配原則
+## The governing principle
 
 ```
-改善対象は「理解を妨げる表現」であって「行数」ではない。
-1行のネストした三項演算子は、5行の if/else より複雑。行数が増える改善もある。
+What is being improved is "expression that obstructs understanding", not "line count".
+A one-line nested ternary is more complex than a five-line if/else. Some improvements increase the line count.
 ```
 
-## パターン表
+## The pattern table
 
-各候補は「なぜ理解を妨げるか」と「動作保持で適用できる変換」をセットで持つ。
-「兆候」列の数値（3段以上・3箇所以上等）は**目安であって足切り条件ではない**。
-境界例（2段ネスト等）も候補化してよく、採否は「新しいチームメンバー」テストで判定する。
+Each candidate carries a pair: "why it obstructs understanding" and "the transformation applicable while preserving behavior".
+The numbers in the "Signs" column (3 levels or more, 3 sites or more, and so on) are **guides, not cut-off conditions**.
+Borderline cases (2 levels of nesting and the like) may still become candidates, and whether to adopt them is decided by the "new team member" test.
 
-| # | パターン | 兆候 | 動作保持な変換 | 注意（過度な単純化の罠） |
+| # | Pattern | Signs | The behavior-preserving transformation | Cautions (the trap of over-simplification) |
 |---|---------|------|---------------|------------------------|
-| C1 | 深いネスト | 3段以上の if/for ネスト、右に流れるコード | early return / guard clause で平坦化 | 早期 return が副作用の順序を変えないこと |
-| C2 | 長大関数 | 1関数が複数の責務を持つ、スクロールが必要 | 意味のある単位で関数抽出（名前が説明になる） | 抽出で共有状態の可視性が落ちないこと |
-| C3 | ネストした三項演算子 | `a ? b : c ? d : e` | if/else または early return、ルックアップテーブル | 短絡評価の副作用順序を保つ |
-| C4 | boolean フラグ引数 | `doThing(true)` で呼び出し側が読めない | 意図が伝わる2関数に分割、または列挙型 | 呼び出し元全件の書き換えが伴う（origin/sweep 両方検証） |
-| C5 | 汎用名 | `data` / `tmp` / `res` / `handle()` | 役割を表す名前に改名 | 公開 API・シリアライズキーは改名不可（public_api） |
-| C6 | what コメント | コードの逐語訳コメント（`// increment i`） | コメント削除 + 名前で意図を表現。why コメントは残す | 「なぜ」を説明するコメントは削除しない |
-| C7 | 重複ロジック | 同一ロジックの3箇所以上のコピー | 共通関数へ抽出（DRY） | 「偶然同形」を統合しない。将来分岐予定は残す |
-| C8 | デッドコード | 到達不能分岐、未使用変数・関数 | 削除は**初版の対象外**（削除系は可逆性が低い）。REPORT に INFO で記載 | 動的 dispatch / リフレクション経由の使用に注意 |
-| C9 | 無価値ラッパー | 1行を包むだけで抽象価値のないラッパー | インライン化 | 名前で概念を与える抽象・テスト境界の抽象は「無価値」ではない |
-| C10 | マジックナンバー | 意味不明の数値リテラルの散在 | 名前付き定数へ抽出 | 定数化で計算タイミング（コンパイル時/実行時）を変えない |
-| C11 | 否定の連鎖 | `if (!(!a && !b))` | ド・モルガンで平明化 | 真理値表が完全一致することを確認 |
-| C12 | 冗長な中間変数 | 一度しか使わず名前も無価値な変数 | インライン化 | 評価タイミング・副作用回数を変えない |
+| C1 | Deep nesting | if/for nesting 3 levels or more, code drifting rightward | Flatten with early returns / guard clauses | The early return must not change the order of side effects |
+| C2 | An overly long function | One function carrying several responsibilities, requiring scrolling | Extract functions at meaningful units (so the name explains it) | The extraction must not reduce the visibility of shared state |
+| C3 | Nested ternaries | `a ? b : c ? d : e` | if/else or an early return, or a lookup table | Preserve the side-effect order of short-circuit evaluation |
+| C4 | A boolean flag argument | `doThing(true)`, where the call site is unreadable | Split into 2 functions whose intent is conveyed, or an enum type | It entails rewriting every caller (verify both origin and sweep) |
+| C5 | Generic names | `data` / `tmp` / `res` / `handle()` | Rename to a name expressing the role | Public APIs and serialization keys cannot be renamed (public_api) |
+| C6 | What-comments | A comment transcribing the code (`// increment i`) | Delete the comment + express the intent through naming. Keep why-comments | Never delete a comment explaining "why" |
+| C7 | Duplicated logic | 3 or more copies of identical logic | Extract into a shared function (DRY) | Do not merge "accidentally identical" shapes. Keep what is scheduled to diverge |
+| C8 | Dead code | Unreachable branches, unused variables and functions | Deletion is **out of scope for the first edition** (deletions have low reversibility). Record it as INFO in the REPORT | Watch for use via dynamic dispatch or reflection |
+| C9 | A worthless wrapper | A wrapper that merely wraps one line with no abstractive value | Inline it | An abstraction that gives a concept a name, or one that forms a test boundary, is not "worthless" |
+| C10 | Magic numbers | Numeric literals of unclear meaning scattered about | Extract into named constants | Making it a constant must not change the timing of computation (compile time vs runtime) |
+| C11 | Chained negations | `if (!(!a && !b))` | Clarify with De Morgan's laws | Confirm the truth tables match exactly |
+| C12 | A redundant intermediate variable | A variable used once whose name adds nothing | Inline it | Do not change the timing of evaluation or the number of side effects |
 
-## 削除・統合系は初版の対象外
+## Deletion and consolidation are out of scope for the first edition
 
-命名整理・抽出・重複解消など**可逆性の高い変換**に限定する。
-デッドコード削除・API 統合など可逆性の低い変換は、一時に見えて仕様化しているコード
-（migration shim / 後方互換 shim 等）を壊すリスクがあるため初版では扱わず、INFO で報告する。
+Limit it to **highly reversible transformations** such as tidying names, extraction, and removing duplication.
+Transformations with low reversibility, such as deleting dead code or consolidating APIs, risk breaking code that looks temporary but has become part of the spec
+(a migration shim, a backward-compatibility shim, and the like), so the first edition does not handle them and reports them as INFO.
 
-## 「新しいチームメンバー」テスト
+## The "new team member" test
 
-各 `REFACTOR_CANDIDATE` に適用する:
+Apply it to each `REFACTOR_CANDIDATE`:
 
 ```
-この変換後のコードは、プロジェクトに詳しくない新メンバーが
-元のコードより「速く・正確に」理解できるか？
+Can a new member unfamiliar with the project understand the transformed code
+"faster and more accurately" than the original?
 
-  YES → REFACTOR_CANDIDATE のまま
-  NO / 微妙 → ALREADY_CLEAN に落とす（効果の薄い改善を無理に列挙しない）
+  YES → it stays a REFACTOR_CANDIDATE
+  NO / borderline → drop it to ALREADY_CLEAN (do not force weak improvements into the list)
 ```
 
-## 過度な単純化の罠（適用してはいけない「改善」）
+## The trap of over-simplification (the "improvements" that must not be applied)
 
-| 罠 | なぜ罠か |
+| The trap | Why it is a trap |
 |----|---------|
-| 抽象を全てインライン化して「フラット」にする | 概念に名前を与える抽象は複雑性ではない。命名された抽象は理解を助ける |
-| エラーハンドリングを消して短くする | behavior change。エラー挙動は挙動契約の一部 |
-| 慣例と違う「よりよい書き方」に統一する | 周辺コードとの一貫性が優先。慣例破りの churn は理解を妨げる |
-| 行数削減のためのワンライナー化 | 密度の高い1行は理解速度を落とす。行数は指標ではない |
-| ホットパスを「読みやすく」書き換える | 計測なしの性能劣化リスク。Phase 2 の performance Gate で UNCERTAIN に倒す |
+| Inlining every abstraction to make it "flat" | An abstraction that gives a concept a name is not complexity. A named abstraction aids understanding |
+| Shortening it by removing error handling | A behavior change. Error behavior is part of the behavioral contract |
+| Unifying on a "better way of writing it" that differs from convention | Consistency with the surrounding code wins. Convention-breaking churn obstructs understanding |
+| Turning things into one-liners to cut line count | A dense single line lowers the speed of understanding. Line count is not the metric |
+| Rewriting a hot path to be "more readable" | The risk of unmeasured performance degradation. Fall to UNCERTAIN at the Phase 2 performance gate |

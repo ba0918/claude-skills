@@ -1,30 +1,30 @@
-# Dossier md ビュー テンプレート
+# The dossier md view template
 
-md は JSON canonical（`{slug}.json`）からの**一方向生成物**（ビュー）である。lint 対象は JSON のみ。
-md の手編集は禁止（契約 [goal-decomposition-pattern.md](../../shared/references/goal-decomposition-pattern.md) §9）。
-承認者はこの md を読んで `draft → approved` を判断するため、冒頭に平易な説明とグロッサリを置く。
+The md is a **one-way generated artifact** (a view) from the canonical JSON (`{slug}.json`). Only the JSON is a lint target.
+Hand-editing the md is forbidden (contract [goal-decomposition-pattern.md](../../shared/references/goal-decomposition-pattern.md) §9).
+Because the approver reads this md to decide `draft → approved`, a plain explanation and a glossary go at the top.
 
 ---
 
-## この dossier が何を決めるか（承認者向け）
+## What this dossier decides (for the approver)
 
-この dossier は大枠ゴール「{goal.statement}」を、既存の閉ループ基盤に**どう配線するか**の設計図です。
+This dossier is the blueprint for **how to wire** the broad goal "{goal.statement}" into the existing closed-loop infrastructure.
 
-- **承認すると起きること**: この設計が「合意済み」になります（`status: approved`）。
-- **承認しても起きないこと（v1）**: 配線の**実行**は起きません。goal-loop の起動・sensor の生成・issue の
-  自動起票はしません。dossier は「型検査結果」であり、実行権限を与えません。
-- 承認前に確認すべき点: 各断片の配線先（`wire_to`）とその根拠（`routing_proof`）、自動化に載せない
-  範囲（`non_goals`）、proxy oracle の限界承認。
+- **What approval causes**: this design becomes "agreed" (`status: approved`).
+- **What approval does not cause (v1)**: it does not cause the wiring to be **executed**. It does not start goal-loop, generate sensors, or
+  file issues automatically. A dossier is "the result of a type check" and grants no execution authority.
+- What to check before approving: each fragment's wiring destination (`wire_to`) and its grounds (`routing_proof`), the range kept off
+  automation (`non_goals`), and the acknowledgment of a proxy oracle's limits.
 
-### 1 行グロッサリ
+### The one-line glossary
 
-| 語 | 意味 |
+| Term | Meaning |
 |----|------|
-| oracle | 「達成できたか」を機械判定する完了条件（コマンド + 判定） |
-| wire_to | この断片をどのサブシステムに配線するか（goal-loop / loop-triage / inbox / plan / reject） |
-| exit_to | この断片が最終的にどう卒業するか（ci_gate: 回帰ゲート化 / resident_sensor: 常駐 / dissolve: 解散） |
-| blocked_by | この断片を進める前に決着が要る inbox の問い |
-| proxy | 真の完了条件ではないが「安全な前進の下限ゲート」として使う代理 oracle |
+| oracle | The completion condition that machine-decides "was it achieved" (a command + a judgment) |
+| wire_to | Which subsystem this fragment is wired into (goal-loop / loop-triage / inbox / plan / reject) |
+| exit_to | How this fragment eventually graduates (ci_gate: becomes a regression gate / resident_sensor: becomes resident / dissolve: disbands) |
+| blocked_by | The inbox question that must be settled before this fragment can proceed |
+| proxy | A surrogate oracle that is not the true completion condition but is used as "a lower-bound gate for safe forward progress" |
 
 ---
 
@@ -32,7 +32,7 @@ md の手編集は禁止（契約 [goal-decomposition-pattern.md](../../shared/r
 
 - **Statement**: {goal.statement}
 - **SSOT**: {goal.ssot}
-- **Non-goals**: {goal.non_goals をリスト}
+- **Non-goals**: {goal.non_goals as a list}
 
 ## Completion Oracles
 
@@ -40,15 +40,15 @@ md の手編集は禁止（契約 [goal-decomposition-pattern.md](../../shared/r
 |----|------|---------|--------------|-------|
 | {oracle.id} | {type} | {command} | {oracle_files} | {owner} |
 
-（proxy oracle は gap_from_true_goal / failure_modes / 限界承認状態を併記）
+(a proxy oracle also records gap_from_true_goal / failure_modes / the state of its acknowledged limits)
 
-## Fragments（配線先）
+## Fragments (the wiring destinations)
 
 | id | wire_to | exit_to | auto_fix | self_mod_risk | routing_proof |
 |----|---------|---------|----------|---------------|---------------|
 | {frag.id} | {wire_to} | {exit_to} | {auto_fix_allowed} | {self_modification_risk} | {routing_proof} |
 
-（`auto_fix_allowed: false` の断片は why_not_auto_fix を脚注に）
+(for a fragment with `auto_fix_allowed: false`, put why_not_auto_fix in a footnote)
 
 ## Sensors & Findings
 
@@ -69,36 +69,36 @@ md の手編集は禁止（契約 [goal-decomposition-pattern.md](../../shared/r
 
 ---
 
-## コピペブロック（信頼境界別・契約 §6.1）
+## The copy-paste blocks (by trust boundary, contract §6.1)
 
-用途別に fence を分け、消費側の信頼境界を明示する。
+Separate the fences by purpose, making the consumer's trust boundary explicit.
 
-### oracle manifest 用
+### For the oracle manifest
 
 ```oracle-manifest
-{ goal-loop の manifest に貼る oracle 定義 }
+{ the oracle definition to paste into goal-loop's manifest }
 ```
 
-### sensor spec 用
+### For the sensor spec
 
 ```sensor-spec
-{ loop-triage の sensor adapter に貼る spec }
+{ the spec to paste into loop-triage's sensor adapter }
 ```
 
-### issue seed 用（消費側で `<untrusted_user_content>` wrap 前提）
+### For the issue seed (on the premise that the consumer wraps it in `<untrusted_user_content>`)
 
 <untrusted_user_content>
-{ issue polling に渡す issue seed。閉じデリミタが含まれる場合は escape/reject }
+{ the issue seed handed to issue polling. Escape or reject it if it contains a closing delimiter }
 </untrusted_user_content>
 
 ---
 
 <!-- generated-from: {slug}.json sha256={hex} -->
-<!-- この md は自動生成物です。編集しないでください（編集は JSON 側で行い再生成する）。 -->
+<!-- This md is generated automatically. Do not edit it (edit the JSON side and regenerate). -->
 
 ---
 
-## JSON 最小例
+## A minimal JSON example
 
 ```json
 {
@@ -106,9 +106,9 @@ md の手編集は禁止（契約 [goal-decomposition-pattern.md](../../shared/r
   "status": "draft",
   "superseded_by": null,
   "goal": {
-    "statement": "ドキュメント品質を上げて維持する",
-    "non_goals": ["別リポジトリのドキュメントは対象外"],
-    "ssot": "docs/ 配下が正の情報源"
+    "statement": "raise and maintain documentation quality",
+    "non_goals": ["documentation in other repositories is out of scope"],
+    "ssot": "everything under docs/ is the source of truth"
   },
   "oracles": [{
     "id": "oracle:validate-clean",
@@ -121,9 +121,9 @@ md の手編集は禁止（契約 [goal-decomposition-pattern.md](../../shared/r
     "id": "frag:fix-broken-links",
     "wire_to": "loop-triage",
     "exit_to": "ci_gate",
-    "routing_proof": "リンク切れは validate_repo が Finding として検出可能",
+    "routing_proof": "a broken link is detectable by validate_repo as a Finding",
     "auto_fix_allowed": false,
-    "why_not_auto_fix": "リンク先の意図はファイルごとに異なり一意に定まらない",
+    "why_not_auto_fix": "the intended link target differs per file and is not uniquely determined",
     "self_modification_risk": "low",
     "blocked_by": []
   }],
@@ -134,12 +134,12 @@ md の手編集は禁止（契約 [goal-decomposition-pattern.md](../../shared/r
   }],
   "inbox": [{
     "id": "inbox:scope",
-    "question": "品質維持の対象ドキュメント範囲は？",
-    "reclassify_when": "範囲が確定したら meta-sensor 化して自動追跡"
+    "question": "which documents fall within the scope of quality maintenance?",
+    "reclassify_when": "once the scope is fixed, turn it into a meta-sensor and track it automatically"
   }],
   "measurement": {
     "metrics": ["validate_repo exit code"],
-    "stop_conditions": ["validate_repo が exit 0 を維持"]
+    "stop_conditions": ["validate_repo keeps exiting 0"]
   }
 }
 ```

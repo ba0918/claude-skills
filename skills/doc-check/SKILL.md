@@ -1,6 +1,6 @@
 ---
 name: doc-check
-description: プロジェクトのドキュメント（README.md、CLAUDE.md、API ドキュメント等）とコードベースの実態の整合性を検証し、不整合を自動修正する。「doc-check」「ドキュメントチェック」「ドキュメント整合性」「docs 確認」で起動。引数なしで直近5コミット、数値で指定コミット数、`all` で全体チェック、ファイルパスで特定ドキュメントのみチェック。汎用スキル — あらゆるプロジェクトで使用可能。
+description: Verify that project documentation (README.md, CLAUDE.md, API docs, and so on) matches the reality of the codebase, and fix the inconsistencies automatically. Use when the user says "doc-check", "check the documentation", "documentation consistency", or "check the docs". With no argument it covers the last 5 commits, a number specifies the commit count, `all` checks everything, and a file path checks that document alone. A general-purpose skill usable in any project.
 ---
 
 # Doc Check
@@ -78,7 +78,7 @@ See [references/structural-checks.md](references/structural-checks.md) for detai
 
 - **Missing entries**: Add following the format of existing entries
 - **Extra entries**: Do not delete; report as WARN (may be intentional)
-- **修正は差分編集で行う**（ファイル全体の上書きではなく、該当箇所のみ編集する）
+- **Apply fixes as incremental edits** (edit only the relevant spot, never overwrite the whole file)
 
 ## Phase 3: Content Check
 
@@ -87,22 +87,22 @@ See [references/content-checks.md](references/content-checks.md) for detailed pe
 
 ### Execution Steps
 
-各ドキュメントについてサブエージェントを**並行で**起動する:
+Launch a subagent **in parallel** for each document:
 
 - Provide each agent with the target document content and change context (diff)
 - Have them verify from 4 perspectives: architecture descriptions, workflow descriptions, configuration descriptions, and API documentation
 - Have them classify results by fix action (AUTO_FIX / NEEDS_JUDGMENT / OK).
   AUTO_FIX / NEEDS_JUDGMENT follow the shared
   [fix-action-taxonomy.md](../shared/references/fix-action-taxonomy.md); `OK` is
-  doc-check's own third value (see that contract's "doc-check の `OK` との差異" section) —
+  doc-check's own third value (see that contract's "Difference from doc-check's `OK`" section) —
   this axis is orthogonal to severity
 
 In `all` mode, since there is no diff, have agents explore the project structure from scratch.
 
 ### Processing Results
 
-1. AUTO_FIX: 修正提案に基づいて差分編集で修正を適用する
-2. NEEDS_JUDGMENT: ユーザーに確認してから、回答に基づいて修正する
+1. AUTO_FIX: apply the fix as an incremental edit, following the proposed fix
+2. NEEDS_JUDGMENT: confirm with the user first, then fix based on the answer
 3. OK: Record as-is
 
 ## Phase 4: Report

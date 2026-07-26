@@ -13,7 +13,7 @@ Limit the target documents, code, configuration, and conversation logs; never le
 
 Each row is one short claim, separating the following.
 
-- `claim`: write it as a capability or outcome observable by an external actor such as a user, an administrator, or an operator. Never make an internal storage unit, data structure, or processing method the subject. For example, write 「管理者は店舗ごとに予約枠を管理できる」 rather than 「予約枠は店舗ごとに管理される」. A description that cannot be projected onto external behavior does not become a claim — demote it to an observation or a decision journal candidate.
+- `claim`: write it as a capability or outcome observable by an external actor such as a user, an administrator, or an operator. Never make an internal storage unit, data structure, or processing method the subject. For example, write "an administrator can manage booking slots per store" rather than "booking slots are managed per store". A description that cannot be projected onto external behavior does not become a claim — demote it to an observation or a decision journal candidate.
 - `observations`: facts confirmed from the sources.
 - `assumptions`: unconfirmed premises or hypotheses.
 - `term_refs`: IDs of the load-bearing vocabulary candidates that govern how the claim is interpreted.
@@ -22,7 +22,7 @@ Present every row as `UNDECIDED`, or as `PROVISIONAL` only when the re-evaluatio
 
 A preview shows at least `id`, `revision`, `state`, `claim`, `term_refs`, and the necessary `observations` / `assumptions` / `risk`. `revision` starts at 1, and an ID is an uppercase alphanumeric namespace plus a sequence number of 3 or more digits (e.g. `BOOKING-001`). Do not fill in unknown values; leave them as open points.
 
-Pre-implementation, no existing code, input range, mode and the like are processing metadata — never turn them into product claims or vocabulary candidates. For example, do not create a ledger row saying 「サービスは実装前である」.
+Pre-implementation, no existing code, input range, mode and the like are processing metadata — never turn them into product claims or vocabulary candidates. For example, do not create a ledger row saying "the service is pre-implementation".
 
 Immediately before returning the preview, inspect every row and remove or fix rows with `revision < 1` and rows that state only processing metadata. Never present a preview that fails this inspection.
 

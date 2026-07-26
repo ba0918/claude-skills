@@ -1,14 +1,14 @@
 # Issue Polling — Pure Function Specifications
 
-> **本ファイルの位置づけ:** `skills/shared/references/polling-pattern.md` §4 で宣言された純関数の、issue adapter 側での実装仕様（全網羅 match 表含む）。
+> **The positioning of this file:** the implementation specification, on the issue adapter side, of the pure functions declared in `skills/shared/references/polling-pattern.md` §4 (including the exhaustive match tables).
 
-共通契約: [../../shared/references/polling-pattern.md](../../shared/references/polling-pattern.md)
+The shared contract: [../../shared/references/polling-pattern.md](../../shared/references/polling-pattern.md)
 
 ---
 
 ## 1. `transition(state, event) -> NextState | InvalidTransition`
 
-**純関数。** 副作用なし。共通契約 §2 の Transition Table と完全一致する match を返す。
+**A pure function.** No side effects. It returns a match agreeing exactly with the Transition Table of shared contract §2.
 
 ### Full Match Table
 
@@ -27,34 +27,34 @@
 ### Examples
 
 - `transition(ready, claim)` → `running`
-- `transition(done, claim)` → `InvalidTransition`（done は claim 対象外）
-- `transition(failed/permanent, retry_under_limit)` → `InvalidTransition`（permanent は retry しない、契約 §8）
+- `transition(done, claim)` → `InvalidTransition` (done is not a claim target)
+- `transition(failed/permanent, retry_under_limit)` → `InvalidTransition` (permanent is never retried, contract §8)
 
 ---
 
 ## 2. `classify_failure(error_kind) -> Transient | Permanent`
 
-**純関数。** エラー種別の文字列を受け取り 2 分類する。
+**A pure function.** It takes the error-kind string and sorts it into 2 classes.
 
 | `error_kind` | Classification |
 |---|---|
 | `network_error` | `Transient` |
 | `timeout` | `Transient` |
 | `file_lock` | `Transient` |
-| `rate_limit` | `Transient` (backoff は exponential、契約 §8) |
+| `rate_limit` | `Transient` (the backoff is exponential, contract §8) |
 | `test_failure` | `Permanent` |
 | `compile_error` | `Permanent` |
 | `cycle_abort` | `Permanent` |
 | `invalid_input` | `Permanent` |
 | **Unknown** | `Permanent` (fail-closed) |
 
-Unknown を **`Permanent` に倒す** のは fail-closed 原則（暴走より停止を優先）。
+**Falling to `Permanent`** for the unknown is the fail-closed principle (preferring a stop over a runaway).
 
 ---
 
 ## 3. `should_promote_to_permanent(retry_count, limit) -> bool`
 
-**純関数。** 純粋な比較のみ。
+**A pure function.** A pure comparison and nothing else.
 
 ```
 should_promote_to_permanent(retry_count, limit) = (retry_count >= limit)
@@ -66,14 +66,14 @@ should_promote_to_permanent(retry_count, limit) = (retry_count >= limit)
 |---|---|---|
 | 0 | 3 | `false` |
 | 2 | 3 | `false` |
-| 3 | 3 | `true` (境界) |
+| 3 | 3 | `true` (the boundary) |
 | 5 | 3 | `true` |
 
 ---
 
 ## 4. `month_boundary_crossed(now, last_check) -> bool`
 
-**純関数。** `now` と `last_check` の `YYYY-MM` が異なれば true。
+**A pure function.** True when the `YYYY-MM` of `now` differs from that of `last_check`.
 
 ```
 month_boundary_crossed(now, last_check) = (now.year_month != last_check.year_month)
@@ -85,22 +85,22 @@ month_boundary_crossed(now, last_check) = (now.year_month != last_check.year_mon
 |---|---|---|
 | 2026-04-08 | 2026-04-01 | `false` |
 | 2026-05-01 | 2026-04-30 | `true` |
-| 2026-04-08 | `""` (unset) | `true` (初回は跨いだ扱い) |
+| 2026-04-08 | `""` (unset) | `true` (the first time counts as crossed) |
 
-時刻・タイムゾーンは呼び出し側で正規化して渡す契約（純関数はローカル時刻取得を行わない）。
+The contract is that the caller normalizes the time and timezone before passing them (the pure function never obtains local time).
 
 ---
 
 ## 5. `session_resume_action(prev, now, config) -> Resume | StartNew | Halt{reason}`
 
-**純関数。** `--stateless` tick の再開判定（契約 §6.5）。`now` は引数注入。
+**A pure function.** The resume judgment for a `--stateless` tick (contract §6.5). `now` is injected as an argument.
 
 ### Full Match Table
 
-| `prev` | 条件 | Output |
+| `prev` | Condition | Output |
 |---|---|---|
 | `None` | — | `StartNew` |
-| `halt_reason == "failed_streak"` | 常に（期限切れでも） | `Halt{failed_streak}`（**sticky**、`session.json` 削除まで拒否） |
+| `halt_reason == "failed_streak"` | Always (even when expired) | `Halt{failed_streak}` (**sticky**, refused until `session.json` is deleted) |
 | `halt_reason ∈ {max_iter, max_wallclock}` | `now - started_at <= max_wallclock` | `Halt{halt_reason}` |
 | `halt_reason ∈ {max_iter, max_wallclock}` | `now - started_at > max_wallclock` | `StartNew` |
 | `halt_reason == null` | `now - started_at > max_wallclock` | `StartNew` |
@@ -110,29 +110,29 @@ month_boundary_crossed(now, last_check) = (now.year_month != last_check.year_mon
 
 ## 6. `next_session_state(session, tick_result) -> Session`
 
-**純関数。** tick 完了後のカウンタ更新（契約 §6.5）。入力は TickResult のみ（adapter 事情を知らない）。
+**A pure function.** The counter update after a tick completes (contract §6.5). The only input is the TickResult (it knows nothing of the adapter's circumstances).
 
-| tick の結果 | `failed_streak` | `iter_count` |
+| The tick's result | `failed_streak` | `iter_count` |
 |---|---|---|
-| `failed_transient + failed_permanent > 0` かつ `done == 0` | `+1` | `+1` |
-| `done > 0` | `0` にリセット | `+1` |
-| `claimed == 0` または `halt_reason == "dry_run"` | 変更なし | `+1` |
+| `failed_transient + failed_permanent > 0` and `done == 0` | `+1` | `+1` |
+| `done > 0` | Reset to `0` | `+1` |
+| `claimed == 0` or `halt_reason == "dry_run"` | Unchanged | `+1` |
 
-カウンタ更新後の halt 判定（`failed_streak >= limit` → `"failed_streak"`、`now - started_at > max_wallclock` → `"max_wallclock"`、`iter_count >= max_iter` → `"max_iter"`、優先順この順）を `halt_reason` に書き込んで返す。
-
----
-
-## 7. 純関数の性質（verification checklist）
-
-- [ ] `now` / `random` / ファイル I/O / ネットワーク I/O を一切呼ばない
-- [ ] 同じ入力に対し常に同じ出力を返す
-- [ ] 例外ではなく Result / Union 型で失敗を表現（`InvalidTransition` 等）
-- [ ] `tick` は本リストに含まれない（orchestrator であり I/O を行う、契約 §1 / §5 参照）
+After updating the counters, write the halt judgment (`failed_streak >= limit` → `"failed_streak"`, `now - started_at > max_wallclock` → `"max_wallclock"`, `iter_count >= max_iter` → `"max_iter"`, in that order of priority) into `halt_reason` and return.
 
 ---
 
-## 8. 参照
+## 7. The properties of the pure functions (verification checklist)
 
-- 共通契約 §2 Transition Table（本ファイルの `transition` は §2 表と完全一致する）
-- 共通契約 §4 Pure Function Signatures
-- FS adapter 実装: [./polling-state.md](./polling-state.md)
+- [ ] Never calls `now` / `random` / file I/O / network I/O
+- [ ] Always returns the same output for the same input
+- [ ] Expresses failure with a Result / union type rather than an exception (`InvalidTransition` and the like)
+- [ ] `tick` is not on this list (it is an orchestrator and performs I/O; see contract §1 / §5)
+
+---
+
+## 8. References
+
+- Shared contract §2 Transition Table (the `transition` in this file agrees exactly with the §2 table)
+- Shared contract §4 Pure Function Signatures
+- The FS adapter implementation: [./polling-state.md](./polling-state.md)

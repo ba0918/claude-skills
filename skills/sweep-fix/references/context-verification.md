@@ -1,83 +1,83 @@
-# Context Verification — 文脈検証チェックリスト
+# Context Verification — the context-verification checklist
 
-sweep-fix Phase 3 で使用する判定基準。横展開検索（Phase 2）が拾った候補箇所に対し、
-「同じ問題が本当に成立するか」を文脈で検証する。
+The judgment criteria used in sweep-fix Phase 3. Against the candidate sites picked up by the sweep search (Phase 2),
+verify from context whether "the same problem genuinely holds".
 
-## 判定の定義
+## The definitions of the verdicts
 
-| 判定 | 定義 | 成立条件 |
+| Verdict | Definition | The condition for it to hold |
 |------|------|---------|
-| **CONFIRMED** | 同じ問題が同じ理由で成立する | 下記チェックリストの全項目で「問題が成立する」側に倒れ、根拠を 1-2 文で書ける |
-| **FALSE_POSITIVE** | 字面は似ているが文脈的に問題ない | チェックリストのいずれかで「成立しない」ことが確認できた。除外理由を必ず記録 |
-| **UNCERTAIN** | 判断に必要な文脈が不足 | どちらとも確認できない。修正せずユーザに委ねる |
+| **CONFIRMED** | The same problem holds for the same reason | Every item of the checklist below falls on the "the problem holds" side, and the grounds can be written in 1-2 sentences |
+| **FALSE_POSITIVE** | It resembles the origin textually but there is no problem in context | Some item of the checklist confirmed that it does not hold. Always record the reason for exclusion |
+| **UNCERTAIN** | The context needed to judge is missing | Neither could be confirmed. Do not fix it; leave it to the user |
 
-> フレーム（3値・Iron Law・fail-safe）の定義元は共通契約
-> [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) の
-> 「文脈検証の3値判定」。本ファイルは sweep-fix 固有の検証述語（バグ成立）を特殊化する。
+> The frame (the 3 values, the Iron Law, fail-safe) is defined in the shared contract
+> [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md), section
+> "The 3-valued verdict of context verification". This file specializes the sweep-fix-specific verification predicate (the bug holding).
 
 ## The Iron Law
 
 ```
-根拠を書けない CONFIRMED は存在しない。
-書けなければ UNCERTAIN に降格する。
+A CONFIRMED whose grounds cannot be written does not exist.
+If they cannot be written, demote it to UNCERTAIN.
 ```
 
-## チェックリスト
+## The checklist
 
-候補箇所ごとに、該当ファイルを **Read で実際に読んで**（excerpt だけで判定しない）以下を確認する:
+For each candidate site, **actually read the file with Read** (never judge from the excerpt alone) and confirm the following:
 
-### 1. 前提条件の同一性
+### 1. Identity of the premises
 
-元の問題が成立した前提（入力の出所、実行タイミング、並行性の有無）が候補箇所でも同じか。
+Are the premises under which the original problem held (where the input comes from, the timing of execution, the presence of concurrency) the same at the candidate site?
 
-- 例: 元箇所は「ユーザ入力を未検証で使う」問題でも、候補箇所の入力元が定数や内部生成値なら **FALSE_POSITIVE**
+- For example, even when the original site's problem is "using user input without validation", if the candidate site's input comes from a constant or an internally generated value, it is **FALSE_POSITIVE**
 
-### 2. ガードの有無
+### 2. The presence of a guard
 
-候補箇所の上流（呼び出し元・早期 return・型制約）に、問題を無効化するガードが既に存在しないか。
+Does a guard that nullifies the problem already exist upstream of the candidate site (the caller, an early return, a type constraint)?
 
-- 例: null 参照の候補でも、呼び出し元で null チェック済み / 型が non-nullable なら **FALSE_POSITIVE**
-- ガードは候補行の周辺だけでなく、**関数の入口と呼び出し元まで**遡って確認する
+- For example, even for a null-dereference candidate, if the caller already checks for null or the type is non-nullable, it is **FALSE_POSITIVE**
+- Confirm guards not just around the candidate line but **all the way back to the function's entry and its callers**
 
-### 3. 意図的な違いの兆候
+### 3. Signs of a deliberate difference
 
-その書き方が意図的であることを示す証拠がないか。
+Is there evidence that this way of writing it is deliberate?
 
-- コメントで理由が説明されている（`// 意図的に〜` / `// NOTE:` / lint 抑制コメント）
-- その挙動を固定するテストが存在する
-- 該当すれば **FALSE_POSITIVE**（意図的な設計）または **UNCERTAIN**（意図は読めるが問題の可能性も残る場合）
+- A comment explains the reason (`// deliberately ...` / `// NOTE:` / a lint-suppression comment)
+- A test exists that pins that behavior
+- If any applies, it is **FALSE_POSITIVE** (a deliberate design) or **UNCERTAIN** (when the intent is legible but the possibility of a problem remains)
 
-### 4. 影響の実在性
+### 4. Whether the impact is real
 
-問題が成立するとして、その箇所で実害に到達するパスがあるか。
+Granting that the problem holds, is there a path from that site to actual harm?
 
-- 例: 到達不能コード、テスト専用コード、デッドパスなら影響なし → **FALSE_POSITIVE**（ただしデッドコード自体は INFO としてレポートに記載してよい)
+- For example, unreachable code, test-only code, or a dead path has no impact → **FALSE_POSITIVE** (though the dead code itself may be recorded in the report as INFO)
 
-### 5. 修正の安全性
+### 5. The safety of the fix
 
-Phase 1 の修正案をこの箇所に適用したとき、既存の挙動を壊さないと言えるか。
+If the Phase 1 proposed fix is applied at this site, can you say it will not break the existing behavior?
 
-- 修正案がこの箇所の文脈に適合しない（同じ問題だが直し方が異なる）場合は **CONFIRMED としたうえで修正案を箇所別に調整**する
-- 修正による挙動変更が仕様変更に相当する可能性がある場合は **UNCERTAIN**
+- When the proposed fix does not suit this site's context (the same problem but a different way of fixing it), **keep it CONFIRMED and adjust the proposed fix per site**
+- When the behavioral change from the fix could amount to a specification change, it is **UNCERTAIN**
 
-## Fail-safe 原則
+## The fail-safe principle
 
-- **UNCERTAIN → CONFIRMED への昇格は禁止**。追加の文脈（ユーザ回答・ドキュメント）が得られた場合のみ再判定できる
-- **CONFIRMED → UNCERTAIN への降格は常に許可**（保守的な方向は自由）
-- 誤修正（偽陽性を直してしまう）のコストは、保留（真陽性を見送る）のコストより大きい。迷ったら直さない
+- **Promotion from UNCERTAIN to CONFIRMED is forbidden.** It can be re-judged only once additional context (a user's answer, documentation) is obtained
+- **Demotion from CONFIRMED to UNCERTAIN is always permitted** (moving in the conservative direction is free)
+- The cost of a wrong fix (fixing a false positive) is greater than the cost of holding back (passing on a true positive). When in doubt, do not fix it
 
-## 判定例
+## Examples of verdicts
 
-**元の問題**: `JSON.parse(userInput)` を try-catch なしで呼んでおり、不正 JSON でクラッシュする（P1。重大度ラベルは例示であり、境界事例の倒し方は SKILL.md Phase 1 の規定に従う）
+**The original problem**: `JSON.parse(userInput)` is called without a try-catch and crashes on malformed JSON (P1. The severity labels are illustrative; how borderline cases fall follows the rules of SKILL.md Phase 1)
 
-| 候補 | 文脈 | 判定 | 根拠 |
+| Candidate | Context | Verdict | Grounds |
 |------|------|------|------|
-| `api/handler.ts:88` の `JSON.parse(req.body)` | 外部入力・ガードなし | CONFIRMED | 元箇所と同じ外部入力を未保護でパースしている |
-| `config/loader.ts:12` の `JSON.parse(fs.readFileSync(...))` | 自リポジトリ内の設定ファイル。起動時に一度だけ実行 | UNCERTAIN | 入力は内部ファイルだが破損時の挙動（即クラッシュ）が意図か不明。fail-fast 設計の可能性がある |
-| `test/fixtures.ts:30` の `JSON.parse(FIXTURE)` | 定数リテラルのパース | FALSE_POSITIVE | 入力が定数であり不正 JSON になり得ない。前提条件（外部入力）が異なる |
-| `worker/job.ts:51` の `JSON.parse(msg)` | 直前に `isValidJson(msg)` ガードあり | FALSE_POSITIVE | 上流ガードが問題を無効化している（チェック2） |
+| `JSON.parse(req.body)` at `api/handler.ts:88` | External input, no guard | CONFIRMED | It parses the same external input as the original site without protection |
+| `JSON.parse(fs.readFileSync(...))` at `config/loader.ts:12` | A config file inside this repository. Executed once at startup | UNCERTAIN | The input is an internal file, but whether the behavior on corruption (an immediate crash) is intended is unclear. It may be a fail-fast design |
+| `JSON.parse(FIXTURE)` at `test/fixtures.ts:30` | Parsing a constant literal | FALSE_POSITIVE | The input is a constant and cannot become malformed JSON. The premise (external input) differs |
+| `JSON.parse(msg)` at `worker/job.ts:51` | An `isValidJson(msg)` guard immediately before | FALSE_POSITIVE | The upstream guard nullifies the problem (check 2) |
 
-## 記録フォーマット
+## The recording format
 
 `.claude/tmp/sweep-fix/verdicts.json`:
 
@@ -89,16 +89,16 @@ Phase 1 の修正案をこの箇所に適用したとき、既存の挙動を壊
       "file": "api/handler.ts",
       "line": 88,
       "verdict": "CONFIRMED",
-      "reason": "元箇所と同じ外部入力（req.body）を未保護でパースしている"
+      "reason": "it parses the same external input (req.body) as the original site without protection"
     },
     {
       "file": "test/fixtures.ts",
       "line": 30,
       "verdict": "FALSE_POSITIVE",
-      "reason": "入力が定数リテラルであり前提条件（外部入力）が異なる"
+      "reason": "the input is a constant literal, so the premise (external input) differs"
     }
   ]
 }
 ```
 
-`reason` は必須。空の reason を持つ verdict は不正データとして扱い、その候補を UNCERTAIN で再判定する。
+`reason` is required. A verdict with an empty reason is treated as invalid data, and that candidate is re-judged as UNCERTAIN.

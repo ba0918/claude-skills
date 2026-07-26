@@ -1,99 +1,99 @@
-# Pattern Extraction — 問題→検索パターン変換ガイド
+# Pattern Extraction — the guide for converting a problem into a search pattern
 
-sweep-fix Phase 2 で使用する。Phase 1 で検出した問題を「コードベース全体から同種箇所を探せる検索シグネチャ」に変換する。
+Used in sweep-fix Phase 2. It converts a problem detected in Phase 1 into "a search signature that can find sites of the same kind across the whole codebase".
 
-## 設計方針: 広く検索して、検証で絞る
+## Design policy: search broadly, narrow by verification
 
-検索段階の責務は**取りこぼさないこと**（偽陰性の最小化）。
-候補に偽陽性が混ざるのは想定内であり、除去は Phase 3（文脈検証）の責務。
+The responsibility of the search stage is **not to miss anything** (minimizing false negatives).
+False positives mixed into the candidates are expected, and removing them is the responsibility of Phase 3 (context verification).
 
-- パターンが「厳密すぎて漏れる」のと「緩すぎて候補が増える」なら、**緩い側に倒す**
-- ただし無差別（例: 言語の全関数呼び出しにマッチ）は検証コストを爆発させる。目安として **候補 50 件超**になるパターンは 1 段階だけ具体化する
+- Between a pattern that is "too strict and misses things" and one that is "too loose and produces more candidates", **fall to the loose side**
+- That said, an indiscriminate pattern (for example, one matching every function call in the language) makes verification cost explode. As a guide, a pattern producing **more than 50 candidates** is made one step more specific
 
-## ツール選択
+## Choosing a tool
 
-問題の性質に応じて選ぶ。迷ったら Grep（常に利用可能）。
+Choose by the nature of the problem. When in doubt, Grep (always available).
 
-| 問題の性質 | ツール | 例 |
+| The nature of the problem | Tool | Examples |
 |-----------|--------|-----|
-| 特定の関数・API の呼び出し方 | パターン検索（正規表現） | `JSON.parse(` を try なしで呼ぶ、`exec(` に変数を渡す |
-| 構文構造（ネスト・欠落・組み合わせ） | ast-grep | catch 節が空、await のない Promise、cleanup のない useEffect |
-| 特定シンボルの全使用箇所 | 言語サーバー（参照検索） | 危険なユーティリティ関数の呼び出し元全列挙、非推奨型の使用箇所 |
+| How a particular function or API is called | Pattern search (regular expressions) | Calling `JSON.parse(` without a try, passing a variable to `exec(` |
+| Syntactic structure (nesting, an omission, a combination) | ast-grep | An empty catch clause, a Promise without await, a useEffect without cleanup |
+| Every use of a particular symbol | The language server (reference search) | Enumerating every caller of a dangerous utility function, the uses of a deprecated type |
 
-### 利用可否の確認とフォールバック
+### Confirming availability, and the fallback
 
-外部ツールを可用性の前提にしない。**存在確認 → なければフォールバック**を必ず行う:
+Never presume an external tool is available. Always **confirm existence → fall back if absent**:
 
 ```bash
 which ast-grep || echo "NOT_AVAILABLE"
 ```
 
-- **ast-grep がない** → 構文パターンを近似する Grep 正規表現に落とす（複数行マッチは `-A`/`-B` の文脈行で補う）。近似により偽陽性が増える旨を候補リストの `tool` 欄に記録する（`"tool": "grep (ast-grep fallback)"`)
-- **LSP が使えない**（サーバ未設定・非対応言語）→ シンボル名の Grep に落とす。同名別シンボルが混入しうるため、import 文の確認を Phase 3 のチェック項目に追加する
+- **ast-grep absent** → fall back to a Grep regular expression approximating the syntactic pattern (make up for multi-line matching with the `-A`/`-B` context lines). Record in the candidate list's `tool` field that the approximation increases false positives (`"tool": "grep (ast-grep fallback)"`)
+- **LSP unusable** (no server configured, an unsupported language) → fall back to a Grep of the symbol name. Because a different symbol with the same name can slip in, add checking the import statements to the Phase 3 checklist
 
-## シグネチャの書き方
+## How to write a signature
 
-### Grep パターン
+### Grep patterns
 
-1. 問題箇所のコードから**問題の本質を表す最小のトークン列**を抜き出す（変数名などの固有部分は除去）
-2. 固有部分は `\w+` / `[^)]*` 等で汎化する
-3. 表記ゆれを OR で吸収する（例: `"` と `'`、スペース有無）
-
-```
-元箇所:   const data = JSON.parse(userInput);
-悪い例:   grep "JSON.parse(userInput)"        ← 変数名に依存。他の箇所を拾えない
-良い例:   grep "JSON\.parse\("               ← 広く拾い、try 内かどうかは Phase 3 で判定
-```
-
-### ast-grep パターン
-
-構文の構造でマッチさせる。メタ変数（`$X`）で固有部分を汎化する。
+1. Extract from the problem site's code **the minimal token sequence expressing the essence of the problem** (strip the site-specific parts such as variable names)
+2. Generalize the site-specific parts with `\w+` / `[^)]*` and the like
+3. Absorb notational variance with OR (for example, `"` versus `'`, with or without a space)
 
 ```
-例: 空 catch の横展開
+The original site: const data = JSON.parse(userInput);
+A bad pattern:     grep "JSON.parse(userInput)"        ← depends on the variable name. It cannot pick up other sites
+A good pattern:    grep "JSON\.parse\("               ← picks up broadly; whether it sits inside a try is judged in Phase 3
+```
+
+### ast-grep patterns
+
+Match on syntactic structure. Generalize the site-specific parts with metavariables (`$X`).
+
+```
+Example: sweeping for empty catches
   ast-grep --pattern 'try { $$$ } catch ($E) {}'
 
-例: await されていない非同期呼び出し
+Example: an asynchronous call that is not awaited
   ast-grep --pattern '$PROMISE.then($$$)'
 ```
 
-### LSP 参照検索
+### LSP reference search
 
-対象シンボルの定義位置を特定してから全参照を列挙する。
+Identify the definition site of the target symbol first, then enumerate every reference.
 
-1. 定義へジャンプ（definition）でシンボルの正体を確定する
-2. 参照検索(references)で全使用箇所を列挙する
-3. 出力の各箇所を候補リストに変換する
+1. Jump to the definition to pin down the symbol's identity
+2. Enumerate every use with a reference search
+3. Convert each site in the output into a candidate list entry
 
-## 検索スコープ
+## The search scope
 
-- デフォルトは**リポジトリ全体**（Phase 0 の指定範囲は「問題を探す範囲」であり、横展開の範囲ではない）
-- 除外: `.git/`, `node_modules/`, ビルド成果物, ロックファイル, vendored コード。プロジェクトの `.gitignore` 対象は原則除外
-- テストコードは**除外しない**（テスト内の同種問題も報告価値がある。修正するかは Phase 3 の判定と重大度による）
+- The default is **the whole repository** (the range specified in Phase 0 is "the range in which to look for the problem", not the range of the sweep)
+- Excluded: `.git/`, `node_modules/`, build artifacts, lockfiles, vendored code. As a rule, whatever the project's `.gitignore` covers is excluded
+- Test code is **not excluded** (a problem of the same kind inside tests is worth reporting too. Whether to fix it depends on the Phase 3 verdict and the severity)
 
-## 候補リストへの記録
+## Recording into the candidate list
 
-各問題につき 1 ファイル `.claude/tmp/sweep-fix/{problem_id}_candidates.json` を作る。
-`pattern_used` と `tool` は必ず記録する — Phase 5 のレポートで検索の再現性を担保し、
-ユーザが「検索が狭すぎた/広すぎた」を事後検証できるようにするため。
+Create one file per problem at `.claude/tmp/sweep-fix/{problem_id}_candidates.json`.
+Always record `pattern_used` and `tool` — so that the Phase 5 report guarantees the reproducibility of the search and
+lets the user verify after the fact whether "the search was too narrow or too broad".
 
 ```json
 {
   "problem_id": "P1",
   "pattern_used": "JSON\\.parse\\(",
   "tool": "grep",
-  "scope": "repo root（node_modules 等除外）",
+  "scope": "the repo root (excluding node_modules and the like)",
   "candidates": [
     { "file": "api/handler.ts", "line": 88, "excerpt": "const body = JSON.parse(req.body);" }
   ]
 }
 ```
 
-## アンチパターン
+## Anti-patterns
 
-| アンチパターン | 問題 | 代わりに |
+| Anti-pattern | The problem | Instead |
 |--------------|------|---------|
-| 変数名・リテラルを含む厳密パターン | その箇所しかマッチせず横展開にならない | 固有部分を汎化する |
-| 「検証を省くため」の過剰に厳密なパターン | 偽陰性が増えるだけ。検証は省略できない | 広く検索して Phase 3 で絞る |
-| ast-grep 存在確認なしで使用 | 環境によっては即失敗 | `which` で確認してフォールバック |
-| 検索結果の excerpt だけで判定まで済ませる | 判定は Phase 3 の責務。excerpt はガード条件を含まない | 候補として記録し Phase 3 に渡す |
+| A strict pattern containing variable names or literals | It matches only that site, so it is no sweep at all | Generalize the site-specific parts |
+| An excessively strict pattern "to save on verification" | It only increases false negatives. Verification cannot be skipped | Search broadly and narrow in Phase 3 |
+| Using ast-grep without an existence check | In some environments it fails immediately | Confirm with `which` and fall back |
+| Finishing the judgment from the search-result excerpt alone | The judgment is Phase 3's responsibility. An excerpt does not include the guard conditions | Record it as a candidate and hand it to Phase 3 |

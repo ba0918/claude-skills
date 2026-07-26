@@ -1,6 +1,6 @@
 ---
 name: design-generate
-description: ページ定義（.design/pages/*.json）+ コンポーネントカタログに基づいて、制約付きでページを生成するスキル。LLM の自由度をセクション内コンテンツに限定し、デザインの再現性を保証する。「ページ生成」「design generate」「制約付き生成」で起動。
+description: Generate pages under constraints, based on page definitions (.design/pages/*.json) plus a component catalog. It limits the LLM's freedom to the content inside each section, which is what makes the design reproducible. Use when the user says "generate a page", "design generate", or "constrained generation".
 ---
 
 # Design Generate
@@ -19,10 +19,10 @@ Restricting the LLM's freedom to "assembling approved components" and "the conte
 
 When any of them is missing:
 ```
-❌ 必要なファイルが見つかりません:
-  {欠けているファイル一覧}
+❌ Required files not found:
+  {list of missing files}
 
-`/claude-skills:design-scaffold` で生成してください。
+Generate them with `/claude-skills:design-scaffold`.
 ```
 
 ## Workflow
@@ -33,10 +33,10 @@ If a page name is given in $ARGUMENTS, generate that page.
 If none is given, present the user with options and ask:
 
 ```
-header: "生成するページ"
+header: "Pages to generate"
 options:
-  - pages/ 配下の各ページ定義を動的にリスト
-  - "全ページ一括生成"
+  - dynamically list each page definition under pages/
+  - "Generate all pages at once"
 ```
 
 ### Step 2: Read the definition files
@@ -153,18 +153,18 @@ As soon as generation completes, run design-lint to detect violations:
 - HTML: `mockups/{page-name}.html`
 
 ```
-✅ ページを生成しました！
+✅ Page generated!
 📄 File: {output_path}
 
-📊 使用コンポーネント:
-  {コンポーネント名}: {variant} × {個数}
+📊 Components used:
+  {component name}: {variant} × {count}
 
 🔍 Lint: PASS ✅
   DL001-006: 0 violations
   DL101-103: 0 violations
 
-ブラウザで開いて確認してね。
-修正したい場合はフィードバックを教えてください。
+Open it in a browser and check it.
+If you want changes, share your feedback.
 ```
 
 Present the user with options and confirm any further adjustment:
@@ -177,12 +177,12 @@ When `.design/pages/` is empty, or when the user wants to add a new page:
 
 1. Present the user with options and ask for the page type:
    ```
-   header: "ページタイプ"
+   header: "Page type"
    options:
-     - "ランディングページ"
-     - "ダッシュボード"
-     - "一覧ページ"
-     - "フォームページ"
+     - "Landing page"
+     - "Dashboard"
+     - "List page"
+     - "Form page"
    ```
 2. Propose a recommended pattern from the `patterns` of layout-rules.json
 3. Present the user with options and confirm the section composition

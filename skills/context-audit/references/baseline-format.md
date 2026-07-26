@@ -1,30 +1,27 @@
-# Baseline Format（意図的差分の suppression）
+# Baseline Format (suppressing intentional differences)
 
-意図的な差分による誤検知を抑制するための baseline。`.claude/context-audit-baseline.json` に置く。
+The baseline that suppresses false positives arising from intentional differences. It lives at `.claude/context-audit-baseline.json`.
 
-## なぜ commit するのか / tmp と別扱い
+## Why it is committed / why it is treated differently from tmp
 
-baseline は**チーム共有目的**（「この finding は我々のプロジェクトでは意図的」という合意）なので
-`.claude/tmp/`（git-ignored）ではなく**リポジトリに commit する**。中間 JSON・レポートは
-`.claude/tmp/context-audit/`（git-ignored）に出力するが、baseline だけは追跡対象。
+The baseline exists **to be shared by the team** (the agreement that "this finding is intentional in our project"), so it is **committed to the repository** rather than placed under `.claude/tmp/` (git-ignored). Intermediate JSON and reports are written to `.claude/tmp/context-audit/` (git-ignored), but the baseline alone is tracked.
 
-## 格納するのは opaque finding ID のみ
+## Only opaque finding IDs are stored
 
-**検出値・本文・行の内容は絶対に載せない**。格納するのは opaque な finding ID（hash）だけ。
-これにより commit された baseline から機密が漏れることはない（v2 の hash 形式でも不変条件）。
+**Never store detected values, body text, or the content of a line.** What is stored is only the opaque finding ID (a hash). This guarantees that no secret can leak from a committed baseline (an invariant that holds in the v2 hash format as well).
 
-### finding ID の構成（v1）
+### The composition of a finding ID (v1)
 
-`aggregate_report.finding_id` が算出する:
+Computed by `aggregate_report.finding_id`:
 
 ```
 finding_id = sha256(f"{id}|{where}|{what}")[:16]
 ```
 
-- `what` は secret redaction 済み、かつ hash 化されるため opaque。
-- `id`（CA-* rule ID）+ `where`（file:line）+ `what` の組で 1 finding を一意に識別。
+- `what` has already been secret-redacted, and it is hashed, so it is opaque.
+- The triple of `id` (the CA-* rule ID) + `where` (file:line) + `what` uniquely identifies one finding.
 
-## スキーマ
+## Schema
 
 ```json
 {
@@ -36,27 +33,23 @@ finding_id = sha256(f"{id}|{where}|{what}")[:16]
 }
 ```
 
-- `version`: baseline フォーマットのバージョン（v1 = 単純 ID リスト）。
-- `suppressions`: suppress する finding ID の配列。
+- `version`: the version of the baseline format (v1 = a plain ID list).
+- `suppressions`: the array of finding IDs to suppress.
 
-## 運用（--update-baseline）
+## Operation (--update-baseline)
 
-- 初回実行時に baseline が不在なら first-run フロー（現状を baseline 化 / triage / フルレポート）を提示。
-- `--update-baseline` で現在の finding を baseline に確定（以降は新規 finding のみ提示）。実装は
-  `aggregate_report.py --update-baseline PATH`（`build_baseline` 純関数、opaque ID のみ書き出し）:
+- If the baseline is absent on the first run, present the first-run flow (baseline the current state / triage / the full report).
+- `--update-baseline` fixes the current findings into the baseline (thereafter only new findings are presented). The implementation is `aggregate_report.py --update-baseline PATH` (the `build_baseline` pure function, writing out only opaque IDs):
 
   ```bash
   python3 skills/context-audit/scripts/aggregate_report.py \
     .claude/tmp/context-audit/findings-{ts}.json \
     --update-baseline .claude/context-audit-baseline.json
   ```
-- suppress された finding は**レポートに件数のみ表示**（`M suppressed`）。silent truncation は禁止。
+- A suppressed finding is **shown in the report as a count only** (`M suppressed`). Silent truncation is forbidden.
 
-## stale 抑制リスク（v1 の既知の限界）
+## The risk of stale suppression (a known limitation of v1)
 
-v1 の finding ID は `where`（file:line）を含むため、**行が動くと ID が変わり suppression が外れる**
-（＝再び表示される。安全側の挙動）。逆に、別の finding がたまたま同じ ID になる衝突は
-sha256 により実質ゼロ。
+Because the v1 finding ID includes `where` (file:line), **moving a line changes the ID and the suppression comes off** (that is, it reappears — the safe-side behavior). Conversely, a collision in which a different finding happens to produce the same ID is effectively zero thanks to sha256.
 
-- **v2 候補**: claim 正規化 hash（行番号非依存）+ expiry（一定期間で自動失効）。
-  行移動に強い suppression と、陳腐化した suppression の自動掃除を提供する。v1 は単純さを優先。
+- **A v2 candidate**: a normalized claim hash (independent of line numbers) + an expiry (automatic lapse after a set period). That would offer suppression robust to line movement, plus automatic cleanup of stale suppressions. v1 prioritizes simplicity.

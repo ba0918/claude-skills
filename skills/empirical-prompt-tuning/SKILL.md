@@ -1,6 +1,6 @@
 ---
 name: empirical-prompt-tuning
-description: agent 向けテキスト指示（skill / slash command / task プロンプト / CLAUDE.md 節 / rules / コード生成プロンプト）を、バイアスを排した 3 役分離（チューナー / 実行者 / checker）で評価し、摩擦の固定タクソノミと統計的採択ゲートで反復改善する。収束した検証資産は可搬 fixture として資産化する。「empirical-prompt-tuning」「プロンプトチューニング」「指示の品質を測りたい」「skill を堅牢化したい」「このプロンプトが分かりにくい原因を知りたい」「rule が守られているか確認したい」で起動。`trigger-eval`（選択層 = description→発火の精度）の姉妹スキル（本文層 = 実行の質）。
+description: Evaluate text instructions written for agents (a skill, a slash command, a task prompt, a CLAUDE.md section, a rules file, or a code generation prompt) through an unbiased separation of 3 roles (tuner / executor / checker), and improve them iteratively with a fixed friction taxonomy and a statistical adoption gate. Converged verification assets are turned into portable fixtures. Use when the user says "empirical-prompt-tuning", "prompt tuning", "I want to measure instruction quality", "I want to harden this skill", "why is this prompt hard to follow", or "check whether the rule is being obeyed". It is the sister skill of `trigger-eval` (which measures the selection layer, description to firing) and covers the body layer, the quality of execution.
 ---
 
 # Empirical Prompt Tuning
@@ -220,7 +220,7 @@ On convergence (`exit_verdict == "converged"`), emit the final iteration's scena
 
 ```json
 {
-  "source_skill": "<対象スキル名 or null>",
+  "source_skill": "<target skill name or null>",
   "instruction_fingerprint": "abc123...",
   "eval_strategy": "task_scenario",
   "converged_at": "2026-07-09T13:42:00Z",
@@ -275,27 +275,27 @@ When the subagent launch cap is hit (counted cumulatively per session; a slot is
 ```
 ## Iteration N
 
-### 変更点（前回差分）
-- <修正内容 1 行>
+### Changes (diff from the previous round)
+- <the change, 1 line>
 
-### 実行結果（シナリオ別）
-| シナリオ | 成功 | 精度 | steps | duration | retries |
+### Results (per scenario)
+| Scenario | Success | Accuracy | steps | duration | retries |
 |---|---|---|---|---|---|
 | A | ○ | 90% | 4 | 20s | 0 |
 | B | × | 60% | 9 | 41s | 2 |
 
-### 摩擦報告（今回新出）
-- <シナリオ B>: [critical] 要件 N が × — <落ちた理由 1 行>
-- <シナリオ B>: [missing_premise] <詳細>
+### Friction report (new this round)
+- <scenario B>: [critical] requirement N failed — <reason, 1 line>
+- <scenario B>: [missing_premise] <details>
 
-### 裁量補完（今回新出）
-- <シナリオ B>: <補完内容>
+### Discretionary gap-filling (new this round)
+- <scenario B>: <what was filled in>
 
-### 次の修正案
-- <最小修正 1 行>
-- 対象要件: #N
+### Next proposed change
+- <the minimal change, 1 line>
+- Target requirement: #N
 
-（exit_verdict: continue | 収束まであと X 回クリア必要）
+(exit_verdict: continue | X more clean rounds needed before convergence)
 ```
 
 ## Red Flags (watch for rationalizations)

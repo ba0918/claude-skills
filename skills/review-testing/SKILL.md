@@ -1,6 +1,6 @@
 ---
 name: review-testing
-description: テストスイート自体の欠陥検出力・契約検証・安定性と testing-anti-patterns 違反を評価する focused read-only レビュー。「テスト品質レビュー」「テストの品質を見て」「テストアンチパターン検出」「このテストは意味があるか」「テストの欠陥検出力」「安全網として機能しているか」「review-testing」で起動。依存やセキュリティではなくテスト自体の健全性が対象。
+description: A focused read-only review that evaluates a test suite's own defect-detection power, contract verification, and stability, along with violations of testing-anti-patterns. Use when the user says "review the test quality", "look at the quality of the tests", "detect testing anti-patterns", "is this test meaningful", "how much can these tests detect", "do the tests work as a safety net", or "review-testing". Its subject is the health of the tests themselves, not dependencies or security.
 ---
 
 # Review: Testing Quality
@@ -25,7 +25,7 @@ Report it only when no test captures that bug, and then as a hole in contract ve
   snapshots, coverage output, a DB, or logs under the target, run it only against a throwaway copy outside the target or in an
   isolated environment whose write destination can be pinned outside the target. If isolation is impossible, do not run the dynamic
   evaluation and fall back to `unsupported`. Compliance is judged by mechanically confirming that the target tree is unchanged before and after the run.
-- **Do not produce an overall score**: never emit a score of the 「テスト品質 82 点」 kind. The deliverables are findings and a
+- **Do not produce an overall score**: never emit a score of the "test quality: 82 points" kind. The deliverables are findings and a
   [coverage ledger](../shared/references/coverage-ledger.md). An overall score hides what could not be measured.
 - **Three-way verdict**: verify every finding with the
   CONFIRMED / FALSE_POSITIVE / UNCERTAIN values of

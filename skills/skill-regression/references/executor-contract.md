@@ -108,16 +108,16 @@ gets misread as "the skill failed", so build the workarounds in before launching
 ## Report format
 
 ```
-## skill-regression run — <対象スキル>
+## skill-regression run — <target skill>
 
-| シナリオ | 合否 | critical | 非critical | 落ちた項目 |
+| Scenario | Pass/fail | critical | non-critical | Failed items |
 |---------|------|----------|-----------|-----------|
 | sf-001 <title> | ○ | 3/3 | 1/1 | - |
-| sf-002 <title> | × | 2/3 | 1/1 | R2: <要件 1 行> — <落ちた根拠 1 行> |
+| sf-002 <title> | × | 2/3 | 1/1 | R2: <requirement, 1 line> — <evidence for the failure, 1 line> |
 
-- 実行者の不明瞭点（新出のみ = 台帳に記録がある前回 run の報告に無かったもの。前回 run が無ければ全件）: <箇条書き>
-- 台帳: <更新した / 不合格のため未更新>
-- fixture を持たない影響スキル: <名前列挙。capture 推奨として提示>
+- Points the executor found unclear (new ones only = absent from the previous run's report recorded in the ledger; all of them if there is no previous run): <bullet list>
+- Ledger: <updated / not updated because it failed>
+- Affected skills with no fixture: <list of names, presented as capture recommendations>
 ```
 
 On a failure, attach the separation of "a regression on the skill side" versus "the fixture going stale (the spec changed

@@ -86,7 +86,7 @@ complementary; do not merge one into the other.
 | Current-specification reference | Static (a field table) | What currently behaves how, and where things are unspecified | extract's 3rd stream |
 
 A narrative document is unsuited to enumerating ruling targets (prose dissolves individual
-points). A static field table can enumerate `⚠️未規定` markers and thereby functions directly as
+points). A static field table can enumerate `⚠️ unspecified` markers and thereby functions directly as
 the **ammunition list for rulings** (each unspecified item becomes a path to a candidate ledger
 row). The two are separate artifacts because **their readers and purposes differ** (narrative =
 grasping the whole picture / field table = domain orientation on individual points — design

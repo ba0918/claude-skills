@@ -90,5 +90,5 @@ On the first failure in brainstorm:
 
 ### Sounding-board skills (brainstorm)
 
-- Append Codex's opinion to Claude's response as a `💡 Codex の視点:` section
+- Append Codex's opinion to Claude's response as a `💡 Codex's perspective:` section
 - Claude produces an integrated answer that takes Codex's response into account

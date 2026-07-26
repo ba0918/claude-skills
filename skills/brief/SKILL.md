@@ -1,6 +1,6 @@
 ---
 name: brief
-description: 変更・実装計画・引き継ぎ・進行中の会話を、人間の判断順に再構成した自己完結 HTML として可視化しブラウザで開くスキル。LLM 向けに書かれた長い文書や大きな差分を「つまり何が起きたか」から読める形へ組み替え、意図別グループ・平易な解説・根拠・確認の質問を提示する。既存ワークフローへ配線せず手動起動だけで動く。「brief」「わかりやすく教えて」「解説画面」「今の会話を整理して」「変更内容を可視化」「実装計画を解説して」で起動。
+description: Reconstruct a change, an implementation plan, a handoff, or an in-flight conversation into a self-contained HTML page ordered the way a human decides, then open it in a browser. It reshapes long LLM-oriented documents and large diffs so they read from "what actually happened" first, presenting intent-based groups, plain-language explanation, evidence, and questions to confirm. It is wired into no existing workflow and runs only on manual invocation. Use when the user says "brief", "explain this in plain terms", "give me an explanation screen", "organize the current conversation", "visualize the changes", or "walk me through the implementation plan".
 ---
 
 # Brief
@@ -180,12 +180,12 @@ reason no export machinery exists.
 Append one line to the run log:
 
 ```
-| 日時 | view | 対象 | 読んだか | 指摘が出たか | ★画面がなければ出なかった指摘か |
+| Datetime | view | Target | Read it | Raised a point | ★ A point that would not have surfaced without the view |
 ```
 
 Write that header and its separator row when the file does not exist yet. The last three
 columns cannot be filled at generation time — the reader has not read anything yet — so record
-them as 未確認 and come back after the conversation that follows. A row invented at generation
+them as `unconfirmed` and come back after the conversation that follows. A row invented at generation
 time would be measuring the writer, not the reader.
 
 The ★ column is the decisive one. At five entries it settles three different outcomes that

@@ -1,6 +1,6 @@
 ---
 name: goal-loop
-description: 機械検証可能な条件（oracle コマンド）が真になるまで「oracle 実行 → 失敗出力を implementer に渡して修正」を自律反復する条件収束型ループ。「全テスト green まで回して」「lint エラーゼロまで直して」「ビルドが通るまで」で起動。oracle ファイル群をハッシュロックし、テストを弱めて合格する oracle-gaming を機械的に遮断（oracle_tampered で即 halt）。同一失敗の stall・往復の oscillation を検出して無限ループを防ぐ。「goal-loop」「ゴールループ」「収束するまで」「〜が通るまで繰り返して」でも起動。
+description: A condition-convergent loop that autonomously repeats "run the oracle, then hand the failure output to the implementer to fix" until a mechanically verifiable condition (an oracle command) becomes true. Use when the user says "run it until all tests are green", "fix it until there are zero lint errors", "until the build passes", "goal-loop", "until it converges", or "keep going until X passes". It hash-locks the oracle files, mechanically blocking the oracle-gaming of passing by weakening the tests (halting immediately on oracle_tampered). It detects stall on an identical failure and oscillation between two states to prevent infinite loops.
 ---
 
 # Goal Loop
@@ -23,7 +23,7 @@ the specifications for oracle integrity, convergence judgment, and the safety br
 ## Argument Format
 
 ```
-goal-loop "<goal の自然言語記述>" [--oracle "COMMAND"] [--oracle-files PATH...]
+goal-loop "<natural language description of the goal>" [--oracle "COMMAND"] [--oracle-files PATH...]
           [--max-iter N] [--max-wallclock DURATION]
 ```
 
@@ -98,12 +98,12 @@ For each iteration i = 1..max_iter:
 ### Step 4: Completion report (conforms to verification-gate)
 
 ```
-## Goal Loop 結果
-- converged: true/false（halt_reason: ...）
+## Goal Loop results
+- converged: true/false (halt_reason: ...)
 - iterations: N / max N
-- oracle: {command}（exit {code}）
-- 証拠: 最終 oracle 実行出力の末尾（$WORK/iter-{last}.log）
-- oracle integrity: 全イテレーションで verify 合格 / oracle_tampered（改変パス列挙）
+- oracle: {command} (exit {code})
+- Evidence: the tail of the final oracle run output ($WORK/iter-{last}.log)
+- oracle integrity: verify passed on every iteration / oracle_tampered (with the tampered paths listed)
 ```
 
 `converged: true` is allowed only when **the actual output of the final oracle run** can be presented as evidence

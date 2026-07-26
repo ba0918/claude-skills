@@ -213,7 +213,7 @@ def check_frontmatter_yaml_compat(root):
 # の要約"挙動"は behavior テストできないため、この統一テキストガードが最低ガードになる。
 # 要約"内容の質"はいずれのスキルも機械検証不能であることを受容した上での設計。
 HUMAN_READABLE_SUMMARY_CONTRACT = "skills/shared/references/human-readable-summary.md"
-HUMAN_READABLE_SUMMARY_LABEL = "📝 つまり:"
+HUMAN_READABLE_SUMMARY_LABEL = "📝 In short:"
 HUMAN_READABLE_SUMMARY_SKILLS = (
     "brainstorm",
     "issue",

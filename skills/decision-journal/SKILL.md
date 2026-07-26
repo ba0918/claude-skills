@@ -1,6 +1,6 @@
 ---
 name: decision-journal
-description: アーキテクチャ・技術選定の意思決定を判例集方式で記録・聞き取りするスキル。着手前 1 行プロトコル / LLM 選定会話（候補・裁可理由・確信度・再評価条件）の固化 / 判例の考古学的聞き取りを提供する。棄却条件の反証可能化と技術選定の来歴保存が目的で、brainstorm（アイデア発散）や plan（実装計画）とは棲み分ける。「意思決定記録の固化」「技術選定の判例」「decision journal」「なぜこの技術にしたか記録」「棄却条件を残す」で起動。
+description: Record and elicit architecture and technology-selection decisions in a case-law style. It provides a one-line protocol to run before starting, a way to solidify an LLM selection conversation (candidates, the reason for the ruling, confidence, and re-evaluation conditions), and archaeological elicitation of past decisions. Its purpose is making rejection conditions falsifiable and preserving the provenance of technology choices, which keeps it distinct from brainstorm (diverging on ideas) and plan (implementation planning). Use when the user says "solidify the decision record", "decision journal", "record why we chose this technology", or "leave the rejection conditions behind".
 ---
 
 # Decision Journal
@@ -46,12 +46,12 @@ Observe the following.
    (the fallback for when the user confirmation is skipped).
 3. **Interruption path on detection** (do not continue the happy path; three options, per
    Hick's Law):
-   - `中断して確認` — show the passage in question and confirm whether to continue
-   - `該当欄を除外して続行` — drop only the fields holding the secret-looking value and carry
+   - `pause and confirm` — show the passage in question and confirm whether to continue
+   - `drop the affected fields and continue` — drop only the fields holding the secret-looking value and carry
      on. When the secret maps to no field of the record, this means "include neither that
      value nor any related mention anywhere in the record" (the absence of a matching field
      is not a reason to ignore the detection and continue)
-   - `中止` — end without writing anything
+   - `abort` — end without writing anything
 4. `decisions/` belongs to the local-visibility artifact store (outside Git), so do not create
    tracked files.
 
@@ -66,16 +66,16 @@ one line behind.
 
 1. Get the subject (project name, the content of the bet) from $ARGUMENTS or from the user.
 2. Have the user pick one success criterion out of the four categories
-   **「遊び / 学習 / 製品 / 事業」** (Hick's Law: four options; the default is 「遊び」 =
-   a low-stake exploration). Confirm the scope (個人 Pj / 企業 Pj) here as well
-   (default: 個人 Pj).
+   **play / learning / product / business** (Hick's Law: four options; the default is play =
+   a low-stake exploration). Confirm the scope (a personal project / a company project) here as well
+   (default: a personal project).
 3. Ask exactly one follow-up question, chosen by the criterion:
-   - 「製品」 or 「事業」 → what is the **indispensable condition** for that product to work?
+   - product or business → what is the **indispensable condition** for that product to work?
      Will you verify it first with the cheapest end-to-end spike?
-   - 「遊び」 or 「学習」 → confirm the investment ceiling (time, money); do not suppress the
-     start. Propose a default inferred from the wording of $ARGUMENTS (e.g. 「週末に」 → 2 days;
-     with no mention of money, default to 「なし」), and ask only when you cannot infer it.
-     Record the ceiling in the 「制約」 field of the selection-time section (the one-line
+   - play or learning → confirm the investment ceiling (time, money); do not suppress the
+     start. Propose a default inferred from the wording of $ARGUMENTS (e.g. "over the weekend" → 2 days;
+     with no mention of money, default to none), and ask only when you cannot infer it.
+     Record the ceiling in the Constraints field of the selection-time section (the one-line
      closing memo reuses the existing template field — do not add a new one).
 4. Only when the higher-level selection drags a language along with it, insert the
    **one dependent-language question**: can you spend long hours with that language, and does
@@ -83,14 +83,14 @@ one line behind.
 5. Save to `.agents/artifacts/decisions/{slug}.md` using the minimal form of
    [decision-record-template.md](references/decision-record-template.md) (the selection-time
    section only). Leave the outcome and loss fields empty (append later via capture). Even in
-   the minimal form, keep the outcome section's field headings — including 「終了時 1 行メモ」 —
-   exactly as the template has them.
+   the minimal form, keep the outcome section's field headings — including the one-line note at
+   the end — exactly as the template has them.
 6. Completion message (echo the declared success criterion in one line):
    ```
-   ✅ 着手前プロトコルを記録しました
-   🎯 成功基準: {遊び|学習|製品|事業} — {1 行宣言}
+   ✅ The pre-commitment protocol is recorded
+   🎯 Success criterion: {play|learning|product|business} — {the one-line declaration}
    📄 File: .agents/artifacts/decisions/{slug}.md
-   📋 次アクション: 賭けが決したら `decision-journal capture` で結果を追記
+   📋 Next action: once the bet is settled, append the outcome with `decision-journal capture`
    ```
 
 ---
@@ -105,38 +105,38 @@ confidence — is easily lost. Extract the structure from the conversation and f
 
 1. Identify the target selection conversation (the current conversation, or a specified log).
 2. Extract the following from the conversation (**never fill a field by guessing**; for a
-   field with no answer, 「復元不能」 is an acceptable formal conclusion):
-   - **候補** (every option raised, including the status-quo option and the rejected ones)
-   - **制約** (the premises and requirements mentioned in the conversation)
-   - **裁可理由** and its **由来** (stated at the time / traces from the time / recalled
-     afterwards / inferred now)
-   - **確信度** (how certain the decider was. Criterion: an explicit statement of confidence
-     = 高 / acceptance with reservation (「まあ〜でいいか」 and the like) = 中 / passive or
-     unstated = 低. Never upgrade to 高 a confidence the conversation does not show)
-   - **棄却条件・再評価条件** (what observation would make you walk away from this bet; record
-     「未設定」 when there is none)
-   - **成功基準** (a template header field): if a Start record for the same subject already
-     exists under `decisions/`, carry that declaration over. Otherwise record
-     「未設定（Start 未実施）」 — do not guess one of the four categories
-   - **射程** (a template header field): 「企業 Pj」 when the conversation mentions a company or
-     team operation, otherwise the default 「個人 Pj」 (never leave it blank, because the List
-     Workflow displays it)
-   - **賭け金** (four impact axes): fill an axis **only when the conversation touched it
-     explicitly**; mark an untouched axis 「言及なし」 (do not infer it from surrounding
+   field with no answer, "unrecoverable" is an acceptable formal conclusion):
+   - **Candidates** (every option raised, including the status-quo option and the rejected ones)
+   - **Constraints** (the premises and requirements mentioned in the conversation)
+   - **The reason for the ruling** and its **provenance** (stated at the time / traces from the
+     time / recalled afterwards / inferred now)
+   - **Confidence** (how certain the decider was. Criterion: an explicit statement of confidence
+     = high / acceptance with reservation ("well, this will do" and the like) = medium / passive or
+     unstated = low. Never upgrade to high a confidence the conversation does not show)
+   - **The rejection and re-evaluation conditions** (what observation would make you walk away from
+     this bet; record "unset" when there is none)
+   - **The success criterion** (a template header field): if a Start record for the same subject
+     already exists under `decisions/`, carry that declaration over. Otherwise record
+     "unset (Start not run)" — do not guess one of the four categories
+   - **Reach** (a template header field): a company project when the conversation mentions a
+     company or team operation, otherwise the default of a personal project (never leave it blank,
+     because the List Workflow displays it)
+   - **The stake** (four impact axes): fill an axis **only when the conversation touched it
+     explicitly**; mark an untouched axis "not mentioned" (do not infer it from surrounding
      information). When the conversation supports all four axes being low (small loss ceiling,
      observable exit point, small external impact, no exposure of confidential data), the
      template's "you need not fill every field when the stake is low" rule applies and a
      few lines of memo are enough
-   - **各主張の証拠強度**: attach OBSERVED / REPORTED / INTERPRETATION / HYPOTHESIS at the
-     moment you write each of the fields above (a selection conversation is usually OBSERVED —
-     the log survives)
+   - **The evidence strength of each claim**: attach OBSERVED / REPORTED / INTERPRETATION /
+     HYPOTHESIS at the moment you write each of the fields above (a selection conversation is
+     usually OBSERVED — the log survives)
 3. Treat every other template field as **outside Capture's remit**, as follows. Do not fill a
    blank by guessing.
-   - **封印セクション**: omit the section entirely (Interview only; per the template's
-     "記入の注意")
-   - **結果セクション / 判旨・射程・反例**: keep the field headings and leave the contents
-     empty (these are appended once the outcome exists; omitting them would delete the place
-     the append goes)
+   - **The sealed section**: omit the section entirely (Interview only; per the template's
+     "Cautions when filling it in")
+   - **The outcome section / the holding, its reach, and counterexamples**: keep the field
+     headings and leave the contents empty (these are appended once the outcome exists;
+     omitting them would delete the place the append goes)
 4. Apply the shared safety rules. Confirm with the user before writing out, whether or not a
    secret was found. The confirmation shows **the destination path and the list of fields the
    record will carry** (presenting the full text is not required). When a secret is detected,
@@ -146,10 +146,10 @@ confidence — is easily lost. Extract the structure from the conversation and f
 6. Completion message (summarise the extracted candidates, ruling rationale, and confidence,
    and show the destination):
    ```
-   ✅ 選定会話を決定記録に固化しました
-   🧭 候補: {候補一覧}／採用: {採用案}
-   📝 裁可理由: {理由}（由来: {当時明示|痕跡|事後回想|推測}・確信度: {高|中|低}）
-   🔁 再評価条件: {条件 or 未設定}
+   ✅ The selection conversation is frozen into a decision record
+   🧭 Candidates: {the candidate list} / Adopted: {the adopted option}
+   📝 Reason for the ruling: {the reason} (provenance: {stated at the time|traces|recalled afterwards|conjectured}, confidence: {high|medium|low})
+   🔁 Re-evaluation condition: {the condition or unset}
    📄 File: .agents/artifacts/decisions/{slug}.md
    ```
 
@@ -170,31 +170,31 @@ interruption**.
 
 1. **Seal the record before interviewing** (follow the interview-guide procedure). Fix the
    hypothesis, the refutation conditions, and the predicted ending before the interview starts,
-   and write them out first into the 封印セクション of `.agents/artifacts/decisions/{slug}.md`
+   and write them out first into the sealed section of `.agents/artifacts/decisions/{slug}.md`
    (this blocks retrofitting after collection; never rewrite it, whatever the interview yields).
-2. **Start from free recall**. Keep case-law vocabulary (境界, 成立条件, 賭け金 and the like) out
-   of your questions and let the person speak in their own words. Do not make the testimony
-   converge on the shape of the template.
-3. Interview field by field, attaching an **証拠強度ラベル** to each field (OBSERVED /
+2. **Start from free recall**. Keep case-law vocabulary (boundary, conditions for holding,
+   stake, and the like) out of your questions and let the person speak in their own words.
+   Do not make the testimony converge on the shape of the template.
+3. Interview field by field, attaching an **evidence-strength label** to each field (OBSERVED /
    REPORTED / INTERPRETATION / HYPOTHESIS; definitions in decision-record-template).
    - **Ask about the reason for stopping and the reason for not resuming separately.**
    - **Do not fabricate a comparison by presenting a list of options** (if the person did not
-     compare, record 「比較なし」).
-   - For a field with no memory, record 「復元不能」 as a formal conclusion.
-   - Restore the template header fields (成功基準, 射程) from the testimony too. For 成功基準,
-     adopt the testimony of a declaration made at the time when there is one; otherwise lead
-     with 「未設定（Start 未実施）」. Keep an inference from circumstances to a parenthetical
-     provisional note and label it INTERPRETATION (「復元不能」 is for when you cannot even
-     confirm whether a declaration existed).
+     compare, record "no comparison").
+   - For a field with no memory, record "unrecoverable" as a formal conclusion.
+   - Restore the template header fields (the success criterion, the reach) from the testimony
+     too. For the success criterion, adopt the testimony of a declaration made at the time when
+     there is one; otherwise lead with "unset (Start not run)". Keep an inference from
+     circumstances to a parenthetical provisional note and label it INTERPRETATION
+     ("unrecoverable" is for when you cannot even confirm whether a declaration existed).
 4. **Save incrementally at every step and echo the progress** (fields obtained / fields
    remaining), so that an interruption and resumption show how far you got.
 5. Apply the shared safety rules (on detecting a secret, take the interruption path).
-6. Completion message (present the breakdown of restored fields and 「復元不能」 fields):
+6. Completion message (present the breakdown of restored fields and unrecoverable fields):
    ```
-   ✅ 判例を記録しました
-   🗂 復元できた欄: {欄名一覧}
-   🚫 復元不能: {欄名一覧}（推測で埋めていない）
-   🔮 封印予想の的中/外れ: {結末分類の照合結果}
+   ✅ The precedent is recorded
+   🗂 Fields recovered: {the list of field names}
+   🚫 Unrecoverable: {the list of field names} (not filled with conjecture)
+   🔮 The sealed prediction, right or wrong: {the result of checking the ending category}
    📄 File: .agents/artifacts/decisions/{slug}.md
    ```
 
@@ -204,12 +204,12 @@ interruption**.
 
 ### Steps
 
-1. Enumerate `*.md` under `.agents/artifacts/decisions/` (if there are none, print
-   「まだ決定記録がありません」).
-2. List each record's title, success criterion, scope (個人/企業), and state.
+1. Enumerate `*.md` under `.agents/artifacts/decisions/` (if there are none, state that no
+   decision record exists yet).
+2. List each record's title, success criterion, scope (personal / company), and state.
 3. Show the count summary:
    ```
-   📊 決定記録数: {N}
+   📊 Decision records: {N}
    ```
 
 ---

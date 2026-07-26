@@ -102,9 +102,9 @@ class TestFingerprint(unittest.TestCase):
         self.assertEqual(1, fp["bullets"])
         self.assertEqual(1, fp["hrs"])
 
-    def test_frontmatter_is_kept_verbatim_and_excluded_from_body(self):
+    def test_skill_name_is_extracted_and_frontmatter_excluded_from_body(self):
         fp = fingerprint(doc("# Heading\n"))
-        self.assertIn("description: Demo skill.", fp["frontmatter"])
+        self.assertEqual("demo", fp["name"])
         self.assertEqual([1], fp["headings"])
 
     def test_identifiers_include_inline_code_and_link_targets(self):
@@ -224,30 +224,31 @@ class TestIdentifierPreservation(unittest.TestCase):
 
 
 class TestFrontmatterImmutability(unittest.TestCase):
-    def test_changed_description_is_blocked(self):
-        after = doc(EN_BODY, frontmatter=FRONTMATTER.replace("Demo skill.", "Demo!"))
+    def test_changed_skill_name_is_blocked(self):
+        after = doc(EN_BODY, frontmatter=FRONTMATTER.replace("name: demo", "name: demo2"))
         findings = [f for f in compare("SKILL.md", doc(JA_BODY), after)
                     if f["rule"] == "frontmatter_immutability"]
         self.assertEqual(1, len(findings))
         self.assertEqual("BLOCK", findings[0]["severity"])
 
+    def test_translated_description_is_allowed(self):
+        after = doc(EN_BODY, frontmatter=FRONTMATTER.replace(
+            "Demo skill. Use when demoing.", "デモ用スキル。デモのときに使う。"))
+        findings = [f for f in compare("SKILL.md", doc(JA_BODY), after)
+                    if f["rule"] == "frontmatter_immutability"]
+        self.assertEqual([], findings)
 
-class TestUserFacingTemplates(unittest.TestCase):
-    def test_translated_fence_content_is_warned_not_blocked(self):
+
+class TestTranslatedUserFacingTextIsNotFlagged(unittest.TestCase):
+    def test_translated_fence_content_raises_no_finding(self):
         after = EN_BODY.replace("完了メッセージ: 「{count} 件を処理したよ」",
                                 "Done message: \"Processed {count} items\"")
-        findings = [f for f in compare("SKILL.md", doc(JA_BODY), doc(after))
-                    if f["rule"] == "user_facing_template_preservation"]
-        self.assertTrue(findings)
-        self.assertEqual({"WARN"}, {f["severity"] for f in findings})
+        self.assertEqual([], compare("SKILL.md", doc(JA_BODY), doc(after)))
 
-    def test_lost_placeholder_template_quote_is_warned(self):
+    def test_translated_placeholder_template_quote_raises_no_finding(self):
         before = doc("# H\n\n「{X} が原因だ」の形式で書く。\n")
-        after = doc("# H\n\nWrite it in the form: X is the cause.\n")
-        findings = [f for f in compare("SKILL.md", before, after)
-                    if f["rule"] == "user_facing_template_preservation"]
-        self.assertTrue(findings)
-        self.assertIn("{X} が原因だ", findings[0]["detail"])
+        after = doc("# H\n\nWrite it in the form: `{X}` is the cause.\n")
+        self.assertEqual([], compare("SKILL.md", before, after))
 
 
 class TestFixAction(unittest.TestCase):

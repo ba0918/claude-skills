@@ -1,59 +1,57 @@
 # CA-* Rule Catalog
 
-context-audit の全ルールの定義。`scripts/static_checks.py` の `RULES` レジストリと
-**この表が dual source of truth** であり、`scripts/test_catalog_sync.py` が
-ID / Category / Severity / Action の一致を機械検証する（drift 防止）。
+The definitions of every context-audit rule. **This table and the `RULES` registry of `scripts/static_checks.py` form a dual source of truth**, and `scripts/test_catalog_sync.py` machine-verifies that ID / Category / Severity / Action agree (preventing drift).
 
-- **Severity**（BLOCK / WARN / INFO / PASS）は問題の重大度。定義は
-  [../../shared/references/severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) に準拠。
-- **Action**（AUTO_FIX / NEEDS_JUDGMENT / REPORT_ONLY）は修正の自動化可否。severity と直交する別軸で、
-  定義は [../../shared/references/fix-action-taxonomy.md](../../shared/references/fix-action-taxonomy.md) に準拠。
-- v1 の判定は「純関数（決定的）」が中心。CA-C001 のみ candidate 抽出が純関数で、矛盾/意図的差分の判定は LLM（Phase 2, REPORT_ONLY）。
+- **Severity** (BLOCK / WARN / INFO / PASS) is the seriousness of the problem. Its definition conforms to
+  [../../shared/references/severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md).
+- **Action** (AUTO_FIX / NEEDS_JUDGMENT / REPORT_ONLY) is whether the fix can be automated. It is an axis orthogonal to severity, and its definition conforms to
+  [../../shared/references/fix-action-taxonomy.md](../../shared/references/fix-action-taxonomy.md).
+- The v1 judgments are centered on "pure functions (deterministic)". Only for CA-C001 is candidate extraction a pure function, with the judgment of contradiction/intentional difference done by an LLM (Phase 2, REPORT_ONLY).
 
-## ID band 規約
+## The ID band convention
 
-末尾 3 桁で band を固定し、将来ルールが恣意的な番号に落ちないようにする:
+The band is fixed by the last 3 digits, so that future rules never land on arbitrary numbers:
 
-| band | 意味 |
+| band | Meaning |
 |------|------|
-| `0xx` | schema / stale（構造・陳腐化） |
-| `1xx` | reference 実在（参照先の存在チェック） |
-| `2xx` | 予約（未使用） |
-| `3xx` | security（secret / 資格情報） |
+| `0xx` | schema / stale (structure and obsolescence) |
+| `1xx` | reference existence (checking that the referent exists) |
+| `2xx` | Reserved (unused) |
+| `3xx` | security (secrets / credentials) |
 
-Category prefix: `S`=stale, `U`=unsafe, `D`=drift, `C`=contradiction, `M`=memory。
+Category prefixes: `S`=stale, `U`=unsafe, `D`=drift, `C`=contradiction, `M`=memory.
 
-## ルール一覧
+## The rule list
 
-| ID | Category | Severity | Action | 検証 | 内容 |
+| ID | Category | Severity | Action | Verification | Content |
 |----|----------|----------|--------|------|------|
-| CA-S001 | stale | WARN | AUTO_FIX / NEEDS_JUDGMENT | 純関数 | 存在しないファイル/ディレクトリへの参照。抽出対象は `/` を含むパス表記のみ（裸のファイル名は precision のため対象外）。edit-distance ≤1 かつ一意候補のみ AUTO_FIX、それ以外は NEEDS_JUDGMENT |
-| CA-S002 | stale | WARN | NEEDS_JUDGMENT | 純関数 | 存在しない `skills/<name>/` ディレクトリ参照 |
-| CA-U001 | unsafe | WARN | REPORT_ONLY | 純関数 | 確認省略・破壊的操作を許可する語彙（regex ベース） |
-| CA-D001 | drift | INFO | REPORT_ONLY | 純関数 | AGENTS.md への Claude 専用ツール語彙（Edit/Write 等、日本語「〜ツール」表記含む）の混入。行単位で finding 化し、1 行に複数語彙があっても代表 1 語で報告 |
-| CA-D002 | drift | WARN | NEEDS_JUDGMENT | 純関数 | スキル一覧カバレッジ差分（実ディレクトリ vs 指示ファイル記載）。`validate_repo.py` 検出時は自動スキップ |
-| CA-C001 | contradiction | WARN | REPORT_ONLY | 混成 | 同一 subject への禁止/許可衝突。candidate 抽出は純関数（recall 優先）、判定は LLM |
-| CA-M001 | memory | WARN | AUTO_FIX / NEEDS_JUDGMENT | 純関数 | メモリ frontmatter schema。整形の揺れは AUTO_FIX（正規化・body 不変）、必須キー欠落/未知 type は NEEDS_JUDGMENT |
-| CA-M101 | memory | WARN | NEEDS_JUDGMENT | 純関数 | メモリが参照するファイル/スキルの実在チェック |
-| CA-M301 | memory | BLOCK / WARN | REPORT_ONLY | 純関数（既存 detect_secrets 再利用） | secret/credential 疑いのパターン検出（credential=BLOCK / PII（email・home_path）=WARN）。値は転記せず自動マスクもしない |
+| CA-S001 | stale | WARN | AUTO_FIX / NEEDS_JUDGMENT | Pure function | A reference to a nonexistent file/directory. Extraction covers only path notation containing `/` (a bare filename is out of scope, for precision). AUTO_FIX only when the edit distance is ≤1 and the candidate is unique; otherwise NEEDS_JUDGMENT |
+| CA-S002 | stale | WARN | NEEDS_JUDGMENT | Pure function | A reference to a nonexistent `skills/<name>/` directory |
+| CA-U001 | unsafe | WARN | REPORT_ONLY | Pure function | Vocabulary permitting skipped confirmation or destructive operations (regex-based) |
+| CA-D001 | drift | INFO | REPORT_ONLY | Pure function | Claude-only tool vocabulary (Edit/Write and the like, including the Japanese 「〜ツール」 notation) leaking into AGENTS.md. Findings are made per line, and even when one line holds several such terms it is reported with a single representative term |
+| CA-D002 | drift | WARN | NEEDS_JUDGMENT | Pure function | The coverage gap in the skill list (the real directories vs what the instruction file records). Automatically skipped when `validate_repo.py` is detected |
+| CA-C001 | contradiction | WARN | REPORT_ONLY | Hybrid | A forbid/permit conflict over the same subject. Candidate extraction is a pure function (favoring recall), and the judgment is by an LLM |
+| CA-M001 | memory | WARN | AUTO_FIX / NEEDS_JUDGMENT | Pure function | The memory frontmatter schema. Formatting drift is AUTO_FIX (normalization, body unchanged); a missing required key or an unknown type is NEEDS_JUDGMENT |
+| CA-M101 | memory | WARN | NEEDS_JUDGMENT | Pure function | Checking the existence of the files/skills that memory references |
+| CA-M301 | memory | BLOCK / WARN | REPORT_ONLY | Pure function (reusing the existing detect_secrets) | Pattern detection of suspected secrets/credentials (credential=BLOCK / PII (email, home_path)=WARN). Values are neither transcribed nor auto-masked |
 
-## 所有ルール（既存スキルとの境界）
+## Ownership rules (the boundary against existing skills)
 
-- **CA-S001 / CA-S002** は doc-check の structural check と表面的に重複するが、所有領域が異なる:
-  - **context-audit**: instruction-bearing ファイル（CLAUDE.md / AGENTS.md / rules / memory）を「指示品質」として所有。
-  - **doc-check**: 任意の docs を「コード正確性（code ⇔ docs）」として所有。
-- **CA-D002** は `scripts/validate_repo.py` を検出したリポジトリでは自動スキップ（prose の「補完扱い」ではなく機械的に抑制）。validate_repo のチェック6がカバレッジを所有する。
+- **CA-S001 / CA-S002** superficially overlap doc-check's structural check, but the owned territory differs:
+  - **context-audit**: owns instruction-bearing files (CLAUDE.md / AGENTS.md / rules / memory) as "instruction quality".
+  - **doc-check**: owns arbitrary docs as "code accuracy (code ⇔ docs)".
+- **CA-D002** is automatically skipped in a repository where `scripts/validate_repo.py` is detected (suppressed mechanically rather than as a prose "treat it as complementary"). validate_repo's check 6 owns coverage.
 
-## 実装ノート
+## Implementation notes
 
-- **CA-D002** は set ベース lookup（skill ディレクトリ集合 vs 指示ファイル記載の集合差分）。per-skill full-file scan はしない。
-- **CA-C001** candidate 抽出は subject token で bucket 化してから同一主題ペアのみ pairing（Jaccard ≥ 0.5、opposite polarity）。全 pairs O(S²) の素朴走査を避ける。
-- 各ルールは pure fn `check(targets, ctx) -> list[Finding]` として `RULES` に登録。ルール追加 = 関数追加 + 登録 + テスト追加のみ（Open-Closed）。
-- 全 finding は `id / severity / action / where(file:line) / what / why / how / fix_action(old→new|null)` を持ち、直列化前に secret redaction を全 line-context に適用する。
+- **CA-D002** is a set-based lookup (the set difference between the skill directory set and the set recorded in the instruction file). It does not do a per-skill full-file scan.
+- **CA-C001** candidate extraction buckets by subject token first and then pairs only same-subject pairs (Jaccard ≥ 0.5, opposite polarity). This avoids a naive O(S²) sweep over all pairs.
+- Each rule is registered in `RULES` as the pure fn `check(targets, ctx) -> list[Finding]`. Adding a rule = adding a function + registering it + adding tests, and nothing else (Open-Closed).
+- Every finding carries `id / severity / action / where(file:line) / what / why / how / fix_action(old→new|null)`, and secret redaction is applied to every line-context before serialization.
 
-## v2 候補（v1 対象外）
+## v2 candidates (out of scope for v1)
 
-- ネストしたサブディレクトリの CLAUDE.md / AGENTS.md。
-- baseline の claim 正規化 hash + expiry（v1 は opaque finding ID の単純リスト）。
-- `2xx` band（drift の追加系）。
-- ランタイム固有メモリ形式の追加対応。
+- CLAUDE.md / AGENTS.md in nested subdirectories.
+- A normalized claim hash + expiry for the baseline (v1 is a plain list of opaque finding IDs).
+- The `2xx` band (additional drift rules).
+- Support for additional runtime-specific memory formats.

@@ -10,20 +10,20 @@ updated: "{{YYYY-MM-DD HH:MM:SS}}"
 
 ## TL;DR
 
-{{1-3行の要約}}
+{{a summary in 1-3 lines}}
 
-## 背景
+## Background
 
-{{なぜこのドキュメントを書くのか、前提知識}}
+{{why this document is being written, and the assumed knowledge}}
 
-## 本題
+## The main subject
 
-{{メインコンテンツ — 見出しは内容に応じて自由に構成}}
+{{the main content — structure the headings freely to suit it}}
 
-## まとめ
+## Summary
 
-{{結論・要点の整理}}
+{{the conclusion and the key points, organized}}
 
-## 参考
+## References
 
-- {{参考リンクや関連ドキュメント}}
+- {{reference links and related documents}}

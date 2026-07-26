@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Create timestamped implementation plans with automatic .agents/artifacts/status.md management and progress tracking. Use when user requests (1) "make a plan", "create a plan", "design this feature" for creating new plans, or (2) "update status", "planning done", "implementation complete", "cycle done" for updating implementation progress, or (3) "resume", "continue from last time", "前回の続き", "前回の続きから" for loading the current session state. Alternative to Claude Code's standard plan mode with timestamp-based file naming and status tracking.
+description: Create timestamped implementation plans with automatic .agents/artifacts/status.md management and progress tracking. Use when user requests (1) "make a plan", "create a plan", "design this feature" for creating new plans, or (2) "update status", "planning done", "implementation complete", "cycle done" for updating implementation progress, or (3) "resume", "continue from last time", "pick up where we left off" for loading the current session state. Alternative to Claude Code's standard plan mode with timestamp-based file naming and status tracking.
 ---
 
 # Plan
@@ -34,9 +34,9 @@ mkdir -p .agents/artifacts/plans
 
 ### Phase 2: Gather Requirements
 
-Feature 名 / 概要 / type（新機能 / 改修 / bug fix / refactor）が必要。ユーザー入力から明確に取れるなら聞かずに進む。不足があれば interactive では簡潔に聞く、Auto mode（`cycle` / `issue-cycle` 等の headless 呼び出し）ではブロックせず文脈から推論する。
+A feature name, a summary, and a type (new feature / modification / bug fix / refactor) are required. If they can be read clearly from the user input, proceed without asking. When something is missing, ask briefly in interactive mode; in Auto mode (a headless invocation such as `cycle` / `issue-cycle`), do not block — infer it from context.
 
-推論した項目は最終応答で明示し、ユーザーが訂正できる形にする。
+State every inferred item explicitly in the final response, in a form the user can correct.
 
 ### Phase 3: Create Plan Document
 
@@ -44,7 +44,7 @@ Feature 名 / 概要 / type（新機能 / 改修 / bug fix / refactor）が必�
 
 **CRITICAL**: Plan files MUST be created under `.agents/artifacts/plans/` directory. Do NOT use `docs/cycles/` or any other directory. This constraint applies regardless of how this skill is invoked (directly, via issue-cycle, or any other caller).
 
-**Feature slug**: `[a-z0-9-]+` のみ（標準的な URL slug 化）。非 ASCII 入力（日本語等）は意味翻訳を優先し、プロジェクト内の既存関連命名（skills や既存 plan）と揃える。翻訳が困難な固有名詞のみ Hepburn 式ローマ字化、意味が曖昧なら user に確認する（空 / garbled slug に落ちるのは禁止）。原文の feature 名は plan header `# {Feature Name}` と status.md `Feature` 列に verbatim で保持する。
+**Feature slug**: `[a-z0-9-]+` only (standard URL slugification). For non-ASCII input (Japanese and the like), prefer a meaning-based translation and align it with related existing naming inside the project (skills, existing plans). Romanize (Hepburn) only proper nouns that resist translation, and ask the user when the meaning is ambiguous (falling back to an empty or garbled slug is forbidden). Keep the original feature name verbatim in the plan header `# {Feature Name}` and in the `Feature` column of status.md.
 
 **Template:** See [references/plan-template.md](references/plan-template.md) for the full plan document structure.
 
@@ -134,8 +134,8 @@ Use when user wants to resume from previous session:
    - If `.agents/artifacts/plans/checkpoints/{cycle_id}.md` exists, classify:
      `python3 skills/shared/scripts/checkpoint.py classify --repo . --file <path>`
      (contract §CLI invocation for path / `--repo` conventions). If it does not exist, skip.
-   - Branch on verdict per contract §restore 判定. **plan resume caller-side asymmetry**: `conflict` は警告して無視し通常 resume を続行（壊れた補助ファイルが正常 resume を止めない）。Orphan checkpoint（status.md に cycle_id 一致なし）は `stale` 相当扱い。
-   - Resume は read-only — checkpoint は削除しない。`superseded` のみ user 確認付きで削除**提案**する（auto-delete は禁止）。
+   - Branch on the verdict per the contract §The restore decision. **plan resume caller-side asymmetry**: warn about `conflict` and then ignore it, continuing the normal resume (a broken auxiliary file must not stop a healthy resume). An orphan checkpoint (no matching cycle_id in status.md) is treated as equivalent to `stale`.
+   - Resume is read-only — never delete the checkpoint. Only for `superseded` do you **propose** deletion with user confirmation (auto-delete is forbidden).
 
 3. **Confirm readiness**
    ```
@@ -183,10 +183,10 @@ Use when user wants to update implementation progress:
 
 4. **Exit condition — checkpoint if leaving work dirty** (secondary trigger; primary is handoff save). Per shared contract [../shared/references/checkpoint-pattern.md](../shared/references/checkpoint-pattern.md).
 
-   - Clean commit で終わるなら書かない。
-   - `git status --porcelain=v1` が non-empty で終わるなら、**セッション最後の書き込み**として skeleton を生成する（他の tracked file 編集を全部確定させた後 — 生成後の編集は fingerprint を stale にする）:
+   - If the session ends on a clean commit, do not write one.
+   - If the session ends with `git status --porcelain=v1` non-empty, generate the skeleton as the **last write of the session** (after every other tracked-file edit is finalized — an edit made after generation leaves the fingerprint stale):
      `python3 skills/shared/scripts/checkpoint.py skeleton --repo . --cycle-id {cycle_id} --owner manual-session --written-at $(date -Iseconds) --output`
-   - 生成後、LLM が `## decision`（plan からの逸脱 1 文, なければ "none"）と `## next`（次の一手 1 個）を埋める。`## evidence` は観測コマンド + タイムスタンプ必須。機械フィールドと詳細は契約側。
+   - After generation, the LLM fills in `## decision` (one sentence on the deviation from the plan, or "none") and `## next` (a single next move). `## evidence` requires an observed command plus a timestamp. The machine fields and the details belong to the contract.
 
 5. **Confirm update**
    ```

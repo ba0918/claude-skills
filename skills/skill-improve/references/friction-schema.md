@@ -73,23 +73,23 @@ friction-report.md is a Markdown document containing the following sections.
 **Sessions:** {count}
 
 ## Executive Summary
-{1-3行の定量的要約。生テキスト禁止}
+{a 1-3 line quantitative summary. No raw text}
 
-## Skill Rankings (摩擦スコア順)
+## Skill Rankings (by friction score)
 | Rank | Skill | Friction Score | Invocations | Top Issue | Recommendation |
 |------|-------|---------------|-------------|-----------|---------------|
 
 ## Detailed Findings
 
 ### {skill_name}
-- **Friction Score:** {0-10 の数値}
+- **Friction Score:** {a number from 0 to 10}
 - **Invocations:** {count}
 - **Retry Rate:** {retry_count / invocation_count}
 - **Correction Rate:** {correction_turns / invocation_count}
 - **Abandonment Rate:** {session_abandoned_count / invocation_count}
 - **Error Rate:** {tool_error_count / total_turns}
 - **Issues:**
-  - {issue_description — 定量的記述のみ}
+  - {issue_description — quantitative statements only}
 - **Recommendations:**
   - {recommendation}
 
@@ -97,8 +97,8 @@ friction-report.md is a Markdown document containing the following sections.
 
 ### Hypothesis {A/B/C}: {title}
 - **Target:** {skill_name}
-- **Change:** {変更内容の記述}
-- **Expected Impact:** {定量的な期待効果}
+- **Change:** {description of the change}
+- **Expected Impact:** {the expected effect, quantified}
 - **Size:** Small / Large
 - **Confidence:** High / Medium / Low
 ```

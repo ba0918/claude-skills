@@ -1,6 +1,6 @@
 # DESIGN.md Template
 
-以下のテンプレートを使って DESIGN.md を生成する。`{...}` はディスカバリーで決定した値で置換する。
+Generate DESIGN.md using the template below. Replace `{...}` with the values decided during discovery.
 
 ---
 
@@ -148,13 +148,13 @@
 
 ## Agent Prompt Guide
 
-AI コーディングエージェントへの指示:
+Instructions for AI coding agents:
 
-1. UI コンポーネントを生成・変更する際は、必ずこの DESIGN.md を参照すること
-2. Color Palette に定義されていない色を使用しないこと
-3. Typography セクションに定義されていないフォントファミリーを導入しないこと
-4. Spacing は必ず Spacing scale の値を使用すること
-5. Component Stylings に定義されたスタイルを逸脱しないこと
-6. 新しいコンポーネントを作る場合は、既存コンポーネントのスタイルパターンに従うこと
-7. Dark Mode が定義されている場合は、ライト・ダーク両対応を確認すること
+1. Always reference this DESIGN.md when generating or modifying a UI component
+2. Do not use a color that is not defined in the Color Palette
+3. Do not introduce a font family that is not defined in the Typography section
+4. Always use a value from the Spacing scale for spacing
+5. Do not deviate from the styles defined in Component Stylings
+6. When creating a new component, follow the style patterns of the existing components
+7. When Dark Mode is defined, confirm that both light and dark are supported
 ```

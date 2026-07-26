@@ -1,6 +1,6 @@
 ---
 name: commit
-description: 変更内容を分析し、論理単位で自動コミットする。確認なしで即実行。「コミットして」「commit」「変更を保存して」で起動。
+description: Analyze the changes and commit them automatically in logical units, running immediately without confirmation. Use when the user says "commit", "commit this", or "save the changes".
 ---
 
 # Auto Commit
@@ -29,7 +29,7 @@ git branch -vv
 
 ## Phase 1.5: Best-Effort Test Verification
 
-Apply the "commit への統合" section of the [Verification Gate contract](../shared/references/verification-gate.md) on a best-effort basis. Run the test suite only when a test framework is detected (timeout 120s; on timeout, skip and continue). On test failure, append `⚠️ Tests failing: {failure_summary}` to the commit message body and continue. If no framework is detected, skip. Never block on test failure (Core Principle "No confirmation").
+Apply the "Integration into commit (best effort)" section of the [Verification Gate contract](../shared/references/verification-gate.md) on a best-effort basis. Run the test suite only when a test framework is detected (timeout 120s; on timeout, skip and continue). On test failure, append `⚠️ Tests failing: {failure_summary}` to the commit message body and continue. If no framework is detected, skip. Never block on test failure (Core Principle "No confirmation").
 
 Detection map: `package.json` (scripts.test) → `npm test` / `Cargo.toml` → `cargo test` / `go.mod` → `go test ./...` / `pyproject.toml`, `pytest.ini` → `pytest` / `Makefile` (test target) → `make test`
 

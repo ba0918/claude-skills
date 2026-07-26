@@ -122,7 +122,7 @@ observations.
   3. It is fully covered on the contract side
 - **Cutting examples and enums**: a capable model does not need general definitions such as "how
   to build a URL slug". Keep one example or cut it entirely
-- **Reducing prohibition words (`絶対に` / `してはならない`)**: they are the main cause of
+- **Reducing prohibition words ("never" / "must not", `絶対に` / `してはならない`)**: they are the main cause of
   `over_specified` and `rationalization_hook`. Compliance does not drop with softer phrasing
   (measured: both categories vanished completely within 4 iterations)
 

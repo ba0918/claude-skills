@@ -1,6 +1,6 @@
 ---
 name: test-driven-development
-description: TDD (RED-GREEN-REFACTOR) サイクルをガイドするスキル。テストファースト開発を強制し、各フェーズでシェルコマンドによるテスト実行結果を証拠として要求する。「tdd」「テスト駆動」「テストファースト」で起動。
+description: Guide the TDD (RED-GREEN-REFACTOR) cycle. It enforces test-first development and demands the output of a test run through a shell command as evidence at each phase. Use when the user says "tdd", "test-driven", or "test first".
 ---
 
 # Test-Driven Development
@@ -33,7 +33,7 @@ Transitions based on guesswork — "it should pass", "I'm confident" — are for
 ### Phase 0: Acquire Context
 
 1. Take the user's task from `$ARGUMENTS`
-   - If `$ARGUMENTS` is empty: ask the user 「TDD で実装したいタスクを教えてください」
+   - If `$ARGUMENTS` is empty: ask the user "Tell me the task you want to implement with TDD."
 2. Auto-detect the test framework:
    - `package.json` → `npm test` / `npx vitest` / `npx jest`
    - `Cargo.toml` → `cargo test`
@@ -41,9 +41,9 @@ Transitions based on guesswork — "it should pass", "I'm confident" — are for
    - `pyproject.toml` / `pytest.ini` → `pytest`
    - `Makefile` (test target) → `make test`
 3. **When test framework detection fails**:
-   - **Interactive mode**: ask the user 「テスト実行コマンドを教えてください（例: `npm test`, `pytest`, `cargo test`）」
-     - The user answers 「なし」 → display 「TDD にはテストフレームワークが必要です。先にテスト環境をセットアップしてください」 and finish
-   - **headless / Auto mode**: do not guess a test command and continue. Report 「テストフレームワークが検出できない」 and abort (standing up test infrastructure is outside this skill's responsibility; the existence of a language's standard test runner does not count as successful detection)
+   - **Interactive mode**: ask the user "Tell me the test command (for example `npm test`, `pytest`, `cargo test`)."
+     - The user answers "none" → display "TDD requires a test framework. Set up the test environment first." and finish
+   - **headless / Auto mode**: do not guess a test command and continue. Report "No test framework could be detected" and abort (standing up test infrastructure is outside this skill's responsibility; the existence of a language's standard test runner does not count as successful detection)
 4. Hold the test command as `$TEST_CMD`
 
 Display:
@@ -83,10 +83,10 @@ Test command: {TEST_CMD}
    - ❌ The test **errored** (an error in the test framework itself) → fix the error and re-run
    - ❌ **Timeout** (60 seconds or more) → abort the test and ask the user how to proceed:
      ```
-     ⚠️ テスト実行がタイムアウトしました。
-     1. テストコマンドを変更する
-     2. タイムアウトを無視して続行する
-     3. セッションを中断する
+     ⚠️ The test run timed out.
+     1. Change the test command
+     2. Ignore the timeout and continue
+     3. Abort the session
      ```
 
 Display:
@@ -148,13 +148,13 @@ Result: ALL PASS ✅
 1. Review the task's remaining behaviors
 2. Ask the user which action to take next:
    ```
-   🔄 TDD サイクル完了！
+   🔄 TDD cycle complete!
    
-   実装済み: {implemented_behaviors}
+   Implemented: {implemented_behaviors}
    
-   次のアクション:
-   1. 次の振る舞いをテストする (→ RED に戻る)
-   2. TDD セッションを終了する
+   Next actions:
+   1. Test the next behavior (→ back to RED)
+   2. End the TDD session
    ```
 3. "next behavior" selected → return to Phase 1 (RED)
 4. "finish" selected → completion display:
@@ -171,18 +171,18 @@ Result: ALL PASS ✅
 
 ### Test framework detection failed
 
-Ask the user for the test command. If the answer is 「なし」, finish the session.
+Ask the user for the test command. If the answer is "none", finish the session.
 
 ### Test execution timeout (60 seconds or more)
 
 Abort the test, ask the user, and present three choices:
-1. テストコマンドを変更する
-2. タイムアウトを無視して続行する
-3. セッションを中断する
+1. Change the test command
+2. Ignore the timeout and continue
+3. Abort the session
 
 ### Runtime error during test execution
 
-Display the error message and warn 「テスト環境に問題がある可能性があります」. Attempt a fix, then re-run the test.
+Display the error message and warn "There may be a problem with the test environment". Attempt a fix, then re-run the test.
 
 ## References
 
