@@ -72,7 +72,7 @@ Config files like `package.json` / `Cargo.toml` / `tsconfig.json` are **not** in
    Path: .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/
    Ensure the directory exists and is writable.
    ```
-6. **context.json を作成**:
+6. **Create context.json**:
    ```json
    {
      "project_name": "Project name",
@@ -87,21 +87,21 @@ Config files like `package.json` / `Cargo.toml` / `tsconfig.json` are **not** in
 
 ### Step 3: Launch 5 Agents in Parallel
 
-5 つのサブエージェントを**単一メッセージで並行起動**する。プロンプトテンプレートは [references/agent-prompts.md](references/agent-prompts.md) を参照。
+Launch the 5 subagents **in parallel from a single message**. See [references/agent-prompts.md](references/agent-prompts.md) for the prompt templates.
 
-**プレースホルダ展開**: 各サブエージェントのプロンプトを構築する際、すべてのプレースホルダ（`{variable}` 等）を**実際のコンテンツに展開**してから渡す。サブエージェントは SKILL.md のコンテキストを持たないため、未解決のプレースホルダを転送しない。
+**Placeholder expansion**: when building each subagent prompt, **expand every placeholder** (`{variable}` and the like) **into its actual content** before passing it. Subagents do not carry the SKILL.md context, so never forward an unresolved placeholder.
 
 ```
-起動するサブエージェント（すべて自動実行モード・高性能モデル）:
+Subagents to launch (all in autonomous execution mode, high-performance model):
 
 1. security-review  — Security + Secrets → {work_dir}/agent-1-security.json
 2. performance-review — Performance + Memory → {work_dir}/agent-2-performance.json
 3. quality-review   — Implementation Quality + Logic → {work_dir}/agent-3-quality.json
 4. hygiene-review   — Code Duplication + Improvements → {work_dir}/agent-4-hygiene.json
-5. codex-review     — Codex セカンドオピニオン → {work_dir}/agent-5-codex.json
+5. codex-review     — Codex second opinion → {work_dir}/agent-5-codex.json
 ```
 
-Codex セキュリティ制約・フォールバックの共通パターン: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
+Shared patterns for Codex security constraints and fallback: [../shared/references/codex-integration.md](../shared/references/codex-integration.md)
 
 ### Step 3.5: Wait for Agents & Handle Failures
 
@@ -159,7 +159,7 @@ After all 5 agents complete, verify results:
 
 ### Step 4: Launch Integration Agent
 
-**少なくとも 2 つのレビューエージェントが完了したことを確認した後**、統合エージェント（汎用サブエージェント、高性能モデル、自動実行モード）を起動する。
+**After confirming that at least 2 review agents completed**, launch the integration agent (a general-purpose subagent, high-performance model, autonomous execution mode).
 
 **Only when ≥1 core agent failed** (i.e., 2-3/4 core succeeded; skip this line entirely when 4/4 succeed), add to the integration agent prompt:
 ```
@@ -284,8 +284,8 @@ Do not include any other text in your final response.
 
 After confirming the integration agent has completed:
 
-1. `{work_dir}/summary.txt` を読み取り、コンソールにそのまま表示する
-2. シェルでコピー（store 未初期化の場合は ignore ルールを先に保証する — [artifact-store contract](../shared/references/artifact-store.md) の lazy initialization）:
+1. Read `{work_dir}/summary.txt` and print it to the console verbatim
+2. Copy it with shell commands (if the store is not initialized yet, guarantee the ignore rule first — the lazy initialization in the [artifact-store contract](../shared/references/artifact-store.md)):
    ```bash
    grep -qxF '/.agents/artifacts/' .gitignore 2>/dev/null || printf '\n# Agent Artifact Store\n/.agents/artifacts/\n' >> .gitignore
    mkdir -p .agents/artifacts/reviews && cp {work_dir}/report.md .agents/artifacts/reviews/review-{YYYYMMDD-HHMM}.md
@@ -332,11 +332,11 @@ After confirming the integration agent has completed:
 ## Important Rules
 
 - **Headless execution**: Do not prompt the user for confirmation at any step.
-- **全エージェントを自動実行モードで起動する**: これが不可欠。権限プロンプトでブロックされるとカスケード障害になる。
-- **単一メッセージで並行起動**: すべてのサブエージェント呼び出しを 1 つのメッセージにまとめて並行実行する。
-- **Codex エージェントはシェルコマンドのみ使用**: Codex セカンドオピニオン・エージェントのファイル読み書きはすべてシェルコマンド（`cat`, `tee` 等）で行う。
+- **Launch every agent in autonomous execution mode**: this is essential. Getting blocked on a permission prompt turns into a cascading failure.
+- **Launch in parallel from a single message**: put every subagent invocation into one message so they run concurrently.
+- **The Codex agent uses shell commands only**: the Codex second opinion agent performs all of its file reads and writes through shell commands (`cat`, `tee`, and the like).
 - **Graceful degradation**: Partial results are better than no results. If some agents fail, generate a report from the successful agents.
-- **agent-*.json や report.md をメインコンテキストに読み込まない**（summary.txt のみ）。コンテキストウィンドウの節約。
+- **Do not read agent-*.json or report.md into the main context** (summary.txt only). This conserves the context window.
 
 ## Reference
 
