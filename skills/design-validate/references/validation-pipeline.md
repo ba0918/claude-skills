@@ -26,18 +26,18 @@ Stage 5: Aggregation
 ### Checking the preconditions
 
 1. Does `.design/baseline/approval.json` exist?
-   - If not, warn with 「Baseline が確定していません。先に Base Design の承認が必要です」
+   - If not, warn with "The baseline is not settled. The Base Design must be approved first."
    - Show the path to design-scaffold's approval flow
 2. Verifying `tokensHash` / `catalogHash`
    - Compute the SHA-256 hash of tokens.json and compare it with `tokensHash` in approval.json
    - Compute the SHA-256 hash of component-catalog.json and compare it with `catalogHash`
    - On a mismatch:
      ```
-     ⚠️ Baseline と現在の定義ファイルが不一致です。
+     ⚠️ The baseline and the current definition files do not match.
      tokens.json: {match/mismatch}
      catalog.json: {match/mismatch}
      
-     再承認が必要です。`/claude-skills:design-scaffold` で Base Design を更新してください。
+     Re-approval is required. Update the Base Design with `/claude-skills:design-scaffold`.
      ```
 
 ### Behavior when the baseline is not established
@@ -94,7 +94,7 @@ If any of R001, R002, R003 FAILs:
 ### When Storybook / Playwright are not installed
 
 Skip when the framework-dependent setup is incomplete:
-- Explain 「Visual test をスキップしました。Storybook + Playwright をセットアップすると visual regression test が有効になります」
+- Explain "The visual test was skipped. Setting up Storybook + Playwright enables visual regression testing."
 - Treat R004 and R007 as N/A and redistribute their weight
 
 ## Stage 4: Rubric Judge (LLM)

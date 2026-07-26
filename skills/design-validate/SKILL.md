@@ -69,13 +69,13 @@ R001 Token Compliance: FAIL (3 violations)
 R002 Component Compliance: PASS
 R003 Layout Compliance: PASS
 
-修正が必要:
-  src/components/Header.tsx:42 — DL001: 直書きカラー '#FF6B6B'
-  src/pages/Landing.tsx:15 — DL006: CSS変数未使用 '#2563EB'
-  src/pages/Landing.tsx:28 — DL001: 直書きカラー '#10B981'
+Needs fixing:
+  src/components/Header.tsx:42 — DL001: hard-coded color '#FF6B6B'
+  src/pages/Landing.tsx:15 — DL006: CSS variable not used '#2563EB'
+  src/pages/Landing.tsx:28 — DL001: hard-coded color '#10B981'
 
-Visual / Rubric ステージはスキップされました。
-まず lint 違反を修正してから再実行してください。
+The Visual / Rubric stages were skipped.
+Fix the lint violations first, then re-run.
 ```
 
 ### Step 4: Stage 3 — Visual Regression
@@ -92,8 +92,8 @@ Comparison against the baseline screenshots.
 **Graceful degradation when it is not installed:**
 ```
 ⚠️ Stage 3: Visual Regression — SKIPPED
-Storybook / Playwright が未導入のため、visual test はスキップされました。
-R004, R007 の weight は他の項目に再配分されます。
+Storybook / Playwright are not installed, so the visual test was skipped.
+The weights of R004 and R007 are redistributed across the other items.
 ```
 
 ### Step 5: Stage 4 — Rubric Judge
@@ -136,7 +136,7 @@ Following Stage 5 of validation-pipeline.md:
 
 📄 Evidence: .design/validate-report.json
 
-コード反映 OK！ ✅
+Reflected in the code — OK! ✅
 ```
 
 **On FAIL:**
@@ -144,11 +144,11 @@ Following Stage 5 of validation-pipeline.md:
 ❌ Design Validation: FAIL (Score: 65.0/100, required: 80)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-{項目別のスコア表}
+{per-item score table}
 
-改善が必要な項目:
-  R001 Token Compliance: 3 violations → var(--*) に置き換え
-  R006 Interaction Coherence: ghost button の hover 効果が不統一
+Items needing improvement:
+  R001 Token Compliance: 3 violations → replace with var(--*)
+  R006 Interaction Coherence: the ghost button hover effect is inconsistent
 
 📄 Evidence: .design/validate-report.json
 ```

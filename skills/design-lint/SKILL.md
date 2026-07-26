@@ -13,7 +13,7 @@ Lint the project's codebase against `.design/tokens.json` and detect design-toke
 ## Prerequisites
 
 1. `.design/tokens.json` must exist
-   - If it does not, print 「tokens.json が見つかりません。`/claude-skills:design-scaffold` で生成してください」 and stop
+   - If it does not, print "tokens.json not found. Generate it with `/claude-skills:design-scaffold`." and stop
 2. `.design/lint-config.json` must exist (the default configuration is used when it is omitted)
 
 ## Workflow
@@ -51,20 +51,20 @@ Interpret `summary` and `violations` in the JSON output and report them.
 **When everything passes:**
 ```
 ✅ Design Lint: PASS
-全ファイルがデザイントークンに準拠しています！
+Every file complies with the design tokens!
 ```
 
 **On FAIL:**
 ```
 ❌ Design Lint: FAIL
-{errors} 件のエラーが検出されました。
+{errors} errors detected.
 
-📄 詳細レポート: .design/lint-report.json
+📄 Detailed report: .design/lint-report.json
 
-修正が必要な箇所:
-{上位5件の違反を表示}
+Places that need fixing:
+{show the top 5 violations}
 
-直書き値を CSS 変数 (var(--*)) に置き換えてください。
+Replace the hard-coded values with CSS variables (var(--*)).
 ```
 
 - With 20 violations or fewer, show the file name, line number, value, and suggested fix

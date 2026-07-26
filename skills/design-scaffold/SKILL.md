@@ -13,7 +13,7 @@ It converts the "human-readable dictionary of values" produced by design-guide i
 ## Preconditions
 
 1. `DESIGN.md` exists at the project root
-   - If it does not, display 「DESIGN.md が見つかりません。`/claude-skills:design-guide` で作成してください」 and stop
+   - If it does not, display "DESIGN.md not found. Create it with `/claude-skills:design-guide`." and stop
 2. Read DESIGN.md and grasp the structure of every section
 
 ## Workflow
@@ -221,15 +221,15 @@ Generate the default lint settings at `.design/lint-config.json`.
 ### Step 6: Completion report
 
 ```
-✅ Design scaffold を生成しました！
+✅ Design scaffold generated!
 
-📁 生成ファイル:
-  .design/tokens.json      — デザイントークン定義
+📁 Generated files:
+  .design/tokens.json      — design token definitions
   .design/tokens.css       — CSS custom properties
-  .design/lint-config.json — lint 設定
-  components/react/theme.ts — React theme object (検出時のみ)
+  .design/lint-config.json — lint config
+  components/react/theme.ts — React theme object (only when detected)
 
-📊 トークン数:
+📊 Token counts:
   Colors: {n} tokens
   Typography: {n} levels
   Spacing: {n} scale values
@@ -237,8 +237,8 @@ Generate the default lint settings at `.design/lint-config.json`.
   Depth: {n} elevation levels
   Breakpoints: {n} defined
 
-次のステップ:
-  1. `/claude-skills:design-lint` でコードベースの準拠状況を確認
+Next step:
+  1. Check how far the codebase complies with `/claude-skills:design-lint`
 ```
 
 ### Step 7: Generate the component catalog
@@ -268,7 +268,7 @@ The Buttons table in DESIGN.md:
 {
   "name": "Button",
   "category": "action",
-  "description": "インタラクティブなアクションボタン",
+  "description": "An interactive action button",
   "variants": [
     {
       "name": "primary",
@@ -492,14 +492,14 @@ export type { NavProps } from './Nav';
 Add the catalog information to the Step 6 completion report:
 
 ```
-📊 コンポーネント:
+📊 Components:
   Components: {n} defined (Button, Card, Input, Nav)
   Variants: {n} total
   Props: {n} total
   Framework: {framework}
 
-📁 追加生成ファイル:
-  .design/component-catalog.json — コンポーネント仕様定義
+📁 Additional generated files:
+  .design/component-catalog.json — component specification definitions
   components/{framework}/Button.tsx + Button.css
   components/{framework}/Card.tsx + Card.css
   components/{framework}/Input.tsx + Input.css
@@ -541,14 +541,14 @@ Convert the Do / Don't lists in DESIGN.md into the `constraintDef` form of [refe
 Present options to the user and ask about the project's main pages:
 
 ```
-header: "主要ページ"
-question: "このプロジェクトの主要なページは何ですか？"
+header: "Main pages"
+question: "What are the main pages of this project?"
 multiSelect: true
 options:
-  - "ランディングページ"
-  - "ダッシュボード"
-  - "一覧ページ"
-  - "フォームページ"
+  - "Landing page"
+  - "Dashboard"
+  - "List page"
+  - "Form page"
 ```
 
 For each selected page:
@@ -560,17 +560,17 @@ For each selected page:
 ### Step 12: Final completion report
 
 ```
-📊 レイアウト:
+📊 Layout:
   Layout Rules: {n} constraints defined
   Page Definitions: {n} pages
 
-📁 追加生成ファイル:
-  .design/layout-rules.json — レイアウト制約
+📁 Additional generated files:
+  .design/layout-rules.json — layout constraints
   .design/pages/{page-name}.json × {n}
 
-次のステップ:
-  1. `/claude-skills:design-generate` でページを生成
-  2. Base Design の承認フローへ進む
+Next steps:
+  1. Generate the pages with `/claude-skills:design-generate`
+  2. Move on to the Base Design approval flow
 ```
 
 ## Overwrite Confirmation for an Existing .design/
@@ -579,8 +579,8 @@ When `.design/tokens.json` already exists:
 
 1. Read the existing `version`
 2. Present options to the user and confirm:
-   - "上書きする（version をインクリメント）"
-   - "キャンセル"
+   - "Overwrite (increment the version)"
+   - "Cancel"
 3. On overwrite, increment the patch version of `version`
 
 ## Absolute Constraints
