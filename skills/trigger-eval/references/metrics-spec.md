@@ -1,92 +1,92 @@
-# metrics-spec — trigger-eval メトリクス厳密定義
+# metrics-spec — the strict definition of the trigger-eval metrics
 
-`aggregate_metrics.py` とその unittest が実装する式の唯一の正典。フィクスチャの期待値はこの式から手計算する。判定は非決定的だが、集計は判定結果 JSON に対して決定的なので、テストは手書きの判定結果 JSON をフィクスチャにする。
+The single canon for the formulas that `aggregate_metrics.py` and its unittests implement. Fixture expectations are hand-computed from these formulas. Judging is non-deterministic, but aggregation over a judgment result JSON is deterministic, so the tests use hand-written judgment result JSON as fixtures.
 
-## モード軸（selection / autonomous）
+## The mode axis (selection / autonomous)
 
-判定は selection / autonomous の 2 モードで実施される（`judge-protocol.md` 参照）。**モードは集計スキーマに影響しない**:
+Judging is run in 2 modes, selection and autonomous (see `judge-protocol.md`). **The mode does not affect the aggregation schema**:
 
-- モードごとに独立した判定結果 JSON（`judged-{mode}-iterN.json`）を生成し、**それぞれを既存の `aggregate()` にそのまま通して** `metrics-{mode}-iterN.json` を得る。`aggregate_metrics.py` は無改修（モードを引数に取らない。ファイル名でモードを分けるだけ）。
-- **2 モードの判定結果を 1 つの JSON に混ぜて集計してはならない**（母集団が異なる。`judge-protocol.md` の妥当性限界を参照）。
-- **改稿ループ（SKILL.md Phase 6）の収束・悪化ガードは selection を正**とする。autonomous は**参考系列** + Tier1(selection)↔Tier2 乖離のキャリブレーション信号として扱う（autonomous 単独で revert 判断はしない）。
+- Produce an independent judgment result JSON per mode (`judged-{mode}-iterN.json`) and **pass each of them through the existing `aggregate()` unchanged** to obtain `metrics-{mode}-iterN.json`. `aggregate_metrics.py` is unmodified (it takes no mode argument; the modes are separated by filename only).
+- **Never mix the judgment results of the 2 modes into one JSON for aggregation** (the populations differ; see the validity limits in `judge-protocol.md`).
+- **The convergence and degradation guards of the rewriting loop (SKILL.md Phase 6) treat selection as authoritative.** autonomous is treated as a **reference series** plus the calibration signal for the Tier1(selection)↔Tier2 divergence (never make a revert decision from autonomous alone).
 
-## ケース JSON スキーマ
+## Case JSON schema
 
 ```json
 {"case_id": "str", "gold": "skill-name | none", "judgments": ["j1", "j2?"]}
 ```
 
-- **メトリクス（TP/FN/FP・confusion・specificity・invalid_rate）は j1 のみを正とする**。`(j1, j2)` のペアは **stability 専用**。
-- INVALID 正規化は判定単位で適用する（j1 と j2 に独立に）。
+- **The metrics (TP/FN/FP, confusion, specificity, invalid_rate) treat j1 alone as authoritative.** The `(j1, j2)` pair is **for stability only**.
+- INVALID normalization is applied per judgment (independently to j1 and j2).
 
-## ラベル空間
+## Label space
 
-正規化済み bare skill name の集合 + `none` + `INVALID`（集計専用バケット）。
+The set of normalized bare skill names + `none` + `INVALID` (an aggregation-only bucket).
 
-## 判定の正規化（カウント側）
+## Judgment normalization (the counting side)
 
-判定が (a) パース不能、(b) 一覧外のスキル名、(c) 複数スキル、のいずれかなら `INVALID`。**INVALID の生成規則は judge-protocol.md 所掌**（1 回だけ再判定してから確定）。本書はカウント方法のみを所掌する。`aggregate_metrics.normalize_judgment(j, valid_labels)` は不変条件の最終防波堤: `valid_labels = set(skills) | {none}` に無い値・list・None は全て `INVALID`。
+A judgment is `INVALID` if it is (a) unparseable, (b) a skill name outside the list, or (c) several skills. **The rules for producing INVALID are owned by judge-protocol.md** (settled after exactly one re-judgment). This document owns only how they are counted. `aggregate_metrics.normalize_judgment(j, valid_labels)` is the last line of defense for the invariant: any value not in `valid_labels = set(skills) | {none}`, any list, and None all become `INVALID`.
 
-## per-skill 集計
+## per-skill aggregation
 
-スキル S について（判定は j1）:
+For a skill S (the judgment is j1):
 
 - **TP** = (gold=S ∧ j1=S)
-- **FN** = (gold=S ∧ j1≠S)  — none・他スキル・INVALID を含む
-- **FP** = (gold≠S ∧ j1=S)  — gold=none・gold=他スキルの両方を含む
+- **FN** = (gold=S ∧ j1≠S)  — includes none, another skill, and INVALID
+- **FP** = (gold≠S ∧ j1=S)  — includes both gold=none and gold=another skill
 - **recall(S)** = TP / (TP + FN)
 - **precision(S)** = TP / (TP + FP)
-- **TP+FP=0 のとき precision(S) は undefined**（`None`）とし、macro precision の平均から除外する（fixture に本ケースを含める）。
+- **When TP+FP=0, precision(S) is undefined** (`None`) and is excluded from the macro precision average (include this case in the fixtures).
 
-## 全体集計
+## Overall aggregation
 
-- ヘッドライン指標は **macro 平均**:
-  - macro recall = recall が defined なスキル（=gold ケースを 1 件以上持つ）で平均
-  - macro precision = precision が defined なスキル（TP+FP>0）で平均
-- 参考として **micro** も併記: micro recall = ΣTP / Σ(TP+FN)、micro precision = ΣTP / Σ(TP+FP)。
+- The headline metrics are the **macro averages**:
+  - macro recall = averaged over the skills whose recall is defined (= having at least 1 gold case)
+  - macro precision = averaged over the skills whose precision is defined (TP+FP>0)
+- Also report **micro** for reference: micro recall = ΣTP / Σ(TP+FN), micro precision = ΣTP / Σ(TP+FP).
 
-## none の扱い（specificity）
+## Handling none (specificity)
 
-none は recall/precision の行を持たない。
+none has no recall/precision row.
 
-- **specificity** = (gold=none ∧ j1=none) / (gold=none 全件)
-- gold=none ∧ j1=S の誤りは **S の FP** に帰属する。
-- gold=none ∧ j1=INVALID は specificity の**分母に含め分子に含めない**。
-- gold=none ケースが 0 件なら specificity = `None`。
+- **specificity** = (gold=none ∧ j1=none) / (all gold=none cases)
+- An error of gold=none ∧ j1=S is attributed to **S's FP**.
+- gold=none ∧ j1=INVALID is **included in the denominator of specificity but not in the numerator**.
+- If there are 0 gold=none cases, specificity = `None`.
 
 ## invalid_rate
 
-- **invalid_rate** = (j1=INVALID の判定数) / 全ケース数。
-- INVALID は正解スキルの **FN に数え、どのスキルの FP にも数えない**。
-- ケース 0 件なら 0.0。
+- **invalid_rate** = (number of judgments with j1=INVALID) / total cases.
+- INVALID is counted **as an FN for the correct skill, and as an FP for no skill**.
+- With 0 cases, it is 0.0.
 
 ## stability
 
-- **stability** = 同一ケース `(j1, j2)` の完全一致率（正規化ラベルで比較。INVALID 同士も一致とみなす）。
-- **イテレーション横断の推移系列は常に固定サンプル部分集合上で計算する**（母集団を揃えて系列比較可能にするため）。`aggregate(cases, skills, stability_sample_ids=[...])` でサンプルを制限する。全数 2 判定するイテレーション 1 も、系列用の値はサンプル部分集合に制限して算出（全数値は参考として別掲）。
-- j2 を持つケースが 0 件なら value = `None`、sample_size = 0。**sample_size は常に明記する**。
+- **stability** = the exact-match rate of `(j1, j2)` for the same case (compared on normalized labels; INVALID matching INVALID counts as a match).
+- **The cross-iteration trend series is always computed over the fixed sample subset** (so the population is aligned and the series is comparable). Restrict the sample with `aggregate(cases, skills, stability_sample_ids=[...])`. Even iteration 1, which judges the full set twice, computes its series value restricted to the sample subset (the full-set value is reported separately for reference).
+- If 0 cases have a j2, value = `None` and sample_size = 0. **Always state sample_size.**
 
 ## confusion matrix
 
-- 行 = gold、列 = j1（`none` / `INVALID` 列を含む）。出力は**非ゼロセルのみ**（全行列ダンプはしない）。
-- **ペアランキング**:
-  - `raw(A,B)` = count[gold=A, j1=B] + count[gold=B, j1=A]（降順が主キー）
-  - `related_cases(A,B)` = **gold ラベルが A または B のケース総数**
-  - `normalized(A,B)` = raw / related_cases（併記。ケース投入数の偏りで上位が歪むのを防ぐ）
-  - raw=0 のペアは出力しない。ソートは (raw desc, normalized desc, a, b)。
-- ペア空間は `skills ∪ {none}`（INVALID はペアの構成要素にしない）。
+- Rows = gold, columns = j1 (including the `none` / `INVALID` columns). The output contains **only non-zero cells** (never dump the full matrix).
+- **Pair ranking**:
+  - `raw(A,B)` = count[gold=A, j1=B] + count[gold=B, j1=A] (descending is the primary key)
+  - `related_cases(A,B)` = **the total number of cases whose gold label is A or B**
+  - `normalized(A,B)` = raw / related_cases (reported alongside; prevents a skew in how many cases were fed from distorting the top entries)
+  - Pairs with raw=0 are not emitted. Sorting is (raw desc, normalized desc, a, b).
+- The pair space is `skills ∪ {none}` (INVALID is never a member of a pair).
 
-## 悪化ガードの defined 遷移規約
+## The defined-transition convention for the degradation guard
 
-per-skill precision が defined ↔ undefined を跨いで遷移したイテレーションでは、そのスキルの **precision 項は 5pt 悪化ガードの比較対象外**（non-comparison）。recall・specificity・invalid_rate はケース集合固定のため常に比較可能。この規約は改稿ループ（SKILL.md Phase 6）が適用するものであり、`aggregate_metrics.py` は per-skill precision の defined/undefined（`None`）を報告するに留める。
+In an iteration where a per-skill precision crossed between defined and undefined, that skill's **precision term is excluded from the 5pt degradation guard comparison** (non-comparison). recall, specificity, and invalid_rate are always comparable because the case set is fixed. This convention is applied by the rewriting loop (SKILL.md Phase 6); `aggregate_metrics.py` only reports whether each per-skill precision is defined or undefined (`None`).
 
-## ゼロ除算規約（まとめ）
+## Division-by-zero conventions (summary)
 
-| 指標 | 分母 0 のとき |
+| Metric | When the denominator is 0 |
 |------|-------------|
-| recall(S) | TP+FN=0 → `None`（macro recall から除外） |
-| precision(S) | TP+FP=0 → `None`（macro precision から除外） |
-| specificity | gold=none 0 件 → `None` |
-| invalid_rate | ケース 0 件 → `0.0` |
-| stability | j2 ありケース 0 件 → `None`（sample_size=0） |
+| recall(S) | TP+FN=0 → `None` (excluded from macro recall) |
+| precision(S) | TP+FP=0 → `None` (excluded from macro precision) |
+| specificity | 0 gold=none cases → `None` |
+| invalid_rate | 0 cases → `0.0` |
+| stability | 0 cases with a j2 → `None` (sample_size=0) |
 | normalized(A,B) | related 0 → `0.0` |

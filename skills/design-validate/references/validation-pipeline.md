@@ -1,37 +1,37 @@
 # Validation Pipeline
 
-design-validate スキルが実行する多段階検証パイプラインの仕様。
+The specification of the multi-stage validation pipeline the design-validate skill runs.
 
-## パイプライン概要
+## Pipeline overview
 
 ```
 Stage 1: Baseline Check
-  └── approval.json 存在確認 + hash 検証
+  └── confirm approval.json exists + verify the hashes
 
 Stage 2: Static Lint (mechanical)
-  └── design-lint 実行 → R001, R002, R003 のスコア算出
+  └── run design-lint → compute the scores for R001, R002, R003
 
 Stage 3: Visual Regression (visual)
-  └── Playwright screenshot comparison → R004, R007 のスコア算出
+  └── Playwright screenshot comparison → compute the scores for R004, R007
 
 Stage 4: Rubric Judge (llm-judge)
-  └── Agent で独立 judge 起動 → R005, R006 のスコア算出
+  └── launch an independent judge subagent → compute the scores for R005, R006
 
 Stage 5: Aggregation
-  └── weighted average → 合否判定 + evidence 出力
+  └── weighted average → verdict + evidence output
 ```
 
 ## Stage 1: Baseline Check
 
-### 前提条件確認
+### Checking the preconditions
 
-1. `.design/baseline/approval.json` が存在するか
-   - なければ「Baseline が確定していません。先に Base Design の承認が必要です」と警告
-   - design-scaffold の approval フローへの導線を表示
-2. `tokensHash` / `catalogHash` の検証
-   - tokens.json の SHA-256 hash を計算し、approval.json の `tokensHash` と比較
-   - component-catalog.json の SHA-256 hash を計算し、`catalogHash` と比較
-   - 不一致の場合:
+1. Does `.design/baseline/approval.json` exist?
+   - If not, warn with 「Baseline が確定していません。先に Base Design の承認が必要です」
+   - Show the path to design-scaffold's approval flow
+2. Verifying `tokensHash` / `catalogHash`
+   - Compute the SHA-256 hash of tokens.json and compare it with `tokensHash` in approval.json
+   - Compute the SHA-256 hash of component-catalog.json and compare it with `catalogHash`
+   - On a mismatch:
      ```
      ⚠️ Baseline と現在の定義ファイルが不一致です。
      tokens.json: {match/mismatch}
@@ -40,108 +40,108 @@ Stage 5: Aggregation
      再承認が必要です。`/claude-skills:design-scaffold` で Base Design を更新してください。
      ```
 
-### Baseline 未確定時の動作
+### Behavior when the baseline is not established
 
-baseline が存在しない場合でも Stage 2 (lint) は実行可能。
-Stage 3 (visual) と Stage 4 (rubric) は baseline 必須のため skip する。
+Even without a baseline, Stage 2 (lint) can run.
+Stage 3 (visual) and Stage 4 (rubric) require the baseline and are skipped.
 
 ## Stage 2: Static Lint
 
-### 実行方法
+### How it runs
 
-design-lint スキルと同じロジックを内部で実行する。
+Run the same logic as the design-lint skill internally.
 
-1. `.design/tokens.json` を Read
-2. `.design/lint-config.json` を Read
-3. `.design/component-catalog.json` を Read（存在する場合）
-4. 全対象ファイルをスキャンし、DL001-204 を適用
-5. 結果を rubric の各項目にマッピング:
+1. Read `.design/tokens.json`
+2. Read `.design/lint-config.json`
+3. Read `.design/component-catalog.json` (when it exists)
+4. Scan every target file and apply DL001-204
+5. Map the results onto the rubric items:
 
-| Rubric ID | Lint ルール | 算出方法 |
+| Rubric ID | Lint rules | Computation |
 |-----------|-----------|---------|
 | R001 (Token Compliance) | DL001-006 | violations=0 → 100, >0 → 0 (binary) |
 | R002 (Component Compliance) | DL101-103 | violations=0 → 100, >0 → 0 (binary) |
 | R003 (Layout Compliance) | DL201-204 | violations=0 → 100, >0 → 0 (binary) |
 
-### 短絡評価
+### Short-circuit evaluation
 
-R001, R002, R003 のいずれかが FAIL の場合:
-- Stage 3, 4 は実行しない（lint が通らないコードの visual test は無意味）
-- 即座に FAIL レポートを出力
-- 修正すべき違反一覧を提示
+If any of R001, R002, R003 FAILs:
+- Do not run Stages 3 and 4 (a visual test of code that fails lint is meaningless)
+- Emit the FAIL report immediately
+- Present the list of violations to fix
 
 ## Stage 3: Visual Regression
 
-### 前提条件
+### Preconditions
 
-- `.design/baseline/screenshots/` に baseline スクリーンショットが存在
-- Playwright がインストール済み（`npx playwright --version` で確認）
-- Storybook がビルド可能（`npx storybook build` が成功）
+- Baseline screenshots exist under `.design/baseline/screenshots/`
+- Playwright is installed (check with `npx playwright --version`)
+- Storybook can be built (`npx storybook build` succeeds)
 
-### 実行方法
+### How it runs
 
-1. Storybook をビルド: `npx storybook build --output-dir storybook-static`
-2. Playwright でスクリーンショットを撮影し、baseline と比較
-3. 差分が `maxDiffPixelRatio` 以下かを判定
+1. Build Storybook: `npx storybook build --output-dir storybook-static`
+2. Take screenshots with Playwright and compare them against the baseline
+3. Decide whether the difference is at or below `maxDiffPixelRatio`
 
-### 結果マッピング
+### Result mapping
 
-| Rubric ID | 対象 | 算出方法 |
+| Rubric ID | Target | Computation |
 |-----------|------|---------|
-| R004 (Visual Consistency) | コンポーネント | 全コンポーネントの diff 平均 ≤ 閾値 → pass |
-| R007 (Responsive Behavior) | 各ブレークポイント | 全ブレークポイントで diff ≤ 閾値 → pass |
+| R004 (Visual Consistency) | components | the mean diff over all components ≤ the threshold → pass |
+| R007 (Responsive Behavior) | each breakpoint | diff ≤ the threshold at every breakpoint → pass |
 
-### Storybook / Playwright 未導入時
+### When Storybook / Playwright are not installed
 
-フレームワーク依存のセットアップが未完了の場合は skip:
-- 「Visual test をスキップしました。Storybook + Playwright をセットアップすると visual regression test が有効になります」と案内
-- R004, R007 は N/A として weight を再配分
+Skip when the framework-dependent setup is incomplete:
+- Explain 「Visual test をスキップしました。Storybook + Playwright をセットアップすると visual regression test が有効になります」
+- Treat R004 and R007 as N/A and redistribute their weight
 
 ## Stage 4: Rubric Judge (LLM)
 
-### 独立性の原則
+### The independence principle
 
-生成した LLM とは **別のインスタンス** で評価する（自己採点防止）。
-design-validate 内で **サブエージェント** として judge 専用エージェントを起動する。
+Evaluate with **a different instance** from the LLM that generated the code (to prevent self-scoring).
+Inside design-validate, launch a dedicated judge agent as a **subagent**.
 
-### Judge 起動
+### Launching the judge
 
 ```
 Agent({
   description: "Design Rubric Judge",
   prompt: `
-    あなたはデザインシステム準拠の独立審査員です。
-    以下のスクリーンショットを DESIGN.md のデザインシステムに照らして評価してください。
+    You are an independent examiner of design system compliance.
+    Evaluate the screenshots below against the design system in DESIGN.md.
     
-    ## 評価基準
+    ## Evaluation criteria
     
-    ### R005: Visual Harmony (全体の調和)
-    - pass: 色彩・フォント・余白が一貫し、視覚的なノイズがない
-    - partial: 概ね一貫しているが、1-2箇所の不統一がある
-    - fail: 明らかな不統一や視覚的な違和感がある
+    ### R005: Visual Harmony (overall harmony)
+    - pass: color, font, and spacing are consistent, with no visual noise
+    - partial: broadly consistent, but with 1-2 inconsistent spots
+    - fail: there is obvious inconsistency or visual discomfort
     
-    ### R006: Interaction Coherence (インタラクションの一貫性)
-    - pass: hover/focus/active 状態が全コンポーネントで一貫
-    - partial: 概ね一貫しているが、一部のコンポーネントで不統一
-    - fail: コンポーネント間でインタラクションパターンが不統一
+    ### R006: Interaction Coherence
+    - pass: hover/focus/active states are consistent across every component
+    - partial: broadly consistent, but inconsistent on some components
+    - fail: the interaction patterns are inconsistent between components
     
-    ## 入力
-    - スクリーンショット: {screenshots}
-    - DESIGN.md の Do's/Don'ts: {dos_donts}
+    ## Input
+    - screenshots: {screenshots}
+    - the Do's/Don'ts of DESIGN.md: {dos_donts}
     
-    ## 出力形式
-    各項目について以下の JSON で回答してください:
+    ## Output format
+    Answer for each item in the following JSON:
     {
-      "R005": { "score": "pass|partial|fail", "reason": "1文で根拠を述べる" },
-      "R006": { "score": "pass|partial|fail", "reason": "1文で根拠を述べる" }
+      "R005": { "score": "pass|partial|fail", "reason": "state the grounds in one sentence" },
+      "R006": { "score": "pass|partial|fail", "reason": "state the grounds in one sentence" }
     }
   `
 })
 ```
 
-### スコア変換
+### Score conversion
 
-| Judge 判定 | 数値スコア |
+| Judge verdict | Numeric score |
 |-----------|----------|
 | pass | 100 |
 | partial | 50 |
@@ -149,17 +149,17 @@ Agent({
 
 ## Stage 5: Aggregation
 
-### Weighted Average 算出
+### Computing the weighted average
 
 ```
 totalScore = Σ (criterion.weight × criterion.score) / Σ (active_weights)
 
-※ N/A の項目は weight を除外して再正規化
+* N/A items are excluded from the weights and the rest renormalized
 ```
 
-### デフォルト Rubric 項目
+### Default rubric items
 
-| ID | 名前 | 検証方法 | Weight | Scoring |
+| ID | Name | Verification | Weight | Scoring |
 |----|------|---------|--------|---------|
 | R001 | Token Compliance | mechanical | 0.25 | binary |
 | R002 | Component Compliance | mechanical | 0.20 | binary |
@@ -169,9 +169,9 @@ totalScore = Σ (criterion.weight × criterion.score) / Σ (active_weights)
 | R006 | Interaction Coherence | llm-judge | 0.08 | scale-5 |
 | R007 | Responsive Behavior | visual | 0.07 | binary |
 
-**Weight 比率:** mechanical (60%) > visual (22%) > llm-judge (18%)
+**Weight ratio:** mechanical (60%) > visual (22%) > llm-judge (18%)
 
-### 合否判定
+### The verdict
 
 ```
 if totalScore >= rubric.passingScore:
@@ -180,9 +180,9 @@ else:
   verdict = "FAIL"
 ```
 
-デフォルト `passingScore`: 80
+Default `passingScore`: 80
 
-### Evidence 出力
+### Evidence output
 
 ```json
 {
@@ -195,9 +195,9 @@ else:
     "R002": { "score": 100, "verification": "mechanical", "details": "0 violations" },
     "R003": { "score": 100, "verification": "mechanical", "details": "0 violations" },
     "R004": { "score": 95, "verification": "visual", "details": "avg diff: 0.3%" },
-    "R005": { "score": 100, "verification": "llm-judge", "details": "pass: 色彩と余白が一貫" },
-    "R006": { "score": 50, "verification": "llm-judge", "details": "partial: ghost button の hover が不統一" },
-    "R007": { "score": 100, "verification": "visual", "details": "全ブレークポイント pass" }
+    "R005": { "score": 100, "verification": "llm-judge", "details": "pass: color and spacing are consistent" },
+    "R006": { "score": 50, "verification": "llm-judge", "details": "partial: the ghost button hover is inconsistent" },
+    "R007": { "score": 100, "verification": "visual", "details": "pass at every breakpoint" }
   },
   "totalScore": 93.5,
   "passingScore": 80,
@@ -205,6 +205,6 @@ else:
 }
 ```
 
-### Evidence 保存
+### Saving the evidence
 
-`.design/validate-report.json` に保存。verification-gate 契約に準拠。
+Save it to `.design/validate-report.json`. Conforms to the verification-gate contract.

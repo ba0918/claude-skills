@@ -86,7 +86,7 @@ The top pairs are used for (a) defining the "neighboring skills" for hard-negati
 Pass the judging agent (**a lightweight model, stated explicitly**, a fresh subagent) the description list plus a batch of cases, and collect its JSON answers. Follow [judge-protocol.md](references/judge-protocol.md):
 
 - **Judge in two modes** (selection / autonomous of `judge-protocol.md`). **The default measures both selection and autonomous**, and `--selection-only` restores the former behavior (selection only). The input and output schemas are shared and only the framing differs. Generate `judged-{mode}-iterN.json` separately per mode (never mix them).
-- Distributing the input is either **inline passing, or read access to exactly two files: `skills.json` plus the batch file** (「入力の配布方法」 of `judge-protocol.md`).
+- Distributing the input is either **inline passing, or read access to exactly two files: `skills.json` plus the batch file** ("Input distribution methods" of `judge-protocol.md`).
 - Batches of ≤20 cases, dispatched in parallel (at most 4). Shuffle the case order.
 - On collection, **verify that "the number of judgments == the number of cases"**. Re-judge a malformed batch exactly once → if it is still malformed, materialize it as `INVALID`.
 - For stability, judge the same case independently twice (from the second iteration onward, reduce this to a fixed sample of 20-30 cases; `--full-stability` for all of them).
@@ -105,7 +105,7 @@ python3 skills/trigger-eval/scripts/aggregate_metrics.py \
   --output .claude/tmp/trigger-eval-{ts}/metrics-autonomous-iterN.json
 ```
 
-Compute recall / precision / specificity / stability / confusion matrix / invalid_rate with the formulas of `metrics-spec.md`. **Never mix the two modes' results**: selection is authoritative for the convergence and regression guards, and autonomous is a reference series (「モード軸」 of `metrics-spec.md`).
+Compute recall / precision / specificity / stability / confusion matrix / invalid_rate with the formulas of `metrics-spec.md`. **Never mix the two modes' results**: selection is authoritative for the convergence and regression guards, and autonomous is a reference series ("The mode axis" of `metrics-spec.md`).
 
 On completing a measurement (the selection series of each iteration), append a measurement event per target skill so that runs can be compared ([measurement-identity.md §4](../shared/references/measurement-identity.md#4-既存系の写像表), recommended):
 `python3 skills/shared/scripts/measurement_identity.py emit --system trigger-eval --event eval --skill <対象スキル> --repo-root {repo_root} --outcome '{"recall":R,"precision":P,"stability":S}'`

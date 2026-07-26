@@ -1,9 +1,9 @@
-# fixtures.json スキーマと設計指針
+# The fixtures.json schema and design guidelines
 
-`skills/<skill>/fixtures.json` の契約。fixture は「このスキルが守るべき挙動」を
-再実行可能な形で固定した回帰資産であり、スキル本体と同じリポジトリで commit する。
+The contract of `skills/<skill>/fixtures.json`. A fixture is a regression asset that pins "the behavior this skill must
+preserve" in re-runnable form, and it is committed in the same repository as the skill itself.
 
-## スキーマ
+## Schema
 
 ```json
 {
@@ -35,114 +35,113 @@
 }
 ```
 
-例中の CONFIRMED / FALSE_POSITIVE / UNCERTAIN は
-[severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md) の
-「文脈検証の3値判定」の語彙（要件文で共有語彙を使うときは定義元の意味で書く）。
+The CONFIRMED / FALSE_POSITIVE / UNCERTAIN in the example are the vocabulary of
+「文脈検証の3値判定」 in [severity-and-verdicts.md](../../shared/references/severity-and-verdicts.md)
+(when a requirement sentence uses shared vocabulary, write it with the meaning from its definition).
 
-| フィールド | 必須 | 意味 |
+| Field | Required | Meaning |
 |-----------|------|------|
-| `skill` | ✓ | 対象スキル名（ディレクトリ名と一致） |
-| `scenarios[].id` | ✓ | スキル内で一意な短い ID。安定させる（報告・履歴の追跡キー） |
-| `scenarios[].title` | ✓ | 1 行のシナリオ名 |
-| `scenarios[].source` | ✓ | この合格基準の出どころ（tuning セッションの plan doc / 手動設計なら `manual`）。来歴が追えない fixture は陳腐化判断ができない |
-| `scenarios[].executor_tier` | - | 省略時 `standard`。`high` に上げた場合は理由を `notes` に書く |
-| `scenarios[].isolation` | - | `worktree`（ファイル生成・編集を伴う）/ `none`（読み取り・対話のみ）。省略時 `worktree`（安全側） |
-| `scenarios[].setup.files` | - | シナリオ実行前に worktree 内へ配置するファイル（相対パス → 内容）。isolation が `worktree` の場合のみ有効 |
-| `scenarios[].setup.mtimes` | - | ファイルの mtime（`files` のパス → 基準時刻からの相対秒。負値が過去）。順序を判定材料にするスキルで必要。相対にするのは絶対時刻が時間経過で陳腐化するため |
-| `scenarios[].setup.git` | - | 隔離領域の git 状態。キーは下表 |
-| `scenarios[].setup.env` | - | 実行者に前提として与える環境変数（名前 → 値）。実体化では設定されず、呼び出し側がプロンプトへ注入する |
-| `scenarios[].prompt` | ✓ | 実行者に渡す状況設定。ユーザー発話として自然な文にする（スキル名を直接指定しない — 発火判定は trigger-eval の領分、ここでは本文実行の質だけを測る） |
-| `scenarios[].requirements[]` | ✓ | 成果物が満たすべき要件。3〜7 項目、`critical: true` を最低 1 つ。キーは `text` / `critical` のみ |
-| `scenarios[].notes` | - | 設計判断のメモ（edge の意図・tier 変更理由など） |
+| `skill` | ✓ | the target skill name (matching the directory name) |
+| `scenarios[].id` | ✓ | a short ID unique within the skill. Keep it stable (it is the tracking key across reports and history) |
+| `scenarios[].title` | ✓ | a one-line scenario name |
+| `scenarios[].source` | ✓ | where this acceptance criterion came from (the plan doc of a tuning session, or `manual` if hand-designed). A fixture whose provenance cannot be traced cannot be judged stale |
+| `scenarios[].executor_tier` | - | `standard` when omitted. When raised to `high`, write the reason in `notes` |
+| `scenarios[].isolation` | - | `worktree` (involves creating or editing files) / `none` (read-only or dialogue only). `worktree` when omitted (the safe side) |
+| `scenarios[].setup.files` | - | files placed into the worktree before running the scenario (relative path → contents). Effective only when isolation is `worktree` |
+| `scenarios[].setup.mtimes` | - | file mtimes (a path from `files` → seconds relative to the reference time; negative is in the past). Needed for skills that use ordering as evidence. They are relative because absolute times go stale as time passes |
+| `scenarios[].setup.git` | - | the git state of the isolated area. The keys are in the table below |
+| `scenarios[].setup.env` | - | environment variables given to the executor as a premise (name → value). They are not set during materialization; the caller injects them into the prompt |
+| `scenarios[].prompt` | ✓ | the situation handed to the executor. Write it as a natural user utterance (never name the skill directly — firing is trigger-eval's domain, and what is measured here is only the quality of body execution) |
+| `scenarios[].requirements[]` | ✓ | the requirements the artifact must satisfy. 3-7 items, with at least one `critical: true`. The only keys are `text` / `critical` |
+| `scenarios[].notes` | - | notes on design decisions (the intent of an edge case, the reason for a tier change, etc.) |
 
-未知のキーは検証で拒否される（トップレベル / シナリオ / `requirements` / `setup` / `setup.git` の全階層）。
-黙って無視されると「宣言したつもりの前提が実体化されない」という最も気づきにくい形で
-測定対象がぶれるため、タイポも含めて違反として落とす。
+Unknown keys are rejected by validation (at every level: top level, scenario, `requirements`, `setup`, `setup.git`).
+Silently ignoring them would skew what is measured in the hardest way to notice — "a premise you believed you declared is
+never materialized" — so typos included, they fail as violations.
 
-### `setup.git` のキー
+### The keys of `setup.git`
 
-| キー | 意味 |
+| Key | Meaning |
 |------|------|
-| `init` | 隔離領域を git リポジトリにする。他の git キーはすべてこれを必要とする |
-| `branch` | 初期ブランチ名。省略時 `master`（git 本体の既定に委ねると実体化が環境依存になるため固定値）。ブランチ名で分岐するスキル（例: commit の main/master 直コミット禁止）では必ず宣言する |
-| `commit` | `true` = 全ファイルを含む基準コミットを作り作業ツリーを clean にする / パス配列 = そのファイルだけをコミットし、残りは未追跡のまま置く（「ベースラインはあるが作業分は未コミット」の宣言） |
-| `message` | 基準コミットのメッセージ。省略時 `fixture baseline`。「既存履歴のスタイルに合わせる」を測るシナリオでは履歴の言語・形式そのものが前提なので宣言する |
-| `remote` | origin の URL |
+| `init` | make the isolated area a git repository. Every other git key requires this |
+| `branch` | the initial branch name. `master` when omitted (a fixed value, because leaving it to git's own default makes materialization environment-dependent). Always declare it for skills that branch on the branch name (e.g. commit's ban on committing directly to main/master) |
+| `commit` | `true` = create a baseline commit containing every file and leave the working tree clean / an array of paths = commit only those files and leave the rest untracked (declaring "a baseline exists but the working changes are uncommitted") |
+| `message` | the message of the baseline commit. `fixture baseline` when omitted. In a scenario measuring "match the style of the existing history", the history's language and form are themselves the premise, so declare it |
+| `remote` | the URL of origin |
 
-`setup` は [scripts/fixture_setup.py](../scripts/fixture_setup.py) が実体化する。
-run / capture で隔離領域を手作業で組み立てない — 手作業は前提が宣言の外に漏れる経路そのもので、
-同じ fixture が実行のたびに違う前提で動く。
+`setup` is materialized by [scripts/fixture_setup.py](../scripts/fixture_setup.py).
+Never assemble the isolated area by hand during run / capture — hand assembly is precisely the path by which premises leak
+outside the declaration, and the same fixture then runs under different premises each time.
 
 ```bash
 python3 {skill_dir}/scripts/fixture_setup.py --materialize \
   skills/<skill>/fixtures.json <scenario_id> <dest>
 ```
 
-出力の `baseline`（相対パス → sha256）は「編集ゼロの裏取り」にそのまま使う。
-ハッシュは宣言ではなく**書き込み後の実体**から取る。`env` は実行者プロンプトの
-環境セットアップ節へ転記する。
+The output's `baseline` (relative path → sha256) is used directly for "corroborating zero edits". Take the hashes from
+**the reality after writing**, not from the declaration. Transcribe `env` into the environment setup section of the executor prompt.
 
-出力の `unmaterialized` が非空なら、そのパスは宣言と実体が食い違っている
-（実行基盤が `.env` 等にデバイスファイルを被せると書き込みが黙って捨てられる）。
-内容に依存する要件はそのシナリオに書けない — run の報告に記録し、要件が内容前提なら
-fixture 側を直す。
+If the output's `unmaterialized` is non-empty, the declaration and the reality diverge for those paths
+(when the execution platform overlays a device file onto `.env` and the like, the write is silently discarded).
+A requirement that depends on the contents cannot be written into that scenario — record it in the run report, and if a
+requirement assumed the contents, fix the fixture side.
 
-スキーマ適合は `--validate` で検査でき、`scripts/validate_repo.py` のチェック17が
-CI で全 `skills/*/fixtures.json` に対して同じ検証を強制する。
+Schema conformance can be checked with `--validate`, and check 17 of `scripts/validate_repo.py` enforces the same validation
+in CI over every `skills/*/fixtures.json`.
 
-## 設計指針
+## Design guidelines
 
-1. **シナリオ数は 2〜3 本**: 現実の使用場面の中央値 1 本 + edge 1〜2 本。
-   1 本では過適合し、4 本以上は run のコストが釣り合わない
-2. **要件は観測可能な形で書く**: 「正しく動く」ではなく「3値判定の verdict が出力に含まれる」。
-   実行者の成果物・報告から ○/× を機械的に判定できる粒度まで落とす
-3. **critical の基準**: それが × ならスキルの存在意義が崩れる項目だけに付ける。
-   全項目 critical は「全部大事 = 何も大事じゃない」で回帰の解像度を失う
-4. **事前固定**: capture で確定した requirements は run の結果を見て動かさない。
-   動かすのは「スキル仕様そのものが意図的に変わった」ときだけで、その場合は
-   fixture を修正して capture からやり直す（`source` も更新する）
-5. **シナリオを楽にする方向の修正は禁止**: 落ちたから prompt を簡単にする・critical を外す、は
-   回帰の隠蔽。落ちた原因の切り分け（スキル回帰 or 仕様変更）が先
-6. **秘密情報を入れない**: fixture は commit される。実在の認証情報・内部 URL・個人情報を
-   setup / prompt に含めない
-7. **要件の到達可能性を検算してから固定する**: 工程到達性（停止点より前か）だけでなく
-   **環境到達性**（この `setup` でその工程に到達するか）と**契約整合性**（要件を満たす振る舞いが
-   スキル本文の他の条項に違反しないか）も確認する。手順は
+1. **2-3 scenarios**: 1 at the median of real usage + 1-2 edge cases.
+   One overfits, and 4 or more do not pay for the cost of a run
+2. **Write requirements in observable form**: not "works correctly" but "the three-valued verdict appears in the output".
+   Bring them down to a granularity where ○/× can be decided mechanically from the executor's artifact and report
+3. **The criterion for critical**: attach it only to items whose × would collapse the skill's reason to exist.
+   Making everything critical means "everything matters = nothing matters" and loses regression resolution
+4. **Fix them in advance**: requirements settled in capture are never moved after seeing a run's result.
+   Move them only when "the skill specification itself changed deliberately", and in that case
+   fix the fixture and redo the capture (updating `source` as well)
+5. **Never edit in the direction of making a scenario easier**: simplifying the prompt or dropping a critical because it failed
+   is hiding a regression. Separating the cause of the failure (a skill regression or a spec change) comes first
+6. **No secrets**: fixtures get committed. Never put real credentials, internal URLs, or personal information into
+   setup / prompt
+7. **Verify requirement reachability before fixing them**: not only process reachability (is it before the stopping point) but
+   also **environment reachability** (does this `setup` actually reach that step) and **contract consistency** (does the
+   behavior satisfying the requirement violate another clause of the skill body). The procedure is in
    [requirement-reachability.md](../../empirical-prompt-tuning/references/requirement-reachability.md)
-8. **`setup.files` で表現できない前提に依存させない**: `setup.files` は「パス → 内容」しか
-   持たない。mtime・git の状態・ファイル**件数**・環境変数といった前提はスキーマの外にあり、
-   run のたびに実行者の裁量で埋められる。埋め方が変われば測っている経路も変わる
+8. **Never depend on a premise `setup.files` cannot express**: `setup.files` holds only "path → contents".
+   Premises such as mtime, git state, the **number** of files, and environment variables live outside the schema and get
+   filled in at the executor's discretion on every run. When the filling changes, so does the path being measured
 
-### `setup.files` の外にある前提（実測で観測した落とし穴）
+### Premises outside `setup.files` (pitfalls found by measurement)
 
-2026-07-25 のバッチ実行（10 スキル / 21 シナリオ）で、意図した分岐を踏めていない
-シナリオが 5 件出た。いずれも原因は同じで、**内容以外の前提が宣言できないこと**にある。
+In the batch run of 2026-07-25 (10 skills / 21 scenarios), 5 scenarios failed to take the intended branch. The cause was the
+same in every case: **premises other than contents cannot be declared**.
 
-| 依存する前提 | 起きること | 宣言する場所 |
+| The premise depended on | What happens | Where to declare it |
 |---|---|---|
-| ファイルの mtime 順 | setup を一括生成すると mtime が同値になり、「mtime 降順」が主規則のスキルでも稀なタイブレーク分岐しか踏まない | `setup.mtimes` |
-| mtime の表示値 | 一覧表示の日時欄がファイル名の日付と食い違い、要件が曖昧になる | 表示値は要件に入れない。順序だけを assert する |
-| 対象ファイルの件数 | 上限（例: `max_parallel=4`）による早期打ち切りが、件数不足で発火せず未検証のまま ○ になる | `setup.files`（上限を踏む件数を置く） |
-| git の状態（初期コミット / remote） | 「作業ツリーが clean」を要件にしても未追跡ファイルで最初から dirty になる。remote 前提のスキルでは実行者が架空 remote を自作する | `setup.git` |
-| ブランチ名 | `git init` の既定ブランチが main/master になり、ブランチ名で中断するスキル（commit）が本題に入る前に abort する | `setup.git.branch` |
-| 既存履歴の内容 | 「既存履歴のスタイルに合わせる」が測れない（履歴が空 or harness 既定の英語メッセージ 1 件） | `setup.git.message` |
-| 未コミットの作業がどれか | `commit: true` は全ファイルをコミットしてしまい「未コミットの変更が N 件ある」前提が作れない | `setup.git.commit` にパス配列 |
-| 機微な名前のファイルの内容 | 実行基盤が `.env` 等に `/dev/null` を被せ、宣言した内容が実体化されない（宣言のハッシュを baseline にすると実体と食い違ったまま「編集ゼロ」を判定する） | 宣言できない。`materialize` の `unmaterialized` で検出し、要件を名前・種別ベースにする |
-| 実行基盤が作るセッション残骸 | `.claude/` や `__pycache__` が作業ツリーを汚し、「clean」要件の成否が実行者の裁量（ignore を自作するか / スコープ外と判断するか）で決まる | `setup.files` に `.gitignore` |
-| 環境変数 | 実行者が値を推測して埋め、run ごとに違う前提で動く | `setup.env` |
-| 入れ子委譲が成立する実行環境 | 多段委譲スキルは委譲先の完了通知が親に届かず停止する | 宣言できない。[executor-contract.md](executor-contract.md) の環境制約に従い上位 watchdog を前提に組む |
+| mtime ordering of files | generating the setup in one go gives identical mtimes, so even a skill whose primary rule is "mtime descending" only takes the rare tie-break branch | `setup.mtimes` |
+| the displayed mtime value | the timestamp column of a listing disagrees with the date in the filename, making the requirement ambiguous | never put displayed values in a requirement. Assert only the ordering |
+| the number of target files | early truncation by a cap (e.g. `max_parallel=4`) never fires for lack of files, and passes as ○ while unverified | `setup.files` (place enough files to hit the cap) |
+| git state (initial commit / remote) | a requirement of "the working tree is clean" starts out dirty because of untracked files. In a skill assuming a remote, the executor invents a fictitious one | `setup.git` |
+| the branch name | `git init`'s default branch becomes main/master, and a skill that stops on the branch name (commit) aborts before reaching the actual subject | `setup.git.branch` |
+| the contents of the existing history | "match the style of the existing history" cannot be measured (the history is empty, or is a single harness-default English message) | `setup.git.message` |
+| which work is uncommitted | `commit: true` commits every file, so the premise "there are N uncommitted changes" cannot be built | an array of paths in `setup.git.commit` |
+| the contents of a file with a sensitive name | the execution platform overlays `/dev/null` onto `.env` and the like, so the declared contents are never materialized (using the declared hash as the baseline judges "zero edits" while it diverges from reality) | cannot be declared. Detect it via `unmaterialized` from `materialize` and make the requirement name/kind-based |
+| session debris created by the platform | `.claude/` and `__pycache__` dirty the working tree, and whether the "clean" requirement passes is decided at the executor's discretion (invent an ignore file, or judge it out of scope) | a `.gitignore` in `setup.files` |
+| environment variables | the executor guesses the values and fills them in, running under different premises each time | `setup.env` |
+| an execution environment where nested delegation works | a multi-stage delegation skill stalls because the delegate's completion notification never reaches the parent | cannot be declared. Follow the environment constraints of [executor-contract.md](executor-contract.md) and build on the assumption of an upper watchdog |
 
-**要件を書くときの指針**: その要件が `setup` の宣言だけで決まるか確認する。決まらないなら、
-前提を宣言できる形に直すか、要件をその前提に依存しない形へ書き直す。
-「実行者が気を利かせて埋めてくれた」は、測定対象がぶれたということでもある。
+**Guidance when writing a requirement**: confirm that the requirement is determined by the `setup` declarations alone. If it is
+not, either reshape the premise into something declarable, or rewrite the requirement so it does not depend on that premise.
+"The executor kindly filled it in" also means what you were measuring drifted.
 
-## 素材別の変換ガイド
+## Conversion guide by source material
 
-- **[empirical tuning](../../empirical-prompt-tuning/SKILL.md) の実測から**: 収束時に出力される
-  `fixture.json`（`.claude/tmp/empirical/{ts}/fixture.json`）の `scenarios` / `requirements` を
-  そのまま本スキーマの scenarios / requirements に写す。`source` は `"empirical-tuning:{ts}"` とする。
-  収束時点のチェックリストが最良の回帰資産（tuning 中に動かした項目は最終版だけを採る）
-- **plan の受け入れ条件から**: plan 文書の「完了条件」「検証」節を requirements に変換する。
-  実装手順ではなく成果物の性質を書いている項目だけを採る
-- **手動設計**: スキルの description が約束していることを requirements に落とす。
-  description と body の乖離がある場合は fixture 化の前に本体を直す
+- **From [empirical tuning](../../empirical-prompt-tuning/SKILL.md) measurements**: copy the `scenarios` / `requirements` of the
+  `fixture.json` emitted at convergence (`.claude/tmp/empirical/{ts}/fixture.json`) directly into this schema's scenarios /
+  requirements. Set `source` to `"empirical-tuning:{ts}"`.
+  The checklist at the moment of convergence is the best regression asset (for items moved during tuning, take only the final version)
+- **From a plan's acceptance criteria**: convert the "completion conditions" and "verification" sections of the plan document
+  into requirements. Take only the items describing properties of the artifact, not the implementation steps
+- **Hand-designed**: turn what the skill's description promises into requirements.
+  When the description and the body diverge, fix the skill itself before turning it into a fixture
