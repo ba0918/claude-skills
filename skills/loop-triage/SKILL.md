@@ -33,12 +33,12 @@ Supply the findings detected by the sensors into the polling queue safely and wi
 
 | Input | Workflow |
 |------|-------------|
-| 「トリアージして」「センサー回して」 (no argument / `run`) | run |
+| "triage this" / "run the sensors" (no argument / `run`) | run |
 | `--dry-run` | run (skips Step 5 onward and presents only the decisions) |
 | `--context-audit PATH` | an option of run (additionally ingests a context-audit findings JSON) |
 | `--max-enqueue N` | an option of run (the enqueue cap, default 5) |
-| `baseline` (「現状を意図的差分として確定して」) | baseline |
-| `status` (「inbox 見せて」「キュー状況は」) | status |
+| `baseline` ("lock in the current state as an intentional difference") | baseline |
+| `status` ("show me the inbox" / "what is the queue like") | status |
 
 run always executes the machine sensors (validate_repo / ledger --check). `--context-audit` is an
 **additional** ingestion; there is no restricted mode that targets only the findings of context-audit.
@@ -83,13 +83,13 @@ With `--dry-run`, present a per-route summary here and stop.
 
 For each enqueue target, generate an issue following [the Slug definition of issue](../issue/SKILL.md#slug-definition):
 
-1. slug: `{yyyymmddhhmmss}_{suggested_title の英語 kebab 化}` (non-ASCII is translated to English by meaning)
+1. slug: `{yyyymmddhhmmss}_{suggested_title kebab-cased in English}` (non-ASCII is translated to English by meaning)
 2. Create `.agents/artifacts/issues/ready/{slug}.md` conforming to [issue-template](../issue/references/issue-template.md), with
    the frontmatter as follows:
    ```yaml
-   finding_id: {finding_id}          # 新規キーとして追加
-   tags: loop-triage,{sensor}        # テンプレート既存の tags: 行に値として設定（行を重複追加しない）
-   gate: skill-regression            # decisions に gate がある場合のみ新規キーとして追加
+   finding_id: {finding_id}          # added as a new key
+   tags: loop-triage,{sensor}        # set as the value on the template's existing tags: line (do not add a duplicate line)
+   gate: skill-regression            # added as a new key only when decisions carries a gate
    ```
    The body's overview = what + why, and the notes = the acceptance condition (a way to confirm mechanically that the finding is resolved; for example, that the finding_id disappears when the sensor is re-run)
 3. Add a row to `.agents/artifacts/issues/issue-status.md` (create it from the issue skill's template if it does not exist.
@@ -108,26 +108,26 @@ Append to `.agents/artifacts/loop/inbox.md` (creating it with the heading `# Loo
 
 ```markdown
 ## {YYYY-MM-DD HH:MM} {finding_id} [{sensor}/{rule}] {suggested_title}
-- severity: {severity} / fix_action: {fix_action} / 降格理由: {reason または "-"}
+- severity: {severity} / fix_action: {fix_action} / demotion reason: {reason, or "-"}
 - where: {where.path}
 - what: {what}
-- 対応方法: 人間が判断 → 対応するなら `/claude-skills:issue-create` で issue 化、意図的差分なら loop-triage baseline へ
+- How to handle: a human decides → if it should be handled, file it with `/claude-skills:issue-create`; if it is an intentional difference, send it to loop-triage baseline
 ```
 
 ### Step 7: Report (summary-first)
 
 ```
-## Loop Triage 結果
-| route | 件数 |
-|-------|------|
-| enqueue（ready/ へ投入） | N |
-| inbox（人間判断待ち） | N |
+## Loop Triage results
+| route | count |
+|-------|-------|
+| enqueue (pushed into ready/) | N |
+| inbox (awaiting human judgment) | N |
 | digest | N |
 | duplicate / suppressed | N / N |
 
-- enqueue した issue: {slug のリスト（gate 付きは明示）}
-- budget 超過による降格: {あれば件数}
-- 次の一手: enqueue 分は issue polling が消化する（/claude-skills:issue-polling）
+- Issues enqueued: {list of slugs (state gated ones explicitly)}
+- Demoted for exceeding budget: {count, if any}
+- Next move: issue polling consumes what was enqueued (/claude-skills:issue-polling)
 ```
 
 ## baseline — fixing the intentional differences

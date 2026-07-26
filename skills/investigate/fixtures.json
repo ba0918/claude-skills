@@ -46,11 +46,11 @@
           "critical": true
         },
         {
-          "text": "第5節で修正不要と明記し、案A/B/C形式を強制していない",
+          "text": "第5節で `no fix needed` と明記し、Option A/B/C 形式を強制していない",
           "critical": true
         },
         {
-          "text": "追加アクション不要、または将来仕様の任意issueだけを直接実行可能な形で提案している",
+          "text": "`no further action needed`、または将来仕様の任意issueだけを直接実行可能な形で提案している",
           "critical": false
         }
       ]
@@ -73,7 +73,7 @@
           "critical": true
         },
         {
-          "text": "cli/bootstrap.tsの空入力テスト不足により検証未完了と明記し、テスト不足だけを根拠に副作用なし・軽微不整合あり・機能差分ありのいずれかを断定していない",
+          "text": "cli/bootstrap.tsの空入力テスト不足により検証未完了と明記し、テスト不足だけを根拠に no side effects・minor inconsistency・functional difference のいずれかを断定していない",
           "critical": true
         },
         {

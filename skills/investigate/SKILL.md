@@ -51,7 +51,7 @@ Cover the relevant parts of these four perspectives:
 3. **Analyze impact**: find affected consumers, dependencies, and occurrences of the same
    pattern.
 4. **Assess tests**: identify existing coverage and whether it exercises the problem. If
-   no relevant test exists, explicitly report `テストなし` in the impact section.
+   no relevant test exists, explicitly report `no tests` in the impact section.
 
 Keep the search proportional to the user's question.
 
@@ -87,78 +87,78 @@ structure:
 INVESTIGATION REPORT
 ══════════════════════════════════════
 
-## 1. 問題の概要
+## 1. Problem overview
 
 {what is happening}
 
-## 2. 原因分析
+## 2. Cause analysis
 
 {why it happens}
-- 直接原因: {direct code-level cause}
-- 根本原因: {design-level cause, when applicable}
+- Direct cause: {direct code-level cause}
+- Root cause: {design-level cause, when applicable}
 
-## 3. 影響範囲
+## 3. Impact
 
-- 影響ファイル: {file list}
-- 影響機能: {feature list}
-- 同様のパターン: {whether the pattern occurs elsewhere}
+- Affected files: {file list}
+- Affected features: {feature list}
+- Same pattern elsewhere: {whether the pattern occurs elsewhere}
 
-## 4. 確信度
+## 4. Confidence
 
-{高 / 中 / 低} — {2–4 evidence bullets}
+{high / medium / low} — {2–4 evidence bullets}
 
-## 5. 修正案
+## 5. Fix options
 
 {concrete options without executing them}
 
-## 6. 推奨アクション
+## 6. Recommended action
 
 {one primary recommendation and directly usable command when applicable}
 ```
 
 Confidence levels:
 
-- **高**: mechanically verified by file contents, searches, or command output; plausible
+- **high**: mechanically verified by file contents, searches, or command output; plausible
   counterexamples are outside the stated scope.
-- **中**: supported by reasoning, but counterexamples or out-of-scope uncertainty remain.
-- **低**: based on limited evidence and needs more information or investigation.
+- **medium**: supported by reasoning, but counterexamples or out-of-scope uncertainty remain.
+- **low**: based on limited evidence and needs more information or investigation.
 
 #### Fix-option rules
 
-When a fix is needed, provide one to three options. Include `現状維持` when doing
+When a fix is needed, provide one to three options. Include `keep as-is` when doing
 nothing is a legitimate option. Use this format for each option:
 
 ```text
-### 案 A: {approach}
-- 変更箇所: {file and location}
-- 概要: {change}
-- メリット/デメリット: {trade-off}
+### Option A: {approach}
+- Where it changes: {file and location}
+- Outline: {change}
+- Pros / cons: {trade-off}
 ```
 
-When no fix is needed, begin section 5 with `修正不要`. Optionally add one or two brief
+When no fix is needed, begin section 5 with `no fix needed`. Optionally add one or two brief
 future improvements, but do not force them into the formal A/B/C format.
 
 #### Recommended-action mapping
 
 | Situation | Recommendation | Directly usable example |
 |---|---|---|
-| Clear, small fix in 1–2 files | Fix directly or use iterate | `/claude-skills:iterate {修正内容の要約}` |
-| Out of scope or deferred | Record an issue | `/claude-skills:issue-create {問題のタイトル}` |
+| Clear, small fix in 1–2 files | Fix directly or use iterate | `/claude-skills:iterate {summary of the fix}` |
+| Out of scope or deferred | Record an issue | `/claude-skills:issue-create {problem title}` |
 | Medium or large change | Plan, then run a cycle | `/claude-skills:plan-create` → `/claude-skills:cycle` |
-| Follow-up after implementation | Use iterate | `/claude-skills:iterate {追加修正の指示}` |
-| No fix needed | Say no fix; optionally record a future improvement | `/claude-skills:issue-create {将来改善案のタイトル}` |
+| Follow-up after implementation | Use iterate | `/claude-skills:iterate {instruction for the follow-up fix}` |
+| No fix needed | Say no fix; optionally record a future improvement | `/claude-skills:issue-create {title of the future improvement}` |
 | Insufficient evidence | Continue investigation or discussion | Continue the conversation |
 
 When several rows apply, choose one primary recommendation and list alternatives from
 lighter to heavier. Keep every displayed command directly usable. Treat a change as
 small when it affects at most three files in one skill; broader cross-cutting work is
-medium or large. For a no-fix case, say `追加アクション不要` when there is no useful
+medium or large. For a no-fix case, say `no further action needed` when there is no useful
 future issue.
 
 ## Post-implementation verification
 
-Use this mode for requests such as `検証して`, `動作確認して`, `実装確認`, or
-`本当にこれで正しいか確認`.
+Use this mode for requests such as `verify this`, `check it works`, `confirm the
+implementation`, `検証して`, `動作確認して`, `実装確認`, or `本当にこれで正しいか確認`.
 
 1. Inspect the implemented or committed change.
 2. Compare it with the expected behavior.
@@ -185,11 +185,11 @@ Use these labels only for observed side effects or behavioral differences. Repor
 verification completeness separately. Missing coverage alone means verification is
 incomplete; it does not prove either behavioral equivalence or a functional difference.
 
-- **副作用なし**: behavior is equivalent and no meaningful output or wording drift exists.
-- **軽微不整合あり**: behavior remains equivalent, but wording, warnings, comments, or
+- **no side effects**: behavior is equivalent and no meaningful output or wording drift exists.
+- **minor inconsistency**: behavior remains equivalent, but wording, warnings, comments, or
   other non-functional details have a small mismatch. Recommend no required action or an
   optional iterate.
-- **機能差分あり**: expected behavior differs, destructive behavior exists, or a regression
+- **functional difference**: expected behavior differs, destructive behavior exists, or a regression
   is demonstrated. Recommend a fix.
 
 ## Final rules
