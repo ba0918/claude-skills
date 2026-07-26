@@ -20,8 +20,8 @@
       "prompt": "前セッションからの引き継ぎを復元して。続きをやりたい。",
       "requirements": [
         { "text": "最新の handoff（20260706_183000_search-api-pagination.md）を選択して読み込んでいる（古い方ではない）", "critical": true },
-        { "text": "復元サマリが固定フォーマット（## 引き継ぎ内容 / 目的 1 行 / 現在地 / 次のアクション最大 3 つ）で提示されている", "critical": true },
-        { "text": "復元成功後に該当ファイルを確認なしで削除し、「引き継ぎ完了！{basename} は削除したよ」形式（basename のみ・フルパス不使用）で報告している", "critical": true },
+        { "text": "復元サマリが固定フォーマット（## Handoff contents / Goal 1 行 / Where we are / Next actions 最大 3 つ）で提示されている", "critical": true },
+        { "text": "復元成功後に該当ファイルを確認なしで削除し、「Handoff complete. Deleted {basename}.」形式（basename のみ・フルパス不使用）で報告している", "critical": true },
         { "text": "古い方（20260705_090000_auth-refactor-debug.md）は削除されず残っている", "critical": true },
         { "text": "注意点の再掲など余計な装飾をサマリに足していない", "critical": false }
       ],

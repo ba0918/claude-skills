@@ -43,7 +43,7 @@ a coarse identical `ls` display as a tie.
      (cycle_id)** and `git status --porcelain=v1` is **non-empty**, generate the checkpoint
      skeleton:
      `python3 {path to checkpoint.py} skeleton --repo {project root} --cycle-id {cycle_id} --owner manual-session --written-at $(date -Iseconds) --output`
-     (path and `--repo` conventions per the contract's "CLI 呼び出し規約" — in this
+     (path and `--repo` conventions per the contract's "CLI invocation conventions" — in this
      repository: `skills/shared/scripts/checkpoint.py` + `--repo .`)
    - **Timing**: the decision (active plan + dirty) happens in Phase 1, but run the skeleton
      and fill the narrative **after the Phase 3 handoff file is written** — the checkpoint
@@ -99,41 +99,41 @@ branch: {current-branch}
 status: {in-progress | blocked | reviewing}
 ---
 
-# Handoff: {一行サマリ}
+# Handoff: {one-line summary}
 
 ## TL;DR
-{3-5行。次セッションの Claude が最初に読む部分。目的と現在地を一発で掴ませる}
+{3-5 lines. The first thing the next session reads. Convey the goal and the current position at a glance}
 
-## 目的 / Why
-{ユーザーが達成したいゴールと、その背景}
+## Goal / Why
+{the goal the user wants to reach, and the background behind it}
 
-## これまでの流れ
-- {時系列の主要イベント}
-- {決定事項と却下した案 + なぜ}
+## How we got here
+- {key events in chronological order}
+- {decisions made, and alternatives rejected + why}
 
-## 現在の状態
-### 完了
+## Current state
+### Done
 - {done items}
-### 進行中
-- {in-progress with具体的にどこまで}
-### 未着手
+### In progress
+- {in-progress items, with exactly how far each got}
+### Not started
 - {todo}
 
-## 関連ファイル
-- `/home/user/projects/myapp/src/auth.ts` — {役割・なぜ関連するか}  # 必ず絶対パス（`/` 始まり）。`src/auth.ts` のような相対パスは NG
+## Related files
+- `/home/user/projects/myapp/src/auth.ts` — {its role / why it is relevant}  # Always an absolute path (starting with `/`). A relative path such as `src/auth.ts` is not acceptable
 
-## 決定事項 / 制約
-- {ユーザーの指示・好み・採用方針}
+## Decisions / constraints
+- {user instructions, preferences, adopted policies}
 
-## 未解決の課題
+## Open issues
 - {open questions, blockers}
 
-## 次のアクション
-1. {具体的なステップ}
+## Next actions
+1. {a concrete step}
 2. {...}
 
-## 注意点
-- {ハマりポイント、やってはいけないこと}
+## Cautions
+- {pitfalls, things not to do}
 ```
 
 ### Phase 4: Report
@@ -142,7 +142,7 @@ Before the saved path, place a summary block per the
 [human-readable summary contract](../shared/references/human-readable-summary.md),
 summary-first. State goal / current position / next move in one plain line each (these have
 the highest summary value — they drive next-session restore quality). Mark unfillable items
-as 「未決定」 and keep secrets out of the summary (defer to the existing handoff-save
+as "undecided" and keep secrets out of the summary (defer to the existing handoff-save
 confidentiality rule: omit or replace with a category name):
 
 ```
@@ -151,8 +151,8 @@ confidentiality rule: omit or replace with a category name):
    Where we are: {how far it has come — 1 line}
    Next move: {what to do first next session — 1 line}
 
-保存したよ: .agents/artifacts/handoff/{filename}
-次セッションで `/handoff-restore` 叩けばそのまま続きからいけるよ！
+Saved: .agents/artifacts/handoff/{filename}
+Run `/handoff-restore` next session to pick up exactly where this left off.
 ```
 
 ## Restore Workflow
@@ -180,7 +180,7 @@ Here the checkpoint is the **only source of information**, so by caller asymmetr
   `.agents/artifacts/plans/checkpoints/{cycle_id}.md` exists, run
   `python3 {path to checkpoint.py} classify --repo {project root} --file .agents/artifacts/plans/checkpoints/{cycle_id}.md`
   and branch on the verdict (path and `--repo` conventions per the contract's
-  "CLI 呼び出し規約" — in this repository: `skills/shared/scripts/checkpoint.py` +
+  "CLI invocation conventions" — in this repository: `skills/shared/scripts/checkpoint.py` +
   `--repo .`). If status.md itself is missing, treat it as no active plan:
   - `valid` / `stale` / `degraded`: present the checkpoint narrative as the restore starting
     point (`evidence` labeled historical; `verify_on_restore` display-only, never
@@ -196,7 +196,7 @@ Here the checkpoint is the **only source of information**, so by caller asymmetr
   verdict + next action".
 - Even when read via fallback, **never delete** the checkpoint (do not propagate handoff's
   delete-after-read semantics).
-- With neither an active plan nor a checkpoint, report 「handoff ファイルが見つからないよ」
+- With neither an active plan nor a checkpoint, report "No handoff file found."
   and finish.
 
 ### Phase 2: Load & Internalize
@@ -205,18 +205,18 @@ Here the checkpoint is the **only source of information**, so by caller asymmetr
 2. Digest it and present a **short summary** to the user, in exactly this Markdown format:
 
 ```markdown
-## 引き継ぎ内容
-- 目的: {1 行}
-- 現在地: {branch / status / どこまで進んだか 1-2 行}
-- 次のアクション:
-  1. {1 行}
-  2. {1 行}
-  3. {1 行（最大 3 つまで、少なくて OK）}
+## Handoff contents
+- Goal: {1 line}
+- Where we are: {branch / status / how far it got, 1-2 lines}
+- Next actions:
+  1. {1 line}
+  2. {1 line}
+  3. {1 line (at most 3; fewer is fine)}
 ```
 
    - `branch` / `status` come from the handoff file's frontmatter (the previous session's
      context), not from the current repository state
-   - Synthesize the "どこまで進んだか" line from the TL;DR and 現在の状態 sections
+   - Synthesize the "Where we are" line from the TL;DR and Current state sections
 3. Leave the user ready to resume immediately. No extra decoration, no re-listing of
    cautions (they can read the original file if needed)
 
@@ -225,7 +225,7 @@ Here the checkpoint is the **only source of information**, so by caller asymmetr
 **Auto-delete**: as soon as the restore succeeds, delete the file (`rm` or an equivalent
 file-deletion operation). No user confirmation.
 
-After deleting, report one line: 「引き継ぎ完了！`{basename}` は削除したよ」
+After deleting, report one line: "Handoff complete. Deleted `{basename}`."
 - `{basename}` is the filename only (e.g. `20260421_230133_search-api.md`). No full paths
 
 ## List Workflow
@@ -234,23 +234,23 @@ List the files under `.agents/artifacts/handoff/` newest first, per the ordering
 above. Use exactly this numbered Markdown list format:
 
 ```markdown
-## Handoff 一覧（{件数} 件）
+## Handoff list ({count})
 
 1. **`{filename}`** ({YYYY-MM-DD HH:MM})
    - status: `{status}`
-   - TL;DR: {TL;DR 1 行目}
+   - TL;DR: {first line of TL;DR}
 2. **`{filename}`** (...)
    - ...
 ```
 
 Extraction rules:
-- `{TL;DR 1 行目}` = the **first non-empty line** of the `## TL;DR` section after the
+- `{first line of TL;DR}` = the **first non-empty line** of the `## TL;DR` section after the
   frontmatter (line-based; do not split at punctuation). **Transcribe verbatim** (keep
   punctuation and symbols, including a trailing `。`)
 - `{YYYY-MM-DD HH:MM}` is the file's mtime, formatted from the local time shown by
   `ls -lt` (no timezone suffix). Take the year from the first 4 characters of the filename —
   `ls` omits the year for current-year files, so the filename is the stable source
-- 0 files → report one line 「handoff ファイルはまだないよ」 and finish
+- 0 files → report one line "No handoff files yet." and finish
 - Do **not** append a how-to-restore hint at the end (answer only if the user asks)
 
 ## Design Principles
