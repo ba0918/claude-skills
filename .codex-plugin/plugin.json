@@ -10,7 +10,7 @@
   "interface": {
     "displayName": "Claude Skills",
     "shortDescription": "Plan, review, and automate implementation workflows",
-    "longDescription": "A comprehensive skill set for implementation planning, reviewed code cycles, TDD enforcement, codebase review, debugging, and self-driving issue resolution. Agent Skills standard compliant, with tool-mapping for cross-platform compatibility.",
+    "longDescription": "A comprehensive skill set for implementation planning, reviewed code cycles, TDD enforcement, codebase review, debugging, and self-driving issue resolution. Agent Skills standard compliant, written in platform-agnostic natural language for cross-platform compatibility.",
     "developerName": "ba0918",
     "category": "Productivity",
     "capabilities": [
