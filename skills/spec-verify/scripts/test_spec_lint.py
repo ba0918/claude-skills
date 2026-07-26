@@ -674,9 +674,11 @@ def _field_table(rows):
     return out
 
 
-# 「`from` / `event` / `to`（必須、string）と `guard`（任意、string）」形式
-# （clause-schema.md パース契約に明記されたネスト規則の prose 形式）。
-_NESTED_RULE_PROSE = re.compile(r"((?:`[^`]+`(?:\s*/\s*)?)+)（(必須|任意)、string）")
+# The "`from` / `event` / `to` (required, string) and `guard` (optional,
+# string)" form (the prose form of the nesting rule spelled out in the
+# clause-schema.md parse contract).
+_NESTED_RULE_PROSE = re.compile(
+    r"((?:`[^`]+`(?:\s*/\s*)?)+)\s*\((required|optional), string\)")
 
 
 def _nested_rule_fields(desc):
@@ -684,7 +686,7 @@ def _nested_rule_fields(desc):
     out = {}
     for tokens, marker in _NESTED_RULE_PROSE.findall(desc):
         for name in _BACKTICK_TOKEN.findall(tokens):
-            out[name] = ("string", marker == "必須")
+            out[name] = ("string", marker == "required")
     return out
 
 
@@ -694,15 +696,15 @@ class TestSchemaSyncMdToCode(unittest.TestCase):
         cls.sections = _md_sections(CLAUSE_SCHEMA_MD)
 
     def test_toplevel_table_matches_code_constants(self):
-        rows = _table_rows(self.sections["ファイル構造"])
+        rows = _table_rows(self.sections["File Structure"])
         self.assertEqual(_field_table(rows), sl.TOPLEVEL_FIELDS)
 
     def test_envelope_table_matches_code_constants(self):
-        rows = _table_rows(self.sections["共通 envelope"])
+        rows = _table_rows(self.sections["Common envelope"])
         self.assertEqual(_field_table(rows), sl.ENVELOPE_FIELDS)
 
     def test_payload_table_matches_code_constants(self):
-        rows = _table_rows(self.sections["kind 別 discriminated payload"])
+        rows = _table_rows(self.sections["kind-specific discriminated payload"])
         parsed = {}
         for cells in rows:
             kind = _BACKTICK_TOKEN.match(cells[0]).group(1)
@@ -713,7 +715,7 @@ class TestSchemaSyncMdToCode(unittest.TestCase):
         self.assertEqual(parsed, sl.PAYLOAD_FIELDS)
 
     def test_kind_enum_in_md_matches_code(self):
-        rows = _table_rows(self.sections["共通 envelope"])
+        rows = _table_rows(self.sections["Common envelope"])
         desc = next(cells[3] for cells in rows
                     if _BACKTICK_TOKEN.match(cells[0]).group(1) == "kind")
         self.assertIn("enum:", desc)
@@ -721,7 +723,7 @@ class TestSchemaSyncMdToCode(unittest.TestCase):
             desc.split("enum:")[1])), sl.KINDS)
 
     def test_effect_enum_in_md_matches_code(self):
-        rows = _table_rows(self.sections["kind 別 discriminated payload"])
+        rows = _table_rows(self.sections["kind-specific discriminated payload"])
         desc = next(cells[4] for cells in rows
                     if _BACKTICK_TOKEN.match(cells[1]).group(1) == "effect")
         self.assertIn("enum:", desc)
@@ -729,22 +731,22 @@ class TestSchemaSyncMdToCode(unittest.TestCase):
             desc.split("enum:")[1])), sl.EFFECT_VALUES)
 
     def test_id_pattern_in_md_matches_code(self):
-        rows = _table_rows(self.sections["ID・revision 規則"])
+        rows = _table_rows(self.sections["ID and revision Rules"])
         cell = next(cells[1] for cells in rows
-                    if cells[0].startswith("`id` パターン"))
+                    if cells[0].startswith("`id` pattern"))
         self.assertEqual(_BACKTICK_TOKEN.match(cell).group(1), sl.ID_PATTERN)
 
     def test_min_items_fields_in_md_match_code(self):
-        rows = _table_rows(self.sections["kind 別 discriminated payload"])
+        rows = _table_rows(self.sections["kind-specific discriminated payload"])
         marked = {_BACKTICK_TOKEN.match(cells[1]).group(1)
-                  for cells in rows if "1 要素以上" in cells[4]}
+                  for cells in rows if "1 element or more" in cells[4]}
         self.assertEqual(marked, set(sl.MIN_ITEMS))
         self.assertTrue(all(n == 1 for n in sl.MIN_ITEMS.values()))
 
     def test_transition_rule_fields_in_md_match_code(self):
         """ネスト規則はフィールド名集合だけでなく必須/任意属性まで突合する
         （説明セルの「（必須、…）」「（任意、…）」prose をパースする）。"""
-        rows = _table_rows(self.sections["kind 別 discriminated payload"])
+        rows = _table_rows(self.sections["kind-specific discriminated payload"])
         by_field = {_BACKTICK_TOKEN.match(cells[1]).group(1): cells[4]
                     for cells in rows}
         self.assertEqual(_nested_rule_fields(by_field["transitions"]),
@@ -754,7 +756,7 @@ class TestSchemaSyncMdToCode(unittest.TestCase):
 
     def test_input_limits_in_md_match_code(self):
         rows = _table_rows(
-            self.sections["exit code 契約（spec_lint / trace_matrix 共通）"])
+            self.sections["exit code contract (shared by spec_lint / trace_matrix)"])
         limits = {}
         for cells in rows:
             if cells[0].startswith("`"):
@@ -769,7 +771,7 @@ class TestSchemaSyncMdToCode(unittest.TestCase):
 
     def test_corruption_categories_in_md_match_code(self):
         """md の破損カテゴリ箇条書き ⇔ spec_lint の SpecLintError raise 箇所。"""
-        lines = self.sections["exit code 契約（spec_lint / trace_matrix 共通）"]
+        lines = self.sections["exit code contract (shared by spec_lint / trace_matrix)"]
         md_slugs = [m.group(1) for m in
                     (re.match(r"^- `([a-z-]+)`", line) for line in lines) if m]
         with open(SPEC_LINT, encoding="utf-8") as f:

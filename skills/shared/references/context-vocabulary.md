@@ -1,111 +1,133 @@
-# CONTEXT.md（語彙の共有層）契約 v1
+# CONTEXT.md (Shared Vocabulary Layer) Contract v1
 
-合意台帳（[agreement-ledger.md](agreement-ledger.md)）の下層にある**語彙の共有層**の契約。
-台帳の主張（`claim`）は語に依存し、語の意味が揺れると合意も揺れる。CONTEXT.md は
-「この案件でこの語は何を指すか」を固定し、台帳行の `term_refs` が参照する。
+The contract for the **shared vocabulary layer** that sits beneath the agreement ledger
+([agreement-ledger.md](agreement-ledger.md)). A ledger claim (`claim`) depends on words, and
+when a word's meaning drifts the agreement drifts with it. CONTEXT.md pins down "what this
+word refers to in this project", and ledger rows reference it through `term_refs`.
 
-台帳が「主張の状態」を持つのに対し、CONTEXT.md は「語の状態」を持つ二層構造である。
+The ledger holds "the state of claims"; CONTEXT.md holds "the state of words" — a two-layer
+structure.
 
-## 語彙項目フォーマット（人間向け CONTEXT.md）
+## Vocabulary Entry Format (human-facing CONTEXT.md)
 
-人間が読む CONTEXT.md の各語彙項目は次を持つ（rigortype/rigor の CONTEXT.md 記法から借用）:
+Each vocabulary entry in the human-facing CONTEXT.md carries the following (borrowed from the
+CONTEXT.md notation of rigortype/rigor):
 
-- **語**（term）と **項目 ID**（`term_refs` が参照する安定 ID）
-- **usage / behaviour の宣言**: その語が「使い方の約束」か「振る舞いの定義」かを分ける
-- **語彙固有状態**: `確定` / `暫定` / `競合中` / `廃語`（次節）
-- **Trapped terms 節**: 意味が割れやすい・誤解されやすい語を明示的に隔離する
-- **実装現実フラグ**: 定義と実装の現状が乖離している語に付ける
-- **関連裁定への相互参照**: その語 → 関連する台帳行 ID
+- The **term** and an **entry ID** (the stable ID that `term_refs` references)
+- A **usage / behaviour declaration**: separates "a promise about how the word is used" from
+  "a definition of behaviour"
+- **Vocabulary-specific state**: `確定` / `暫定` / `競合中` / `廃語` (next section)
+- A **Trapped terms section**: explicitly quarantines words whose meaning splits easily or is
+  prone to misreading
+- An **implementation-reality flag**: attached to words where the definition and the current
+  implementation have diverged
+- **Cross-references to related rulings**: from the word to the related ledger row IDs
 
-## 語彙固有状態
+## Vocabulary-specific State
 
-| 状態 | 意味 |
+| State | Meaning |
 |------|------|
-| `確定` | 意味が裁定済み。安心して依存してよい |
-| `暫定` | 仮の意味。再検討の余地がある |
-| `競合中` | 複数の意味が競合しており未解決。この語に依存する主張は不安定 |
-| `廃語` | 使わない語。参照は解消すべき |
+| `確定` | The meaning has been ruled on. Safe to depend on |
+| `暫定` | A tentative meaning. Still open to reconsideration |
+| `競合中` | Multiple meanings are in conflict and unresolved. Claims depending on this word are unstable |
+| `廃語` | A retired word. References to it should be resolved away |
 
-## 機械可読な語彙ファイル（`ledger_lint` が読む形式）
+## Machine-readable Vocabulary File (the format `ledger_lint` reads)
 
-`ledger_lint.py` の `term_refs` 未定義語チェックは、次の JSON 形式の語彙ファイルを読む。
-人間向け CONTEXT.md とは別に、機械検証用の投影として置く（正本は人間向け CONTEXT.md、
-投影の drift は運用で管理する。将来 docgen 的な生成を検討）。
+The undefined-`term_refs` check in `ledger_lint.py` reads a vocabulary file in the JSON format
+below. It lives separately from the human-facing CONTEXT.md, as a projection for machine
+verification (the human-facing CONTEXT.md is the source of truth; drift in the projection is
+managed operationally — docgen-style generation is a future consideration).
 
-トップレベルは次の 2 キーのみを持つ object:
+The top level is an object with exactly these 2 keys:
 
-| フィールド | 型 | 必須 | 説明 |
+| Field | Type | Required | Description |
 |-----------|-----|------|------|
-| `schema_version` | `integer` | `required` | v1 は `1` 固定 |
-| `terms` | `array[object]` | `required` | 語彙項目の配列 |
+| `schema_version` | `integer` | `required` | Fixed at `1` for v1 |
+| `terms` | `array[object]` | `required` | The array of vocabulary entries |
 
-各 `terms[]` 項目:
+Each `terms[]` entry:
 
-| フィールド | 型 | 必須 | 説明 |
+| Field | Type | Required | Description |
 |-----------|-----|------|------|
-| `id` | `string` | `required` | 語彙項目 ID。台帳行の `term_refs` はこの ID を参照する |
-| `term` | `string` | `required` | 語そのもの |
-| `state` | `string` | `required` | 語彙固有状態。enum: `確定` / `暫定` / `競合中` / `廃語` |
+| `id` | `string` | `required` | Vocabulary entry ID. A ledger row's `term_refs` references this ID |
+| `term` | `string` | `required` | The word itself |
+| `state` | `string` | `required` | Vocabulary-specific state. enum: `確定` / `暫定` / `競合中` / `廃語` |
 
-`ledger_lint` は語彙ファイルを与えられたとき、台帳行の `term_refs` が語彙 `id` 集合に含まれるかを
-O(1) membership で検証する（`--context PATH` 未指定時は `term_refs` 検証を skip する）。lint は語彙 `id` に
-加えて `state`（語彙固有状態）も読み、`AGREED` 行が `競合中` / `廃語` の語に依存する場合を pending-vocabulary の
-派生検出として扱う（[agreement-ledger.md](agreement-ledger.md) の pending-vocabulary 節・二重状態整合規則）。
+Given a vocabulary file, `ledger_lint` verifies via O(1) membership that each ledger row's
+`term_refs` is contained in the set of vocabulary `id`s (when `--context PATH` is not given,
+`term_refs` verification is skipped). Beyond the vocabulary `id`, the lint also reads `state`
+(the vocabulary-specific state) and treats an `AGREED` row that depends on a `競合中` / `廃語`
+word as a derived detection of pending-vocabulary (see the pending-vocabulary section and the
+dual-state consistency rule in [agreement-ledger.md](agreement-ledger.md)).
 
-## 語彙の生成フロー（extract の副産物・1 パス 2 ストリーム）
+## Vocabulary Generation Flow (a by-product of extract — one pass, two streams)
 
-語彙は「人が事前に埋める静的入力」ではなく、**extract 考古学の副産物**として生成する。extract は 1 回のパスで
-2 つのストリームを出力する: **合意候補**（台帳行）と**語彙候補**（CONTEXT 項目）。語は合意の前提レイヤであり、
-未知語を含む合意は語彙が確定するまで安心して依存できない。
+Vocabulary is not "static input a human fills in beforehand"; it is generated as a
+**by-product of extract archaeology**. A single extract pass emits two streams: **agreement
+candidates** (ledger rows) and **vocabulary candidates** (CONTEXT entries). Words are the
+premise layer of agreement, and an agreement containing unknown words cannot be safely
+depended on until the vocabulary is settled.
 
-生成は 2 モードで、同一の検出器の batch 適用 / streaming 適用として扱う:
+Generation has 2 modes, treated as batch application and streaming application of the same
+detector:
 
-- **cold-start（batch）**: 既存コーパス（ドキュメント・コード・会話ログ）へ語彙抽出を batch で走らせ、
-  **高頻度かつ load-bearing（知らないと誤った前提で動く）な上位 N 語**を機械的に選ぶ。手で選び出すのではなく、
-  頻度と load-bearing 性で機械抽出する。LLM が各語の定義案を提示し、**人は confirm / edit のみ**を行う
-  （LLM は定義を確定させない）。
-- **定常（streaming）**: 運用中の**理解修復イベント**で語彙を育てる。完全な語彙検出器は人と LLM のペアである —
-  人の「何それ」（人の欠落を捕捉）と、LLM の「この語を X の意味で扱っているが合っているか」
-  （LLM の欠落 = 沈黙側を捕捉）。正規表現ではなく理解修復イベントのクラスを拾う。
+- **cold-start (batch)**: run vocabulary extraction as a batch over the existing corpus
+  (documents, code, conversation logs) and mechanically select the **top N words that are both
+  high-frequency and load-bearing** (words you would proceed on false premises without
+  knowing). Extract them mechanically by frequency and load-bearing-ness rather than
+  hand-picking them. The LLM proposes a definition for each word, and **the human only confirms
+  or edits** (the LLM does not finalize definitions).
+- **steady-state (streaming)**: grow the vocabulary from **comprehension-repair events** during
+  operation. A complete vocabulary detector is the pair of human and LLM — the human's "what is
+  that?" (catching the human's gap) and the LLM's "I am treating this word as meaning X, is
+  that right?" (catching the LLM's gap, i.e. the silent side). It picks up classes of
+  comprehension-repair events, not regular expressions.
 
-**admission フィルタ**: 拾った語をすべて語彙へ昇格させると膨張する。**再出現する語**か **load-bearing な語**だけを
-候補として通す。
+**Admission filter**: promoting every word picked up into the vocabulary makes it bloat. Only
+**recurring words** or **load-bearing words** pass through as candidates.
 
-### セッション外の自動育成（候補と鮮度まで自動・確定は人間）
+### Out-of-session Auto-growth (candidates and freshness are automated; confirmation is human)
 
-ドメイン知識はいつでも更新されうるため、語彙の**収穫と鮮度管理は自動化**する:
+Because domain knowledge can be updated at any time, **harvesting and freshness management of
+the vocabulary are automated**:
 
-- extract batch の**差分再実行**で新語を検出し、候補 queue へ積む。
-- `ledger_lint --context` の未定義語検出を**候補収穫に転用**する（未定義参照は「まだ語彙化されていない
-  load-bearing 語」の信号）。
-- **参照実績による廃語候補**（どの台帳行からも `term_refs` されなくなった語）と、**定義と実態の乖離による
-  競合中候補**を自動マークする。
+- Detect new words via **incremental re-runs** of the extract batch and push them onto the
+  candidate queue.
+- **Repurpose the undefined-word detection of `ledger_lint --context` for candidate harvesting**
+  (an undefined reference is a signal of "a load-bearing word not yet turned into vocabulary").
+- Automatically mark **retirement candidates by reference record** (words no longer `term_refs`-ed
+  by any ledger row) and **`競合中` candidates by divergence between definition and reality**.
 
-ただし**自動でよいのは「候補（暫定）と鮮度」まで**である。語彙の**確定は必ず人間**が行う（LLM は語彙でも
-提案者であって承認者になれない）。候補の消化（confirm / edit）は裁定セッションの冒頭、または plan 作成ゲートで行う。
-候補の自動昇格ロジックや admission 閾値のチューニングは作り込まず、pilot の実測後に iterate で調整する
-（[agreement-ledger.md](agreement-ledger.md) §E と整合）。
+However, **what may be automated stops at "candidates (tentative) and freshness"**. Finalizing
+vocabulary is **always done by a human** (even for vocabulary, the LLM is a proposer and cannot
+become the approver). Candidates are worked off (confirm / edit) at the start of a ruling
+session, or at the plan-creation gate. Do not build out auto-promotion logic or admission
+threshold tuning; adjust them with iterate after pilot measurements
+(consistent with §E of [agreement-ledger.md](agreement-ledger.md)).
 
-## 二重状態の整合規則（PROVISIONAL）
+## Dual-state Consistency Rule (PROVISIONAL)
 
-`競合中` / `廃語` の語を参照する `AGREED` 行は、相互参照だけではドリフトを防げないため
-**再裁定候補として lint / status が検出する**（pending-vocabulary の派生検出 (b)・[agreement-ledger.md](agreement-ledger.md)
-の pending-vocabulary 節）。この検出規則は本 v1 では PROVISIONAL とし、**advisory（report-only）に留める**。
-automation-visualize でのパイロット結果を受けて確定する。一方、`AGREED` 行の `term_refs` が CONTEXT 未定義を
-参照する場合の検出（派生検出 (a)）は**確定実装**とする。
+An `AGREED` row referencing a `競合中` / `廃語` word cannot be protected from drift by
+cross-references alone, so **lint / status detect it as a re-ruling candidate** (derived
+detection (b) of pending-vocabulary; see the pending-vocabulary section of
+[agreement-ledger.md](agreement-ledger.md)). This detection rule is PROVISIONAL in v1 and
+**stays advisory (report-only)**. It will be finalized after the pilot results from
+automation-visualize. By contrast, detecting an `AGREED` row whose `term_refs` points at a
+CONTEXT-undefined entry (derived detection (a)) is a **finalized implementation**.
 
-## 境界の問い（CONTEXT.md か台帳か）
+## The Boundary Question (CONTEXT.md or the ledger)
 
-ある事柄を CONTEXT.md に書くか台帳に書くかは、次の問いで分ける:
+Whether something belongs in CONTEXT.md or in the ledger is decided by this question:
 
-> **解釈の説明か、選択の裁定か。**
+> **Is it an explanation of interpretation, or a ruling on a choice?**
 
-- 「この語はこういう意味だ」という**解釈の共有** → CONTEXT.md
-- 「A と B のどちらを採るか」という**選択の裁定** → 台帳の行（状態を持つ）
+- **Sharing an interpretation** — "this word means this" → CONTEXT.md
+- **Ruling on a choice** — "do we take A or B" → a ledger row (which carries state)
 
-## 参照実績による生存管理
+## Survival Management by Reference Record
 
-語彙は放置すると膨張する。**どの台帳行からも `term_refs` されなくなった語**は、
-生存を問い直す候補とする（削除ではなく「まだ要るか」の確認）。常駐させるのは
-「知らないと間違った前提で動く決定」に関わる語のみとし、他はインデックス lookup とする
-（LLM 側コンテキスト予算の実運用）。
+Left alone, vocabulary bloats. A word **no longer `term_refs`-ed by any ledger row** becomes a
+candidate for re-examining its survival (a "is this still needed?" check, not a deletion). Keep
+resident only the words involved in "decisions you would get wrong without knowing them";
+everything else is an index lookup (the practical reality of the LLM-side context budget).

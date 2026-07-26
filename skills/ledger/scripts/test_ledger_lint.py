@@ -577,13 +577,13 @@ class SyncTests(unittest.TestCase):
             cls.src = f.read()
 
     def test_states_match(self):
-        rows = _tables_under(self.md, "状態と必須随伴フィールド")
+        rows = _tables_under(self.md, "States and Required Attached Fields")
         md_states = {_first_token(r[0]) for r in rows if _first_token(r[0])}
         self.assertEqual(md_states, set(ll.STATES))
 
     def test_state_attachment_match(self):
         md_map = {}
-        for cells in _tables_under(self.md, "状態と必須随伴フィールド"):
+        for cells in _tables_under(self.md, "States and Required Attached Fields"):
             st = _first_token(cells[0])
             att = _first_token(cells[1]) if len(cells) >= 2 else None
             if st and att:
@@ -602,7 +602,7 @@ class SyncTests(unittest.TestCase):
 
     def test_input_limits_match(self):
         values = {}
-        for r in _tables_under(self.md, "入力上限と破損カテゴリ"):
+        for r in _tables_under(self.md, "Input Limits and Corruption Categories"):
             slug = _first_token(r[2]) if len(r) >= 3 else None
             num = re.search(r"`(\d+)`", r[1]) if len(r) >= 2 else None
             if slug and num:
@@ -612,24 +612,24 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(values.get("too-deep"), ll.MAX_DEPTH)
 
     def test_row_fields_full_match(self):
-        self.assertEqual(_field_table(self.md, "共通 row（行）"),
+        self.assertEqual(_field_table(self.md, "Common Row"),
                          dict(ll.ROW_FIELDS))
 
     def test_approval_fields_match(self):
-        self.assertEqual(_field_table(self.md, "承認イベント"),
+        self.assertEqual(_field_table(self.md, "Approval Event"),
                          dict(ll.APPROVAL_FIELDS))
 
     def test_delegation_fields_match(self):
-        self.assertEqual(_field_table(self.md, "委任 capability"),
+        self.assertEqual(_field_table(self.md, "Delegation Capability"),
                          dict(ll.DELEGATION_FIELDS))
 
     def test_toplevel_fields_match(self):
-        self.assertEqual(_field_table(self.md, "ファイル構造"),
+        self.assertEqual(_field_table(self.md, "File Structure"),
                          dict(ll.TOPLEVEL_FIELDS))
 
     def test_id_pattern_match(self):
         pat = None
-        for cells in _tables_under(self.md, "ID・revision 規則"):
+        for cells in _tables_under(self.md, "ID and revision Rules"):
             tok = _first_token(cells[1]) if len(cells) >= 2 else None
             if tok and tok.startswith("^"):
                 pat = tok
@@ -639,7 +639,7 @@ class SyncTests(unittest.TestCase):
         # Parse the actor_kind enum out of the 承認イベント table so md/code
         # drift is caught if the enum ever changes (not a tautological assert).
         md_actors = set()
-        for cells in _tables_under(self.md, "承認イベント"):
+        for cells in _tables_under(self.md, "Approval Event"):
             if _first_token(cells[0]) == "actor_kind" and len(cells) >= 4:
                 m = re.search(r"enum:\s*((?:`[^`]+`(?:\s*/\s*)?)+)", cells[3])
                 if m:
@@ -987,22 +987,22 @@ class SyncTestsV2(unittest.TestCase):
             cls.md = f.read()
 
     def test_batch_manifest_fields_match(self):
-        self.assertEqual(_field_table(self.md, "batch 承認 manifest"),
+        self.assertEqual(_field_table(self.md, "Batch Approval Manifest"),
                          dict(ll.BATCH_MANIFEST_FIELDS))
 
     def test_toplevel_includes_batch_manifests(self):
-        self.assertEqual(_field_table(self.md, "ファイル構造"),
+        self.assertEqual(_field_table(self.md, "File Structure"),
                          dict(ll.TOPLEVEL_FIELDS))
         self.assertIn("batch_manifests", ll.TOPLEVEL_FIELDS)
 
     def test_row_fields_include_risk(self):
-        self.assertEqual(_field_table(self.md, "共通 row（行）"),
+        self.assertEqual(_field_table(self.md, "Common Row"),
                          dict(ll.ROW_FIELDS))
         self.assertIn("risk", ll.ROW_FIELDS)
 
     def test_risk_levels_match(self):
         md_risks = set()
-        for cells in _tables_under(self.md, "共通 row（行）"):
+        for cells in _tables_under(self.md, "Common Row"):
             if _first_token(cells[0]) == "risk" and len(cells) >= 4:
                 m = re.search(r"enum:\s*((?:`[^`]+`(?:\s*/\s*)?)+)", cells[3])
                 if m:

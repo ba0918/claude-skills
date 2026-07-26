@@ -1,241 +1,254 @@
-# 条項スキーマ v1（語彙の正本）
+# Clause Schema v1 (the canonical vocabulary)
 
-spec-verify が扱う条項ファイルのスキーマ定義。**この文書が唯一の正本**であり、
-[spec-clause.schema.json](spec-clause.schema.json) は外部エディタ・対象プロジェクト向けの
-射影にすぎない（スクリプトは実行時に schema.json を読まない）。
-正本・コード・射影の drift は同期テストが機械的に防止する。
-同期テストは **(1) 本文書の表 ⇔ `spec_lint` のコード内定数、
-(2) コード内定数 ⇔ [spec-clause.schema.json](spec-clause.schema.json) の
-required / enum / pattern / payload 必須キー、の三者を突合する**
-（表 ⇔ 定数、定数 ⇔ schema.json の 2 辺で 3 者が閉じる）。
+The schema definition for the clause files spec-verify handles. **This document is the sole
+source of truth**, and [spec-clause.schema.json](spec-clause.schema.json) is merely a projection
+for external editors and target projects (the scripts do not read schema.json at runtime).
+Drift between the source of truth, the code, and the projection is mechanically prevented by
+the sync tests. The sync tests reconcile **(1) the tables in this document ⇔ the in-code
+constants of `spec_lint`, and (2) the in-code constants ⇔ the required / enum / pattern /
+payload required keys of [spec-clause.schema.json](spec-clause.schema.json)** (2 edges — table ⇔
+constants and constants ⇔ schema.json — close the loop over all 3).
 
-**表のパース契約**: 同期テストは見出し（節名）で表を特定する。パース対象の節:
-「ファイル構造」「共通 envelope」「kind 別 discriminated payload」「ID・revision 規則」
-「exit code 契約（spec_lint / trace_matrix 共通）」。
-**節名を変更する場合は同期テストも同時に更新する**こと。
-データ行の判定は「行頭が `|` で、先頭セル（または第 2 セル）が
-バッククォート付きトークンである行」。
-各表の**列順を変更する場合も同期テストを同時に更新する**こと。
-型トークンは `string` / `integer` / `object` / `array[string]` / `array[object]`、
-必須トークンは `required` / `optional` に固定する。
-「kind 別 discriminated payload」の `transitions` / `forbidden` の説明セルにある
-「`from` / `event` / `to`（必須、string）と `guard`（任意、string）」という prose 形式も
-同期テストの突合対象である（ネスト規則のフィールド名と必須/任意をこの形式から読み取る）。
-「exit code 契約」節では、入力上限表（第 2 セルが値、第 3 セルが破損カテゴリ）と、
-破損カテゴリの箇条書き（`- ` + バッククォート付きスラッグで始まる行）を突合対象とする。
+**Table parse contract**: the sync tests locate tables by heading (section name). The sections
+parsed are: "File Structure", "Common envelope", "kind-specific discriminated payload",
+"ID and revision Rules", "exit code contract (shared by spec_lint / trace_matrix)".
+**If you change a section name, update the sync tests at the same time.**
+A data row is decided by "a line starting with `|` whose first cell (or second cell) is a
+backticked token".
+**If you change the column order of any table, update the sync tests at the same time** as well.
+The type tokens are fixed to `string` / `integer` / `object` / `array[string]` /
+`array[object]`, and the required tokens to `required` / `optional`.
+In "kind-specific discriminated payload", the prose form
+"`from` / `event` / `to` (required, string) and `guard` (optional, string)" in the description
+cells of `transitions` / `forbidden` is also reconciled by the sync tests (the nested rule's
+field names and required/optional are read out of that form).
+In the "exit code contract" section, the input-limit table (second cell is the value, third cell
+is the corruption category) and the bullet list of corruption categories (lines starting with
+`- ` plus a backticked slug) are the reconciliation targets.
 
-## ファイル構造
+## File Structure
 
-条項ファイルのトップレベルは次の 2 キーのみを持つ object とする:
+The top level of a clause file is an object with exactly these 2 keys:
 
-| フィールド | 型 | 必須 | 説明 |
+| Field | Type | Required | Description |
 |-----------|-----|------|------|
-| `schema_version` | `integer` | `required` | ファイルレベルのスキーマ版数。v1 は `1` 固定。未知の値は入力破損として扱う（exit 2） |
-| `clauses` | `array[object]` | `required` | 条項（共通 envelope）の配列 |
+| `schema_version` | `integer` | `required` | File-level schema version. Fixed at `1` for v1. An unknown value is treated as input corruption (exit 2) |
+| `clauses` | `array[object]` | `required` | The array of clauses (common envelopes) |
 
-`schema_version` を条項単位でなく**ファイルレベル**に置くのは、
-1 ファイル内で版数が混在する状態を構造的に禁止するため。
+`schema_version` is placed at the **file level** rather than per clause in order to structurally
+prohibit a state where versions are mixed within one file.
 
-トップレベルが object でない入力、およびトップレベル必須キーを欠く入力は
-ファイル構造の破損であり、`schema_version` 未知と同様に
-**入力破損として扱う（exit 2）**。条項単位の違反検出（exit 1 相当）には進まない。
+Input whose top level is not an object, and input missing a top-level required key, is a
+corruption of the file structure and is **treated as input corruption (exit 2)**, the same as an
+unknown `schema_version`. It does not proceed to per-clause violation detection (the exit-1
+class).
 
-## 検証の共通規則（未知キー・非空）
+## Common Verification Rules (unknown keys, non-empty)
 
-本スキーマの全 object（トップレベル・envelope・payload・`transitions` / `forbidden` の
-各要素）に共通して適用する規則。各表の個別セルには繰り返さない（固定注記）:
+Rules applied uniformly to every object in this schema (top level, envelope, payload, and each
+element of `transitions` / `forbidden`). They are not repeated in individual table cells (a
+fixed note):
 
-- **未知キーは fail-closed（違反）**: envelope・payload とも、各表に列挙されていない
-  キーを持つ入力は違反として検出する（射影では `additionalProperties: false` に相当）。
-  typo されたキーがサイレントに無視され「書いたつもりの契約が存在しない」状態に
-  なる事故を防ぐため。
-- **string は非空**: 非空要件（`minLength 1` 相当）の対象は、各表で型トークンが
-  `string` のすべてのフィールドと `array[string]` のすべての要素である。
-  必須・任意を問わない。「値なし」は空文字列でなく**キー自体の省略**で表現する
-  （任意フィールドのみ可。必須フィールドの空文字列は欠落と同じ違反）。
+- **Unknown keys are fail-closed (a violation)**: for both envelope and payload, input carrying
+  a key not enumerated in the respective table is detected as a violation (equivalent to
+  `additionalProperties: false` in the projection). This prevents the accident where a typo'd
+  key is silently ignored and "the contract you thought you wrote does not exist".
+- **strings are non-empty**: the non-empty requirement (equivalent to `minLength 1`) applies to
+  every field whose type token is `string` in any table, and to every element of an
+  `array[string]`. It holds regardless of required or optional. "No value" is expressed by
+  **omitting the key itself**, not by an empty string (permitted for optional fields only; an
+  empty string in a required field is the same violation as a missing one).
 
-## 共通 envelope
+## Common envelope
 
-すべての条項が持つフィールド。`payload` 以外は kind に依存しない。
+The fields every clause carries. Everything but `payload` is independent of kind.
 
-| フィールド | 型 | 必須 | 説明 |
+| Field | Type | Required | Description |
 |-----------|-----|------|------|
-| `id` | `string` | `required` | 条項 ID。「ID・revision 規則」のパターンに従う namespace 付き ASCII 識別子。ファイル内で一意 |
-| `revision` | `integer` | `required` | 正整数（1 以上）。意味変更のたびに +1 する単調増加カウンタ |
-| `kind` | `string` | `required` | 検証意味論の種別。enum: `invariant` / `pre_post` / `transition` / `authorization` |
-| `statement` | `string` | `required` | 人間向けの宣言文（自然言語）。digest 算出対象外（文言修正で証拠が失効しない） |
-| `payload` | `object` | `required` | kind 別 discriminated payload（次節）。テスト生成と digest 算出はこの payload に基づき、statement の自然言語再解釈に依存しない |
-| `rationale` | `string` | `optional` | この契約が必要な理由・背景 |
-| `examples` | `array[string]` | `optional` | 条項を満たす具体例。**合成・匿名データ限定**（「機密情報の規約」節参照） |
-| `counterexamples` | `array[string]` | `optional` | 条項に違反する具体例。同上 |
-| `refs` | `array[string]` | `optional` | 外部仕様（OpenAPI / JSON Schema 等）への参照。**不透明な識別子/URI として保存し、スクリプトは dereference しない**（開かない・取得しない・存在確認もしない） |
-| `superseded_by` | `array[string]` | `optional` | 後継条項 ID の配列。**このキーが存在する条項は tombstone**（ライフサイクル節参照）。空配列は「後継なしの廃止」 |
-| `predicates` | `array[string]` | `optional` | escape hatch: ホスト言語述語への参照。**不透明文字列**であり、スクリプトは import・eval・実行・存在確認をしない。述語参照そのものは証拠に寄与せず、保証レベルは通常どおり observation からのみ算出される |
+| `id` | `string` | `required` | Clause ID. A namespaced ASCII identifier following the pattern in "ID and revision Rules". Unique within the file |
+| `revision` | `integer` | `required` | A positive integer (1 or greater). A monotonically increasing counter incremented by 1 on every semantic change |
+| `kind` | `string` | `required` | The kind of verification semantics. enum: `invariant` / `pre_post` / `transition` / `authorization` |
+| `statement` | `string` | `required` | The human-facing declarative sentence (natural language). Excluded from digest computation (evidence does not expire from wording fixes) |
+| `payload` | `object` | `required` | The kind-specific discriminated payload (next section). Test generation and digest computation are based on this payload and do not depend on a natural-language reinterpretation of statement |
+| `rationale` | `string` | `optional` | The reason and background for why this contract is needed |
+| `examples` | `array[string]` | `optional` | Concrete examples satisfying the clause. **Synthetic and anonymized data only** (see the "Confidential Information Convention" section) |
+| `counterexamples` | `array[string]` | `optional` | Concrete examples violating the clause. Same as above |
+| `refs` | `array[string]` | `optional` | References to external specifications (OpenAPI / JSON Schema, etc.). **Stored as opaque identifiers/URIs; the scripts do not dereference them** (they neither open, fetch, nor check for existence) |
+| `superseded_by` | `array[string]` | `optional` | An array of successor clause IDs. **A clause carrying this key is a tombstone** (see the lifecycle section). An empty array means "retired with no successor" |
+| `predicates` | `array[string]` | `optional` | Escape hatch: references to host-language predicates. **Opaque strings**; the scripts do not import, eval, execute, or check them for existence. A predicate reference contributes nothing to evidence on its own, and the assurance level is computed from observations only, as usual |
 
-`examples` / `counterexamples` の各要素は「入力 → 期待出力」形式を推奨する
-（counterexample は「入力 → 誤出力（違反理由）」）。書式は機械検証しないが、
-逆生成レビューで人間が読み比べる前提のため、条項内で形式を揃えること。
+Each element of `examples` / `counterexamples` is recommended to take the form
+"input → expected output" (a counterexample being "input → wrong output (reason for the
+violation)"). The format is not machine-verified, but since a human is expected to read them
+side by side during reverse-generation review, keep the form consistent within a clause.
 
-## kind 別 discriminated payload
+## kind-specific discriminated payload
 
-`payload` の必須キーは `kind` で決まる。bind ワークフローはこの payload から
-テストを生成する（statement を再解釈しない）。
+The required keys of `payload` are determined by `kind`. The bind workflow generates tests from
+this payload (it does not reinterpret statement).
 
-| kind | フィールド | 型 | 必須 | 説明 |
+| kind | Field | Type | Required | Description |
 |------|-----------|-----|------|------|
-| `invariant` | `target` | `string` | `required` | 不変条件が対象とするデータ形の宣言的記述 |
-| `invariant` | `condition` | `string` | `required` | 対象に対して常に成り立つべき不変述語の宣言的記述 |
-| `pre_post` | `input_domain` | `string` | `required` | 入力領域の記述（ジェネレータ設計の基礎になる） |
-| `pre_post` | `precondition` | `string` | `required` | 事前条件 |
-| `pre_post` | `operation` | `string` | `required` | 対象操作の識別・記述 |
-| `pre_post` | `postcondition` | `string` | `required` | 事後条件 |
-| `transition` | `states` | `array[string]` | `required` | 状態集合（1 要素以上） |
-| `transition` | `events` | `array[string]` | `required` | イベント集合（1 要素以上） |
-| `transition` | `transitions` | `array[object]` | `required` | 許可遷移。各要素は `from` / `event` / `to`（必須、string）と `guard`（任意、string）を持つ |
-| `transition` | `forbidden` | `array[object]` | `optional` | 禁止遷移。各要素は `from` / `event`（必須、string）を持つ |
-| `authorization` | `subject` | `string` | `required` | 主体（ロール・属性の記述） |
-| `authorization` | `action` | `string` | `required` | 操作 |
-| `authorization` | `resource` | `string` | `required` | 対象リソース |
-| `authorization` | `context` | `string` | `optional` | 文脈条件（時間帯・所有関係等） |
+| `invariant` | `target` | `string` | `required` | A declarative description of the data shape the invariant applies to |
+| `invariant` | `condition` | `string` | `required` | A declarative description of the invariant predicate that must always hold for the target |
+| `pre_post` | `input_domain` | `string` | `required` | A description of the input domain (the basis for generator design) |
+| `pre_post` | `precondition` | `string` | `required` | The precondition |
+| `pre_post` | `operation` | `string` | `required` | Identification and description of the target operation |
+| `pre_post` | `postcondition` | `string` | `required` | The postcondition |
+| `transition` | `states` | `array[string]` | `required` | The state set (1 element or more) |
+| `transition` | `events` | `array[string]` | `required` | The event set (1 element or more) |
+| `transition` | `transitions` | `array[object]` | `required` | Permitted transitions. Each element carries `from` / `event` / `to` (required, string) and `guard` (optional, string) |
+| `transition` | `forbidden` | `array[object]` | `optional` | Forbidden transitions. Each element carries `from` / `event` (required, string) |
+| `authorization` | `subject` | `string` | `required` | The subject (a description of the role or attributes) |
+| `authorization` | `action` | `string` | `required` | The operation |
+| `authorization` | `resource` | `string` | `required` | The target resource |
+| `authorization` | `context` | `string` | `optional` | Contextual conditions (time window, ownership relation, etc.) |
 | `authorization` | `effect` | `string` | `required` | enum: `allow` / `deny` |
 
-**authorization の競合解決規則**: 同一の (subject, action, resource) 組に
-`allow` と `deny` の両方が適用可能な場合、**deny を優先**する。
-この規則は条項ファイルに書くものではなく、v1 のスキーマ自体が固定する意味論である。
+**Conflict resolution rule for authorization**: when both `allow` and `deny` are applicable to
+the same (subject, action, resource) triple, **deny wins**. This rule is not something written
+into a clause file; it is semantics fixed by the v1 schema itself.
 
-## ID・revision 規則
+## ID and revision Rules
 
-| 項目 | 規則 |
+| Item | Rule |
 |------|------|
-| `id` パターン | `^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*-[0-9]{3,}$` |
-| `id` の構成 | 大文字英数の namespace セグメント（1 個以上、`-` 区切り）+ 末尾に 3 桁以上の連番。**先頭セグメントは英字始まり**（`[A-Z][A-Z0-9]*`）、**中間セグメントは英数字**（`[A-Z0-9]+`、全数字のセグメントも可）。例: `LIB-INV-001`, `CHAT-USAGE-042` |
-| `id` の一意性 | 同一ファイル内で重複禁止（lint が検出）。プロジェクト横断の一意性は運用規約 |
-| `revision` | 正整数（1 以上）。意味変更（payload の変更）ごとに +1。単調増加であり rollback 禁止 |
+| `id` pattern | `^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*-[0-9]{3,}$` |
+| `id` composition | Uppercase alphanumeric namespace segments (1 or more, `-` separated) plus a trailing sequence number of 3 or more digits. **The leading segment starts with a letter** (`[A-Z][A-Z0-9]*`), and **intermediate segments are alphanumeric** (`[A-Z0-9]+`; an all-digit segment is allowed). Examples: `LIB-INV-001`, `CHAT-USAGE-042` |
+| `id` uniqueness | Duplicates within the same file are prohibited (detected by lint). Cross-project uniqueness is an operational convention |
+| `revision` | A positive integer (1 or greater). Incremented by 1 on every semantic change (a change to payload). Monotonically increasing; rollback is prohibited |
 
-ID は namespace 付き opaque 識別子であり、スクリプトは ID の内部構造
-（セグメントの意味）を解釈しない。連番は人間の採番規約にすぎない。
+An ID is a namespaced opaque identifier, and the scripts do not interpret its internal structure
+(the meaning of its segments). The sequence number is nothing more than a human numbering
+convention.
 
-## ライフサイクル（変更分類）
+## Lifecycle (classification of changes)
 
-どの編集がどの操作に当たるかの分類表:
+A table classifying which edit constitutes which operation:
 
-| 変更の種類 | id | revision | 表現方法 |
+| Kind of change | id | revision | How it is expressed |
 |-----------|-----|----------|----------|
-| 文言修正（`statement` / `rationale` / `examples` 等、payload 以外の編集） | 維持 | 維持 | そのまま編集する |
-| 意味変更（`payload` の変更） | 維持 | +1 | 同一条項の改訂として編集する |
-| 廃止（後継なし） | 維持 | 維持 | `superseded_by: []` を付与して tombstone 化する |
-| 分割 | 維持 | 維持 | 旧条項に `superseded_by: [新ID1, 新ID2, ...]` を付与し、新条項を追加する |
-| 統合 | 維持 | 維持 | 統合される各旧条項に `superseded_by: [統合先ID]` を付与する |
+| Wording fix (an edit outside payload — `statement` / `rationale` / `examples`, etc.) | Keep | Keep | Edit it in place |
+| Semantic change (a change to `payload`) | Keep | +1 | Edit it as a revision of the same clause |
+| Retirement (no successor) | Keep | Keep | Add `superseded_by: []` to turn it into a tombstone |
+| Split | Keep | Keep | Add `superseded_by: [newID1, newID2, ...]` to the old clause and add the new clauses |
+| Merge | Keep | Keep | Add `superseded_by: [mergeTargetID]` to each old clause being merged |
 
-### tombstone 規則
+### tombstone Rules
 
-- `superseded_by` キーが存在する条項が tombstone。**tombstone の削除は違反**
-  （履歴の断絶）。ただし lint が検出できるのは、削除された ID への参照が
-  他の条項の `superseded_by` や証拠マニフェストに残っている場合のみ。
-- lint が機械検出する参照整合違反: `superseded_by` の**自己参照**、
-  **循環**（A→B→A）、**存在しない後継 ID への参照**。
-- **集計との関係**: tombstone 条項（`superseded_by` キーを持つ条項）は
-  **保証レベル算出・未検証条項検出の対象外**とし、トレーサビリティのサマリーには
-  **件数のみ別掲**する（未検証件数には含めない）。廃止済みの契約が
-  `unverified` を水増しして、現役条項の「見ていない」を埋没させないため。
+- A clause carrying the `superseded_by` key is a tombstone. **Deleting a tombstone is a
+  violation** (a break in history). However, lint can only detect it when a reference to the
+  deleted ID remains in another clause's `superseded_by` or in an evidence manifest.
+- The reference-integrity violations lint detects mechanically: **self-reference** in
+  `superseded_by`, a **cycle** (A→B→A), and a **reference to a non-existent successor ID**.
+- **Relation to aggregation**: tombstone clauses (clauses carrying the `superseded_by` key) are
+  **excluded from assurance-level computation and unverified-clause detection**, and are listed
+  **by count only, separately** in the traceability summary (not included in the unverified
+  count). This keeps retired contracts from padding `unverified` and burying the "not looked at"
+  of active clauses.
 
-### 単一スナップショット lint の限界（v1）
+### Limits of Single-snapshot lint (v1)
 
-lint は現在のファイル群という単一スナップショットしか見ない。したがって
-**削除済み ID の再利用**や **revision の rollback** は機械検出できない。
-「ID 再利用禁止」「revision 単調増加」は **v1 では規約であり機械保証ではない**。
-履歴レジストリ / VCS 比較による機械保証は v2 で扱う。
+Lint sees only a single snapshot — the current set of files. Therefore **reuse of a deleted ID**
+and **rollback of a revision** cannot be detected mechanically. "No ID reuse" and "revision is
+monotonically increasing" are **conventions in v1, not machine guarantees**. Machine guarantees
+via a history registry or VCS comparison are handled in v2.
 
-## 保証レベル
+## Assurance Levels
 
-条項の保証レベルは**証拠（observation）から算出する。自己申告は禁止**
-（binding の手書き追加だけでは昇格しない）。「証拠ゼロ = 見ていない」を
-可視化する思想は [coverage-ledger](../../shared/references/coverage-ledger.md) と同一である。
+A clause's assurance level is **computed from evidence (observations). Self-declaration is
+prohibited** (hand-adding a binding alone does not promote it). The philosophy of making
+"zero evidence = not looked at" visible is identical to
+[coverage-ledger](../../shared/references/coverage-ledger.md).
 
-| レベル | v1 算出 | 定義 / 算出規則 |
+| Level | v1 computation | Definition / computation rule |
 |--------|---------|-----------------|
-| `unverified` | 算出可（既定） | 有効な証拠がゼロ。「問題なし」ではなく「見ていない」を表す |
-| `example_only` | 算出可 | 具体例ベースのテストの成功 observation が 1 件以上 |
-| `property` | 算出可 | property テストの observation で、**valid（discard を除く）実行ケース数 ≥ 1 かつ失敗 0 かつ exit 0** |
-| `model_checked` | 予約 | v1 では対応する検証可能な証拠種別がないため受理しない（warning + `unverified` 扱い） |
-| `proved` | 予約 | 同上 |
+| `unverified` | Computable (default) | Zero valid evidence. It means "not looked at", not "no problems" |
+| `example_only` | Computable | 1 or more successful observations from example-based tests |
+| `property` | Computable | An observation from a property test with **valid (excluding discards) executed case count ≥ 1, failures 0, and exit 0** |
+| `model_checked` | Reserved | Not accepted in v1 because there is no corresponding verifiable evidence kind (warning + treated as `unverified`) |
+| `proved` | Reserved | Same as above |
 
-- 「実行ケース数」は **valid ケース数**（discard を除く）を指す。
-  skip / xfail / valid ケース 0 件 / exit 非 0 / 失敗数 > 0 の observation は
-  成功証拠に数えない。
-- **前方互換規則**: 未知・未対応の証拠種別を持つ observation は
-  warning を出して最下位（`unverified`）扱いとし、**エラーにしない**。
-  将来の証拠種別追加で旧スクリプトが壊れないようにするため。
+- "Executed case count" refers to the **valid case count** (excluding discards). Observations
+  that are skip / xfail / have 0 valid cases / have a non-zero exit / have failures > 0 do not
+  count as successful evidence.
+- **Forward-compatibility rule**: an observation with an unknown or unsupported evidence kind
+  produces a warning and is treated as the lowest level (`unverified`), and **is not an error**.
+  This keeps older scripts from breaking when new evidence kinds are added in the future.
 
-## 配置規約（対象プロジェクト側）
+## Placement Conventions (target project side)
 
-| 対象 | パス | 扱い |
+| Target | Path | Handling |
 |------|------|------|
-| 条項ファイル | `specs/clauses/*.json` | コミット対象（正本） |
-| 証拠マニフェスト | `specs/evidence/manifest.json` | コミット対象 |
-| 生成マトリクス | stdout / 一時領域 | ephemeral。コミットしない |
-| draft（未承認条項） | `.agents/artifacts/spec-verify/drafts/` | 正本ツリーから隔離（[artifact-store 契約](../../shared/references/artifact-store.md)準拠）。lint / trace の探索対象外。承認（apply）時に `specs/clauses/` へ移す |
+| Clause files | `specs/clauses/*.json` | Committed (the source of truth) |
+| Evidence manifest | `specs/evidence/manifest.json` | Committed |
+| Generated matrix | stdout / temporary area | Ephemeral. Not committed |
+| draft (unapproved clauses) | `.agents/artifacts/spec-verify/drafts/` | Isolated from the canonical tree (conforms to the [artifact-store contract](../../shared/references/artifact-store.md)). Outside the search scope of lint / trace. Moved to `specs/clauses/` on approval (apply) |
 
-draft を正本ツリーに置かないのは、無承認の条項が lint / トレーサビリティ集計に
-混入して「承認済みの契約」として扱われる事故を構造的に防ぐため。
+Drafts are kept out of the canonical tree to structurally prevent the accident where an
+unapproved clause slips into lint / traceability aggregation and gets treated as "an approved
+contract".
 
-## exit code 契約（spec_lint / trace_matrix 共通）
+## exit code contract (shared by spec_lint / trace_matrix)
 
-両スクリプトはこの契約を共有する。定義はこの表が一箇所の正本である。
+Both scripts share this contract. This table is the single source of truth for the definition.
 
-| exit | report-only（既定） | strict（`--strict`） | モード依存 |
+| exit | report-only (default) | strict (`--strict`) | Mode dependent |
 |------|---------------------|----------------------|-----------|
-| `0` | 実行成功。**検出があっても 0**（対象ゼロ件の案内も 0） | 実行成功かつ検出なし | あり |
-| `1` | 発生しない | 違反・検出あり | あり |
-| `2` | 入力破損・使用法エラー | 入力破損・使用法エラー | **なし（モード非依存）** |
+| `0` | Ran successfully. **0 even when there are detections** (a zero-target notice is also 0) | Ran successfully with no detections | Yes |
+| `1` | Does not occur | There are violations / detections | Yes |
+| `2` | Input corruption / usage error | Input corruption / usage error | **No (mode independent)** |
 
-- 警告（revision 単調性のファイル単体警告、未対応証拠種別の warning 等）は
-  exit code に**影響しない**。
-- 検出の有無は exit code と独立に、機械出力（JSON）の `findings_present`
-  フィールドで分離して表現する。CI は exit code で、ツールは JSON で判定できる。
-- exit 2 のとき、保証レベル算出とマトリクスの publish は行わない
-  （診断専用出力のみ。部分結果を正本として消費させない）。
+- Warnings (the file-local warning on revision monotonicity, the warning on unsupported evidence
+  kinds, etc.) **do not affect** the exit code.
+- Whether there were detections is expressed separately from the exit code, in the
+  `findings_present` field of the machine output (JSON). CI can decide by exit code, and tools by
+  the JSON.
+- On exit 2, assurance-level computation and matrix publication are not performed (diagnostic
+  output only — do not let partial results be consumed as canonical).
 
-### 入力上限と破損カテゴリ（exit 2 の内訳）
+### Input Limits and Corruption Categories (the breakdown of exit 2)
 
-入力上限は次のとおり。超過は入力破損（exit 2）として扱い、条項単位の検証
-（exit 1 相当の違反検出）には進まない。値は lint 実装のコード内定数と
-同期テストで突合される:
+The input limits are as follows. Exceeding one is treated as input corruption (exit 2) and does
+not proceed to per-clause verification (the exit-1-class violation detection). The values are
+reconciled with the lint implementation's in-code constants by the sync tests:
 
-| 上限項目 | 値 | 破損カテゴリ |
+| Limit item | Value | Corruption category |
 |---------|-----|-------------|
-| ファイルサイズ（1 ファイル） | `1000000` バイト | `file-too-large` |
-| 条項数（1 ファイル） | `10000` 件 | `too-many-clauses` |
-| ネスト深さ | `16` 段 | `too-deep` |
+| File size (per file) | `1000000` bytes | `file-too-large` |
+| Clause count (per file) | `10000` clauses | `too-many-clauses` |
+| Nesting depth | `16` levels | `too-deep` |
 
-exit 2 の破損カテゴリ（機械出力 `diagnostics[].category` のスラッグ）は
-次の一覧が正本である（同期テストが lint 実装の raise 箇所と突合する）:
+The corruption categories for exit 2 (the slugs of `diagnostics[].category` in the machine
+output) have the following list as their source of truth (the sync tests reconcile it against
+the raise sites in the lint implementation):
 
-- `invalid-json` — JSON として parse できない（空ファイル・エンコーディング破損を含む）
-- `duplicate-json-key` — 同一 object 内の JSON key 重複
-- `not-an-object` — トップレベルが object でない
-- `missing-toplevel-key` — トップレベル必須キーの欠落
-- `clauses-not-array` — `clauses` が配列でない
-- `unknown-schema-version` — `schema_version` が未知（v1 は `1` 固定）
-- `file-too-large` — ファイルサイズ上限超過
-- `too-many-clauses` — 条項数上限超過
-- `too-deep` — ネスト深さ上限超過
-- `unreadable` — ファイルが読み取り不能
-- `path-escape` — 対象が root 外（symlink 経由の脱出を含む）
+- `invalid-json` — Cannot be parsed as JSON (including an empty file or corrupted encoding)
+- `duplicate-json-key` — A duplicated JSON key within the same object
+- `not-an-object` — The top level is not an object
+- `missing-toplevel-key` — A top-level required key is missing
+- `clauses-not-array` — `clauses` is not an array
+- `unknown-schema-version` — `schema_version` is unknown (fixed at `1` for v1)
+- `file-too-large` — The file size limit was exceeded
+- `too-many-clauses` — The clause count limit was exceeded
+- `too-deep` — The nesting depth limit was exceeded
+- `unreadable` — The file cannot be read
+- `path-escape` — The target is outside root (including escape via a symlink)
 
-## 機密情報の規約
+## Confidential Information Convention
 
-`examples` / `counterexamples` / `statement` / `rationale` は
-**合成・匿名データ限定**とする。実在の credential・API キー・個人情報を書かない。
-lint は自由文フィールドに secret 検出を適用するが、検出時は黙って書き換えず、
-報告して修正を要求する（仕様正本の無断改変はドリフトそのものだから）。
+`examples` / `counterexamples` / `statement` / `rationale` are **restricted to synthetic and
+anonymized data**. Do not write real credentials, API keys, or personal information in them.
+Lint applies secret detection to free-text fields, and on a hit it does not silently rewrite
+them but reports and demands a fix (because unauthorized alteration of the canonical
+specification is drift itself).
 
-## why-not（採らなかった選択肢）
+## why-not (options not taken)
 
-- **YAML を採らない**: 実行環境の標準ライブラリに YAML パーサがなく、
-  外部依存ゼロの方針と両立しない。JSON は標準ライブラリで厳密に
-  （重複キー拒否まで含めて）パースできる。
-- **Markdown + frontmatter を採らない**: kind 別 payload のネスト構造・
-  リスト構造（`transitions` の from/event/to 等）を frontmatter で表現するには
-  表現力が不足し、結局 JSON 相当の構造を埋め込むことになる。
-  可読性は statement / rationale と逆生成ドキュメントで担保する。
+- **YAML not taken**: the runtime environment's standard library has no YAML parser, which is
+  incompatible with the zero-external-dependency policy. JSON can be parsed strictly with the
+  standard library (down to rejecting duplicate keys).
+- **Markdown + frontmatter not taken**: frontmatter lacks the expressive power for the nested
+  and list structures of kind-specific payloads (the from/event/to of `transitions`, etc.), and
+  would end up embedding a JSON-equivalent structure anyway. Readability is secured by statement
+  / rationale and the reverse-generated documentation.

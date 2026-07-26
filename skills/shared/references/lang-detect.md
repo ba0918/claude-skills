@@ -1,19 +1,19 @@
 # Language Detection Contract
 
-複数スキルが共有する言語・フレームワーク検出の契約仕様。
-消費スキルはこのファイルを参照し、同じ手順で言語検出を行う。
+The contract specification for language and framework detection shared by several skills.
+Consuming skills reference this file and perform language detection by the same procedure.
 
-> **利用スキル**: attack-review, generate-review-rules（将来: codebase-review）
+> **Consuming skills**: attack-review, generate-review-rules (future: codebase-review)
 
 ## 1. Detection Procedure
 
-以下の手順で対象プロジェクトの言語・フレームワーク構成を特定する。
+Identify the target project's language and framework composition by the following procedure.
 
-### Step 1: ビルドファイル Glob
+### Step 1: Glob the Build Files
 
-プロジェクトルートおよび直下1階層を Glob で走査し、以下のマーカーファイルを検索する。
+Glob the project root and one level below it, searching for the following marker files.
 
-| マーカーファイル | 言語 | エコシステム |
+| Marker file | Language | Ecosystem |
 |----------------|------|------------|
 | `Cargo.toml` | Rust | cargo |
 | `package.json` | TypeScript / JavaScript | npm / yarn / pnpm / bun |
@@ -28,22 +28,22 @@
 | `Gemfile` | Ruby | bundler |
 | `*.csproj` / `*.sln` | C# | .NET |
 
-### Step 2: レガシー / 静的サイト検出
+### Step 2: Legacy / Static-site Detection
 
-マーカーファイルが見つからない場合の補助検出:
+Auxiliary detection for when no marker file is found:
 
-| パターン | 言語 | 備考 |
+| Pattern | Language | Notes |
 |---------|------|------|
-| `*.php` がルートレベルに存在（composer.json なし） | PHP (legacy) | PHP 5.x 系を含むレガシー環境 |
-| `index.html` / `*.html` がルートレベルに存在 | HTML / CSS | 静的サイト、または SPA のビルド出力 |
+| `*.php` exists at the root level (no composer.json) | PHP (legacy) | A legacy environment, including the PHP 5.x line |
+| `index.html` / `*.html` exists at the root level | HTML / CSS | A static site, or the build output of an SPA |
 
-### Step 3: フレームワーク検出
+### Step 3: Framework Detection
 
-マーカーファイルの **依存関係セクション** を読み、フレームワークを特定する。
+Read the **dependency section** of the marker file and identify the framework.
 
 #### package.json (dependencies / devDependencies)
 
-| パッケージ名 | フレームワーク | role |
+| Package name | Framework | role |
 |-------------|-------------|------|
 | `express` | Express.js | server |
 | `fastify` | Fastify | server |
@@ -53,14 +53,14 @@
 | `next` | Next.js | both |
 | `nuxt` | Nuxt.js | both |
 | `@remix-run/node` | Remix | both |
-| `react` (サーバーFW なし) | React SPA | client |
-| `vue` (サーバーFW なし) | Vue.js SPA | client |
+| `react` (no server framework) | React SPA | client |
+| `vue` (no server framework) | Vue.js SPA | client |
 | `svelte` / `@sveltejs/kit` | SvelteKit / Svelte | both / client |
 | `@angular/core` | Angular | client |
 
 #### pyproject.toml / requirements.txt
 
-| パッケージ名 | フレームワーク | role |
+| Package name | Framework | role |
 |-------------|-------------|------|
 | `django` | Django | server |
 | `flask` | Flask | server |
@@ -71,17 +71,17 @@
 
 #### go.mod
 
-| モジュールパス（部分一致） | フレームワーク | role |
+| Module path (substring match) | Framework | role |
 |--------------------------|-------------|------|
 | `github.com/gin-gonic/gin` | Gin | server |
 | `github.com/labstack/echo` | Echo | server |
 | `github.com/gofiber/fiber` | Fiber | server |
-| `net/http` (標準ライブラリ) | stdlib | server |
+| `net/http` (standard library) | stdlib | server |
 | `connectrpc.com` | Connect RPC | server |
 
 #### Cargo.toml
 
-| クレート名 | フレームワーク | role |
+| Crate name | Framework | role |
 |-----------|-------------|------|
 | `actix-web` | Actix Web | server |
 | `axum` | Axum | server |
@@ -91,32 +91,33 @@
 
 #### pubspec.yaml
 
-| パッケージ名 | フレームワーク | role |
+| Package name | Framework | role |
 |-------------|-------------|------|
 | `flutter` | Flutter | client |
 | `shelf` / `dart_frog` | Dart server | server |
 
 #### composer.json
 
-| パッケージ名 | フレームワーク | role |
+| Package name | Framework | role |
 |-------------|-------------|------|
 | `laravel/framework` | Laravel | both |
 | `symfony/framework-bundle` | Symfony | server |
 | `slim/slim` | Slim | server |
 | `wordpress` (type: wordpress-plugin/theme) | WordPress | server |
 
-### Step 4: role 判定ルール
+### Step 4: role Decision Rules
 
-1. **明示的 role**: フレームワーク検出表の role 列をそのまま使用
-2. **both の展開**: `both` は server と client 両方の観点で分析対象
-3. **FW 未検出時のデフォルト**:
-   - バックエンド言語（Go, Rust, Python, PHP, Java/Kotlin, Ruby, C#）→ `server`
-   - フロントエンド資産のみ（HTML/CSS, package.json + FW なし）→ `client`
-   - 判定不能 → `both`（安全側に倒す）
+1. **Explicit role**: use the role column of the framework detection tables as-is
+2. **Expanding both**: `both` means the target is analyzed from the server and client
+   perspectives alike
+3. **Defaults when no framework is detected**:
+   - Backend languages (Go, Rust, Python, PHP, Java/Kotlin, Ruby, C#) → `server`
+   - Frontend assets only (HTML/CSS, or package.json with no framework) → `client`
+   - Undeterminable → `both` (erring on the safe side)
 
-### Step 5: 出力形式
+### Step 5: Output Format
 
-検出結果は以下の構造で返す（JSON 表現）:
+Return the detection result in the following structure (JSON representation):
 
 ```json
 {
@@ -139,27 +140,33 @@
 }
 ```
 
-- `primary_language`: サーバーサイド言語を優先。複数ある場合はマーカーファイルが最初に見つかったもの
-- `is_monorepo`: マーカーファイルがサブディレクトリに複数見つかった場合 `true`
+- `primary_language`: prefer a server-side language. When there are several, the one whose
+  marker file was found first
+- `is_monorepo`: `true` when several marker files were found in subdirectories
 
-## 2. マルチ言語プロジェクトの扱い
+## 2. Handling Multi-language Projects
 
-モノレポや複合プロジェクトでは複数の言語が検出される。消費スキルは以下のルールで言語情報を利用する:
+In monorepos and composite projects, several languages are detected. Consuming skills use the
+language information by the following rules:
 
-1. **全言語の情報を context.json に含める**（フィルタリングは消費側の責任）
-2. **エージェントへの言語プロファイル注入時**:
-   - server 専用エージェント → `role: "server"` または `"both"` の言語のみ
-   - client 専用エージェント → `role: "client"` または `"both"` の言語のみ
-   - 共通エージェント → 全言語
-3. **スコープ絞り込み**: 特定ディレクトリが指定された場合、そのディレクトリのマーカーファイルのみ使用
+1. **Include the information for all languages in context.json** (filtering is the consumer's
+   responsibility)
+2. **When injecting a language profile into an agent**:
+   - A server-only agent → only languages with `role: "server"` or `"both"`
+   - A client-only agent → only languages with `role: "client"` or `"both"`
+   - A shared agent → all languages
+3. **Scope narrowing**: when a specific directory is given, use only the marker files in that
+   directory
 
-## 3. 拡張ポイント
+## 3. Extension Points
 
-新しい言語を追加する場合:
+To add a new language:
 
-1. §1 Step 1 のマーカーファイル表に行を追加
-2. §1 Step 3 に該当フレームワーク検出表を追加
-3. §1 Step 4 の role デフォルトに言語を追加
-4. 消費スキル固有の言語プロファイル（例: `lang-profiles.md`）に該当セクションを追加
+1. Add a row to the marker file table in §1 Step 1
+2. Add the corresponding framework detection table to §1 Step 3
+3. Add the language to the role defaults in §1 Step 4
+4. Add the corresponding section to the consuming skill's own language profile (e.g.
+   `lang-profiles.md`)
 
-> **Note**: この契約は仕様定義であり、実行可能コードではない。各消費スキルがこの手順を SKILL.md のワークフロー内で実行する。
+> **Note**: this contract is a specification, not executable code. Each consuming skill performs
+> this procedure within its SKILL.md workflow.

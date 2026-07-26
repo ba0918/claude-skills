@@ -1,251 +1,274 @@
-# 証拠マニフェスト形式 v1（正本）
+# Evidence Manifest Format v1 (canonical)
 
-spec-verify の証拠マニフェスト（対象プロジェクトの `specs/evidence/manifest.json`）の
-形式定義。**この文書が唯一の正本**であり、`trace_matrix` のコード内定数と本文書の表は
-同期テストが機械的に突合する。条項スキーマ・保証レベルの算出規則・tombstone 集計規則・
-exit code 契約・配置規約は [clause-schema.md](clause-schema.md) に既定義であり、
-本文書はそれらを**参照する**（重複定義しない）。
+The format definition for spec-verify's evidence manifest (the target project's
+`specs/evidence/manifest.json`). **This document is the sole source of truth**, and the sync
+tests mechanically reconcile `trace_matrix`'s in-code constants with the tables in this
+document. The clause schema, the assurance-level computation rules, the tombstone aggregation
+rules, the exit code contract, and the placement conventions are already defined in
+[clause-schema.md](clause-schema.md), and this document **references** them (it does not
+redefine them).
 
-**表のパース契約**: 同期テストは見出し（節名）で表を特定する。パース対象の節:
-「マニフェストのファイル構造」「binding 宣言」「実行 observation」
-「識別子・digest の形式規則」「検出項目」「マトリクス行スキーマ」。
-節名・列順を変更する場合は同期テストも同時に更新すること。データ行の判定は
-「行頭が `|` で、先頭セルがバッククォート付きトークンである行」。
-型トークンは `string` / `integer` / `boolean` / `array[object]`、
-必須トークンは `required` / `optional`、検出区分トークンは `error` / `warning` に固定する。
-「マトリクス行スキーマ」節のみ、突合対象は**キー集合**（先頭セルのトークン）である
-（型セルは説明用であり `array[string]` / null 許容の注記を含んでよい）。
+**Table parse contract**: the sync tests locate tables by heading (section name). The sections
+parsed are: "Manifest File Structure", "binding Declarations", "Execution observation",
+"Format Rules for Identifiers and digests", "Detection Items", "Matrix Row Schema".
+If you change a section name or column order, update the sync tests at the same time. A data row
+is decided by "a line starting with `|` whose first cell is a backticked token".
+The type tokens are fixed to `string` / `integer` / `boolean` / `array[object]`, the required
+tokens to `required` / `optional`, and the detection-class tokens to `error` / `warning`.
+For the "Matrix Row Schema" section alone, the reconciliation target is the **key set** (the
+tokens in the first cell) — the type cells are explanatory and may include notes such as
+`array[string]` or nullability.
 
-## 二部構成の理由
+## Why It Has Two Parts
 
-マニフェストは **binding 宣言**（人間レビューを経て追記される静的な対応宣言）と
-**実行 observation**（テスト実行のたびに追記される動的な観測記録）の 2 部で構成する。
-保証レベルは observation のみから算出され、binding の手書き追加だけでは
-`unverified` のまま昇格しない（[clause-schema.md 保証レベル節](clause-schema.md#保証レベル)）。
-2 部をファイル構造上分離しておくのは、将来 v2 で binding 部のみを
-テスト内アノテーションへ移行できる余地を残すためでもある（why-not 節参照）。
+The manifest is composed of 2 parts: **binding declarations** (static correspondence
+declarations appended after human review) and **execution observations** (dynamic observation
+records appended on every test run). Assurance levels are computed from observations only, and
+hand-adding a binding alone leaves a clause at `unverified` without promotion (see
+[the assurance-levels section of clause-schema.md](clause-schema.md#assurance-levels)).
+Separating the 2 parts at the file-structure level also leaves room to migrate the binding part
+alone into in-test annotations in a future v2 (see the why-not section).
 
-## マニフェストのファイル構造
+## Manifest File Structure
 
-マニフェストのトップレベルは次の 3 キーのみを持つ object とする:
+The top level of the manifest is an object with exactly these 3 keys:
 
-| フィールド | 型 | 必須 | 説明 |
+| Field | Type | Required | Description |
 |-----------|-----|------|------|
-| `schema_version` | `integer` | `required` | v1 は `1` 固定。未知の値は入力破損として扱う（exit 2） |
-| `bindings` | `array[object]` | `required` | binding 宣言の配列（次節） |
-| `observations` | `array[object]` | `required` | 実行 observation の配列 |
+| `schema_version` | `integer` | `required` | Fixed at `1` for v1. An unknown value is treated as input corruption (exit 2) |
+| `bindings` | `array[object]` | `required` | The array of binding declarations (next section) |
+| `observations` | `array[object]` | `required` | The array of execution observations |
 
-- トップレベルが object でない・必須キー欠落・`schema_version` 未知・
-  `bindings` / `observations` が配列でない入力は**入力破損（exit 2）**として扱い、
-  エントリ単位の違反検出には進まない。
-- **既定パス（暗黙）のマニフェストが存在しない場合は破損ではなく「証拠ゼロ」**として扱う:
-  案内 note を出力し、全現役条項を `unverified` として集計する（exit は report-only で 0）。
-  ただし**マニフェストパスを明示指定してファイルが存在しない場合は使用法エラー（exit 2、
-  `manifest-not-found`）**とする — typo したパスが黙って「証拠ゼロ」に化けるのを防ぐため。
-- `bindings` / `observations` がともに空配列の場合も graceful に扱う
-  （条項があれば全件 `unverified`、条項もゼロなら案内のみで exit 0）。
+- Input whose top level is not an object, that is missing a required key, that has an unknown
+  `schema_version`, or whose `bindings` / `observations` is not an array is treated as **input
+  corruption (exit 2)** and does not proceed to per-entry violation detection.
+- **When the manifest at the default (implicit) path does not exist, it is treated not as
+  corruption but as "zero evidence"**: a guidance note is emitted and every active clause is
+  aggregated as `unverified` (exit is 0 in report-only mode). However, **when a manifest path is
+  specified explicitly and the file does not exist, it is a usage error (exit 2,
+  `manifest-not-found`)** — to prevent a typo'd path from silently turning into "zero evidence".
+- The case where `bindings` and `observations` are both empty arrays is also handled gracefully
+  (with clauses present, all of them are `unverified`; with zero clauses too, only the guidance
+  is emitted and the exit is 0).
 
-## binding 宣言
+## binding Declarations
 
-条項 ⇔ テストの**多対多**マッピング。同一 `clause_id` を持つ複数エントリ、
-同一 `test_id` を持つ複数エントリのどちらも正当である
-（1 条項を複数テストが検証する / 1 テストが複数条項を検証する）。
-bind ワークフローが人間レビューを経て追記する。手書きテストの登録も可。
+The **many-to-many** mapping between clauses and tests. Multiple entries sharing a `clause_id`
+and multiple entries sharing a `test_id` are both legitimate (several tests verifying one clause
+/ one test verifying several clauses). The bind workflow appends them after human review.
+Registering hand-written tests is also possible.
 
-| フィールド | 型 | 必須 | 説明 |
+| Field | Type | Required | Description |
 |-----------|-----|------|------|
-| `clause_id` | `string` | `required` | 条項 ID。[clause-schema.md](clause-schema.md) の ID パターンに従う |
-| `clause_revision` | `integer` | `required` | binding 時点の条項 revision（1 以上）。現行条項の revision と食い違う場合は**警告**（`binding-revision-mismatch`） |
-| `test_id` | `string` | `required` | テスト識別子（「識別子・digest の形式規則」節の文字集合制限に従う） |
+| `clause_id` | `string` | `required` | The clause ID. Follows the ID pattern of [clause-schema.md](clause-schema.md) |
+| `clause_revision` | `integer` | `required` | The clause revision at binding time (1 or greater). If it disagrees with the current clause's revision, it is a **warning** (`binding-revision-mismatch`) |
+| `test_id` | `string` | `required` | The test identifier (follows the character-set restriction in the "Format Rules for Identifiers and digests" section) |
 
-## 実行 observation
+## Execution observation
 
-テスト実行の観測記録。**binding エントリ（条項 × テストのペア）単位**で持つ。
-drift-check ワークフローが「テスト実行 → observation 追記」の手順で記録する
-（v1 ではスクリプト化せず手順として記録する。CI 常設の自動記録は v2）。
+Observation records of test runs. Held **per binding entry (a clause × test pair)**. The
+drift-check workflow records them via the procedure "run the test → append the observation"
+(in v1 this is recorded as a procedure rather than scripted; automatic recording built into CI
+is v2).
 
-| フィールド | 型 | 必須 | 説明 |
+| Field | Type | Required | Description |
 |-----------|-----|------|------|
-| `clause_id` | `string` | `required` | 対象条項 ID |
-| `test_id` | `string` | `required` | 対象テスト識別子。(`clause_id`, `test_id`) の binding が宣言済みであること（未宣言は警告 + 証拠に数えない） |
-| `evidence_kind` | `string` | `required` | 証拠種別。enum: `example` / `property` |
-| `command` | `string` | `required` | 実行したテストコマンドの記録（自由文）。記録専用であり、スクリプトはこれを再実行・シェル解釈しない |
-| `exit_status` | `integer` | `required` | テストランナーの exit status |
-| `cases_valid` | `integer` | `required` | valid 実行ケース数（discard を除く）。0 以上 |
-| `failures` | `integer` | `required` | 失敗数。0 以上 |
-| `payload_digest` | `string` | `required` | 記録時点の条項 payload digest（「識別子・digest の形式規則」節の形式） |
-| `recorded_at` | `string` | `required` | 記録日時（ISO 8601 UTC）。**表示専用であり stale 判定に使わない** |
-| `cases_discarded` | `integer` | `optional` | discard 数（取得可能な場合のみ）。0 以上 |
-| `skipped` | `boolean` | `optional` | skip されたか。`true` の observation は成功証拠に数えない |
-| `xfail` | `boolean` | `optional` | xfail（期待された失敗）扱いか。`true` の observation は成功証拠に数えない |
+| `clause_id` | `string` | `required` | The target clause ID |
+| `test_id` | `string` | `required` | The target test identifier. The (`clause_id`, `test_id`) binding must already be declared (undeclared ones are a warning and do not count as evidence) |
+| `evidence_kind` | `string` | `required` | The evidence kind. enum: `example` / `property` |
+| `command` | `string` | `required` | A record of the test command that was run (free text). It is for the record only; the scripts do not re-run or shell-interpret it |
+| `exit_status` | `integer` | `required` | The test runner's exit status |
+| `cases_valid` | `integer` | `required` | The valid executed case count (excluding discards). 0 or greater |
+| `failures` | `integer` | `required` | The failure count. 0 or greater |
+| `payload_digest` | `string` | `required` | The clause payload digest at recording time (the format in the "Format Rules for Identifiers and digests" section) |
+| `recorded_at` | `string` | `required` | The recording timestamp (ISO 8601 UTC). **For display only; not used for staleness judgement** |
+| `cases_discarded` | `integer` | `optional` | The discard count (only when obtainable). 0 or greater |
+| `skipped` | `boolean` | `optional` | Whether it was skipped. An observation with `true` does not count as successful evidence |
+| `xfail` | `boolean` | `optional` | Whether it counts as xfail (an expected failure). An observation with `true` does not count as successful evidence |
 
-未知の `evidence_kind`（`model_checked` / `proved` を含む）は
-[clause-schema.md の前方互換規則](clause-schema.md#保証レベル)に従い
-**warning + `unverified` 扱い（エラーにしない）**。
+An unknown `evidence_kind` (including `model_checked` / `proved`) follows
+[the forward-compatibility rule of clause-schema.md](clause-schema.md#assurance-levels) and is
+**a warning + treated as `unverified` (not an error)**.
 
-## 識別子・digest の形式規則
+## Format Rules for Identifiers and digests
 
-| 項目 | 規則 |
+| Item | Rule |
 |------|------|
-| `test_id` パターン | `^[A-Za-z0-9][A-Za-z0-9_.:\[\]/=,-]{0,499}$` |
-| `payload_digest` 形式 | `^sha256:[0-9a-f]{64}$` |
+| `test_id` pattern | `^[A-Za-z0-9][A-Za-z0-9_.:\[\]/=,-]{0,499}$` |
+| `payload_digest` format | `^sha256:[0-9a-f]{64}$` |
 
-- テスト識別子の文字集合は、空白・シェルメタ文字（`;` `&` `$` バッククォート・引用符等）・
-  制御文字を構造的に排除する。**先頭文字は英数に限定**し、先頭 `-` の識別子が
-  ランナーのオプションとして解釈される余地を排除する。識別子はテストランナーへ
-  **引数として**渡し、シェル文字列へ補間しない。ランナー呼び出しでは識別子を
-  **`--` セパレータの後に**渡す（先頭文字制限との二重防御）。
-  スクリプトは識別子をパスとして**開かない**（不透明な識別子）。
-- digest の**算出対象は条項の `id` + `revision` + `kind` + kind 別 `payload` のみ**。
-  `statement` / `rationale` / `examples` / `counterexamples` / `refs` 等の
-  payload 外フィールドは対象外であり、**文言修正では digest が変わらない
-  （= 証拠が stale 化しない）**。payload の意味変更でのみ stale 化する。
-- 正規化 JSON: キーを辞書順に固定（sort_keys）、区切りは `,` / `:`（空白なし）、
-  非 ASCII は UTF-8 のまま（ensure_ascii なし）でエンコードし、SHA-256 を取る。
-- 数値表現: 整数は 10 進表記に固定する。**float は禁止**。v1 の条項スキーマは
-  payload に数値型フィールドを持たないため、float の混入はそれ自体がスキーマ違反であり、
-  digest は算出不能（`undigestable-clause` 警告 + 当該条項の判定をスキップ）とする。
-  float の処理系依存表記（repr 差）を仕様に含めると同一条項の digest が
-  環境によって割れるため、既定表記の容認ではなく禁止を採る。
+- The character set for test identifiers structurally excludes whitespace, shell metacharacters
+  (`;`, `&`, `$`, backticks, quotes, etc.), and control characters. **The leading character is
+  restricted to alphanumerics**, eliminating any room for an identifier beginning with `-` to be
+  interpreted as a runner option. Identifiers are passed to the test runner **as arguments** and
+  are not interpolated into a shell string. In runner invocations, identifiers are passed
+  **after the `--` separator** (defense in depth alongside the leading-character restriction).
+  The scripts **do not open** an identifier as a path (it is an opaque identifier).
+- The digest is **computed over the clause's `id` + `revision` + `kind` + the kind-specific
+  `payload` only**. Fields outside the payload — `statement` / `rationale` / `examples` /
+  `counterexamples` / `refs` and so on — are excluded, so **a wording fix does not change the
+  digest (= evidence does not go stale)**. Only a semantic change to the payload makes it stale.
+- Canonical JSON: keys fixed in lexicographic order (sort_keys), separators `,` / `:` (no
+  whitespace), non-ASCII left as UTF-8 (no ensure_ascii); then take the SHA-256.
+- Numeric representation: integers are fixed to decimal notation. **floats are prohibited.**
+  Because the v1 clause schema has no numeric-typed fields in payload, a float appearing at all
+  is itself a schema violation, and the digest is treated as uncomputable (an
+  `undigestable-clause` warning + skipping the judgement for that clause). Including the
+  implementation-dependent notation of floats (repr differences) in the specification would make
+  the same clause's digest diverge across environments, so prohibition is taken rather than
+  acceptance of a default notation.
 
-## 保証レベルとの関係（有効 observation の定義）
+## Relation to Assurance Levels (the definition of a valid observation)
 
-保証レベルの算出規則（`unverified` / `example_only` / `property` /
-予約レベルの扱い、valid ケース数の定義、`property` 昇格条件）の正本は
-[clause-schema.md 保証レベル節](clause-schema.md#保証レベル)である。
-「証拠ゼロ = 見ていない」の思想は
-[coverage-ledger](../../shared/references/coverage-ledger.md) と同一。
-本書はどの observation が「有効な証拠」として算出に参加するかのみを定義する。
+The source of truth for the assurance-level computation rules (`unverified` / `example_only` /
+`property`, the handling of reserved levels, the definition of the valid case count, the
+promotion condition for `property`) is
+[the assurance-levels section of clause-schema.md](clause-schema.md#assurance-levels). The
+philosophy of "zero evidence = not looked at" is identical to
+[coverage-ledger](../../shared/references/coverage-ledger.md).
+This document defines only which observations participate in the computation as "valid
+evidence".
 
-observation が**有効**であるのは、次のすべてを満たすときに限る:
+An observation is **valid** only when all of the following hold:
 
-1. `clause_id` が現役条項（tombstone でない実在の条項）に解決される
-2. (`clause_id`, `test_id`) の binding が宣言済みである
-3. `evidence_kind` が v1 の認識種別（`example` / `property`）である
-4. `payload_digest` が現行条項の digest と一致する（stale でない）
-5. 実行結果が成功証拠の条件を満たす — この条件と、有効 observation から
-   保証レベルへの算出規則の**規範文は
-   [clause-schema.md 保証レベル節](clause-schema.md#保証レベル)であり、
-   本書には再掲しない**。
+1. `clause_id` resolves to an active clause (an existing clause that is not a tombstone)
+2. The (`clause_id`, `test_id`) binding has been declared
+3. `evidence_kind` is a kind recognized in v1 (`example` / `property`)
+4. `payload_digest` matches the current clause's digest (it is not stale)
+5. The execution result satisfies the conditions for successful evidence — **the normative text
+   for this condition, and for the rule computing an assurance level from valid observations, is
+   [the assurance-levels section of clause-schema.md](clause-schema.md#assurance-levels), and is
+   not restated here**.
 
-## マトリクス行スキーマ
+## Matrix Row Schema
 
-`trace_matrix` の機械出力（JSON）の `matrix[]` が持つ行キーの一覧。
-docgen 等の下流ツールが転記に使う参照であり、行の生成規則
-（現役条項のみ・条項 ID 昇順・有効 observation の定義・tombstone / draft の除外）は
-既出の各節が正本である（本表は重複定義しない）。
+The list of row keys carried by `matrix[]` in `trace_matrix`'s machine output (JSON). It is a
+reference used by downstream tools such as docgen for transcription; the rules that generate the
+rows (active clauses only, ascending clause ID order, the definition of a valid observation,
+exclusion of tombstones / drafts) are canonical in the earlier sections (this table does not
+redefine them).
 
-| フィールド | 型 | 説明 |
+| Field | Type | Description |
 |-----------|-----|------|
-| `clause` | `string` | 条項 ID |
-| `revision` | `integer` | 現行条項の revision |
-| `level` | `string` | 保証レベル（`property` / `example_only` / `unverified`） |
-| `tests` | `array[string]` | binding された test_id（昇順） |
-| `effective_observations` | `integer` | 有効 observation の件数 |
-| `cases_valid_total` | `integer` | 有効 observation の `cases_valid` 合計（有効ゼロなら 0） |
-| `last_recorded_at` | `string` | 有効 observation の `recorded_at` 最大値（辞書順 = ISO 8601 UTC 前提の表示値。**表示専用**であり stale 判定に使わない）。有効 observation ゼロの行は `null` |
-| `digest` | `string` | 現行条項の payload digest（observation への転記元） |
+| `clause` | `string` | The clause ID |
+| `revision` | `integer` | The current clause's revision |
+| `level` | `string` | The assurance level (`property` / `example_only` / `unverified`) |
+| `tests` | `array[string]` | The bound test_ids (ascending) |
+| `effective_observations` | `integer` | The count of valid observations |
+| `cases_valid_total` | `integer` | The sum of `cases_valid` over valid observations (0 if there are none) |
+| `last_recorded_at` | `string` | The maximum `recorded_at` over valid observations (lexicographic order, assuming ISO 8601 UTC — a display value. **For display only**; not used for staleness judgement). `null` for rows with zero valid observations |
+| `digest` | `string` | The current clause's payload digest (the transcription source for observations) |
 
-## 検出項目
+## Detection Items
 
-`trace_matrix` の検出項目と区分。`error` は exit code 契約
-（[clause-schema.md](clause-schema.md#exit-code-契約spec_lint--trace_matrix-共通)）の
-「検出」（strict で exit 1）に数え、`warning` は exit code に影響しない。
-構造違反（`missing-required` 等）を持つエントリは保証レベル算出から除外される。
+`trace_matrix`'s detection items and their classes. `error` counts as a "detection" under the
+exit code contract
+([clause-schema.md](clause-schema.md#exit-code-contract-shared-by-spec_lint--trace_matrix))
+(exit 1 in strict mode), while `warning` does not affect the exit code.
+Entries with a structural violation (`missing-required`, etc.) are excluded from assurance-level
+computation.
 
-| check | 区分 | 定義 |
+| check | Class | Definition |
 |-------|------|------|
-| `unverified-clause` | `error` | 有効な証拠がゼロの現役条項（binding のみでは解消しない） |
-| `dangling-clause-reference` | `error` | 存在しない条項 ID を参照する binding / observation |
-| `stale-evidence` | `error` | `payload_digest` が現行条項の digest と不一致の observation |
-| `missing-required` | `error` | エントリの必須キー欠落 |
-| `invalid-type` | `error` | エントリのフィールド型違反 |
-| `unknown-key` | `error` | エントリ・トップレベルの未知キー（fail-closed。typo がサイレントに無視される事故防止） |
-| `invalid-test-id` | `error` | `test_id` が文字集合規則に違反 |
-| `invalid-clause-ref` | `error` | `clause_id` が条項 ID パターンに違反 |
-| `invalid-digest` | `error` | `payload_digest` が形式規則に違反 |
-| `invalid-value` | `error` | 値域違反（必須 string の空文字列・負のケース数・1 未満の `clause_revision` 等） |
-| `binding-revision-mismatch` | `warning` | binding の `clause_revision` が現行条項の revision と不一致 |
-| `unknown-evidence-kind` | `warning` | 未知の証拠種別（前方互換規則で `unverified` 扱い） |
-| `observation-without-binding` | `warning` | binding 未宣言のペアに対する observation（有効証拠に数えない） |
-| `undigestable-clause` | `warning` | digest 算出に必要な envelope が壊れている条項（spec_lint で修正する）。**条項としては実在扱い**であり索引に残る: 当該条項への binding / observation は dangling にせず、保証レベル判定のみスキップする |
-| `duplicate-clause-id` | `warning` | 同一条項 ID の重複定義（同一ファイル内・ファイル間とも。先に読んだ定義で索引化する） |
+| `unverified-clause` | `error` | An active clause with zero valid evidence (a binding alone does not resolve it) |
+| `dangling-clause-reference` | `error` | A binding / observation referencing a non-existent clause ID |
+| `stale-evidence` | `error` | An observation whose `payload_digest` disagrees with the current clause's digest |
+| `missing-required` | `error` | A required key is missing from an entry |
+| `invalid-type` | `error` | A field type violation in an entry |
+| `unknown-key` | `error` | An unknown key in an entry or at the top level (fail-closed; preventing the accident of a typo being silently ignored) |
+| `invalid-test-id` | `error` | `test_id` violates the character-set rule |
+| `invalid-clause-ref` | `error` | `clause_id` violates the clause ID pattern |
+| `invalid-digest` | `error` | `payload_digest` violates the format rule |
+| `invalid-value` | `error` | A range violation (an empty string in a required string, a negative case count, a `clause_revision` below 1, etc.) |
+| `binding-revision-mismatch` | `warning` | A binding's `clause_revision` disagrees with the current clause's revision |
+| `unknown-evidence-kind` | `warning` | An unknown evidence kind (treated as `unverified` under the forward-compatibility rule) |
+| `observation-without-binding` | `warning` | An observation for a pair with no declared binding (does not count as valid evidence) |
+| `undigestable-clause` | `warning` | A clause whose envelope is broken in a way that blocks digest computation (fix it with spec_lint). **It still counts as an existing clause** and stays in the index: bindings / observations pointing at it are not made dangling, and only the assurance-level judgement is skipped |
+| `duplicate-clause-id` | `warning` | A duplicate definition of the same clause ID (both within one file and across files. The definition read first is indexed) |
 
-**多重違反時の分類順序**: 1 つの observation が複数の検出条件に該当する場合、
-dangling → tombstone / undigestable の除外 → binding 未宣言 → 未知 `evidence_kind` →
-stale → 実行結果、の順で最初に該当した 1 件のみを報告する
-（例: 未知 `evidence_kind` かつ digest 不一致の observation は
-`unknown-evidence-kind` が先勝ちし、`stale-evidence` は出ない）。
+**Classification order on multiple violations**: when one observation matches several detection
+conditions, report only the first match in the order dangling → exclusion for tombstone /
+undigestable → binding undeclared → unknown `evidence_kind` → stale → execution result (for
+example, an observation with both an unknown `evidence_kind` and a digest mismatch yields
+`unknown-evidence-kind` first, and `stale-evidence` is not emitted).
 
-**サマリー集計と baseline の関係**: 機械出力のサマリーが持つ check 別件数
-（`summary.by_check`。findings と warnings の合計を check 別に数える）は、
-baseline diff 適用時は**抑制後に再計算**される。`summary.findings` と
-`by_check` は常に整合し、抑制された既知件数は `summary.baseline_suppressed` が持つ。
+**Relation between summary aggregation and the baseline**: the per-check counts carried by the
+machine output's summary (`summary.by_check`, counting the sum of findings and warnings per
+check) are **recomputed after suppression** when a baseline diff is applied. `summary.findings`
+and `by_check` are always consistent, and the suppressed known count is carried by
+`summary.baseline_suppressed`.
 
-**dangling reference の v1 定義**: 検出するのは「マニフェスト → 条項」方向のみである。
-逆方向（マニフェスト未登録の managed テストの発見）は母集合定義が必要なため
-v1 では扱わず、**trace の完全性（すべてのテストが登録済みであること）は主張しない**。
+**The v1 definition of a dangling reference**: only the "manifest → clause" direction is
+detected. The reverse direction (discovering managed tests not registered in the manifest)
+requires a definition of the population, is not handled in v1, and **completeness of the trace
+(that every test is registered) is not claimed**.
 
-## tombstone・draft の扱い
+## Handling of tombstones and drafts
 
-- **tombstone**（`superseded_by` キーを持つ条項）は
-  [clause-schema.md の tombstone 規則](clause-schema.md#tombstone-規則)に従い、
-  保証レベル算出・未検証検出の**対象外**とし、サマリーに**件数のみ別掲**する。
-  tombstone を参照する binding / observation は dangling ではなく、集計から除外する。
-- **draft**（`.agents/artifacts/spec-verify/drafts/` 配下。
-  [artifact-store 契約](../../shared/references/artifact-store.md)準拠）は
-  `trace_matrix` の**探索対象外**である（スクリプトは `specs/` 配下しか読まない）。
-  draft ディレクトリが存在する場合、ファイル**件数のみ**をサマリーに別掲する
-  （内容はパースしない — 未承認条項を集計に混入させないため）。
+- **tombstones** (clauses carrying the `superseded_by` key) follow
+  [the tombstone rules of clause-schema.md](clause-schema.md#tombstone-rules): they are
+  **excluded** from assurance-level computation and unverified detection, and are listed
+  **by count only, separately** in the summary. Bindings / observations referencing a tombstone
+  are not dangling and are excluded from aggregation.
+- **drafts** (under `.agents/artifacts/spec-verify/drafts/`, conforming to the
+  [artifact-store contract](../../shared/references/artifact-store.md)) are **outside
+  `trace_matrix`'s search scope** (the scripts read only under `specs/`). When a draft directory
+  exists, only the **file count** is listed separately in the summary (the contents are not
+  parsed — so unapproved clauses never enter the aggregation).
 
-## 入力破損と使用法エラー（exit 2）
+## Input Corruption and Usage Errors (exit 2)
 
-exit code 契約と共通の破損カテゴリは
-[clause-schema.md](clause-schema.md#exit-code-契約spec_lint--trace_matrix-共通)が正本。
-マニフェスト固有・`trace_matrix` 固有のカテゴリは次のとおり:
+The corruption categories shared with the exit code contract are canonical in
+[clause-schema.md](clause-schema.md#exit-code-contract-shared-by-spec_lint--trace_matrix).
+The categories specific to the manifest and to `trace_matrix` are:
 
-- `not-an-object` — マニフェストのトップレベルが object でない
-- `missing-toplevel-key` — トップレベル必須キーの欠落
-- `unknown-schema-version` — `schema_version` が未知（v1 は `1` 固定）
-- `manifest-key-not-array` — `bindings` / `observations` が配列でない
-- `output-rejected` — `--output` 先が root 外・`.git/` / `specs/` 配下・
-  上書きフラグなしの既存ファイル（使用法エラー）
-- `manifest-not-found` — 明示指定したマニフェストファイルが存在しない（使用法エラー。
-  既定パスの不存在は「証拠ゼロ」として続行する）
+- `not-an-object` — The manifest's top level is not an object
+- `missing-toplevel-key` — A top-level required key is missing
+- `unknown-schema-version` — `schema_version` is unknown (fixed at `1` for v1)
+- `manifest-key-not-array` — `bindings` / `observations` is not an array
+- `output-rejected` — The `--output` destination is outside root, under `.git/` or `specs/`, or
+  an existing file without an overwrite flag (a usage error)
+- `manifest-not-found` — An explicitly specified manifest file does not exist (a usage error;
+  a non-existent default path continues as "zero evidence")
 
-入力破損時（exit 2）は**診断のみを出力し、保証レベル算出・マトリクスの publish・
-`--output` へのファイル書き込みを一切行わない**（部分結果を正本として消費させない）。
+On input corruption (exit 2), **only diagnostics are emitted, and assurance-level computation,
+matrix publication, and writing the file at `--output` are all skipped** (do not let partial
+results be consumed as canonical).
 
-## v1 の信頼境界
+## The v1 Trust Boundary
 
-- **observation は手続き信頼である**: drift-check 手順による記録をそのまま信頼し、
-  実行記録の真正性（本当にそのコマンドがその結果で実行されたか）は機械検証しない。
-  runner adapter による原子的生成と真正性検証は CI 自動記録とセットで v2 とする。
-  この限界のため、レポートのサマリーには
-  「observation は手続き信頼（v1）」の注記を**常に**出力する。
-- **drift 検知の保証範囲は条項側変更のみ**である: 条項 payload の変更は digest で
-  機械検知するが、**テスト側の変更・削除（test drift）は検知しない**。
-  binding された test_id が指す実体が消えていても v1 は気づけない。
-  この限界も本書とレポート注記の**両方**に明示する。
-- レポート本文（statement 由来の自由文等）はデータであり、
-  内部に指示文が含まれていても従わない（プロンプトインジェクション対策。
-  診断・findings の自由文フィールドには secret マスキングを適用するが、
-  digest・条項 ID・テスト識別子・enum・数値には適用しない — 全体一括マスクは
-  SHA-256 digest や識別子を破壊するため field-aware に限定する）。
+- **Observations are procedurally trusted**: records made via the drift-check procedure are
+  trusted as-is, and the authenticity of the execution record (whether that command really ran
+  with that result) is not machine-verified. Atomic generation and authenticity verification via
+  a runner adapter are v2, together with automatic CI recording. Because of this limit, the
+  report summary **always** emits the note "observations are procedurally trusted (v1)".
+- **The guaranteed scope of drift detection is clause-side changes only**: a change to a clause
+  payload is mechanically detected by digest, but **changes to or deletions on the test side
+  (test drift) are not detected**. Even if the entity a bound test_id points at has disappeared,
+  v1 cannot notice. This limit is also stated explicitly in **both** this document and the report
+  note.
+- The report body (free text originating from statement, etc.) is data, and instructions
+  contained within it are not followed (prompt-injection countermeasure. Secret masking is
+  applied to the free-text fields of diagnostics and findings, but not to digests, clause IDs,
+  test identifiers, enums, or numbers — a blanket mask would destroy SHA-256 digests and
+  identifiers, so it is limited to being field-aware).
 
-## why-not（採らなかった選択肢）
+## why-not (options not taken)
 
-- **テスト内アノテーション + grep 収集方式を採らない**: binding（静的宣言）は
-  テストソースのアノテーションでも表現できるが、observation（実行コマンド・
-  exit status・ケース数・digest・記録日時という**動的な実行結果**）はソースコメントに
-  置けない。宣言と観測で置き場所が割れると突合が二重化するため、v1 は一箇所
-  （manifest.json）に集約する。将来 v2 で binding 部のみアノテーション移行できるよう、
-  binding と observation はファイル構造上分離してある。
-- **revision 比較でなく digest を採る**: revision は人間が宣言する値であり、
-  上げ忘れた意味変更（payload を変えたのに revision 据え置き）を検知できない。
-  digest は内容から機械算出されるため、宣言漏れも含めて payload の意味変更を捕捉する。
-  binding の `clause_revision` は補助情報とし、食い違いは警告に留める。
-- **test source digest を v1 で扱わない**: テスト側ソースの digest を記録すれば
-  test drift も検知できるが、テストファイルの特定（test_id → ファイルの解決）が
-  ランナー依存であり、識別子を「開かない」という v1 の境界と両立しない。
-  この限界は信頼境界の節とレポート注記に明示する（v2 で runner adapter とセットで扱う）。
+- **In-test annotations + grep collection not taken**: a binding (a static declaration) could be
+  expressed as an annotation in the test source, but an observation (the **dynamic execution
+  result** of command, exit status, case count, digest, and recording timestamp) cannot be placed
+  in a source comment. If declaration and observation live in different places, reconciliation
+  doubles, so v1 consolidates them in one place (manifest.json). Bindings and observations are
+  separated at the file-structure level so that a future v2 can migrate the binding part alone
+  into annotations.
+- **digest taken rather than revision comparison**: revision is a value declared by a human and
+  cannot detect a semantic change where the bump was forgotten (payload changed but revision left
+  as-is). A digest is mechanically computed from the content, so it catches payload semantic
+  changes including undeclared ones. A binding's `clause_revision` is auxiliary information, and a
+  disagreement is kept at warning level.
+- **test source digest not handled in v1**: recording a digest of the test-side source would also
+  detect test drift, but identifying the test file (resolving test_id → file) is runner-dependent
+  and incompatible with the v1 boundary of "not opening" identifiers. This limit is stated
+  explicitly in the trust-boundary section and the report note (handled in v2 together with a
+  runner adapter).

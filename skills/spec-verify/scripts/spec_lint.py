@@ -180,7 +180,7 @@ def load_clause_file(path):
 
 def validate_toplevel(data, name):
     """Return (clauses, toplevel findings). Raise SpecLintError for file
-    structure corruption per clause-schema.md ファイル構造節 (exit 2 class)."""
+    structure corruption per clause-schema.md "File Structure" (exit 2 class)."""
     if not isinstance(data, dict):
         raise SpecLintError("not-an-object", "トップレベルが object でない")
     missing = [k for k, (_t, req) in TOPLEVEL_FIELDS.items()

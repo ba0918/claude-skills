@@ -3,8 +3,8 @@
 
 The vocabulary source of truth is references/evidence-manifest.md; the
 constants below mirror its tables and are kept in sync by test_trace_matrix.
-Assurance-level derivation rules live in references/clause-schema.md (保証
-レベル節) — this script implements them, it does not redefine them.
+Assurance-level derivation rules live in references/clause-schema.md ("Assurance
+Levels") — this script implements them, it does not redefine them.
 
 Reused from spec_lint (not reimplemented): SpecLintError, the fail-closed
 JSON loader, validate_toplevel, check_containment, make_finding /

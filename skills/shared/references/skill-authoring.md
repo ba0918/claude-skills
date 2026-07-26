@@ -1,202 +1,319 @@
-# Skill Authoring 共通仕様
+# Skill Authoring — Common Specification
 
-本リポジトリでスキルを新規作成・大幅改訂するときのフォーマット仕様と執筆原則。
-skill-improve などのメタスキルの判断基準としても参照する。
-ここに書かれた機械検証可能なルールは `scripts/validate_repo.py` が CI で強制する。
+The format specification and authoring principles for creating or substantially revising a
+skill in this repository. Meta-skills such as skill-improve also reference it as their
+judgement criteria. The machine-verifiable rules written here are enforced in CI by
+`scripts/validate_repo.py`.
 
-## ディレクトリ構成
+## Directory Layout
 
 ```
 skills/<skill-name>/
-  SKILL.md          # 必須: メインロジック
-  references/       # 任意: テンプレート・チェックリスト等（SKILL.md から相対リンク）
-  scripts/          # 任意: 実行ヘルパー（skill-improve の collect.py 等）
-commands/<command>.md  # 任意: スキルを呼び出す薄いラッパー（skills-first 方針により新規はデフォルト不要）
+  SKILL.md          # required: the main logic
+  references/       # optional: templates, checklists, etc. (relative links from SKILL.md)
+  scripts/          # optional: execution helpers (skill-improve's collect.py, etc.)
+commands/<command>.md  # optional: a thin wrapper that invokes the skill (not needed by default for new skills under the skills-first policy)
 ```
 
-- スキル名はケバブケース。`.skill` 単体ファイル形式は使わない
-- `references/` は本当に使うファイルだけ置く。他スキルの構成を真似た空ディレクトリを作らない
-- 複数スキルで共有する契約・定義は `skills/shared/references/` に置き、各スキルからリンクする
+- Skill names are kebab-case. Do not use the single-file `.skill` format
+- Put only files you actually use in `references/`. Do not create empty directories imitating
+  another skill's layout
+- Contracts and definitions shared by several skills go in `skills/shared/references/`, linked
+  from each skill
 
-## Commands の位置づけ（skills-first）
+## The Place of Commands (skills-first)
 
-ロジックは常に skills に集約し、commands は Claude Code ローカル専用のオプショナルな糖衣とする。
-skills はクロスツールの共通分母（Codex CLI / APM 等のエコシステムは commands 相当を非サポート）であり、
-Claude Code 上でもスキルは `/skill-name` で直接起動できるため、command がなくても発見性は description で確保できる。
+Always concentrate the logic in skills, and treat commands as optional sugar local to Claude
+Code. Skills are the cross-tool common denominator (ecosystems such as Codex CLI / APM do not
+support the equivalent of commands), and even on Claude Code a skill can be invoked directly
+as `/skill-name`, so discoverability is secured by the description even without a command.
 
-- **新規スキルは command なしをデフォルトにする**。SKILL.md の description にトリガー語と引数の使い方を書くことで起動導線を担保する
-- command を追加してよいのは **multi-workflow スキルの名前付きエントリポイント**が必要な場合のみ（例: `issue` スキルに対する issue-create / issue-list / issue-plan。1スキル複数ワークフローの各入口を `/` 補完に個別の説明付きで並べたい場合）
-- command を作る場合もロジックは書かない。Skill ツール呼び出し + `$ARGUMENTS` の受け渡しのみの薄いラッパーに徹する
-- **既存 commands は互換性のため維持する**。1行ラッパーで維持コストはほぼゼロであり、削除は既存ユーザーの `/claude-skills:*` 呼び出しを壊す。積極的に増やさず自然減に任せる
-- **command 名がスキル名と対応しない場合、description で起動先スキルを名指しする**（`validate_repo.py` チェック16 が強制）。`/debug` → `systematic-debugging` のように名前がずれると、利用者からは command とスキルが別々の名前空間に見え、`/` 補完の説明文だけでは入口が判別できない。改名も削除もしない方針なので説明文側で解決する。`<スキル名>-<workflow>` 形式（`issue-list` 等）は対応が自明なので免除される
+- **Default new skills to having no command**. Guarantee the invocation path by writing trigger
+  words and argument usage into the SKILL.md description
+- A command may be added only when a **named entry point for a multi-workflow skill** is needed
+  (e.g. issue-create / issue-list / issue-plan for the `issue` skill — when you want each entry
+  of a one-skill-many-workflows setup listed separately with its own explanation in `/`
+  completion)
+- Even when you do create a command, write no logic in it. Keep it a thin wrapper that only
+  invokes the Skill tool and passes `$ARGUMENTS` through
+- **Keep existing commands for compatibility**. A one-line wrapper costs almost nothing to
+  maintain, and removing it breaks existing users' `/claude-skills:*` invocations. Do not
+  actively add more; let them decline naturally
+- **When a command name does not correspond to its skill name, name the target skill in the
+  description** (enforced by check 16 of `validate_repo.py`). When the names diverge, as with
+  `/debug` → `systematic-debugging`, commands and skills look like separate namespaces to the
+  user, and the `/` completion blurb alone cannot identify the entry point. Since the policy is
+  neither to rename nor to delete, solve it on the explanatory-text side. The
+  `<skill-name>-<workflow>` form (`issue-list`, etc.) is exempt because the correspondence is
+  self-evident
 
-## Frontmatter 契約（validate_repo.py が強制）
+## Frontmatter Contract (enforced by validate_repo.py)
 
 ```yaml
 ---
-name: skill-name        # ディレクトリ名と一致
-description: <何をするか>。<いつ使うか（トリガー語）>。
+name: skill-name        # matches the directory name
+description: <what it does>. <when to use it (trigger words)>.
 ---
 ```
 
-- **name / description は必須**（チェック3）
-- **description は 1024 字以内**（チェック10）
-- **description はトリガー語を含む**（チェック10）: 日本語スキルは「『◯◯』『◯◯』で起動」、英語スキルは "Use when …"。スキル発火はモデルが description を読んで判断するため、トリガー語の欠落は発火漏れに直結する
-- description に**ワークフローの要約を書かない**。手順を description に書くと、モデルが本文を読まずに要約だけで動く事故が起きる
-- 免除が必要な場合は frontmatter ではなく `validate_repo.py` の `DESCRIPTION_TRIGGER_EXEMPT` に理由付きで登録する（スキルファイルの編集だけで検証を迂回させない）
+- **name / description are required** (check 3)
+- **description is at most 1024 characters** (check 10)
+- **description contains trigger words** (check 10): Japanese skills use
+  「『◯◯』『◯◯』で起動」, English skills use "Use when …". Skill firing is decided by the model
+  reading the description, so missing trigger words translate directly into missed firings
+- **Do not write a workflow summary in the description**. Putting the procedure in the
+  description causes the accident where the model acts on the summary alone without reading the
+  body
+- When an exemption is needed, register it with a reason in `DESCRIPTION_TRIGGER_EXEMPT` of
+  `validate_repo.py` rather than in the frontmatter (do not let editing a skill file alone
+  bypass verification)
 
-## 執筆原則
+## Authoring Principles
 
-1. **Process over prose** — スキルは参照ドキュメントではなくワークフロー。フェーズ・ステップ・遷移条件で書く。知識の羅列になりそうなら `references/` に逃がす
-2. **Specific over general** — 「テストを確認する」ではなく「`npm test` を実行し 0 failures を確認する」
-3. **Evidence over assumption** — 完了条件は必ずエビデンス要求とセットにする（[verification-gate.md](verification-gate.md) 準拠）
-4. **Progressive disclosure** — SKILL.md はエントリーポイントに徹する。詳細資料はワークフローが到達した時点で読む `references/` に置く。参照は SKILL.md から1階層まで（参照の参照をチェーンしない）
-5. **共有契約を再発明しない** — TDD / 検証ゲート / Codex 連携 / polling / 言語検出 / オーケストレーション設計は既存の shared references を参照する。重複記述はドリフトの温床
+1. **Process over prose** — a skill is a workflow, not a reference document. Write it as
+   phases, steps, and transition conditions. If it is turning into a pile of knowledge, move it
+   out to `references/`
+2. **Specific over general** — not "check the tests" but "run `npm test` and confirm 0 failures"
+3. **Evidence over assumption** — always pair a completion condition with an evidence
+   requirement (conforms to [verification-gate.md](verification-gate.md))
+4. **Progressive disclosure** — SKILL.md is strictly an entry point. Put detailed material in
+   `references/`, read at the point the workflow reaches it. References go one level deep from
+   SKILL.md (do not chain references of references)
+5. **Do not reinvent shared contracts** — TDD / verification gates / Codex integration /
+   polling / language detection / orchestration design reference the existing shared
+   references. Duplicated descriptions are a breeding ground for drift
 
-## 合理化防止テーブルと Red Flags
+## Rationalization-prevention Tables and Red Flags
 
-エージェントがステップをサボる時の「言い訳」と反論を表で明記する。
-省略されやすいステップ（検証・テスト・確認）を持つスキルには入れることを推奨する。
+State in a table the "excuses" an agent makes when skipping a step, and the rebuttals.
+Recommended for skills that have easily-skipped steps (verification, tests, confirmation).
 
 ```markdown
-## 合理化防止
+## Preventing rationalization
 
-| 言い訳 | 現実 |
+| Excuse | Reality |
 |--------|------|
-| 「今回だけスキップ」 | 例外なし。それは合理化 |
-| 「もう正しいとわかっている」 | 自信はエビデンスではない |
+| "Just this once" | No exceptions. That is rationalization |
+| "I already know it's right" | Confidence is not evidence |
 ```
 
-- 書き方の実例: [verification-gate.md](verification-gate.md) の合理化防止、[tdd-contract.md](tdd-contract.md) の合理化テーブル
-- **Red Flags** は「スキルが守られていない兆候」の観測可能なリスト。レビュー時・自己監視に使う。判定可能な形で書く（「テスト実行せずに GREEN を宣言している」）
+- Worked examples: the rationalization prevention in
+  [verification-gate.md](verification-gate.md), the rationalization table in
+  [tdd-contract.md](tdd-contract.md)
+- **Red Flags** is an observable list of "signs the skill is not being followed". Use it during
+  review and for self-monitoring. Write it in a decidable form ("declaring GREEN without
+  running the tests")
 
-## プロンプト圧縮の効果条件（empirical-prompt-tuning 実測に基づく）
+## When Prompt Compression Works (based on empirical-prompt-tuning measurements)
 
-Fable 5 世代モデルでも「短くすれば良くなる」わけではない。`empirical-prompt-tuning` で plan / cycle スキルを 6 iteration 計測した結果、以下が観測された。
+Even for Fable 5 generation models, "shorter is better" does not hold. Measuring the plan /
+cycle skills over 6 iterations with `empirical-prompt-tuning` produced the following
+observations.
 
-### 効くパターン
+### Patterns that work
 
-- **inline 二重説明を契約参照に集約**: SKILL.md 内に inline された共通契約（checkpoint 復元手順 / delegation relay 等）を、契約側正本への短い参照に置き換える。次 3 条件が揃うと顕著に効く（実測で friction -37%）:
-  1. inline 節が長い（数十行以上）
-  2. inline 節が全シナリオに関係するわけではない（例: 新規 plan 作成では checkpoint 節は不要）
-  3. 契約側で完全にカバー済み
-- **例示・enum の削減**: 有能モデルには「URL slug の作り方」等の一般定義は不要。1 例のみ残すか完全に削る
-- **禁止語（`絶対に` / `してはならない`）を減らす**: `over_specified` と `rationalization_hook` の主原因。柔らかい表現でも compliance は落ちない（実測: 4 iter で両カテゴリ完全消滅）
+- **Consolidating inline duplicate explanations into contract references**: replace a shared
+  contract inlined into SKILL.md (checkpoint restore procedure, delegation relay, etc.) with a
+  short reference to the canonical contract. It is markedly effective when these 3 conditions
+  hold (measured friction -37%):
+  1. The inline section is long (tens of lines or more)
+  2. The inline section is not relevant to every scenario (e.g. the checkpoint section is
+     unnecessary when creating a new plan)
+  3. It is fully covered on the contract side
+- **Cutting examples and enums**: a capable model does not need general definitions such as "how
+  to build a URL slug". Keep one example or cut it entirely
+- **Reducing prohibition words (`絶対に` / `してはならない`)**: they are the main cause of
+  `over_specified` and `rationalization_hook`. Compliance does not drop with softer phrasing
+  (measured: both categories vanished completely within 4 iterations)
 
-### 効かない / 削るべきでないパターン
+### Patterns that do not work / must not be cut
 
-- **契約側の rationale / 却下記録 / v2 ロードマップ削除**: 保守負債軽減にはなるが実行時信号は弱い（friction ほぼ変化なし）
-- **パス制約や auto mode 判別等の「規約」の緩和**: compliance が破綻する
-- **常時関与する情報の集約**: inline 節が全シナリオで必要な場合、集約しても執行者が読む情報量は同じで効果が薄い（cycle の delegation relay 圧縮で実証）
+- **Deleting the contract side's rationale / rejection records / v2 roadmap**: it reduces
+  maintenance debt but the runtime signal is weak (friction barely changed)
+- **Loosening "conventions" such as path constraints or auto-mode discrimination**: compliance
+  collapses
+- **Consolidating always-relevant information**: when the inline section is needed in every
+  scenario, consolidating it leaves the executor reading the same amount of information, so the
+  effect is thin (demonstrated by compressing cycle's delegation relay)
 
-### 構造由来の摩擦は prose 削減では解けない
+### Structural friction cannot be solved by cutting prose
 
-`ambiguous_term` / `missing_premise` / `self_containment_gap` は削減方向ではなく **明示化・例示追加** で解く。テンプレ書式の曖昧さ、プロジェクト情報の欠落、template chase 構造そのものが原因のため、Fable 論調とは逆方向のアプローチが必要になる。
+`ambiguous_term` / `missing_premise` / `self_containment_gap` are solved by **making things
+explicit and adding examples**, not by reduction. Because the causes are ambiguity in template
+formats, missing project information, and the template-chase structure itself, the approach
+required runs opposite to the Fable line of argument.
 
-### 横展開バッチ1（commit / plan-reviewer、2026-07-22）での追加知見
+### Additional findings from rollout batch 1 (commit / plan-reviewer, 2026-07-22)
 
-- **既にリーンなスキル（~150-200 行級）はサイズ削減より摩擦削減が主効果**: commit は行数 -9% に対し摩擦 -83%（6→1、precision 100% 維持）。明示化の追記でバイト数はむしろ増えうるが、それで良い（「高信号トークンの選別」が正）
-- **圧縮テーマと明示化テーマは iteration を分けて回す**: 圧縮で消える摩擦（二重説明由来）と、明示化でしか消えない摩擦（既定値欠落・未定義分岐）が分離して観測できる
-- **`is_diverged` はカテゴリ単位の粗い判定**: 詳細レベルで毎回別項目・総数漸減でも ambiguous_term が 3 回連続すると diverged になる。残存が (a) 本質的判断領域 (b) 契約参照設計そのもの (c) 評価ハーネス起因なら、prose 追加は over-specification に転ぶため打ち切りが正しい
+- **For skills that are already lean (~150-200 lines), the main effect is friction reduction
+  rather than size reduction**: commit came to -9% in lines against -83% in friction (6→1,
+  precision maintained at 100%). Adding explicitness can even increase the byte count, and that
+  is fine ("selecting high-signal tokens" is the correct framing)
+- **Run compression themes and explicitness themes in separate iterations**: it lets you observe
+  separately the friction that disappears through compression (originating in duplicate
+  explanation) and the friction that only disappears through explicitness (missing defaults,
+  undefined branches)
+- **`is_diverged` is a coarse, category-level judgement**: even when the details differ every
+  time and the total is gradually decreasing, 3 consecutive occurrences of ambiguous_term make
+  it diverged. If the residue is (a) an inherently judgement-bound area, (b) the
+  contract-reference design itself, or (c) caused by the evaluation harness, adding prose tips
+  over into over-specification, so stopping is the right call
 
-### 「保守的」の 3 種を分離する（2026-07-25 実測 / null result）
+### Separating the 3 kinds of "conservative" (measured 2026-07-25 / null result)
 
-Opus 5 プロンプトガイドは「レビュープロンプトの *be conservative* は文字通り従われ、報告量が減る」と述べる。
-本リポジトリへ当てはめて棚卸し・実測した結果、**この主張は本リポジトリの review 系スキルにはほぼ当てはまらなかった**。
+The Opus 5 prompting guide states that "*be conservative* in a review prompt is followed
+literally and reduces the volume of reporting". Taking stock of this repository and measuring
+it, **the claim turned out to barely apply to this repository's review-family skills**.
 
-**棚卸し**: 本文に「保守的」と書かれた箇所のうち、実際に報告を抑制するのは 1 箇所だけだった。
-分類は次の 3 種で、guide が対象とするのは最初の 1 種のみ。残り 2 種を混同して緩めると安全性が落ちる。
+**Stock-take**: of the places whose text says "conservative", only 1 actually suppresses
+reporting. The classification has the following 3 kinds, and the guide targets only the first.
+Loosening the other 2 by conflating them lowers safety.
 
-| 種類 | 実例 | 扱い |
+| Kind | Example | Handling |
 |------|------|------|
-| 報告を抑制する保守性 | 文脈が無ければ severity を下げる | guide 該当。計測対象 |
-| 逆方向（報告を維持する）保守性 | 非到達を確認できなければ severity を**下げない** / 到達可能性を「到達し得る」と仮定する | 既に report-all 方向。**変更しない** |
-| 自動修正を絞る fail-safe | NEEDS_JUDGMENT へ倒す / UNCERTAIN を厚めに出す / 自動補完しない | 誤修正の防波堤。**変更しない** |
+| Conservatism that suppresses reporting | Lower the severity when there is no context | Covered by the guide. In scope for measurement |
+| Conservatism in the opposite direction (maintaining reporting) | Do **not** lower the severity unless unreachability is confirmed / assume reachability as "could be reached" | Already in the report-all direction. **Do not change** |
+| Fail-safes that narrow automatic fixing | Fall back to NEEDS_JUDGMENT / emit UNCERTAIN generously / do not auto-complete | A breakwater against wrong fixes. **Do not change** |
 
-**実測**: 唯一の該当箇所（`review-testing` の「影響範囲を判断する仕様・利用文脈が無ければ severity は保守的に WARN」）を
-before/after 2 変種 × 2 シナリオ、判別シナリオは k=3 で計測した（3 役分離・本番同等モデル・チェックリスト sha256 ロック）。
+**Measurement**: the single applicable place (`review-testing`'s "if there is no spec or usage
+context to judge the blast radius, keep the severity conservatively at WARN") was measured with
+2 before/after variants × 2 scenarios, with k=3 for the discriminating scenario (3-role
+separation, production-equivalent model, checklist locked by sha256).
 
-- **severity 降格は両変種とも 0/3 で発生しなかった**。実行者は docstring・例外送出・破壊的操作といった
-  **コード自身が持つ契約証拠**から BLOCK を維持する。うち 1 run は「docstring が影響範囲を明示しているため
-  保守的 WARN への降格は不要と判断した」と明示的に推論していた
-- 低影響領域（純関数）シナリオでは両変種とも BLOCK 膨張なし。降格指示を外しても重大度インフレは起きない
-- 書き換え版は要件充足で非劣性だったが**改善は測定されなかった**。行数・トークンは増えるため、採用根拠にならない
+- **Severity demotion occurred in 0/3 for both variants**. Executors maintain BLOCK based on
+  **the contract evidence the code itself carries** — docstrings, raised exceptions, destructive
+  operations. In 1 of those runs the executor explicitly reasoned that "the docstring states the
+  blast radius, so demotion to a conservative WARN is unnecessary"
+- In the low-impact-area scenario (pure functions) neither variant inflated BLOCK. Removing the
+  demotion instruction does not cause severity inflation
+- The rewritten version was non-inferior on requirement satisfaction but **no improvement was
+  measured**. Since lines and tokens increase, it is not grounds for adoption
 
-**帰結**: 指示文に「保守的」という語があることだけを根拠に書き換えない。まず
-(a) それが報告抑制か fail-safe かを分類し、(b) 抑制側でも**降格が実際に起きるか**を計測してから判断する。
-レビュー対象のコードが自身の契約証拠を持つ限り、文脈欠如を理由とした降格は実際には起きにくい。
+**Consequence**: do not rewrite an instruction merely because the word "conservative" appears in
+it. First (a) classify whether it is report suppression or a fail-safe, and (b) even on the
+suppression side, measure **whether demotion actually happens** before deciding. As long as the
+code under review carries its own contract evidence, demotion justified by missing context is in
+practice unlikely to occur.
 
-### verification-gate の削除是非（2026-07-25 実測 / null result）
+### Whether to delete verification-gate (measured 2026-07-25 / null result)
 
-Opus 5 プロンプトガイドの主張 1「明示的な検証指示は over-verification を誘発し、削除してもクオリティが落ちず
-トークンだけ減る」を、`verification-gate.md` を対象に測った。**トークン削減は確立できなかった。**
+Claim 1 of the Opus 5 prompting guide — "explicit verification instructions induce
+over-verification; deleting them costs no quality and only reduces tokens" — was measured
+against `verification-gate.md`. **A token reduction could not be established.**
 
-計測: `cycle` の fixture cy-001 を対象に、gate 本文 88 行 → 30 行（Iron Law / Gate Function / 禁止表現 /
-合理化防止表 / 検証パターン表を削除、スキル別統合指針のみ残置）のアブレーションを作り、各 n=3 で実走。
+Measurement: targeting cycle's fixture cy-001, an ablation was built taking the gate body from
+88 lines to 30 (deleting the Iron Law / Gate Function / prohibited-expression list /
+rationalization-prevention table / verification-pattern table, leaving only the per-skill
+integration guidance), and each was run live at n=3.
 
-| | tokens 中央値 | tool calls 中央値 | 委譲報告の独立再検証 |
+| | median tokens | median tool calls | independent re-verification of delegated reports |
 |---|---|---|---|
-| gate あり | 110,557 | 34 | 3/3 |
-| gate なし | 99,576 | 32 | 3/3 |
+| With gate | 110,557 | 34 | 3/3 |
+| Without gate | 99,576 | 32 | 3/3 |
 
-- 中央値差 -9.9%（11.0k）に対し noise_band（run 間差の半分）は約 9.7k。**閾値をぎりぎり超える程度で、
-  1 run 分の揺れで逆転する**。n=3 では削減があるとは言えない
-- 品質は両変種とも劣化なし。**6/6 の run で「委譲先の報告を信用せず自分で再検証する」挙動が観測された** —
-  gate を削った 3 run を含む
-- 理由は明白で、`cycle/SKILL.md` 自身が Phase 2 でテスト実行エビデンスを要求している。
-  **gate の執行力は既に参照側スキルへインライン化されており**、共有契約側のレトリックを消しても実行挙動が動かない
+- Against a median difference of -9.9% (11.0k), the noise_band (half the between-run spread) is
+  about 9.7k. **It barely clears the threshold and would flip with one run's worth of
+  variance**. At n=3 one cannot say a reduction exists
+- Quality did not degrade in either variant. **In 6/6 runs the behavior of "not trusting the
+  delegate's report and re-verifying it oneself" was observed** — including the 3 runs with the
+  gate cut
+- The reason is plain: `cycle/SKILL.md` itself demands test-run evidence in Phase 2. **The
+  gate's enforcement power is already inlined into the referencing skill**, so erasing the
+  rhetoric on the shared-contract side does not move runtime behavior
 
-**帰結**: gate を削除する根拠は無い。ただし「参照側が既に同じ要求を持つ」なら共有契約側の分量は実行挙動に
-効かないので、削るなら**参照側の要求を確認してから**にする。
+**Consequence**: there are no grounds for deleting the gate. That said, if "the referencing side
+already carries the same requirement", the volume on the shared-contract side does not affect
+runtime behavior — so if you do cut, **check the referencing side's requirements first**.
 
-**この計測の限界（次に測る人へ）**: アブレーションはクリーンではない。gate の節を消した一方
-`cycle/SKILL.md` は「Gate Function を適用せよ」と参照し続けるため、gate なし条件は「指示が無い」ではなく
-「参照先が空」だった（実行者 1 名がダングリング参照として検出）。参照元の文言も同時に差し替えないと
-純粋な ablation にならない。
+**Limits of this measurement (for whoever measures next)**: the ablation is not clean. While the
+gate's sections were erased, `cycle/SKILL.md` keeps referencing "apply the Gate Function", so the
+no-gate condition was not "no instruction" but "an empty reference target" (1 executor detected
+it as a dangling reference). Without simultaneously replacing the wording on the referencing
+side, it is not a pure ablation.
 
-### 収束履歴の資産化
+### Turning Convergence History into an Asset
 
-`empirical-prompt-tuning` の fixture として plan スキルの 4 iteration 収束履歴が `.claude/tmp/empirical/plan-*/fixture.json` に記録される。横展開バッチ1 の計測は `.claude/tmp/empirical/20260722-lean-rollout/`（summary.md + iterations.jsonl）。カテゴリ推移・削減量・学びの全文はそこを参照。再チューニング時のベースライン比較・回帰検出資産として使う。
+As a fixture for `empirical-prompt-tuning`, the plan skill's 4-iteration convergence history is
+recorded in `.claude/tmp/empirical/plan-*/fixture.json`. The measurements for rollout batch 1
+are in `.claude/tmp/empirical/20260722-lean-rollout/` (summary.md + iterations.jsonl). Refer
+there for the full text of category transitions, reduction amounts, and lessons. Use them as
+baseline comparison and regression-detection assets when re-tuning.
 
-### リリース単位と version bump
+### Release Units and version bump
 
-version は「配布の単位」であって「変更の単位」ではない。PR 単位で bump すると、並走する PR が
-揃って同じ番号を名乗り、1 本マージするたび残りが 3 manifest + CHANGELOG でコンフリクトする
-（実例: 同時に開いた 6 PR が全て 1.66.0）。
+A version is a "unit of distribution", not a "unit of change". Bumping per PR makes concurrent
+PRs all claim the same number, so every merge leaves the rest conflicting across 3 manifests +
+CHANGELOG (a real case: 6 simultaneously open PRs were all 1.66.0).
 
-- **PR では version を bump しない**。変更は `CHANGELOG.md` の `## Unreleased` へ追記する
-- bump はリリース時に一度だけ行う。`## Unreleased` を `## <version>` へ改名し、
+- **Do not bump the version in a PR**. Append the change to `## Unreleased` in `CHANGELOG.md`
+- Bump exactly once at release time. Rename `## Unreleased` to `## <version>` and update
   `.claude-plugin/plugin.json` / `.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json`
-  を揃えて更新する
-- `## Unreleased` は単一・正規表記・最新版より上に保つ（`validate_repo.py` のチェック12b が検証）。
-  リリース時に番号へ昇格させる対象を一意に定めるため
+  together
+- Keep `## Unreleased` singular, in canonical notation, and above the latest version (verified by
+  check 12b of `validate_repo.py`). This uniquely determines what gets promoted to a number at
+  release time
 
-複数スキルへ段階的に横展開する最適化では、これに加えて次を守る。
+For an optimization rolled out incrementally across several skills, additionally observe the
+following.
 
-- 実装・検証・コミットはバッチ単位で分離するが、`## Unreleased` への起票は rollout 完了時に
-  全体の体感可能な変化・総削減量・検証範囲を 1 エントリへ集約する
-- rollout の親 issue で対象一覧と完了条件を管理する。バッチ固有の測定履歴は issue と
-  ローカル empirical artifact を正本にし、バッチごとの暫定エントリを作らない
+- Implementation, verification, and commits are separated per batch, but the entry into
+  `## Unreleased` is consolidated into a single entry at rollout completion, covering the
+  overall perceptible change, the total reduction, and the verification scope
+- Manage the target list and completion conditions in the rollout's parent issue. Keep the
+  batch-specific measurement history canonical in the issue and the local empirical artifacts;
+  do not create provisional per-batch entries
 
-## クロスツール互換性の注意
+## Cross-tool Compatibility Notes
 
-- **SKILL.md 本文の言語は 1 スキル内で統一する（本文は英語を推奨）**: 英日混在は可読性を損なう（2026-07-22 ユーザー裁定）。トークン効率も英語が有利 — o200k 実測で同内容の日本語版は約 +30%（commit: 英 1,607 vs 日 2,091 tokens）、英日混在だった plan-reviewer は英語統一だけで 3,758→3,025 tokens（-19.5%）。frontmatter `description` はユーザーの発話語彙（日本語トリガー）を含める必要があるため日本語のままでよい。日本語契約ファイルの見出し名や照合語彙（例: "ユーザー確認"）の引用は混在に数えない
-- **代理モデルの計測結果を本番モデルの保証として扱わない**: 高コストな本番モデルの代わりに同世代の低コストモデルで探索・非劣性評価を行う場合、fixture の `notes` と計測サマリへ `proxy verified / production untested` 相当の証拠範囲を明記する（skill-regression ledger の `pass` は挙動面の freshness 記録であり、モデル範囲は表さない）。本番モデルによる sentinel は自動実行せず、対象シナリオ・不確実性・推定消費・停止上限を提示してユーザー承認を得た場合だけ行う。未承認でも proxy 合格版は段階的 canary として展開できるが、本番精度保証を表明してはならない
-- スキル本文は `skills/` を単一の正本とし、Claude Code / Codex CLI / Cursor / Gemini CLI などで読める自然言語に保つ
-- `SKILL.md` と `references/` では、特定プラットフォームのツール API 名やモデル名に依存しない表現を使う
-- プラットフォーム差が必要な場合は、本文を分岐コピーせず、共通語彙と fallback で 1 本にまとめる
-- **共有契約の可搬性は 3 段階で判定する**: `skills/shared/references/` に置く契約は単一の正本として複数ランタイムから読まれる。新規・改訂時に次のどれに当たるかを確認する
-  - **tool-agnostic**: 内容にツール固有 API 名がなく、そのまま複数ランタイムで通用する
-  - **platform-aware**: 外部レビュー、サブエージェント、対話確認などランタイム差があるが、共通語彙と fallback で表現できる
-  - **platform-specific**: どうしても固有 API 名が必要な場合は、その理由と代替不能性を本文に明記し、影響範囲を最小化する
-- **対話によるユーザー確認に依存しない**: 対話確認の手段は、ランタイムによっては特定モードでしか使えない（実測で確認済み）。非対話実行で応答が得られない場合に安全側デフォルト（no-op / report-only / UNCERTAIN / 中断）へ降格する経路を、確認を要求するスキル本文に必ず書く
+- **Unify the body language within a single skill (English is recommended for the body)**: mixing
+  English and Japanese hurts readability (user ruling, 2026-07-22). English is also better for
+  token efficiency — measured with o200k, the Japanese version of the same content is about +30%
+  (commit: 1,607 EN vs 2,091 JA tokens), and plan-reviewer, which had been mixed, went from
+  3,758 to 3,025 tokens (-19.5%) from unifying to English alone. The frontmatter `description`
+  may stay Japanese because it needs to contain the user's spoken vocabulary (Japanese
+  triggers). Quoting the heading names or matching vocabulary of a Japanese contract file (e.g.
+  "ユーザー確認") does not count as mixing
+- **Do not treat a proxy model's measurements as a guarantee for the production model**: when
+  exploration or non-inferiority evaluation is done on a same-generation low-cost model in place
+  of the expensive production model, state the evidence scope — equivalent to
+  `proxy verified / production untested` — in the fixture's `notes` and the measurement summary
+  (a `pass` in the skill-regression ledger is a freshness record of the behavioral surface and
+  says nothing about the model range). Do not run production-model sentinels automatically; run
+  them only with user approval after presenting the target scenarios, the uncertainty, the
+  estimated consumption, and the stop limit. Even without approval, a proxy-passing version can
+  be rolled out as a staged canary, but production-accuracy guarantees must not be claimed
+- Keep `skills/` as the single source of truth for skill bodies, in natural language readable by
+  Claude Code / Codex CLI / Cursor / Gemini CLI and others
+- In `SKILL.md` and `references/`, use expressions that do not depend on a specific platform's
+  tool API names or model names
+- When a platform difference is necessary, do not fork the body into copies; unify it into one
+  using shared vocabulary and fallbacks
+- **Judge a shared contract's portability on 3 levels**: a contract placed in
+  `skills/shared/references/` is a single source of truth read from multiple runtimes. On
+  creation or revision, confirm which of these it falls under
+  - **tool-agnostic**: the content contains no tool-specific API names and holds as-is across
+    multiple runtimes
+  - **platform-aware**: there are runtime differences (external review, subagents, interactive
+    confirmation), but they can be expressed with shared vocabulary and fallbacks
+  - **platform-specific**: when a proprietary API name is unavoidable, state the reason and its
+    irreplaceability in the body and minimize the blast radius
+- **Do not depend on interactive user confirmation**: depending on the runtime, the means of
+  interactive confirmation may only be available in specific modes (confirmed by measurement).
+  Any skill body that requires confirmation must state a path that demotes to a safe-side default
+  (no-op / report-only / UNCERTAIN / abort) when no response is obtainable in non-interactive
+  execution
 
-## 新規スキル追加チェックリスト
+## Checklist for Adding a New Skill
 
-- [ ] command の要否を skills-first 方針で判断した（デフォルトは command なし。multi-workflow の名前付き入口が必要な場合のみ薄いラッパーを追加）
-- [ ] AGENTS.md / README.md の主要スキル表を必要に応じて更新した（CLAUDE.md は薄い wrapper のままにする）
-- [ ] README.md（コマンド表・スキル表・ファイル構成）を更新した
-- [ ] plugin manifest への反映が必要な変更なら `.claude-plugin/` / `.codex-plugin/` を更新した
-- [ ] 複数エージェントを使う場合は [orchestration-patterns.md](orchestration-patterns.md) の判断フローを通し、Agent 呼び出しに model 指定（モデル階層準拠）を明示した
-- [ ] `python3 scripts/validate_repo.py` が全チェック合格
-- [ ] `CHANGELOG.md` の `## Unreleased` へ変更を追記した（PR では version を bump しない）
+- [ ] Decided whether a command is needed under the skills-first policy (no command by default;
+      add a thin wrapper only when a named entry point for a multi-workflow is needed)
+- [ ] Updated the main skill tables in AGENTS.md / README.md as needed (keep CLAUDE.md a thin
+      wrapper)
+- [ ] Updated README.md (command table, skill table, file layout)
+- [ ] Updated `.claude-plugin/` / `.codex-plugin/` if the change needs to be reflected in the
+      plugin manifests
+- [ ] If using multiple agents, went through the decision flow of
+      [orchestration-patterns.md](orchestration-patterns.md) and stated the model specification
+      (conforming to the model tiers) explicitly on the Agent invocation
+- [ ] `python3 scripts/validate_repo.py` passes all checks
+- [ ] Appended the change to `## Unreleased` in `CHANGELOG.md` (do not bump the version in a PR)

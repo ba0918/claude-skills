@@ -121,4 +121,4 @@ For each iteration i = 1..max_iter:
 ## Choosing between skills
 
 Condition-convergent (this skill) vs interactive TDD vs instruction-driven iterate vs queue-consuming polling —
-see [the comparison table in contract §7](../shared/references/convergence-pattern.md#7-使い分け).
+see [the comparison table in contract §7](../shared/references/convergence-pattern.md#7-when-to-use-which).

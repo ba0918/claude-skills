@@ -1,21 +1,24 @@
-# Convergence Pattern — Shared Contract（条件収束型ループ）
+# Convergence Pattern — Shared Contract (condition-convergent loops)
 
-> **⚠️ Warning:** 本契約は [polling-pattern.md](polling-pattern.md)（キュー消化型）の姉妹契約であり、
-> 「機械検証可能な条件が真になるまで回す」ループ族の共通仕様を定義する。oracle 整合・収束判定・
-> 安全ブレーキの変更は全実装スキル（`skills/goal-loop/` 等）に影響する。同一 PR で同期更新すること。
+> **⚠️ Warning:** This contract is the sister of [polling-pattern.md](polling-pattern.md)
+> (queue-consuming) and defines the common specification for the family of loops that
+> "keep running until a machine-verifiable condition becomes true". Changes to oracle
+> integrity, convergence detection, or the safety brakes affect every implementing skill
+> (`skills/goal-loop/` and others). Update them in sync within the same PR.
 
 ---
 
-## 1. Overview — 2 つのループ族
+## 1. Overview — the 2 loop families
 
-| 族 | 契約 | 停止条件 | 例 |
+| Family | Contract | Stop condition | Example |
 |---|---|---|---|
-| キュー消化型 | polling-pattern.md | キューが空 / kill / brake | issue polling / github-issue polling |
-| **条件収束型** | 本契約 | **oracle が検証可能に真** / kill / brake / 収束不能検出 | goal-loop（「全テスト green まで回す」） |
+| Queue-consuming | polling-pattern.md | Queue empty / kill / brake | issue polling / github-issue polling |
+| **Condition-convergent** | This contract | **Oracle verifiably true** / kill / brake / non-convergence detected | goal-loop ("run until all tests are green") |
 
-条件収束型の最大の脅威は **oracle-gaming（Goodhart の法則）**: 目標が計測になった瞬間、
-「テストを直す」より「テストを弱める」方が常に安い。自律圧力下の implementer は
-悪意なしにこの経路へ滑り落ちる。本契約はこれを**機械的に**遮断する。
+The biggest threat to the condition-convergent family is **oracle-gaming (Goodhart's law)**:
+the moment the goal becomes the measure, "weakening the test" is always cheaper than "fixing
+the test". Under autonomy pressure an implementer slides down that path without any malice.
+This contract blocks it **mechanically**.
 
 ---
 
@@ -23,57 +26,65 @@
 
 ```
 Oracle {
-  command:       str        # 判定コマンド（例: "python3 -m unittest discover"）
-  expected_exit: int = 0    # 成功とみなす exit code
-  oracle_files:  [str]      # oracle の意味を定義するファイル群（テスト・検証スクリプト・期待値）
+  command:       str        # judgement command (e.g. "python3 -m unittest discover")
+  expected_exit: int = 0    # exit code treated as success
+  oracle_files:  [str]      # files that define the meaning of the oracle (tests, verification scripts, expected values)
 }
 ```
 
-- `command` は**機械実行可能**でなければならない。「〜が良くなったら」のような LLM 判定を
-  oracle にしない（判定者が動かせる目標は目標ではない）
-- `oracle_files` はループ開始時に確定する。テストディレクトリ全体を含めるのが既定
-  （狭くするほど gaming の抜け道が増える）
+- `command` must be **machine-executable**. Do not make an LLM judgement such as "once it
+  gets better" the oracle (a goal the judge can move is not a goal)
+- `oracle_files` is fixed at loop start. Including the entire test directory is the default
+  (the narrower it is, the more gaming loopholes open up)
 
 ---
 
-## 3. Oracle Integrity（ハッシュロック — Goodhart 遮断の中核）
+## 3. Oracle Integrity (hash lock — the core of Goodhart blocking)
 
-1. **Lock**: ループ開始時に `oracle_files` の各ファイル sha256 を manifest として記録する
-2. **Verify**: **毎イテレーションの oracle 実行直前**に manifest を再検証する
-3. 不一致（変更・削除・oracle_files 内への新規テスト skip 追加を含む書き換え）を検出したら、
-   即 `halt_reason="oracle_tampered"` で停止し、改変されたパスを報告する。**実装の巻き戻しはしない**
-   （何が起きたかを人間が見るため。改変が implementer の暴走か正当な仕様変更かは人間が判断する）
+1. **Lock**: at loop start, record the sha256 of each file in `oracle_files` as a manifest
+2. **Verify**: re-verify the manifest **immediately before every iteration's oracle run**
+3. On detecting a mismatch (modification, deletion, or a rewrite such as adding a new test
+   skip inside `oracle_files`), halt immediately with `halt_reason="oracle_tampered"` and
+   report the altered paths. **Do not roll back the implementation** (so a human can see what
+   happened; whether the alteration was implementer runaway or a legitimate spec change is a
+   human judgement)
 
-**不変条件:**
+**Invariants:**
 
-- implementer には oracle_files を**編集する権限がない**ことをプロンプトで明示し、
-  かつ編集されても Verify が検出する（пронプト規律に依存しない二重防御）
-- 正当な oracle 変更（仕様変更・テスト追加）は**ループ外**で人間が行い、ループを最初から再開始する。
-  ループ内での manifest 更新 API は**存在させない**（あれば必ず使われる）
-- oracle の**実行**はループコントローラが行う。implementer の「テスト通りました」という
-  自己申告は採らない（maker/checker 分離。[verification-gate.md](verification-gate.md) 準拠）
+- State explicitly in the prompt that the implementer has **no permission to edit**
+  `oracle_files`, and have Verify detect it even if they do (defense in depth that does not
+  rely on prompt discipline)
+- Legitimate oracle changes (spec changes, added tests) are made by a human **outside the
+  loop**, restarting the loop from the beginning. A manifest-update API inside the loop
+  **must not exist** (if it exists, it will be used)
+- The controller **runs** the oracle. Do not accept an implementer's self-report of "the tests
+  passed" (maker/checker separation; conforms to
+  [verification-gate.md](verification-gate.md))
 
 ---
 
-## 4. 収束判定（failed_streak より細かい停止条件）
+## 4. Convergence Detection (stop conditions finer than failed_streak)
 
-失敗し続けても**違う失敗**なら前進かもしれない。同じ失敗の反復と往復だけを止める。
+Continuing to fail may still be progress if the failures are **different**. Stop only the
+repetition of the same failure and oscillation between failures.
 
 ### 4.1 Failure Signature
 
-oracle 失敗出力を正規化（行トリム / タイムスタンプ・実行時間・16進アドレスの除去）して
-sha256 先頭 16 hex を取る。イテレーションごとに履歴に積む。
+Normalize the oracle failure output (trim lines; strip timestamps, elapsed times, and
+hexadecimal addresses) and take the leading 16 hex characters of its sha256. Push it onto the
+history each iteration.
 
-### 4.2 純関数
+### 4.2 Pure Functions
 
-| Function | Signature | 判定 |
+| Function | Signature | Judgement |
 |---|---|---|
-| `oracle_manifest(contents)` | `(dict[path, bytes]) -> dict[path, hex64]` | lock 用 manifest 生成 |
-| `verify_oracle_integrity(manifest, current)` | `(dict, dict) -> Ok \| Tampered{paths}` | 変更・削除・追加をすべて検出 |
-| `failure_signature(output)` | `(str) -> hex16` | §4.1 の正規化 + hash |
-| `detect_convergence_halt(history, config)` | `(list[hex16], Config) -> None \| "stall" \| "oscillation"` | stall: 末尾 `stall_limit` 個が同一シグネチャ。oscillation: 末尾 `window` 個が周期 2〜`max_period` の繰り返しパターン |
+| `oracle_manifest(contents)` | `(dict[path, bytes]) -> dict[path, hex64]` | Generate the manifest for locking |
+| `verify_oracle_integrity(manifest, current)` | `(dict, dict) -> Ok \| Tampered{paths}` | Detect modification, deletion, and addition alike |
+| `failure_signature(output)` | `(str) -> hex16` | §4.1 normalization + hash |
+| `detect_convergence_halt(history, config)` | `(list[hex16], Config) -> None \| "stall" \| "oscillation"` | stall: the last `stall_limit` entries share one signature. oscillation: the last `window` entries repeat a pattern with period 2 to `max_period` |
 
-全て副作用なし・time / random / I/O 不使用。実装スキルは unittest で検証すること。
+All are side-effect free and use no time / random / I/O. Implementing skills must verify them
+with unittest.
 
 ---
 
@@ -88,21 +99,22 @@ goal_loop(oracle, config) -> LoopResult:
         if wallclock_exceeded(): return halt("max_wallclock")
         if verify_oracle_integrity(manifest, rehash()) is Tampered:
             return halt("oracle_tampered", paths)            # §3
-        result = run(oracle.command)                         # コントローラが実行
+        result = run(oracle.command)                         # the controller runs it
         if result.exit == oracle.expected_exit:
-            return success(i, evidence=result.output_tail)   # verification-gate 準拠の証拠
+            return success(i, evidence=result.output_tail)   # evidence per verification-gate
         sig = failure_signature(result.output)
         history.append(sig)
         if (h := detect_convergence_halt(history, config)):
             return halt(h)                                   # stall / oscillation
-        implementer_fix(result.output)                       # maker: 失敗出力を渡して修正させる
+        implementer_fix(result.output)                        # maker: hand over the failure output to be fixed
     return halt("max_iter")
 ```
 
-- 安全ブレーキ（kill file 2 系統 / max_iter / max_wallclock）は polling-pattern §6 の値と
-  意味論を流用する。**ブレーキのない自律ループはこのリポジトリに追加しない**
-  （[orchestration-patterns.md](orchestration-patterns.md) 支配原則 3）
-- IterationResult / LoopResult は構造化フィールドのみ（自由文禁止、polling-pattern §7 の哲学）:
+- The safety brakes (2 kill-file channels / max_iter / max_wallclock) reuse the values and
+  semantics of polling-pattern §6. **Do not add an autonomous loop without brakes to this
+  repository** ([orchestration-patterns.md](orchestration-patterns.md) governing principle 3)
+- IterationResult / LoopResult carry structured fields only (no free text; the philosophy of
+  polling-pattern §7):
   `LoopResult {iterations, converged: bool, halt_reason?, tampered_paths?, final_signature?}`
 
 ---
@@ -112,22 +124,22 @@ goal_loop(oracle, config) -> LoopResult:
 ```yaml
 max_iter: 8
 max_wallclock: 30m
-stall_limit: 3        # 同一シグネチャ 3 連続で stall
-window: 6             # oscillation 検出の観測窓
-max_period: 3         # 検出する往復周期の上限
+stall_limit: 3        # stall after 3 consecutive identical signatures
+window: 6             # observation window for oscillation detection
+max_period: 3         # upper bound on the oscillation period to detect
 ```
 
-## 7. 使い分け
+## 7. When to Use Which
 
-| スキル | ループ | 向き |
+| Skill | Loop | Suited for |
 |---|---|---|
-| test-driven-development | 人間対話型 RED-GREEN-REFACTOR | 新規実装 |
-| iterate | 指示駆動の 1 パス改善 | cycle 後の追加修正 |
-| **goal-loop（本契約）** | oracle 収束まで自律反復 | 「全テスト green まで」「lint ゼロまで」型の明確な条件 |
-| issue polling | キュー消化 | 作業の量を捌く |
+| test-driven-development | Human-interactive RED-GREEN-REFACTOR | New implementation |
+| iterate | Instruction-driven single-pass improvement | Follow-up fixes after cycle |
+| **goal-loop (this contract)** | Autonomous repetition until the oracle converges | Explicit conditions of the form "until all tests are green", "until lint is zero" |
+| issue polling | Queue consumption | Working through a volume of tasks |
 
-## 8. 参照
+## 8. References
 
-- [polling-pattern.md](polling-pattern.md) — 安全ブレーキ / kill file / 構造化結果の定義元
-- [verification-gate.md](verification-gate.md) — 証拠なし完了主張の防止（oracle 実行ログが証拠）
-- [orchestration-patterns.md](orchestration-patterns.md) — 自律ループの支配原則
+- [polling-pattern.md](polling-pattern.md) — where the safety brakes / kill file / structured results are defined
+- [verification-gate.md](verification-gate.md) — preventing completion claims without evidence (the oracle run log is the evidence)
+- [orchestration-patterns.md](orchestration-patterns.md) — governing principles for autonomous loops

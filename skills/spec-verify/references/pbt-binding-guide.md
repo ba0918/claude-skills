@@ -24,7 +24,7 @@ clause's kind-specific payload and never depends on reinterpreting the natural l
 Satisfying a precondition with a filter (an assume / discard style mechanism) increases discards and reduces the
 number of valid executed cases. The promotion conditions (valid case count, failure count, exit status, and all the
 skip/xfail conditions) are canonical in
-[the assurance level section of clause-schema.md](clause-schema.md#保証レベル),
+[the assurance level section of clause-schema.md](clause-schema.md#assurance-levels),
 and filter abuse produces "tests that ran but count as no evidence".
 
 - Satisfy preconditions by constructing the generator (restricting the value range, structural assembly, mapping).
@@ -39,13 +39,13 @@ and filter abuse produces "tests that ran but count as no evidence".
 After running, record the execution result as an observation
 (the fields and the conditions for valid evidence are canonical in [evidence-manifest.md](evidence-manifest.md)).
 Because which runs count as evidence of success (the promotion conditions) is canonical in
-[the assurance level section of clause-schema.md](clause-schema.md#保証レベル),
+[the assurance level section of clause-schema.md](clause-schema.md#assurance-levels),
 confirm at generation time, via distribution observation, that the test can produce valid cases every run.
 
 ### Test identifiers
 
 Name the generated tests with identifiers that can be recorded directly as a binding's `test_id`
-(the character-set rule is in [evidence-manifest.md](evidence-manifest.md#識別子digest-の形式規則)).
+(the character-set rule is in [evidence-manifest.md](evidence-manifest.md#format-rules-for-identifiers-and-digests)).
 Never give a name containing whitespace or shell metacharacters.
 
 ## Generation patterns by kind
@@ -112,7 +112,7 @@ property "CLAUSE-ID: access decision matches the clause":
 ```
 
 - **Deny-first conflict resolution** is the semantics the v1 schema fixes
-  ([clause-schema.md](clause-schema.md#kind-別-discriminated-payload)),
+  ([clause-schema.md](clause-schema.md#kind-specific-discriminated-payload)),
   and it must always be built into the oracle (`decide`).
 - Verify not only that the allow side succeeds but that **tuples that should be denied are reliably denied**
   (placing the clause's `counterexamples` alongside as fixed cases makes the boundary explicit).
