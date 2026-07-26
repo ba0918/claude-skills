@@ -34,8 +34,8 @@ CONTEXT.md notation of rigortype/rigor):
 
 **Which layer this enum binds.** These 4 tokens are the value set of the `state` field in the
 machine-readable projection (next section), not a constraint on prose. The human-facing
-CONTEXT.md is written in the project's own language, so labelling a state there as 確定 /
-暫定 / 競合中 / 廃語 — or in any other language — is expected; the projection maps it onto the
+CONTEXT.md is written in the project's own language, so labelling a state there as settled /
+provisional / contested / retired — or in any other language — is expected; the projection maps it onto the
 canonical token. What belongs to the project's language is the vocabulary itself (`term`, a
 free-text domain word); `state` is a machine enum and sits alongside the other machine enums of
 this file family (`AGREED` / `DELEGATED` in a ledger row, `actor_kind: human`, `risk: high`),
@@ -85,7 +85,7 @@ whose `state` falls outside the enum, `ledger_lint` emits the `unknown-term-stat
 (report-only). Without this check an unrecognised state would drop out of the unstable-dependency
 detection silently, and the vocabulary layer would look clean precisely where it is unreadable.
 The advisory is also the migration path for a projection still carrying the pre-v1 Japanese
-tokens (`確定` / `暫定` / `競合中` / `廃語`): they are no longer projection values, so they
+tokens (`確定` / `暫定` / `競合中` / `廃語` — settled / provisional / contested / retired): they are no longer projection values, so they
 surface here instead of going quiet. This is about the `state` field of the projection only —
 the human-facing canon may keep labelling states in those words (previous section).
 

@@ -25,7 +25,7 @@ Report it only when no test captures that bug, and then as a hole in contract ve
   snapshots, coverage output, a DB, or logs under the target, run it only against a throwaway copy outside the target or in an
   isolated environment whose write destination can be pinned outside the target. If isolation is impossible, do not run the dynamic
   evaluation and fall back to `unsupported`. Compliance is judged by mechanically confirming that the target tree is unchanged before and after the run.
-- **Do not produce an overall score**: never emit a score of the 「テスト品質 82 点」 kind. The deliverables are findings and a
+- **Do not produce an overall score**: never emit a score of the "test quality: 82 points" kind. The deliverables are findings and a
   [coverage ledger](../shared/references/coverage-ledger.md). An overall score hides what could not be measured.
 - **Three-way verdict**: verify every finding with the
   CONFIRMED / FALSE_POSITIVE / UNCERTAIN values of

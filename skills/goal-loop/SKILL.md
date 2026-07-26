@@ -23,7 +23,7 @@ the specifications for oracle integrity, convergence judgment, and the safety br
 ## Argument Format
 
 ```
-goal-loop "<goal の自然言語記述>" [--oracle "COMMAND"] [--oracle-files PATH...]
+goal-loop "<natural language description of the goal>" [--oracle "COMMAND"] [--oracle-files PATH...]
           [--max-iter N] [--max-wallclock DURATION]
 ```
 
@@ -98,12 +98,12 @@ For each iteration i = 1..max_iter:
 ### Step 4: Completion report (conforms to verification-gate)
 
 ```
-## Goal Loop 結果
-- converged: true/false（halt_reason: ...）
+## Goal Loop results
+- converged: true/false (halt_reason: ...)
 - iterations: N / max N
-- oracle: {command}（exit {code}）
-- 証拠: 最終 oracle 実行出力の末尾（$WORK/iter-{last}.log）
-- oracle integrity: 全イテレーションで verify 合格 / oracle_tampered（改変パス列挙）
+- oracle: {command} (exit {code})
+- Evidence: the tail of the final oracle run output ($WORK/iter-{last}.log)
+- oracle integrity: verify passed on every iteration / oracle_tampered (with the tampered paths listed)
 ```
 
 `converged: true` is allowed only when **the actual output of the final oracle run** can be presented as evidence

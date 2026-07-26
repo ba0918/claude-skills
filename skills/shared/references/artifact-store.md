@@ -128,7 +128,7 @@ Rules for a derived index:
   issues index is `Issue | Tags | Created | Summary` (no Status column). Ideas entries carry
   their fields as bold labels (`**Created:**` / `**Status:**` / `**Tags:**`) under a `#`
   title with a `## Summary` body; issues entries carry them in YAML frontmatter
-  (`title` / `status` / `created` / `tags` / `source`) with a `## 概要` body. The frontmatter
+  (`title` / `status` / `created` / `tags` / `source`) with a `## Overview` body. The frontmatter
   is read with the repository's minimal flat-scalar parser — no external YAML engine is
   introduced, so an entry file can never trigger arbitrary YAML execution.
 - **Entry text is escaped, never trusted for structure.** Pipes and newlines from an entry

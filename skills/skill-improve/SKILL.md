@@ -115,16 +115,16 @@ generate `.claude/tmp/skill-improve-{datetime}/friction-report.md`.
 
 The integrating agent's prompt:
 ```
-.claude/tmp/skill-improve-{datetime}/ 配下の 4つの JSON ファイルを読み込み、
-摩擦レポートを friction-report.md として書き出してください。
+Read the 4 JSON files under .claude/tmp/skill-improve-{datetime}/ and
+write out the friction report as friction-report.md.
 
-フォーマット:
+Format:
 # Friction Report: {project}
 
 ## Executive Summary
-{1-3行の要約}
+{a 1-3 line summary}
 
-## Skill Rankings (摩擦スコア順)
+## Skill Rankings (by friction score)
 | Skill | Score | Top Issue | Recommendation |
 
 ## Detailed Findings

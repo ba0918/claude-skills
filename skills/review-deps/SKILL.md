@@ -24,7 +24,7 @@ application code quality (→ `codebase-review`).
 - **The machine is the source of truth, the agent supplies correlation**: for known facts (advisory matching, checksums, signature verification) adopt only the results of the scanner and
   of machine verification. **The agent must never "read and judge" the validity of a hash or a signature.**
   The agent owns the correlations a scanner cannot produce: dependency paths, reachability, dev/prod, and the meaning of a diff.
-- **Do not produce an overall score**: never emit a score of the 「依存健全性 80 点」 kind. The deliverables are findings and a
+- **Do not produce an overall score**: never emit a score of the "dependency health: 80 points" kind. The deliverables are findings and a
   [coverage ledger](../shared/references/coverage-ledger.md).
 - **Three-way verdict**: verify every finding with the
   CONFIRMED / FALSE_POSITIVE / UNCERTAIN values of

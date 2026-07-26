@@ -180,12 +180,12 @@ reason no export machinery exists.
 Append one line to the run log:
 
 ```
-| 日時 | view | 対象 | 読んだか | 指摘が出たか | ★画面がなければ出なかった指摘か |
+| Datetime | view | Target | Read it | Raised a point | ★ A point that would not have surfaced without the view |
 ```
 
 Write that header and its separator row when the file does not exist yet. The last three
 columns cannot be filled at generation time — the reader has not read anything yet — so record
-them as 未確認 and come back after the conversation that follows. A row invented at generation
+them as `unconfirmed` and come back after the conversation that follows. A row invented at generation
 time would be measuring the writer, not the reader.
 
 The ★ column is the decisive one. At five entries it settles three different outcomes that
