@@ -105,8 +105,8 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
 8. Update **Last Updated** to now.
 9. Show the completion message, opening with a summary-first block per the [human-readable summary contract](../shared/references/human-readable-summary.md): state the core of the saved idea in 1–2 plain lines and name the open questions left by the session (or 「なし」). No verbatim replay or exhaustive lists:
    ```
-   📝 つまり: {保存したアイデアが「つまり何なのか」を、メモを読んでいない人にも
-      伝わる平易な 1〜2 行で}。未決定点: {残った論点、なければ「なし」}
+   📝 In short: {what the saved idea amounts to, in 1-2 plain lines that reach
+      someone who has not read the memo}. Undecided: {the remaining points, or "none"}
 
    ✅ アイデアを保存しました!
    📄 File: .agents/artifacts/ideas/{slug}.md

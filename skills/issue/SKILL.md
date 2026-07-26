@@ -90,17 +90,17 @@ If arguments are given as free-form text without flags, extract title from the f
 9. Display the creation result. Prepend a summary block per the
    [human-readable summary contract](../shared/references/human-readable-summary.md)
    (summary-first): echo the issue title and a plain-language one-line gist of what
-   the issue is about, so a reader who has not opened the file grasps "つまり何なのか".
+   the issue is about, so a reader who has not opened the file grasps "so what is it".
    Do not re-transcribe the full body; do not include secret values (per the contract's
    degradation rule, omit or replace with a category name):
    ```
-   📝 つまり: 「{title}」— {issue が「つまり何の課題か」を、本文を読んでいない人にも
-      伝わる平易な 1 行で}
+   📝 In short: "{title}" — {what the issue is about at heart, in one plain line
+      that reaches someone who has not read the body}
 
    ✅ Issue created!
    📄 File: .agents/artifacts/issues/{slug}.md
    📋 Index: .agents/artifacts/issues/issue-status.md
-   💡 Tip: `/claude-skills:issue-list` で現在の issue 一覧を確認できます
+   💡 Tip: `/claude-skills:issue-list` shows the current list of issues
    ```
 
 ---
@@ -121,7 +121,7 @@ Display a list of open issues.
    ```
 4. If open issue count is **11 or more** (i.e. `N >= 11`, not `N > 10` interpreted as `N >= 10`), display a warning **in addition to** the Step 3 summary:
    ```
-   ⚠️ Open issues: {N} — 未使用の issue がないか確認してください。`/claude-skills:issue-close` で不要な issue をアーカイブできます。
+   ⚠️ Open issues: {N} — check whether any issue has gone unused. `/claude-skills:issue-close` archives the ones you no longer need.
    ```
 
 ---
@@ -175,7 +175,7 @@ Connect an issue to plan → cycle for resolution.
 ### Steps
 
 1. Execute the **Issue → Plan Conversion** procedure above
-2. **Preflight check** — Read the selected issue file and verify the「備考」(Notes) section has meaningful content (not just the placeholder text):
+2. **Preflight check** — Read the selected issue file and verify the Notes section (the supplementary-information section of the issue template; an issue created before the template was translated carries it under a heading in the project's language) has meaningful content (not just the placeholder text):
    - If the section is empty or contains only the default placeholder: present options to the user and prompt for acceptance criteria or additional context. Update the issue file with the provided information before proceeding.
    - Options: provide text input, or "Skip" to proceed without additional context
 3. Execute cycle: Execute `claude-skills:cycle` via the skill invocation with the created plan

@@ -6,11 +6,11 @@ tags: {{TAGS}}
 source: {{SOURCE}}
 ---
 
-## 概要
+## Overview
 
 {{DESCRIPTION}}
 
-## 備考
+## Notes
 
 (Add supplementary information here if available)
 

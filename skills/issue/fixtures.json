@@ -83,8 +83,8 @@
       },
       "prompt": "ログイン画面でセッションが 30 分で強制ログアウトされるバグを見つけた。あとで対応したいから課題として記録しておいて。",
       "requirements": [
-        { "text": "完了表示の冒頭（ファイルパス・Index 行より前）に「📝 つまり:」で始まる要約ブロックがある（summary-first の配置）", "critical": true },
-        { "text": "要約が登録した issue のタイトルと「つまり何の課題か」を、本文を読んでいない人にも伝わる平易な言葉でエコーしている（本文の逐語再掲・網羅列挙ではない）", "critical": true },
+        { "text": "完了表示の冒頭（ファイルパス・Index 行より前）に、共有契約 human-readable-summary.md の固定ラベルで始まる要約ブロックがある（summary-first の配置）", "critical": true },
+        { "text": "要約が登録した issue のタイトルと、その issue が要するに何の課題かを、本文を読んでいない人にも伝わる平易な言葉でエコーしている（本文の逐語再掲・網羅列挙ではない）", "critical": true },
         { "text": "issue ファイル（.agents/artifacts/issues/{slug}.md）と issue-status.md インデックスが生成・更新されている（要約を出すために本来の Create 挙動を欠落させていない）", "critical": true },
         { "text": "要約ブロックが上限 10 行前後に収まり、定型文の水増しがない", "critical": false },
         { "text": "要約に機密らしい値（トークン・鍵・個人情報）を新規転記していない", "critical": false }

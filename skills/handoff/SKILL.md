@@ -146,10 +146,10 @@ as 「未決定」 and keep secrets out of the summary (defer to the existing ha
 confidentiality rule: omit or replace with a category name):
 
 ```
-📝 つまり:
-   ゴール: {何を目指しているか — 1 行}
-   現在地: {今どこまで進んだか — 1 行}
-   次の一手: {次セッションで最初にやること — 1 行}
+📝 In short:
+   Goal: {what is being aimed at — 1 line}
+   Where we are: {how far it has come — 1 line}
+   Next move: {what to do first next session — 1 line}
 
 保存したよ: .agents/artifacts/handoff/{filename}
 次セッションで `/handoff-restore` 叩けばそのまま続きからいけるよ！

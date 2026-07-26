@@ -94,7 +94,7 @@ The leading keyword of $ARGUMENTS selects the workflow:
    already shown in the feedback loop, so keep this minimal — just echo the gist in plain
    words). Keep confidential values out of the summary:
    ```
-   📝 つまり: {この文書を読んでいない人にも「つまり何を説明する文書か」が伝わる平易な 1 行}
+   📝 In short: {one plain line conveying what this document explains, reaching someone who has not read it}
 
    ✅ ドキュメントを保存しました!
    📄 File: docs/writings/{slug}.md

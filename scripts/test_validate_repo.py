@@ -1108,7 +1108,8 @@ class TestCheckHumanReadableSummary(unittest.TestCase):
         os.makedirs(cdir, exist_ok=True)
         body = "# ヒューマンリーダブル要約契約\n\n"
         if before_after:
-            body += "## Before / After ワークト例\n\nBefore: ✅ 保存しました\nAfter: 📝 つまり: ...\n"
+            body += ("## Before / After ワークト例\n\nBefore: ✅ 保存しました\n"
+                     f"After: {HUMAN_READABLE_SUMMARY_LABEL} ...\n")
         with open(os.path.join(cdir, "human-readable-summary.md"), "w",
                   encoding="utf-8") as f:
             f.write(body)
