@@ -1,52 +1,52 @@
 # Friction Taxonomy
 
-実行者の摩擦報告を分類する固定タクソノミ。
-自由記述をイテレーション間で比較可能にし、発散判定を精密化する。
+The fixed taxonomy for classifying the executor's friction reports.
+It makes free text comparable across iterations and sharpens the divergence verdict.
 
-## 6 分類
+## The 6 categories
 
-| カテゴリ | 定義 | 典型的な実行者の発言 |
+| Category | Definition | A typical executor remark |
 |---------|------|---------------------|
-| `ambiguous_term` | 複数解釈可能な語句 | 「"適切に" がどの水準か分からない」 |
-| `missing_premise` | 暗黙の前提知識が必要 | 「この API のバージョンが不明」 |
-| `contradictory` | 指示間の矛盾 | 「A 節と B 節で逆のことを言っている」 |
-| `over_specified` | 不必要に厳密で判断余地がない | 「変数名まで指定されていて実態と合わない」 |
-| `rationalization_hook` | 合理化で回避できる指示 | 「"必要に応じて" と書いてあるので省略した」 |
-| `self_containment_gap` | 外部参照なしでは完結しない | 「references/X.md を読まないと何をすべきか分からない」 |
+| `ambiguous_term` | wording open to multiple interpretations | "I cannot tell what level 'appropriately' means" |
+| `missing_premise` | implicit background knowledge is required | "the version of this API is unknown" |
+| `contradictory` | contradiction between instructions | "section A and section B say opposite things" |
+| `over_specified` | unnecessarily strict, leaving no room for judgment | "even the variable names are dictated and they do not match reality" |
+| `rationalization_hook` | an instruction that can be dodged by rationalizing | "it says 'as needed', so I skipped it" |
+| `self_containment_gap` | does not stand alone without external references | "I cannot tell what to do without reading references/X.md" |
 
-`uncategorized` は上記に当てはまらない場合のフォールバック。
+`uncategorized` is the fallback when none of the above applies.
 
-## 分類 → 修正パターン対応表
+## Category → fix pattern mapping
 
-| カテゴリ | 推奨修正パターン |
+| Category | Recommended fix pattern |
 |---------|----------------|
-| `ambiguous_term` | 定義を追加 or 用語を限定する（例: 「適切に」→「RFC 7231 準拠で」） |
-| `missing_premise` | 前提を明示 or 最小完成例を inline に追加 |
-| `contradictory` | 優先順位を明示 or 片方を削除 |
-| `over_specified` | 制約を緩める or 「推奨」に降格 |
-| `rationalization_hook` | escape hatch を塞ぐ（「必要に応じて」→ 具体条件を列挙） |
-| `self_containment_gap` | 必要な情報を inline 化 or 参照先と読むタイミングを明示 |
+| `ambiguous_term` | add a definition or narrow the term (e.g. "appropriately" → "conforming to RFC 7231") |
+| `missing_premise` | state the premise, or add a minimal complete example inline |
+| `contradictory` | state the priority order, or delete one side |
+| `over_specified` | loosen the constraint, or demote it to "recommended" |
+| `rationalization_hook` | close the escape hatch ("as needed" → enumerate the concrete conditions) |
+| `self_containment_gap` | inline the necessary information, or state the reference and when to read it |
 
-## 発散判定への接続
+## Connection to the divergence verdict
 
-同一カテゴリが `threshold`（デフォルト 3）回連続で出現した場合、
-`convergence.py` の `is_diverged()` が発散と判定する。
-これは「同じ種類の問題をパッチで直せていない → 構造を書き直すべき」のシグナル。
+When the same category appears `threshold` times in a row (3 by default),
+`is_diverged()` in `convergence.py` declares divergence.
+This is the signal that "the same kind of problem is not being fixed by patches → the structure should be rewritten".
 
-## 実行者への指示
+## Instructions to the executor
 
-実行者の摩擦報告テンプレートに以下を含める:
+Include the following in the executor's friction report template:
 
 ```
-## 摩擦報告
-指示で詰まった箇所を以下の分類で報告してください:
-- ambiguous_term: 複数解釈可能な語句
-- missing_premise: 暗黙の前提知識が必要
-- contradictory: 指示間の矛盾
-- over_specified: 不必要に厳密
-- rationalization_hook: 合理化で回避できる指示
-- self_containment_gap: 外部参照なしでは完結しない
+## Friction report
+Report the places where the instructions tripped you up, using these categories:
+- ambiguous_term: wording open to multiple interpretations
+- missing_premise: implicit background knowledge is required
+- contradictory: contradiction between instructions
+- over_specified: unnecessarily strict
+- rationalization_hook: an instruction that can be dodged by rationalizing
+- self_containment_gap: does not stand alone without external references
 
-形式: { "category": "<分類>", "detail": "<詳細>" }
-該当なしの場合は空配列 [] を返してください。
+Format: { "category": "<category>", "detail": "<detail>" }
+Return an empty array [] when none apply.
 ```

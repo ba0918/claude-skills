@@ -1,177 +1,178 @@
-# 要件の到達可能性 — ロック前の検算手順
+# Requirement reachability — the verification procedure before locking
 
-要件チェックリストをハッシュロックする**前**に、各要件がそのシナリオで到達可能かを検算する。
-到達不能な要件が混じると、**指示どおりに正しく振る舞った実行者が減点される**。
-そのとき測っているのは指示の質ではなく、シナリオ設計の欠陥である。
+**Before** hash-locking the requirement checklist, verify that each requirement is reachable in that scenario.
+When an unreachable requirement slips in, **an executor that behaved exactly as instructed loses points**.
+What you are measuring then is not the quality of the instruction but a defect in the scenario design.
 
-この検算を省いた結果、dw-001（doc-write）→ dj-003（decision-journal）→ gi-003 / gi-004（github-issue）
-→ pi-001〜003（plan-implement）で **4 回同じ罠を踏んだ**。gi-004 では判定が HOLD に倒れ、
-バッチ 1 本を破棄して回し直した。
+Skipping this verification led to **stepping into the same trap 4 times**: dw-001 (doc-write) → dj-003 (decision-journal)
+→ gi-003 / gi-004 (github-issue) → pi-001-003 (plan-implement). In gi-004 the verdict fell to HOLD, and a whole batch was
+discarded and re-run.
 
-## 3 軸
+## The 3 axes
 
-要件が到達可能であるとは、次の 3 つを**すべて**満たすことを指す。
+A requirement is reachable when it satisfies **all** three of the following.
 
-| 軸 | 問い | 外すと起きること |
+| Axis | The question | What happens if you drop it |
 |---|---|---|
-| **工程到達性** | 要件を観測できる工程は、シナリオの停止点より前にあるか | 確認待ちで止まった後の工程を採点し、全 run が fail |
-| **環境到達性** | **この環境で**その工程に到達するか。手前で停止する条件は無いか | 環境要因で先に止まり、要件が将来形の注記に格下げされる |
-| **契約整合性** | 要件を満たす振る舞いは、指示文の他の条項と矛盾しないか | 正しく振る舞うと必ず違反する要件になり、逸脱した側が高得点 |
+| **Process reachability** | Is the step where the requirement can be observed before the scenario's stopping point? | You grade steps after a stop for confirmation, and every run fails |
+| **Environment reachability** | Does that step get reached **in this environment**? Is there a condition that stops it earlier? | An environmental factor stops it first, and the requirement is demoted to a future-tense note |
+| **Contract consistency** | Does the behavior satisfying the requirement contradict another clause of the instruction? | The requirement becomes one that correct behavior always violates, and the deviant arm scores higher |
 
-工程到達性だけを見るのは**手順表への照合**にすぎない。手順表は「ステップ N で何を観測できるか」しか
-答えず、「この環境でステップ N に到達するか」を答えない。**2 軸目が抜けたのが 4 回の再発原因である。**
+Looking only at process reachability is **nothing more than matching against the procedure table**. The procedure table
+answers only "what can be observed at step N", never "is step N reached in this environment". **The missing second axis is the cause of the 4 recurrences.**
 
-## 手順: 要件表より先に「停止条件」を列挙する
+## Procedure: enumerate the "stopping conditions" before the requirement table
 
-要件表を書く前に、この環境でワークフローを止めうる条件を先に全部並べる。
-要件の到達性は、その停止点リストとの前後関係として決まる。
+Before writing the requirement table, lay out every condition that could halt the workflow in this environment.
+A requirement's reachability is determined by where it falls relative to that list of stopping points.
 
-| # | 停止条件 | この環境での成否 | 影響する工程 |
+| # | Stopping condition | Does it hold in this environment | Steps affected |
 |---|---|---|---|
-| S1 | 必須ツールが無い | | |
-| S2 | 認証・資格情報が無い | | |
-| S3 | 対象ファイル・リポジトリが実在しない | | |
-| S4 | 外部 API・レート制限に到達できない | | |
-| S5 | ユーザー確認待ちで停止する | | |
+| S1 | A required tool is missing | | |
+| S2 | Authentication or credentials are missing | | |
+| S3 | The target file or repository does not exist | | |
+| S4 | An external API or rate limit cannot be reached | | |
+| S5 | It stops waiting for user confirmation | | |
 
-典型例（実測）: gi-003 は Cycle Pre-check 3 の issue 番号検証を測ろうとしたが、**S2（gh 未認証）が
-Common Pre-checks 2 で先に止めた**。実行者は日英とも正しく停止し、007 の拒否は
-「認証しても、このまま cycle は始められません」という将来形の注記になり、日英同一文型で partial。
+A typical case (measured): gi-003 tried to measure the issue-number validation of Cycle Pre-check 3, but
+**S2 (gh unauthenticated) stopped it earlier at Common Pre-checks 2**. The executor stopped correctly in both the Japanese
+and English arms, and 007's rejection became the future-tense note "even after authenticating, cycle cannot start as is",
+identical in sentence form in both arms and therefore partial.
 
-**解除の仕方**: プロンプト側に環境例外条項を置く。
-「この環境では〈依存〉が使えないが、〈測りたい判断〉はそれに依存しないはず —
-失敗は記録した上で、その判断は返して」。gi-001 はこの条項を持っていたので同じ環境で到達できていた。
+**How to release it**: put an environment exception clause on the prompt side.
+"In this environment <the dependency> is unavailable, but <the judgment you want to measure> should not depend on it —
+record the failure and still return that judgment". gi-001 had this clause and did reach the step in the same environment.
 
-### 停止条件は「何を要求されているか」まで降りて潰す
+### Crush a stopping condition all the way down to "what is being asked for"
 
-「ユーザー回答待ちはプロンプトで先に答えを与えれば回避できる」は**成り立たないことがある**。
-その工程が要求しているのが「方向の宣言」なのか「**生成された候補からの選択**」なのかで結果が変わる。
+"Waiting on a user answer can be avoided by giving the answer in the prompt up front" **does not always hold**.
+The outcome depends on whether what that step asks for is "a declaration of direction" or **"a choice among generated candidates"**.
 
-実測（dg-002 / design-guide）: 対話型ディスカバリーの Phase 6（成果物生成）を測ろうとして、
-プロンプトにビジュアルムードの方向（寒色・ミュート・ブルーグリーン系）を先に与えた。
-しかし Phase 3 が要求するのは**その場で生成した 3 つのパレット候補からの選択**であり、
-まだ存在しない候補の選択を宣言で先取りすることはできない。実行者は日英とも Phase 3 で正しく
-停止し、Phase 6 に到達しなかった。**要件 5 つが全滅した。**
+Measured (dg-002 / design-guide): trying to measure Phase 6 (artifact generation) of the interactive discovery, the prompt
+gave the visual mood direction (cool, muted, blue-green) up front.
+But what Phase 3 asks for is **a choice among 3 palette candidates generated on the spot**, and a choice among candidates
+that do not exist yet cannot be pre-empted by a declaration. The executor stopped correctly at Phase 3 in both arms and
+never reached Phase 6. **All 5 requirements were wiped out.**
 
-停止条件を潰したと言うには、次まで確認する:
+To claim a stopping condition has been crushed, confirm this much:
 
 ```
-その工程がユーザーに求めているのは何か
-  「事実・方針の申告」          → プロンプトで先に与えれば潰せる
-  「提示された候補からの選択」  → 潰せない。候補は実行時に生成されるため先取りできない
-  「生成物への承認」            → 潰せない
+What does that step ask of the user?
+  "declaring a fact or a policy"      → it can be crushed by giving it in the prompt up front
+  "choosing among presented candidates" → it cannot. The candidates are generated at runtime and cannot be pre-empted
+  "approving a produced artifact"      → it cannot
 ```
 
-後ろ 2 つに当たる工程が停止点より手前にあるなら、**その先の工程は単一ターンでは測れない**。
-対話型スキルの本体（候補提示 → 選択 → 生成）は多くがこれに該当する。
+When a step of the latter two kinds lies before the stopping point, **everything past it cannot be measured in a single turn**.
+The body of most interactive skills (present candidates → choose → generate) falls into this category.
 
-### 許可されている経路は、選ばれる経路ではない
+### A permitted path is not the path that gets chosen
 
-指示文が「この状況ではこう代行してよい」と**許可している**ことを、その工程に到達する
-根拠にしてはならない。許可は選択肢を増やすだけで、実行者がその選択肢を選ぶことを保証しない。
+Never treat the fact that the instruction **permits** "in this situation you may substitute this way" as grounds for reaching
+that step. A permission only widens the options; it does not guarantee that the executor picks that option.
 
-実測（pi-001〜003 / plan-implement）: 本文冒頭に「サブエージェントを起動できない /
-他スキルが対象プロジェクトを正しく指せない」ならインライン実行してよいという明示的な条項があり、
-隔離領域は後者に該当していた。この条項を根拠に「入れ子委譲の停止には当たらない」と検算表へ
-書いたが、**3 人中 2 人が委譲を選び**、子の完了通知が親へ届かず後続工程の手前で停止した。
-残る 1 人は本文の条項ではなく実行基盤側の別の制約でインラインを選んでいた。
+Measured (pi-001-003 / plan-implement): the top of the body had an explicit clause allowing inline execution when
+"subagents cannot be launched / another skill cannot point at the target project correctly", and the isolated area fell under
+the latter. The verification table cited that clause to say "this does not count as a nested-delegation stall", but
+**2 of 3 chose delegation**, the child's completion notification never reached the parent, and it stalled short of the
+following step. The remaining 1 chose inline not because of the clause but because of a separate constraint on the platform side.
 
-環境例外条項をプロンプトへ置いて「委譲せずインラインで代行する」を**指示**したところ、
-同一 setup で 2/2 が完走した。差は本文が許可しているか否かではなく、指示されたか否かである。
+When an environment exception clause was put into the prompt **instructing** "do not delegate; substitute inline",
+2 of 2 ran to completion under the same setup. The difference is not whether the body permits it, but whether it was instructed.
 
-**検算の書き方**: 「本文が許可しているので到達する」は根拠にならない。
-「この環境で確実に選ばれる経路はどれか」まで書く。選ばれる保証がないなら、プロンプト側で
-経路を指定する。その際、指定した経路が本文の許可範囲内であること、および測りたい判断を
-先取りしていないことを別に確認する。
+**How to write the verification**: "the body permits it, so it is reached" is not grounds.
+Write it down to "which path is certain to be chosen in this environment". If no path is guaranteed, specify the path on the
+prompt side. When you do, separately confirm that the specified path is within what the body permits, and that it does not
+pre-empt the judgment you want to measure.
 
-## 契約整合性の見方
+## How to look at contract consistency
 
-要件を満たす振る舞いが指示文の他の条項に違反しないかを確認する。
+Confirm that the behavior satisfying the requirement does not violate another clause of the instruction.
 
-実測例: gi-004 の要件「**gh コマンドの実行**をしていない」は、全ワークフロー冒頭で
-`gh --version` / `gh auth status` / `gh repo view` の実行を義務づける Common Pre-checks と矛盾していた。
-pre-check を踏んだ実行者が partial、踏まなかった実行者が pass。
-測っていたのは言語差ではなく「pre-check を踏むか踏まないか」の偶然である。
+A measured example: gi-004's requirement "has not **executed the gh command**" contradicted the Common Pre-checks, which
+mandate running `gh --version` / `gh auth status` / `gh repo view` at the top of every workflow.
+An executor that ran the pre-checks got partial; one that did not got pass.
+What was being measured was not the language difference but the accident of "whether the pre-checks were run".
 
-**書き方**: 副作用ゼロを測る要件は**書き込み系に限定して列挙する**。
-「gh を実行していない」ではなく「issue edit / label 付与・削除 / pr create / pr merge / issue close を
-実行していない」と書く。読み取り・状態確認系は指示文が義務づけている可能性がある。
+**How to write it**: a requirement measuring zero side effects must **enumerate write operations only**.
+Not "has not executed gh" but "has not executed issue edit / adding or removing a label / pr create / pr merge / issue close".
+Reads and status checks may be mandated by the instruction itself.
 
-## 欠陥を見つけたときの扱い
+## What to do when you find a defect
 
-**要件を緩めない。baseline リセット + 再ロック + 両アーム回し直し。**
-ハッシュロックはそのために打っている（[SKILL.md §チェックリストのハッシュロック](../SKILL.md)）。
+**Do not loosen the requirement. Reset the baseline, re-lock, and re-run both arms.**
+The hash lock exists precisely for this ([SKILL.md, "Hash-locking the checklist"](../SKILL.md)).
 
-「緩和」と「測定可能化」を混同しないこと。
+Never confuse "loosening" with "making it measurable".
 
-| | 内容 | 可否 |
+| | Content | Allowed |
 |---|---|---|
-| 緩和 | 結果を見て、失敗した要件の強度を落とす | **禁止** |
-| 測定可能化 | この環境で原理的に観測できない主張だけを外し、実質は保持する | 可（リセット扱い） |
+| Loosening | Looking at the results and lowering the strength of a failed requirement | **Forbidden** |
+| Making it measurable | Removing only the claim that is impossible to observe in principle in this environment, keeping the substance | Allowed (treated as a reset) |
 
-測定可能化を選ぶ場合は、次を必ず満たす:
+When you choose to make it measurable, always satisfy the following:
 
-- 実質（何を判定できていれば正解か）を残す。gi-003 では工程順序の主張「即座に失敗終了」だけを外し、
-  拒否の実質・エラー語・読み替え禁止は保持した
-- 旧 lock の `checklist_sha256` を `supersedes` に明示する
-- **両アームを最初から回し直す**。旧 run の点数は 1 つも持ち込まない
-- なぜ観測不能だったかを検算表に残す。次に同じ罠を踏まないための記録はここにしか置けない
+- Keep the substance (what must be decidable for it to count as correct). In gi-003 only the process-order claim "fails and
+  exits immediately" was removed, while the substance of the rejection, the error term, and the ban on reinterpretation were kept
+- State the old lock's `checklist_sha256` in `supersedes`
+- **Re-run both arms from the start.** Carry over not a single score from the old run
+- Leave in the verification table why it was unobservable. There is nowhere else to record what keeps the next person out of the same trap
 
-シナリオを**事後に除外するのは選択バイアス**なので、都合の悪いシナリオを落として判定してはならない。
+**Excluding a scenario after the fact is selection bias**, so never drop an inconvenient scenario before judging.
 
-### 判定ルールの誤りは「緩和」ではない
+### An error in the verdict rule is not "loosening"
 
-要件ではなく **verdict rule 側が壊れている**ことがある。その修正は緩和に当たらない。
-判別の基準は **その修正の根拠が候補と独立しているか**である。
+Sometimes it is not the requirement but **the verdict rule that is broken**. Fixing that does not count as loosening.
+The criterion is **whether the grounds for the fix are independent of the candidate**.
 
-実測（dg-001 / design-guide）: 非劣化 A/B のゲートを
-「候補アームで critical が pass すること」という**絶対述語**で書いていた。
-ところが baseline 自身がその critical を落としていたため、候補が何であってもゲートは成立せず、
-**定数 false を返す装置**になっていた。これは候補を弁別していない。
+Measured (dg-001 / design-guide): the non-degradation A/B gate was written as the **absolute predicate**
+"the critical requirement passes in the candidate arm".
+But the baseline itself was dropping that critical, so the gate could not hold whatever the candidate was —
+it had become **a device returning constant false**. That discriminates nothing between candidates.
 
-修正の根拠「baseline が critical を落とす」は **baseline アームだけを見れば分かる事実**であり、
-候補アームの結果を参照せずに導ける。よって候補比較にバイアスを持ち込まない。
-逆に「候補の点数を見て初めて正当化できる」修正は、それが verdict rule の変更であっても緩和である。
+The grounds for the fix, "the baseline drops the critical", is **a fact visible from the baseline arm alone** and can be
+derived without referring to the candidate arm's results. It therefore introduces no bias into the candidate comparison.
+Conversely, a fix that can only be justified after looking at the candidate's score is loosening, even when it is a change to the verdict rule.
 
-非劣化 A/B のゲートは最初から**差分形式**で書く:
+Write the non-degradation A/B gate in **differential form** from the start:
 
 ```
-NG: 候補アームで critical が pass すること
-OK: baseline が pass していた critical を候補が落としていないこと
+NG: the critical requirement passes in the candidate arm
+OK: the candidate does not drop a critical that the baseline was passing
 ```
 
-## ゲート条件に向かない軸
+## Axes unsuited to being gate conditions
 
-**お願いベースの制約に対する遵守**は、ゲート条件として使ってはならない。
+**Compliance with a request-based constraint** must never be used as a gate condition.
 
-制約が「設定でも指示でも外せない機械的ゲート」ではなく依頼文である場合、遵守するか否かは
-実行側の特性に依存し run ごとに揺れる。これは**言語不変**であり、
-本文の言い換え・翻訳・圧縮の採否を左右させると、測っていない性質で判定することになる。
+When the constraint is a request rather than "a mechanical gate that neither configuration nor instruction can remove",
+whether it is upheld depends on the executor's characteristics and wobbles run to run. This is **language-invariant**, and
+letting it decide whether to adopt a rephrasing, translation, or compression of the body means judging on a property you are not measuring.
 
-実測（dg-001）: 「Phase 1-5 ではファイル作成禁止」という制約が、ユーザーの
-「質問はいいから先に書いて」で剥がれた。しかも**日英まったく同型**に剥がれ、
-両アームとも同じ 3 つの critical を落とした。翻訳の質とは無関係である。
+Measured (dg-001): the constraint "no file creation during Phases 1-5" came off under the user's
+"skip the questions and just write it". And it came off **in exactly the same shape in both arms**, with both dropping the
+same 3 criticals. It has nothing to do with translation quality.
 
-扱い方を分ける:
+Split the handling by purpose:
 
-| 目的 | 扱い |
+| Purpose | Handling |
 |---|---|
-| 指示文の欠陥を見つける | **有効**。合理化フックの検出器として価値が高い |
-| 本文改稿の採否を決める | **不可**。差分形式のゲートに載せ、baseline が落としている分は候補の責任にしない |
-| 回帰資産（fixture） | 有効。ただし現在 RED なら「直す対象」であって、fixture を消す理由にはならない |
+| Finding defects in the instruction | **Valid.** Highly valuable as a detector of rationalization hooks |
+| Deciding whether to adopt a body revision | **Not allowed.** Put it on a differential-form gate, and never make the candidate responsible for what the baseline drops |
+| A regression asset (fixture) | Valid. But if it is RED now, that makes it "something to fix", not a reason to delete the fixture |
 
-## ゲート
+## The gate
 
-ロック直前に、各要件について:
+Right before locking, for each requirement:
 
 ```
-1. この要件を観測できる工程はどこか → 停止点より前か
-2. この環境で、その工程より手前で止まる条件はあるか → S1-S5 を 1 つずつ当てる
-3. この要件を満たす振る舞いは、指示文の他の条項に違反しないか
+1. Where is the step at which this requirement can be observed → is it before the stopping point?
+2. In this environment, is there a condition that stops before that step → check S1-S5 one by one
+3. Does the behavior satisfying this requirement violate another clause of the instruction?
 
-1-3 のどれかが No → ロックしない。シナリオかプロンプトを直す
-プロンプトを直したなら、その prompt もハッシュ対象に含める
+Any of 1-3 is No → do not lock. Fix the scenario or the prompt
+If you fixed the prompt, include that prompt in the hash target as well
 ```
 
-`requirements` だけをハッシュすると、プロンプトを黙って書き換えても fingerprint が動かない。
-プロンプト側で到達性を解除する設計を採るなら、**prompt と requirements の両方をロックに含める。**
+Hashing only `requirements` means the fingerprint does not move even when the prompt is silently rewritten.
+If the design releases reachability on the prompt side, **include both the prompt and the requirements in the lock.**
