@@ -1,143 +1,143 @@
 # Discovery Questions
 
-ディスカバリーフェーズで使用する質問バンクと回答解釈マトリクス。
+The question bank used in the discovery phase, and the answer-interpretation matrix.
 
-## 質問設計の原則
+## The principles of question design
 
-- **オープンクエスチョンを避ける**: 「どんな色がいいですか？」は禁止。具体的な選択肢を提示する
-- **二択〜四択で絞る**: 選択肢（2-4択）を提示して方向性を収束させる
-- **preview を活用**: カラーパレットやフォントは preview フィールドでASCII表現を見せる
-- **段階的に具体化**: ムード → カラー方向 → 具体 hex 値の順で詳細度を上げる
-- **各フェーズ冒頭で中間まとめ**: 前フェーズの決定事項を要約してから次へ進む
+- **Avoid open questions**: "What kind of colors would you like?" is forbidden. Present concrete options
+- **Narrow with 2 to 4 choices**: present options (2-4) and converge on a direction
+- **Make use of previews**: for color palettes and fonts, show an ASCII representation in the preview field
+- **Concretize in stages**: raise the level of detail in the order mood → color direction → concrete hex values
+- **An interim summary at the head of each phase**: summarize the decisions of the previous phase before moving on
 
-## Phase 1: プロジェクトコンテキスト
+## Phase 1: Project context
 
-### Q1: プロジェクトの種類
+### Q1: The kind of project
 
-header: "プロジェクト種類"
-
-| Option | Description |
-|--------|-------------|
-| Web アプリ / SPA | ログインがある業務ツール・SaaS・ダッシュボード等 |
-| ランディングページ / マーケティング | 商品紹介・サービスLP・ポートフォリオ等 |
-| モバイルアプリ | iOS / Android / クロスプラットフォーム |
-| ドキュメント / ブログ | 技術文書・ブログ・ナレッジベース等 |
-
-### Q2: ターゲットユーザー
-
-header: "ユーザー層"
+header: "Project kind"
 
 | Option | Description |
 |--------|-------------|
-| 開発者 / テック系 | エンジニア、デザイナー、テック好き |
-| 一般消費者 | 幅広い年齢層、ITリテラシーは様々 |
-| ビジネス / エンタープライズ | 企業の意思決定者、マネージャー層 |
-| 社内ツール | 自社チームが使う内部ツール |
+| A web app / SPA | A business tool, SaaS, dashboard, or the like that has a login |
+| A landing page / marketing | A product introduction, service LP, portfolio, or the like |
+| A mobile app | iOS / Android / cross-platform |
+| Documentation / a blog | Technical documents, a blog, a knowledge base, or the like |
 
-### Q3: 与えたい印象（multiSelect: true, 2つまで）
+### Q2: The target user
 
-header: "印象"
-
-| Option | Description |
-|--------|-------------|
-| プロフェッショナル | 信頼感・安定感・落ち着き |
-| 親しみやすい | カジュアル・明るい・フレンドリー |
-| 先進的 / イノベーティブ | テクノロジー感・未来的・エッジィ |
-| プレミアム / 高級感 | 洗練・ラグジュアリー・品格 |
-
-## Phase 2: ビジュアル方向（二択ラッシュ）
-
-各質問は1問ずつユーザーに提示する。選択肢の説明で具体的なイメージを添える。
-
-### Q4: カラーモード
-
-header: "カラーモード"
+header: "User segment"
 
 | Option | Description |
 |--------|-------------|
-| ライトモード優先 | 白背景ベース。ダークモードは後から検討 |
-| ダークモード優先 | 暗い背景ベース。開発者ツール・メディア系に多い |
-| 両対応で設計 | 最初から両方のパレットを定義する |
+| Developers / tech people | Engineers, designers, the tech-inclined |
+| General consumers | A broad age range, with varying IT literacy |
+| Business / enterprise | Corporate decision-makers, the manager tier |
+| An internal tool | An internal tool used by your own team |
 
-### Q5: カラートーン
+### Q3: The impression you want to give (multiSelect: true, up to 2)
 
-header: "色の温度"
-
-| Option | Description |
-|--------|-------------|
-| 暖色系（Warm） | オレンジ・赤・イエロー寄り。親しみ・エネルギー感 |
-| 寒色系（Cool） | ブルー・パープル・グリーン寄り。信頼・知性・落ち着き |
-| ニュートラル | グレー・ベージュ・スレート。控えめでコンテンツが主役 |
-
-### Q6: 情報密度
-
-header: "密度"
+header: "Impression"
 
 | Option | Description |
 |--------|-------------|
-| ゆったり（Spacious） | 余白たっぷり。呼吸感があり視線が迷わない |
-| みっちり（Dense） | 情報量重視。ダッシュボード・データ系向き |
+| Professional | Trustworthy, stable, composed |
+| Approachable | Casual, bright, friendly |
+| Advanced / innovative | Technological, futuristic, edgy |
+| Premium / luxurious | Refined, luxury, dignified |
 
-### Q7: 角の形状
+## Phase 2: Visual direction (a rush of binary choices)
 
-header: "角丸"
+Present each question to the user one at a time. Attach a concrete image to the description of each option.
 
-| Option | Description |
-|--------|-------------|
-| まるっと（Rounded） | 丸みのある柔らかいUI。親しみやすさ・フレンドリー |
-| カクッと（Sharp） | 直線的でシャープ。プロフェッショナル・構造的 |
-| 中間（Moderate） | ほどほどの丸み (4-8px)。バランス型 |
+### Q4: Color mode
 
-### Q8: 色の強さ
-
-header: "彩度"
+header: "Color mode"
 
 | Option | Description |
 |--------|-------------|
-| ビビッド（Bold） | 高彩度・高コントラスト。目を引く・エネルギッシュ |
-| ミュート（Subtle） | 低彩度・柔らかい。上品・疲れにくい |
+| Light mode first | Based on a white background. Dark mode is considered later |
+| Dark mode first | Based on a dark background. Common for developer tools and media |
+| Designed for both | Define both palettes from the start |
 
-### Q9: 深度表現
+### Q5: Color tone
 
-header: "深度"
-
-| Option | Description |
-|--------|-------------|
-| フラット（Flat） | シャドウなし or 極薄。ボーダーで区切る |
-| 立体的（Depth） | シャドウ・エレベーションで奥行き表現 |
-
-### Q10: フォントの方向性
-
-header: "フォント"
+header: "Color temperature"
 
 | Option | Description |
 |--------|-------------|
-| サンセリフ（Modern） | Geometric / Grotesque 系。モダン・クリーン |
-| セリフ（Classic） | 伝統的・権威感・エディトリアル |
-| ミックス（見出しセリフ+本文サンセリフ） | コントラストで視覚的リズムを作る |
+| Warm | Leaning orange, red, yellow. Approachable, energetic |
+| Cool | Leaning blue, purple, green. Trustworthy, intelligent, composed |
+| Neutral | Gray, beige, slate. Understated, with the content as the lead |
 
-## Phase 3: カラーパレット生成
+### Q6: Information density
 
-Phase 2 の回答から3つのパレット候補を生成し、プレビュー付きの選択肢として提示する。
+header: "Density"
 
-### 解釈マトリクス
+| Option | Description |
+|--------|-------------|
+| Spacious | Plenty of margin. It breathes, and the eye never gets lost |
+| Dense | Prioritizing volume of information. Suited to dashboards and data |
 
-| 温度 | 彩度 | 印象 | Primary 候補方向 |
+### Q7: The shape of corners
+
+header: "Corner radius"
+
+| Option | Description |
+|--------|-------------|
+| Rounded | A soft, rounded UI. Approachable, friendly |
+| Sharp | Linear and sharp. Professional, structural |
+| Moderate | A moderate roundness (4-8px). The balanced type |
+
+### Q8: The strength of color
+
+header: "Saturation"
+
+| Option | Description |
+|--------|-------------|
+| Bold | High saturation, high contrast. Eye-catching, energetic |
+| Subtle | Low saturation, soft. Elegant, easy on the eyes |
+
+### Q9: The expression of depth
+
+header: "Depth"
+
+| Option | Description |
+|--------|-------------|
+| Flat | No shadow, or extremely light. Separated by borders |
+| Depth | Depth expressed with shadows and elevation |
+
+### Q10: The direction of the fonts
+
+header: "Fonts"
+
+| Option | Description |
+|--------|-------------|
+| Sans-serif (Modern) | Geometric / Grotesque. Modern, clean |
+| Serif (Classic) | Traditional, authoritative, editorial |
+| Mixed (serif headings + sans-serif body) | Creating a visual rhythm through contrast |
+
+## Phase 3: Generating the color palette
+
+Generate 3 palette candidates from the Phase 2 answers and present them as options with previews.
+
+### The interpretation matrix
+
+| Temperature | Saturation | Impression | The direction of the Primary candidate |
 |------|------|------|-----------------|
-| Warm + Bold | — | #E84855, #FF6B35, #F77F00 系 |
-| Warm + Subtle | — | #C1666B, #D4A373, #DDA15E 系 |
-| Cool + Bold | — | #2563EB, #7C3AED, #0891B2 系 |
-| Cool + Subtle | — | #6B7280, #64748B, #78716C 系 |
-| Neutral + Bold | — | #18181B, #0F172A, #1C1917 系 |
-| Neutral + Subtle | — | #9CA3AF, #A1A1AA, #A8A29E 系 |
+| Warm + Bold | — | Around #E84855, #FF6B35, #F77F00 |
+| Warm + Subtle | — | Around #C1666B, #D4A373, #DDA15E |
+| Cool + Bold | — | Around #2563EB, #7C3AED, #0891B2 |
+| Cool + Subtle | — | Around #6B7280, #64748B, #78716C |
+| Neutral + Bold | — | Around #18181B, #0F172A, #1C1917 |
+| Neutral + Subtle | — | Around #9CA3AF, #A1A1AA, #A8A29E |
 
-各候補は以下を含むパレット全体として提示:
+Present each candidate as a whole palette containing:
 - Primary / Secondary / Accent
 - Background / Surface
 - Text Primary / Secondary
 - Error / Warning / Success
 
-### Preview 形式
+### The preview format
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -154,13 +154,13 @@ Phase 2 の回答から3つのパレット候補を生成し、プレビュー�
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-## Phase 4: タイポグラフィ選定
+## Phase 4: Choosing typography
 
-Phase 2 の Q10 回答に基づき、3つのフォントペアリング候補を提示。
+Based on the Q10 answer from Phase 2, present 3 font-pairing candidates.
 
-### フォント候補プール
+### The pool of font candidates
 
-**サンセリフ（見出し向き）:**
+**Sans-serif (suited to headings):**
 - Outfit — Geometric, modern, versatile
 - Satoshi — Clean, contemporary, neutral
 - Cabinet Grotesk — Bold, distinctive character
@@ -168,28 +168,28 @@ Phase 2 の Q10 回答に基づき、3つのフォントペアリング候補を
 - General Sans — Balanced, professional
 - Switzer — Swiss-inspired, precise
 
-**サンセリフ（本文向き）:**
+**Sans-serif (suited to body text):**
 - Plus Jakarta Sans — Friendly, readable
 - DM Sans — Clean, geometric harmony
 - Manrope — Semi-rounded, tech-friendly
 - Geist — Vercel's font, developer-oriented
 - Onest — Round, warm, accessible
 
-**セリフ:**
+**Serif:**
 - Playfair Display — Elegant, editorial
 - Fraunces — Quirky, warm, distinctive
 - Newsreader — Traditional, readable
 - Lora — Elegant, literary
 - Source Serif 4 — Professional, versatile
 
-**モノスペース:**
+**Monospace:**
 - JetBrains Mono — Developer favorite, ligatures
 - Fira Code — Ligatures, readable
 - IBM Plex Mono — Clean, professional
 
-### 禁止フォント（Anti-patterns より）
+### Forbidden fonts (from Anti-patterns)
 
-以下は使用禁止。AI が安易に選びがちなため、独自性に欠ける:
+The following must not be used. An AI reaches for them too readily, so they lack distinctiveness:
 - Inter
 - Roboto
 - Arial
@@ -198,16 +198,16 @@ Phase 2 の Q10 回答に基づき、3つのフォントペアリング候補を
 - Lato
 - Montserrat
 - Poppins
-- system-ui (具体フォントの代替として)
+- system-ui (as a substitute for a concrete font)
 - Space Grotesk
 
-## Phase 5: コンポーネント＆レイアウト確認
+## Phase 5: Confirming components and layout
 
-Phase 2-4 で決定した内容を統合し、主要コンポーネントのスタイリングを提案する。
+Integrate what was decided in Phases 2-4 and propose the styling of the main components.
 
-### 自動導出ルール
+### The automatic derivation rules
 
-| Phase 2 回答 | 導出されるトークン |
+| The Phase 2 answer | The derived token |
 |-------------|------------------|
 | Rounded | border-radius: 12-16px (button), 16-24px (card) |
 | Sharp | border-radius: 0-2px (button), 0-4px (card) |
@@ -217,15 +217,15 @@ Phase 2-4 で決定した内容を統合し、主要コンポーネントのス�
 | Flat | shadow: none, border: 1px solid {border} |
 | Depth | shadow: 0 1px 3px rgba(0,0,0,0.1) to 0 25px 50px rgba(0,0,0,0.25) |
 
-### 確認項目
+### The items to confirm
 
-ユーザーに最終確認:
-- 生成されたコンポーネントスタイルの preview を表示
-- 「この方向でOK？」と確認
-- 微調整があればフリーテキストで受け付ける
+Final confirmation with the user:
+- Display a preview of the generated component styles
+- Ask whether this direction is acceptable
+- Accept any fine adjustments as free text
 
-## 解釈の注意点
+## Points to watch when interpreting
 
-- 回答は絶対ではなくヒント。矛盾する回答があった場合はユーザーに意図を確認する
-- ユーザーが「Other」でフリーテキストを入力した場合は、その内容を最優先で反映する
-- 全フェーズを通じて、ユーザーの言葉を DESIGN.md の "Visual Theme & Atmosphere" セクションに反映する
+- The answers are hints, not absolutes. When answers contradict each other, confirm the intent with the user
+- When the user enters free text via "Other", reflect that content with the highest priority
+- Throughout every phase, reflect the user's own words into the "Visual Theme & Atmosphere" section of DESIGN.md
