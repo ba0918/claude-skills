@@ -8,6 +8,31 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## Unreleased
+
+2026-07-27 の二軸実測で踏んだドキュメントの欠落 3 件を埋めた。いずれも実装が唯一の正本に
+なっていて、reference だけを読んだ呼び出し側が必ず失敗する種類のものである。挙動は変えない。
+
+`metrics-spec.md` に入力ラッパーの節を追加した（issue #68）。`aggregate_metrics.py` は
+`{cases, valid_skills, stability_sample_ids?}` というラッパーを要求するが、同ファイルは
+ケース 1 件のスキーマしか定めておらず、包む側のキー名がどこにも書かれていなかった。docs
+だけ読んで呼ぶと `KeyError: 'valid_skills'` で落ちる。`valid_skills` に `none` を含めない
+（自動で加わる）ことも明記した。
+
+`testcase-design.md` の holdout 分割に、成立範囲を先に計算する手順を足した（issue #69）。
+「holdout は 20%」と「両側 none 25% 以上」を並記していたが、この 2 つは常に両立するとは
+限らない。実測の 188 ケース / none 47 件では 20% 近傍の H=37..41 のうち成立するのは
+**H=40（21.3%）で holdout none がちょうど 10 のときだけ**で、20% ちょうどはどの丸め方でも
+失敗する。層化制約が比率を支配することと、成立範囲が空なら分割ではなくケース生成に戻ることを
+規定した。
+
+`process-delegation.md` に `backends.json` の `schema_version` の扱いを明記した（issue #70）。
+欠落は既定値で補われず `unsupported schema_version None (expected 1)` で拒否される。
+これは意図的で、このファイルは権限の宣言（§5）であり、形が未検証のレジストリを黙って受理する
+のは権限付与の失敗モードとして誤っている。移行は先頭へ 1 行足すだけで済むことも書いた。
+レジストリは 1 度書いて使い回す前提のファイルで、過去の実行資産をコピーする経路が正常系である
+にもかかわらず、バージョン導入時に移行手順が書かれていなかった。
+
 ## 1.68.0
 
 CONTEXT 語彙の状態 enum を英語化した（`確定` / `暫定` / `競合中` / `廃語` →

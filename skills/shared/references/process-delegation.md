@@ -86,6 +86,16 @@ unit that failed, so confirm the grant on the first unit rather than across a wh
 }
 ```
 
+- `schema_version` is **required and rejected when absent**. The runner compares it for equality
+  with the version it supports, so a missing key parses as `None` and fails with
+  `unsupported schema_version None (expected 1)`. It is deliberately not defaulted: this file
+  declares permissions (§5), and silently accepting a registry whose shape was never asserted is
+  the wrong failure mode for a permission grant.
+  **Migrating a pre-versioned registry is one line** — add `"schema_version": 1` at the top and
+  change nothing else. Registries written before the key existed are otherwise still valid.
+  This matters because a registry is written once and reused: copying a previous run's
+  `backends.json` is the normal path, not an edge case, and a rejected registry fails a unit the
+  same way a badly executed unit does.
 - `argv` is an **argument vector**, never a shell string. The runner does not invoke a shell.
 - `prompt_delivery` is `stdin` (default) or `argv`. `stdin` is the common denominator across
   agent CLIs and is the recommended form; `argv` requires `{prompt_file}` in the template.
