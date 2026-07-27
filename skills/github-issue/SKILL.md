@@ -149,7 +149,7 @@ The core workflow that drives a single issue to completion.
 ### Pre-condition
 
 - `claude-skills:cycle` assumes it only makes commits on the current branch. **Branch operations, push, and PR creation are this workflow's responsibility.**
-- The whole workflow runs inside a dedicated worktree (Step 4). The primary checkout's HEAD, current branch, and index are never touched — another session or a human switching branches in the primary checkout must not affect this run, and this run must not affect them.
+- Steps 1–3 perform no working-tree operations: they touch only the GitHub API, the state root, and the artifact store. Everything that reads or writes the repository's working tree (Step 4 onward — running cycle, Gate 3, push, PR creation) happens inside a dedicated worktree created at Step 4. The primary checkout's HEAD, current branch, and index are never touched — another session or a human switching branches in the primary checkout must not affect this run, and this run must not affect them.
 
 ### Steps
 
@@ -213,6 +213,10 @@ The three-stage defence (lockfile + gh edit + re-verify) is hidden in [`referenc
      recovers it with no changes
    - **Every subsequent step of this workflow (running cycle, Gate 3, push, PR creation) executes
      inside this worktree.** The primary checkout's HEAD, branch, and index stay untouched
+   - **Materialize the plan into the worktree before invoking cycle.** The plan file from Step 3
+     lives in the primary checkout's artifact store, which is typically outside Git tracking and
+     therefore absent from a fresh worktree. Copy it to the same store-relative path inside the
+     worktree and pass that copied path to cycle
    - A lockfile mutual exclusion on the working tree was rejected: only the loop would ever take
      the lock, and one-sided exclusion is no exclusion. A `git status --porcelain` launch check is
      also deliberately absent — isolation makes the primary checkout's dirtiness irrelevant, and a
@@ -227,10 +231,17 @@ The three-stage defence (lockfile + gh edit + re-verify) is hidden in [`referenc
    - It is the symptom-side net under Gates 0-2: anything that slips past them lands here, because an issue
      with nothing left to do cannot produce a diff
    - Records `error_kind = "abort"`, like the other gate halts
-4. **Worktree removal.** Remove the worktree when the workflow ends, on success and failure alike
-   (`git worktree remove <path>`). The pushed branch and the draft PR carry all diagnostics, so the
-   worktree holds no unique state worth preserving. If the process dies before its own removal step,
-   the orphan detection of [`references/cleanup-spec.md`](references/cleanup-spec.md) is the safety net
+4. **Worktree removal — always the run's last action.** Remove the worktree from the primary
+   checkout's directory (`git worktree remove <path>`) after every other step of the run has
+   finished — including Step 9's failure bookkeeping — on success and failure alike. Cleanup runs
+   last so no bookkeeping ever depends on a directory that no longer exists. Before removing a
+   failed run's worktree, push its branch if it holds any commits that never reached the remote,
+   so the diagnostics survive the removal; a dirty tree refuses plain removal, so fall back to
+   `git worktree remove --force` after that push. If even forced removal fails, report it and
+   leave the worktree to the orphan detection of
+   [`references/cleanup-spec.md`](references/cleanup-spec.md) — never skip retry-state or label
+   updates because cleanup failed. The same orphan detection is the safety net when the process
+   dies before reaching this step
 
 **Isolation verification procedure** (how to confirm the contract above holds): in the primary
 checkout, switch to any non-default branch that is ahead of the default branch by unrelated commits,
@@ -301,7 +312,6 @@ gh issue edit ${N} --remove-label claude-auto --remove-label claude-review
 #### 9. Handling failure
 
 - Keep the PR as a draft
-- Remove the worktree, the same as the success path (Step 4.4) — the draft PR preserves the diagnostics
 - Save the error details as structure into the **FS retry state** (`<state_root>/retry/{N}.json`) — retry_count / last_failed_at / run_id only; storing free-text errors is forbidden (shared contract §3)
 - Remove `claude-running` / `claude-review` and run the **atomic dual-write** through `mark_failed(slug, kind)`:
   - Decide the kind (TRANSIENT / PERMANENT) with `classify_failure(normalize_github_error(exc))`
@@ -309,6 +319,8 @@ gh issue edit ${N} --remove-label claude-auto --remove-label claude-review
   - Verify afterwards with `gh issue view`; on a mismatch, retry three times with backoff (0s/1s/2s)
   - On final failure, write the `<state_root>/recovery/{N}` marker (crash-safe ordering: marker write, then release) and `release(slug)` so the next tick re-evaluates it
   - Details in [`references/polling-adapter.md §mark_failed(slug, kind)`](references/polling-adapter.md#mark_failedslug-kind) + [`references/label-spec.md §Backward Compatibility`](references/label-spec.md#backward-compatibility)
+- After all of the above bookkeeping is recorded, remove the worktree per Step 4.4 (push any
+  unpushed commits first; forced removal for a dirty tree)
 - Release the lockfile (automatic on process exit; `flock(2)` releases at the kernel level)
 
 #### 10. Idempotence
