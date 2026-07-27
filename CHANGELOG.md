@@ -10,6 +10,16 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+github-issue の Cycle Workflow が主チェックアウトの HEAD から直接 `git switch -c` しており、
+別セッションが feature ブランチで作業中に `cycle N` を起動すると無関係コミットが PR に混入する
+状態だった（issue #83、実害未遂）。分岐起点を `origin/{default_branch}`（`gh repo view` で毎回解決、
+`main` 決め打ち禁止）に固定し、ワークフロー全体を `gh-issue-{N}-{timestamp}` 命名の専用 worktree 内で
+実行する契約に変更した。主チェックアウトの HEAD・ブランチ・インデックスには一切触れない。
+worktree は成功・失敗の双方で撤去し、cleanup-spec の orphan 検知はクラッシュ時の安全網に位置づけ直した。
+lockfile 相互排他と dirty チェックは採らない（片側しか参加しない排他は排他ではなく、分離後は
+主チェックアウトの汚れが無関係になるため）。非既定ブランチ上から起動しても PR diff に無関係コミットが
+混入しないことの検証手順を Step 4 に明記した。
+
 SI-S003（prose 肥大）の見出し分類語彙に英語の `flow` が無く、`## Flow` を見出しに持つ
 plan-refine が 85/85 行 (100%) という構造的に成立し得ない値で誤検出されていた（issue #119）。
 skills/ 全文書の英語化で `## フロー` が `## Flow` になった際、検出器側の語彙が追従して

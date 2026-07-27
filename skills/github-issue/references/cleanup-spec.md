@@ -59,6 +59,11 @@ Example: `gh-issue-42-20260408041530`
 
 Branch names use the same `gh-issue-{N}-{timestamp}`.
 
+The Cycle Workflow creates its dedicated worktree under this name at Step 4 (branching from
+`origin/{default_branch}`, never from the primary checkout's HEAD) and removes it itself when the
+run ends, on success and failure alike. The orphan detection below is therefore the safety net for
+runs that died before reaching their own removal step, not the primary cleanup path.
+
 ## Orphan Detection Rules (the 24h condition)
 
 Only a worktree satisfying **all** of the following is a cleanup target.

@@ -23,6 +23,7 @@ Every value can be overridden with the `--config key=value` argument.
 | `impact_command` | (unset) | command | The external command that computes the blast radius of a change, used by [Gate 0](polling-adapter.md#self-drive-gates). `{files}` expands to the declared paths, space separated. **When unset, Gate 0's impact check is a no-op** (the skill is distributed to other repositories, and there is no portable oracle) |
 | `max_impacted_units` | `1` | count | The upper bound on impacted units that still allows self-driving. Applied only when `impact_command` is set |
 | `forbidden_path_globs` | `skills/shared/**` | glob csv | Paths that reject self-driving regardless of the impact count. Evaluated **without** the oracle, so it stays in force even when `impact_command` is unset |
+| `default_branch` | (resolved per run) | name | **Not a stored setting**: resolved at Cycle Workflow Step 4 with `gh repo view --json defaultBranchRef --jq .defaultBranchRef.name`, and used as the branch point (`origin/{default_branch}`) of the dedicated worktree. Never hardcoded and not user-overridable — a configured branch point would reintroduce the nondeterministic PR bases that issue #83 removed |
 
 ### Why the impact oracle is pluggable
 
