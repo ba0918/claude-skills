@@ -49,6 +49,33 @@ class TestTokenize(unittest.TestCase):
         self.assertIn("行す", toks)
         self.assertNotIn("を", toks)  # length-1 run dropped
 
+    def test_drops_english_stopwords(self):
+        # grammatical words carry no discriminating power and are removed
+        toks = sc.tokenize("review the plan and the diff")
+        self.assertEqual(toks, {"review", "plan", "diff"})
+
+    def test_drops_trigger_phrase_boilerplate(self):
+        # `Use when the user says ...` is mandated by the authoring convention, so it rides on
+        # nearly every description and must not contribute to similarity
+        toks = sc.tokenize("Use when the user says commit")
+        self.assertEqual(toks, {"commit"})
+
+    def test_keeps_common_content_words(self):
+        # frequency alone is not the criterion: domain words stay even when common
+        toks = sc.tokenize("check the plan and review the skill")
+        for kept in ("check", "plan", "review", "skill"):
+            self.assertIn(kept, toks)
+
+    def test_stopwords_do_not_touch_cjk(self):
+        # the list is ASCII-only; CJK bigrams are fragments of words, not words
+        toks = sc.tokenize("計画をレビューする")
+        self.assertIn("計画", toks)
+        self.assertIn("レビ", toks)
+
+    def test_boilerplate_only_yields_no_tokens(self):
+        # a description consisting solely of boilerplate contributes nothing to any pair
+        self.assertEqual(sc.tokenize("Use it when the user says so"), set())
+
     def test_empty(self):
         self.assertEqual(sc.tokenize(""), set())
 
