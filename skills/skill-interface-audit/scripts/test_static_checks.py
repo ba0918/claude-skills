@@ -59,6 +59,23 @@ class TestSIS001(unittest.TestCase):
         self.assertEqual(len(findings), 1)
         self.assertEqual(findings[0]["id"], "SI-S001")
 
+    def test_repeated_skill_md_links_count_edge_once(self):
+        """issue #110: linking the same reference N times must not multiply findings."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(
+            name="my-skill",
+            content="See [ref](references/a.md), again [ref](references/a.md), "
+                    "and once more [ref](references/a.md).",
+            tmpdir=tmpdir)
+        refs_dir = os.path.join(t["skill_dir"], "references")
+        os.makedirs(refs_dir, exist_ok=True)
+        with open(os.path.join(refs_dir, "a.md"), "w") as f:
+            f.write("See also [b](b.md) for details.\n")
+        with open(os.path.join(refs_dir, "b.md"), "w") as f:
+            f.write("# B\nDeep content.\n")
+        findings = sc.check_si_s001([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertEqual(len(findings), 1)
+
     def test_chain_to_shared_allowed(self):
         tmpdir = tempfile.mkdtemp()
         t = _make_target(name="my-skill", content="See [ref](references/a.md).", tmpdir=tmpdir)
