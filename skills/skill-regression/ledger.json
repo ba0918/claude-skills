@@ -201,11 +201,11 @@
   },
   "github-issue": {
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "9d9a935cc4d4d3ff0d4e3c0605b001531c041f5a076f39ec4c8a8386a3cecb08",
+      "skills/github-issue/SKILL.md": "4f78886eb4860105d36ad667926366d5c59a721a38af7679ca9a60629fa75511",
       "skills/github-issue/fixtures.json": "6a62e882d8c576aa94bc24f3346b4d1d56169bff9215d885ba88a2458dbd85ae",
-      "skills/github-issue/references/cleanup-spec.md": "a141e9524911d46bee62e4cffceeb4da845d23cf1f555905eb6c6a222daa21f7",
+      "skills/github-issue/references/cleanup-spec.md": "cca0c1f7e73ddb22bfc79719fe486e37be9a62868dd13c4465944315f52f05e0",
       "skills/github-issue/references/codex-review-loop.md": "616fec7c7da33d18cdecc60b20b02e1be461cb0029eeffbeca19a6b7554755ed",
-      "skills/github-issue/references/config-defaults.md": "5613460095f8cafb97bb8603aca37933e3b8e40f1014fb9ded04b6727775172c",
+      "skills/github-issue/references/config-defaults.md": "00a4c5904bd23f14f2893e50f51470198d4f9603d0c8d1486a9eaae1383dc06e",
       "skills/github-issue/references/gh-commands.md": "cc3f6ec5bda0d660e5ff86aea58c8bac181c8c660b1a2c405a68f9623b4732e3",
       "skills/github-issue/references/label-spec.md": "d43e607c70abba0b17755a7c59cd7acf4ba39dce8b83be93e02db1c478358683",
       "skills/github-issue/references/polling-adapter.md": "f97b84e9106b7564636a9c2e29b962ef78c5a7c6055ebcbecfffb2b64a0780d8",
@@ -216,7 +216,7 @@
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "polling-adapter.md の parse_change_targets 散文修正（#95）に対する process-queue 実走 6/6、critical 全 ○・非 critical 欠落 0。fable レビューで検査順序と forbidden_path_globs の漏れを補い、validate_repo の契約語彙偽陽性を避けて skipped→dropped へ言い換えた最終テキストに対する再実走。baseline は 6 ユニットとも空宣言のため drift 突き合わせは空振り（#54 の既知問題）で、判定根拠は要件判定のみ。全 executor がインライン実行・Read/Grep のみ・gh コマンド未実行。",
+    "note": "issue #83 worktree 分離契約の変更後、gi-001〜gi-006 を process-queue（claude-exec、並列3）で実走。全 6 件 critical 欠落ゼロ・baseline drift ゼロ（verdict は unadjudicated_pass）。バッチはスクラッチパッド regression-83",
     "result": "pass",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -234,7 +234,7 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "5c2497f376792084e830037be590f5b3d246a33564b4355cc3a8fa10724fd628",
+    "surface_sha256": "a2778ebdbfb1abaeae1a202a3674820a011d14d7afa500cf94be8e462f8356db",
     "verified": "2026-07-28"
   },
   "handoff": {
