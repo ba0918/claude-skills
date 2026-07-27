@@ -141,17 +141,56 @@ Present the choices to the user and obtain approval.
 
 For each approved plan, generate the plan file with a subagent (lightweight model — mechanical file generation from an already-approved decomposition):
 
+Capture `{timestamp}` **once, here, before launching anything**, and resolve each plan's full path
+yourself. The path is then handed to the subagent — it is not something the delegate derives.
+
 **Subagent instruction:**
 ```
 Invoke the `claude-skills:plan` skill and create a plan for the following feature.
 Feature: {plan_title}
 Description: {plan_description}
 Affected files: {file_list}
+
+Save the plan to exactly this path, relative to the repository root: {plan_file_path}
+This path is assigned by the caller and **overrides the plan skill's own filename rule**.
+Do not generate a timestamp or a filename of your own.
+
+Do not update .agents/artifacts/status.md or .agents/artifacts/session-history.md.
+This run updates them once, from the orchestrator, in Phase 4.
 ```
 
-Each plan is saved to `.agents/artifacts/plans/{timestamp}_{slug}.md`. All plans in the same batch share a single `{timestamp}` (captured once at Step 0.3 entry) and are differentiated only by `{slug}`.
+`{plan_file_path}` is `.agents/artifacts/plans/{timestamp}_{plan_id}_{slug}.md` — **relative to the
+repository root**, not to the delegate's working directory — where `{plan_id}` is the plan letter
+(`A`, `B`, …) from the approved decomposition.
 
-**Concurrency**: Step 0.3 may launch the subagents for all plans in parallel (up to 3 at a time). Plan file generation is an independent write per plan, with no data dependency between generations.
+Two invariants have to hold, and each names one part:
+
+- **The batch is recognizable.** Every plan of one decomposition carries the same `{timestamp}`, so
+  the group is visible in `.agents/artifacts/plans/` without consulting anything else. Let each plan
+  take its own timestamp and that is gone. The timestamp **groups**; it does not prove membership
+  (a plan written in the same second by any other caller shares the prefix), so the authoritative
+  record of what a batch contained is the result file's `## Plan Files` list
+- **Each plan is unique within the batch.** That is `{plan_id}`'s job, **not** `{slug}`'s. Two plans
+  from one instruction can legitimately produce the same slug (§Phase 2), and with the slug as the
+  only differentiator they resolve to the *same path* — one silently overwriting the other, or both
+  being written at once
+
+The delegate cannot uphold either one: `claude-skills:plan` takes its own clock reading and builds
+its own name, so parallel launches that straddle a second boundary land on different timestamps.
+That is why the caller assigns the path instead of stating a rule and hoping.
+
+`{timestamp}` is **not** the identifier used for worktrees or for the result file — those name a
+*run*, and one batch of plans can be run more than once (§Phase 2, §Step 4.3).
+
+**Concurrency**: Step 0.3 may launch the subagents for all plans in parallel (up to 3 at a time).
+That is safe for the **plan files** because `{plan_id}` makes every target path distinct — the
+parallelism rests on that, not on an absence of data dependencies.
+
+It is **not** safe for `status.md`. Left alone, `claude-skills:plan` also rewrites
+`.agents/artifacts/status.md` and `session-history.md` — read-modify-write on a shared file, three
+at a time, each deciding independently which session to archive as abandoned. That is why the
+delegation prompt above forbids touching them, and why the consolidated update happens once in
+Phase 4 (§Important: status.md Write Suppression).
 
 ### Edge Cases
 
@@ -253,6 +292,9 @@ For each cycle in the group, **in parallel**:
    Invoke the `claude-skills:plan-implement` skill and implement the plan file {plan_file_path}.
    Implement every step, commit after each step, and update the progress table.
    On completion, report: number of files changed, number of tests added, number of commits.
+
+   Do not update .agents/artifacts/status.md or .agents/artifacts/session-history.md.
+   This run updates them once, from the orchestrator, in Phase 4.
    ```
 
 3. **Collect the results**: record success/failure and a summary for each cycle
@@ -278,7 +320,14 @@ Launch at most 3 subagents concurrently per group. If a group exceeds 3, split i
 
 ### Important: status.md Write Suppression
 
-During parallel execution, do NOT update `.agents/artifacts/status.md` or `.agents/artifacts/session-history.md` from individual cycles. The orchestrator will perform a single consolidated update after all cycles complete.
+Do NOT update `.agents/artifacts/status.md` or `.agents/artifacts/session-history.md` from **any**
+delegate — neither the plan-generating subagents of Step 0.3 nor the cycles of Phase 2. Both files
+are read-modify-write, and every delegate that touches them decides on its own which session to
+archive. The orchestrator performs a single consolidated update in Phase 4.
+
+The rule lives here, but it only takes effect where it is **said to the delegate**: it is written
+into the Step 0.3 delegation prompt and the Phase 2 one. A rule stated only in this section reaches
+no one who is about to write the file.
 
 ## Phase 3: Merge
 
@@ -348,14 +397,28 @@ Files changed: {total_files}
 
 ### Step 4.3: Generate Result File
 
-Save the summary to `.agents/artifacts/plans/results/{base_plan_name}_result.md`:
+Save the summary to `.agents/artifacts/plans/results/{run_id}_parallel_result.md`, using the same
+`{run_id}` that Phase 2 captured.
+
+The name comes from the **run**, not from the plans, for two reasons. A batch has one result file
+but many plans, so no single plan name can stand for it — and in plan-file mode the arguments are
+pre-existing files that share nothing to derive a name from. Naming by run also means re-running a
+batch after fixing its failures writes a **second** result file instead of overwriting the record of
+what failed the first time.
 
 ```markdown
 # Parallel Cycle Result
 
 **Executed:** {datetime}
+**Run ID:** {run_id}
+**Plan batch:** {timestamp in natural-language mode; `external` in plan-file mode, where the
+arguments are pre-existing files that share no batch timestamp}
 **Plans:** {N}
 **Groups:** {M}
+
+## Plan Files
+{one path per plan — the authoritative record of what this run consumed, and the only one that
+holds in plan-file mode}
 
 ## Results
 
