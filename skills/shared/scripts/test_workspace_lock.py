@@ -4,6 +4,7 @@
 **「取れない環境で処理を止めないこと」** にある。前者が崩れれば防ごうとした事故がそのまま
 起き、後者が崩れればレガシー構成が動かなくなって無効化される。両方を同じ重みで固定する。
 """
+import errno
 import json
 import os
 import stat
@@ -11,6 +12,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -29,11 +31,57 @@ def make_runtime_area_uncreatable(repo):
     no-op になるため。root はこのリポジトリの自走ループが実際に走る標準環境であり、
     そこでだけ fail-open 契約が無検証になる（issue #103）。
 
-    なお `.agents/runtime` が既に存在して書き込めない経路はここでは作れない。claim() は
-    その場合 mkdir(exist_ok=True) を通過して _write_record() へ進み、fail-open へ変換されない
-    （issue #106）。
+    これは mkdir の失敗経路だけを作る。既存の runtime 領域へ書けない経路は別なので、
+    `fail_claim_open` / `fail_claim_write` で個別に検査する。
     """
     (Path(repo) / ".agents").write_text("not a directory", encoding="utf-8")
+
+
+def _patch_os(test, name, replacement):
+    patcher = mock.patch.object(wl.os, name, replacement)
+    patcher.start()
+    test.addCleanup(patcher.stop)
+
+
+def fail_claim_open(test, exc):
+    """runtime 領域は作れるが claim ファイルを**開けない**環境を作る。
+
+    読み取り専用マウント（EROFS）、quota 超過（EDQUOT）、runtime 領域だけ所有者が違う
+    コンテナ（EACCES）で起きる。`chmod` で模擬しないのは #103 と同じ理由（uid 0 では
+    DAC が効かず no-op になる）で、errno を直接指定すれば uid にも FS にも依存しない。
+    """
+    real_open = wl.os.open
+
+    def guarded(path, *args, **kwargs):
+        if str(path).endswith(wl.CLAIM_REL.name):
+            raise exc
+        return real_open(path, *args, **kwargs)
+
+    _patch_os(test, "open", guarded)
+
+
+def fail_claim_write(test, exc, before_failing=None):
+    """claim ファイルは作れたが**書き込みの最中に**失敗する環境を作る。
+
+    `os.fdopen` 自体ではなく `write()` を落とすのは、実際の ENOSPC / EDQUOT がその位置で
+    表面化するため。fd の解放を with 文へ委ねる点も本番と同じ経路になる。
+
+    `before_failing` は失敗と後始末の隙間に別セッションが割り込む状況を作るためのフック。
+    """
+    real_fdopen = wl.os.fdopen
+
+    def guarded(fd, *args, **kwargs):
+        handle = real_fdopen(fd, *args, **kwargs)
+
+        def boom(*_args, **_kwargs):
+            if before_failing is not None:
+                before_failing()
+            raise exc
+
+        handle.write = boom
+        return handle
+
+    _patch_os(test, "fdopen", guarded)
 
 
 class WorkspaceLockTest(unittest.TestCase):
@@ -158,6 +206,43 @@ class TestFailOpen(WorkspaceLockTest):
         self.assertTrue(result.ok, "fail-open なので処理は続行する")
         self.assertTrue(any("without the workspace lock" in w for w in result.warnings))
 
+    def test_an_unwritable_runtime_area_warns_and_continues(self):
+        """領域を作れるかと、そこへ書けるかは別。後者だけ失敗する環境が実在する。"""
+        fail_claim_open(self, PermissionError(errno.EACCES, "Permission denied"))
+        result = wl.claim(self.repo, "cycle")
+        self.assertEqual(wl.UNAVAILABLE, result.outcome)
+        self.assertTrue(result.ok, "fail-open なので処理は続行する")
+        self.assertTrue(any("without the workspace lock" in w for w in result.warnings))
+
+    def test_a_read_only_mount_is_fail_open_regardless_of_uid(self):
+        """EROFS / EDQUOT は権限ビットの話ではないので root でも同じ経路に入る。"""
+        fail_claim_open(self, OSError(errno.EROFS, "Read-only file system"))
+        self.assertEqual(wl.UNAVAILABLE, wl.claim(self.repo, "cycle").outcome)
+
+    def test_a_failed_write_is_fail_open(self):
+        """容量超過は書き込みの最中に表面化する。開けたかどうかとは別に倒す先が要る。"""
+        fail_claim_write(self, OSError(errno.ENOSPC, "No space left on device"))
+        result = wl.claim(self.repo, "cycle")
+        self.assertEqual(wl.UNAVAILABLE, result.outcome)
+        self.assertTrue(result.ok, "fail-open なので処理は続行する")
+
+    def test_a_failed_write_never_removes_another_session_claim(self):
+        """書き損じた側が最終パスを消すと、その隙に成立した別セッションの claim を奪う。
+
+        書き込み失敗と後始末の間に、別セッションが未完成レコードを stale 回収して自分の
+        claim を publish できる。後始末が最終パスを unlink すると生きた claim が消え、
+        「生きている claim は奪わない」が破れる。作りかけを残す方が安全側である。
+        """
+        def a_second_session_takes_over():
+            wl.claim_path(self.repo).write_text(
+                json.dumps({"pid": os.getpid(), "skill": "iterate", "token": "held-by-b"}),
+                encoding="utf-8")
+
+        fail_claim_write(self, OSError(errno.ENOSPC, "No space left on device"),
+                         before_failing=a_second_session_takes_over)
+        self.assertEqual(wl.UNAVAILABLE, wl.claim(self.repo, "cycle").outcome)
+        self.assertEqual("held-by-b", self._record()["token"])
+
 
 class TestStatus(WorkspaceLockTest):
     def test_status_is_none_when_unclaimed(self):
@@ -221,6 +306,13 @@ class TestCli(WorkspaceLockTest):
 
     def test_unavailable_exits_zero_because_the_contract_is_fail_open(self):
         make_runtime_area_uncreatable(self.repo)
+        code, out = self._run("claim", "--repo", str(self.repo), "--skill", "cycle")
+        self.assertEqual(0, code)
+        self.assertEqual(wl.UNAVAILABLE, json.loads(out.splitlines()[0])["outcome"])
+
+    def test_an_unwritable_runtime_area_also_exits_zero(self):
+        """非ゼロは LOCK_HELD 専用。書けない環境で 1 を返すと実在しない占有者で停止する。"""
+        fail_claim_open(self, PermissionError(errno.EACCES, "Permission denied"))
         code, out = self._run("claim", "--repo", str(self.repo), "--skill", "cycle")
         self.assertEqual(0, code)
         self.assertEqual(wl.UNAVAILABLE, json.loads(out.splitlines()[0])["outcome"])

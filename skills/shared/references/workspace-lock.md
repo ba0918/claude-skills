@@ -97,8 +97,13 @@ No automatic takeover is offered.
 
 ## When the lock cannot be taken (fail-open)
 
-If `.agents/runtime/` cannot be created (outside Git control, read-only, and so on), emit a
-single warning and **continue**.
+If `.agents/runtime/` cannot be created, **or the claim file inside it cannot be written**
+(outside Git control, read-only mount, quota exhausted, a differently-owned runtime area,
+and so on), emit a single warning and **continue**.
+
+Both halves matter. A runtime area that already exists but rejects writes must reach
+`UNAVAILABLE` too — surfacing it as an error would exit non-zero, and the contract reserves
+that for `LOCK_HELD`, so callers would stop on a holder that does not exist.
 
 This is deliberate. The lock is an addition to existing behavior; stopping where it cannot be
 held would break setups that used to work. Such an environment keeps its previous safety —

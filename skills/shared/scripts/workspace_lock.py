@@ -43,9 +43,9 @@ class ClaimResult:
     """The outcome of a claim attempt.
 
     `ok` is what a caller branches on. It is True for UNAVAILABLE as well, because the
-    contract is **fail-open**: a tree where the runtime area cannot be created is no less
-    safe than it was before this lock existed, and stopping there would break setups that
-    used to work.
+    contract is **fail-open**: a tree where the runtime area cannot be created — or where it
+    exists but the claim cannot be written — is no less safe than it was before this lock
+    existed, and stopping there would break setups that used to work.
     """
 
     def __init__(self, outcome, token=None, holder=None, warnings=None):
@@ -109,12 +109,23 @@ def read_claim(repo):
 
 
 def _write_record(path, record, warnings):
-    """Create the claim exclusively. Returns False when it already exists."""
+    """Create the claim exclusively. Returns False when it already exists.
+
+    `FileExistsError` means someone else holds the tree, which is an outcome. **Every other
+    OSError propagates** and the caller turns it into `UNAVAILABLE` — an unwritable runtime
+    area (read-only mount, quota, a differently-owned directory) is a fail-open condition,
+    not a conflict.
+    """
     payload = json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
     try:
         fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, CLAIM_MODE)
     except FileExistsError:
         return False
+    # A write that fails here leaves a truncated record behind **on purpose**. Deleting it
+    # would race: between our failed write and the cleanup, another session can already have
+    # stale-reclaimed this pathname, and the unlink would take that live claim — the one thing
+    # this module must never do. A truncated record is read back as unreadable and reclaimed
+    # through the path below, which is safe.
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         handle.write(payload)
     _verify_mode(path, warnings)
@@ -176,7 +187,19 @@ def claim(repo, skill, branch=None, pid=None, now=None, token=None):
         "token": token or secrets.token_hex(16),
     }
 
-    if _write_record(path, record, warnings):
+    try:
+        created = _write_record(path, record, warnings)
+    except OSError as exc:
+        # Same fail-open posture as the mkdir above. Letting this escape would surface as a
+        # non-zero CLI exit, which the contract reserves for LOCK_HELD — callers would stop
+        # on a holder that does not exist.
+        warnings.append(
+            f"cannot write {CLAIM_REL} ({errno.errorcode.get(exc.errno, exc.errno)}); "
+            "continuing without the workspace lock"
+        )
+        return ClaimResult(UNAVAILABLE, warnings=warnings)
+
+    if created:
         return ClaimResult(ACQUIRED, token=record["token"], warnings=warnings)
 
     holder = read_claim(repo)
