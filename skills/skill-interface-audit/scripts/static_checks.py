@@ -202,7 +202,7 @@ def check_si_s002(targets: list[dict], ctx: dict) -> list[dict]:
 # SI-S003: Prose bloat
 # ---------------------------------------------------------------------------
 
-_WORKFLOW_KEYWORDS = {"workflow", "phase", "step", "フロー", "ワークフロー"}
+_WORKFLOW_KEYWORDS = {"workflow", "flow", "phase", "step", "フロー", "ワークフロー"}
 
 
 def _classify_heading(heading_text: str) -> str:
