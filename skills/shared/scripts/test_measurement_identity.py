@@ -225,9 +225,27 @@ class TestCurrentSurfaceSha256(unittest.TestCase):
 
         expected = ledger.fingerprint(REPO_ROOT,
                                        ledger.skill_surface(REPO_ROOT, "issue"))
-        actual = mi.current_surface_sha256(REPO_ROOT, "issue")
+        actual = mi.current_surface_sha256("issue")
         self.assertRegex(actual, r"^[0-9a-f]{64}$")
         self.assertEqual(actual, expected)
+
+    def test_distribution_root_contains_the_skills_directory(self):
+        # 配布物ルートの直下に skills/ があること。emit が対象プロジェクトではなく
+        # 配布物から fingerprint を計算できる前提そのもの
+        root = mi.distribution_root()
+        self.assertTrue(os.path.isdir(os.path.join(root, "skills")))
+        self.assertTrue(os.path.isfile(
+            os.path.join(root, "skills", "skill-regression", "scripts", "ledger.py")))
+
+    def test_fingerprint_ignores_repo_root(self):
+        # 対象プロジェクトが変わっても指示のバージョンは変わらない。外部プロジェクトから
+        # 呼んでも配布物側の値が出ることの担保
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(
+                mi.current_surface_sha256("issue"),
+                mi.current_surface_sha256("issue", dist_root=mi.distribution_root()),
+            )
+            self.assertFalse(os.path.isdir(os.path.join(tmp, "skills")))
 
 
 class TestDefaultEventsPath(unittest.TestCase):

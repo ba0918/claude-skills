@@ -53,6 +53,31 @@ says 92% / and 90% で、`Use when the user says ...` という定型句がほ�
 両者を分ける情報（refine 済みか）も description に書かれているため判定は割れない。
 **語彙の重なりは判定の混同を予測しない**という、ストップワードでは解けない別の問題である。
 
+`issue` / `github-issue` の計測イベント追記を外部プロジェクトから実行できるようにした
+（issue #56）。両スキルは利用側プロジェクトで動く設計なのに、コマンドが
+`python3 skills/shared/scripts/measurement_identity.py ...` というリポジトリ相対パスで
+書かれていた。利用側に `skills/` は無いので必ず落ちる。しかも両スキルは「計測の失敗は warn
+のみで tick を落とさない」と定めている（正しい設計）ため、**tick は成功し続け計測イベント
+だけが永久に記録されない**状態だった。
+
+パスの修正だけでは足りなかった。`measurement_identity.py` 自身が
+`{repo_root}/skills/skill-regression/scripts` から `ledger` を動的 import しており、
+外部プロジェクトでは `ModuleNotFoundError` で落ちる。`--repo-root` は計測対象プロジェクト
+（イベントの書き込み先）であってスキル実体の置き場ではない、という取り違えが原因である。
+
+`surface_sha256` は契約上「指示のバージョン番号」であり、実行されているのは配布物側の
+SKILL.md なので、**fingerprint を配布物ルートから計算する**ようにした。`--repo-root` の役割は
+イベントの書き込み先だけに限定される。checkpoint-pattern.md の CLI 呼び出し規約と同じ理由で、
+スクリプト実体は配布位置にあり対象プロジェクトと同居しているとは限らない。本リポジトリで
+動かす場合は両者が一致するため値は変わらない。issue が代替案として挙げていた
+「`surface_sha256` を null で記録する degraded 経路」は採らなかった。null にすると
+「どの指示バージョンで測ったか」が失われ、計測の目的そのものが消えるため。
+
+なお両 SKILL.md から checkpoint-pattern.md へ md リンクを張ったことで、同契約が
+`issue` / `github-issue` の挙動面に入った。今後 checkpoint-pattern.md を編集すると
+2 スキルの再評価が要る。共有契約を再発明せず参照するという原則（skill-authoring #5）に
+従った結果として、回帰評価の範囲が広がるトレードオフである。
+
 ## 1.68.0
 
 CONTEXT 語彙の状態 enum を英語化した（`確定` / `暫定` / `競合中` / `廃語` →
