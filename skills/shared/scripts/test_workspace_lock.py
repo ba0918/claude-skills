@@ -19,6 +19,23 @@ import workspace_lock as wl  # noqa: E402
 DEAD_PID = 2 ** 22 - 1  # Linux の既定 pid_max を超える値。存在しえない
 
 
+def make_runtime_area_uncreatable(repo):
+    """runtime 領域を**作成**できない環境を作る（既存領域への書き込み不能とは別の経路）。
+
+    `.agents` を通常ファイルとして置くと `mkdir` が ENOTDIR で落ちる。権限検査ではなく
+    パス解決の失敗なので、実行 uid によらず同じ fail-open 経路へ入る。
+
+    `chmod(0o500)` で模擬しないのは、uid 0 に対して DAC の書き込みビットが効かず模擬が
+    no-op になるため。root はこのリポジトリの自走ループが実際に走る標準環境であり、
+    そこでだけ fail-open 契約が無検証になる（issue #103）。
+
+    なお `.agents/runtime` が既に存在して書き込めない経路はここでは作れない。claim() は
+    その場合 mkdir(exist_ok=True) を通過して _write_record() へ進み、fail-open へ変換されない
+    （issue #106）。
+    """
+    (Path(repo) / ".agents").write_text("not a directory", encoding="utf-8")
+
+
 class WorkspaceLockTest(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
@@ -133,12 +150,9 @@ class TestRelease(WorkspaceLockTest):
 
 
 class TestFailOpen(WorkspaceLockTest):
-    def test_unwritable_runtime_area_warns_and_continues(self):
+    def test_an_uncreatable_runtime_area_warns_and_continues(self):
         """ロックできない環境で止めると、これまで動いていた構成が動かなくなる。"""
-        agents = self.repo / ".agents"
-        agents.mkdir()
-        agents.chmod(0o500)
-        self.addCleanup(agents.chmod, 0o700)
+        make_runtime_area_uncreatable(self.repo)
         result = wl.claim(self.repo, "cycle")
         self.assertEqual(wl.UNAVAILABLE, result.outcome)
         self.assertTrue(result.ok, "fail-open なので処理は続行する")
@@ -206,10 +220,7 @@ class TestCli(WorkspaceLockTest):
         self.assertIn("cycle", out)
 
     def test_unavailable_exits_zero_because_the_contract_is_fail_open(self):
-        agents = self.repo / ".agents"
-        agents.mkdir()
-        agents.chmod(0o500)
-        self.addCleanup(agents.chmod, 0o700)
+        make_runtime_area_uncreatable(self.repo)
         code, out = self._run("claim", "--repo", str(self.repo), "--skill", "cycle")
         self.assertEqual(0, code)
         self.assertEqual(wl.UNAVAILABLE, json.loads(out.splitlines()[0])["outcome"])
