@@ -342,9 +342,16 @@ parse_change_targets(body) -> list[Path] | MISSING:
   heading annotating each file, in the form `- a/b.md:170 — what to fix here`, and those must not be read
   as declarations. Requiring the whole item to match the path character set drops them: a line reference
   contains `:`, an annotation contains spaces.
-- **A path that fails validation rejects the whole declaration, not just that line.** The declared set is
-  what Gate 0b measures the plan against, so silently dropping one entry would quietly widen the allowed
-  scope. It is also what keeps a hostile body out of `impact_command`'s argument list.
+- **The two checks reject at different scopes, and the difference is deliberate.** Failing the path
+  character set skips **that item only** (`continue`) — that is exactly what lets the annotated list
+  above be ignored — and it runs first, so an annotated item that also contains `..` is still just
+  dropped. Failing the traversal / absolute-path check rejects **the whole declaration** (`MISSING`),
+  because an item of that shape is evidence the body is malformed or hostile. Dropping it silently and
+  carrying on with the rest would hand Gate 0a a shortened path list, so both of its checks loosen:
+  `forbidden_path_globs` can no longer see the dropped entry, and `impact_units` measures less than
+  the change actually reaches — **underestimating the blast radius**, the one error this gate must
+  not make. (Gate 0b moves the other way: a shorter declared set makes `plan_paths ⊆ declared_paths`
+  harder to satisfy, not easier.)
 - `MISSING` is a Gate 0a quiet skip.
 
 ### `impact_units(paths, config)`

@@ -10,6 +10,38 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+`parse_change_targets` の散文が 2 つの検査を混同していた（issue #95、#96 を集約）。擬似コードは
+文字種チェックを `continue`（当該項目のみスキップ）、traversal / 絶対パスチェックを `MISSING`
+（宣言全体を却下）と**別々の却下範囲**で扱うが、散文は両方を「validation」と呼んでいた。
+文字種チェックが項目単位なのは、実際の issue 本文が `## 変更対象` に併記する注釈付き第 2 リスト
+（`- a/b.md:170 — 直すもの`）を宣言として読まないための意図的な設計である。
+
+この reference から実装する読み手が誤読すると、注釈付き項目が宣言ごと却下される。すると
+`## 変更対象` に注釈を併記した issue（#78 自身がこの形）が軒並み Gate 0a の quiet skip に落ち、
+`claude-auto` を付けた issue が原理的に 1 件も拾われなくなる。スキルは散文が実行される仕様なので
+「擬似コードを読めば分かる」は緩和にならない。
+
+**検査順序も明記した。** 注釈付き項目は両検査に該当しうる（`- ../b.md:170 — 直すもの` は空白も
+`..` も含む）ため、順序が書かれていないと traversal を先に検査する実装が生まれ、上記の全滅が
+そのまま再発する。
+
+根拠の文も訂正した。宣言集合から 1 件落ちると Gate 0b の `plan_paths ⊆ declared_paths` は母集合が
+縮んで**厳しくなる**。緩むのは Gate 0a 側で、`forbidden_path_globs` が落ちた項目を見られなくなり、
+`impact_units` に渡すパスが減って**波及半径を過小評価する**。旧文の「allowed scope が広がる」は
+理由づけの置き場所ごと誤っていた。
+
+旧文末尾の「hostile body を `impact_command` の引数から締め出す」は削除した。項目単位の skip でも
+当該パスはオラクルに渡らないため、「skip ではなく全体却下」の根拠になっていない。シェルメタ文字を
+防ぐのは文字種チェックと `shell_quote_join` で、既に別途明記されている。
+
+`skipped` ではなく `dropped` と書いているのは、`validate_repo.py` の契約語彙チェックが
+coverage-ledger の `reviewed` / `skipped` / `unsupported` の共起で発火する偽陽性を避けるためである
+（除外登録はスキル単位でゲートを無効化するので採らない）。隣接する bullet も同じ動作を `drops` と
+呼んでおり語彙が揃う。
+
+擬似コードと Gate ロジックは変更していない。影響 1 スキル 6 シナリオを process-queue 経路で実走し
+critical 全 ○。
+
 `workspace_lock` の fail-open が、既存の runtime 領域へ書けない環境で破れていた（issue #106）。
 `claim()` が fail-open へ変換するのは `mkdir()` の `OSError` だけで、`.agents/runtime` が既に
 存在すると `mkdir(exist_ok=True)` を通過して `_write_record()` へ進む。そこは
