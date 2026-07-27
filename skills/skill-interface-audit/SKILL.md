@@ -52,7 +52,7 @@ No command is created (the skills-first policy; being single-workflow, it needs 
 
 Run the SI-S\* rules in one batch and emit a findings JSON.
 
-Target rules: SI-S001 through SI-S004 (details in [rule-catalog.md](references/rule-catalog.md)).
+Target rules: SI-S001 through SI-S004, plus SI-S006 (details in [rule-catalog.md](references/rule-catalog.md)). SI-S005 is reserved and not implemented, so the numbering has a gap.
 All of them correspond to machine-verifiable principles of skill-authoring.md and can be decided deterministically.
 
 The finding schema is shared with context-audit:

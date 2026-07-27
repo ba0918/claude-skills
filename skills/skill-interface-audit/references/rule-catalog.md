@@ -39,6 +39,7 @@ words, link existence, shared contract vocabulary). This phase owns the structur
 | SI-S002 | WARN | REPORT\_ONLY | skill-authoring frontmatter | pure function | **A workflow summary leaked into the description**: detects numbered lists, phase keywords (Phase/Step/まず/次に), and procedure description patterns. A description stays at "what it does + when to use it" |
 | SI-S003 | INFO | REPORT\_ONLY | skill-authoring #1 | pure function | **Prose bloat**: sections in SKILL.md without a `Workflow` / `Phase` / `Step` style heading exceed 60% of the whole. An indicator of deviation from the process-over-prose principle |
 | SI-S004 | WARN | NEEDS\_JUDGMENT | AGENTS.md editing rules | pure function | **Platform-specific tool vocabulary leaked in**: SKILL.md or references/ contains a platform-specific tool API name (`Edit`, `Write`, `Read`, `Bash`, `Agent`, `Workflow`, etc.) or a model-specific name. Code blocks and quotes are excluded |
+| SI-S006 | WARN | NEEDS\_JUDGMENT | skill-authoring #5 | pure function | **A shared contract is inlined**: a run of 12 words matches verbatim between a file (SKILL.md or references/) and a shared contract that same file links to. Code blocks are excluded |
 
 ### SI-S001 detail: reference chain depth
 
@@ -82,6 +83,31 @@ Exclusion conditions:
 - capitalized words in sentence-initial position (line start, or right after a period)
 - words inside Markdown headings (`## Workflow`, etc. A heading starts with `#` at line start, so it also falls under the sentence-initial exclusion, but exclude it explicitly)
 - words right after a numbered list marker (the `Write` in `3. Write ...`, etc. The period in `N. ` is not a sentence-final period, but treat it as sentence-initial and exclude it)
+
+### SI-S006 detail: inlined shared contract
+
+**What is compared**: a file (SKILL.md, or any `references/*.md` of the same skill) against **only the shared contracts that same file links to**. Unlinked contracts are never compared — a skill that happens to share vocabulary with a contract it does not reference is not duplicating it.
+
+**The signal is a verbatim run of 12 words**, over lowercased word tokens with code fences and frontmatter stripped. Nothing else. Lexical similarity and heading-name matching were both **measured and rejected** on 2026-07-27 over the 48-skill corpus:
+
+| Candidate signal | Result |
+|---|---|
+| Contract-distinctive vocabulary rate | Continuous, no separation (median 0.117 / max 0.625). The top scorers were skills that legitimately *implement* the contract (`issue` ↔ `polling-pattern` at 0.55) |
+| Same, per section | Same outcome (median 0.058 / max 0.157) |
+| Heading-name match | 6 hits, false positives. `Preventing rationalization` is shared because the authoring convention *recommends* that table — the rows underneath were entirely different |
+| **Verbatim 12-word run** | **4 hits, 4 of 4 confirmed true positives by inspection** |
+
+The 4 findings on the corpus at introduction: a test-framework detection table duplicated in `test-driven-development`, a comparison table in `mockup-diff` (**already drifted** — the contract said "Verification level / When it runs", the skill said "Role / In the pipeline"), a secret-masking rule in `goal-decomposition`, and a failed-state retention rule in `issue/references/polling-state.md`.
+
+**Why there is no line-span gate.** The measured -37% friction pattern describes a long inline section, so gating on "the matched region spans N lines" is tempting. Measured, it removes real findings: at a 4-line gate, 2 of the 3 then-confirmed true positives disappeared, because a duplicated **table** matches in fragments that do not form a contiguous line run. A 12-word verbatim run is itself the evidence that text was copied; the line count adds nothing but false negatives.
+
+**Why n = 12.** Sweeping the threshold: n=8 gives 16 pairs, n=10 gives 7, n=12 gives 4, n=16 gives 0. The pairs that appear only below 12 are short role-specific restatements sitting next to a link (`handoff` restating the checkpoint conflict rule in one line), which is exactly what a referencing skill is *supposed* to write. 12 is the point where the boundary between "restates its own role" and "copied the contract" falls.
+
+**Why NEEDS\_JUDGMENT and not AUTO\_FIX.** The measured pattern has 3 conditions: the inline section is long, it is **not relevant to every scenario**, and the contract covers it fully. The middle condition cannot be decided mechanically, and it is the real gate — the 2026-07-25 verification-gate measurement (a null result) showed a case where the duplicate was load-bearing and removing it changed nothing at runtime. Which side to keep is a judgement, so the rule reports and never rewrites.
+
+**Recall is not claimed.** A duplication that has been fully paraphrased carries no verbatim run and is invisible to this rule. SI-S006 finding zero results is not evidence that no contract is inlined.
+
+**ID note**: `SI-S005` is reserved below for "missing rationalization guard table", so this rule takes `SI-S006`. The reservation predates it and was not renumbered — a catalog whose IDs shift under later arrivals cannot be read against older findings.
 
 ## Phase 2: Contract Rules (LLM semantic judgment)
 

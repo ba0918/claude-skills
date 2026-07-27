@@ -433,3 +433,84 @@ class TestRunOnRealRepo(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ── SI-S006 ──────────────────────────────────────────────────────────────
+
+def _make_contract(tmpdir, name, body):
+    d = os.path.join(tmpdir, "skills", "shared", "references")
+    os.makedirs(d, exist_ok=True)
+    with open(os.path.join(d, name), "w") as f:
+        f.write(body)
+
+
+_LONG = ("the queue itself holds ready running done failed archives and their "
+         "index under the state root directory")
+
+
+class TestSIS006(unittest.TestCase):
+    def test_verbatim_run_in_linked_contract_is_flagged(self):
+        tmpdir = tempfile.mkdtemp()
+        _make_contract(tmpdir, "polling-pattern.md", f"# Contract\n\n{_LONG}\n")
+        t = _make_target(
+            content=f"See [contract](../shared/references/polling-pattern.md).\n\n{_LONG}\n",
+            tmpdir=tmpdir)
+        findings = sc.check_si_s006([t], {"root": tmpdir})
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0]["id"], "SI-S006")
+        self.assertEqual(findings[0]["severity"], "WARN")
+        self.assertEqual(findings[0]["action"], "NEEDS_JUDGMENT")
+
+    def test_link_without_duplication_passes(self):
+        tmpdir = tempfile.mkdtemp()
+        _make_contract(tmpdir, "polling-pattern.md", f"# Contract\n\n{_LONG}\n")
+        t = _make_target(
+            content="Follow [contract](../shared/references/polling-pattern.md); "
+                    "this skill retries at most three times.\n",
+            tmpdir=tmpdir)
+        self.assertEqual(sc.check_si_s006([t], {"root": tmpdir}), [])
+
+    def test_unlinked_contract_is_not_compared(self):
+        # リンクしていない契約とは比較しない。偶然の語の一致で発火させないため
+        tmpdir = tempfile.mkdtemp()
+        _make_contract(tmpdir, "polling-pattern.md", f"# Contract\n\n{_LONG}\n")
+        t = _make_target(content=f"{_LONG}\n", tmpdir=tmpdir)
+        self.assertEqual(sc.check_si_s006([t], {"root": tmpdir}), [])
+
+    def test_code_fence_match_is_ignored(self):
+        # コマンド例やスキーマ例が契約と一致するのは正しい引用であって重複ではない
+        tmpdir = tempfile.mkdtemp()
+        _make_contract(tmpdir, "polling-pattern.md", f"# Contract\n\n```\n{_LONG}\n```\n")
+        t = _make_target(
+            content=f"See [contract](../shared/references/polling-pattern.md).\n\n"
+                    f"```\n{_LONG}\n```\n",
+            tmpdir=tmpdir)
+        self.assertEqual(sc.check_si_s006([t], {"root": tmpdir}), [])
+
+    def test_short_shared_phrase_passes(self):
+        # 閾値未満の短い言い換えは拾わない（役割固有の 1 行要約を潰さない）
+        tmpdir = tempfile.mkdtemp()
+        _make_contract(tmpdir, "polling-pattern.md", "# Contract\n\nready running done failed\n")
+        t = _make_target(
+            content="See [contract](../shared/references/polling-pattern.md).\n\n"
+                    "ready running done failed\n",
+            tmpdir=tmpdir)
+        self.assertEqual(sc.check_si_s006([t], {"root": tmpdir}), [])
+
+    def test_duplication_inside_references_dir_is_flagged(self):
+        # references/ 配下も走査対象。実測ではここで真陽性 1 件が増えた
+        tmpdir = tempfile.mkdtemp()
+        _make_contract(tmpdir, "polling-pattern.md", f"# Contract\n\n{_LONG}\n")
+        t = _make_target(content="A skill body with no duplication.\n", tmpdir=tmpdir)
+        refs = os.path.join(t["skill_dir"], "references")
+        os.makedirs(refs, exist_ok=True)
+        with open(os.path.join(refs, "state.md"), "w") as f:
+            f.write(f"See [contract](../../shared/references/polling-pattern.md).\n\n{_LONG}\n")
+        findings = sc.check_si_s006([t], {"root": tmpdir})
+        self.assertEqual(len(findings), 1)
+        self.assertIn("references/state.md", findings[0]["where"])
+
+    def test_missing_shared_dir_is_not_an_error(self):
+        t = _make_target(content="# Test\n")
+        self.assertEqual(
+            sc.check_si_s006([t], {"root": os.path.dirname(t["skill_dir"])}), [])
