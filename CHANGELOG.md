@@ -10,6 +10,13 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+cycle の Delegation result relay に、共有契約が明記を要求している role-specific values
+（timeout minutes / redelegation limit / optional viewpoints）が書かれていなかった（issue #58）。
+実害として、N=10 分の契約に対し約 1 分で委譲を見切って inline へ倒れ、委譲結果の着弾 1 秒前に
+取りこぼした回帰評価がある。裁定（2026-07-28）に基づき共有契約の既定 N=10 分をそのまま採用し、
+redelegation limit は pillar 2 の「1 視点 1 回」、optional viewpoints は無しと明記した。
+cycle の実測が溜まって別値が正当化されたら改定する。
+
 SI-S001（参照チェーン深度）が同一の参照エッジを SKILL.md 側のリンク出現回数だけ重複出力し、
 finding が 4.1 倍（raw 329 / distinct 80）に膨らんでいた（issue #110）。重複分は `where` も `what` も
 完全に同一で `id` だけが違い、読み手が区別できる情報を持たない。raw は issue 起票時の実測で 323、
