@@ -22,10 +22,10 @@ Input (natural language or plan files)
   │     Extract affected files → intersection check → execution groups
   │
   ├── Phase 2: Parallel Execution (per group)
-  │     Create worktree → subagent (cycle) → remove worktree
+  │     Create worktree → subagent (cycle) → collect results (worktree kept)
   │
   ├── Phase 3: Merge
-  │     Merge successful branches → test → revert on failure
+  │     Merge successful branches → test → revert on failure → remove merged worktrees
   │
   └── Phase 4: Summary
         Unified report of all cycles
@@ -37,6 +37,29 @@ Determine input type from `$ARGUMENTS`:
 
 - **All arguments end in `.md`** → Treat as plan file paths. Skip Phase 0, go to Phase 1.
 - **Otherwise** → Treat as natural language instruction. Start from Phase 0.
+
+## Preserved Worktrees
+
+A failed cycle leaves its worktree in place (§Failure Handling). **Before Phase 0 / Phase 1, in
+both input modes**, run `git worktree list` and report every preserved worktree with its path,
+its branch, and whether that branch is already merged into `main`.
+
+Removal is a decision, never a timer:
+
+- **Only when Step 0.2 actually runs** (natural-language mode that reached 2+ plans): fold the
+  removal question into that same approval prompt — no second confirmation point is created
+  (§Important Rules). Remove only the paths approved there, with
+  `git worktree remove --force {path}`
+- **Everywhere else** — plan-file mode, the 0-plan exit, the 1-plan headless fallback, and any
+  other headless run: report the list and **remove nothing**. Never open a prompt that exists
+  only to ask about cleanup: there is no one present to answer, and a prompt there is
+  indistinguishable from a stall
+
+Do not remove a preserved worktree on an age or count threshold, and do not treat "the branch is
+merged" as permission to remove it unasked. Merging proves the *committed* work survived; the
+reason to keep the tree is everything that was never committed. Age-based cleanup would recreate
+the exact failure this rule exists to prevent — the diagnostic state is gone by the time anyone
+looks for it.
 
 ## Phase 0: Decompose
 
@@ -201,7 +224,23 @@ Execute each group sequentially. Within each group, execute cycles in parallel.
 
 For each cycle in the group, **in parallel**:
 
-1. **Create the worktree**: create an isolated working tree and branch with git worktree
+1. **Create the worktree**: create an isolated working tree and branch with git worktree.
+
+   Name both after the **run**, not the plan: branch `parallel/{run_id}-{plan_id}-{slug}` and a
+   worktree path carrying the same suffix.
+
+   - `{run_id}` is captured **once at Phase 2 entry** and shared across the batch. Derive it from
+     the current time at a precision that cannot repeat across back-to-back runs (sub-second, or
+     seconds plus a short random suffix). It must **not** come from the plan file: a preserved
+     worktree still holds its branch checked out, git refuses to hand that branch to a second
+     worktree, so any plan-derived name collides the moment the same plan is re-run after a failure
+   - `{plan_id}` distinguishes plans within the run — the plan letter in natural-language mode, the
+     one-based argument position in plan-file mode
+   - `{slug}` is for readability only. **Uniqueness must never depend on it**, since two plans can
+     legitimately share a slug
+
+   If `git worktree add` still fails, do not improvise another path: record that cycle as failed
+   and continue (§Failure Handling).
 2. **Run the cycle**: launch a subagent (high-performance model — implementation is protected by verification gates, so do not inherit the expensive session model) and run the cycle inside the worktree.
    **Pass no workspace-lock token.** The worktree is a different resource from the main tree
    (its own `.agents/runtime/`), so the delegate claims it itself:
@@ -217,11 +256,19 @@ For each cycle in the group, **in parallel**:
    ```
 
 3. **Collect the results**: record success/failure and a summary for each cycle
-4. **Remove the worktree**: delete the git worktree and clean up
+4. **Do not remove the worktree here.** Removal is Step 3.4's decision, and only for a cycle that
+   merged cleanly — a worktree torn down in Phase 2 is unavailable when Phase 3's post-merge test
+   fails and the revert has to be explained. On cycle failure it is preserved outright
+   (§Failure Handling)
 
 ### Failure Handling
 
-- If a cycle fails, record the failure and preserve the branch
+- If a cycle fails, record the failure and preserve **both the branch and the worktree**. The
+  branch only carries what was committed; the uncommitted edits, the test output, and the
+  `.agents/` state the run left behind are the part worth diagnosing, and a cycle that died
+  mid-implementation may have committed nothing at all
+- Report the preserved worktree's path everywhere the failure is reported (Step 4.2 and the
+  result file), so the reader can go look without reconstructing the path
 - Check if any cycles in later groups depend on the failed cycle
 - Mark dependent cycles as "skipped (dependency failure)"
 
@@ -263,8 +310,13 @@ If no test runner exists, skip this step.
 
 ### Step 3.4: Cleanup
 
+Remove the worktree of every cycle that **merged and passed its post-merge test**. Leave every
+other worktree in place — failed, merge-reverted, and skipped cycles all keep theirs
+(§Preserved Worktrees).
+
 ```bash
-git worktree prune
+git worktree remove {worktree_path}   # per successfully merged cycle
+git worktree prune                    # bookkeeping only; never removes a live directory
 ```
 
 ## Phase 4: Summary
@@ -286,7 +338,7 @@ Groups: {M}
 Results:
   [A] {title} — ✅ Merged
   [B] {title} — ✅ Merged
-  [C] {title} — ❌ Failed (reason)
+  [C] {title} — ❌ Failed (reason) — worktree kept: {worktree_path}
   [D] {title} — ⏭ Skipped (dependency: C)
 
 Commits: {total_commits}
@@ -316,7 +368,7 @@ Save the summary to `.agents/artifacts/plans/results/{base_plan_name}_result.md`
 {git log --oneline for all merged commits}
 
 ## Failed / Skipped Cycles
-{details for any non-successful cycles}
+{details for any non-successful cycles, each with its preserved branch and worktree path}
 ```
 
 ## Important Rules
@@ -325,6 +377,8 @@ Save the summary to `.agents/artifacts/plans/results/{base_plan_name}_result.md`
 - **File orthogonality is the safety guarantee** — Never allow parallel execution of plans with file intersections
 - **Partial success is acceptable** — Merge what succeeds, preserve what fails
 - **Single user confirmation point** — Only Phase 0 approval. Everything else is headless
-- **Worktree cleanup is mandatory** — Success or failure, always clean up
+- **Worktree cleanup is mandatory on success, forbidden on failure** — A failed cycle's worktree
+  is the diagnostic evidence; removing it destroys exactly what the failure needs (§Preserved
+  Worktrees)
 - **No force push, no rebase** — Standard merges only
 - **status.md updates are consolidated** — No parallel writes to shared files
