@@ -208,7 +208,7 @@
       "skills/github-issue/references/config-defaults.md": "5613460095f8cafb97bb8603aca37933e3b8e40f1014fb9ded04b6727775172c",
       "skills/github-issue/references/gh-commands.md": "cc3f6ec5bda0d660e5ff86aea58c8bac181c8c660b1a2c405a68f9623b4732e3",
       "skills/github-issue/references/label-spec.md": "d43e607c70abba0b17755a7c59cd7acf4ba39dce8b83be93e02db1c478358683",
-      "skills/github-issue/references/polling-adapter.md": "7d6593e283447a8b852d99f354792f642b2feb6989a15012bcc0021737e7fe5c",
+      "skills/github-issue/references/polling-adapter.md": "f97b84e9106b7564636a9c2e29b962ef78c5a7c6055ebcbecfffb2b64a0780d8",
       "skills/github-issue/references/secret-scanner.md": "d9a01874b251afdef4501d5a5c0f997a6ec6069f88f27f61e2dcfe2630276668",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
@@ -216,7 +216,7 @@
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "artifact-store.md への ephemeral/config 2 節追加に伴う再評価。process-queue 経路（claude-exec backend）で実走し critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて全一致を確認（unadjudicated_pass を素通しにしていない）。executor は --allowedTools が Bash/Read/Write/Edit/Glob/Grep でサブエージェント委譲が構造的に不可のため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
+    "note": "polling-adapter.md の parse_change_targets 散文修正（#95）に対する process-queue 実走 6/6、critical 全 ○・非 critical 欠落 0。fable レビューで検査順序と forbidden_path_globs の漏れを補い、validate_repo の契約語彙偽陽性を避けて skipped→dropped へ言い換えた最終テキストに対する再実走。baseline は 6 ユニットとも空宣言のため drift 突き合わせは空振り（#54 の既知問題）で、判定根拠は要件判定のみ。全 executor がインライン実行・Read/Grep のみ・gh コマンド未実行。",
     "result": "pass",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -234,8 +234,8 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "df8c55bc0bb451d66a5d2fc909f06e69b54db43d0d76822e3e1a3918eab19f54",
-    "verified": "2026-07-27"
+    "surface_sha256": "5c2497f376792084e830037be590f5b3d246a33564b4355cc3a8fa10724fd628",
+    "verified": "2026-07-28"
   },
   "handoff": {
     "file_sha256": {
