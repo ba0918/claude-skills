@@ -10,11 +10,39 @@ ja→en の一括変換では、fixture を持たない 26 スキルについて
 
 ## 対象ファイルの選別
 
-日本語行比率が閾値以上から閾値未満へ **遷移した** ファイルだけを検証する。
-遷移を条件にしないと、日本語のまま行う通常の編集（節を書き換えて見出しが 1 つ増える等）
-がすべて構造パリティ違反として報告され、ゲートが常時赤になって使い物にならない。
+翻訳されたファイルを 2 つの経路で拾う。**閾値の跨ぎ**（日本語行比率が閾値以上から
+閾値未満へ遷移した = 元が日本語主体だったファイル）と、**日本語行の実質的な減少**
+（元から本文の一部が英語だった部分翻訳ファイル）である。
+
+跨ぎだけを条件にすると、部分翻訳ファイルは閾値を跨がないため一切検証されない。
+それでいて出力は「劣化なし」と読めるため、緑の意味が「検証して問題なし」から
+「検証していない」へ静かに反転する。英語化が進むほど残る作業は部分翻訳ファイルに
+寄るので、スイープの後半ほど網が粗くなる。
+
+減少側の条件には縮み幅の上限を置く。翻訳は行を置き換えるが、節の削除は散文行そのものを
+減らす。縮んだファイルまで翻訳として扱うと、日本語のまま節を消す通常の編集が
+すべて構造差分で赤くなり、ゲートが常時赤になって使い物にならない。
+
+どちらの経路にも載らなかったファイルのうち、日本語が減っているものは
+`report()` が **未検証** として明示列挙する。素通しと検証済みを出力で区別する。
+
 閾値と日本語判定は check_language_coverage と共有する（2 つの日本語検出器が
 別々に育つと、指標と劣化検出が食い違う）。
+
+## baseline の鮮度
+
+remote-tracking ref は fetch するまで更新されない。pre-push hook は push の **前** に
+走るため、「しばらく fetch していない作業ディレクトリから push する」経路では
+古い `origin/main` が baseline に採用される。するとマージ済みの翻訳が
+「これから入る翻訳」として再検出され、数十件の偽 BLOCK でゲートが赤くなる。
+
+対策は 2 つある。pre-push hook は push ネゴシエーションで得た **remote の現在地**
+（stdin の remote sha）を `$TRANSLATION_PARITY_BASELINE` で渡す。これは fetch なしに
+得られる正確な比較元である。それが使えない経路のために、baseline から HEAD までの
+コミット数が `--max-baseline-lead` を超えたら比較を成立させず skip を明示出力する。
+
+`git fetch` をスクリプトから打つことはしない。副作用が大きく、検証の実行が
+リポジトリの状態を変えるのは sensor の役割から外れる。
 
 ## rule と severity
 
@@ -61,6 +89,19 @@ FM_NAME = re.compile(r"^name:\s*(.+?)\s*$", re.MULTILINE)
 # baseline リビジョンの解決順。ローカル（pre-push）と CI（PR）の両方で、
 # ネットワークアクセスなしにローカル ref だけで解決できる候補を並べる。
 BASELINE_ENV = "TRANSLATION_PARITY_BASELINE"
+
+# baseline から HEAD までのコミット数の上限。これを超えたら比較を成立させない。
+# 実測の根拠: 本リポジトリの feature ブランチは 1〜2 コミットで、偽 BLOCK 68 件を
+# 出した事例では古い remote-tracking ref が 195 コミット先行していた。日数を条件に
+# しないのは、その事例の ref が 4 日前のリリースのもので、活発なリポジトリでは
+# 「古さ」が日数に現れないため。先行コミット数は fetch 漏れの量を直接映す。
+DEFAULT_MAX_BASELINE_LEAD = 100
+
+# 翻訳と認めるのに必要な日本語行の最小減少。1〜2 行の手直しを翻訳と数えない。
+MIN_TRANSLATED_LINES = 3
+
+# 翻訳として許容する散文行の縮み幅。これを超えて縮んだものは削除とみなす。
+MAX_PROSE_SHRINK = 0.10
 
 # 契約語彙は validate_repo のチェック9 と同一の表を使う。あちらは「語彙があるなら
 # 契約へのリンクを要求する」検査で、語彙が消えた場合は要求そのものが消えて
@@ -126,13 +167,26 @@ def fingerprint(text):
     }
 
 
-def is_translation(base_text, cur_text, threshold=DEFAULT_THRESHOLD):
-    """閾値以上から閾値未満へ遷移したか（= このファイルは今回訳された）。"""
+def japanese_lines(base_text, cur_text):
+    """(baseline の未翻訳行, 現在版の未翻訳行, baseline の散文行, 現在版の散文行)。"""
     base_n, base_total = measure(base_text)
     cur_n, cur_total = measure(cur_text)
+    return base_n, cur_n, base_total, cur_total
+
+
+def is_translation(base_text, cur_text, threshold=DEFAULT_THRESHOLD):
+    """このファイルは今回訳されたか。
+
+    閾値の跨ぎと、日本語行の実質的な減少の 2 経路で判定する（詳細は module docstring）。
+    """
+    base_n, cur_n, base_total, cur_total = japanese_lines(base_text, cur_text)
     base_ratio = base_n / base_total if base_total else 0.0
     cur_ratio = cur_n / cur_total if cur_total else 0.0
-    return base_ratio >= threshold > cur_ratio
+    if base_ratio >= threshold > cur_ratio:
+        return True
+    return (base_n - cur_n >= MIN_TRANSLATED_LINES
+            and cur_ratio < base_ratio
+            and cur_total >= base_total * (1 - MAX_PROSE_SHRINK))
 
 
 def _finding(path, rule, severity, detail):
@@ -226,6 +280,14 @@ def resolve_baseline(repo, explicit=None):
     return None
 
 
+def baseline_lead(repo, baseline):
+    """baseline から HEAD までのコミット数。数えられなければ None。"""
+    out = git(["rev-list", "--count", f"{baseline}..HEAD"], repo)
+    if out is None or not out.strip().isdigit():
+        return None
+    return int(out.strip())
+
+
 def changed_md(repo, baseline, paths):
     """baseline ⇔ 作業ツリーで変化した .md のリポジトリ相対パス。"""
     out = git(["diff", "--name-only", baseline, "--", *(paths or ["."])], repo)
@@ -240,8 +302,13 @@ def baseline_text(repo, baseline, path):
 
 
 def scan(repo, baseline, paths, force=False):
-    """(findings, 検証したファイル数, 遷移なしで飛ばしたファイル数)。"""
-    findings, checked, skipped = [], 0, 0
+    """(findings, 検証したファイル数, 対象外のファイル数, 未検証の明細)。
+
+    未検証の明細は `[(path, baseline の未翻訳行, 現在版の未翻訳行), ...]`。
+    翻訳判定に載らなかったファイルのうち、日本語が減っているものだけを挙げる。
+    「対象外」に埋めると素通しと検証済みが出力で区別できない。
+    """
+    findings, checked, skipped, unverified = [], 0, 0, []
     for rel in changed_md(repo, baseline, paths):
         full = os.path.join(repo, rel)
         if not os.path.isfile(full):
@@ -252,24 +319,42 @@ def scan(repo, baseline, paths, force=False):
         cur = read(full)
         if not force and not is_translation(base, cur):
             skipped += 1
+            base_n, cur_n, _, _ = japanese_lines(base, cur)
+            if base_n > cur_n:
+                unverified.append((rel, base_n, cur_n))
             continue
         checked += 1
         findings += compare(rel, base, cur)
-    return findings, checked, skipped
+    return findings, checked, skipped, unverified
 
 
-def report(findings, checked, skipped, strict):
+def _print_unverified(unverified, limit=10):
+    """未検証ファイルを列挙する。緑を「検証済み」と読ませないための出力。"""
+    if not unverified:
+        return
+    print(f"  ! 未検証 {len(unverified)} ファイル: 日本語は減っているが翻訳判定に"
+          "載らないため、構造は検証していない")
+    for rel, base_n, cur_n in unverified[:limit]:
+        print(f"      {rel}（未翻訳行 {base_n} → {cur_n}）")
+    if len(unverified) > limit:
+        print(f"      … +{len(unverified) - limit}")
+    print("      翻訳したファイルなら --force で検証できる")
+
+
+def report(findings, checked, skipped, unverified, strict):
     blocks = [f for f in findings if f["severity"] == "BLOCK"]
     warns = [f for f in findings if f["severity"] == "WARN"]
     if not findings:
         print(f"✓ {SENSOR}: 翻訳 {checked} ファイルに劣化なし"
-              f"（翻訳遷移なしで対象外 {skipped}）")
+              f"（翻訳判定に載らず対象外 {skipped}）")
+        _print_unverified(unverified)
         return 0
     print(f"✗ {SENSOR}: {len(findings)} 件（BLOCK {len(blocks)} / WARN {len(warns)}）"
           f"  検証 {checked} ファイル / 対象外 {skipped}")
     for f in blocks + warns:
         print(f"  {f['severity']:<5} {f['file']} [{f['rule']}] {f['detail']}")
     print(f"  fix action: {FIX_ACTION}（機械的な復元は訳文の構文を壊すため行わない）")
+    _print_unverified(unverified)
     return 1 if blocks or (strict and warns) else 0
 
 
@@ -284,9 +369,14 @@ def main():
     ap.add_argument("--force", action="store_true",
                     help="翻訳遷移の判定を省き、変化した .md すべてを検証する")
     ap.add_argument("--strict", action="store_true", help="WARN も exit 1 に含める")
+    ap.add_argument("--max-baseline-lead", type=int, default=DEFAULT_MAX_BASELINE_LEAD,
+                    help="baseline から HEAD までのコミット数の上限。超えたら比較を "
+                         f"成立させず skip する（既定 {DEFAULT_MAX_BASELINE_LEAD}）。"
+                         "明示指定した baseline には適用しない")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
 
+    unverified = []
     if args.pair:
         before, after = args.pair
         findings = compare(after, read(before), read(after))
@@ -298,13 +388,29 @@ def main():
             print(f"- {SENSOR}: baseline リビジョンを解決できないため skip"
                   f"（--baseline か ${BASELINE_ENV} で指定できる）")
             return 0
-        findings, checked, skipped = scan(args.repo, baseline, args.paths, args.force)
+        # 明示指定は利用者の判断なので鮮度を問わない。候補の連鎖から自動で
+        # 拾った ref だけを検査する。
+        explicit = args.baseline or os.environ.get(BASELINE_ENV)
+        lead = None if explicit else baseline_lead(args.repo, baseline)
+        if lead is not None and lead > args.max_baseline_lead:
+            print(f"- {SENSOR}: baseline が古すぎるため skip")
+            print(f"    {baseline[:12]} から HEAD まで {lead} コミット"
+                  f"（上限 {args.max_baseline_lead}）")
+            print("    remote-tracking ref が fetch されておらず、マージ済みの翻訳を"
+                  "「これから入る翻訳」として再検出する状態にある")
+            print("    `git fetch origin main` の後に再実行するか、--baseline で明示する")
+            return 0
+        findings, checked, skipped, unverified = scan(
+            args.repo, baseline, args.paths, args.force)
 
     if args.json:
         print(json.dumps({"sensor": SENSOR, "checked": checked, "skipped": skipped,
+                          "unverified": [{"file": f, "baseline_untranslated": b,
+                                          "current_untranslated": c}
+                                         for f, b, c in unverified],
                           "findings": findings}, ensure_ascii=False, indent=2))
         return 1 if any(f["severity"] == "BLOCK" for f in findings) else 0
-    return report(findings, checked, skipped, args.strict)
+    return report(findings, checked, skipped, unverified, args.strict)
 
 
 if __name__ == "__main__":

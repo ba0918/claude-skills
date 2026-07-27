@@ -11,13 +11,16 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from check_translation_parity import (  # noqa: E402
+    baseline_lead,
     compare,
     fingerprint,
     is_translation,
+    main,
     report,
     resolve_baseline,
     scan,
@@ -28,6 +31,14 @@ FRONTMATTER = "---\nname: demo\ndescription: Demo skill. Use when demoing.\n---\
 
 def doc(body, frontmatter=FRONTMATTER):
     return frontmatter + body
+
+
+def mixed_body(japanese, english, heading="# Heading"):
+    """日本語 N 行 + 英語 M 行の本文。部分翻訳ファイルを組み立てるための素材。"""
+    lines = [heading, ""]
+    lines += [f"日本語で書かれた {i} 行目である。" for i in range(japanese)]
+    lines += [f"English line {i}." for i in range(english)]
+    return "\n".join(lines) + "\n"
 
 
 JA_BODY = """# 見出し
@@ -128,6 +139,25 @@ class TestTranslationDetection(unittest.TestCase):
     def test_editing_an_already_english_file_is_not_a_translation(self):
         edited = EN_BODY.replace("## Steps", "## Steps\n\nAn added paragraph.")
         self.assertFalse(is_translation(doc(EN_BODY), doc(edited)))
+
+    def test_partial_translation_below_the_threshold_is_detected(self):
+        """元から大半が英語のファイルは閾値を跨がない。減少側の経路で拾う。"""
+        base = doc(mixed_body(japanese=3, english=25))
+        self.assertLess(3 / 29, 0.15, "前提: baseline は既に閾値未満である")
+        self.assertTrue(is_translation(base, doc(mixed_body(japanese=0, english=28))))
+
+    def test_deleting_a_japanese_section_is_not_a_translation(self):
+        """節の削除は散文行そのものを減らす。翻訳と数えるとゲートが常時赤になる。"""
+        base = doc(mixed_body(japanese=4, english=30))
+        self.assertFalse(is_translation(base, doc(mixed_body(japanese=0, english=27))))
+
+    def test_a_one_line_touch_up_is_not_a_translation(self):
+        base = doc(mixed_body(japanese=3, english=25))
+        self.assertFalse(is_translation(base, doc(mixed_body(japanese=2, english=26))))
+
+    def test_adding_english_without_touching_japanese_is_not_a_translation(self):
+        base = doc(mixed_body(japanese=3, english=25))
+        self.assertFalse(is_translation(base, doc(mixed_body(japanese=3, english=35))))
 
 
 class TestFaithfulTranslation(unittest.TestCase):
@@ -267,7 +297,7 @@ class TestExitCode(unittest.TestCase):
 
     def _report(self, findings, strict):
         with contextlib.redirect_stdout(io.StringIO()):
-            return report(findings, 1, 0, strict)
+            return report(findings, 1, 0, [], strict)
 
     def test_block_fails(self):
         self.assertEqual(1, self._report([self._finding("BLOCK")], strict=False))
@@ -313,8 +343,8 @@ class TestGitIntegration(unittest.TestCase):
         self._commit("add japanese skill")
         broken = EN_BODY.replace("## Steps\n\n", "")
         self._write("skills/demo/SKILL.md", doc(broken))
-        findings, checked, skipped = scan(self.root, "HEAD", [])
-        self.assertEqual((1, 0), (checked, skipped))
+        findings, checked, skipped, unverified = scan(self.root, "HEAD", [])
+        self.assertEqual((1, 0, []), (checked, skipped, unverified))
         self.assertEqual({"structure_parity"}, {f["rule"] for f in findings})
         self.assertEqual("skills/demo/SKILL.md", findings[0]["file"])
 
@@ -323,15 +353,15 @@ class TestGitIntegration(unittest.TestCase):
         self._commit("add japanese skill")
         self._write("skills/demo/SKILL.md",
                     doc(JA_BODY.replace("## 手順", "## 追記\n\n段落。\n\n## 手順")))
-        findings, checked, skipped = scan(self.root, "HEAD", [])
-        self.assertEqual(([], 0, 1), (findings, checked, skipped))
+        findings, checked, skipped, unverified = scan(self.root, "HEAD", [])
+        self.assertEqual(([], 0, 1, []), (findings, checked, skipped, unverified))
 
     def test_force_checks_even_without_a_translation_transition(self):
         self._write("skills/demo/SKILL.md", doc(JA_BODY))
         self._commit("add japanese skill")
         self._write("skills/demo/SKILL.md",
                     doc(JA_BODY.replace("## 手順", "## 追記\n\n段落。\n\n## 手順")))
-        findings, checked, _ = scan(self.root, "HEAD", [], force=True)
+        findings, checked, _, _ = scan(self.root, "HEAD", [], force=True)
         self.assertEqual(1, checked)
         self.assertTrue(findings)
 
@@ -339,13 +369,13 @@ class TestGitIntegration(unittest.TestCase):
         self._write("README.md", "# readme\n")
         self._commit("init")
         self._write("skills/demo/SKILL.md", doc(EN_BODY))
-        self.assertEqual(([], 0, 0), scan(self.root, "HEAD", []))
+        self.assertEqual(([], 0, 0, []), scan(self.root, "HEAD", []))
 
     def test_deleted_file_is_skipped(self):
         self._write("skills/demo/SKILL.md", doc(JA_BODY))
         self._commit("add japanese skill")
         os.remove(os.path.join(self.root, "skills/demo/SKILL.md"))
-        self.assertEqual(([], 0, 0), scan(self.root, "HEAD", []))
+        self.assertEqual(([], 0, 0, []), scan(self.root, "HEAD", []))
 
     def test_paths_narrow_the_scan(self):
         self._write("skills/a/SKILL.md", doc(JA_BODY))
@@ -354,8 +384,36 @@ class TestGitIntegration(unittest.TestCase):
         broken = doc(EN_BODY.replace("## Steps\n\n", ""))
         self._write("skills/a/SKILL.md", broken)
         self._write("skills/b/SKILL.md", broken)
-        _, checked, _ = scan(self.root, "HEAD", ["skills/a"])
+        _, checked, _, _ = scan(self.root, "HEAD", ["skills/a"])
         self.assertEqual(1, checked)
+
+    def test_partial_translation_damage_is_caught_end_to_end(self):
+        """#65 の死角。閾値を跨がない部分翻訳ファイルで見出しを落としたケース。"""
+        self._write("skills/demo/SKILL.md", doc(mixed_body(japanese=3, english=25)))
+        self._commit("add a partially translated skill")
+        translated = mixed_body(japanese=0, english=28).replace("# Heading\n", "")
+        self._write("skills/demo/SKILL.md", doc(translated))
+        findings, checked, _, _ = scan(self.root, "HEAD", [])
+        self.assertEqual(1, checked)
+        self.assertEqual({"structure_parity"}, {f["rule"] for f in findings})
+
+    def test_untranslated_loss_outside_the_gate_is_listed_as_unverified(self):
+        """翻訳判定に載らないが日本語が減ったファイルは、黙って落とさず列挙する。"""
+        self._write("skills/demo/SKILL.md", doc(mixed_body(japanese=3, english=25)))
+        self._commit("add a partially translated skill")
+        self._write("skills/demo/SKILL.md", doc(mixed_body(japanese=2, english=26)))
+        _, checked, skipped, unverified = scan(self.root, "HEAD", [])
+        self.assertEqual((0, 1), (checked, skipped))
+        self.assertEqual([("skills/demo/SKILL.md", 3, 2)], unverified)
+
+    def test_unverified_files_are_named_in_the_report(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = report([], 0, 1, [("skills/demo/SKILL.md", 3, 2)], strict=False)
+        out = buf.getvalue()
+        self.assertEqual(0, code, "可視化であって新たなゲートではない")
+        self.assertIn("未検証 1 ファイル", out)
+        self.assertIn("skills/demo/SKILL.md", out)
 
     def test_explicit_baseline_wins_over_the_candidate_chain(self):
         self._write("README.md", "# readme\n")
@@ -369,6 +427,81 @@ class TestGitIntegration(unittest.TestCase):
         # origin/main も main も無い状態（既定ブランチ名に依存しないよう明示的に改名）
         self._git("branch", "-m", "detached-work")
         self.assertIsNone(resolve_baseline(self.root, "no-such-rev"))
+
+
+class TestBaselineFreshness(unittest.TestCase):
+    """古い remote-tracking ref を比較元にすると偽 BLOCK が出る（#88）。
+
+    ゲートが理由なく赤くなると `--baseline` で握りつぶす運用が定着し、
+    fixture 未保有 26 スキルの唯一の劣化検出手段が実質的に無効化される。
+    比較が成立しないときは、赤にせず skip を明示出力する。
+    """
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = temp.name
+        self.env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        self._git("init", "-q")
+        self._git("config", "user.email", "test@example.com")
+        self._git("config", "user.name", "test")
+        # 既定ブランチ名は環境依存なので、候補連鎖が拾う `main` を明示的に作る。
+        self._git("checkout", "-q", "-B", "main")
+        self._write("skills/demo/SKILL.md", doc(JA_BODY))
+        self._commit("add japanese skill")
+        self._git("checkout", "-q", "-b", "work")
+        for i in range(2):
+            self._write(f"docs/note{i}.md", f"# note {i}\n")
+            self._commit(f"unrelated commit {i}")
+        # 作業ツリーには見出しを 1 つ落とした翻訳を置く（本来なら BLOCK）。
+        self._write("skills/demo/SKILL.md", doc(EN_BODY.replace("## Steps\n\n", "")))
+
+    def _git(self, *args):
+        return subprocess.run(["git", *args], cwd=self.root, env=self.env,
+                              check=True, capture_output=True, text=True).stdout
+
+    def _write(self, rel, text):
+        path = os.path.join(self.root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(text)
+
+    def _commit(self, message):
+        self._git("add", "-A")
+        self._git("commit", "-q", "-m", message)
+
+    def _run(self, *extra):
+        argv = ["check_translation_parity.py", "--repo", self.root, *extra]
+        clean = {k: v for k, v in os.environ.items()
+                 if k not in ("GITHUB_BASE_REF", "TRANSLATION_PARITY_BASELINE")}
+        buf = io.StringIO()
+        with unittest.mock.patch.object(sys, "argv", argv), \
+                unittest.mock.patch.dict(os.environ, clean, clear=True), \
+                contextlib.redirect_stdout(buf):
+            code = main()
+        return code, buf.getvalue()
+
+    def test_baseline_lead_counts_commits_ahead_of_the_baseline(self):
+        base = self._git("rev-parse", "main").strip()
+        self.assertEqual(2, baseline_lead(self.root, base))
+
+    def test_a_fresh_baseline_still_reports_the_damage(self):
+        code, out = self._run("--max-baseline-lead", "5")
+        self.assertEqual(1, code)
+        self.assertIn("structure_parity", out)
+
+    def test_a_stale_baseline_skips_instead_of_reporting_false_findings(self):
+        code, out = self._run("--max-baseline-lead", "1")
+        self.assertEqual(0, code, "偽 BLOCK で赤にせず、成立しないことを申告する")
+        self.assertIn("baseline が古すぎるため skip", out)
+        self.assertIn("git fetch origin main", out)
+        self.assertNotIn("structure_parity", out)
+
+    def test_an_explicit_baseline_is_exempt_from_the_freshness_guard(self):
+        """明示指定は利用者の判断。鮮度を理由に握り潰さない。"""
+        code, out = self._run("--baseline", "main", "--max-baseline-lead", "1")
+        self.assertEqual(1, code)
+        self.assertIn("structure_parity", out)
 
 
 if __name__ == "__main__":

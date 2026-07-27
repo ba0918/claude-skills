@@ -13,4 +13,24 @@ cd "$(git rev-parse --show-toplevel)"
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
 unset GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES
 
+# translation parity の比較元に、push ネゴシエーションで得た remote の現在地を渡す。
+# git は pre-push の stdin へ `<local ref> <local sha> <remote ref> <remote sha>` を
+# 与える。この remote sha は今まさに remote と交渉して得た値なので、fetch していない
+# 作業ディレクトリでも正確である。remote-tracking ref をそのまま使うと、fetch 漏れの
+# 分だけマージ済みの翻訳が「これから入る翻訳」として再検出され、偽 BLOCK になる。
+#
+# 新規ブランチの push では remote sha が全 0 になる。その場合は指定せず、
+# check_translation_parity.py 側の候補連鎖と鮮度検査に委ねる。
+while read -r _local_ref _local_sha _remote_ref remote_sha; do
+  case "${remote_sha:-}" in
+    *[!0]*) ;;      # 0 以外の文字を含む = 実在する remote の tip
+    *) continue ;;  # 空文字 / 全 0 = remote にまだ存在しないブランチ
+  esac
+  if git cat-file -e "${remote_sha}^{commit}" 2>/dev/null; then
+    TRANSLATION_PARITY_BASELINE="$remote_sha"
+    export TRANSLATION_PARITY_BASELINE
+    break
+  fi
+done
+
 exec sh scripts/run_checks.sh
