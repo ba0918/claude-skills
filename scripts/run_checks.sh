@@ -25,10 +25,12 @@ python3 skills/skill-regression/scripts/ledger.py --check .
 
 # 翻訳による構造劣化（sensor:translation-damage）。fixture を持たないスキルでは
 # これが唯一の劣化検出手段なので、翻訳を含む push / PR では必ず通す。
-# 日本語行比率が閾値以上→未満へ遷移したファイルだけを見るため、通常の編集では
-# 対象 0 件の no-op になる。baseline は origin/$GITHUB_BASE_REF → origin/main →
+# 日本語が減ったファイルだけを見るため、通常の編集では対象 0 件の no-op になる。
+# baseline は $TRANSLATION_PARITY_BASELINE → origin/$GITHUB_BASE_REF → origin/main →
 # main の順に解決し、どれも無い checkout では skip を明示出力して pass する
 # （CI の checkout は fetch-depth: 0 が必要 — .github/workflows/validate.yml 参照）。
+# pre-push hook は push ネゴシエーションで得た remote sha を環境変数で渡す。fetch
+# していない作業ディレクトリの古い remote-tracking ref で偽 BLOCK を出さないため。
 echo "=== Translation parity"
 python3 scripts/check_translation_parity.py
 
