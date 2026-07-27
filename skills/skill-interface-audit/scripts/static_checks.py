@@ -374,6 +374,114 @@ def check_si_s004(targets: list[dict], ctx: dict) -> list[dict]:
 # RULES registry
 # ---------------------------------------------------------------------------
 
+_SI_S006_NGRAM = 12
+_WORD_RE = re.compile(r"[a-z0-9]+")
+_SHARED_LINK_RE = re.compile(r"\]\((?:\.\./)*shared/references/([a-z0-9-]+\.md)")
+
+
+def _word_stream(content: str) -> list[tuple[str, int]]:
+    """(word, 1-indexed line) の列。frontmatter とコードフェンスは除く。
+
+    フェンスを除くのは、コマンド例やスキーマ例が契約と一致するのは重複ではなく
+    正しい引用だから。SI-S004 が同じ理由でコードブロックを除外しているのに揃える。
+    """
+    return [
+        (w, lineno)
+        for lineno, line in _lines_outside_code_blocks(_strip_frontmatter(content))
+        for w in _WORD_RE.findall(line.lower())
+    ]
+
+
+def _ngrams(stream: list[tuple[str, int]], n: int) -> set[str]:
+    return {" ".join(w for w, _ in stream[i:i + n]) for i in range(len(stream) - n + 1)}
+
+
+def _first_shared_ngram_hit(stream, contract_grams, n):
+    """最初に一致した n-gram を (行, 語列) で返す。無ければ None。"""
+    for i in range(len(stream) - n + 1):
+        gram = " ".join(w for w, _ in stream[i:i + n])
+        if gram in contract_grams:
+            return stream[i][1], gram
+    return None
+
+
+def check_si_s006(targets: list[dict], ctx: dict) -> list[dict]:
+    """SI-S006: 共有契約のインライン重複。
+
+    ファイルが md リンクしている共有契約との間で、コードフェンス外の語が
+    `_SI_S006_NGRAM` 語ぶん逐語一致したら finding とする。
+
+    語彙の重なりや見出し名の一致は使わない。2026-07-27 の実測では、契約固有語彙の
+    出現率は連続値で分離せず（中央値 0.117 / 最大 0.625）、上位は「その契約を実装して
+    いるスキルが当然の語彙を使っている」偽陽性で埋まった。見出し名の一致も、
+    `Preventing rationalization` のように推奨パターンとして共有されるだけで
+    中身は別物だった。逐語一致だけが分離した（12 語で 4 件検出・4 件とも真陽性）。
+
+    行スパンによる長さゲートは置かない。12 語連続の逐語一致それ自体が
+    「コピーされた」ことの証拠で、行数ゲートを重ねると確認済みの真陽性
+    （表形式の重複など、語順が行をまたぐもの）が落ちる。
+    """
+    findings = []
+    root = ctx.get("root", ".")
+    shared_dir = os.path.join(root, "skills", "shared", "references")
+    if not os.path.isdir(shared_dir):
+        return findings
+
+    contract_grams: dict[str, set[str]] = {}
+    for name in sorted(os.listdir(shared_dir)):
+        if not name.endswith(".md"):
+            continue
+        try:
+            with open(os.path.join(shared_dir, name), encoding="utf-8", errors="replace") as f:
+                text = f.read()
+        except OSError:
+            continue
+        contract_grams[name] = _ngrams(_word_stream(text), _SI_S006_NGRAM)
+
+    for t in targets:
+        files = [(os.path.join(t["skill_dir"], "SKILL.md"), t["skill_md_content"])]
+        refs_dir = os.path.join(t["skill_dir"], "references")
+        if os.path.isdir(refs_dir):
+            for name in sorted(os.listdir(refs_dir)):
+                if not name.endswith(".md"):
+                    continue
+                path = os.path.join(refs_dir, name)
+                try:
+                    with open(path, encoding="utf-8", errors="replace") as f:
+                        files.append((path, f.read()))
+                except OSError:
+                    continue
+
+        for path, content in files:
+            linked = {c for c in _SHARED_LINK_RE.findall(content) if c in contract_grams}
+            if not linked:
+                continue
+            stream = _word_stream(content)
+            for contract in sorted(linked):
+                hit = _first_shared_ngram_hit(stream, contract_grams[contract], _SI_S006_NGRAM)
+                if hit is None:
+                    continue
+                lineno, gram = hit
+                rel = os.path.relpath(path, root)
+                findings.append(make_finding(
+                    "SI-S006", "WARN", "NEEDS_JUDGMENT",
+                    where=f"{rel}:{lineno}",
+                    what=(f"A verbatim run of {_SI_S006_NGRAM} words is shared with the linked "
+                          f"shared contract `{contract}`: \"{gram}\""),
+                    why=("skill-authoring #5 forbids reinventing a shared contract. Duplicated text "
+                         "drifts: the two copies are edited separately and silently disagree. "
+                         "Consolidating an inline duplicate into a contract reference measured "
+                         "friction -37%, the largest recorded effect"),
+                    how=("Decide which side is canonical. If the contract covers it, replace the "
+                         "inline text with a link plus this skill's role-specific values. Keep the "
+                         "inline copy only when the section is needed in every scenario of this "
+                         "skill — that judgement is not mechanical, which is why this is "
+                         "NEEDS_JUDGMENT rather than an automatic fix"),
+                    fix_draft=None,
+                ))
+    return findings
+
+
 RULES: dict[str, dict[str, Any]] = {
     "SI-S001": {"category": "structural", "severity": "WARN",
                 "action": "REPORT_ONLY", "fn": check_si_s001},
@@ -383,6 +491,8 @@ RULES: dict[str, dict[str, Any]] = {
                 "action": "REPORT_ONLY", "fn": check_si_s003},
     "SI-S004": {"category": "structural", "severity": "WARN",
                 "action": "NEEDS_JUDGMENT", "fn": check_si_s004},
+    "SI-S006": {"category": "structural", "severity": "WARN",
+                "action": "NEEDS_JUDGMENT", "fn": check_si_s006},
 }
 
 
