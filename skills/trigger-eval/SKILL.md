@@ -43,7 +43,7 @@ For the general rules on countering bias see `skills/shared/references/codex-int
 
 ```bash
 python3 skills/trigger-eval/scripts/collect_descriptions.py --dir skills \
-  --output .claude/tmp/trigger-eval-{ts}/skills.json
+  --output .agents/tmp/trigger-eval-{ts}/skills.json
 ```
 
 - Turn the `{name, description}` list into JSON. With no argument, the current repository's `skills/*/SKILL.md`. Apply it generally with `--user-scope` / `--dir PATH`.
@@ -55,10 +55,10 @@ python3 skills/trigger-eval/scripts/collect_descriptions.py --dir skills \
 
 ```bash
 python3 skills/skill-improve/scripts/collect.py --capture-prompts --days N \
-  --output .claude/tmp/trigger-eval-{ts}/prompts.jsonl
+  --output .agents/tmp/trigger-eval-{ts}/prompts.jsonl
 ```
 
-- Harvest the triggering record and the missed-triggering candidates (the `correction_after_skill` signal plus the masked `user_text_masked`). The output goes only under `.claude/tmp/trigger-eval-{ts}/`.
+- Harvest the triggering record and the missed-triggering candidates (the `correction_after_skill` signal plus the masked `user_text_masked`). The output goes only under `.agents/tmp/trigger-eval-{ts}/`.
 - collect.py itself **verifies before writing that the path is ignored, via `git check-ignore --quiet <the resolved actual output path>`, and refuses on a non-zero result** (fail-closed; it does not scan the root .gitignore as a string).
 - **The masking is a denylist and is not complete**, so treat a harvested body file as sensitive even after masking (delete it in Phase 6).
 
@@ -66,8 +66,8 @@ python3 skills/skill-improve/scripts/collect.py --capture-prompts --days N \
 
 ```bash
 python3 skills/trigger-eval/scripts/static_collisions.py \
-  .claude/tmp/trigger-eval-{ts}/skills.json --top-n 30 \
-  --output .claude/tmp/trigger-eval-{ts}/collisions.json
+  .agents/tmp/trigger-eval-{ts}/skills.json --top-n 30 \
+  --output .agents/tmp/trigger-eval-{ts}/collisions.json
 ```
 
 The top pairs are used for (a) defining the "neighboring skills" for hard-negative generation, (b) prioritizing revisions, and (c) obvious merge candidates that need no judging.
@@ -97,12 +97,12 @@ Pass the judging agent (**a lightweight model, stated explicitly**, a fresh suba
 ```bash
 # run the same script separately per mode (aggregate_metrics.py stays unmodified)
 python3 skills/trigger-eval/scripts/aggregate_metrics.py \
-  .claude/tmp/trigger-eval-{ts}/judged-selection-iterN.json \
-  --output .claude/tmp/trigger-eval-{ts}/metrics-selection-iterN.json
+  .agents/tmp/trigger-eval-{ts}/judged-selection-iterN.json \
+  --output .agents/tmp/trigger-eval-{ts}/metrics-selection-iterN.json
 # unless --selection-only is set, aggregate autonomous the same way
 python3 skills/trigger-eval/scripts/aggregate_metrics.py \
-  .claude/tmp/trigger-eval-{ts}/judged-autonomous-iterN.json \
-  --output .claude/tmp/trigger-eval-{ts}/metrics-autonomous-iterN.json
+  .agents/tmp/trigger-eval-{ts}/judged-autonomous-iterN.json \
+  --output .agents/tmp/trigger-eval-{ts}/metrics-autonomous-iterN.json
 ```
 
 Compute recall / precision / specificity / stability / confusion matrix / invalid_rate with the formulas of `metrics-spec.md`. **Never mix the two modes' results**: selection is authoritative for the convergence and regression guards, and autonomous is a reference series ("The mode axis" of `metrics-spec.md`).
@@ -134,7 +134,7 @@ After stopping:
 
 ### Report
 
-Emit to `.claude/tmp/trigger-eval-{ts}/report.md`:
+Emit to `.agents/tmp/trigger-eval-{ts}/report.md`:
 
 - The metric trajectory / the top confusions (**only the non-zero cells and the top N pairs, not a full matrix dump**, listing both the raw value and the normalized rate `confusion(A,B)/related_cases(A,B)`)
 - **The selection / autonomous modes side by side** (selection only under `--selection-only`). Place selection as the primary metric and autonomous as a reference series, and note the divergence between them as a salience signal. **Never emit a mixed value**

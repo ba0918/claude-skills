@@ -1,13 +1,13 @@
 ---
 name: generate-review-rules
-description: Analyze a project's CLAUDE.md, documentation, and code structure, and generate project-specific review rules (.claude/review-rules.md) for plan-reviewer and for code review. Use when the user says "generate review rules", "create review-rules", or "set up reviews". Use it as setup before starting reviews in a new project.
+description: Analyze a project's CLAUDE.md, documentation, and code structure, and generate project-specific review rules (.agents/config/review-rules.md) for plan-reviewer and for code review. Use when the user says "generate review rules", "create review-rules", or "set up reviews". Use it as setup before starting reviews in a new project.
 ---
 
 # Generate Review Rules
 
 Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
-Analyze the project's documentation and code structure to generate project-specific review rules in `.claude/review-rules.md` for use with plan-reviewer and code reviews.
+Analyze the project's documentation and code structure to generate project-specific review rules in `.agents/config/review-rules.md` for use with plan-reviewer and code reviews.
 
 ## Workflow
 
@@ -30,7 +30,7 @@ Search for marker files by listing files. Multiple matches across subdirectories
 
 ### Step 3: Generate Rules
 
-Generate `.claude/review-rules.md` from the collected information.
+Generate `.agents/config/review-rules.md` from the collected information.
 
 Output template: [references/output-template.md](references/output-template.md)
 
@@ -42,6 +42,6 @@ Output template: [references/output-template.md](references/output-template.md)
 
 ### Step 4: Confirm and Output
 
-1. If `.claude/review-rules.md` already exists, confirm overwrite with the user
+1. If `.agents/config/review-rules.md` already exists, confirm overwrite with the user
 2. Present the generated content to the user and provide an opportunity for adjustments
 3. Write the file after approval

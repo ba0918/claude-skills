@@ -6,7 +6,7 @@ This catalogs endorsed patterns proven in this repository and anti-patterns to a
 **Governing Principles**:
 
 1. **Orchestration depth is at most one layer** — Stop at skill/command -> Agent. Do not design Agent-calls-Agent flows (Claude Code forbids nested spawn, but this is a design rule independent of platform constraints)
-2. **Pass data by file, not summary** — Handoffs between agents go through files under `.claude/tmp/`. Paraphrase hops degrade context and double token cost. This covers **intermediate results** (partial fan-out outputs that the orchestrator immediately merges). The **result/completion report** of delegation itself needs separate durability against delivery failure, so its location and obligations are separated and specified later in "Delegation Result Relay"
+2. **Pass data by file, not summary** — Handoffs between agents go through files under `.agents/tmp/`. Paraphrase hops degrade context and double token cost. This covers **intermediate results** (partial fan-out outputs that the orchestrator immediately merges). The **result/completion report** of delegation itself needs separate durability against delivery failure, so its location and obligations are separated and specified later in "Delegation Result Relay"
 3. **Autonomous loops require safety brakes** — If human checkpoints are removed, replace them with mechanical stop conditions
 
 ## Endorsed Patterns
@@ -28,9 +28,9 @@ Main -> Agent (heavy processing) -> Summary -> Main continues
 Multiple specialized agents process the same input from different viewpoints, then an integration agent (or main) aggregates the results.
 
 ```
-        ┌-> Viewpoint A Agent -> .claude/tmp/a.json ┐
-Input ──┼-> Viewpoint B Agent -> .claude/tmp/b.json ┼-> Integrate -> Report
-        └-> Viewpoint C Agent -> .claude/tmp/c.json ┘
+        ┌-> Viewpoint A Agent -> .agents/tmp/a.json ┐
+Input ──┼-> Viewpoint B Agent -> .agents/tmp/b.json ┼-> Integrate -> Report
+        └-> Viewpoint C Agent -> .agents/tmp/c.json ┘
 ```
 
 - **Examples**: codebase-review (4 viewpoints + Codex), attack-review (6 viewpoints + Codex), plan-reviewer (7 viewpoints + Codex)
@@ -88,7 +88,7 @@ Each layer inserts a summary, so context reaching the leaf degrades and failure 
 
 A sequential relay where main summarizes Agent A's output and passes it to Agent B. Information is lost at every summary.
 
-**Instead**: Have A write its output to a file (`.claude/tmp/*.json`) and pass the file path to B.
+**Instead**: Have A write its output to a file (`.agents/tmp/*.json`) and pass the file path to B.
 
 ### D. Autonomous Loop Without Safety Brakes
 
@@ -109,7 +109,7 @@ Completion message delivery is nondeterministic: measured stalls include work be
 Stop placing the source of truth for results in report delivery, and instead replace it with the asymmetry that **the source of truth for results is a file, and the report message is only a notification**.
 File writes can be reliably completed and verified as the delegate's own work, but message delivery cannot. This difference is the rationale for this design.
 
-This has a different purpose and location from the **intermediate results** in `.claude/tmp/` covered by governing principle 2 (partial fan-out outputs immediately merged by the orchestrator, intended to avoid context degradation).
+This has a different purpose and location from the **intermediate results** in `.agents/tmp/` covered by governing principle 2 (partial fan-out outputs immediately merged by the orchestrator, intended to avoid context degradation).
 This section covers the **source of truth for delegation results**, which must be discoverable through a deterministic path even if the report is not delivered (the purpose is durability against delivery failure).
 Do not conflate the two; use each location for its own purpose.
 

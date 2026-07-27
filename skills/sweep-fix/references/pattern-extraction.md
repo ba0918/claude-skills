@@ -73,7 +73,7 @@ Identify the definition site of the target symbol first, then enumerate every re
 
 ## Recording into the candidate list
 
-Create one file per problem at `.claude/tmp/sweep-fix/{problem_id}_candidates.json`.
+Create one file per problem at `.agents/tmp/sweep-fix/{problem_id}_candidates.json`.
 Always record `pattern_used` and `tool` — so that the Phase 5 report guarantees the reproducibility of the search and
 lets the user verify after the fact whether "the search was too narrow or too broad".
 

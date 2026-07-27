@@ -60,7 +60,7 @@
       "requirements": [
         { "text": "指定範囲に問題が検出されなかったと報告して正常終了している（指摘をひねり出していない）", "critical": true },
         { "text": "ファイルを一切編集していない（setup.files の内容が実行前と同一）", "critical": true },
-        { "text": "中間ファイル置き場 .claude/tmp/sweep-fix/ を残していない", "critical": true },
+        { "text": "中間ファイル置き場 .agents/tmp/sweep-fix/ を残していない", "critical": true },
         { "text": "修正が発生していないため検証ゲート（テスト実行）は不要として扱っている（テスト未実行を欠陥として報告していない）", "critical": false },
         { "text": "完全版レポートではなく、検出した問題と分析根拠のみの簡略版を出力している", "critical": false }
       ],

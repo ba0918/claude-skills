@@ -30,6 +30,7 @@ from validate_repo import (
     check_manifests,
     check_command_skill_mapping,
     check_design_token_sync,
+    check_legacy_claude_paths,
     check_fixtures,
     parse_version,
     HUMAN_READABLE_SUMMARY_LABEL,
@@ -1207,3 +1208,92 @@ class TestCheckDesignTokenSync(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, "skills/brief/assets/tokens.css", ":root { --a: 1px; }\n")
             self.assertEqual(check_design_token_sync(root), [])
+
+class TestCheckLegacyClaudePaths(unittest.TestCase):
+    """チェック19: agent 生成物の置き場に `.claude/` を使っていないこと。
+
+    共有契約は provider 名入りのパスを禁じており、#76 で `.agents/tmp/` と
+    `.agents/config/` へ移行した。ガードが無いと次に書かれた 1 行から静かに戻る。
+    同時に、Claude Code の実体パス（監査対象・入力ソース・配置先）を誤検出しては
+    ならない。誤検出するガードは無効化され、検出力が 0 になる。
+    """
+
+    def _write(self, root, rel, content):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def test_migrated_paths_pass(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/SKILL.md",
+                        "中間結果は `.agents/tmp/demo/` に置く。\n"
+                        "レビュー規則は `.agents/config/review-rules.md`。\n")
+            self.assertEqual(check_legacy_claude_paths(root), [])
+
+    def test_legacy_tmp_reference_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/SKILL.md", "中間結果は `.claude/tmp/demo/`。\n")
+            errors = check_legacy_claude_paths(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn(".claude/tmp", errors[0])
+            self.assertIn("skills/demo/SKILL.md:1", errors[0])
+
+    def test_legacy_review_rules_reference_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/references/r.md", "`.claude/review-rules.md`\n")
+            self.assertEqual(len(check_legacy_claude_paths(root)), 1)
+
+    def test_legacy_baseline_reference_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/scripts/s.py",
+                        'BASE = ".claude/skill-interface-audit-baseline.json"\n')
+            self.assertEqual(len(check_legacy_claude_paths(root)), 1)
+
+    def test_claude_code_real_paths_are_not_flagged(self):
+        """監査対象・入力ソース・配置先は `.claude/` のままが正しい。"""
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/SKILL.md",
+                        "セッションログは `~/.claude/projects/` から読む。\n"
+                        "監査対象は `~/.claude/CLAUDE.md` と `.claude/rules/`。\n"
+                        "配置先は `.claude/skills` と `~/.claude/plugins/cache/`。\n"
+                        "`.claude/settings.local.json` は個人設定。\n")
+            self.assertEqual(check_legacy_claude_paths(root), [])
+
+    def test_fixture_source_provenance_is_exempt(self):
+        """`source` は捕獲場所の来歴であって現在の書き込み先ではない。"""
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/fixtures.json",
+                        '{\n  "scenarios": [\n'
+                        '    { "source": ".claude/tmp/empirical/20260725-x/" }\n'
+                        '  ]\n}\n')
+            self.assertEqual(check_legacy_claude_paths(root), [])
+
+    def test_non_source_line_in_fixtures_is_still_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/fixtures.json",
+                        '{ "text": "中間置き場 .claude/tmp/demo/ を残していない" }\n')
+            self.assertEqual(len(check_legacy_claude_paths(root)), 1)
+
+    def test_another_key_on_the_same_line_as_source_is_still_flagged(self):
+        """除外は行単位ではなく値単位。同じ行の別キーを巻き添えにしない。"""
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/fixtures.json",
+                        '{ "source": ".claude/tmp/empirical/x/", '
+                        '"text": "中間置き場 .claude/tmp/demo/ を残していない" }\n')
+            self.assertEqual(len(check_legacy_claude_paths(root)), 1)
+
+    def test_ledger_note_recording_the_migration_is_exempt(self):
+        """`note` は過去の検証イベントの記録。移行を述べた記録自体が違反にならない。"""
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/ledger.json",
+                        '{ "demo": { "note": "#76 の .claude/tmp → .agents/tmp 移行に'
+                        '伴う再評価。escaped \\" quote も含む" } }\n')
+            self.assertEqual(check_legacy_claude_paths(root), [])
+
+    def test_another_key_on_the_same_line_as_note_is_still_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/demo/fixtures.json",
+                        '{ "note": "移行前は .claude/tmp/x/ だった", '
+                        '"text": "中間置き場 .claude/tmp/demo/ を残していない" }\n')
+            self.assertEqual(len(check_legacy_claude_paths(root)), 1)

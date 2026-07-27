@@ -1,10 +1,10 @@
 # Baseline Format (suppressing intentional differences)
 
-The baseline that suppresses false positives arising from intentional differences. It lives at `.claude/context-audit-baseline.json`.
+The baseline that suppresses false positives arising from intentional differences. It lives at `.agents/config/context-audit-baseline.json`.
 
 ## Why it is committed / why it is treated differently from tmp
 
-The baseline exists **to be shared by the team** (the agreement that "this finding is intentional in our project"), so it is **committed to the repository** rather than placed under `.claude/tmp/` (git-ignored). Intermediate JSON and reports are written to `.claude/tmp/context-audit/` (git-ignored), but the baseline alone is tracked.
+The baseline exists **to be shared by the team** (the agreement that "this finding is intentional in our project"), so it is **committed to the repository** rather than placed under `.agents/tmp/` (git-ignored). Intermediate JSON and reports are written to `.agents/tmp/context-audit/` (git-ignored), but the baseline alone is tracked.
 
 ## Only opaque finding IDs are stored
 
@@ -43,8 +43,8 @@ finding_id = sha256(f"{id}|{where}|{what}")[:16]
 
   ```bash
   python3 skills/context-audit/scripts/aggregate_report.py \
-    .claude/tmp/context-audit/findings-{ts}.json \
-    --update-baseline .claude/context-audit-baseline.json
+    .agents/tmp/context-audit/findings-{ts}.json \
+    --update-baseline .agents/config/context-audit-baseline.json
   ```
 - A suppressed finding is **shown in the report as a count only** (`M suppressed`). Silent truncation is forbidden.
 

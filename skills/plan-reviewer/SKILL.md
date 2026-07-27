@@ -40,13 +40,13 @@ Read the full contents of the plan file. If the status is anything other than Pl
 Sources to collect:
 - Files planned for modification (verify existence + understand current contents)
 - `CLAUDE.md` (project root — project rules)
-- `.claude/review-rules.md` (project-specific review rules, if present)
+- `.agents/config/review-rules.md` (project-specific review rules, if present)
 - `docs/ARCHITECTURE.md` (architecture principles, if present)
 - `docs/SECURITY.md` (security requirements, if present)
 
 **Important**: Always verify that line numbers and code snippets in the plan match the actual code. Any discrepancies should be flagged as Feasibility issues.
 
-**Missing optional sources**: `.claude/review-rules.md`, `docs/ARCHITECTURE.md`, and `docs/SECURITY.md` are all optional. When absent, continue the review using `CLAUDE.md` + the generic checklists in [review-dimensions.md](references/review-dimensions.md); do not block. Note the absence once in the final report (e.g. `Project-specific review rules: not present (falling back to CLAUDE.md + generic checklist)`).
+**Missing optional sources**: `.agents/config/review-rules.md`, `docs/ARCHITECTURE.md`, and `docs/SECURITY.md` are all optional. When absent, continue the review using `CLAUDE.md` + the generic checklists in [review-dimensions.md](references/review-dimensions.md); do not block. Note the absence once in the final report (e.g. `Project-specific review rules: not present (falling back to CLAUDE.md + generic checklist)`).
 
 ### Step 2.5: UI/UX Review Trigger Detection
 
@@ -61,7 +61,7 @@ Match keywords by meaning, not by surface form: when the plan is written in Japa
 **Weak signals (2+ required to trigger):**
 - Keywords: "display", "layout", "style", "output", "format", "message", "error message", "progress"
 
-**Override:** If `.claude/review-rules.md` contains `ui_ux_review: always`, always include. If `ui_ux_review: never`, always skip. Invalid values fall back to default `auto`.
+**Override:** If `.agents/config/review-rules.md` contains `ui_ux_review: always`, always include. If `ui_ux_review: never`, always skip. Invalid values fall back to default `auto`.
 
 If no signals detected and no override, skip Review 7.
 
@@ -84,7 +84,7 @@ Launch up to **7 reviews + 1 Codex agent in parallel** (Review 7: UI/UX is condi
 **Execution fallback**: Parallel subagent launch is the recommended mode. Choose sequential mode when either holds: (a) you are running as a subagent yourself (regardless of whether you technically can spawn children), or (b) parallel subagent launch is unavailable in the environment. In sequential mode, run each dimension's checklist **inline in the same session**; the result file relay and wait discipline do not apply (the relay instructions in Step 3 and Step 4 are parallel-mode only); aggregate each dimension's verdict directly from the session context. Do not launch the Codex second opinion either — note the exact warning `⚠️ Codex second opinion unavailable — proceeding with existing review only.` (same as the Codex fallback in Step 3) and continue. Sequential execution must produce the same output format as parallel execution. Note the fallback once in the report (`Execution mode: sequential (<reason>)` — reason is `nested execution context` for (a), `subagent unavailable` for (b)).
 
 Each review applies perspectives in the following priority order:
-1. Project-specific rules from `.claude/review-rules.md` (highest priority)
+1. Project-specific rules from `.agents/config/review-rules.md` (highest priority)
 2. Project-specific instructions from `AGENTS.md` / `CLAUDE.md`, plus the shared [Design Principles](../shared/references/design-principles.md)
 3. Generic checklists from [review-dimensions.md](references/review-dimensions.md)
 

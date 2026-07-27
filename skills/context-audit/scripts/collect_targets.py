@@ -4,7 +4,7 @@ context-audit: audit-target discovery & classification.
 
 Deterministic path-allowlist discovery (no content inference). Only files on
 an explicit allowlist are collected, so archival/temp areas (.agents/artifacts/plans,
-.agents/artifacts/ideas, .claude/tmp, ...) are excluded by construction. Missing targets
+.agents/artifacts/ideas, .agents/tmp, ...) are excluded by construction. Missing targets
 graceful-skip; a single unreadable file never aborts the whole audit.
 
 Memory auditing defaults to the cwd-corresponding project only. The cwd->slug
@@ -28,7 +28,7 @@ from typing import Any
 REPO_FILE_TARGETS: list[tuple[str, str]] = [
     ("CLAUDE.md", "claude_md"),
     ("AGENTS.md", "agents_md"),
-    (".claude/review-rules.md", "review_rules"),
+    (".agents/config/review-rules.md", "review_rules"),
 ]
 REPO_DIR_TARGETS: list[tuple[str, str]] = [
     (".claude/rules", "rules"),

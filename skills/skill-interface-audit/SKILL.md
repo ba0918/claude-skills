@@ -35,7 +35,7 @@ No command is created (the skills-first policy; being single-workflow, it needs 
 - **Resolving script paths**: `{skill_dir}` is the directory this skill is installed in (an absolute path). `{project_root}` is the user's project root (the cwd).
 - **Non-interactive fallback**: when running headless or as a subagent, fall to the safe side and change no state. Do not write the baseline; emit the full report.
 - `{ts}` is minted with `date +%Y%m%d-%H%M%S` and the same value is reused across the phases.
-- **Output location**: `.claude/tmp/skill-interface-audit/` (git-ignored).
+- **Output location**: `.agents/tmp/skill-interface-audit/` (git-ignored).
 
 ## Workflow
 
@@ -43,7 +43,7 @@ No command is created (the skills-first policy; being single-workflow, it needs 
 
 1. Collect `skills/*/SKILL.md` and build the target list. Narrow it if skill names were given as arguments
 2. Also collect the files under each skill's `references/` as secondary targets
-3. Check whether the baseline file (`.claude/skill-interface-audit-baseline.json`) exists
+3. Check whether the baseline file (`.agents/config/skill-interface-audit-baseline.json`) exists
 4. How the baseline is handled:
    - **Auditing every skill with no baseline present**: present the first-run flow — (a) fix the current state as the baseline and present only new findings thereafter, or (b) the full report only (the baseline is not written)
    - **A single skill specified**: do not present the baseline first-run flow. Emit the full report. Write the baseline only when `--update-baseline` is explicit
@@ -117,8 +117,8 @@ Map SI-C\* findings onto empirical-prompt-tuning's fixed taxonomy to prevent the
 
 ## Side effects
 
-- Generates a report and a findings JSON under `.claude/tmp/skill-interface-audit/`
-- Writes `.claude/skill-interface-audit-baseline.json` only when `--update-baseline` is given
+- Generates a report and a findings JSON under `.agents/tmp/skill-interface-audit/`
+- Writes `.agents/config/skill-interface-audit-baseline.json` only when `--update-baseline` is given
 - **Never changes** skills/\*/SKILL.md
 
 ## Completion conditions

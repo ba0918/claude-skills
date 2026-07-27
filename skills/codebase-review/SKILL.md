@@ -60,16 +60,16 @@ Config files like `package.json` / `Cargo.toml` / `tsconfig.json` are **not** in
 3. Check main config files (`package.json`, `deno.json`, `tsconfig.json`, `Cargo.toml`, etc.)
 4. **Create work directory**:
    ```bash
-   mkdir -p .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/
+   mkdir -p .agents/tmp/codebase-review-{YYYYMMDD-HHMM}/
    ```
 5. **Preflight check** — Verify write permission to the work directory:
    ```bash
-   touch .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/.preflight && rm .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/.preflight
+   touch .agents/tmp/codebase-review-{YYYYMMDD-HHMM}/.preflight && rm .agents/tmp/codebase-review-{YYYYMMDD-HHMM}/.preflight
    ```
    If this fails, abort immediately:
    ```
    ⛔ CODEBASE REVIEW ABORTED: Cannot write to work directory.
-   Path: .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/
+   Path: .agents/tmp/codebase-review-{YYYYMMDD-HHMM}/
    Ensure the directory exists and is writable.
    ```
 6. **Create context.json**:
@@ -80,7 +80,7 @@ Config files like `package.json` / `Cargo.toml` / `tsconfig.json` are **not** in
      "target_files": ["List of filtered target file paths from Step 1"],
      "file_count": "len(target_files) — the review-target count after filtering, NOT total repo size",
      "claude_md_rules": "CLAUDE.md contents (empty string \"\" if absent)",
-     "work_dir": ".claude/tmp/codebase-review-{YYYYMMDD-HHMM}",
+     "work_dir": ".agents/tmp/codebase-review-{YYYYMMDD-HHMM}",
      "datetime": "YYYY-MM-DD HH:MM"
    }
    ```
@@ -132,7 +132,7 @@ After all 5 agents complete, verify results:
    ```
    ⛔ CODEBASE REVIEW ABORTED: Only {N}/4 review agents completed.
    Missing: {list of failed agent names}
-   Check .claude/tmp/codebase-review-{YYYYMMDD-HHMM}/ for any partial results.
+   Check .agents/tmp/codebase-review-{YYYYMMDD-HHMM}/ for any partial results.
    ```
 
 3. **Codex agent (Agent 5) is independent**: If `agent-5-codex.json` is missing for any reason (Codex plugin not installed, Codex CLI unreachable, sandbox blocked, explicit failure), display a warning and proceed without Codex perspective:

@@ -8,7 +8,7 @@ friction signals (no message body content) for skill usage analysis.
 The `--capture-prompts` mode (opt-in) additionally emits masked user prompt
 text as JSONL; trigger-eval is the second consumer of this mode, using it to
 harvest misfire seeds. Because that mode writes message bodies, its --output
-is mechanically restricted to a git-ignored path under cwd/.claude/tmp. The
+is mechanically restricted to a git-ignored path under cwd/.agents/tmp. The
 default (body-free) output path and its --output behavior are unchanged.
 """
 
@@ -531,7 +531,7 @@ def validate_capture_output_path(output: str, base: Path) -> Path | None:
     The output file itself may not exist yet, so the PARENT directory is
     resolved with strict=True and containment is checked with
     Path.is_relative_to (never raw-string startswith, which would allow a
-    sibling like `.claude/tmp2` to escape `.claude/tmp`). The atomic
+    sibling like `.agents/tmp2` to escape `.agents/tmp`). The atomic
     `<output>.tmp` sibling lands in the same parent, so it is covered too.
     Returns the resolved final path, or None if it escapes `base`.
     """
@@ -623,7 +623,7 @@ def _run_capture_prompts(
         print("error: --capture-prompts requires --output", file=sys.stderr)
         return 2
 
-    base = Path.cwd() / ".claude" / "tmp"
+    base = Path.cwd() / ".agents" / "tmp"
     resolved = validate_capture_output_path(args.output, base)
     if resolved is None:
         print(
@@ -678,7 +678,7 @@ def main() -> None:
     parser.add_argument(
         "--capture-prompts", action="store_true", default=False,
         help="Opt-in: emit masked user prompt text as JSONL (requires a "
-             "git-ignored --output under cwd/.claude/tmp)",
+             "git-ignored --output under cwd/.agents/tmp)",
     )
     args = parser.parse_args()
 

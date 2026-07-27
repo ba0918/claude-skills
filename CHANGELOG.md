@@ -10,6 +10,34 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+`.claude/` 配下を agent 生成物の置き場として参照していた 38 ファイル 122 行を、#75 で定義した
+`.agents/tmp/` と `.agents/config/` へ移行した（issue #76）。共有契約は
+「The namespace is provider-independent」を規定しており、provider 名入りのパスは違反である。
+移行対象の実ファイルは存在せず（`git ls-files .claude/` は 0 件）、パス文字列の書き換えのみ。
+
+一括置換にしなかった箇所が 3 種ある。**fixture の `source`** は「その資産をどこで捕獲したか」の
+来歴で、書き換えると存在しなかった場所を指すことになるため残した。一方、同じ fixtures.json でも
+**要件テキスト**（`中間ファイル置き場 .claude/tmp/sweep-fix/ を残していない` など）はスキル本体の
+書き出し先が動く以上、移行しないと間違ったパスを検査する fixture になるので移行した。
+**CHANGELOG の過去エントリ**は史実なので触っていない。**Claude Code の実体パス**
+（`~/.claude/projects/` / `~/.claude/CLAUDE.md` / `.claude/rules` / `.claude/skills` /
+`~/.claude/plugins/`）は監査対象・入力ソース・配置先であり `.claude/` のままが正しい。
+
+再発防止に `validate_repo.py` のチェック19 を追加した。`skills/` 配下の md / py / json を走査し
+`.claude/(tmp|review-rules|*-baseline.json)` を検出する。検出パターンを移行済みの 3 種に限定
+することで実体パスを誤検出しない（誤検出するガードは無効化され検出力が 0 になる）。
+`source` と `note` は過去の記録なので除外するが、除外は**行単位ではなく値単位**で行う。
+行単位にすると 1 行へ複数キーが並んだとき同じ行の別キーまで見逃すためである。
+
+`.gitignore` から `.claude/tmp` エントリを削除した。移行前のローカル `.claude/tmp/` が残っている
+環境では untracked として現れるので、手元で削除するか `.git/info/exclude` で個別に無視する
+（追跡対象ではない）。
+
+パスは機械解釈されるトークンなので `--accept` せず、影響 6 スキル 17 シナリオを process-queue
+経路で実走して critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と
+突き合わせて 17/17 一致。移行が効いていることは成果物で裏取りした（executor は `.agents/tmp/`
+配下へ書き、`.claude/tmp/` への書き込みは 0 件）。
+
 Agent Artifact Store 契約に **ephemeral 領域**（`.agents/tmp/`）と **config 領域**
 （`.agents/config/`）の 2 節を追加した（issue #75）。契約が定義していた領域は artifacts と
 runtime の 2 つだけで、使い捨ての中間生成物と、commit して共有する設定・受理済み baseline の

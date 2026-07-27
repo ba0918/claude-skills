@@ -125,7 +125,7 @@ Instructions to the agent:
 - Implement the additional instructions
 - Follow existing code style and conventions
 - Comply with CLAUDE.md rules
-- Reference `.claude/review-rules.md` if it exists
+- Reference `.agents/config/review-rules.md` if it exists
 - Follow `skills/shared/references/tdd-contract.md`: write tests FIRST (RED), then minimal implementation (GREEN), then refactor (REFACTOR)
   - **Exception — non-executable changes** (documentation only: README/CHANGELOG/comments/markdown with no behavior change): TDD does not apply. Instead, the implementation agent must (a) state explicitly that TDD is skipped because the change has no executable behavior, and (b) still run the existing test suite to confirm nothing breaks.
     - **Config files are NOT automatically non-executable**: `tsconfig.json` strict-mode flips, `package.json` dep/script changes, linter rule changes, CI workflow edits all affect runtime or build behavior → TDD applies (write a test proving the new behavior, or at minimum a regression test confirming build/test pipeline still passes). Only pure content edits (e.g., `description` field in `package.json`) qualify as non-executable.
@@ -154,7 +154,7 @@ Store the diff output and inline it into both agent prompts. If the diff exceeds
 **Launch two subagents in parallel** (issued simultaneously in the same message):
 1. **The review agent** (a high-capability model):
    - Review along the 2 perspectives Security + Implementation Quality
-   - Use `.claude/review-rules.md` as an additional criterion if it exists
+   - Use `.agents/config/review-rules.md` as an additional criterion if it exists
    - Apply the `skills/shared/references/verification-gate.md` Gate Function: never emit PASS without evidence of a test run
      - **Exception — non-executable changes** (the documentation-only changes defined in Phase 3): the Gate Function is satisfied by the existing test suite passing, or by an explicit declaration that there is no impact on executable code. The review agent states which path it applied
    - Classify the findings as BLOCK / WARN / PASS
@@ -169,7 +169,7 @@ Store the diff output and inline it into both agent prompts. If the diff exceeds
 **Launch two subagents in parallel** (issued simultaneously in the same message):
 1. **The review agent** (a high-capability model):
    - Review along the 4 perspectives Security + Implementation Quality + Architecture + Completeness
-   - Use `.claude/review-rules.md` as an additional criterion if it exists
+   - Use `.agents/config/review-rules.md` as an additional criterion if it exists
    - Apply the `skills/shared/references/verification-gate.md` Gate Function: never emit PASS without evidence of a test run
      - **Exception — non-executable changes** (the documentation-only changes defined in Phase 3): the Gate Function is satisfied by the existing test suite passing, or by an explicit declaration that there is no impact on executable code. The review agent states which path it applied
    - Classify the findings as BLOCK / WARN / PASS

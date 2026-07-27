@@ -26,8 +26,8 @@ Supply the findings detected by the sensors into the polling queue safely and wi
 ## Execution contract
 
 - Call the scripts by absolute path: `python3 {skill_dir}/scripts/<name>.py`. `{skill_dir}` is this SKILL.md's directory and `{repo_root}` is the repository root (usually the cwd)
-- Put intermediate JSON under `.claude/tmp/loop-triage/{datetime}/` (git-ignored)
-- The baseline is `.claude/loop-baseline.json` (committed; opaque IDs only, contract §3.3)
+- Put intermediate JSON under `.agents/tmp/loop-triage/{datetime}/` (git-ignored)
+- The baseline is `.agents/config/loop-baseline.json` (committed; opaque IDs only, contract §3.3)
 
 ## Workflow selection
 
@@ -49,7 +49,7 @@ run always executes the machine sensors (validate_repo / ledger --check). `--con
 
 ```bash
 TS=$(date +%Y%m%d%H%M%S)
-OUT=.claude/tmp/loop-triage/$TS
+OUT=.agents/tmp/loop-triage/$TS
 mkdir -p $OUT
 ```
 
@@ -67,7 +67,7 @@ context-audit or the like automatically** (when a sensor runs is up to a human o
 
 ```bash
 python3 {skill_dir}/scripts/triage.py $OUT/findings-*.json \
-  --repo-root {repo_root} --baseline .claude/loop-baseline.json \
+  --repo-root {repo_root} --baseline .agents/config/loop-baseline.json \
   --out $OUT/decisions.json [--max-enqueue 5]
 ```
 
@@ -136,7 +136,7 @@ Fix the current findings into the suppress list (contract §3.3; opaque IDs only
 
 ```bash
 python3 {skill_dir}/scripts/triage.py $OUT/findings-*.json \
-  --repo-root {repo_root} --update-baseline .claude/loop-baseline.json
+  --repo-root {repo_root} --update-baseline .agents/config/loop-baseline.json
 ```
 
 Before running it, always confirm with the user and obtain approval for how many findings are to be baselined (never baseline in a self-driving context).

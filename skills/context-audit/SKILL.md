@@ -53,21 +53,21 @@ No command is created (the skills-first policy; being single-workflow, it needs 
 
 ## Workflow
 
-Every output goes to `.claude/tmp/context-audit/` (under the audited project, git-ignored).
+Every output goes to `.agents/tmp/context-audit/` (under the audited project, git-ignored).
 
 ### Phase 0: Discovery
 
 ```bash
 python3 {skill_dir}/scripts/collect_targets.py {project_root} \
-  --output .claude/tmp/context-audit/targets-{ts}.json
+  --output .agents/tmp/context-audit/targets-{ts}.json
 ```
 
 (`{skill_dir}` is the directory where this skill lives, `{project_root}` is the user's project root = cwd. See the execution contract)
 
 - Collect the targets with a **path allowlist (deterministic, a pure function)**. The targets: the root's `CLAUDE.md` / `AGENTS.md`,
-  `.claude/rules/*.md` / `rules/*.md`, `.claude/review-rules.md`, plus the project memory corresponding to cwd.
+  `.claude/rules/*.md` / `rules/*.md`, `.agents/config/review-rules.md`, plus the project memory corresponding to cwd.
 - A nonexistent target (for example, no `.claude/rules/`) is graceful-skipped (recorded in `skipped`, never an error).
-- CLAUDE.md/AGENTS.md in nested subdirectories, and archival/temporary areas such as `.agents/artifacts/plans/`, `.agents/artifacts/ideas/`, and `.claude/tmp/`, are
+- CLAUDE.md/AGENTS.md in nested subdirectories, and archival/temporary areas such as `.agents/artifacts/plans/`, `.agents/artifacts/ideas/`, and `.agents/tmp/`, are
   not included in the allowlist (that is, they are excluded).
 - A single non-UTF-8 or unreadable file never interrupts the whole audit (`errors='replace'` / skip-and-report).
 - Global settings are added only when `--include-global` is given.
@@ -80,8 +80,8 @@ python3 {skill_dir}/scripts/collect_targets.py {project_root} \
 
 ```bash
 python3 {skill_dir}/scripts/static_checks.py \
-  .claude/tmp/context-audit/targets-{ts}.json --root {project_root} \
-  --output .claude/tmp/context-audit/findings-{ts}.json
+  .agents/tmp/context-audit/targets-{ts}.json --root {project_root} \
+  --output .agents/tmp/context-audit/findings-{ts}.json
 ```
 
 - Run the `RULES` registry in one pass and emit the findings JSON.
@@ -100,9 +100,9 @@ python3 {skill_dir}/scripts/static_checks.py \
 
 ```bash
 python3 {skill_dir}/scripts/aggregate_report.py \
-  .claude/tmp/context-audit/findings-{ts}.json \
-  --baseline .claude/context-audit-baseline.json \
-  --output .claude/tmp/context-audit/report-{ts}.json
+  .agents/tmp/context-audit/findings-{ts}.json \
+  --baseline .agents/config/context-audit-baseline.json \
+  --output .agents/tmp/context-audit/report-{ts}.json
 ```
 
 - Apply baseline suppression and generate the **summary-first report skeleton** deterministically
@@ -117,7 +117,7 @@ python3 {skill_dir}/scripts/aggregate_report.py \
   ("apply N auto-fixes?").
   ```bash
   python3 {skill_dir}/scripts/apply_fixes.py \
-    .claude/tmp/context-audit/findings-{ts}.json --write
+    .agents/tmp/context-audit/findings-{ts}.json --write
   ```
 - **NEEDS_JUDGMENT**: present in batches grouped by fix-type / rule ID ("apply 12 path typo fixes
   in bulk / confirm individually / skip"). Cap the interactive prompts at N per run, and send the rest to the report

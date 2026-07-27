@@ -40,7 +40,7 @@ Phase 5: REPORT  — structured report, then delete intermediate files
    - **headless / Auto mode**: do not guess a scope and continue. Report that the target scope is unspecified and abort (a whole-codebase scan with no scope is codebase-review's territory)
 3. Confirm that the specified paths exist (`ls` / list the files). Abort with an error immediately if they do not
 
-> Do not create the intermediate-file location `.claude/tmp/sweep-fix/` at this point. Create it at the moment the first file is saved (the problem list in Phase 1) — so that finishing early with zero problems leaves no litter.
+> Do not create the intermediate-file location `.agents/tmp/sweep-fix/` at this point. Create it at the moment the first file is saved (the problem list in Phase 1) — so that finishing early with zero problems leaves no litter.
 
 ## Phase 1: ANALYZE — Detect Problems in the Specified Scope
 
@@ -57,10 +57,10 @@ Analyze the code in the specified scope and build a problem list.
    - The proposed fix (the direction of the code change)
    - **Generalizability** — is this problem a structure that can occur elsewhere? If it is specific to that site (a spec local to it), drop it from the sweep
 4. **When there are zero problems (the early-exit path)**: report that no problem was detected in the specified range and finish normally. Do not manufacture findings
-   - Do not create intermediate files (if you already created them, delete them with `rm -rf .claude/tmp/sweep-fix`)
+   - Do not create intermediate files (if you already created them, delete them with `rm -rf .agents/tmp/sweep-fix`)
    - The report is not Phase 5's full version but an abbreviated one — the "problems detected" section plus the basis of the analysis — printed in the conversation
    - No fix happened, so the verification gate (running tests) is unnecessary. "nothing to verify because nothing changed" suffices
-5. Save the problem list: **before creating the directory, check whether the intermediate-file location is ignored by the VCS** (`git check-ignore -q .claude/tmp/sweep-fix`. If the check itself cannot be run, treat the state as unknown and handle it the same as not-ignored). Then run `mkdir -p .claude/tmp/sweep-fix` and write `.claude/tmp/sweep-fix/problems.json`
+5. Save the problem list: **before creating the directory, check whether the intermediate-file location is ignored by the VCS** (`git check-ignore -q .agents/tmp/sweep-fix`. If the check itself cannot be run, treat the state as unknown and handle it the same as not-ignored). Then run `mkdir -p .agents/tmp/sweep-fix` and write `.agents/tmp/sweep-fix/problems.json`
    - **When it is not ignored**: do not move the location, and do not edit the project's ignore settings on your own (rewriting the user's repository setup is outside this skill's scope). Proceed as is and **state in the report that the intermediate files are visible to the VCS at that path**. Whether to add an ignore entry is the user's call
    - The point of the check is not to change where the files go. It is so that Phase 4-3 does not misreport them as an unintended change, and so that leftovers surviving a refused deletion in Phase 5 do not get swept into the user's next commit unnoticed
 
@@ -80,7 +80,7 @@ Convert each Phase 1 problem (the ones marked generalizable) into a searchable s
    - **Multiple** problems: launch one sweep subagent per problem in parallel ([orchestration-patterns.md](../shared/references/orchestration-patterns.md) pattern 2)
      - **Required**: issue the multiple subagent calls **within a single message** (sequential turns serialize them)
      - **Required**: state a high-capability model explicitly for each subagent (prevents inheriting an expensive session model)
-     - Each agent writes its results to `.claude/tmp/sweep-fix/{problem_id}_candidates.json` and returns only a summary (candidate count, file paths) to the main context
+     - Each agent writes its results to `.agents/tmp/sweep-fix/{problem_id}_candidates.json` and returns only a summary (candidate count, file paths) to the main context
 4. **Structure of the candidate list** (JSON):
    ```json
    {
@@ -112,7 +112,7 @@ Judge every candidate site against the checklist in [references/context-verifica
 3. **Always attach the basis for a verdict**: record in one or two sentences "why the problem does or does not hold at this site". A CONFIRMED you cannot write a basis for is demoted to UNCERTAIN
 4. **Promoting UNCERTAIN to CONFIRMED is forbidden** (fail-safe). The reverse (conservatively demoting CONFIRMED to UNCERTAIN) is allowed
 5. When there are many candidates (more than 20), you may delegate verification to subagents (state a high-capability model explicitly). Even then, inject the criteria from context-verification.md into the subagent's prompt
-6. Save the verdicts to `.claude/tmp/sweep-fix/verdicts.json`
+6. Save the verdicts to `.agents/tmp/sweep-fix/verdicts.json`
 
 ## Phase 4: FIX — Apply the Fixes
 
@@ -124,14 +124,14 @@ Fix **CONFIRMED sites only**. Do not create any path by which a change touches a
    - When the test command is known (detectable from CLAUDE.md / package.json / Makefile, etc.), run it and check the output
    - On test failure: if your fix caused it, fix it. If it is an unrelated pre-existing failure, distinguish it and state so in the report
    - Get the list of changed files with `git diff --stat` and confirm it matches the fix-target list (that no unintended file was changed)
-   - **Exclude the intermediate-file location `.claude/tmp/sweep-fix/` from this comparison.** It is this skill's own workspace, not a fix target. When Phase 1 found the location is not ignored, it also shows up in `git status` — do not report it as an unintended change, and do not delete it here (Phase 5 owns the deletion)
+   - **Exclude the intermediate-file location `.agents/tmp/sweep-fix/` from this comparison.** It is this skill's own workspace, not a fix target. When Phase 1 found the location is not ignored, it also shows up in `git status` — do not report it as an unintended change, and do not delete it here (Phase 5 owns the deletion)
 4. **Do not commit**. The user commits with `/claude-skills:commit` (this skill's responsibility ends at the fix)
 
 ## Phase 5: REPORT — Structured Report
 
-Print a report in the conversation with the structure below, then delete the intermediate files (`rm -rf .claude/tmp/sweep-fix`).
+Print a report in the conversation with the structure below, then delete the intermediate files (`rm -rf .agents/tmp/sweep-fix`).
 
-**The order is a requirement, not a preference: delete only after the report has been printed.** `.claude/tmp/sweep-fix/verdicts.json` holds the only record of each verdict's basis, so the FALSE_POSITIVE exclusion reasons (section 4) and the UNCERTAIN decision material (section 5) must already be transcribed into the report before anything is deleted. Delete first and they are unrecoverable.
+**The order is a requirement, not a preference: delete only after the report has been printed.** `.agents/tmp/sweep-fix/verdicts.json` holds the only record of each verdict's basis, so the FALSE_POSITIVE exclusion reasons (section 4) and the UNCERTAIN decision material (section 5) must already be transcribed into the report before anything is deleted. Delete first and they are unrecoverable.
 
 **When the deletion is refused or fails** (a permission gate, a mount constraint): do not force it through by another route. State the surviving path in the report and finish normally — the run counts as complete. The leftovers are inert intermediate files, not an unfinished fix.
 

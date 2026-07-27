@@ -84,7 +84,7 @@ finding_id = sha256(f"{sensor}|{rule}|{where.path}|{what}")[:16]
 
 ### 3.3 Baseline suppression (intentional differences)
 
-- Store suppressed finding_ids in `.claude/loop-baseline.json` (**opaque IDs only — never put
+- Store suppressed finding_ids in `.agents/config/loop-baseline.json` (**opaque IDs only — never put
   detected values or body text in it**. The format and operation follow the same philosophy as
   [the context-audit baseline](../../context-audit/references/baseline-format.md), with the
   same `{version, suppressions[]}` schema)
@@ -139,7 +139,7 @@ skills/*/references/**
 skills/shared/**
 commands/**
 scripts/validate_repo.py
-.claude/review-rules.md
+.agents/config/review-rules.md
 ```
 
 ### 5.2 Gate Rule (demotion at enqueue time)

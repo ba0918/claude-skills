@@ -234,8 +234,8 @@ side, it is not a pure ablation.
 ### Turning Convergence History into an Asset
 
 As a fixture for `empirical-prompt-tuning`, the plan skill's 4-iteration convergence history is
-recorded in `.claude/tmp/empirical/plan-*/fixture.json`. The measurements for rollout batch 1
-are in `.claude/tmp/empirical/20260722-lean-rollout/` (summary.md + iterations.jsonl). Refer
+recorded in `.agents/tmp/empirical/plan-*/fixture.json`. The measurements for rollout batch 1
+are in `.agents/tmp/empirical/20260722-lean-rollout/` (summary.md + iterations.jsonl). Refer
 there for the full text of category transitions, reduction amounts, and lessons. Use them as
 baseline comparison and regression-detection assets when re-tuning.
 

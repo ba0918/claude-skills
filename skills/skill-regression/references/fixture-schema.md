@@ -138,7 +138,7 @@ not, either reshape the premise into something declarable, or rewrite the requir
 ## Conversion guide by source material
 
 - **From [empirical tuning](../../empirical-prompt-tuning/SKILL.md) measurements**: copy the `scenarios` / `requirements` of the
-  `fixture.json` emitted at convergence (`.claude/tmp/empirical/{ts}/fixture.json`) directly into this schema's scenarios /
+  `fixture.json` emitted at convergence (`.agents/tmp/empirical/{ts}/fixture.json`) directly into this schema's scenarios /
   requirements. Set `source` to `"empirical-tuning:{ts}"`.
   The checklist at the moment of convergence is the best regression asset (for items moved during tuning, take only the final version)
 - **From a plan's acceptance criteria**: convert the "completion conditions" and "verification" sections of the plan document

@@ -444,6 +444,59 @@ DESIGN_TOKEN_LAYERS = [
 ]
 
 
+LEGACY_CLAUDE_PATH = re.compile(
+    r"\.claude/(tmp|review-rules|[a-z][a-z0-9-]*-baseline\.json)"
+)
+# `source`（fixture をどこで捕獲したか）と `note`（その検証イベントがどういう性質だったか）は
+# **過去の記録** であり、現在の書き込み先ではない。史実を書き換えると存在しなかった場所を
+# 指すことになるうえ、「旧パスから移行した」と述べる記録そのものが違反として検出される。
+# ガードの対象外にするが、除外していること自体をここに明示する。
+#
+# 除外は行単位ではなく **値単位** で行う。行単位にすると `{ "source": "...", "x": "..." }`
+# のように 1 行へ複数キーが並んだとき、同じ行の別キーまで一緒に見逃す。JSON の整形は
+# ファイルごとに違うので、整形に依存しない切り出し方を採る。
+LEGACY_CLAUDE_EXEMPT_VALUE = re.compile(r'"(?:source|note)"\s*:\s*"(?:[^"\\]|\\.)*"')
+
+
+def check_legacy_claude_paths(root):
+    """チェック19: agent 生成物の置き場として `.claude/` 配下を参照していないか。
+
+    共有契約は `.agents/tmp/`（ephemeral）と `.agents/config/`（tracked config）を
+    定義しており、provider 名入りのパスを agent 生成物の置き場に使うことを禁じている
+    （artifact-store.md「The namespace is provider-independent」）。移行後にガードが
+    無いと、次に書かれた 1 行から静かに逆戻りする。
+
+    Claude Code の実体パス（`~/.claude/projects/`, `.claude/rules`, `.claude/skills`,
+    `.claude/plugins/`, `.claude/settings*`）は監査対象・入力ソース・配置先であって
+    `.claude/` のままが正しい。検出パターンを移行済みの 3 種に限定することで、
+    それらを誤検出しない。
+    """
+    errors = []
+    skills_root = os.path.join(root, "skills")
+    for dirpath, dirnames, filenames in os.walk(skills_root):
+        dirnames[:] = [d for d in dirnames if d != "__pycache__"]
+        for name in sorted(filenames):
+            if not name.endswith((".md", ".py", ".json")):
+                continue
+            path = os.path.join(dirpath, name)
+            try:
+                text = _read(path)
+            except (UnicodeDecodeError, OSError):
+                continue
+            for lineno, line in enumerate(text.splitlines(), 1):
+                hit = LEGACY_CLAUDE_PATH.search(
+                    LEGACY_CLAUDE_EXEMPT_VALUE.sub('""', line))
+                if hit:
+                    rel = os.path.relpath(path, root)
+                    errors.append(
+                        f"[legacy-path] agent 生成物の置き場に `.claude/` を参照している: "
+                        f"{rel}:{lineno} `{hit.group(0)}`"
+                        "（`.agents/tmp/` か `.agents/config/` を使う — "
+                        "skills/shared/references/artifact-store.md）"
+                    )
+    return errors
+
+
 def check_design_token_sync(root):
     """チェック18: authoring 層のデザイントークンと配布層の同一性を照合する。
 
@@ -867,6 +920,9 @@ def run_checks(root):
 
     # 18. デザイントークンの authoring 層 ⇔ 配布層 同期
     errors += check_design_token_sync(root)
+
+    # 19. agent 生成物の置き場に `.claude/` を使っていないか（移行後の再発防止）
+    errors += check_legacy_claude_paths(root)
 
     return errors
 

@@ -38,7 +38,7 @@ skill-improve command
 - `--days N`: the analysis period (default: 30 days)
 - `--project NAME`: the project filter (default: inferred from the cwd)
 - `--all-projects`: scan across every project. Use it for analyzing user-scoped skills or for grasping usage trends across all skills
-- `--capture-prompts`: opt-in. Emits masked user prompt bodies as JSONL (for collecting real examples of missed triggering; the `trigger-eval` skill is the second consumer). Because it writes out bodies, `--output` is mechanically restricted to a path under `cwd/.claude/tmp` that is also `git check-ignore`d (fail-closed). It uses a different path from the default body-free output and does not affect existing behavior. Secret values are fully masked as `[REDACTED:kind]` (detecting AWS / PEM / JWT / email / home paths / known-prefix tokens such as ghp_, github_pat_, xoxb-, sk-, sk-ant-, and AIza, whether or not they are quoted)
+- `--capture-prompts`: opt-in. Emits masked user prompt bodies as JSONL (for collecting real examples of missed triggering; the `trigger-eval` skill is the second consumer). Because it writes out bodies, `--output` is mechanically restricted to a path under `cwd/.agents/tmp` that is also `git check-ignore`d (fail-closed). It uses a different path from the default body-free output and does not affect existing behavior. Secret values are fully masked as `[REDACTED:kind]` (detecting AWS / PEM / JWT / email / home paths / known-prefix tokens such as ghp_, github_pat_, xoxb-, sk-, sk-ant-, and AIza, whether or not they are quoted)
 
 ## Phase 1: Data collection
 
@@ -50,7 +50,7 @@ When `--all-projects` is given:
 python3 skills/skill-improve/scripts/collect.py \
   --days {days} \
   --all-projects \
-  --output .claude/tmp/skill-improve-{datetime}/context.json
+  --output .agents/tmp/skill-improve-{datetime}/context.json
 ```
 
 In the default case (a project is specified):
@@ -59,7 +59,7 @@ In the default case (a project is specified):
 python3 skills/skill-improve/scripts/collect.py \
   --days {days} \
   --project {project} \
-  --output .claude/tmp/skill-improve-{datetime}/context.json
+  --output .agents/tmp/skill-improve-{datetime}/context.json
 ```
 
 ### Step 1.2: Check the result
@@ -95,7 +95,7 @@ Do not proceed to Phase 2; finish.
 Launch the four analysis agents **in parallel** as subagents (a lightweight model, automatic-execution mode).
 For each agent's prompt, see [references/analysis-roles.md](references/analysis-roles.md).
 
-**Important**: automatic-execution mode is mandatory. Without it, the background agents are blocked by a permission prompt when writing to `.claude/tmp/`, and every agent fails to write.
+**Important**: automatic-execution mode is mandatory. Without it, the background agents are blocked by a permission prompt when writing to `.agents/tmp/`, and every agent fails to write.
 
 The context handed to each agent:
 1. The contents of context.json
@@ -106,16 +106,16 @@ The context handed to each agent:
    - For each constraint, evaluate "the likelihood that the user or the LLM rationalizes bypassing this constraint under {pressure type}"
    - Recommend strengthening the guardrails for high-risk constraints
 
-Each agent writes its analysis result as JSON to `.claude/tmp/skill-improve-{datetime}/{role}.json`.
+Each agent writes its analysis result as JSON to `.agents/tmp/skill-improve-{datetime}/{role}.json`.
 
 ### Step 2.2: Integrate the results
 
 Launch an integrating subagent (a lightweight model, automatic-execution mode), and have it integrate the four analysis results to
-generate `.claude/tmp/skill-improve-{datetime}/friction-report.md`.
+generate `.agents/tmp/skill-improve-{datetime}/friction-report.md`.
 
 The integrating agent's prompt:
 ```
-Read the 4 JSON files under .claude/tmp/skill-improve-{datetime}/ and
+Read the 4 JSON files under .agents/tmp/skill-improve-{datetime}/ and
 write out the friction report as friction-report.md.
 
 Format:
@@ -148,7 +148,7 @@ Display:
 Agents: 4/4
 Skills analyzed: {N}
 Top friction skill: {name} (score: {score})
-Report: .claude/tmp/skill-improve-{datetime}/friction-report.md
+Report: .agents/tmp/skill-improve-{datetime}/friction-report.md
 ```
 
 ## Phase 3: Improvement hypotheses and the autonomy verdict
@@ -228,7 +228,7 @@ Report: {friction_report_path}
 
 ## Cleaning up temporary files
 
-On phase completion (whether it ends normally or with an error), delete `.claude/tmp/skill-improve-{datetime}/`.
+On phase completion (whether it ends normally or with an error), delete `.agents/tmp/skill-improve-{datetime}/`.
 Keep `friction-report.md`, however (so the user can refer to it later).
 
 ## Error handling

@@ -112,7 +112,7 @@ class TestDedupKey(unittest.TestCase):
 class TestValidateCaptureOutputPath(unittest.TestCase):
     def test_accepts_inside_claude_tmp(self):
         with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp) / ".claude" / "tmp"
+            base = Path(tmp) / ".agents" / "tmp"
             base.mkdir(parents=True)
             out = base / "trigger-eval-x"
             out.mkdir()
@@ -122,7 +122,7 @@ class TestValidateCaptureOutputPath(unittest.TestCase):
 
     def test_rejects_outside(self):
         with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp) / ".claude" / "tmp"
+            base = Path(tmp) / ".agents" / "tmp"
             base.mkdir(parents=True)
             outside = Path(tmp) / "elsewhere"
             outside.mkdir()
@@ -131,11 +131,11 @@ class TestValidateCaptureOutputPath(unittest.TestCase):
             )
 
     def test_rejects_sibling_escape(self):
-        # .claude/tmp2 must not be accepted as if inside .claude/tmp
+        # .agents/tmp2 must not be accepted as if inside .agents/tmp
         with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp) / ".claude" / "tmp"
+            base = Path(tmp) / ".agents" / "tmp"
             base.mkdir(parents=True)
-            sibling = Path(tmp) / ".claude" / "tmp2"
+            sibling = Path(tmp) / ".agents" / "tmp2"
             sibling.mkdir()
             self.assertIsNone(
                 collect.validate_capture_output_path(str(sibling / "p.jsonl"), base)
@@ -143,7 +143,7 @@ class TestValidateCaptureOutputPath(unittest.TestCase):
 
     def test_rejects_dotdot_escape(self):
         with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp) / ".claude" / "tmp"
+            base = Path(tmp) / ".agents" / "tmp"
             base.mkdir(parents=True)
             self.assertIsNone(
                 collect.validate_capture_output_path(str(base / ".." / "p.jsonl"), base)
@@ -151,7 +151,7 @@ class TestValidateCaptureOutputPath(unittest.TestCase):
 
     def test_rejects_dotdot_as_filename(self):
         with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp) / ".claude" / "tmp"
+            base = Path(tmp) / ".agents" / "tmp"
             base.mkdir(parents=True)
             # a path whose final component is ".." must be rejected
             self.assertIsNone(
@@ -176,7 +176,7 @@ class TestGitIgnoreGate(unittest.TestCase):
     def _init_repo(self, root):
         import subprocess
         subprocess.run(["git", "init", "-q"], cwd=str(root), check=True)
-        (root / ".gitignore").write_text(".claude/tmp/\n")
+        (root / ".gitignore").write_text(".agents/tmp/\n")
 
     def test_non_ignored_path_refused(self):
         # fail-closed: a path git does not ignore must return False
@@ -191,7 +191,7 @@ class TestGitIgnoreGate(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self._init_repo(root)
-            ignored_dir = root / ".claude" / "tmp"
+            ignored_dir = root / ".agents" / "tmp"
             ignored_dir.mkdir(parents=True)
             ignored = ignored_dir / "p.jsonl"
             ignored.write_text("{}\n")
