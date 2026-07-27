@@ -538,6 +538,35 @@ S1 は影響スキルが fixture 非保有（`ledger.py --coverage` で全 uncov
 なった以上 "should be fine" 等が素通りする。ゲートが守るのは語形ではなく「検証前に
 正しさを主張しない」という意味なので、列挙は例示であって allowlist ではないと明示した。
 
+英語化スイープの事後二軸実測を完走し、regression 台帳を `accepted-without-run` から
+実行結果へ進めた。**英語化は品質を落としておらず、description コミットの revert は不要**
+と確定した。発火軸（trigger-eval、188 ケース・判定 576 件）は selection の macro
+recall 0.9947 / precision 0.9929 / specificity 1.000 / stability 1.000 / invalid_rate
+0.000 で、判定前に宣言して固定した閾値をすべて上回った。達成軸（skill-regression、
+fixture 保有 20 スキル・67 シナリオ）は 18 本が critical 全 ○ で `pass`、残る 2 本は
+`accepted-without-run` に留めた。
+
+台帳を進めなかった 2 本はどちらもスキルの回帰ではない。`brainstorm` は bs-003 が
+「Codex 利用不可時の縮退表示」を要求するが清浄な環境では codex CLI に到達できてしまい
+縮退が起きず、fixture の前提が実体化されない。`decision-journal` は dj-004 が 3 回とも
+接続断で report を落とした実行基盤の制約である。どちらも note に理由を残した。
+
+`--note` にはプロセス経路（`claude-exec` バックエンド）での実行であることと、読み取り
+専用要件を `.claude/` 外の清浄な場所で再実行して裏取りしたことを記録した。`.claude/` 配下を
+実行者の作業ディレクトリにすると書き込みが自動拒否され、「行儀よく書かなかった」と
+「書けなかった」がどちらも drift 0 になって読み取り専用要件の検証が無力化する。経路差を
+残さないと、次に subagent 経路で走らせた人が食い違いを原因不明の回帰と誤読する。
+
+confusion は全行列でオフダイアゴナル 1 セル（`plan-implement` → `cycle`）のみで、これは
+日本語時代のトリガー語「この計画を自動実装」「計画を自動実装して」が最初から衝突していた
+ものを英語版が忠実に保存した結果である。`plan-implement` が `cycle` の真部分集合という
+責務境界の問題なので、description の改稿ではなく設計裁定として別途扱う。
+
+Tier 2（実発火検証）は前提未成立のため保留した。実行セッションがロードするのは
+プラグインキャッシュであってリポジトリの `skills/` ではなく、47 スキル中 44 本で
+description が食い違う（キャッシュ側は日本語のまま）。成立には version bump と再
+インストールが要るが、それはリリース判断であり実測タスクの範囲外である。
+
 ## 1.65.0
 
 ledger の常時ロード本文を 368 行から 42 行へ縮約し、`extract` / `session` / `orient` の

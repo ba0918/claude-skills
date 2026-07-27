@@ -8,7 +8,7 @@
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "note": "英語化スイープは翻訳のみで挙動面の意味変更なしと判断（run 未成立）。bs-003 は「Codex 利用不可時の縮退表示」を要求するが清浄環境では codex CLI に到達でき縮退が起きず、fixture の前提が実体化されない（issue #54 と同系統）。bs-001/bs-002 は process 経路で critical 全 ○",
     "result": "accepted-without-run",
     "surface": [
       "skills/brainstorm/SKILL.md",
@@ -34,8 +34,8 @@
       "skills/brief/scripts/brief_render.py": "b4fc93158220b7b1fce0ca7cf0e0cbcdaf644a93ebee1e7f4f39ca9c9dd5eba0",
       "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 6 シナリオを実行し critical 全 ○；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/brief/SKILL.md",
       "skills/brief/assets/brief.css",
@@ -57,8 +57,8 @@
       "skills/commit/fixtures.json": "695f26893f3762173ca414166f83058d22e6d2d02164b738813f55efed74dbbd",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；読み取り専用要件 cm-003 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/commit/SKILL.md",
       "skills/commit/fixtures.json",
@@ -83,8 +83,8 @@
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；読み取り専用要件 ca-001/ca-002 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/context-audit/SKILL.md",
       "skills/context-audit/fixtures.json",
@@ -113,8 +113,8 @@
       "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；cy-001 は .gitignore による非 critical partial あり（Artifact Store 不変条件を尊重し git add -f はしない）；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
@@ -136,7 +136,7 @@
       "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
       "skills/shared/references/decision-protocol.md": "9385ac847f75b4b23daaba710f72faee1f5319e88ef57ab45058c3d1a5db9629"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
+    "note": "英語化スイープは翻訳のみで挙動面の意味変更なしと判断（run 未成立）。dj-004 は 3 回とも API Error: Connection closed mid-response で report.json 未取得（実行基盤の制約であってスキルの回帰ではない）。dj-001〜dj-003 は process 経路で critical 全 ○（dj-003 に非 critical partial: 機密確認前に封印記録の仮説文がディスクへ落ちた）",
     "result": "accepted-without-run",
     "surface": [
       "skills/decision-journal/SKILL.md",
@@ -158,8 +158,8 @@
       "skills/design-guide/references/discovery-questions.md": "1efca8547738730215ccc9dc666cc3b58919c7676166161075f824519ea0fc2e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 2 シナリオを実行し critical 全 ○；読み取り専用要件 dg-001/dg-003 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/design-guide/SKILL.md",
       "skills/design-guide/fixtures.json",
@@ -182,8 +182,8 @@
       "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 4 シナリオを実行し critical 全 ○；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/doc-write/SKILL.md",
       "skills/doc-write/fixtures.json",
@@ -213,8 +213,8 @@
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 4 シナリオを実行し critical 全 ○；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/github-issue/SKILL.md",
       "skills/github-issue/fixtures.json",
@@ -241,8 +241,8 @@
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 4 シナリオを実行し critical 全 ○；読み取り専用要件 ho-004 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/handoff/SKILL.md",
       "skills/handoff/fixtures.json",
@@ -258,8 +258,8 @@
       "skills/investigate/SKILL.md": "05e3447d808972adbe90f75d3d95ab405600810baca341c9a8cac0365cdb3829",
       "skills/investigate/fixtures.json": "7698fd56a2c19b2d0afda45329015e5cdd555f949a8e542b5b67430c4ec7f6b4"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；読み取り専用要件 iv-001/iv-002/iv-003 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/investigate/SKILL.md",
       "skills/investigate/fixtures.json"
@@ -279,8 +279,8 @@
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 4 シナリオを実行し critical 全 ○；読み取り専用要件 is-003 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/issue/SKILL.md",
       "skills/issue/fixtures.json",
@@ -305,8 +305,8 @@
       "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 4 シナリオを実行し critical 全 ○；読み取り専用要件 pl-004 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/plan/SKILL.md",
       "skills/plan/fixtures.json",
@@ -330,8 +330,8 @@
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/plan-implement/SKILL.md",
       "skills/plan-implement/fixtures.json",
@@ -357,8 +357,8 @@
       "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 2 シナリオを実行し critical 全 ○；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/plan-reviewer/SKILL.md",
       "skills/plan-reviewer/fixtures.json",
@@ -378,8 +378,8 @@
       "skills/problem-solving/SKILL.md": "406850dc04a82af239124802bfb42a8d13a831b1e7302d322e7430879d6c6997",
       "skills/problem-solving/fixtures.json": "805584fb1dacbf7e18fac4fd53cc323faa0db29317f7f814514cc7da1f4d645c"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/problem-solving/SKILL.md",
       "skills/problem-solving/fixtures.json"
@@ -399,8 +399,8 @@
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；読み取り専用要件 rf-001/rf-003 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/refactor/SKILL.md",
       "skills/refactor/fixtures.json",
@@ -425,8 +425,8 @@
       "skills/sweep-fix/references/context-verification.md": "4f6d79132703095d33642fe7016f455ea7373bd52fdaefd1eac81b7eca3c9af1",
       "skills/sweep-fix/references/pattern-extraction.md": "8c6bd69ac2318b069abab9d3e8df53eb8e3d753fbd748fef560fffe7643084bb"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；読み取り専用要件 sf-002/sf-003 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；sf-001 は置き場対照実験（.claude/ 配下では書き込み拒否で誤 fail）を経て pass を確認；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md",
@@ -447,8 +447,8 @@
       "skills/systematic-debugging/fixtures.json": "3581f610b0b790518266ab8be0e3375bed56165386767c29740cbc681523a99f",
       "skills/systematic-debugging/references/root-cause-tracing.md": "27fb3aa57781e5fc843a459ab3ec53343a18fb979cd4525010603c2353ccdaef"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md",
@@ -467,8 +467,8 @@
       "skills/test-driven-development/SKILL.md": "8d7ce1608d7f35ddee6fdf5428ad6d023513eaa61d63386493aa94efbed1004b",
       "skills/test-driven-development/fixtures.json": "ad73bf8a0daf85dad9eabdb049e48d449310be0db1ba0823a26aaa1376fb3ad4"
     },
-    "note": "translation-only sweep to English; verified by post-merge two-axis measurement",
-    "result": "accepted-without-run",
+    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；読み取り専用要件 td-002 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/testing-anti-patterns.md",
