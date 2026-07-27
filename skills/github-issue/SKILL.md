@@ -149,6 +149,7 @@ The core workflow that drives a single issue to completion.
 ### Pre-condition
 
 - `claude-skills:cycle` assumes it only makes commits on the current branch. **Branch operations, push, and PR creation are this workflow's responsibility.**
+- The whole workflow runs inside a dedicated worktree (Step 4). The primary checkout's HEAD, current branch, and index are never touched — another session or a human switching branches in the primary checkout must not affect this run, and this run must not affect them.
 
 ### Steps
 
@@ -194,8 +195,29 @@ The three-stage defence (lockfile + gh edit + re-verify) is hidden in [`referenc
 
 #### 4. Running cycle
 
-1. Create a new branch: `git switch -c gh-issue-${N}-$(date +%Y%m%d%H%M%S)`
-2. Run the `claude-skills:cycle` skill (passing the plan file as the argument). cycle stacks its commits on this branch.
+1. Create a dedicated worktree, branching from the remote default branch — never from the current HEAD:
+
+   ```bash
+   default_branch=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
+   git fetch origin
+   ts=$(date +%Y%m%d%H%M%S)
+   git worktree add ../gh-issue-${N}-${ts} -b gh-issue-${N}-${ts} "origin/${default_branch}"
+   ```
+
+   - `default_branch` is resolved through the API on every run; never hardcode `main`
+   - Branching from `origin/${default_branch}` makes the branch point deterministic whatever the
+     primary checkout's HEAD happens to be. Branching from HEAD is exactly how two unrelated
+     commits from another session's feature branch nearly leaked into a PR (issue #83)
+   - The worktree directory and the branch share the `gh-issue-{N}-{timestamp}` name, so the
+     orphan detection of [`references/cleanup-spec.md §Worktree Naming Convention`](references/cleanup-spec.md#worktree-naming-convention)
+     recovers it with no changes
+   - **Every subsequent step of this workflow (running cycle, Gate 3, push, PR creation) executes
+     inside this worktree.** The primary checkout's HEAD, branch, and index stay untouched
+   - A lockfile mutual exclusion on the working tree was rejected: only the loop would ever take
+     the lock, and one-sided exclusion is no exclusion. A `git status --porcelain` launch check is
+     also deliberately absent — isolation makes the primary checkout's dirtiness irrelevant, and a
+     dirty check would only add spurious launch failures
+2. Run the `claude-skills:cycle` skill (passing the plan file as the argument). cycle stacks its commits on this branch, inside the worktree.
 3. **Gate 3 — the zero-diff safety net.** Once the implementation phase ends, compare the branch against its
    starting point (`git diff <branch-point>..HEAD` plus `git status --porcelain` for uncommitted work). If
    **both are empty**, do not create a draft PR: stop with a **permanent failed** (halt reason
@@ -205,8 +227,23 @@ The three-stage defence (lockfile + gh edit + re-verify) is hidden in [`referenc
    - It is the symptom-side net under Gates 0-2: anything that slips past them lands here, because an issue
      with nothing left to do cannot produce a diff
    - Records `error_kind = "abort"`, like the other gate halts
+4. **Worktree removal.** Remove the worktree when the workflow ends, on success and failure alike
+   (`git worktree remove <path>`). The pushed branch and the draft PR carry all diagnostics, so the
+   worktree holds no unique state worth preserving. If the process dies before its own removal step,
+   the orphan detection of [`references/cleanup-spec.md`](references/cleanup-spec.md) is the safety net
+
+**Isolation verification procedure** (how to confirm the contract above holds): in the primary
+checkout, switch to any non-default branch that is ahead of the default branch by unrelated commits,
+then run `cycle N` and confirm all three of:
+
+1. `git -C <worktree> log origin/${default_branch}..HEAD --oneline` lists only commits made by this
+   cycle — none of the unrelated commits appear
+2. the resulting PR diff (`gh pr diff <PR>`) contains no changes outside the plan's scope
+3. after the run, the primary checkout still sits on the same branch and HEAD as before it
 
 #### 5. Creating the draft PR
+
+Both commands run inside the worktree from Step 4:
 
 ```bash
 git push -u origin <branch>
@@ -264,6 +301,7 @@ gh issue edit ${N} --remove-label claude-auto --remove-label claude-review
 #### 9. Handling failure
 
 - Keep the PR as a draft
+- Remove the worktree, the same as the success path (Step 4.4) — the draft PR preserves the diagnostics
 - Save the error details as structure into the **FS retry state** (`<state_root>/retry/{N}.json`) — retry_count / last_failed_at / run_id only; storing free-text errors is forbidden (shared contract §3)
 - Remove `claude-running` / `claude-review` and run the **atomic dual-write** through `mark_failed(slug, kind)`:
   - Decide the kind (TRANSIENT / PERMANENT) with `classify_failure(normalize_github_error(exc))`
