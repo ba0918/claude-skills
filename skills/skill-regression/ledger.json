@@ -199,21 +199,21 @@
   },
   "github-issue": {
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "dbce3f97e575ea47e8ff58edde051963116ed383dbc47bbfb8c1558de41c27e6",
-      "skills/github-issue/fixtures.json": "6727406b6c2e79cfc4a38ad6955c3af7b976cb07f70a5f23ffcaa2bd92c2069b",
+      "skills/github-issue/SKILL.md": "7369fa922c5ea8b35070f96d4a831cd4609b4c76a362a54933fcb39fb3d64513",
+      "skills/github-issue/fixtures.json": "b388e9b0ac5b320fdfa21db5ff47ea959bba547497cb575efba36ace2cee34d2",
       "skills/github-issue/references/cleanup-spec.md": "a141e9524911d46bee62e4cffceeb4da845d23cf1f555905eb6c6a222daa21f7",
       "skills/github-issue/references/codex-review-loop.md": "616fec7c7da33d18cdecc60b20b02e1be461cb0029eeffbeca19a6b7554755ed",
       "skills/github-issue/references/config-defaults.md": "536d35ba1412d9b3883bf18d4731d51474f51ec32d9a69bf97306b1cf28ecba5",
       "skills/github-issue/references/gh-commands.md": "cc3f6ec5bda0d660e5ff86aea58c8bac181c8c660b1a2c405a68f9623b4732e3",
       "skills/github-issue/references/label-spec.md": "e1479642e0c4716cdac2ddf4f70d69fa6b3dd72cff54bd0baf45c63c1bd80c27",
-      "skills/github-issue/references/polling-adapter.md": "ccc7a861bf1fd27746c6b873d4093854d961afa47d936378a880d5760c1b6cbf",
+      "skills/github-issue/references/polling-adapter.md": "c8b202dabc69775e3cb7b3ca6e8c56096031d2f7e3767b69d444d107d0012b71",
       "skills/github-issue/references/secret-scanner.md": "d9a01874b251afdef4501d5a5c0f997a6ec6069f88f27f61e2dcfe2630276668",
       "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "process 経路（claude-exec バックエンド）で全 4 シナリオを実行し critical 全 ○；外部からの状況照会 0 回",
+    "note": "issue #57（invalid issue_number の識別子統一 + ゼロパディング検証の修正）後の再評価。process 経路（claude-exec バックエンド）で全 4 シナリオを実行し critical 全 ○、baseline_drift 0。スクラッチパッド配下で実行しており書き込み拒否の交絡なし（読み取り専用要件の drift 0 は実測値）。外部からの状況照会 0 回",
     "result": "pass",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -230,7 +230,7 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "f75233da25eea66788428421cfd37a98657a806e3e59f7633f1bfa24caea7d73",
+    "surface_sha256": "34ee4d0aaca1e212f3013badaae49783a71a8077fda2c452032505a3ab409fd4",
     "verified": "2026-07-27"
   },
   "handoff": {

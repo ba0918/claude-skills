@@ -152,7 +152,7 @@ The core workflow that drives a single issue to completion.
 
 1. Common Pre-checks
 2. `gh api rate_limit --jq '.rate.remaining'` ≥ `min_rate_limit_remaining`
-3. Confirm an issue number N was given in the arguments. **N must match `^[1-9][0-9]*$`** (rejecting `0` and any zero-padded form). On no match, fail immediately with `"invalid issue number"` (to prevent command injection and mistaken invocations)
+3. Confirm an issue number N was given in the arguments. **N must match `^[1-9][0-9]*$`** (rejecting `0` and any zero-padded form). On no match, fail immediately with `"invalid issue_number"` (to prevent command injection and mistaken invocations)
 4. **`codex_required_for_merge` is forced to `true`**: ignore any `--config` override from the user; the pre-flight check in `references/codex-review-loop.md` logs a warning and then resets it to `true`
 
 #### 2. Atomic Claim
