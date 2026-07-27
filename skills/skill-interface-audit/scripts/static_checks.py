@@ -125,9 +125,11 @@ def check_si_s001(targets: list[dict], ctx: dict) -> list[dict]:
             os.path.join(ctx["root"], "skills", "shared", "references"))
 
         first_level_refs = []
+        seen_ref_paths = set()
         for link, lineno in _extract_md_links(skill_md):
             resolved = os.path.normpath(os.path.join(skill_dir, link))
-            if _startswith_dir(resolved, refs_dir):
+            if _startswith_dir(resolved, refs_dir) and resolved not in seen_ref_paths:
+                seen_ref_paths.add(resolved)
                 first_level_refs.append((link, lineno, resolved))
 
         for ref_link, ref_lineno, ref_path in first_level_refs:

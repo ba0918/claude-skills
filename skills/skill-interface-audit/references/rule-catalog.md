@@ -44,7 +44,7 @@ words, link existence, shared contract vocabulary). This phase owns the structur
 ### SI-S001 detail: reference chain depth
 
 Detection method:
-1. Extract the relative md links in SKILL.md and treat the links into references/ as primary references
+1. Extract the relative md links in SKILL.md and treat the links into references/ as primary references. Each distinct reference file counts as one primary reference — linking the same file multiple times from SKILL.md does not multiply the edges (issue #110)
 2. Extract the relative md links inside the primary reference files
 3. If a primary reference links to md outside shared/references/, that is a finding (shared is allowed, being the shared contract)
 

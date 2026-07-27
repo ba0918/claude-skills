@@ -10,6 +10,14 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+SI-S001（参照チェーン深度）が同一の参照エッジを SKILL.md 側のリンク出現回数だけ重複出力し、
+finding が 4.1 倍（raw 329 / distinct 80）に膨らんでいた（issue #110）。重複分は `where` も `what` も
+完全に同一で `id` だけが違い、読み手が区別できる情報を持たない。raw は issue 起票時の実測で 323、
+#119 時点で 325、本修正の直前には 329 へ動いていた（#83 が同一 reference へのリンクを 2 本追加した
+だけで +4）——リンクを足すたび findings が水増しされる、この欠陥の生きた実例である。一次参照の収集を resolved パスで
+一意化し、同じ reference を何回リンクしても各エッジを 1 回だけ数えるようにした。rule-catalog の
+SI-S001 detail にも同旨を明記。SI-S001 は 329 → 80 件（raw = distinct）、他ルールの増減なし。
+
 github-issue の Cycle Workflow が主チェックアウトの HEAD から直接 `git switch -c` しており、
 別セッションが feature ブランチで作業中に `cycle N` を起動すると無関係コミットが PR に混入する
 状態だった（issue #83、実害未遂）。分岐起点を `origin/{default_branch}`（`gh repo view` で毎回解決、
