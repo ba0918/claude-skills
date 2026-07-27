@@ -8,7 +8,7 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
-## Unreleased
+## 1.69.0
 
 plan が 1 件のときだけ worktree 分離が失われていた（issue #84）。`parallel-cycle` は各 plan を
 独立した worktree で実行するが、1 plan のときだけ `claude-skills:cycle` へ fallback し、呼び出し元の
