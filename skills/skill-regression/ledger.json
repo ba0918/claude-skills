@@ -199,7 +199,7 @@
   },
   "github-issue": {
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "7369fa922c5ea8b35070f96d4a831cd4609b4c76a362a54933fcb39fb3d64513",
+      "skills/github-issue/SKILL.md": "8f1164ccd9ed52463e35d48b97e7ed1830a60a6e555a8a2a23244aa1428330f9",
       "skills/github-issue/fixtures.json": "b388e9b0ac5b320fdfa21db5ff47ea959bba547497cb575efba36ace2cee34d2",
       "skills/github-issue/references/cleanup-spec.md": "a141e9524911d46bee62e4cffceeb4da845d23cf1f555905eb6c6a222daa21f7",
       "skills/github-issue/references/codex-review-loop.md": "616fec7c7da33d18cdecc60b20b02e1be461cb0029eeffbeca19a6b7554755ed",
@@ -209,11 +209,12 @@
       "skills/github-issue/references/polling-adapter.md": "c8b202dabc69775e3cb7b3ca6e8c56096031d2f7e3767b69d444d107d0012b71",
       "skills/github-issue/references/secret-scanner.md": "d9a01874b251afdef4501d5a5c0f997a6ec6069f88f27f61e2dcfe2630276668",
       "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
+      "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "issue #57（invalid issue_number の識別子統一 + ゼロパディング検証の修正）後の再評価。process 経路（claude-exec バックエンド）で全 4 シナリオを実行し critical 全 ○、baseline_drift 0。スクラッチパッド配下で実行しており書き込み拒否の交絡なし（読み取り専用要件の drift 0 は実測値）。外部からの状況照会 0 回",
+    "note": "issue #56（計測コマンドのパス規約統一 + surface_sha256 を配布物基準へ）後の再評価。process 経路（claude-exec バックエンド）で全 4 シナリオを実行し critical 全 ○。スクラッチパッド配下で実行しており書き込み拒否の交絡なし。is-001 の実行者が Step 15 の measurement_identity.py emit を実際に走らせ events.jsonl への append を確認しており、変更経路が実行されている。外部からの状況照会 0 回",
     "result": "pass",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -226,11 +227,12 @@
       "skills/github-issue/references/polling-adapter.md",
       "skills/github-issue/references/secret-scanner.md",
       "skills/shared/references/artifact-store.md",
+      "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "34ee4d0aaca1e212f3013badaae49783a71a8077fda2c452032505a3ab409fd4",
+    "surface_sha256": "7a0511592cb89ee4655a3446c4781b117b1cb2f05729b0b5d70f8136a4e59200",
     "verified": "2026-07-27"
   },
   "handoff": {
@@ -269,17 +271,18 @@
   },
   "issue": {
     "file_sha256": {
-      "skills/issue/SKILL.md": "9a9545e0cf42e4e3582f7fff52e2d8785ac03faff05a0a3d4a90bffed9ce72c2",
+      "skills/issue/SKILL.md": "f3d96444845ce5135121383b0306ccd13b304298fc50e24bca3558315f62a58d",
       "skills/issue/fixtures.json": "40065f95ee8d35d14806fcc5a922fb9525d75658cac163cd9fc0c8d1ca894ad7",
       "skills/issue/references/issue-template.md": "6c27174d5b7b8c6fa00b66b69d4a90df0c38af36ebf8c3b90fcef78c57a0715f",
       "skills/issue/references/polling-state-machine.md": "7c65e6079934335d3a891e49c798e2a8761ce443dc63b6f1600be21a96131d70",
       "skills/issue/references/polling-state.md": "11c6169d79da16612e1a06dcd8a372570aac6fd2f6b87c30611aebaee7713f0f",
       "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
+      "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec",
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "process 経路（claude-exec バックエンド）で全 4 シナリオを実行し critical 全 ○；読み取り専用要件 is-003 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
+    "note": "issue #56（計測コマンドのパス規約統一 + surface_sha256 を配布物基準へ）後の再評価。process 経路（claude-exec バックエンド）で全 4 シナリオを実行し critical 全 ○。スクラッチパッド配下で実行しており書き込み拒否の交絡なし。is-001 の実行者が Step 15 の measurement_identity.py emit を実際に走らせ events.jsonl への append を確認しており、変更経路が実行されている。外部からの状況照会 0 回",
     "result": "pass",
     "surface": [
       "skills/issue/SKILL.md",
@@ -288,11 +291,12 @@
       "skills/issue/references/polling-state-machine.md",
       "skills/issue/references/polling-state.md",
       "skills/shared/references/artifact-store.md",
+      "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/human-readable-summary.md",
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "ad55d03eb88240840a5de8b4eb6157e2359c882a590087b073c9185c52db4364",
+    "surface_sha256": "8398ef0c1b838432da166183def6a3fce44e45abe1eddf9ef2f88b04aaea3343",
     "verified": "2026-07-27"
   },
   "plan": {

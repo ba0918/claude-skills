@@ -259,15 +259,33 @@ def surface_delta(agg):
     return {"prev": prev, "curr": curr, "rate_delta": rate_delta}
 
 
-def current_surface_sha256(repo_root, skill):
-    """skill-regression/scripts/ledger.py を再利用し現在の挙動面 fingerprint を返す。"""
-    sr_scripts = os.path.join(repo_root, "skills", "skill-regression", "scripts")
+def distribution_root():
+    """このスクリプトが同梱されている配布物のルート（`skills/` の親ディレクトリ）。
+
+    `--repo-root` は計測対象プロジェクト、つまりイベントの書き込み先であって、スキル実体の
+    置き場ではない。外部プロジェクトへインストールした場合 `{repo_root}/skills/` は存在しない。
+    checkpoint-pattern.md の CLI 呼び出し規約が言うとおり、スクリプト実体は配布位置にあり
+    対象プロジェクトと同居しているとは限らない。
+    """
+    here = os.path.dirname(os.path.abspath(__file__))  # skills/shared/scripts
+    return os.path.abspath(os.path.join(here, os.pardir, os.pardir, os.pardir))
+
+
+def current_surface_sha256(skill, dist_root=None):
+    """skill-regression/scripts/ledger.py を再利用し現在の挙動面 fingerprint を返す。
+
+    fingerprint は「いま実行されている指示のバージョン」を指す（measurement-identity.md §
+    surface_sha256）。実行されているのは配布物側の SKILL.md なので、対象プロジェクトではなく
+    配布物から計算する。本リポジトリで動かす場合は両者が一致するため値は変わらない。
+    """
+    root = dist_root or distribution_root()
+    sr_scripts = os.path.join(root, "skills", "skill-regression", "scripts")
     if sr_scripts not in sys.path:
         sys.path.insert(0, sr_scripts)
-    import ledger  # noqa: E402  (repo_root 依存の動的 import)
+    import ledger  # noqa: E402  (配布物レイアウト依存の動的 import)
 
-    surface = ledger.skill_surface(repo_root, skill)
-    return ledger.fingerprint(repo_root, surface)
+    surface = ledger.skill_surface(root, skill)
+    return ledger.fingerprint(root, surface)
 
 
 def format_report(agg, delta, skill):
@@ -387,7 +405,7 @@ def _cmd_emit(rest):
             print(warning, file=sys.stderr)
 
     outcome = json.loads(flags["--outcome"])
-    surface_sha256 = current_surface_sha256(repo_root, flags["--skill"])
+    surface_sha256 = current_surface_sha256(flags["--skill"])
     ts = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     try:

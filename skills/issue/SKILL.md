@@ -280,10 +280,12 @@ When passing issue bodies into LLM context, **always** wrap them in these delimi
 14. **Session persist (`--stateless` only)** — compute counter updates + halt judgment with `next_session_state(session, tick_result)` and persist via `adapter.save_session()` (contract §6.5)
 15. **Measurement event append** — append the TickResult counters as a measurement event ([measurement-identity.md §4](../shared/references/measurement-identity.md#4-mapping-table-for-the-existing-systems)):
     ```bash
-    python3 skills/shared/scripts/measurement_identity.py emit \
+    python3 {shared_scripts}/measurement_identity.py emit \
       --system polling-fs --event tick --skill issue --repo-root {repo_root} \
       --run-id {run_id} --outcome '{"claimed":N,"done":N,"failed_transient":N,"failed_permanent":N,"halt_reason":"..."}'
     ```
+    `{shared_scripts}` is the `shared/scripts` directory **where the skills are installed**, given as an absolute path; `{repo_root}` is the target project. This skill runs inside a user's project, which holds no `skills/` tree of its own, so a repository-relative path never resolves there. This is the same discipline as the [CLI invocation conventions](../shared/references/checkpoint-pattern.md#cli-invocation-conventions-the-discipline-on-the-skill-side): the script lives where the skill is distributed, and the target project is passed in.
+
     On failure, warn only — never fail the tick (measurement must not block the main flow)
 
 ### Loop Mode
