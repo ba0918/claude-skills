@@ -77,7 +77,13 @@ git worktree list
 git worktree prune
 ```
 
-All worktrees must be cleaned up regardless of cycle success or failure.
+Remove the worktree of a cycle that **merged and passed its post-merge test** — that is Step 3.4,
+after the decisions above, not during Phase 2. Every other worktree stays: failed, merge-reverted,
+and skipped cycles keep theirs for diagnosis, and those are removed only when a human says so
+(§Preserved Worktrees in [SKILL.md](../SKILL.md)).
+
+`git worktree prune` only discards bookkeeping for worktrees whose directory is already gone, so
+it never removes a preserved one and is not a substitute for the explicit removal above.
 
 ## Safety Rules
 
@@ -85,4 +91,5 @@ All worktrees must be cleaned up regardless of cycle success or failure.
 - **Never rebase** — Only merge commits
 - **Pull before merge** — Always sync with remote before merging
 - **Test after each merge** — Not just after all merges
-- **Preserve failed branches** — Do not delete branches of failed cycles
+- **Preserve failed branches and their worktrees** — Do not delete either. The branch holds only
+  what was committed; the worktree holds the rest
