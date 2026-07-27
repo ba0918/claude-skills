@@ -60,7 +60,11 @@ Take issue content from the user in natural language, infer suitable labels, and
 3. Fetch the repository's existing labels with `gh label list --json name,description,color`
 4. From the issue content and the existing labels, infer:
    - The labels to apply (`bug` / `feature` / `docs` / `enhancement`, ...)
-   - Whether `claude-auto` may be attached (does it carry acceptance criteria clear enough to drive itself?)
+   - Whether `claude-auto` may be attached (does it carry acceptance criteria clear enough to drive itself?).
+     When it may, the body must also satisfy the two required sections of
+     [`references/label-spec.md §claude-auto Body Contract`](references/label-spec.md#claude-auto-body-contract)
+     — `## 自走可否` with a two-valued `判定:` line, and `## 変更対象` listing the paths. Without them polling
+     quietly skips the issue forever, and the label reads as a promise nothing will honour
    - A candidate title (when one is missing)
 5. **Confirm with the user**:
    - Show: title / body / inferred labels / whether `claude-auto` applies / the reasoning
@@ -118,7 +122,7 @@ Label adapter implementation details — the three-stage claim defence, state_ro
 5. **Archive**: `adapter.archive_month_boundary()` (a no-op on GitHub; it only refreshes the cache)
 6. **Rate limit pre-check**: `gh api rate_limit --jq '.rate.remaining'` ≥ `min_rate_limit_remaining`. Quiet skip when below
 7. **List ready**: call `adapter.list_ready(effective_parallel)` with `effective_parallel = min(max_parallel, parallel_worktree_limit)` (for the precedence rule see [`references/config-defaults.md`](references/config-defaults.md)). One API call; do not re-fetch even if the client-side filter leaves fewer than the limit
-8. **Atomic claim**: call `adapter.claim(slug)` for each slug. Failures are a quiet skip (the three-stage claim defence is internal to the adapter). The `authorAssociation` filter is already applied inside `adapter.list_ready()` ([`references/polling-adapter.md §list_ready(limit)`](references/polling-adapter.md#list_readylimit)); do not repeat it in the orchestrator
+8. **Atomic claim**: call `adapter.claim(slug)` for each slug. Failures are a quiet skip (the three-stage claim defence is internal to the adapter). The `authorAssociation` filter **and the Gate 0a / Gate 1 self-drive filters** are already applied inside `adapter.list_ready()` ([`references/polling-adapter.md §list_ready(limit)`](references/polling-adapter.md#list_readylimit)); do not repeat them in the orchestrator, and never claim an issue `list_ready()` withheld
 9. **Dry run decision**: when `config.dry_run` is set or `<state_root>/.polling-initialized` does not exist, `release()` everything claimed and return `halt_reason="dry_run"`
 10. **Delegate to parallel-cycle**: build a plan from the claimed issues and delegate to `claude-skills:parallel-cycle`. **parallel-cycle must not re-claim** (claim responsibility stays centralised in Polling)
 11. **Classify & persist**: call `classify_failure(normalize_github_error(exc))` for each outcome.
@@ -167,14 +171,40 @@ The three-stage defence (lockfile + gh edit + re-verify) is hidden in [`referenc
 
 #### 3. Building the plan (internal sub-step)
 
-1. Fetch the issue with `gh issue view ${N} --json number,title,body,labels`
-2. Build a plan by invoking the `claude-skills:plan` skill from the issue body and acceptance criteria
-3. Prepend `**GitHubIssue:** #${N}` to the plan
+1. Fetch the issue with `gh issue view ${N} --json number,title,body,labels,stateReason,comments`
+2. **Gate 2 — REOPENED context reconciliation.** `stateReason == "REOPENED"` is evidence that a human judged
+   the previous self-driving result insufficient, so the odds that the body is now stale are high — and a
+   comment is invisible to the loop unless it is fetched, which is exactly how a partially-addressed issue
+   went on being picked up as if untouched.
+   - Hand `comments` to the plan builder together with the body whenever the issue is `REOPENED`
+   - If a comment contradicts the body's `## 自走可否` / `## 変更対象` sections — it says part of the body is
+     already done, that the verdict changed, that the scope narrowed, or that only human-judgment work is
+     left — **stop with a permanent failed** (halt reason `gate2_body_stale`) and ask the human to update
+     the body. Do not reconcile the contradiction yourself: the body is the source of truth, and an agent
+     that patches around a stale body is the failure mode this gate exists to stop
+   - With no contradiction, continue normally
+3. Build a plan by invoking the `claude-skills:plan` skill from the issue body and acceptance criteria
+4. **Gate 0b — the halt gate.** Before implementing anything, take the set of files the plan targets and run
+   the two checks of [`references/polling-adapter.md §Gate 0b — the halt gate`](references/polling-adapter.md#gate-0b--the-halt-gate):
+   scope containment against the body's `## 変更対象` declaration, then the blast-radius check. On either
+   rejection, stop with a **permanent failed** without starting the implementation. Gate 0a already applied
+   the same thresholds to the *declared* paths at claim time; this pass exists because the plan is what
+   actually gets edited, and the author's declaration is not evidence about it
+5. Prepend `**GitHubIssue:** #${N}` to the plan
 
 #### 4. Running cycle
 
 1. Create a new branch: `git switch -c gh-issue-${N}-$(date +%Y%m%d%H%M%S)`
 2. Run the `claude-skills:cycle` skill (passing the plan file as the argument). cycle stacks its commits on this branch.
+3. **Gate 3 — the zero-diff safety net.** Once the implementation phase ends, compare the branch against its
+   starting point (`git diff <branch-point>..HEAD` plus `git status --porcelain` for uncommitted work). If
+   **both are empty**, do not create a draft PR: stop with a **permanent failed** (halt reason
+   `gate3_zero_diff`).
+   - This catches "the loop picked up an issue with no work left in it" whatever the cause — a body that
+     went stale after a partial fix, work already merged by another PR, a plan that resolved to nothing
+   - It is the symptom-side net under Gates 0-2: anything that slips past them lands here, because an issue
+     with nothing left to do cannot produce a diff
+   - Records `error_kind = "abort"`, like the other gate halts
 
 #### 5. Creating the draft PR
 
