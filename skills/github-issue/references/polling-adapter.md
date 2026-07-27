@@ -60,7 +60,7 @@ The 3 layers of defense are hidden as **an internal implementation detail of the
 
 For details see §`claim() 3 Layers of Defense`. On failure it returns `ClaimFailed{reason}` and quietly aborts (no retry).
 
-**Input validation**: verify in advance that `issue_number` is an integer. If `int(slug.removeprefix("issue-"))` fails to convert, or the value is not an integer (negative, zero-padded, `0`), `fail_closed("invalid issue_number")`. It must match the regular expression `^[1-9][0-9]*$`.
+**Input validation**: the part of the slug after `issue-` must match the regular expression `^[1-9][0-9]*$` **as a raw string**. Anything else (non-numeric, negative, zero-padded, `0`) is `fail_closed("invalid issue_number")`. Applying the pattern after `int()` would not do: the conversion normalizes `007` to `7`, so a zero-padded slug would pass a check placed downstream of it. `invalid issue_number` is the single failure identifier for this gate — the same string appears in [SKILL.md](../SKILL.md)'s pre-check so that one search finds every occurrence.
 
 ### release(slug)
 
@@ -479,13 +479,13 @@ Execute the following 3 layers **in this order**. If even one fails, quietly abo
 
 ```
 claim(slug) -> ClaimResult:
-  # Input validation: issue_number is verified as an integer in advance
-  try:
-    N = int(slug.removeprefix("issue-"))
-  except ValueError:
-    fail_closed(f"invalid issue_number: {slug!r}")
-  if not re.match(r'^[1-9][0-9]*$', str(N)) or N != int(str(N)):
-    fail_closed(f"invalid issue_number format: {N}")
+  # Input validation: match the raw string, never the parsed integer.
+  # int() then re-stringifying silently normalizes "007" to "7", so a
+  # zero-padded slug would pass a check applied after the conversion.
+  raw = slug.removeprefix("issue-")
+  if not re.match(r'^[1-9][0-9]*$', raw):
+    fail_closed(f"invalid issue_number: {raw!r}")
+  N = int(raw)
 
   # ① Local lockfile (flock(2) non-blocking)
   lock_path = state_root / "claim" / f"{N}.lock"
