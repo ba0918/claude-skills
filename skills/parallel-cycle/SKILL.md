@@ -40,6 +40,16 @@ Determine input type from `$ARGUMENTS`:
 
 ## Phase 0: Decompose
 
+**Step 0.0: take the main working tree** per the
+[Workspace Lock contract](../shared/references/workspace-lock.md), before decomposition and
+before writing any project state. `LOCK_HELD` → stop and show the holder's `skill` / `pid` / `branch` /
+`started_at`; `STALE_RECLAIMED` → report it and continue; `UNAVAILABLE` → warn once and
+continue (fail-open). Release on every exit path.
+
+The lock covers **the main tree only**. Each worktree created in Phase 2 has its own
+`.agents/runtime/`, so it is a separate resource and its delegate claims it independently —
+do not pass the main tree's token into a worktree delegate.
+
 Decompose a natural language instruction into multiple plans.
 
 ### Step 0.1: Analyze and Decompose
@@ -192,7 +202,9 @@ Execute each group sequentially. Within each group, execute cycles in parallel.
 For each cycle in the group, **in parallel**:
 
 1. **Create the worktree**: create an isolated working tree and branch with git worktree
-2. **Run the cycle**: launch a subagent (high-performance model — implementation is protected by verification gates, so do not inherit the expensive session model) and run the cycle inside the worktree:
+2. **Run the cycle**: launch a subagent (high-performance model — implementation is protected by verification gates, so do not inherit the expensive session model) and run the cycle inside the worktree.
+   **Pass no workspace-lock token.** The worktree is a different resource from the main tree
+   (its own `.agents/runtime/`), so the delegate claims it itself:
 
    **Subagent instruction:**
    ```

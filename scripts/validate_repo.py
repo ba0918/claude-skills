@@ -127,6 +127,11 @@ CONTRACT_VOCAB = [
      ("ci_gate", "resident_sensor", "dissolve"), 2),
     ("skills/shared/references/artifact-store.md",
      (".agents/artifacts",), 1),
+    # workspace lock。語彙は意図的に固有名にしてある。polling-pattern が既に使う
+    # `ClaimFailed` や汎用語の `claim` / `lock` を採ると、coverage-ledger の
+    # reviewed / skipped で起きたのと同じ偽陽性を招く。
+    ("skills/shared/references/workspace-lock.md",
+     ("workspace.claim", "LOCK_HELD", "STALE_RECLAIMED"), 2),
     # coverage ledger（評価範囲台帳）。reviewed/skipped は汎用語で偽陽性を招くため、
     # 4 値中 3 値の共起でのみ契約リンクを要求する（min_distinct=3）。
     ("skills/shared/references/coverage-ledger.md",
