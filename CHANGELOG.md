@@ -8,6 +8,15 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## Unreleased
+
+SI-S003（prose 肥大）の見出し分類語彙に英語の `flow` が無く、`## Flow` を見出しに持つ
+plan-refine が 85/85 行 (100%) という構造的に成立し得ない値で誤検出されていた（issue #119）。
+skills/ 全文書の英語化で `## フロー` が `## Flow` になった際、検出器側の語彙が追従して
+いなかった。`_WORKFLOW_KEYWORDS` へ `flow` を追加し、rule-catalog の SI-S003 detail の
+語彙列挙を実装と同期した。SI-S003 は 11 → 10 件になり、消えるのは plan-refine の誤検出
+1 件のみ。他ルール・他スキルの finding に増減は無い。
+
 ## 1.69.0
 
 plan が 1 件のときだけ worktree 分離が失われていた（issue #84）。`parallel-cycle` は各 plan を

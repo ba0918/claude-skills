@@ -59,7 +59,7 @@ Detection patterns (regex-based):
 ### SI-S003 detail: prose bloat verdict
 
 Heuristic:
-1. Classify the `##` headings of SKILL.md: workflow-type (`Workflow` / `Phase` / `Step` / フロー / ワークフロー) vs prose-type (everything else). Subheadings at `###` and below inherit the classification of their parent `##`. A standalone `###` with no parent `##` is classified as prose-type
+1. Classify the `##` headings of SKILL.md: workflow-type (`Workflow` / `Flow` / `Phase` / `Step` / フロー / ワークフロー) vs prose-type (everything else). Subheadings at `###` and below inherit the classification of their parent `##`. A standalone `###` with no parent `##` is classified as prose-type
 2. The denominator is **the total line count of SKILL.md excluding the frontmatter** (blank lines included). If the total lines of prose-type sections / the denominator > 0.6, it is a finding
 3. A pile of knowledge should be moved out into references/ (skill-authoring #1 + #4)
 

@@ -141,6 +141,16 @@ class TestSIS003(unittest.TestCase):
         findings = sc.check_si_s003([t], {"root": "."})
         self.assertEqual(len(findings), 0)
 
+    def test_english_flow_heading_is_workflow(self):
+        """issue #119: `## Flow` must classify as workflow-type, not prose."""
+        content = "\n".join(
+            ["# My Skill", "", "Short intro.", "", "## Flow", ""]
+            + [f"Step {i}." for i in range(40)]
+            + ["", "## Notes", "", "A few notes."])
+        t = _make_target(content=content)
+        findings = sc.check_si_s003([t], {"root": "."})
+        self.assertEqual(len(findings), 0)
+
     def test_prose_heavy_detected(self):
         content = "\n".join(
             ["# My Skill", "", "## Background", ""]
