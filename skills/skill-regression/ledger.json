@@ -112,9 +112,9 @@
       "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
       "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/shared/references/workspace-lock.md": "b3ef9c624125bd6b13f78f282e6e9a4bb7623ec9ea256b7fe90708bab6cdd3ee"
+      "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "#90 の workspace lock 導入に伴う再評価。process-queue 経路で cycle / plan-implement 各 3 シナリオ critical 全 ○、baseline_drift の申告と実測 6/6 一致。ロックが働いたことを成果物で裏取り済み（全ユニットで .agents/runtime/ が作られ ACQUIRED を報告、終了後に workspace.claim の残存 0 件 = release パスが動作）。実行者申告から契約の欠陥 2 件を検出して修正し 3 回実走した: (1)「1 バイトも書く前に取れ」が claim 自身の書き込みを禁じるように読める → 「project state を」に限定し runtime 領域が例外である旨を明記、(2) CLI エントリが無く呼び出し方を各実行者が発明していた（2 ユニットが独立に報告）→ claim/release/status の CLI を追加。修正後は当該摩擦の申告が 6 ユニットすべてで消えた。executor は --allowedTools にサブエージェント委譲を含まないため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
+    "note": "process-queue 実走 3/3。全 executor が委譲不可環境のため Phase 1/2 をインライン代行（cy-002 は workspace_lock.py を skills リポジトリ側の絶対パスで実行）。critical 全 ○。cy-001 の非 critical 要件6 は .agents/artifacts/ が gitignore 済みでコミット不能なため partial（fixture 側の前提が artifact-store 契約より古い）。baseline drift はシナリオの成果物のみで要件資産の改変なし。",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -126,8 +126,8 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "5e4fe38478aafdffc3e4c7d807b0fdfb577ed6b9e2ef5a346f67b67873405a8f",
-    "verified": "2026-07-27"
+    "surface_sha256": "bf63540f2e81d2ff882dbd0e7052c7e0c950a8012ea06c0c1b8287e8cb63fe0c",
+    "verified": "2026-07-28"
   },
   "decision-journal": {
     "file_sha256": {
@@ -335,9 +335,9 @@
       "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/shared/references/workspace-lock.md": "b3ef9c624125bd6b13f78f282e6e9a4bb7623ec9ea256b7fe90708bab6cdd3ee"
+      "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "#90 の workspace lock 導入に伴う再評価。process-queue 経路で cycle / plan-implement 各 3 シナリオ critical 全 ○、baseline_drift の申告と実測 6/6 一致。ロックが働いたことを成果物で裏取り済み（全ユニットで .agents/runtime/ が作られ ACQUIRED を報告、終了後に workspace.claim の残存 0 件 = release パスが動作）。実行者申告から契約の欠陥 2 件を検出して修正し 3 回実走した: (1)「1 バイトも書く前に取れ」が claim 自身の書き込みを禁じるように読める → 「project state を」に限定し runtime 領域が例外である旨を明記、(2) CLI エントリが無く呼び出し方を各実行者が発明していた（2 ユニットが独立に報告）→ claim/release/status の CLI を追加。修正後は当該摩擦の申告が 6 ユニットすべてで消えた。executor は --allowedTools にサブエージェント委譲を含まないため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
+    "note": "process-queue 実走 3/3。全シナリオ critical 全 ○、非 critical 欠落ゼロ。baseline drift は plan md / status.md / pi-003 の .gitignore のみでシナリオの成果物に一致し、要件資産の改変なし。",
     "result": "pass",
     "surface": [
       "skills/plan-implement/SKILL.md",
@@ -350,8 +350,8 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "0c3a2c1b5db58bb869a31dcdc8b69b2c4a47dd96016219cf89311c298b4d3ba8",
-    "verified": "2026-07-27"
+    "surface_sha256": "ae561df0b8e95f4e487dcc5d9459ede13d4dd7c4ec64a04e70bd5d6812b7c9f6",
+    "verified": "2026-07-28"
   },
   "plan-reviewer": {
     "file_sha256": {
