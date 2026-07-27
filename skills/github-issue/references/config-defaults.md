@@ -20,6 +20,29 @@ Every value can be overridden with the `--config key=value` argument.
 | `require_author_association` | `OWNER,MEMBER,COLLABORATOR` | csv | Skip polling when the issue author is none of these |
 | `enable_base64_scan` | `false` | bool | Whether to enable secret-scanner's generic Base64 pattern. Off by default because it produces many false positives. See [`secret-scanner.md`](secret-scanner.md) for details |
 | `rollback_gh_fetch_cap` | `10` | count | The per-tick cap on `gh issue view` API calls in `rollback_orphans()` steps ③ / ④. The excess carries over to the next tick (preventing a fetch storm)|
+| `impact_command` | (unset) | command | The external command that computes the blast radius of a change, used by [Gate 0](polling-adapter.md#self-drive-gates). `{files}` expands to the declared paths, space separated. **When unset, Gate 0's impact check is a no-op** (the skill is distributed to other repositories, and there is no portable oracle) |
+| `max_impacted_units` | `1` | count | The upper bound on impacted units that still allows self-driving. Applied only when `impact_command` is set |
+| `forbidden_path_globs` | `skills/shared/**` | glob csv | Paths that reject self-driving regardless of the impact count. Evaluated **without** the oracle, so it stays in force even when `impact_command` is unset |
+
+### Why the impact oracle is pluggable
+
+`github-issue` is distributed and runs inside other people's repositories, so it must not depend on
+this repository's `skills/skill-regression/scripts/ledger.py`. `impact_command` is therefore an
+injection point, unset by default, and Gate 0's impact check degrades to a no-op wherever no oracle
+is configured. What never degrades is `forbidden_path_globs` — it needs no oracle.
+
+This repository configures:
+
+```
+--config 'impact_command=python3 skills/skill-regression/scripts/ledger.py --impact {files}'
+```
+
+The command's stdout is read as **one impacted unit per line** (in this repository, a skill name), and
+the line count is the impact count. A non-zero exit is **fail-closed**: never read it as "0 impacted
+units" (see [`polling-adapter.md §Self-Drive Gates`](polling-adapter.md#self-drive-gates)).
+
+> **Where the per-repository value is persisted**: until `.agents/config/` exists, pass it through
+> `--config` and keep the table above as the documented value.
 
 ## Parallel Precedence Rule
 
@@ -66,5 +89,7 @@ github-issue cycle 42 --config max_review_iterations=5 --config parallel_worktre
 - `min_rate_limit_remaining >= 0`
 - `auto_merge_strategy ∈ {squash, merge, rebase}`
 - `rollback_gh_fetch_cap >= 1`
+- `max_impacted_units >= 1`
+- `impact_command`, when set, contains the `{files}` placeholder exactly once
 
 An invalid value causes an error exit at startup.

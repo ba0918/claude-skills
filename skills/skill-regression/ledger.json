@@ -199,14 +199,14 @@
   },
   "github-issue": {
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "8f1164ccd9ed52463e35d48b97e7ed1830a60a6e555a8a2a23244aa1428330f9",
-      "skills/github-issue/fixtures.json": "b388e9b0ac5b320fdfa21db5ff47ea959bba547497cb575efba36ace2cee34d2",
+      "skills/github-issue/SKILL.md": "9d9a935cc4d4d3ff0d4e3c0605b001531c041f5a076f39ec4c8a8386a3cecb08",
+      "skills/github-issue/fixtures.json": "6a62e882d8c576aa94bc24f3346b4d1d56169bff9215d885ba88a2458dbd85ae",
       "skills/github-issue/references/cleanup-spec.md": "a141e9524911d46bee62e4cffceeb4da845d23cf1f555905eb6c6a222daa21f7",
       "skills/github-issue/references/codex-review-loop.md": "616fec7c7da33d18cdecc60b20b02e1be461cb0029eeffbeca19a6b7554755ed",
-      "skills/github-issue/references/config-defaults.md": "536d35ba1412d9b3883bf18d4731d51474f51ec32d9a69bf97306b1cf28ecba5",
+      "skills/github-issue/references/config-defaults.md": "5613460095f8cafb97bb8603aca37933e3b8e40f1014fb9ded04b6727775172c",
       "skills/github-issue/references/gh-commands.md": "cc3f6ec5bda0d660e5ff86aea58c8bac181c8c660b1a2c405a68f9623b4732e3",
-      "skills/github-issue/references/label-spec.md": "e1479642e0c4716cdac2ddf4f70d69fa6b3dd72cff54bd0baf45c63c1bd80c27",
-      "skills/github-issue/references/polling-adapter.md": "c8b202dabc69775e3cb7b3ca6e8c56096031d2f7e3767b69d444d107d0012b71",
+      "skills/github-issue/references/label-spec.md": "d43e607c70abba0b17755a7c59cd7acf4ba39dce8b83be93e02db1c478358683",
+      "skills/github-issue/references/polling-adapter.md": "7d6593e283447a8b852d99f354792f642b2feb6989a15012bcc0021737e7fe5c",
       "skills/github-issue/references/secret-scanner.md": "d9a01874b251afdef4501d5a5c0f997a6ec6069f88f27f61e2dcfe2630276668",
       "skills/shared/references/artifact-store.md": "57d02e47c7858e7a7f3212ceb2b5ecb04cbd64bb2609a6a27567bc65cf8f3f96",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
@@ -214,7 +214,7 @@
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "issue #56（計測コマンドのパス規約統一 + surface_sha256 を配布物基準へ）後の再評価。process 経路（claude-exec バックエンド）で全 4 シナリオを実行し critical 全 ○。スクラッチパッド配下で実行しており書き込み拒否の交絡なし。is-001 の実行者が Step 15 の measurement_identity.py emit を実際に走らせ events.jsonl への append を確認しており、変更経路が実行されている。外部からの状況照会 0 回",
+    "note": "Gate 0/1/2/3 追加に伴う再評価。subagent 経路で 6 シナリオ全 critical ○（非 critical も全 ○）。外部からの状況照会 0 回、stall なし。gh 未導入環境のため全シナリオが Common Pre-checks を fail-closed で記録して続行する経路を通った（gi-001 は gh 監査シムで呼び出し 0 件を実証）。新規 gi-005（判定値 5 ケース）/ gi-006（禁止パス却下・宣言外パス停止）を含む。実行後に polling-adapter.md の擬似コード内コメントから記号のみ 1 行整形しており、run 時点の本文とは意味変更のない差分がある。",
     "result": "pass",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -232,7 +232,7 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "7a0511592cb89ee4655a3446c4781b117b1cb2f05729b0b5d70f8136a4e59200",
+    "surface_sha256": "3bcc8e83e21b84d3fba9680f044145154ee8d1b2eb1a11b933d48b68f27e4bb6",
     "verified": "2026-07-27"
   },
   "handoff": {

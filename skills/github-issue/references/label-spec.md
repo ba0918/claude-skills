@@ -8,7 +8,7 @@ The exhaustive definition of the labels the github-issue skill manages.
 
 | Label | Meaning | When it is added | When it is removed |
 |-------|------|---------------|--------------|
-| `claude-auto` | A self-driving target. A trust boundary — only repository administrators may add it | The user / the Create Workflow | On cycle completion (together with merge & close) |
+| `claude-auto` | A self-driving target. A trust boundary — only repository administrators may add it. The body must satisfy the contract in §`claude-auto` Body Contract | The user / the Create Workflow | On cycle completion (together with merge & close) |
 | `claude-running` | A cycle is running (after the atomic claim)| Cycle Step 2 | Step 6 (the review transition) / on failure (Step 9) |
 | `claude-review` | Under Codex review / in the draft-PR review stage | Cycle Step 6 | On auto-merge success / on failure |
 | `claude-failed-transient` | Self-driving failed (a transient error, retryable on the next tick)| `mark_failed(slug, TRANSIENT)` | On success at the next tick / on promotion to permanent |
@@ -16,6 +16,56 @@ The exhaustive definition of the labels the github-issue skill manages.
 | `claude-failed` | **A DEPRECATED alias** (precedence: permanent). Backward compatible via dual-write in 1.14.0, scheduled for removal in 1.16.0 | Added together with transient/permanent by `mark_failed`'s dual-write | A human removes it manually and re-submits |
 
 > **`claude-auto` is a trust boundary**: the body of an issue carrying this label is handed to Codex. State explicitly in the documentation that only repository administrators may add it. `require_author_association` additionally checks the issue author's permission.
+
+## `claude-auto` Body Contract
+
+Attaching `claude-auto` is a claim that this issue can be driven **with no human present**, and the body
+is the source of truth for that claim. Both sections below are **required**, and both are read
+mechanically at claim time by [`polling-adapter.md §Self-Drive Gates`](polling-adapter.md#self-drive-gates).
+An issue that does not satisfy them gets a quiet skip — it is never claimed, and no failure label is
+attached, because a body that does not meet the contract is a defect in how the issue was written.
+
+### What self-driving means
+
+**Self-driving means running to completion in an execution environment where no human is present**
+(polling loops, scheduled cloud runs). The contrast is *semi-automatic*: an interactive session where a
+human is on hand and can settle a judgment call on the spot. These are different execution environments,
+not two ends of a scale, and whether a human is present is 0 or 1 — so the verdict is two-valued.
+The full argument, and why `部分的に自走可` is a forbidden value rather than a third state, is in
+[`polling-adapter.md §Self-Drive Gates`](polling-adapter.md#self-drive-gates) (the canonical SSOT for the
+parsing rules; this file does not restate the algorithm).
+
+### Required section 1 — the self-drive verdict
+
+```
+## 自走可否
+
+判定: 自走可
+```
+
+- **The permitted values are exactly two: `自走可` and `自走不可`.**
+- `部分的に自走可` is a **forbidden value** and is treated as ambiguous (quiet skip). An issue that is
+  only partly self-drivable gets the self-drivable part split into its own issue — writing the value at
+  all means the triage is already done and only the split is missing.
+- A missing section, a missing `判定:` line, or any other value is likewise a quiet skip (fail-closed).
+
+### Required section 2 — the declared change targets
+
+```
+## 変更対象
+
+- skills/github-issue/SKILL.md
+- skills/github-issue/references/label-spec.md
+```
+
+- One repository-relative path per list item, and **nothing else on the item**. An annotated item such as
+  `- file.md:170 — what to fix here` is deliberately not read as a declaration, so a body may carry a
+  second annotated list under the same heading.
+- The declaration is the source of truth for scope: the plan may not target a path outside it, and a
+  plan that does stops the cycle at Gate 0b instead of implementing.
+- The declared paths are also what the blast-radius check measures — an issue whose change reaches more
+  than `max_impacted_units` units, or touches `forbidden_path_globs`, is not claimed even when it says
+  `自走可`. A verdict written from the size of the edit rather than its radius is rejected here.
 
 ## State Machine (a direct link to shared contract §2)
 
