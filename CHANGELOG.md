@@ -10,6 +10,30 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+`workspace_lock` の fail-open テスト 2 件が root 実行で必ず落ちる問題を直した（issue #103）。
+検証の正本である `scripts/run_checks.sh` は `set -eu` かつユニットテストが最初のステージなので、
+この 2 件の赤が構造ゲート 4 種（`validate_repo.py` / ledger check / translation parity / anchors）を
+巻き添えで一度も走らせずに中断させていた。CI は非 root ランナーなので緑のまま通り、
+`.github/workflows/validate.yml` が明文で置く「ローカルと CI の検証内容は常に一致する」という
+前提が root 環境でだけ成立していなかった。
+
+原因は実装ではなくテストの模擬手段にある。「runtime 領域を作成できない環境」を `chmod(0o500)` で
+作っていたが、uid 0 に対して DAC の書き込みビットは効かないため模擬が no-op になり、
+`.agents/runtime` の作成が普通に成功して `ACQUIRED` が返っていた。`.agents` を通常ファイルとして
+置き `mkdir` を ENOTDIR で落とす形へ差し替えた。権限検査ではなくパス解決の失敗なので、
+実行 uid によらず同じ fail-open 経路へ入る。アサーション本体と
+`workspace_lock.py` は変更していない。
+
+テスト名とヘルパー名を `unwritable` から `uncreatable` へ改めた。この 2 件は変更前から
+`mkdir` の失敗経路（EACCES）だけを検査しており、既存の `.agents/runtime` へ書けない経路は
+検査していない。`unwritable` を名乗ると書き込み不能もカバー済みだと読めてしまう。
+書き込み経路には実際に fail-open の穴があり、issue #106 として切り出した。
+
+`skipIf(os.geteuid() == 0)` で逃がす案は採らなかった。root は「たまたま特殊な環境」ではなく
+このリポジトリの自走ループが実際に走る標準環境であり、そこでだけ fail-open 契約が
+無検証になる。user namespace（`unshare -r`）で uid 0 を作って両方向を実測した
+（修正前 = 2 件失敗 / 修正後 = 26 件 pass、非 root でも 26 件 pass）。
+
 作業ツリーの占有ロックを常時 ON で導入した（issue #90）。中核の実装ループ
 （`cycle` → `plan-implement` → `iterate`）は共有チェックアウトへ直接書き込み、他セッションが
 そこで走っていないかを一切検査していなかった。2 セッションが同じツリーで進むと互いの編集を
