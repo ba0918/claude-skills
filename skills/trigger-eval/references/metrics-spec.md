@@ -10,6 +10,26 @@ Judging is run in 2 modes, selection and autonomous (see `judge-protocol.md`). *
 - **Never mix the judgment results of the 2 modes into one JSON for aggregation** (the populations differ; see the validity limits in `judge-protocol.md`).
 - **The convergence and degradation guards of the rewriting loop (SKILL.md Phase 6) treat selection as authoritative.** autonomous is treated as a **reference series** plus the calibration signal for the Tier1(selection)↔Tier2 divergence (never make a revert decision from autonomous alone).
 
+## Input JSON schema (the wrapper)
+
+What `aggregate_metrics.py` reads is not a bare case array but an object wrapping it. The wrapper keys are part of the contract, not an implementation detail of the script:
+
+```json
+{
+  "cases": [ ... ],
+  "valid_skills": ["skill-a", "skill-b"],
+  "stability_sample_ids": ["c1-001", "c1-002"]
+}
+```
+
+| Key | Required | Meaning |
+|---|---|---|
+| `cases` | yes | The array of the case schema below |
+| `valid_skills` | yes | The label space, as bare skill names. **Do not include `none`** — it is added automatically, and anything outside `set(valid_skills) \| {none}` normalizes to `INVALID` |
+| `stability_sample_ids` | no | The fixed sample of `case_id` for the stability series. Omitted means the full set |
+
+Writing a caller from this document alone used to fail with `KeyError: 'valid_skills'`, because the wrapper was specified nowhere and the script was its own only canon. A producer that emits the case array under any other key (`skills`, a bare array, ...) is wrong even if every case inside it is well-formed.
+
 ## Case JSON schema
 
 ```json

@@ -21,9 +21,29 @@ Every case carries **a single correct label** (a skill name or `none`). Ambiguou
 
 - Fix the cases in Phase 2 and **never move them in later iterations** (no substitutions).
 - **Fix them into 2 files: `cases.json` for train and `cases_holdout.json` for holdout**:
-  - The holdout is **20%** of the whole.
-  - **A stratified split that keeps the none ratio at 25% or more on both the train and holdout sides.**
+  - The holdout is **about 20%** of the whole. This is a target, not a fixed value — see below.
+  - **A stratified split that keeps the none ratio at 25% or more on both the train and holdout sides.** **The stratification constraint dominates the fraction**: satisfy it first, then land as close to 20% as it allows.
   - Never show the holdout to the rewriting loop. Make the post-convergence holdout verdict the **acceptance gate** (revert unless the macro recall/precision of `metrics-spec.md` is non-degraded against the pre-loop baseline).
+
+### Computing the feasible split before splitting
+
+The two rules above are not always jointly satisfiable, so **compute the feasible range first and fail loudly when it is empty** — do not discover it by a split that silently violates one of them. For a total of `N` cases with `M` of them `none`, a holdout of size `H` needs a holdout-`none` count `h` such that
+
+```
+ceil(0.25 * H) <= h <= M - ceil(0.25 * (N - H))
+```
+
+Choose the `H` closest to 20% for which that range is non-empty. Worked example from the 2026-07-27 run (`N = 188`, `M = 47`):
+
+| `H` | `H / N` | required `h` | feasible |
+|---:|---:|---|---|
+| 37 | 19.7% | `10 <= h <= 9` | no |
+| 38 | 20.2% | `10 <= h <= 9` | no |
+| 39 | 20.7% | `10 <= h <= 9` | no |
+| **40** | **21.3%** | `10 <= h <= 10` | **yes (h = 10, unique)** |
+| 41 | 21.8% | `11 <= h <= 10` | no |
+
+A flat 20% fails here for every rounding, and the only feasible split is 40 with exactly 10 `none`. If no `H` in a reasonable band works, the corpus itself is the problem — go back to generation and raise the `none` count rather than bending either rule.
 
 ## The triple anonymization gate (always applied before fixing)
 
