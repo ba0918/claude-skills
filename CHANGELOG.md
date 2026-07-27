@@ -10,6 +10,33 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+`workspace_lock` の fail-open が、既存の runtime 領域へ書けない環境で破れていた（issue #106）。
+`claim()` が fail-open へ変換するのは `mkdir()` の `OSError` だけで、`.agents/runtime` が既に
+存在すると `mkdir(exist_ok=True)` を通過して `_write_record()` へ進む。そこは
+`FileExistsError` しか捕捉していなかったため、EACCES / EROFS / ENOSPC / EDQUOT が呼び出し元へ
+そのまま抜けていた。
+
+症状は「ロックが効かない」ではなく**実在しない `LOCK_HELD` で停止する**である。CLI 経路では
+traceback を吐いて exit 1 になるが、契約は「非ゼロ終了は `LOCK_HELD` のときだけ」と規定して
+いるため、`cycle` / `plan-implement` / `iterate` は空の holder を理由に開始前で止まる。
+fail-open の意図と正反対の帰結になる。
+
+`_write_record()` の `FileExistsError` 以外の `OSError` を `UNAVAILABLE` へ変換する。占有の
+合図である `FileExistsError` は従来どおり別扱いのまま。stale 再取得側は元から `OSError` を
+`UNAVAILABLE` にしており、初回作成経路だけが非対称だった。
+
+**書き込みに失敗した作りかけの claim は削除しない。** 一度は「残すと次のセッションが実在しない
+stale 回収を報告する」として削除する実装にしたが、Codex のレビューでレースが判明した。書き込み
+失敗と後始末の隙間に別セッションが未完成レコードを stale 回収して自分の claim を publish でき、
+そこで最終パスを unlink すると**生きた claim を消す**。これは本モジュールが唯一やってはならない
+ことで、幽霊 `STALE_RECLAIMED` の警告 1 行より遥かに重い。作りかけは既存の「読めないレコードは
+stale 扱い」経路が安全に回収する。この判断はテストで固定した。
+
+契約側（`workspace-lock.md`）の fail-open 条件も「作成できない」だけでなく「作成できても
+claim を書けない」を含む形へ広げた。テストは 4 件追加し、模擬は errno を直接指定する形にした
+（`chmod` は #103 と同じ理由で uid 0 では no-op になる）。修正前のモジュールに対して新テスト
+4 件が落ち、既存 26 件が通ることを確認済み。
+
 `workspace_lock` の fail-open テスト 2 件が root 実行で必ず落ちる問題を直した（issue #103）。
 検証の正本である `scripts/run_checks.sh` は `set -eu` かつユニットテストが最初のステージなので、
 この 2 件の赤が構造ゲート 4 種（`validate_repo.py` / ledger check / translation parity / anchors）を
