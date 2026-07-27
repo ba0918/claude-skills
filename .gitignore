@@ -27,3 +27,9 @@ Thumbs.db
 # loop の events ログ等。いかなる visibility でも共有・migration 対象外 —
 # skills/shared/references/artifact-store.md「Runtime area」参照）
 /.agents/runtime/
+
+# Agent ephemeral area（作業中の中間生成物。いつ消えても復元不要 —
+# skills/shared/references/artifact-store.md「Ephemeral area」参照）。
+# .agents/config/ は tracked なのでここに書かない（受理済み baseline が clone に
+# 付いてこないと、新しい checkout のたびに裁定済みの finding が再報告される）。
+/.agents/tmp/

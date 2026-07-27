@@ -106,6 +106,61 @@ Rules for the runtime area:
 
 Polling adapters bind control/session files to a `<runtime_root>` (see `polling-pattern.md` §Roots). Loop event log path is defined by `measurement-identity.md`.
 
+## Ephemeral area
+
+Intermediate files a skill writes while working — scratch JSON, a batch's working
+directory, a report it is about to summarize and discard — are **ephemeral**. They are
+neither project state nor process control, and they live in a third tree:
+
+```text
+.agents/tmp/
+```
+
+Rules for the ephemeral area:
+
+- **Always machine-local.** Ignored by Git; never shared, never migrated, regardless of
+  `visibility`. Visibility governs artifacts, not scratch.
+- **Excluded from the migration inventory**, on the same footing as the runtime area.
+- **Losable by definition.** Unlike an artifact, an ephemeral file may vanish at any time
+  and nothing is expected to restore it. A skill that cannot survive its scratch
+  disappearing is holding project state in the wrong tree.
+- **Not a derived index.** A derived index is regenerated on demand from artifacts;
+  ephemeral output is simply discarded.
+
+The distinction that matters is **who is expected to read it later**. An artifact is read
+by a future session, a reviewer, or another skill. A runtime file is read by a concurrent
+process on this host. An ephemeral file is read by the step that is running right now, and
+by nothing after it.
+
+## Configuration area
+
+Skill-facing configuration and accepted baselines are **tracked project state**, and they
+are the one tree here that is deliberately committed:
+
+```text
+.agents/config/
+├── review-rules.md
+├── context-audit-baseline.json
+├── loop-baseline.json
+└── skill-interface-audit-baseline.json
+```
+
+Rules for the configuration area:
+
+- **Tracked, not ignored.** These files are committed and shared. A baseline records which
+  findings a team has already accepted; if it did not travel with the clone, every fresh
+  checkout would re-report findings the team already ruled on.
+- **Flat layout.** One file per concern, named after the skill or the concern it serves. No
+  per-skill subdirectories — the set is small and a nesting rule would be a second thing to
+  keep in sync.
+- **Distinct from the store policy.** `.agents/artifacts.yml` declares *where and how the
+  store itself lives*, and changing it is a migration governed by the seven steps above.
+  `.agents/config/` holds ordinary settings that skills read; changing one is a normal edit
+  with no migration discipline attached. Do not merge the two: putting a routine toggle
+  under migration discipline either burdens the toggle or erodes the discipline.
+- **Never holds secrets.** Same prohibition as the tracked policy (safety invariant 6):
+  no credentials, no remote URLs, no machine-specific absolute paths.
+
 ## Derived indexes
 
 `ideas/idea-status.md` and `issues/issue-status.md` are **derived caches**, not
