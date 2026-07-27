@@ -8,7 +8,7 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
-## Unreleased
+## 1.68.0
 
 CONTEXT 語彙の状態 enum を英語化した（`確定` / `暫定` / `競合中` / `廃語` →
 `settled` / `tentative` / `conflicting` / `retired`）。S1 英語化では「`ledger_lint.py` が
