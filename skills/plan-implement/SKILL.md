@@ -73,8 +73,8 @@ Receive the implementation result.
 
 1. Launch a review agent as a subagent
    - Give it **strict evaluation criteria**. Make it take a critical stance
-   - **When `.claude/review-rules.md` exists, you must load it and use it as the review criteria**
-   - When there is no `.claude/review-rules.md`, use the default viewpoints below:
+   - **When `.agents/config/review-rules.md` exists, you must load it and use it as the review criteria**
+   - When there is no `.agents/config/review-rules.md`, use the default viewpoints below:
      - Whether anything violates the target project's own instructions or [design-principles.md](../shared/references/design-principles.md)
      - Whether responsibilities are mixed together
      - Whether the tests are sufficient (coverage, edge cases)

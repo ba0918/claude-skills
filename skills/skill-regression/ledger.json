@@ -69,22 +69,22 @@
   },
   "context-audit": {
     "file_sha256": {
-      "skills/context-audit/SKILL.md": "f07880b8e6d9c5b2df1a04e558264aa8aa3cfa457d268481590e8b15a61bed03",
-      "skills/context-audit/fixtures.json": "d2888346fb7abe5d6e908fa0e8fe490d5597e2c860371095652c4af844866464",
-      "skills/context-audit/references/baseline-format.md": "a6bf0d0afc6cbf06e9436b8bc91ac959553abfeb4e053cf0c5408814f0653e18",
+      "skills/context-audit/SKILL.md": "f0c803e5a101e17585a9a0e4131da7b1dbba7dc4692fe920ca685155752fa19a",
+      "skills/context-audit/fixtures.json": "2b733669b888e0578a108953fd3d41dfd7d1133b645ce478dbbdb9a358e0ac11",
+      "skills/context-audit/references/baseline-format.md": "dcc394afc4d0eb9a3b0d1a9de69e50e2f49c76819f883e6c46c483522d24cd51",
       "skills/context-audit/references/memory-audit.md": "725e2cfc6c00e686959c9856d4badbbc6cb8c5ce183e40cb8487dbd37147016b",
       "skills/context-audit/references/rule-catalog.md": "4bb4a5bb3633a520ee9f3130d93e085acee0bf748ae17c5a2984ea7e27fc54c3",
       "skills/context-audit/scripts/aggregate_report.py": "9acdb60cbda5dcf18b2d69ccb4a42910852a5ec7723d1abe49a3a253ad4fcb10",
       "skills/context-audit/scripts/apply_fixes.py": "d37bc3064138bf2c8325157edfd2aeb38a14ad70a637835f0616658f77b02231",
-      "skills/context-audit/scripts/collect_targets.py": "aa6a60a70f3c7c3b4c161c0ca080d428fe4b3fa9ff4169af7707f74b2fe5957e",
+      "skills/context-audit/scripts/collect_targets.py": "0d1df45689e6367ecfc9e50c058a061dc8da702f9288005fac407449ee1a57ce",
       "skills/context-audit/scripts/static_checks.py": "87d54d880ddfe445e4872378b0024893a848efc6592cef19255afde7179b9216",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "artifact-store.md への ephemeral/config 2 節追加による stale。実走せず accept。根拠は実測で、本スキルの fixtures.json 全シナリオ（JSON 全文）が artifact store 関連語彙（.agents/ / artifact / artifacts.yml / store / migration / visibility / runtime）を 1 件も含まない。追加は純粋な新節で既存ルール・スキーマキー・コマンドの変更を含まないため、本スキルの挙動面に到達する経路が無い。",
-    "result": "accepted-without-run",
+    "note": "#76 の .claude/ → .agents/ パス移行に伴う再評価。パスは機械解釈されるトークンなので accept せず process-queue 経路で実走し、6 スキル 17 シナリオ critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて 17/17 一致。移行が実際に効いていることを成果物で裏取り済み（executor は .agents/tmp/ 配下へ書き、.claude/tmp/ への書き込みは 0 件）。sweep-fix は sf-002（置き場を残していない=critical）が残存 0 件、sf-001（置き場が ignore 対象外であることを検出・報告し自力解決しない）が残存 3 件で、いずれも要件どおり。executor は --allowedTools にサブエージェント委譲を含まないため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
+    "result": "pass",
     "surface": [
       "skills/context-audit/SKILL.md",
       "skills/context-audit/fixtures.json",
@@ -100,7 +100,7 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "114d047972b10733774cf8a6e46ee1856d31694527c91f5e2f22cfaa3b7ce545",
+    "surface_sha256": "0679f9294fa6f199b202dea76e4cbc3ce00e9ce056083f42abb1fcf15f267429",
     "verified": "2026-07-27"
   },
   "cycle": {
@@ -109,11 +109,11 @@
       "skills/cycle/fixtures.json": "cb405816cc5a28fdc624be8f13842304ec96104025088e5cebd4923a102001d6",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
-      "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
+      "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
       "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "artifact-store.md への ephemeral/config 2 節追加に伴う再評価。process-queue 経路（claude-exec backend）で実走し critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて全一致を確認（unadjudicated_pass を素通しにしていない）。executor は --allowedTools が Bash/Read/Write/Edit/Glob/Grep でサブエージェント委譲が構造的に不可のため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
+    "note": "#76 の .claude/ → .agents/ パス移行に伴う再評価。パスは機械解釈されるトークンなので accept せず process-queue 経路で実走し、6 スキル 17 シナリオ critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて 17/17 一致。移行が実際に効いていることを成果物で裏取り済み（executor は .agents/tmp/ 配下へ書き、.claude/tmp/ への書き込みは 0 件）。sweep-fix は sf-002（置き場を残していない=critical）が残存 0 件、sf-001（置き場が ignore 対象外であることを検出・報告し自力解決しない）が残存 3 件で、いずれも要件どおり。executor は --allowedTools にサブエージェント委譲を含まないため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -124,7 +124,7 @@
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "6dce3b117fb586b11a22b6c90ff4e78162a2fdcd666e94fbd4aa10adfa6e9c31",
+    "surface_sha256": "d3ddf94f91f08d7459000ec1f6ef1da932f4a44abd4e2623f6e2c14903ab1785",
     "verified": "2026-07-27"
   },
   "decision-journal": {
@@ -325,7 +325,7 @@
   },
   "plan-implement": {
     "file_sha256": {
-      "skills/plan-implement/SKILL.md": "ebdd2c45e47d1e1ec629aff1abefc8076d9940e189f4a5a4f84d09dc5a9da0f9",
+      "skills/plan-implement/SKILL.md": "26d8b3ff21d7dc4a24657adc04bfe71b09063a3c08c29e71ca3a020c57277e2f",
       "skills/plan-implement/fixtures.json": "2840fcbc704e213fcd50d5d492a96e6e8c4aabb525ab6bd94210ff6d87adaf89",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
@@ -334,7 +334,7 @@
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "artifact-store.md への ephemeral/config 2 節追加に伴う再評価。process-queue 経路（claude-exec backend）で実走し critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて全一致を確認（unadjudicated_pass を素通しにしていない）。executor は --allowedTools が Bash/Read/Write/Edit/Glob/Grep でサブエージェント委譲が構造的に不可のため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
+    "note": "#76 の .claude/ → .agents/ パス移行に伴う再評価。パスは機械解釈されるトークンなので accept せず process-queue 経路で実走し、6 スキル 17 シナリオ critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて 17/17 一致。移行が実際に効いていることを成果物で裏取り済み（executor は .agents/tmp/ 配下へ書き、.claude/tmp/ への書き込みは 0 件）。sweep-fix は sf-002（置き場を残していない=critical）が残存 0 件、sf-001（置き場が ignore 対象外であることを検出・報告し自力解決しない）が残存 3 件で、いずれも要件どおり。executor は --allowedTools にサブエージェント委譲を含まないため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
     "result": "pass",
     "surface": [
       "skills/plan-implement/SKILL.md",
@@ -346,22 +346,22 @@
       "skills/shared/references/testing-anti-patterns.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "679ea20586b51927611b62239f791195b996c83efbc852b901cdb1f1be937ea1",
+    "surface_sha256": "effbeddac87c8b5e82de5196ec3274b74b84b3b44831b128628312bab95c3eb0",
     "verified": "2026-07-27"
   },
   "plan-reviewer": {
     "file_sha256": {
-      "skills/plan-reviewer/SKILL.md": "beef34802c1cf872c5f451b6a1d6de28ceee1211070e37f2931fd5462335837d",
+      "skills/plan-reviewer/SKILL.md": "5f2656d2ef54fd5ed8627d31d4ab197c23f8b19fbde4edb5807d6596509ff945",
       "skills/plan-reviewer/fixtures.json": "551e9f86884b8913ac0c80f9daf1f0621d9cd6b5888b86be5f38da4a21278773",
       "skills/plan-reviewer/references/output-format.md": "3140912a79e485dc23545b99335b1e581863a3d28df2694b8b4ed8e22f1d0230",
-      "skills/plan-reviewer/references/review-dimensions.md": "e80876dfc62783f0e629064eada35b157a7b6babffa58cafd77714ff5e64ed89",
+      "skills/plan-reviewer/references/review-dimensions.md": "481e0cbbb7882e9a626a63600840a370ec8b4172c8810e1e3a4defb6979cca01",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
-      "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
+      "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd"
     },
-    "note": "artifact-store.md への ephemeral/config 2 節追加に伴う再評価。process-queue 経路（claude-exec backend）で実走し critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて全一致を確認（unadjudicated_pass を素通しにしていない）。executor は --allowedTools が Bash/Read/Write/Edit/Glob/Grep でサブエージェント委譲が構造的に不可のため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
+    "note": "#76 の .claude/ → .agents/ パス移行に伴う再評価。パスは機械解釈されるトークンなので accept せず process-queue 経路で実走し、6 スキル 17 シナリオ critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて 17/17 一致。移行が実際に効いていることを成果物で裏取り済み（executor は .agents/tmp/ 配下へ書き、.claude/tmp/ への書き込みは 0 件）。sweep-fix は sf-002（置き場を残していない=critical）が残存 0 件、sf-001（置き場が ignore 対象外であることを検出・報告し自力解決しない）が残存 3 件で、いずれも要件どおり。executor は --allowedTools にサブエージェント委譲を含まないため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
     "result": "pass",
     "surface": [
       "skills/plan-reviewer/SKILL.md",
@@ -374,7 +374,7 @@
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md"
     ],
-    "surface_sha256": "ae242f4100d2af10c705b8cb231ef2ca0d9a1b44529d7642bc67626feeb31fe1",
+    "surface_sha256": "ddb36829ca417a8c9776b9238de1b84f53b8148da55615f66a548603299ec79c",
     "verified": "2026-07-27"
   },
   "problem-solving": {
@@ -399,12 +399,12 @@
       "skills/refactor/references/refactoring-catalog.md": "90cb3d767e3f0c432c80334dc0f0bf56a59b04777e78d909bd4e60fbc2bf5569",
       "skills/refactor/references/similarity-detection.md": "a4ef8d314ff0bbeb89126d469eb1c3564b045dec08c4abfed9801ed258f6af33",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
-      "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
+      "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "artifact-store.md への ephemeral/config 2 節追加による stale。実走せず accept。根拠は実測で、本スキルの fixtures.json 全シナリオ（JSON 全文）が artifact store 関連語彙（.agents/ / artifact / artifacts.yml / store / migration / visibility / runtime）を 1 件も含まない。追加は純粋な新節で既存ルール・スキーマキー・コマンドの変更を含まないため、本スキルの挙動面に到達する経路が無い。",
-    "result": "accepted-without-run",
+    "note": "#76 の .claude/ → .agents/ パス移行に伴う再評価。パスは機械解釈されるトークンなので accept せず process-queue 経路で実走し、6 スキル 17 シナリオ critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて 17/17 一致。移行が実際に効いていることを成果物で裏取り済み（executor は .agents/tmp/ 配下へ書き、.claude/tmp/ への書き込みは 0 件）。sweep-fix は sf-002（置き場を残していない=critical）が残存 0 件、sf-001（置き場が ignore 対象外であることを検出・報告し自力解決しない）が残存 3 件で、いずれも要件どおり。executor は --allowedTools にサブエージェント委譲を含まないため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
+    "result": "pass",
     "surface": [
       "skills/refactor/SKILL.md",
       "skills/refactor/fixtures.json",
@@ -416,20 +416,20 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "254220fe1b5c0ec92384a970fbaacd49d66c4c5cf616fde0b55535718b2e52a1",
+    "surface_sha256": "a66dc624e2a625ab02dab4fafbca28c0bec38631bf48a9650a94c88e57d46575",
     "verified": "2026-07-27"
   },
   "sweep-fix": {
     "file_sha256": {
-      "skills/shared/references/orchestration-patterns.md": "bb30c5403ca98e4805616b2c7eac970dceb967caa3d1b9224ec575fe0fd87d14",
+      "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/sweep-fix/SKILL.md": "dce40a8a2370147c3601e0cbb040d6af35ff1a233c1cb1071bcdfafcec20f44c",
-      "skills/sweep-fix/fixtures.json": "0efab723b12b648dce4d0066481cb7c65aed53508d4f3c2bb1cbd9e1dc3b42ca",
-      "skills/sweep-fix/references/context-verification.md": "4f6d79132703095d33642fe7016f455ea7373bd52fdaefd1eac81b7eca3c9af1",
-      "skills/sweep-fix/references/pattern-extraction.md": "8c6bd69ac2318b069abab9d3e8df53eb8e3d753fbd748fef560fffe7643084bb"
+      "skills/sweep-fix/SKILL.md": "3b7714ae06ea97be8dd4338952f60061ce645f1ad21631420d15dbf113ca88c0",
+      "skills/sweep-fix/fixtures.json": "3f413726531dc4aebe78dfb9a8589125a3b7326f6e55e2faf6426587ae78fa50",
+      "skills/sweep-fix/references/context-verification.md": "1e835b97a51ea34723c6b20f23a16b0c3e690a32316208dd0a1ec91c50b07104",
+      "skills/sweep-fix/references/pattern-extraction.md": "9f4c15f68c82b80c7d97ee28010270f6adbd65266bf7df1ca980f7871364ffa8"
     },
-    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；読み取り専用要件 sf-002/sf-003 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；sf-001 は置き場対照実験（.claude/ 配下では書き込み拒否で誤 fail）を経て pass を確認；外部からの状況照会 0 回",
+    "note": "#76 の .claude/ → .agents/ パス移行に伴う再評価。パスは機械解釈されるトークンなので accept せず process-queue 経路で実走し、6 スキル 17 シナリオ critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて 17/17 一致。移行が実際に効いていることを成果物で裏取り済み（executor は .agents/tmp/ 配下へ書き、.claude/tmp/ への書き込みは 0 件）。sweep-fix は sf-002（置き場を残していない=critical）が残存 0 件、sf-001（置き場が ignore 対象外であることを検出・報告し自力解決しない）が残存 3 件で、いずれも要件どおり。executor は --allowedTools にサブエージェント委譲を含まないため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
     "result": "pass",
     "surface": [
       "skills/shared/references/orchestration-patterns.md",
@@ -440,7 +440,7 @@
       "skills/sweep-fix/references/context-verification.md",
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
-    "surface_sha256": "c10679d47b6a23fb500a9b3a9cfeb40b1488a81ab4184cc8d634ecca4f8866ed",
+    "surface_sha256": "0bf1af0c0d538918a19f7a30d1b81c4a835d2a1d925c03ae338ccb7b90096a1a",
     "verified": "2026-07-27"
   },
   "systematic-debugging": {

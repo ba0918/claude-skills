@@ -1,7 +1,7 @@
 # Review Dimensions - Plan Reviewer
 
 Detailed checklists and scoring criteria for 7 review dimensions.
-Language and framework agnostic. Add project-specific perspectives via `.claude/review-rules.md`.
+Language and framework agnostic. Add project-specific perspectives via `.agents/config/review-rules.md`.
 
 ## Scoring Guide (applies to every dimension)
 
@@ -119,10 +119,10 @@ Conformance with project architecture principles and design guidelines.
 
 ### Checklist
 
-**Project-specific (read from CLAUDE.md / .claude/review-rules.md):**
+**Project-specific (read from CLAUDE.md / .agents/config/review-rules.md):**
 - [ ] No violations of layer structure defined in CLAUDE.md
 - [ ] No violations of dependency direction rules defined in CLAUDE.md
-- [ ] No violations of project-specific design rules defined in `.claude/review-rules.md`
+- [ ] No violations of project-specific design rules defined in `.agents/config/review-rules.md`
 
 **General:**
 - [ ] DRY principle: No code duplicated 2+ times

@@ -1,6 +1,6 @@
 # Output Template - generate-review-rules
 
-Output template for `.claude/review-rules.md`. Not all sections are required. Only output sections with perspectives applicable to the project.
+Output template for `.agents/config/review-rules.md`. Not all sections are required. Only output sections with perspectives applicable to the project.
 
 ---
 

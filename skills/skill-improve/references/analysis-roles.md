@@ -6,7 +6,7 @@ Same shape as the parallel analysis pattern of codebase-review.
 ## Common rules
 
 - Every agent is **read-only**. Editing files is forbidden
-- Analysis results are written as JSON to `.claude/tmp/skill-improve-{datetime}/{role}.json`
+- Analysis results are written as JSON to `.agents/tmp/skill-improve-{datetime}/{role}.json`
 - **Raw text (the original text of session content) must never appear in the results**
 - Emit only figures, classifications, and scores
 

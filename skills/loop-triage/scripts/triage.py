@@ -97,7 +97,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="loop-triage: findings -> decisions")
     ap.add_argument("findings", nargs="+", help="Finding JSON 配列ファイル")
     ap.add_argument("--repo-root", required=True)
-    ap.add_argument("--baseline", default=".claude/loop-baseline.json")
+    ap.add_argument("--baseline", default=".agents/config/loop-baseline.json")
     ap.add_argument("--out", help="decisions.json の出力先")
     ap.add_argument("--max-enqueue", type=int, default=5)
     ap.add_argument("--update-baseline", metavar="PATH",

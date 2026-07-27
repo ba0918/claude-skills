@@ -82,16 +82,16 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
    Store both values and reuse them throughout Steps 5-7.
 6. **Create work directory** (using the datetime captured above):
    ```bash
-   mkdir -p .claude/tmp/attack-review-{YYYYMMDD-HHMM}/
+   mkdir -p .agents/tmp/attack-review-{YYYYMMDD-HHMM}/
    ```
 7. **Preflight check** — Verify write permission:
    ```bash
-   touch .claude/tmp/attack-review-{YYYYMMDD-HHMM}/.preflight && rm .claude/tmp/attack-review-{YYYYMMDD-HHMM}/.preflight
+   touch .agents/tmp/attack-review-{YYYYMMDD-HHMM}/.preflight && rm .agents/tmp/attack-review-{YYYYMMDD-HHMM}/.preflight
    ```
    If this fails, abort immediately:
    ```
    ATTACK REVIEW ABORTED: Cannot write to work directory.
-   Path: .claude/tmp/attack-review-{YYYYMMDD-HHMM}/
+   Path: .agents/tmp/attack-review-{YYYYMMDD-HHMM}/
    Ensure the directory exists and is writable.
    ```
 8. **Create context.json**.
@@ -114,7 +114,7 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
    | `target_files` | array<string> | `["client/package.json", "client/src/App.tsx", "package.json", "server/package.json", "server/src/app.js"]` | See **Target files** definition in Step 1. Include manifest files (`package.json`, `composer.json`, `go.mod`, `Cargo.toml`, `requirements.txt`, `Pipfile`, `pubspec.yaml`, `Gemfile`, `pom.xml`) **in addition to** the source-code extensions — they are required for Agent 5 (Supply Chain) analysis. **Sort order: alphabetical by path string** (stable across runs, deterministic). |
    | `file_count` | number | `42` | Must equal `target_files.length`. |
    | `claude_md_rules` | string | `"..."` / `""` | The full contents of the CLAUDE.md file(s) joined with `\n\n---\n\n` separators, or the empty string `""` when no CLAUDE.md exists. Never `null`. |
-   | `work_dir` | string | `".claude/tmp/attack-review-20260421-1840"` | Concrete path — substitute `{YYYYMMDD-HHMM}` with the actual datetime. |
+   | `work_dir` | string | `".agents/tmp/attack-review-20260421-1840"` | Concrete path — substitute `{YYYYMMDD-HHMM}` with the actual datetime. |
    | `datetime` | string | `"2026-04-21 18:40"` | Format: `YYYY-MM-DD HH:MM`. |
 
    **Canonical example**:
@@ -148,7 +148,7 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
      ],
      "file_count": 4,
      "claude_md_rules": "",
-     "work_dir": ".claude/tmp/attack-review-20260421-1840",
+     "work_dir": ".agents/tmp/attack-review-20260421-1840",
      "datetime": "2026-04-21 18:40"
    }
    ```
@@ -174,7 +174,7 @@ Follow the language detection contract in [../shared/references/lang-detect.md](
      "target_files": ["admin.php", "db.php", "index.php"],
      "file_count": 3,
      "claude_md_rules": "",
-     "work_dir": ".claude/tmp/attack-review-20260421-1840",
+     "work_dir": ".agents/tmp/attack-review-20260421-1840",
      "datetime": "2026-04-21 18:40"
    }
    ```
@@ -271,7 +271,7 @@ After all agents complete, verify results:
    ```
    ATTACK REVIEW ABORTED: Only {N}/{total} attack review agents completed.
    Missing: {list of failed agent names}
-   Check .claude/tmp/attack-review-{YYYYMMDD-HHMM}/ for any partial results.
+   Check .agents/tmp/attack-review-{YYYYMMDD-HHMM}/ for any partial results.
    ```
 
 3. **Codex agent (Agent 7) is independent**: If `agent-7-codex.json` is missing, display a warning and proceed without Codex perspective:

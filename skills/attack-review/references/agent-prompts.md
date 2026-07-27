@@ -18,7 +18,7 @@ These are replaced with actual values **just before** assembling the Agent tool'
 | `{N}` | `1` |
 | `{category}` | `injection` |
 | `{AGENT_PREFIX}` | `INJ` |
-| `{work_dir}` | `.claude/tmp/attack-review-20260421-1840` |
+| `{work_dir}` | `.agents/tmp/attack-review-20260421-1840` |
 | `{attack_criteria_section}` | Text block extracted from attack-criteria.md — see "Section extraction rules" below for scope definition |
 | `{lang_profile_sections}` | Text block extracted from lang-profiles.md — see "Section extraction rules" below for scope definition |
 

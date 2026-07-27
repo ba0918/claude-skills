@@ -22,7 +22,7 @@ CLI:
       渡すと再帰的に配下の全ファイルを対象にする。
       注意: manifest（--out）は **どの lock root の配下にも置かない**こと。root 配下に
       置くと verify の再走査がそれを「追加ファイル」と見なし常に oracle_tampered に
-      なる（fail-closed だが誤停止する footgun）。SKILL の $WORK/.claude/tmp 慣習で回避。
+      なる（fail-closed だが誤停止する footgun）。SKILL の $WORK/.agents/tmp 慣習で回避。
 
   verify MANIFEST.json
       manifest の roots を **再走査**して current 集合を再構築し、各ファイルを

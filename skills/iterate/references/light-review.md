@@ -34,7 +34,7 @@ Whether the changes maintain the existing code quality standards.
 - [ ] No obvious bugs in added/modified code
 - [ ] DRY principle: No duplication with existing code
 - [ ] Error handling: Failure paths are properly handled
-- [ ] No violations of CLAUDE.md / `.claude/review-rules.md` rules
+- [ ] No violations of CLAUDE.md / `.agents/config/review-rules.md` rules
 
 ### Verdict
 

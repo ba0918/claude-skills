@@ -53,7 +53,7 @@ The output JSON schema of collect.py, and the schema definition of friction-repo
 
 ## --capture-prompts output schema (opt-in / for trigger-eval)
 
-A JSONL generated only when `--capture-prompts` is given. 1 line = 1 record. Because it contains message bodies, `--output` is mechanically restricted (fail-closed) to a path under `cwd/.claude/tmp` that is also git-ignored.
+A JSONL generated only when `--capture-prompts` is given. 1 line = 1 record. Because it contains message bodies, `--output` is mechanically restricted (fail-closed) to a path under `cwd/.agents/tmp` that is also git-ignored.
 
 ```json
 {"ts": "ISO 8601 string | null", "project": "string", "user_text_masked": "string — mask_secrets applied", "fired_skill": "string (bare skill name) | null", "signals": ["string — slash_fired / correction_after_skill, etc."]}

@@ -92,7 +92,7 @@ class TestIsLoopDefining(unittest.TestCase):
 
     def test_review_rules_matches(self):
         self.assertTrue(
-            admission.is_loop_defining(".claude/review-rules.md"))
+            admission.is_loop_defining(".agents/config/review-rules.md"))
 
     def test_double_star_matches_zero_segments(self):
         """skills/shared/** は skills/shared 直下のファイルにも一致する（0 セグメント）。"""

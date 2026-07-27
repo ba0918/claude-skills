@@ -79,7 +79,7 @@ If the Phase 1 proposed fix is applied at this site, can you say it will not bre
 
 ## The recording format
 
-`.claude/tmp/sweep-fix/verdicts.json`:
+`.agents/tmp/sweep-fix/verdicts.json`:
 
 ```json
 {

@@ -1,6 +1,6 @@
 # Iteration Record Schema
 
-Appended one record per line to `.claude/tmp/empirical/{ts}/iterations.jsonl`.
+Appended one record per line to `.agents/tmp/empirical/{ts}/iterations.jsonl`.
 Structured fields only. Free text is forbidden.
 
 ## Schema

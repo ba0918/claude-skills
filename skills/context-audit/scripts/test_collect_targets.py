@@ -64,7 +64,9 @@ class TestCollectRepoTargets(unittest.TestCase):
         rules = root / ".claude" / "rules"
         rules.mkdir(parents=True)
         (rules / "a.md").write_text("rule a", encoding="utf-8")
-        (root / ".claude" / "review-rules.md").write_text("rr", encoding="utf-8")
+        config = root / ".agents" / "config"
+        config.mkdir(parents=True)
+        (config / "review-rules.md").write_text("rr", encoding="utf-8")
         return root
 
     def test_classifies_allowlisted_files(self):

@@ -242,7 +242,7 @@ On convergence (`exit_verdict == "converged"`), emit the final iteration's scena
 }
 ```
 
-Output: `.claude/tmp/empirical/{ts}/fixture.json`
+Output: `.agents/tmp/empirical/{ts}/fixture.json`
 
 This fixture:
 - can be re-run for regression detection when the prompt is edited later

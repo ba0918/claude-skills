@@ -14,7 +14,7 @@ LOOP_DEFINING_GLOBS = [
     "skills/shared/**",
     "commands/**",
     "scripts/validate_repo.py",
-    ".claude/review-rules.md",
+    ".agents/config/review-rules.md",
 ]
 
 

@@ -46,7 +46,7 @@ goal-loop "<natural language description of the goal>" [--oracle "COMMAND"] [--o
 ### Step 2: Lock
 
 ```bash
-TS=$(date +%Y%m%d%H%M%S); WORK=$(pwd)/.claude/tmp/goal-loop/$TS; mkdir -p $WORK
+TS=$(date +%Y%m%d%H%M%S); WORK=$(pwd)/.agents/tmp/goal-loop/$TS; mkdir -p $WORK
 python3 {skill_dir}/scripts/goal_loop.py lock {oracle_files...} --out $WORK/manifest.json
 ```
 
