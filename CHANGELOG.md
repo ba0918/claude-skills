@@ -10,6 +10,43 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+`parallel-cycle` の plan ファイル命名で、共有 timestamp が必須か個別可かが SKILL.md と
+`decompose-guide.md` で食い違っていた（issue #111）。`{timestamp}` が「plan ファイルの一意化」と
+「バッチの識別」という 2 つの役割を兼ねており、decompose-guide は前者だけを見て個別を許容し、
+SKILL.md は後者を要求していた。共有を必須に統一し、両文書に理由を書いた。
+
+**規定を強めた結果、それが守られない経路が 3 つ見つかった。**いずれも「規則は書いてあるが、
+実際に書き込む委譲先には届いていない」という同じ形をしている。
+
+- **plan ファイルが上書きし合う。** 命名は `{slug}` だけで区別する規定だったが、#104 で
+  「2 つの plan が同じ slug を持ちうる」と明文化したばかりだった。同一バッチ内で slug が重なると
+  同じパスへ解決し、並列生成なので上書きか同時書き込みになる。さらに Phase 1 が同じファイルを
+  2 plan として読み、直交性判定を誤る。`{timestamp}_{plan_id}_{slug}.md` とし、一意性は
+  `{plan_id}` が負う（#104 の worktree 命名と同じ語彙）
+- **「timestamp を 1 回だけ取得する」が委譲先に伝わっていない。** Step 0.3 の委譲プロンプトには
+  timestamp も出力パスも含まれておらず、呼ばれる `claude-skills:plan` は自分で時刻を取る。並列
+  起動が秒境界をまたぐだけで分かれる。呼び出し側が解決済みのパスを渡す形へ変えた
+- **`status.md` が並列に書き換えられる。** 抑止規定は Phase 2 の内側にあり対象も「individual
+  cycles」だったため、Step 0.3 の plan 生成は素通りしていた。`plan` は read-modify-write で
+  セッションの abandoned 退避まで行うので、3 並列で更新消失・多重退避・履歴破損が起こりうる
+  （issue #114）。抑止を全 delegate 対象へ広げ、両委譲プロンプトに実際に書き込んだ
+
+抑止規定には「規則はここに置くが、効くのは**委譲先に言われた場所**だけである」ことを明記した。
+この節にだけ書かれた規則は、これから書き込もうとしている者には届かない。
+
+Step 4.3 の result ファイル名を `{base_plan_name}` から `{run_id}_parallel_result.md` へ変えた。
+`{base_plan_name}` はどこにも定義がなく、バッチは result 1 つに対し plan が複数なのでどの plan 名も
+代表にならない。plan ファイル直指定モードでは共有する要素も無い。run 由来にすると、失敗を直して
+再実行したときに 2 本目の result が書かれ、最初に何が落ちたかの記録が残る。result には
+`Run ID` / `Plan batch` / `Plan Files` を追加した。`Plan batch` は自然言語モードのみで、plan ファイル
+直指定モードでは `external` とする（引数は既存ファイルでバッチ timestamp を共有しない）。
+
+秒精度の timestamp は同じ秒の別 plan 生成と prefix が衝突しうるため、「バッチを再構築できる」とは
+主張しない。timestamp はグループ化するだけで membership を証明せず、正本は result の `Plan Files` である。
+
+`plan` 側に caller-supplied path / status 更新抑止の正式契約が無い点は #115 として分離した。現状は
+委譲プロンプトの自然言語指示で上書きしており、優先関係を明示してある。
+
 失敗した cycle の worktree が撤去され、診断に必要な状態が失敗時にだけ失われていた（issue #104）。
 `parallel-cycle` は `Merge what succeeds, preserve what fails` と宣言していたが、`preserve the
 branch` が守るのはコミット済みの内容だけで、未コミットの編集・テスト出力・`.agents/` の状態は

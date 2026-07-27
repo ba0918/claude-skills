@@ -102,6 +102,13 @@ Proceed? (y/n/edit)
 
 ## Plan Generation
 
-After approval, generate each plan using the same format as `/claude-skills:plan-create`. Each plan file is saved to `.agents/artifacts/plans/{timestamp}_{slug}.md` with its own timestamp (or a shared timestamp with different slugs).
+After approval, generate each plan using the same format as `/claude-skills:plan-create`. Each plan file is saved to `.agents/artifacts/plans/{timestamp}_{plan_id}_{slug}.md`, and **the caller resolves that path and hands it to the generating subagent** — see [SKILL.md](../SKILL.md) Step 0.3, which is authoritative for the naming and for why the delegate must not derive it.
+
+Two parts, two jobs: `{timestamp}` is captured once for the whole batch so the decomposition can be reconstructed from the directory, and `{plan_id}` (the plan letter) is what makes each file unique. Uniqueness must not rest on `{slug}` — two plans from one instruction can produce the same slug. Per-plan timestamps are not an option here.
+
+This plan timestamp identifies the *plans*; the `{run_id}` of Phase 2 and Step 4.3 identifies an *execution*. The two move independently:
+
+- Re-running the **same existing plan files** (plan-file mode) keeps their plan timestamp and takes a new `{run_id}`
+- Re-decomposing the **same natural-language instruction** produces a new batch with a new plan timestamp, and later a new `{run_id}`
 
 The "Files to Change" section in each plan is critical — it is the input for the orthogonality check in Phase 1.
