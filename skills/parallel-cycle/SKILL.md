@@ -50,7 +50,7 @@ Removal is a decision, never a timer:
   removal question into that same approval prompt — no second confirmation point is created
   (§Important Rules). Remove only the paths approved there, with
   `git worktree remove --force {path}`
-- **Everywhere else** — plan-file mode, the 0-plan exit, the 1-plan headless fallback, and any
+- **Everywhere else** — plan-file mode, the 0-plan exit, the 1-plan headless path, and any
   other headless run: report the list and **remove nothing**. Never open a prompt that exists
   only to ask about cleanup: there is no one present to answer, and a prompt there is
   indistinguishable from a stall
@@ -101,7 +101,7 @@ See [references/decompose-guide.md](references/decompose-guide.md) for detailed 
 **Immediately after Step 0.1, count the resulting plans and branch:**
 
 - **0 plans** → jump to the "Edge Cases" section below (error exit). Skip Step 0.2 and Step 0.3.
-- **1 plan** → jump to the "Edge Cases" section below (fallback to `claude-skills:cycle`). Skip Step 0.2 and Step 0.3.
+- **1 plan** → jump to the "Edge Cases" section below (`claude-skills:cycle` in its own worktree). Skip Step 0.2 **only** — Step 0.3 still runs.
 - **2+ plans** → continue to Step 0.2.
 
 ### Step 0.2: User Approval
@@ -195,15 +195,47 @@ Phase 4 (§Important: status.md Write Suppression).
 ### Edge Cases
 
 - **0 plans**: Display an error message and exit. Do not invoke any fallback.
-- **1 plan**: Fall back to `/claude-skills:cycle` using the steps below. Do NOT display the DECOMPOSE RESULT block and do NOT ask for approval — 1-plan fallback is headless.
+- **1 plan**: run `claude-skills:cycle` **inside a worktree**, the same as any other plan. Do NOT
+  display the DECOMPOSE RESULT block and do NOT ask for approval — the 1-plan path is headless.
 
-  1. Display only the fallback message (single line, verbatim):
+  1. Display only this message (single line, verbatim):
      ```
      Single plan detected. Falling back to /claude-skills:cycle.
      ```
-  2. Skip Step 0.3 (do NOT generate a plan file). The downstream `claude-skills:cycle` skill will create a plan itself if it needs one.
-  3. Invoke the `claude-skills:cycle` skill and pass the original `$ARGUMENTS` string through as its input verbatim. Do not paraphrase it, summarize it, or replace it with a plan file path.
-  4. Exit immediately after the skill invocation. Do not proceed to Phase 1, Phase 2, Phase 3, or Phase 4.
+  2. **Run Step 0.3 as usual** and generate the one plan file, with `{plan_id}` = `A`. Do not skip
+     it: `claude-skills:cycle` does not build a plan from an instruction — given no path it
+     auto-selects the newest incomplete plan under `.agents/artifacts/plans/` and aborts when there
+     is none (see [cycle/SKILL.md](../cycle/SKILL.md) Phase 0). A fresh worktree's artifact store is
+     empty, so a delegate handed the raw `$ARGUMENTS` would abort every time
+  3. Skip Phase 1 — one plan has nothing to intersect — and carry forward the execution state it
+     would have produced: **Group 1 = `[A]`, `{N}` = 1, `{M}` = 1, no dependencies**. Phase 3's
+     merge order and Phase 4's `Groups:` line read those values, so they have to exist
+  4. Enter Phase 2 normally. `{run_id}` is captured at its entry as always, the worktree is created
+     by step 1's rule, and the delegate is invoked **inside it** — but running
+     `claude-skills:cycle` against the generated plan path, not `claude-skills:plan-implement`, so a
+     single plan still passes the refine gate:
+
+     ```
+     You are working in a worktree at: {worktree_path}
+     Branch: {branch_name}
+
+     Invoke the `claude-skills:cycle` skill against the plan file {plan_file_path}.
+
+     Do not update .agents/artifacts/status.md or .agents/artifacts/session-history.md.
+     This run updates them once, from the orchestrator, in Phase 4.
+     ```
+
+     Pass no workspace-lock token — the worktree is its own resource and the delegate claims it
+     itself (§Phase 2)
+  5. Continue through Phase 3 and Phase 4 as usual: the branch is merged, and the worktree is
+     removed or preserved by the **same rule as every other cycle** (§Step 3.4,
+     §Preserved Worktrees). The result file's `Plan batch` is Step 0.3's `{timestamp}` and its
+     `Plan Files` is the one generated path — the same as any natural-language run
+
+  **Isolation is not a function of how many plans there are.** Running one plan directly in the
+  main checkout would leave exactly one case where another session's work, or an unrelated starting
+  branch, can end up in the commit — and on the polling path, whether that happens is decided by how
+  many issues happened to be ready on that tick.
 
 ## Phase 1: Orthogonality Check & Grouping
 

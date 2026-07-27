@@ -10,6 +10,30 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+plan が 1 件のときだけ worktree 分離が失われていた（issue #84）。`parallel-cycle` は各 plan を
+独立した worktree で実行するが、1 plan のときだけ `claude-skills:cycle` へ fallback し、呼び出し元の
+作業ツリーで直接コミットしていた。**分離の有無が plan の件数という無関係な要因で決まる。**
+polling 経路では、そのティックで ready だった issue がたまたま 1 件だったかどうかで分離が変わる。
+1 plan でも通常経路（worktree 作成 → delegate → マージ）へ流す。
+
+**Step 0.3 をスキップする挙動も併せて廃した。** 従来の本文は「downstream の cycle が必要なら plan を
+作る」と書いていたが、`cycle` にその工程は無い。パスが無ければ最新の未完了 plan を自動選択し、
+無ければ abort する。しかも worktree の artifact store は Git 無視で**空**なので、生の `$ARGUMENTS` を
+渡す delegate は毎回 abort する。1 plan でも Step 0.3 で plan ファイルを生成し、そのパスを delegate へ
+渡す。delegate は `plan-implement` ではなく `cycle` を呼ぶ（1 件でも refine ゲートを通すため）。
+
+Phase 1 は引き続き飛ばす（1 件に交差は無い）が、Phase 1 でしか確定しない実行状態を明示的に引き継ぐ
+ようにした。**Group 1 = `[A]` / `{N}` = 1 / `{M}` = 1 / 依存なし。** Phase 3 のマージ順と Phase 4 の
+`Groups:` 行がこれを読むため、値が存在しないと表示が未定義になる。result の `Plan batch` は Step 0.3 の
+`{timestamp}`、`Plan Files` は生成した 1 本のパスで、他の自然言語モード実行と同じになる。
+
+表示挙動（DECOMPOSE RESULT 非表示・承認なし・headless）は従来どおり維持する。変えたのは実行の分離
+だけである。
+
+なお issue #84 の設計は「worktree 撤去は成功・失敗いずれの場合も行う」と書いていたが、これは
+#104 で変更前の規定を指しているため、意図（1 plan を特別扱いしない）に従って現行の Step 3.4 と
+同じ規則（マージ済みかつ post-merge test 通過のみ撤去、失敗時は保存）として実装した。
+
 `parallel-cycle` の plan ファイル命名で、共有 timestamp が必須か個別可かが SKILL.md と
 `decompose-guide.md` で食い違っていた（issue #111）。`{timestamp}` が「plan ファイルの一意化」と
 「バッチの識別」という 2 つの役割を兼ねており、decompose-guide は前者だけを見て個別を許容し、
