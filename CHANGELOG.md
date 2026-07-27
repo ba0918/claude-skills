@@ -10,6 +10,33 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+Agent Artifact Store 契約に **ephemeral 領域**（`.agents/tmp/`）と **config 領域**
+（`.agents/config/`）の 2 節を追加した（issue #75）。契約が定義していた領域は artifacts と
+runtime の 2 つだけで、使い捨ての中間生成物と、commit して共有する設定・受理済み baseline の
+置き場が無かった。移行先が存在しなかったために provider 名入りの `.claude/` 配下パスが
+残存しており、パス置換だけでは再発する。既存ルールは 1 つも変えない純粋な追加である。
+
+ephemeral は常にマシンローカルで migration inventory と visibility 統制の対象外、かつ
+**定義上いつ消えてもよい**（artifact と違い復元を期待されない）。3 つの領域を分ける軸は
+**後で誰が読むか**に置いた。artifact は未来のセッション・レビュアー・他スキルが読み、runtime は
+このホストの並行プロセスが読み、ephemeral は今走っているステップだけが読んでその後は誰も読まない。
+
+config はここで唯一 **tracked**。受理済み baseline が clone に付いてこないと、新しい checkout の
+たびにチームが裁定済みの finding が再報告されるためである。store policy の `.agents/artifacts.yml`
+とは別物であることを明記した。あちらはストア自体の在り処の宣言で変更は migration 規律（7 段階）の
+対象、こちらはスキルが読む通常の設定で変更は普通の編集である。混ぜると、トグル 1 つに migration
+規律が掛かるか、逆に migration 規律が緩むかのどちらかになる。
+
+`.gitignore` には `/.agents/tmp/` のみ追加した（`.agents/config/` は tracked なので追加しない）。
+
+この契約は 27 スキルが参照するため、fixture 保有 13 スキルの regression ledger が stale になった。
+実測に基づいて払い分けている。fixtures.json が artifact store 関連語彙を含む 10 スキル 39 シナリオは
+process-queue 経路で実走し critical 全 ○（自己申告の baseline_drift を manifest の baseline hash と
+突き合わせて 27/27 一致を確認）。語彙を 1 件も含まない 3 スキル（context-audit / doc-write /
+refactor）はその実測を根拠に `--accept`。`decision-journal` の dj-004 のみ fail だが、原因は
+fixture の前提が実体化されない #54 で本変更の回帰ではないため、fixture を通しやすい方向へは直さず
+`accepted-without-run` に留めた。
+
 `sensor:translation-damage` が両方向に壊れていたのを直した（issue #88 / #65）。この sensor は
 fixture 未保有 26 スキルにとって唯一の劣化検出手段であり、赤の側と緑の側の双方で意味が失われていた。
 
