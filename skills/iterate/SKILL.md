@@ -19,6 +19,13 @@ Additional instruction → Scope analysis → Size judgment ─→ Small → Imp
 
 ## Phase 0: Acquire Context
 
+0. **Take the working tree** per the [Workspace Lock contract](../shared/references/workspace-lock.md),
+   before reading context and before writing any project state. `LOCK_HELD` → stop and show the holder's
+   `skill` / `pid` / `branch` / `started_at`, offering only "wait" or "delete
+   `.agents/runtime/workspace.claim` after confirming the holder is dead";
+   `STALE_RECLAIMED` → report it and continue; `UNAVAILABLE` → warn once and continue
+   (fail-open). Release on every exit path.
+
 1. Identify the latest plan file
    ```bash
    ls -t .agents/artifacts/plans/*.md 2>/dev/null | grep -v _result | head -1

@@ -27,6 +27,16 @@ launched, perform its core action yourself following that skill's documented pro
 
 ## Phase 0: Preparation
 
+0. **Take the working tree** per the [Workspace Lock contract](../shared/references/workspace-lock.md),
+   before plan validation and before writing a single byte of project state.
+   - `ACQUIRED` / `STALE_RECLAIMED` → continue. Report `STALE_RECLAIMED` in the CYCLE START
+     block so a recovered crash is visible rather than silent
+   - `LOCK_HELD` → **abort here**, showing the holder's `skill` / `pid` / `branch` /
+     `started_at`. Offer only "wait for that session" or "delete
+     `.agents/runtime/workspace.claim` after confirming the holder is dead". Never take it over
+   - `UNAVAILABLE` → warn once and continue (fail-open)
+   - Release the token when the cycle ends, on every exit path including abort
+
 1. Identify the plan file
    - If the arguments contain a path, use it
    - Otherwise auto-select: list the `*.md` files directly under `.agents/artifacts/plans/`
@@ -78,6 +88,9 @@ Subagent delegation in Phases 1 / 1.5 / 2 follows
   if absent). Requirement: the orchestrator and the delegate must derive the same path.
 - **`{role}`**: `refine` / `refine-fix` / `implement` per phase. Include the
   `.agents/runtime/delegation/{run_id}_{role}.md` path in the delegation prompt.
+- **Workspace-lock token**: pass the token from Phase 0 in the delegation prompt, on the same
+  path as `{run_id}`. A delegate that receives one neither claims nor releases — that is what
+  keeps a delegate from deadlocking against the tree its own orchestrator already holds.
 - **Wait discipline**: cycle is the **parent orchestrator** of each delegate, so it holds
   [§ wait discipline pillar 3 (upper watchdog)](../shared/references/orchestration-patterns.md).
   List `.agents/runtime/delegation/`, cross-check result-file mtimes against final artifacts

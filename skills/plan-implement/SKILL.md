@@ -23,6 +23,15 @@ while implementing — re-read only the code and the tests to evaluate them, and
 
 ## Phase 0: Load the Plan and Update Status
 
+0. **Working tree occupancy** — [Workspace Lock contract](../shared/references/workspace-lock.md).
+   - **If a workspace-lock token was passed in** (running under `cycle` / `parallel-cycle`):
+     do **not** claim and do **not** release. The orchestrator already holds this tree, and
+     claiming again would deadlock against its own parent
+   - **Standalone run (no token)**: take the tree before writing any project state. `LOCK_HELD` → stop before
+     writing project state and show the holder's `skill` / `pid` / `branch` / `started_at`;
+     `STALE_RECLAIMED` → report it and continue; `UNAVAILABLE` → warn once and continue
+     (fail-open). Release on every exit path
+
 1. Read `.agents/artifacts/status.md` and identify the session currently at 🟡 Planning
    - Re-entry from a step partway through (a session already at 🔵 Implementing) is also a normal case
 2. Load the corresponding plan file (inside `.agents/artifacts/plans/`)
