@@ -46,6 +46,7 @@ See the following references for the details of each workflow. The shared pollin
 - [`references/secret-scanner.md`](references/secret-scanner.md) — The regex set for secret detection
 - [`references/gh-commands.md`](references/gh-commands.md) — The 18 semantic GitHub operations and their `gh` / connected-integration implementations
 - [`references/cleanup-spec.md`](references/cleanup-spec.md) — Orphan cleanup rules for worktrees and branches + the sanitize responsibility split
+- [`references/worktree-cycle.md`](references/worktree-cycle.md) — GitHub-specific adapter for the shared satellite transport lifecycle
 
 ---
 
@@ -214,15 +215,18 @@ The three-stage defence (lockfile + selected-transport update + re-verify) is hi
      recovers it with no changes
    - **Every subsequent step of this workflow (running cycle, Gate 3, push, PR creation) executes
      inside this worktree.** The primary checkout's HEAD, branch, and index stay untouched
-   - **Materialize the plan into the worktree before invoking cycle.** The plan file from Step 3
-     lives in the primary checkout's artifact store, which is typically outside Git tracking and
-     therefore absent from a fresh worktree. Copy it to the same store-relative path inside the
-     worktree and pass that copied path to cycle
+   - Use the shared satellite transport facade immediately after worktree creation. It performs
+     ingress of the plan and creates the run-scoped capability; do not locally copy artifact files.
+     Pass the inner cycle exactly `pinned_plan={repository_relative_plan_path}`,
+     `resolved_isolation=worktree`, `satellite_run_id={satellite_run_id}`, and
+     `satellite_capability_file={capability_file_path}`. The inner cycle never writes the main
+     artifact store directly and cannot create a nested worktree.
    - A lockfile mutual exclusion on the working tree was rejected: only the loop would ever take
      the lock, and one-sided exclusion is no exclusion. A `git status --porcelain` launch check is
      also deliberately absent — isolation makes the primary checkout's dirtiness irrelevant, and a
      dirty check would only add spurious launch failures
-2. Run the `claude-skills:cycle` skill (passing the plan file as the argument). cycle stacks its commits on this branch, inside the worktree.
+2. Run the `claude-skills:cycle` skill with the complete resolved inner context. Cycle stacks its
+   commits on this branch while all artifact writes remain in the satellite.
 3. **Gate 3 — the zero-diff safety net.** Once the implementation phase ends, compare the branch against its
    starting point (`git diff <branch-point>..HEAD` plus `git status --porcelain` for uncommitted work). If
    **both are empty**, do not create a draft PR: stop with a **permanent failed** (halt reason
@@ -232,17 +236,26 @@ The three-stage defence (lockfile + selected-transport update + re-verify) is hi
    - It is the symptom-side net under Gates 0-2: anything that slips past them lands here, because an issue
      with nothing left to do cannot produce a diff
    - Records `error_kind = "abort"`, like the other gate halts
-4. **Worktree removal — always the run's last action.** Remove the worktree from the primary
+4. **Shared harvest and worktree removal — terminal ordering.** Through the shared
+   facade, collect on every terminal path before cleanup. Collection stages content but does not
+   publish it. On the successful path, keep staging until Step 8 has passed every existing review
+   and verification gate and the remote merge succeeds; only then publish and compose main-tree
+   singleton state. After publication, close the issue and apply terminal labels. Failure,
+   cancellation, rejection, reversion, and failed verification preserve staging; discard requires
+   explicit human authorization. Only after remote bookkeeping succeeds and the transport reports
+   `cleanup_allowed` may the run remove the
+   worktree from the primary
    checkout's directory (`git worktree remove <path>`) after every other step of the run has
-   finished — including Step 9's failure bookkeeping — on success and failure alike. Cleanup runs
-   last so no bookkeeping ever depends on a directory that no longer exists. Before removing a
-   failed run's worktree, push its branch if it holds any commits that never reached the remote,
-   so the diagnostics survive the removal; a dirty tree refuses plain removal, so fall back to
-   `git worktree remove --force` after that push. If even forced removal fails, report it and
-   leave the worktree to the orphan detection of
+   finished. Cleanup runs last so no bookkeeping ever depends on a directory that no longer exists.
+   A failed run is not cleanup-eligible and its worktree remains intact. If removal of an eligible
+   successful run fails, report it and leave the worktree to the orphan detection of
    [`references/cleanup-spec.md`](references/cleanup-spec.md) — never skip retry-state or label
-   updates because cleanup failed. The same orphan detection is the safety net when the process
-   dies before reaching this step
+   updates because cleanup failed. A collect conflict/interruption or failed cleanup gate
+   preserves the worktree. A publish failure preserves the worktree and staging. These failures
+   do not claim remote completion and invoke the shared
+   exact six-line formatter with a closed reason code. Its final line is
+   `recovery_command=/claude-skills:artifacts recover --run-id {satellite_run_id}`. The same orphan detection is
+   only a discovery safety net when the process dies; it does not bypass the shared cleanup gate.
 
 **Isolation verification procedure** (how to confirm the contract above holds): in the primary
 checkout, switch to any non-default branch that is ahead of the default branch by unrelated commits,
@@ -299,16 +312,21 @@ Merge only when **all** of the following hold.
 3. Zero secret-scanner detections
 4. The changed files include no `.env` / `*.key` / `*.pem` / `credentials.*`
 
-On passing:
+On passing, merge and perform post-merge verification, publish, then update singleton and remote
+state in that order:
 
 ```bash
 mark_pr_ready(<PR>)
 merge_pr(<PR>, strategy="squash", delete_branch=true)
+post_merge_verify(<merged_sha>)
+publish_satellite_artifacts(<satellite_run_id>)
 close_issue(${N})
 edit_issue_labels(${N}, add=[], remove=["claude-auto", "claude-review"])
 ```
 
-> Do not use the `--auto` flag. Run ready then merge explicitly, in that order, so the ordering is guaranteed.
+> Do not use the `--auto` flag. Run ready then merge explicitly, in that order, so the ordering is
+> guaranteed. A post-merge verification or publish failure preserves staging and the worktree,
+> leaves remote completion pending, and uses the shared exact six-line formatter.
 
 #### 9. Handling failure
 
@@ -320,8 +338,9 @@ edit_issue_labels(${N}, add=[], remove=["claude-auto", "claude-review"])
   - Verify afterwards with `get_issue`; on a mismatch, retry three times with backoff (0s/1s/2s)
   - On final failure, write the `<state_root>/recovery/{N}` marker (crash-safe ordering: marker write, then release) and `release(slug)` so the next tick re-evaluates it
   - Details in [`references/polling-adapter.md §mark_failed(slug, kind)`](references/polling-adapter.md#mark_failedslug-kind) + [`references/label-spec.md §Backward Compatibility`](references/label-spec.md#backward-compatibility)
-- After all of the above bookkeeping is recorded, remove the worktree per Step 4.4 (push any
-  unpushed commits first; forced removal for a dirty tree)
+- After all failure bookkeeping is recorded, preserve the worktree and staging. Do not request
+  cleanup eligibility; recovery or an explicitly authorized human discard must resolve transport
+  state first
 - Release the lockfile (automatic on process exit; `flock(2)` releases at the kernel level)
 
 #### 10. Idempotence

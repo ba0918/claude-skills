@@ -27,6 +27,7 @@ from satellite_transport import (  # noqa: E402
     publish as publish_satellite,
     reconcile_owner as reconcile_satellite_owner,
     recovery_report as satellite_recovery,
+    recover as recover_satellite,
     revoke_capability as revoke_satellite_capability,
     rotate_capability as rotate_satellite_capability,
     transition_cleanup_allowed,
@@ -34,6 +35,7 @@ from satellite_transport import (  # noqa: E402
 
 
 CONFIG_REL = Path(".agents/artifacts.yml")
+WORKSPACE_POLICY_REL = Path(".agents/workspace.yml")
 DEFAULT_ROOT_REL = Path(".agents/artifacts")
 LEGACY_RELS = (
     Path("docs/plans"),
@@ -140,6 +142,22 @@ def satellite_reconcile(runtime_dir):
 
 def satellite_recovery_report(runtime_dir):
     return satellite_recovery(Path(runtime_dir))
+
+
+def recover_run(repo_path: str | os.PathLike, run_id: str) -> dict:
+    """Reconcile and report one preserved run from its canonical main tree."""
+    if not isinstance(run_id, str) or not re.fullmatch(
+        r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", run_id,
+    ):
+        raise ArtifactStoreError("recover requires one safe run_id")
+    repo = Path(repo_path).resolve()
+    runtime = repo / ".agents/runtime/satellite-runs" / run_id
+    if not runtime.is_dir() or runtime.is_symlink():
+        raise ArtifactStoreError(f"satellite run not found: {run_id}")
+    try:
+        return recover_satellite(runtime)
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise ArtifactStoreError(f"satellite recovery failed: {exc}") from exc
 
 # Runtime area (machine-specific, never shared, never migrated). See the
 # "Runtime area" section of skills/shared/references/artifact-store.md. Files
@@ -322,6 +340,17 @@ def require_writable(repo_path: str | os.PathLike = ".") -> dict:
 def initialize(repo_path: str | os.PathLike = ".") -> dict:
     """Create an idempotent safe local store, refusing legacy state."""
     repo = Path(repo_path).resolve()
+    workspace_existed = (repo / WORKSPACE_POLICY_REL).exists() or (
+        repo / WORKSPACE_POLICY_REL
+    ).is_symlink()
+    artifact_policy_existed = (repo / CONFIG_REL).exists() or (repo / CONFIG_REL).is_symlink()
+    canonical_store_existed = (repo / DEFAULT_ROOT_REL).exists() or (
+        repo / DEFAULT_ROOT_REL
+    ).is_symlink()
+    legacy_existed = any((repo / path).exists() for path in (*LEGACY_RELS, *LEGACY_FILES))
+    fresh_project = not (
+        workspace_existed or artifact_policy_existed or canonical_store_existed or legacy_existed
+    )
     before = inspect(repo, validate_git=False)
     if before["legacy_roots"]:
         raise ArtifactStoreError("legacy artifacts require migration before initialization")
@@ -344,9 +373,21 @@ def initialize(repo_path: str | os.PathLike = ".") -> dict:
     root.mkdir(parents=True, exist_ok=True)
     for kind in ARTIFACT_KINDS:
         (root / kind).mkdir(exist_ok=True)
+    workspace_created = False
+    if fresh_project:
+        workspace = repo / WORKSPACE_POLICY_REL
+        workspace.parent.mkdir(parents=True, exist_ok=True)
+        workspace.write_text("isolation: worktree\n", encoding="utf-8")
+        workspace_created = True
     result = inspect(repo)
     if result["errors"]:
         raise ArtifactStoreError("; ".join(result["errors"]))
+    result["workspace_policy_created"] = workspace_created
+    result["workspace_policy_opt_in"] = (
+        None if workspace_created or workspace_existed
+        else "Workspace isolation remains inplace. To opt in, create "
+             ".agents/workspace.yml containing: isolation: worktree"
+    )
     return result
 
 
@@ -625,7 +666,7 @@ def main(argv=None) -> int:
         "command",
         choices=(
             "resolve", "status", "init", "rebuild-index",
-            "migrate-check", "migrate-stage", "migrate-finalize",
+            "migrate-check", "migrate-stage", "migrate-finalize", "recover",
         ),
     )
     parser.add_argument("--repo", default=".")
@@ -635,10 +676,15 @@ def main(argv=None) -> int:
     parser.add_argument("--output")
     parser.add_argument("--confirm-remove-source", action="store_true")
     parser.add_argument("--confirm-public-history", action="store_true")
+    parser.add_argument("--run-id")
     args = parser.parse_args(argv)
     try:
         if args.command == "init":
             result = initialize(args.repo)
+        elif args.command == "recover":
+            if not args.run_id:
+                raise ArtifactStoreError("recover requires --run-id")
+            result = recover_run(args.repo, args.run_id)
         elif args.command == "rebuild-index":
             if not args.kind:
                 raise ArtifactStoreError("rebuild-index requires --kind (ideas|issues)")

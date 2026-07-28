@@ -49,6 +49,28 @@ by the outer orchestrator:
 Without the complete context, retain the standalone behavior below. This contract only defines the
 inner path used by an existing outer worktree; standalone outer-worktree resolution is separate.
 
+### Standalone isolation boundary
+
+Before Phase 0, Resolve isolation exactly once through the shared workspace-isolation facade.
+In `inplace` mode, preserve the existing workflow unchanged. In `worktree` mode the standalone
+invocation is the main-tree outer orchestrator and performs this ordered protocol:
+
+1. Create exactly one outer worktree and derive `{satellite_run_id}`.
+2. Initialize satellite ingress for the repository-relative pinned plan and capability file.
+3. Launch one inner run with `pinned_plan`, `resolved_isolation=worktree`,
+   `satellite_run_id`, and `satellite_capability_file`. The inner run must not re-resolve
+   isolation or create a nested worktree.
+4. Collect on every terminal path: success, failure, cancellation, and verification failure.
+5. Merge and run post-merge verification in the main tree.
+6. Publish only after verification passes. Every failure path preserves staging and the worktree;
+   discard requires explicit human authorization.
+7. Cleanup only when cleanup_allowed is proven and the capability is revoked.
+
+On every new terminal collect, publish, or cleanup-gate failure, preserve the worktree and invoke
+the shared exact six-line formatter with its closed reason code. Its final line is
+`recovery_command=/claude-skills:artifacts recover --run-id {satellite_run_id}`. Never mark that
+path cleanup-eligible. The outer orchestrator composes singleton artifacts only after publication.
+
 ## Phase 0: Preparation
 
 0. **Take the working tree** per the [Workspace Lock contract](../shared/references/workspace-lock.md),

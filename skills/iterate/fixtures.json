@@ -1,0 +1,42 @@
+{
+  "skill": "iterate",
+  "scenarios": [
+    {
+      "id": "it-outer-worktree",
+      "title": "standalone worktree isolation uses one outer transport lifecycle",
+      "source": "manual:worktree-artifact-transport-step4",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "prompt": "Run iterate for this follow-up in a project whose workspace policy is worktree.",
+      "requirements": [
+        {"text": "Isolation is resolved once and exactly one outer worktree is created.", "critical": true},
+        {"text": "Ingress precedes the inner run; collection runs on every terminal path and precedes merge.", "critical": true},
+        {"text": "Publication follows post-merge verification and cleanup requires cleanup_allowed evidence.", "critical": true}
+      ]
+    },
+    {
+      "id": "it-inner-context",
+      "title": "resolved inner context prevents nested worktrees",
+      "source": "manual:worktree-artifact-transport-step4",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "prompt": "Run iterate with pinned_plan, resolved_isolation=worktree, satellite_run_id, and satellite_capability_file.",
+      "requirements": [
+        {"text": "The complete context is accepted unchanged without policy re-resolution.", "critical": true},
+        {"text": "No nested worktree or main-tree singleton write occurs.", "critical": true}
+      ]
+    },
+    {
+      "id": "it-recovery",
+      "title": "transport failure preserves exact recovery path",
+      "source": "manual:worktree-artifact-transport-step4",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "prompt": "Handle an iterate run whose artifact collection conflicts.",
+      "requirements": [
+        {"text": "The worktree is preserved and no publication or cleanup occurs.", "critical": true},
+        {"text": "The diagnostic is /claude-skills:artifacts recover --run-id {satellite_run_id}.", "critical": true}
+      ]
+    }
+  ]
+}

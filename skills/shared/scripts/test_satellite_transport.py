@@ -25,6 +25,7 @@ from satellite_transport import (  # noqa: E402
     publish,
     reconcile_owner,
     recovery_report,
+    recover,
     revoke_capability,
     rotate_capability,
     sweep_store,
@@ -257,7 +258,7 @@ class SatelliteTransportTest(unittest.TestCase):
             collect(record.runtime_dir, expected_version=2, raw_capability=record.capability)
         provenance = json.loads((record.runtime_dir / "provenance.json").read_text())
         self.assertEqual("recovery_required", provenance["lifecycle_state"])
-        evidence = json.loads((record.runtime_dir / "discard-evidence.json").read_text())
+        evidence = json.loads((record.runtime_dir / "recovery-evidence.json").read_text())
         self.assertIsNone(evidence["staging_manifest_digest"])
         self.assertTrue(evidence["partial_staging_inventory"])
 
@@ -386,9 +387,157 @@ class SatelliteTransportTest(unittest.TestCase):
             collect(record.runtime_dir, expected_version=2, raw_capability=record.capability)
         provenance = json.loads((record.runtime_dir / "provenance.json").read_text())
         self.assertEqual("recovery_required", provenance["lifecycle_state"])
-        self.assertTrue((record.runtime_dir / "discard-evidence.json").is_file())
+        self.assertFalse((record.runtime_dir / "discard-evidence.json").exists())
+        failure = json.loads((record.runtime_dir / "recovery-evidence.json").read_text())
+        self.assertEqual("HARVEST_INTERRUPTED", failure["reason_code"])
+        self.assertTrue(failure["preserved_satellite"])
         lifecycle_transition(record.runtime_dir, "recovery_required",
                              provenance["lifecycle_version"], "harvesting")
+
+    def test_recovery_report_is_actionable_when_preserved_worktree_is_missing(self):
+        main, worktree, record = self.active_run()
+        subprocess = __import__("subprocess")
+        subprocess.run(
+            ["git", "worktree", "remove", "--force", str(worktree)],
+            cwd=main, check=True,
+        )
+        report = recover(record.runtime_dir, pid_start_reader=lambda _: None)
+        self.assertFalse(report["preserved_worktree"])
+        self.assertEqual(str(worktree), report["worktree_path"])
+        self.assertEqual("failed_readonly", report["lifecycle_state"])
+        self.assertEqual("revoked", report["capability_state"])
+        self.assertEqual("WORKTREE_MISSING", report["state_code"])
+        self.assertEqual("SATELLITE_PRESERVED", report["reason_code"])
+        self.assertIn("cannot be collected", report["next_safe_action"])
+        self.assertEqual(
+            [
+                "reason_code=SATELLITE_PRESERVED",
+                "run_id=run-1",
+                f"main_tree_path={main}",
+                f"worktree_path={worktree}",
+                "reason=recorded worktree is missing; satellite bytes cannot be collected",
+                "recovery_command=/claude-skills:artifacts recover --run-id run-1",
+            ],
+            report["diagnostic"].splitlines(),
+        )
+        self.assertEqual([], report["entries"])
+        self.assertEqual([], report["conflicts"])
+
+    def test_missing_worktree_reconcile_uses_allowed_readonly_edge_and_preserves_terminal_capability(self):
+        subprocess = __import__("subprocess")
+        for lifecycle_state in ("created", "active"):
+            for capability_state in ("live", "consumed", "revoked"):
+                with self.subTest(
+                    lifecycle_state=lifecycle_state,
+                    capability_state=capability_state,
+                ):
+                    main, worktree = self.roots()
+                    plan = Path("plans/p.md")
+                    (main / ".agents/artifacts" / plan).write_bytes(b"base")
+                    record = create_run(main, worktree, "run-1", plan)
+                    if lifecycle_state == "active":
+                        lifecycle_transition(record.runtime_dir, "created", 0, "active")
+                    provenance_path = record.runtime_dir / "provenance.json"
+                    provenance = json.loads(provenance_path.read_text())
+                    provenance["capability_state"] = capability_state
+                    provenance_path.write_text(json.dumps(provenance))
+                    previous_version = provenance["lifecycle_version"]
+                    subprocess.run(
+                        ["git", "worktree", "remove", "--force", str(worktree)],
+                        cwd=main, check=True,
+                    )
+
+                    reconciled = reconcile_owner(
+                        record.runtime_dir, pid_start_reader=lambda _: None,
+                    )
+
+                    self.assertEqual("failed_readonly", reconciled["lifecycle_state"])
+                    self.assertEqual(previous_version + 1, reconciled["lifecycle_version"])
+                    self.assertEqual(
+                        "revoked" if capability_state == "live" else capability_state,
+                        reconciled["capability_state"],
+                    )
+
+    def test_dead_owner_reconcile_uses_only_allowed_edges_and_preserves_terminal_capability(self):
+        expected_lifecycle = {
+            "created": "failed_readonly",
+            "active": "failed_readonly",
+            "harvesting": "recovery_required",
+            "staged": "recovery_required",
+            "failed_readonly": "failed_readonly",
+            "recovery_required": "recovery_required",
+            "published": "published",
+            "discarded": "discarded",
+            "cleanup_allowed": "cleanup_allowed",
+        }
+        for lifecycle_state, expected_state in expected_lifecycle.items():
+            for capability_state in ("live", "consumed", "revoked"):
+                with self.subTest(
+                    lifecycle_state=lifecycle_state,
+                    capability_state=capability_state,
+                ):
+                    _, _, record = self.active_run()
+                    provenance_path = record.runtime_dir / "provenance.json"
+                    provenance = json.loads(provenance_path.read_text())
+                    provenance["lifecycle_state"] = lifecycle_state
+                    provenance["capability_state"] = capability_state
+                    provenance["owner_pid"] = 99999999
+                    provenance_path.write_text(json.dumps(provenance))
+                    previous_version = provenance["lifecycle_version"]
+
+                    reconciled = reconcile_owner(
+                        record.runtime_dir, pid_start_reader=lambda _: None,
+                    )
+
+                    self.assertEqual(expected_state, reconciled["lifecycle_state"])
+                    self.assertEqual(
+                        previous_version + (expected_state != lifecycle_state),
+                        reconciled["lifecycle_version"],
+                    )
+                    self.assertEqual(
+                        "revoked" if capability_state == "live" else capability_state,
+                        reconciled["capability_state"],
+                    )
+
+    def test_staged_recovery_report_uses_state_code_and_closed_six_line_diagnostic(self):
+        _, worktree, record = self.active_run()
+        (worktree / ".agents/artifacts/plans/p.md").write_bytes(b"satellite")
+        lifecycle_transition(record.runtime_dir, "active", 1, "harvesting",
+                             capability=record.capability, consume=True, expected_epoch=1)
+        collect(record.runtime_dir, expected_version=2, raw_capability=record.capability)
+        report = recovery_report(record.runtime_dir)
+        self.assertEqual("STAGED_REVIEW_REQUIRED", report["state_code"])
+        self.assertEqual("SATELLITE_PRESERVED", report["reason_code"])
+        self.assertEqual(6, len(report["diagnostic"].splitlines()))
+
+    def test_explicit_recover_rotates_failed_readonly_without_returning_secret(self):
+        _, _, record = self.active_run()
+        provenance_path = record.runtime_dir / "provenance.json"
+        provenance = json.loads(provenance_path.read_text())
+        provenance["lifecycle_state"] = "failed_readonly"
+        provenance["capability_state"] = "revoked"
+        provenance["owner_pid"] = 99999999
+        provenance_path.write_bytes(canonical_json(provenance))
+        result = recover(record.runtime_dir, pid_start_reader=lambda _: None)
+        self.assertEqual("active", result["lifecycle_state"])
+        self.assertEqual(str(record.capability_path), result["capability_file_path"])
+        self.assertEqual("plans/p.md", result["resolved_context"]["pinned_plan"])
+        self.assertNotIn(record.capability, json.dumps(result))
+
+    def test_recover_conflict_reports_inventory_and_never_mutates_state(self):
+        main, worktree, record = self.active_run()
+        (worktree / ".agents/artifacts/plans/p.md").write_bytes(b"satellite")
+        lifecycle_transition(record.runtime_dir, "active", 1, "harvesting",
+                             capability=record.capability, consume=True, expected_epoch=1)
+        (main / ".agents/artifacts/plans/p.md").write_bytes(b"main")
+        with self.assertRaisesRegex(TransportError, "harvest conflict"):
+            collect(record.runtime_dir, expected_version=2, raw_capability=record.capability)
+        before = (record.runtime_dir / "provenance.json").read_bytes()
+        report = recover(record.runtime_dir, pid_start_reader=lambda _: None)
+        self.assertEqual(before, (record.runtime_dir / "provenance.json").read_bytes())
+        self.assertEqual("recovery_required", report["lifecycle_state"])
+        self.assertEqual(["plans/p.md"], [row["relative_path"] for row in report["conflicts"]])
+        self.assertIn("resolve conflicts", report["next_safe_action"])
 
     def test_publish_rolls_back_all_files_when_commit_is_interrupted(self):
         main, worktree, record = self.active_run()

@@ -13,6 +13,7 @@ import os
 from pathlib import Path, PurePosixPath
 import secrets
 import shutil
+import stat
 import tempfile
 
 from workspace_isolation import WorkspaceIsolationError, identify_workspace
@@ -426,12 +427,13 @@ def _record_collection_failure(
     provenance["lifecycle_state"] = "recovery_required"
     provenance["lifecycle_version"] += 1
     evidence = {
+        "schema_version": 1,
         "run_id": provenance["run_id"], "staging_manifest_digest": None,
         "partial_staging_inventory": inventory, "reason_code": reason_code,
-        "actor": "system", "discarded_at": _now(), "preserved_satellite": True,
+        "actor": "system", "recorded_at": _now(), "preserved_satellite": True,
         "lifecycle_version": provenance["lifecycle_version"],
     }
-    _atomic_bytes(runtime_dir / "discard-evidence.json", canonical_json(evidence))
+    _atomic_bytes(runtime_dir / "recovery-evidence.json", canonical_json(evidence))
     _save(runtime_dir, provenance)
 
 
@@ -702,9 +704,49 @@ def format_diagnostic(reason_code: str, runtime_dir: Path, reason: str) -> str:
     ))
 
 
+def _recorded_worktree_is_directory(provenance: dict) -> bool:
+    """Check the recorded path without following a symlink outside the main runtime."""
+    try:
+        mode = os.lstat(provenance["worktree_path"]).st_mode
+    except (OSError, KeyError, TypeError):
+        return False
+    return stat.S_ISDIR(mode)
+
+
+def _validate_canonical_runtime(runtime_dir: Path, provenance: dict) -> None:
+    """Bind recovery mutations to the recorded canonical main-tree runtime."""
+    try:
+        run_id = _strict_run_id(provenance["run_id"])
+        main_tree = Path(provenance["main_tree_path"]).resolve(strict=True)
+        expected = main_tree / RUNS_REL / run_id
+    except (KeyError, OSError, TypeError) as exc:
+        raise TransportError("canonical main runtime identity unavailable") from exc
+    if runtime_dir.resolve() != expected.resolve():
+        raise TransportError("recovery must use the canonical main runtime")
+    _reject_control_symlinks(main_tree, (Path(".agents"), RUNS_REL))
+
+
+def _reconcile_unavailable_owner_state(provenance: dict) -> None:
+    """Apply only lifecycle edges allowed when the recorded owner is unavailable."""
+    if provenance["capability_state"] == "live":
+        provenance["capability_state"] = "revoked"
+    state = provenance["lifecycle_state"]
+    if state in {"created", "active"}:
+        provenance["lifecycle_state"] = "failed_readonly"
+        provenance["lifecycle_version"] += 1
+    elif state in {"harvesting", "staged"}:
+        provenance["lifecycle_state"] = "recovery_required"
+        provenance["lifecycle_version"] += 1
+
+
 def reconcile_owner(runtime_dir: Path, *, pid_start_reader=_pid_start_time) -> dict:
     with _locked(runtime_dir):
         provenance = _load(runtime_dir)
+        _validate_canonical_runtime(runtime_dir, provenance)
+        if not _recorded_worktree_is_directory(provenance):
+            _reconcile_unavailable_owner_state(provenance)
+            _save(runtime_dir, provenance)
+            return provenance
         _validate_identity_and_destination(provenance)
         if _rollback_publish_transaction(runtime_dir, provenance):
             if provenance["capability_state"] == "live":
@@ -722,11 +764,8 @@ def reconcile_owner(runtime_dir: Path, *, pid_start_reader=_pid_start_time) -> d
         if owner_alive:
             return provenance
         if provenance["capability_state"] == "live":
-            provenance["capability_state"] = "revoked"
             Path(provenance["worktree_path"]).joinpath(CAPABILITY_REL).unlink(missing_ok=True)
-        if provenance["lifecycle_state"] not in {"published", "discarded", "cleanup_allowed"}:
-            provenance["lifecycle_state"] = "recovery_required"
-            provenance["lifecycle_version"] += 1
+        _reconcile_unavailable_owner_state(provenance)
         _save(runtime_dir, provenance)
         return provenance
 
@@ -734,18 +773,122 @@ def reconcile_owner(runtime_dir: Path, *, pid_start_reader=_pid_start_time) -> d
 def recovery_report(runtime_dir: Path) -> dict:
     """Return read-only facts for the single main-tree recovery workflow."""
     provenance = _load(runtime_dir)
-    _validate_identity_and_destination(provenance)
     staging_manifest = runtime_dir / "staging/manifest.json"
+    worktree = Path(provenance["worktree_path"])
+    entries = []
+    conflicts = []
+    if staging_manifest.is_file():
+        try:
+            entries = json.loads(staging_manifest.read_text(encoding="utf-8")).get(
+                "entries", [],
+            )
+        except (OSError, ValueError):
+            entries = []
+    recovery_evidence = runtime_dir / "recovery-evidence.json"
+    if recovery_evidence.is_file():
+        try:
+            inventory = json.loads(
+                recovery_evidence.read_text(encoding="utf-8"),
+            ).get("partial_staging_inventory", [])
+            conflicts = [
+                row for row in inventory
+                if row.get("classification") in {"deletion", "recreation", "conflict"}
+            ]
+            if not entries:
+                entries = inventory
+        except (OSError, ValueError):
+            pass
+    preserved = _recorded_worktree_is_directory(provenance)
+    state = provenance["lifecycle_state"]
+    if not preserved:
+        state_code = "WORKTREE_MISSING"
+        reason_code = "SATELLITE_PRESERVED"
+        reason = "recorded worktree is missing; satellite bytes cannot be collected"
+        next_action = (
+            "satellite bytes cannot be collected: recover them outside this command, or "
+            "explicitly close the run after human review; publish remains a separate "
+            "authorized action"
+        )
+    elif state == "staged":
+        state_code = "STAGED_REVIEW_REQUIRED"
+        reason_code = "SATELLITE_PRESERVED"
+        reason = "validated staging is preserved for explicit review"
+        next_action = (
+            "review every staged entry; publish separately only with explicit approval "
+            "and mechanically checked preconditions, or request an authorized human discard"
+        )
+    elif state == "recovery_required" and conflicts:
+        state_code = "HARVEST_CONFLICT"
+        reason_code = "HARVEST_CONFLICT"
+        reason = "harvest conflicts require human judgment; all bytes are preserved"
+        next_action = (
+            "resolve conflicts in the preserved worktree without deleting either version; "
+            "then rerun recovery"
+        )
+    elif state == "recovery_required":
+        state_code = "RECOVERY_PRECONDITIONS_UNPROVEN"
+        reason_code = "SATELLITE_PRESERVED"
+        reason = "recovery preconditions are not mechanically proven; all bytes are preserved"
+        next_action = (
+            "inspect recovery evidence and retry collection only after identity and "
+            "compare-and-swap preconditions are mechanically proven"
+        )
+    elif state == "failed_readonly":
+        state_code = "FAILED_READONLY"
+        reason_code = "SATELLITE_WRITE_DENIED"
+        reason = "satellite is read-only until a new run-scoped capability is issued"
+        next_action = "invoke recovery to rotate a file-backed capability and resume the inner run"
+    else:
+        state_code = "LIFECYCLE_STATE_REPORT"
+        reason_code = "SATELLITE_PRESERVED"
+        reason = f"satellite lifecycle state is {state}"
+        next_action = "follow the lifecycle action for the reported state"
+    diagnostic = format_diagnostic(reason_code, runtime_dir, reason)
     return {
         "run_id": provenance["run_id"],
-        "lifecycle_state": provenance["lifecycle_state"],
+        "lifecycle_state": state,
         "capability_state": provenance["capability_state"],
         "staging_present": staging_manifest.is_file(),
-        "preserved_worktree": Path(provenance["worktree_path"]).exists(),
+        "preserved_worktree": preserved,
+        "worktree_path": str(worktree),
+        "entries": entries,
+        "conflicts": conflicts,
+        "state_code": state_code,
+        "reason_code": reason_code,
+        "diagnostic": diagnostic,
+        "next_safe_action": next_action,
         "recovery_command": (
             f"/claude-skills:artifacts recover --run-id {provenance['run_id']}"
         ),
     }
+
+
+def recover(runtime_dir: Path, *, pid_start_reader=_pid_start_time) -> dict:
+    """Execute only state-specific recovery actions that are mechanically safe."""
+    reconcile_owner(runtime_dir, pid_start_reader=pid_start_reader)
+    provenance = _load(runtime_dir)
+    if (
+        provenance["lifecycle_state"] == "failed_readonly"
+        and _recorded_worktree_is_directory(provenance)
+    ):
+        rotate_capability(
+            runtime_dir,
+            expected_epoch=provenance["capability_epoch"],
+            expected_version=provenance["lifecycle_version"],
+        )
+        report = recovery_report(runtime_dir)
+        report["capability_file_path"] = str(
+            Path(provenance["worktree_path"]) / CAPABILITY_REL
+        )
+        report["resolved_context"] = {
+            "pinned_plan": provenance["pinned_plan"],
+            "resolved_isolation": "worktree",
+            "satellite_run_id": provenance["run_id"],
+            "satellite_capability_file": report["capability_file_path"],
+        }
+        report["next_safe_action"] = "resume the inner run with resolved_context"
+        return report
+    return recovery_report(runtime_dir)
 
 
 def cleanup_allowed(runtime_dir: Path) -> bool:

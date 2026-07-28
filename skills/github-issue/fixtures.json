@@ -246,6 +246,33 @@
         }
       ],
       "notes": "Issue #123 の transport seam を固定する回帰面。fallback の可用性と、認証失敗で backend を切り替えて fail-closed を迂回しない境界を1シナリオで対比する。読み取り専用のため isolation: none。"
+    },
+    {
+      "id": "gi-008",
+      "title": "issue cycle uses shared satellite transport and preserves failures",
+      "source": "manual:worktree-artifact-transport-step4",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "prompt": "Drive an accepted issue through cycle while using the shared worktree artifact transport.",
+      "requirements": [
+        {
+          "text": "Shared ingress creates the pinned plan and capability before cycle receives the complete resolved inner context.",
+          "critical": true
+        },
+        {
+          "text": "The inner cycle creates no nested worktree and never writes the main artifact store directly.",
+          "critical": true
+        },
+        {
+          "text": "Every terminal path collects before cleanup; success publishes only after merge and post-merge verification.",
+          "critical": true
+        },
+        {
+          "text": "A transport failure preserves the worktree and reports /claude-skills:artifacts recover --run-id {satellite_run_id}.",
+          "critical": true
+        }
+      ],
+      "notes": "The existing GitHub issue gates, draft PR, review, retry, label, and merge semantics remain unchanged around the shared transport."
     }
   ]
 }

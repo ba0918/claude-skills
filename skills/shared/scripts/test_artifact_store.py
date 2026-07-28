@@ -1,10 +1,13 @@
 import os
+import json
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
 from unittest import mock
+from contextlib import redirect_stdout
+import io
 
 sys.path.insert(0, str(Path(__file__).parent))
 from artifact_store import (  # noqa: E402
@@ -33,6 +36,8 @@ from artifact_store import (  # noqa: E402
     satellite_discard,
     satellite_format_diagnostic,
     satellite_authorize_write,
+    recover_run,
+    main,
 )
 
 
@@ -131,6 +136,104 @@ class ArtifactStoreTest(unittest.TestCase):
         self.assertFalse(explicit)
         self.assertEqual("local", policy["visibility"])
         self.assertEqual(".agents/artifacts", policy["root"])
+
+    def test_fresh_init_creates_worktree_workspace_policy(self):
+        root = self.repo()
+        result = initialize(root)
+        self.assertEqual(
+            "isolation: worktree\n",
+            (root / ".agents/workspace.yml").read_text(encoding="utf-8"),
+        )
+        self.assertTrue(result["workspace_policy_created"])
+        self.assertIsNone(result["workspace_policy_opt_in"])
+
+    def test_existing_or_partial_init_does_not_silently_create_workspace_policy(self):
+        cases = ("artifact-policy", "empty-store", "legacy-store")
+        for case in cases:
+            with self.subTest(case=case):
+                root = self.repo()
+                if case == "artifact-policy":
+                    self.write_policy(root)
+                elif case == "empty-store":
+                    (root / ".agents/artifacts").mkdir(parents=True)
+                else:
+                    (root / "docs/plans").mkdir(parents=True)
+                    (root / "docs/plans/p.md").write_text("plan", encoding="utf-8")
+                if case == "legacy-store":
+                    with self.assertRaises(ArtifactStoreError):
+                        initialize(root)
+                else:
+                    result = initialize(root)
+                    self.assertFalse(result["workspace_policy_created"])
+                    self.assertIn(".agents/workspace.yml", result["workspace_policy_opt_in"])
+                self.assertFalse((root / ".agents/workspace.yml").exists())
+
+    def test_repeated_init_preserves_workspace_policy(self):
+        root = self.repo()
+        initialize(root)
+        policy = root / ".agents/workspace.yml"
+        policy.write_text("isolation: inplace\n", encoding="utf-8")
+        result = initialize(root)
+        self.assertEqual("isolation: inplace\n", policy.read_text(encoding="utf-8"))
+        self.assertFalse(result["workspace_policy_created"])
+
+    def test_recover_run_reconciles_selected_main_runtime_and_reports(self):
+        root = self.repo()
+        runtime = root / ".agents/runtime/satellite-runs/run-42"
+        runtime.mkdir(parents=True)
+        with mock.patch(
+            "artifact_store.recover_satellite", return_value={"run_id": "run-42"},
+        ) as report:
+            self.assertEqual({"run_id": "run-42"}, recover_run(root, "run-42"))
+            report.assert_called_once_with(runtime)
+
+    def test_recover_cli_requires_one_safe_run_id(self):
+        root = self.repo()
+        output = io.StringIO()
+        with mock.patch("artifact_store.recover_run", return_value={"run_id": "run-42"}):
+            with redirect_stdout(output):
+                self.assertEqual(0, main(["recover", "--repo", str(root), "--run-id", "run-42"]))
+        self.assertEqual("run-42", json.loads(output.getvalue())["run_id"])
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(2, main(["recover", "--repo", str(root), "--run-id", "../escape"]))
+
+    def test_recover_facade_and_cli_reconcile_a_deleted_worktree_from_main_runtime(self):
+        root = self.repo()
+        (root / ".agents/artifacts/plans").mkdir(parents=True)
+        (root / ".agents/artifacts/plans/p.md").write_text("plan", encoding="utf-8")
+        subprocess.run(["git", "add", "."], cwd=root, check=True)
+        subprocess.run(
+            ["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+             "commit", "-qm", "base"],
+            cwd=root, check=True,
+        )
+        worktree = root.parent / f"{root.name}-deleted-worktree"
+        subprocess.run(["git", "worktree", "add", "-q", str(worktree)], cwd=root, check=True)
+        self.addCleanup(lambda: subprocess.run(
+            ["git", "worktree", "remove", "--force", str(worktree)],
+            cwd=root, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        ))
+        record = satellite_create(root, worktree, "run-deleted", "plans/p.md")
+        satellite_activate(record.runtime_dir, 0)
+        subprocess.run(
+            ["git", "worktree", "remove", "--force", str(worktree)],
+            cwd=root, check=True,
+        )
+
+        facade = recover_run(root, "run-deleted")
+        self.assertEqual("WORKTREE_MISSING", facade["state_code"])
+        self.assertEqual("SATELLITE_PRESERVED", facade["reason_code"])
+
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(
+                0,
+                main(["recover", "--repo", str(root), "--run-id", "run-deleted"]),
+            )
+        cli = json.loads(output.getvalue())
+        self.assertEqual("failed_readonly", cli["lifecycle_state"])
+        self.assertEqual("revoked", cli["capability_state"])
+        self.assertEqual(6, len(cli["diagnostic"].splitlines()))
 
     def test_unknown_schema_and_key_fail_closed(self):
         root = self.repo()
