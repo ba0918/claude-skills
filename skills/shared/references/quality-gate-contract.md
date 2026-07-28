@@ -14,6 +14,16 @@ Enforcement and recall implementations are deliberately absent from this file (�
 conformance-profile layer and the evidence-format verifier plug into §6 and §2 respectively;
 both ship separately.
 
+## Contract Identity
+
+This contract carries an explicit, machine-readable version: **`quality-gate-contract 1.0.0`**.
+Evidence and profiles reference this identifier, never the prose. Update rule: a change that
+alters any guarantee condition, state definition, obligation, or convergence rule is a
+**semantic** change and bumps this version; editorial changes (wording, examples, links) do
+not. Verifiers compare the version recorded in evidence against this declared value —
+a version string that does not resolve to a published contract version is invalid evidence.
+(Content-hash identity is a v2 candidate; out of scope here.)
+
 ## The Core Property
 
 ```
@@ -32,7 +42,7 @@ convergence (§5). Which states are protected is declared by the conformance pro
 ```
 machine_verified  ⊥  semantic_reviewed
         \             /
-         → publishable   (risk class decides which are required; the default is both)
+         → publishable   (v1: both are required, unconditionally)
 ```
 
 - **`machine_verified`** — every mechanical gate passed on the exact target version.
@@ -43,9 +53,10 @@ machine_verified  ⊥  semantic_reviewed
   missing tests, unintended impact. The boundary between the two states is the boundary
   of what is mechanically verifiable; neither state substitutes for the other.
 - The two states are orthogonal: neither implies, contains, nor refreshes the other.
-  `publishable` requires the conjunction demanded by the applicable risk class; a profile
-  may require both for everything (the conservative default) but may never require less
-  than the generic contract does.
+  **The v1 generic minimum is normative: every transition into a protected state requires
+  both `machine_verified` and `semantic_reviewed`.** Risk tiering that would relax one of
+  them is deferred to v2 (§8); until it exists, neither a profile nor a local setting may
+  require less, and enforcement adapters decide `publishable` by this conjunction alone.
 - What a semantic review guarantees is **that the review contract was executed and every
   finding dispositioned** — not that the reviewer's conclusions are correct. Correctness
   claims stay with the evidence; see [verification-gate.md](verification-gate.md) for the
@@ -56,9 +67,10 @@ machine_verified  ⊥  semantic_reviewed
 Evidence is a record asserting that a gate held for a target. Its validity is defined by
 binding, not by trust in whoever produced it:
 
-- **Binding**: every piece of evidence binds to `(target version identifier × verification
-  contract version)`. Evidence that does not name the exact target version and the version
-  of the contract it verified against is not evidence. (Binding additionally to an input
+- **Binding**: every piece of evidence binds to `(target version identifier × contract
+  identifier and version per §Contract Identity — including the profile's version when a
+  profile applies)`. Evidence that does not name the exact target version and the resolvable
+  contract version it verified against is not evidence. (Binding additionally to an input
   manifest hash is a v2 extension — out of scope here.)
 - **Invalidation is part of the contract.** Universal invalidation rules:
   - New commits on top of a reviewed version invalidate that review's evidence for the new
@@ -67,9 +79,12 @@ binding, not by trust in whoever produced it:
     older contract, for the states that contract governs.
   - Expired evidence is treated identically to absent evidence — the §Core Property blocks
     the transition.
-- Re-verification after invalidation may be scoped (what changed decides what re-runs),
-  but the scoping rules belong to the conformance profile; the generic contract only fixes
-  the invariant that *some* valid evidence must exist per required state.
+- **In v1, invalidation is total.** Once a state's evidence is invalidated, the state is
+  re-earned only by complete regeneration of its evidence against the new target version.
+  Scoped re-verification (re-running only what a change impacts) requires a compositional
+  evidence manifest that can rebind unchanged results to the new target; that mechanism is
+  deferred to v2 together with input-manifest hashing, and a profile may not introduce it
+  ahead of the contract.
 
 ## 3. Independence of Review
 
@@ -145,20 +160,29 @@ an optional appendix.
 Convergence is a state, not a feeling of having iterated enough. The gate converges when
 **all** of the following hold:
 
-1. Every obligation fired for this change (§4) has been evaluated — its ledger entry exists
-   and names a coverage state.
+1. Every obligation fired for this change (§4) has a ledger entry, and every **mandatory**
+   obligation — the always-on invariants, plus whatever the profile marks mandatory —
+   reached coverage state `reviewed`. A mandatory obligation left `skipped`, `unsupported`,
+   or `inconclusive` blocks convergence, unless a human records an explicit waiver naming
+   the obligation and the reason; the waiver becomes part of the evidence. A ledger entry's
+   mere existence never counts as evaluation.
 2. No blocking-severity finding verified as CONFIRMED remains undispositioned.
-3. Every finding is dispositioned as one of:
-   - **FIXED**,
-   - **WONT_FIX** with a typed reason — one of: preference difference / outside the
-     contract / fix risk exceeds benefit / duplicate,
-   - **ACCEPTED_RISK** (an explicitly recorded acceptance).
+3. Every finding is dispositioned **according to its verification value** (the three-valued
+   judgment of [severity-and-verdicts.md](severity-and-verdicts.md)):
+   - **CONFIRMED** → one of **FIXED**, **WONT_FIX** with a typed reason (preference
+     difference / outside the contract / fix risk exceeds benefit / duplicate), or
+     **ACCEPTED_RISK** (an explicitly recorded acceptance);
+   - **FALSE_POSITIVE** → a recorded dismissal with the reason it does not apply;
+   - **UNCERTAIN** → stays report-only, never marked fixed or accepted. Blocking-severity
+     UNCERTAIN blocks convergence until resolved to CONFIRMED / FALSE_POSITIVE or
+     explicitly escalated to a human; non-blocking UNCERTAIN is recorded as-is and does
+     not block.
 4. At least one history-free (§3) review pass completed without new blocking findings.
 
 Non-convergence rules:
 
-- Blocking-severity findings left UNCERTAIN, and areas left `inconclusive`, never converge
-  silently — they either get resolved or escalate to a human.
+- Blocking-severity findings left UNCERTAIN, and mandatory-obligation areas left
+  `inconclusive`, never converge silently — they either get resolved or escalate to a human.
 - **Oscillation** — a fix followed by a finding pushing in the opposite direction — escalates
   to a human immediately.
 - An iteration cap is a **detector of undecidability, not a quality condition**. Reaching it
@@ -185,7 +209,11 @@ reference.
 
 The canonical layer states *conditions*, never *firing points*:
 
-- Pre-condition: the knowledge a task needs is reachable when work starts.
+- Pre-condition: the obligations applicable to a task were **delivered into its working
+  context** before any protected-state decision. Mere discoverability — a file that could
+  have been read — does not satisfy this. A conforming recall adapter emits an observable
+  delivery record (which obligations, delivered when, for which unit of work), so recall
+  is auditable like any other evidence.
 - Post-condition: no transition to a protected state without valid evidence (§Core).
 
 Anything that makes those conditions hold in a specific environment is an adapter. A hosted
