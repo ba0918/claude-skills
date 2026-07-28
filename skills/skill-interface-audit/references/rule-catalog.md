@@ -68,21 +68,24 @@ Heuristic:
 Vocabulary detected (the same list as context-audit CA-D001, over a different file set):
 - tool API names: `Edit`, `Write`, `Read`, `Bash`, `Agent`, `Workflow`, `WebFetch`, `WebSearch`, `Grep`, `Glob`, `LSP`, `NotebookEdit`
 - the Japanese 「〜ツール」 form: `Edit ツール`, `Bash ツール`, etc.
+- the English "X tool" form: `the Read tool`, `Read tool's`, etc. (high-confidence pattern)
 - model-specific names: `claude-opus-*`, `claude-sonnet-*`, `claude-haiku-*`, `gpt-*`, `o1-*`
 
 **Case rules (to prevent false positives in an English SKILL.md)**:
 - A PascalCase tool name (`Edit`, `Read`, `Write`, etc.) is detected only when it appears standalone **outside sentence-initial position**
 - A capital at the start of a sentence (line start, or right after a period) is ordinary English orthography and is excluded
 - Lowercase `edit`, `read`, `write`, etc. are excluded as ordinary verbs (they are also used as Unix commands)
-- Because `LSP` is also an industry-standard protocol name, detect only tool usages such as 「`LSP` ツール」 or 「`LSP` を使う」, and exclude mentions of the protocol name (「`LSP` 準拠」, 「`LSP` サポート」, etc.)
+- Because `LSP` is also an industry-standard protocol name, detect only tool usages such as 「`LSP` ツール」 or 「`LSP` を使う」, and exclude mentions of the protocol name (「`LSP` 準拠」, 「`LSP` サポート」, `the language server (LSP)`, etc.)
 
 Exclusion conditions:
 - code blocks (inside `` ``` `` / `` ` ``)
 - quote blocks (`> ` lines)
-- words inside file paths (`scripts/test_*.py`, etc.)
-- capitalized words in sentence-initial position (line start, or right after a period)
+- words inside file paths (`scripts/test_*.py`, etc.) — a `/` suppresses the match only when surrounded by path characters (letters, digits, `.`, `-`, `_`); a `/` between two tool names (`Read/Write/Edit`) is treated as enumeration, not a path
+- capitalized words in sentence-initial position (line start, right after a period, or right after a bullet marker `- ` / `* ` / `+ ` / `| `)
 - words inside Markdown headings (`## Workflow`, etc. A heading starts with `#` at line start, so it also falls under the sentence-initial exclusion, but exclude it explicitly)
 - words right after a numbered list marker (the `Write` in `3. Write ...`, etc. The period in `N. ` is not a sentence-final period, but treat it as sentence-initial and exclude it)
+- words right after Markdown emphasis markers at a list/sentence start (the `Read` in `1. **Read** the file`, etc.)
+- **domain-term whitelist**: `Agent Artifact Store`, `Agent Skills`, `Agent N` (numbered subagent), `<Name> Workflow` (e.g. `Wrap Workflow`, `Cycle Workflow`) — these are repository domain terms, not platform-specific tool API names
 
 ### SI-S006 detail: inlined shared contract
 

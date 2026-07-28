@@ -335,6 +335,141 @@ class TestSIS004(unittest.TestCase):
         findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
         self.assertEqual(len(findings), 0)
 
+    # ── Issue #124: English false-positive suppression ──────────────────
+
+    def test_bullet_start_excluded(self):
+        """#124 case 1: bullet list items are sentence-initial."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(content="# Skill\n\n- Read the file\n* Write output\n+ Edit it",
+                         tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertEqual(len(findings), 0)
+
+    def test_table_cell_start_excluded(self):
+        """#124 case 1: table cell start is sentence-initial."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(content="# Skill\n\n| Read | Write | Edit |",
+                         tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertEqual(len(findings), 0)
+
+    def test_emphasis_after_list_marker_excluded(self):
+        """#124 case 1: bold/italic at list start is sentence-initial."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(
+            content="# Skill\n\n1. **Read** current status\n- *Write* the output",
+            tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertEqual(len(findings), 0)
+
+    def test_domain_agent_artifact_store_excluded(self):
+        """#124 case 2: 'Agent Artifact Store' is a domain term."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(content="# Skill\n\nInitialize the Agent Artifact Store.",
+                         tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertEqual(len(findings), 0)
+
+    def test_domain_agent_skills_excluded(self):
+        """#124 case 2: 'Agent Skills' is a domain term."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(content="# Skill\n\nThis repo contains Agent Skills.",
+                         tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertEqual(len(findings), 0)
+
+    def test_domain_agent_number_excluded(self):
+        """#124 case 2: 'Agent 1' (numbered subagent) is a domain term."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(content="# Skill\n\nLaunch Agent 3 for review.",
+                         tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertEqual(len(findings), 0)
+
+    def test_domain_workflow_excluded(self):
+        """#124 case 2: 'Wrap Workflow' is a domain term."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(content="# Skill\n\nRun the Wrap Workflow to finish.",
+                         tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertEqual(len(findings), 0)
+
+    def test_bare_agent_mid_sentence_still_detected(self):
+        """#124 case 2: bare 'Agent' not in domain phrase is still flagged."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(content="# Skill\n\nUse the Agent to run tasks.",
+                         tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertGreaterEqual(len(findings), 1)
+
+    def test_lsp_english_language_server_excluded(self):
+        """#124 case 3: 'the language server (LSP)' is protocol context."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(
+            content="# Skill\n\nConnect to the language server (LSP) for completions.",
+            tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertEqual(len(findings), 0)
+
+    def test_slash_in_enumeration_not_suppressed(self):
+        """#124 case 4: slash in enumeration is not a path, so detect."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(
+            content="# Skill\n\nAvoid Read/Write/Edit in the text.",
+            tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        # "Read" is at sentence start (after ". "), but "Write" and "Edit" should be detected
+        tool_names = [f["what"] for f in findings]
+        self.assertTrue(any("Write" in w for w in tool_names))
+        self.assertTrue(any("Edit" in w for w in tool_names))
+
+    def test_slash_in_path_still_suppressed(self):
+        """#124 case 4: slash in file path still suppresses."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(
+            content="# Skill\n\nSee scripts/Read/foo.py for details.",
+            tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertEqual(len(findings), 0)
+
+    def test_english_tool_pattern_detected(self):
+        """#124 case 5: 'the Read tool' is a high-confidence pattern."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(
+            content="# Skill\n\nUse the Read tool to inspect files.",
+            tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertGreaterEqual(len(findings), 1)
+        self.assertTrue(any("Read tool" in f["what"] for f in findings))
+
+    def test_english_tool_possessive_detected(self):
+        """#124 case 5: 'Read tool's output' is a high-confidence pattern."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(
+            content="# Skill\n\nCheck Read tool's output before proceeding.",
+            tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertGreaterEqual(len(findings), 1)
+
+    def test_english_tool_no_double_count(self):
+        """#124 case 5: 'the Read tool' must produce exactly 1 finding, not 2."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(
+            content="# Skill\n\nUse the Read tool here.",
+            tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertEqual(len(findings), 1)
+
+    def test_japanese_tool_still_works(self):
+        """#124: _TOOL_JA_RE must still fire for remaining Japanese content."""
+        tmpdir = tempfile.mkdtemp()
+        t = _make_target(
+            content="# Skill\n\nBash ツールで実行する。",
+            tmpdir=tmpdir)
+        findings = sc.check_si_s004([t], {"root": os.path.join(tmpdir, "skills")})
+        self.assertEqual(len(findings), 1)
+        self.assertIn("ツール", findings[0]["what"])
+
 
 # ── ID numbering ─────────────────────────────────────────────────────────
 
