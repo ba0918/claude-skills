@@ -123,11 +123,27 @@ Key difference: {description}
 - "I believe {X} is the root cause, because {Y}"
 - Write it concretely (do not leave it vague)
 
-### Step 3.2: Test It With a Minimal Change
+### Step 3.2: Test the Hypothesis With a Verification Probe
 
-- Make exactly one **minimal change** that verifies the hypothesis
-- Do not apply several fixes at once
-- Run the test in the shell and check the result
+Verify the hypothesis **without modifying production files**. A probe is a read-only
+observation — adding a log statement to a scratch script, inspecting a value in a REPL,
+running a command with different arguments, or checking an environment variable.
+
+- Use exactly one probe that confirms or refutes the hypothesis
+- Do not apply a fix — this phase is verification, not implementation
+- Run the probe in the shell and check the result
+
+**Fallback — when a probe cannot verify the hypothesis** (e.g., build configuration,
+environment-dependent behavior that only manifests through an actual file change):
+
+1. Make the smallest possible **tentative edit** to the production file
+2. Run the verification and record the result
+3. **Revert the tentative edit before advancing to Phase 4** — Phase 4 requires a clean
+   starting state so the failing test (Step 4.1) is written before any production change,
+   per the TDD contract: [../shared/references/tdd-contract.md](../shared/references/tdd-contract.md)
+4. Record in the Phase 3 display:
+   - Why a probe could not verify the hypothesis
+   - That the tentative edit was reverted before Phase 4
 
 ### Step 3.3: Verify
 
@@ -139,8 +155,9 @@ Display:
 ```
 ── Phase 3: Hypothesis ──
 Hypothesis: {description}
-Test: {minimal_change}
+Probe: {probe_description}
 Result: {confirmed/rejected}
+Fallback used: {no | yes — reason: {why_probe_insufficient}, reverted: yes}
 ```
 
 ## Phase 4: Implementation

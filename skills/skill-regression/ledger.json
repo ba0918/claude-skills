@@ -459,11 +459,11 @@
     "file_sha256": {
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/systematic-debugging/SKILL.md": "ce3a5e0dc0e6401a8bfb818054f49f9b85a211878a534fa5877d7b50824aba92",
+      "skills/systematic-debugging/SKILL.md": "9a16180e43476a3b83f0d1f92769607f94ef4c4222555899c82d5a495ed6ca49",
       "skills/systematic-debugging/fixtures.json": "3581f610b0b790518266ab8be0e3375bed56165386767c29740cbc681523a99f",
       "skills/systematic-debugging/references/root-cause-tracing.md": "27fb3aa57781e5fc843a459ab3ec53343a18fb979cd4525010603c2353ccdaef"
     },
-    "note": "tdd-contract REFACTOR節に変更不要の出口を追加（plan-implementで確定済みの方針の転記、新たな設計判断なし）",
+    "note": "Phase 3.2 を検証プローブ原則+fallback revert の二段構えに改訂（Iron Law との衝突を解消）",
     "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/tdd-contract.md",
@@ -472,7 +472,7 @@
       "skills/systematic-debugging/fixtures.json",
       "skills/systematic-debugging/references/root-cause-tracing.md"
     ],
-    "surface_sha256": "a245f91e5889d1e8891ecaccb6e37842d8d33bc23ff1d53d11d6bdde4cecf084",
+    "surface_sha256": "7af765e5ac423a35a22b61128433f591dc0a67a18d84896e29fc4b90f8d16c76",
     "verified": "2026-07-28"
   },
   "test-driven-development": {
