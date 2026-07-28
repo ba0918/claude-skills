@@ -27,6 +27,9 @@
   15. 配布 manifest の整合性（3 manifest の name / version、リポジトリ slug、LICENSE 実在）
   16. 名前が対応しない command が description で起動先スキルを名指ししている
   17. skills/*/fixtures.json が回帰 fixture の契約に適合する
+  18. デザイントークンの authoring 層 ⇔ 配布層同期
+  19. agent 生成物の置き場に `.claude/` を使っていないか
+  20. リネーム許可表（scripts/rename-allowlist.json）の失効エントリ検出
 
 チェック 10・11 と store 実在性:
   チェック 10（dossier lint）は local store が ignore されている環境では対象ファイルが
@@ -40,6 +43,7 @@
 import json
 import os
 import re
+import subprocess
 import sys
 
 sys.path.insert(
@@ -502,6 +506,78 @@ def check_legacy_claude_paths(root):
     return errors
 
 
+RENAME_ALLOWLIST_REL = os.path.join("scripts", "rename-allowlist.json")
+
+
+def _resolve_rename_baseline(root):
+    """リネーム許可表の失効判定に使う baseline ref を解決する。
+
+    check_translation_parity.py の baseline 候補連鎖と同じ方向で探す。
+    origin/main → main の順に試し、どちらも無ければ None（skip）。
+    """
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    for candidate in ("origin/main", "main"):
+        try:
+            r = subprocess.run(
+                ["git", "rev-parse", "--verify", "--quiet",
+                 f"{candidate}^{{commit}}"],
+                cwd=root, capture_output=True, text=True, env=env,
+            )
+            if r.returncode == 0:
+                return candidate
+        except (OSError, subprocess.SubprocessError):
+            pass
+    return None
+
+
+def check_rename_allowlist_staleness(root):
+    """チェック20: リネーム許可表の失効エントリを検出する。
+
+    check_translation_parity.py の identifier_preservation は、許可表に申告された
+    リネーム（old → new）を消失から除外する。しかしリネームが完了して baseline から
+    old が消えた後もエントリが残ると、「消えた識別子を無条件で許す穴」が恒久化する。
+
+    baseline（比較元）の skills/ 配下に old が存在しないエントリを失効として報告する。
+    baseline が解決できない環境（remote なし・shallow clone 等）では skip して pass する。
+    """
+    path = os.path.join(root, RENAME_ALLOWLIST_REL)
+    if not os.path.isfile(path):
+        return []
+    try:
+        allowlist = json.loads(_read(path))
+    except json.JSONDecodeError as exc:
+        return [f"[rename-allowlist] JSON として読めない: "
+                f"{RENAME_ALLOWLIST_REL} ({exc})"]
+    if not allowlist:
+        return []
+
+    ref = _resolve_rename_baseline(root)
+    if ref is None:
+        return []
+
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    errors = []
+    for entry in allowlist:
+        old = entry.get("old", "")
+        if not old:
+            continue
+        try:
+            r = subprocess.run(
+                ["git", "grep", "-q", "-F", old, ref, "--", "skills/"],
+                cwd=root, capture_output=True, text=True, env=env,
+            )
+            found = r.returncode == 0
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if not found:
+            errors.append(
+                f"[rename-allowlist] 失効エントリ: old={old!r} が baseline ({ref})"
+                f" の skills/ 配下に存在しない"
+                f"（リネーム完了後は許可表から削除する）"
+            )
+    return errors
+
+
 def check_design_token_sync(root):
     """チェック18: authoring 層のデザイントークンと配布層の同一性を照合する。
 
@@ -928,6 +1004,9 @@ def run_checks(root):
 
     # 19. agent 生成物の置き場に `.claude/` を使っていないか（移行後の再発防止）
     errors += check_legacy_claude_paths(root)
+
+    # 20. リネーム許可表の失効エントリ（baseline に old が残っていないなら削除すべき）
+    errors += check_rename_allowlist_staleness(root)
 
     return errors
 

@@ -32,6 +32,7 @@ from validate_repo import (
     check_design_token_sync,
     check_legacy_claude_paths,
     check_fixtures,
+    check_rename_allowlist_staleness,
     parse_version,
     HUMAN_READABLE_SUMMARY_LABEL,
     HUMAN_READABLE_SUMMARY_SKILLS,
@@ -1297,3 +1298,102 @@ class TestCheckLegacyClaudePaths(unittest.TestCase):
                         '{ "note": "移行前は .claude/tmp/x/ だった", '
                         '"text": "中間置き場 .claude/tmp/demo/ を残していない" }\n')
             self.assertEqual(len(check_legacy_claude_paths(root)), 1)
+
+
+class TestCheckRenameAllowlistStaleness(unittest.TestCase):
+    """チェック20: リネーム許可表の失効エントリ検出。
+
+    identifier_preservation の許可表エントリは、baseline から old が消えたら
+    役目を終えている。残すと「消えた識別子を無条件で許す穴」が恒久化するため、
+    baseline に old が存在しないエントリを失効として報告する。
+    """
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = temp.name
+        self.env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        self._git("init", "-q")
+        self._git("config", "user.email", "test@example.com")
+        self._git("config", "user.name", "test")
+        self._git("checkout", "-q", "-B", "main")
+
+    def _git(self, *args):
+        return subprocess.run(
+            ["git", *args], cwd=self.root, env=self.env,
+            check=True, capture_output=True, text=True,
+        ).stdout
+
+    def _write(self, rel, content):
+        path = os.path.join(self.root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def _commit(self, message):
+        self._git("add", "-A")
+        self._git("commit", "-q", "-m", message)
+
+    def test_missing_allowlist_is_noop(self):
+        self._write("skills/a/SKILL.md", "# A\n")
+        self._commit("init")
+        self.assertEqual(check_rename_allowlist_staleness(self.root), [])
+
+    def test_empty_allowlist_is_noop(self):
+        self._write("skills/a/SKILL.md", "# A\n")
+        self._write("scripts/rename-allowlist.json", "[]")
+        self._commit("init")
+        self.assertEqual(check_rename_allowlist_staleness(self.root), [])
+
+    def test_valid_entry_passes_when_old_exists_in_baseline(self):
+        """baseline に old が存在するエントリは失効していない。"""
+        self._write("skills/a/SKILL.md", "# A\n\n`executor_model` を指定する。\n")
+        self._write("scripts/rename-allowlist.json", json.dumps([
+            {"old": "executor_model", "new": "executor_tier",
+             "reason": "platform-independent", "added": "2026-07-28"}
+        ]))
+        self._commit("init")
+        self.assertEqual(check_rename_allowlist_staleness(self.root), [])
+
+    def test_stale_entry_is_flagged_when_old_not_in_baseline(self):
+        """baseline に old が存在しないエントリは失効（受け入れ条件 3）。"""
+        self._write("skills/a/SKILL.md", "# A\n\n`executor_tier` を指定する。\n")
+        self._write("scripts/rename-allowlist.json", json.dumps([
+            {"old": "executor_model", "new": "executor_tier",
+             "reason": "platform-independent", "added": "2026-07-28"}
+        ]))
+        self._commit("init")
+        errors = check_rename_allowlist_staleness(self.root)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("executor_model", errors[0])
+        self.assertIn("失効", errors[0])
+
+    def test_no_resolvable_baseline_returns_empty(self):
+        """baseline を解決できない環境では skip して pass する。"""
+        self._write("skills/a/SKILL.md", "# A\n")
+        self._write("scripts/rename-allowlist.json", json.dumps([
+            {"old": "foo", "new": "bar", "reason": "x", "added": "2026-07-28"}
+        ]))
+        self._commit("init")
+        self._git("branch", "-m", "detached-work")
+        self.assertEqual(check_rename_allowlist_staleness(self.root), [])
+
+    def test_entry_is_valid_during_rename_branch_and_stale_after_merge(self):
+        """feature branch でリネーム中は valid、main へマージ後は stale。"""
+        self._write("skills/a/SKILL.md", "# A\n\n`executor_model` を指定する。\n")
+        self._commit("baseline with old identifier")
+        self._git("checkout", "-q", "-b", "rename-branch")
+        self._write("skills/a/SKILL.md", "# A\n\nSpecify `executor_tier`.\n")
+        self._write("scripts/rename-allowlist.json", json.dumps([
+            {"old": "executor_model", "new": "executor_tier",
+             "reason": "platform-independent", "added": "2026-07-28"}
+        ]))
+        self._commit("rename executor_model to executor_tier")
+        # feature branch 上: main にはまだ old がある → valid
+        self.assertEqual(check_rename_allowlist_staleness(self.root), [])
+        # main にマージ → old が消える → stale
+        self._git("checkout", "-q", "main")
+        self._git("merge", "-q", "rename-branch")
+        errors = check_rename_allowlist_staleness(self.root)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("executor_model", errors[0])
