@@ -7,12 +7,7 @@ description: A workflow that captures screenshots of an approved mockup HTML and
 
 ## Boundary with design-validate
 
-| | design-validate | mockup-diff |
-|--|----------------|-------------|
-| **Compared** | baseline screenshots vs implementation code | mockup HTML vs the running app |
-| **Detects** | hardcoded tokens, use of undefined tokens, pixel diff | spacing drift, broken fonts, layout bugs in dynamic states |
-| **Role** | verification of mechanical rule compliance | the last mile of implementation quality |
-| **In the pipeline** | after design-generate | after porting into the app |
+See the [division-of-labor table in design-system-contract.md](../shared/references/design-system-contract.md#division-of-labor-with-design-validate).
 
 ```
 design-guide → design-scaffold → design-generate

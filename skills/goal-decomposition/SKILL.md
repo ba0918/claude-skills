@@ -80,14 +80,13 @@ Do not bombard them with questions. Ask the human only these three (with fixed w
 
 ### Step 4: secret redaction (contract §9, import-based)
 
-The order of the write-out pipeline: **generate the JSON → check for secrets → abort on detection → generate the md only on success**.
-In practice: write the JSON first as a temporary file under `.agents/tmp/goal-decomposition/` and inspect it there.
+Apply [§9 Secret Redaction and the GD203 Defense in Depth](../shared/references/goal-decomposition-pattern.md#9-secret-redaction-and-the-gd203-defense-in-depth)
+to the dossier JSON before write-out.
+
+Pipeline order: **generate the JSON → check for secrets → abort on detection → generate the md only on success**.
+Write the JSON first as a temporary file under `.agents/tmp/goal-decomposition/` and inspect it there.
 On success, place it into `.agents/artifacts/loop/dossiers/`; on detection, delete the temporary file and abort
 (never put an uninspected file into the dossiers directory, and never leave debris behind on a detection).
-
-- **Free-text fields** (`goal.statement` / `inbox[].question` / `routing_proof`, etc.) are masked with `mask_secrets`
-- **Structural fields** (`oracle_files` / hash values / `id`) use `detect_secrets`, and **a detection aborts the compile**
-  (do not silently destroy them by masking)
 
 ### Step 5: Write-out and lint
 
