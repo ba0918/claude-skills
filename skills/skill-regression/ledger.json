@@ -105,8 +105,8 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "767db85e35b6b70812d5b2ba56b2dbd2400876e40f418c4a49fe018bf747a00e",
-      "skills/cycle/fixtures.json": "cb405816cc5a28fdc624be8f13842304ec96104025088e5cebd4923a102001d6",
+      "skills/cycle/SKILL.md": "3fbba29e65755745a99699da95506a03bbed09b2546472dc8307e7897e6d5122",
+      "skills/cycle/fixtures.json": "54a6abd5f6948d75a4912e30bb9ca9529847850e8ebf4b770f43715118d14b88",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
@@ -114,8 +114,8 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "issue #58 の role-specific values 明記後、cy-001〜003 を process-queue（claude-exec）で実走。3 件とも critical 欠落ゼロ。drift は全て要件が変更を要求したファイル（cy-001: plan+status.md / cy-003: plan+timeutil.py+tests）で、変更禁止対象（cy-003 要件5 の完了済み計画）は drift 非検出。実測所要: cy-001=8.4分 / cy-002=1.4分 / cy-003=22.5分 — timeout は 40 分級が必要（7分/15分では cy-003 が SIGTERM され、claude -p の 'Execution error' 定型出力を即死と誤読しやすい）",
-    "result": "pass",
+    "note": "fixture要件を反転（artifact store配下のコミット不在を検査）。judge裁定により検出力は純増と判断。恒常failだった要件の弁別力はゼロで禁止規定に非抵触",
+    "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
@@ -126,7 +126,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "f4ded9c15367be7476c660eccd1b207e17c399b83f175b15cedfdf3e6450158a",
+    "surface_sha256": "ec094b2d804f711346d23e24a2e8720fef29fbd057ddbf5ad8dbfa2af47b8185",
     "verified": "2026-07-28"
   },
   "decision-journal": {
@@ -328,7 +328,7 @@
   "plan-implement": {
     "file_sha256": {
       "skills/plan-implement/SKILL.md": "b28685383dbd729fce514fbe4a3bb8aa75a2d539b342e2054fe48d52cea8145a",
-      "skills/plan-implement/fixtures.json": "2840fcbc704e213fcd50d5d492a96e6e8c4aabb525ab6bd94210ff6d87adaf89",
+      "skills/plan-implement/fixtures.json": "ac9e21291f9c3d7ae270cf6fbb14dcffa7e4848e3813f8b93a8507441991cbc0",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
@@ -337,8 +337,8 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "process-queue 実走 3/3。全シナリオ critical 全 ○、非 critical 欠落ゼロ。baseline drift は plan md / status.md / pi-003 の .gitignore のみでシナリオの成果物に一致し、要件資産の改変なし。",
-    "result": "pass",
+    "note": "pi-002要件4を反転（artifact store配下のコミット不在を検査）。#109のcycle側と同じ裁定根拠",
+    "result": "accepted-without-run",
     "surface": [
       "skills/plan-implement/SKILL.md",
       "skills/plan-implement/fixtures.json",
@@ -350,7 +350,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "ae561df0b8e95f4e487dcc5d9459ede13d4dd7c4ec64a04e70bd5d6812b7c9f6",
+    "surface_sha256": "bbc0904a01fd6e43e89fa19b71aee85f7c4f71df83bcfd744952c3c268b739a5",
     "verified": "2026-07-28"
   },
   "plan-reviewer": {
