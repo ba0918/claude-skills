@@ -28,12 +28,12 @@ The first keyword of the arguments selects the workflow.
 
 Run these at the start of every workflow.
 
-1. **gh CLI check**: `gh --version` must succeed. On failure, exit stating that the gh CLI is required and can be installed from https://cli.github.com/.
-2. **gh authentication check**: `gh auth status` must succeed. On failure, exit stating that the gh CLI is unauthenticated and that `gh auth login` should be run.
-3. **Repository check**: confirm the current directory sits inside a GitHub repository with `gh repo view --json nameWithOwner`. On failure you may resolve it through the same order as `fetch_git_remote_url()` ([`references/polling-adapter.md §state_root Resolution`](references/polling-adapter.md#state_root-resolution)) — `git remote get-url origin` first, `gh repo view` as the fallback. Keeping both in the same order guarantees that the repository check and state_root resolution never disagree about where the URL came from.
-4. **Configuration values**: load the defaults from `references/config-defaults.md`. Any value overridden by an argument takes precedence.
+1. **Configuration values**: load the defaults from `references/config-defaults.md`. Any value overridden by an argument takes precedence.
+2. **Transport resolution**: resolve `github_transport` once using [`references/gh-commands.md §Transport resolution`](references/gh-commands.md#transport-resolution). `auto` selects installed `gh`; only when `gh` is absent does it try a connected GitHub integration. Keep the selected transport fixed for the invocation.
+3. **Authentication check**: call the selected transport's `check_authentication`. An available backend that rejects authentication fails as `security`; an unavailable selected backend fails as `tool_missing`.
+4. **Repository check**: call `repository_info` and confirm the current directory maps to a GitHub repository. On failure you may resolve it through the same order as `fetch_git_remote_url()` ([`references/polling-adapter.md §state_root Resolution`](references/polling-adapter.md#state_root-resolution)) — `git remote get-url origin` first, then the selected transport's repository URL as the fallback. Keeping both in the same order guarantees that repository checking and state-root resolution never disagree about the URL source.
 
-> **Relationship to Polling (fail-closed)**: a failure of the pre-checks above is fail-closed and does not start a polling tick (same path as `fail_closed`, with `error_kind` treated as equivalent to [`tool_missing`](references/polling-adapter.md#error_kind-enum)). The one exception: when the user explicitly asks for a check that needs no GitHub access (confirming a kill file stop, for example), you may record the pre-check failure and continue with that check alone.
+> **Relationship to Polling (fail-closed)**: a failure of the pre-checks above does not start a polling tick. Missing all usable transports is `tool_missing`; authentication or authorization rejection is `security`. The one exception: when the user explicitly asks for a check that needs no GitHub access (confirming a kill file stop, for example), you may record the pre-check failure and continue with that check alone.
 
 ## References
 
@@ -44,20 +44,21 @@ See the following references for the details of each workflow. The shared pollin
 - [`references/codex-review-loop.md`](references/codex-review-loop.md) — Codex PR review delegation prompt + normalize_github_error + the fail-closed override
 - [`references/config-defaults.md`](references/config-defaults.md) — Table of GitHub-specific configuration values (anything duplicated from shared contract §10 is a direct SSOT link)
 - [`references/secret-scanner.md`](references/secret-scanner.md) — The regex set for secret detection
-- [`references/gh-commands.md`](references/gh-commands.md) — List of semantic wrappers around the gh CLI
+- [`references/gh-commands.md`](references/gh-commands.md) — The 18 semantic GitHub operations and their `gh` / connected-integration implementations
 - [`references/cleanup-spec.md`](references/cleanup-spec.md) — Orphan cleanup rules for worktrees and branches + the sanitize responsibility split
 
 ---
 
 ## Create Workflow
 
-Take issue content from the user in natural language, infer suitable labels, and run `gh issue create`.
+Take issue content from the user in natural language, infer suitable labels, and call
+`create_issue` through the selected transport.
 
 ### Steps
 
-1. Run Common Pre-checks
+1. Run Common Pre-checks and retain the selected transport
 2. Parse the user arguments (title + body + any hints)
-3. Fetch the repository's existing labels with `gh label list --json name,description,color`
+3. Fetch the repository's existing labels with `list_labels`
 4. From the issue content and the existing labels, infer:
    - The labels to apply (`bug` / `feature` / `docs` / `enhancement`, ...)
    - Whether `claude-auto` may be attached (does it carry acceptance criteria clear enough to drive itself?).
@@ -69,7 +70,7 @@ Take issue content from the user in natural language, infer suitable labels, and
 5. **Confirm with the user**:
    - Show: title / body / inferred labels / whether `claude-auto` applies / the reasoning
    - Options: create / revise / cancel
-6. Once approved, create it with `gh issue create --title ... --body ... --label ...`
+6. Once approved, create it with `create_issue`
 7. Show the result (the issue URL)
 
 > **Never call Create from a non-interactive path**: invoking this workflow from a headless path such as polling is forbidden.
@@ -83,7 +84,7 @@ List the open issues carrying the `claude-auto` label.
 ### Steps
 
 1. Run Common Pre-checks
-2. Run `gh issue list --label claude-auto --state open --json number,title,labels,assignees,author,authorAssociation --limit 100`
+2. Call `list_issues` for open issues carrying `claude-auto`, requesting number, title, labels, assignees, author, and author association with limit 100
 3. Classify client-side and display (for the precedence rule see [`references/polling-adapter.md §state_of_failure Precedence Rule`](references/polling-adapter.md#state_of_failure-precedence-rule)):
    - **Ready**: carries none of `claude-running`, `claude-review`, or the failed labels
    - **Running**: carries `claude-running`
@@ -120,7 +121,7 @@ Label adapter implementation details — the three-stage claim defence, state_ro
    - Under `--stateless`, evaluate `adapter.load_session()` → `session_resume_action(prev, now, config)` right after this; on `Halt{reason}`, finish immediately with `TickResult(halt_reason=reason)` without claiming (shared contract §6.5)
 4. **Orphan recovery**: run the five-stage recovery with `adapter.rollback_orphans(now)` (shared contract §6.4 + [`references/polling-adapter.md §rollback_orphans Sub-Steps`](references/polling-adapter.md#rollback_orphans-sub-steps))
 5. **Archive**: `adapter.archive_month_boundary()` (a no-op on GitHub; it only refreshes the cache)
-6. **Rate limit pre-check**: `gh api rate_limit --jq '.rate.remaining'` ≥ `min_rate_limit_remaining`. Quiet skip when below
+6. **Rate limit pre-check**: `rate_limit` ≥ `min_rate_limit_remaining`. Quiet skip when below
 7. **List ready**: call `adapter.list_ready(effective_parallel)` with `effective_parallel = min(max_parallel, parallel_worktree_limit)` (for the precedence rule see [`references/config-defaults.md`](references/config-defaults.md)). One API call; do not re-fetch even if the client-side filter leaves fewer than the limit
 8. **Atomic claim**: call `adapter.claim(slug)` for each slug. Failures are a quiet skip (the three-stage claim defence is internal to the adapter). The `authorAssociation` filter **and the Gate 0a / Gate 1 self-drive filters** are already applied inside `adapter.list_ready()` ([`references/polling-adapter.md §list_ready(limit)`](references/polling-adapter.md#list_readylimit)); do not repeat them in the orchestrator, and never claim an issue `list_ready()` withheld
 9. **Dry run decision**: when `config.dry_run` is set or `<state_root>/.polling-initialized` does not exist, `release()` everything claimed and return `halt_reason="dry_run"`
@@ -129,7 +130,7 @@ Label adapter implementation details — the three-stage claim defence, state_ro
     - **Success**: `adapter.mark_done(slug)`
     - **Transient failure**: `n = adapter.increment_retry(slug)` → `kind = should_promote_to_permanent(n, config.transient_retry_limit) ? Permanent : Transient` → `adapter.mark_failed(slug, kind)` (per the shared contract §5 Classify & persist block)
     - **Permanent failure**: `adapter.mark_failed(slug, Permanent)` (skip `increment_retry`; apply the shared contract §4 `classify_failure` pure function directly)
-    - `mark_failed` is an atomic dual-write plus verification in a single `gh issue edit` (details in [`references/polling-adapter.md §mark_failed(slug, kind)`](references/polling-adapter.md#mark_failedslug-kind))
+    - `mark_failed` is an atomic dual-write plus verification in one `edit_issue_labels` operation (details in [`references/polling-adapter.md §mark_failed(slug, kind)`](references/polling-adapter.md#mark_failedslug-kind))
     - `error_kind = "lock"` does not count towards `failed_streak` (silent skip; see [`references/polling-adapter.md §error_kind Handling Rules`](references/polling-adapter.md#error_kind-handling-rules))
 12. **Emit TickResult**: return the structured counters conforming to shared contract §7 Tick Schema — `{run_id, tick_started_at, claimed, done, failed_transient, failed_permanent, halt_reason?}`. All seven fields including `run_id` and `tick_started_at` are invariant (see shared contract §7)
 13. **On the first successful tick**: create `<state_root>/.polling-initialized` with `write_atomic` (which lifts the forced dry-run from the next tick on)
@@ -156,7 +157,7 @@ The core workflow that drives a single issue to completion.
 #### 1. Pre-check
 
 1. Common Pre-checks
-2. `gh api rate_limit --jq '.rate.remaining'` ≥ `min_rate_limit_remaining`
+2. `rate_limit` ≥ `min_rate_limit_remaining`
 3. Confirm an issue number N was given in the arguments. **N must match `^[1-9][0-9]*$`** (rejecting `0` and any zero-padded form). On no match, fail immediately with `"invalid issue_number"` (to prevent command injection and mistaken invocations)
 4. **`codex_required_for_merge` is forced to `true`**: ignore any `--config` override from the user; the pre-flight check in `references/codex-review-loop.md` logs a warning and then resets it to `true`
 
@@ -164,15 +165,15 @@ The core workflow that drives a single issue to completion.
 
 Delegated to the adapter: just call `adapter.claim(slug)`. On failure, quiet abort with `ClaimFailed{reason}` (no retry).
 
-The three-stage defence (lockfile + gh edit + re-verify) is hidden in [`references/polling-adapter.md §claim() 3 Layers of Defense`](references/polling-adapter.md#claim-3-layers-of-defense). SKILL.md knows only the interface and does not depend on the internals (shared contract §3 + Layer Separation).
+The three-stage defence (lockfile + selected-transport update + re-verify) is hidden in [`references/polling-adapter.md §claim() 3 Layers of Defense`](references/polling-adapter.md#claim-3-layers-of-defense). SKILL.md knows only the interface and does not depend on the internals (shared contract §3 + Layer Separation).
 
 - lockfile path: `<state_root>/claim/{N}.lock` (non-blocking `flock(2)`)
-- Failure reasons: one of `LockBusy` / `gh edit failed` / `post-claim verify failed`
+- Failure reasons: one of `LockBusy` / `github update failed` / `post-claim verify failed`
 - `issue_number` is validated up front (the adapter verifies it matches `^[1-9][0-9]*$`)
 
 #### 3. Building the plan (internal sub-step)
 
-1. Fetch the issue with `gh issue view ${N} --json number,title,body,labels,stateReason,comments`
+1. Fetch the issue with `get_issue(N)`, including number, title, body, labels, state reason, and comments
 2. **Gate 2 — REOPENED context reconciliation.** `stateReason == "REOPENED"` is evidence that a human judged
    the previous self-driving result insufficient, so the odds that the body is now stale are high — and a
    comment is invisible to the loop unless it is fetched, which is exactly how a partially-addressed issue
@@ -198,7 +199,7 @@ The three-stage defence (lockfile + gh edit + re-verify) is hidden in [`referenc
 1. Create a dedicated worktree, branching from the remote default branch — never from the current HEAD:
 
    ```bash
-   default_branch=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
+   default_branch=$(repository_info.default_branch)
    git fetch origin
    ts=$(date +%Y%m%d%H%M%S)
    git worktree add ../gh-issue-${N}-${ts} -b gh-issue-${N}-${ts} "origin/${default_branch}"
@@ -249,7 +250,7 @@ then run `cycle N` and confirm all three of:
 
 1. `git -C <worktree> log origin/${default_branch}..HEAD --oneline` lists only commits made by this
    cycle — none of the unrelated commits appear
-2. the resulting PR diff (`gh pr diff <PR>`) contains no changes outside the plan's scope
+2. the resulting PR diff (`get_pr_diff(<PR>)`) contains no changes outside the plan's scope
 3. after the run, the primary checkout still sits on the same branch and HEAD as before it
 
 #### 5. Creating the draft PR
@@ -258,7 +259,7 @@ Both commands run inside the worktree from Step 4:
 
 ```bash
 git push -u origin <branch>
-gh pr create --draft --title "<plan title>" --body "Closes #${N}\n\n<plan summary>"
+create_draft_pr(title="<plan title>", body="Closes #${N}\n\n<plan summary>")
 ```
 
 **Always pass `--draft`** (do not undraft until the auto merge gate has passed).
@@ -268,7 +269,7 @@ gh pr create --draft --title "<plan title>" --body "Closes #${N}\n\n<plan summar
 Remove `claude-running` and add `claude-review`:
 
 ```bash
-gh issue edit ${N} --remove-label claude-running --add-label claude-review
+edit_issue_labels(${N}, add=["claude-review"], remove=["claude-running"])
 ```
 
 #### 7. The Codex review loop
@@ -278,7 +279,7 @@ See [`references/codex-review-loop.md`](references/codex-review-loop.md) for the
 Outline:
 
 1. **Pre-filters**:
-   - `gh pr diff <PR>` exceeds `max_diff_lines` → skip Codex and go straight to Step 9 (claude-failed)
+   - `get_pr_diff(PR)` exceeds `max_diff_lines` → skip Codex and go straight to Step 9 (claude-failed)
    - Scan the diff with the regexes in `references/secret-scanner.md`. On a hit, claude-failed the same way
 2. **Prompt injection defence**: wrap the issue body in `<untrusted_user_content>...</untrusted_user_content>`
 3. **Differential review**: from the second round on, tell Codex the previous findings and how they were addressed, and skip re-reviewing files already marked LGTM
@@ -294,17 +295,17 @@ Outline:
 Merge only when **all** of the following hold.
 
 1. Codex says `LGTM`
-2. `gh pr checks <PR>` all pass
+2. `get_pr_checks(<PR>)` reports that all required checks pass
 3. Zero secret-scanner detections
 4. The changed files include no `.env` / `*.key` / `*.pem` / `credentials.*`
 
 On passing:
 
 ```bash
-gh pr ready <PR>                       # undraft
-gh pr merge <PR> --squash --delete-branch
-gh issue close ${N}
-gh issue edit ${N} --remove-label claude-auto --remove-label claude-review
+mark_pr_ready(<PR>)
+merge_pr(<PR>, strategy="squash", delete_branch=true)
+close_issue(${N})
+edit_issue_labels(${N}, add=[], remove=["claude-auto", "claude-review"])
 ```
 
 > Do not use the `--auto` flag. Run ready then merge explicitly, in that order, so the ordering is guaranteed.
@@ -315,8 +316,8 @@ gh issue edit ${N} --remove-label claude-auto --remove-label claude-review
 - Save the error details as structure into the **FS retry state** (`<state_root>/retry/{N}.json`) — retry_count / last_failed_at / run_id only; storing free-text errors is forbidden (shared contract §3)
 - Remove `claude-running` / `claude-review` and run the **atomic dual-write** through `mark_failed(slug, kind)`:
   - Decide the kind (TRANSIENT / PERMANENT) with `classify_failure(normalize_github_error(exc))`
-  - Add both the new and the legacy label at once with a single `gh issue edit --add-label claude-failed-{transient,permanent} --add-label claude-failed`
-  - Verify afterwards with `gh issue view`; on a mismatch, retry three times with backoff (0s/1s/2s)
+  - Add both the new and the legacy label atomically with one `edit_issue_labels` operation
+  - Verify afterwards with `get_issue`; on a mismatch, retry three times with backoff (0s/1s/2s)
   - On final failure, write the `<state_root>/recovery/{N}` marker (crash-safe ordering: marker write, then release) and `release(slug)` so the next tick re-evaluates it
   - Details in [`references/polling-adapter.md §mark_failed(slug, kind)`](references/polling-adapter.md#mark_failedslug-kind) + [`references/label-spec.md §Backward Compatibility`](references/label-spec.md#backward-compatibility)
 - After all of the above bookkeeping is recorded, remove the worktree per Step 4.4 (push any

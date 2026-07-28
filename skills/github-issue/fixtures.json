@@ -207,6 +207,45 @@
         }
       ],
       "notes": "Gate 0a（claim ゲート）と Gate 0b（halt ゲート）の回帰面。#75 で「編集の行数」で書かれた自走可判定が 27 スキル参照の共有契約に当たった実害を固定する。要件 [4] は影響オラクル未設定時の縮退範囲を測るもので、gi-004 の教訓（要件が質問文から呼ばれていないと partial になる）に従い prompt 側で「影響範囲を算出するコマンドは設定していない」と明示して呼んでいる。読み取り専用のため isolation: none。"
+    },
+    {
+      "id": "gi-007",
+      "title": "GitHub transport の解決順序と fail-closed 境界",
+      "source": "issue-123",
+      "executor_tier": "standard",
+      "isolation": "none",
+      "prompt": "github-issue list を3環境で使う場合の挙動を、設定値と pre-check の根拠付きで説明して。(a) 既定設定で gh がインストール済みかつ認証済み、接続済み GitHub integration もある。(b) 既定設定で gh executable は存在せず、18操作すべてを提供する接続済み GitHub integration がある。(c) gh も接続済み integration もない。加えて、gh は存在するが認証エラーになる場合に integration へ切り替えてよいか、`github_transport=gh` または `integration` を明示した backend が利用不能な場合に別 backend へ fallback してよいかも答えて。transport の選択によって Codex review、secret scanner、禁止 credential path、4条件 merge gate のどれかを省略できるかも説明して。説明だけで、GitHub への書き込みやファイル編集はしないで。",
+      "requirements": [
+        {
+          "text": "(a) は既定 `github_transport=auto` により `gh` が選択され、従来の認証・repository check を通ると述べている",
+          "critical": true
+        },
+        {
+          "text": "(b) は `gh` 不在時の fallback として connected GitHub integration が選択され、list workflow が実行可能だと述べている",
+          "critical": true
+        },
+        {
+          "text": "(c) は全 transport 不在時にのみ `tool_missing` として fail-closed すると述べている",
+          "critical": true
+        },
+        {
+          "text": "`gh` が存在して認証または権限を拒否した場合は backend を切り替えず `security` として fail-closed すると述べている",
+          "critical": true
+        },
+        {
+          "text": "明示設定値が `auto|gh|integration` の3値であり、明示 transport が利用不能なら fallback しないと述べている",
+          "critical": false
+        },
+        {
+          "text": "Codex review、secret scanner、禁止 credential path、4条件 merge gate は transport 外の共通 policy であり、integration 選択でも省略できないと述べている",
+          "critical": true
+        },
+        {
+          "text": "GitHub への書き込みやファイル編集を行っていない",
+          "critical": false
+        }
+      ],
+      "notes": "Issue #123 の transport seam を固定する回帰面。fallback の可用性と、認証失敗で backend を切り替えて fail-closed を迂回しない境界を1シナリオで対比する。読み取り専用のため isolation: none。"
     }
   ]
 }

@@ -1,6 +1,8 @@
 # Secret Scanner
 
-Scan the `gh pr diff` output before handing it to Codex, and on a detection transition immediately to `claude-failed`.
+Scan the selected transport's `get_pr_diff` output before handing it to Codex, and on a
+detection transition immediately to `claude-failed`. The scanner is transport-independent policy:
+selecting an integration backend never bypasses it.
 
 ## Filename Patterns (immediate reject)
 

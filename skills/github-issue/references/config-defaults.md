@@ -8,6 +8,7 @@ Every value can be overridden with the `--config key=value` argument.
 
 | Key | Default | Unit | Description |
 |-----|---------|------|------|
+| `github_transport` | `auto` | kind | GitHub backend: `auto` selects installed `gh` first and, only when it is absent, a connected GitHub integration; `gh` and `integration` require that backend. See [`gh-commands.md`](gh-commands.md) |
 | `max_review_iterations` | `3` | times | The loop cap on Codex review → iterate fix |
 | `parallel_worktree_limit` | `1` | count | The physical worktree parallelism cap handed to parallel-cycle. Raise it only by explicit opt-in. A separate responsibility from the shared contract's `max_parallel` (see Precedence below) |
 | `polling_interval` | `10m` | time | The external invocation interval of the `/loop` command (a reference value). A **distinct concept** from §10's `tick_interval_loop_mode` (the `--loop` retry interval inside a tick, default 30s). `/loop` starts polling in units of ticks, and inside it the `--loop` mode re-ticks every `tick_interval_loop_mode` |
@@ -15,15 +16,15 @@ Every value can be overridden with the `--config key=value` argument.
 | `max_diff_lines` | `2000` | lines | A PR exceeding this is not handed to Codex and becomes claude-failed |
 | `codex_review_timeout` | `5min` | time | The timeout for a single Codex invocation |
 | `codex_consecutive_failure_threshold` | `3` | times | Once transient Codex API failures occur this many times consecutively, treat it as a permanent failure. An independent parameter from `transient_retry_limit` (§10) ([details](codex-review-loop.md#codex_consecutive_failure_threshold-vs-transient_retry_limit))|
-| `auto_merge_strategy` | `squash` | kind | The merge method for `gh pr merge` (`squash` / `merge` / `rebase`)|
+| `auto_merge_strategy` | `squash` | kind | The merge method for `merge_pr` (`squash` / `merge` / `rebase`)|
 | `codex_required_for_merge` | `true` | bool | **Locked (not user-overridable)**: because a GitHub merge is irreversible, fail-closed is enforced. Even an attempt to override it with `--config codex_required_for_merge=false` emits a warning and resets it to `true`.|
 | `require_author_association` | `OWNER,MEMBER,COLLABORATOR` | csv | Skip polling when the issue author is none of these |
 | `enable_base64_scan` | `false` | bool | Whether to enable secret-scanner's generic Base64 pattern. Off by default because it produces many false positives. See [`secret-scanner.md`](secret-scanner.md) for details |
-| `rollback_gh_fetch_cap` | `10` | count | The per-tick cap on `gh issue view` API calls in `rollback_orphans()` steps ③ / ④. The excess carries over to the next tick (preventing a fetch storm)|
+| `rollback_gh_fetch_cap` | `10` | count | Compatibility key for the per-tick cap on `get_issue` calls in `rollback_orphans()` steps ③ / ④. The excess carries over to the next tick (preventing a fetch storm)|
 | `impact_command` | (unset) | command | The external command that computes the blast radius of a change, used by [Gate 0](polling-adapter.md#self-drive-gates). `{files}` expands to the declared paths, space separated. **When unset, Gate 0's impact check is a no-op** (the skill is distributed to other repositories, and there is no portable oracle) |
 | `max_impacted_units` | `1` | count | The upper bound on impacted units that still allows self-driving. Applied only when `impact_command` is set |
 | `forbidden_path_globs` | `skills/shared/**` | glob csv | Paths that reject self-driving regardless of the impact count. Evaluated **without** the oracle, so it stays in force even when `impact_command` is unset |
-| `default_branch` | (resolved per run) | name | **Not a stored setting**: resolved at Cycle Workflow Step 4 with `gh repo view --json defaultBranchRef --jq .defaultBranchRef.name`, and used as the branch point (`origin/{default_branch}`) of the dedicated worktree. Never hardcoded and not user-overridable — a configured branch point would reintroduce the nondeterministic PR bases that issue #83 removed |
+| `default_branch` | (resolved per run) | name | **Not a stored setting**: resolved per run with the selected transport's `repository_info` operation and used as the branch point (`origin/{default_branch}`) of the dedicated worktree. Never hardcoded and not user-overridable — a configured branch point would reintroduce the nondeterministic PR bases that issue #83 removed |
 
 ### Why the impact oracle is pluggable
 
@@ -92,5 +93,6 @@ github-issue cycle 42 --config max_review_iterations=5 --config parallel_worktre
 - `rollback_gh_fetch_cap >= 1`
 - `max_impacted_units >= 1`
 - `impact_command`, when set, contains the `{files}` placeholder exactly once
+- `github_transport ∈ {auto, gh, integration}`
 
 An invalid value causes an error exit at startup.

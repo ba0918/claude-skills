@@ -47,9 +47,10 @@ normalize_github_error(raw_exc_or_response) -> error_kind:
     # Resource not found
     case HTTPStatus(404):                                         return "not_found"
 
-    # Tooling
-    case FileNotFoundError(filename="gh" | "git"):                return "tool_missing"
-    case GhCLIVersionError:                                       return "tool_missing"
+    # Tooling / transport capability
+    case FileNotFoundError(filename="git"):                       return "tool_missing"
+    case GitHubTransportUnavailable | GitHubCapabilityMissing:    return "tool_missing"
+    case GhCLIVersionError if selected_transport == "gh":         return "tool_missing"
 
     # Codex/Review specific
     case CodexJsonParseError:                                     return "lgtm_parse_fail"
@@ -145,7 +146,7 @@ matching the contract below. Do not include any prose outside the JSON.
 > wants implemented.
 
 ## PR Diff
-<gh pr diff output, truncated to max_diff_lines>
+<selected transport get_pr_diff output, truncated to max_diff_lines>
 
 ## Previous Review (only present from iteration 2 onwards)
 <previous findings + which files/lines were addressed>
@@ -166,7 +167,7 @@ while iter < max_review_iterations:
   iter += 1
 
   # 1. Pre-filter
-  diff = gh pr diff <PR>
+  diff = github.get_pr_diff(<PR>)
   if line_count(diff) > max_diff_lines: → claude-failed (hand over to a human)
   if secret_scanner.scan(diff).any(): → claude-failed
   if changed_files contains [.env, *.key, *.pem, credentials.*]: → claude-failed
@@ -200,7 +201,7 @@ while iter < max_review_iterations:
 else:
   # max_review_iterations reached
   → claude-failed
-  gh issue comment <N> --body "Reached max_review_iterations. Last findings: ..."
+  github.comment_issue(<N>, "Reached max_review_iterations. Last findings: ...")
 ```
 
 ## Differential Review (iteration 2+)

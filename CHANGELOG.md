@@ -8,6 +8,23 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## Unreleased
+
+`github-issue` の GitHub 操作を `gh` CLI 固定から18個の意味的 transport operation へ分離した
+（issue #123）。既定の `github_transport=auto` は `gh` がインストール済みなら従来経路を維持し、
+`gh` 自体が存在しない場合だけ接続済み GitHub integration へフォールバックする。
+`gh` の認証・権限エラーでは backend を切り替えず `security` として fail-closed し、明示指定した
+transport または全 transport が利用不能な場合だけ `tool_missing` とする。Codex review、secret
+scanner、ラベル状態機械、4条件の merge gate は transport の外側に維持した。
+
+- `skills/github-issue/SKILL.md`
+- `skills/github-issue/references/gh-commands.md`
+- `skills/github-issue/references/polling-adapter.md`
+- `skills/github-issue/references/config-defaults.md`
+- `skills/github-issue/references/codex-review-loop.md`
+- `skills/github-issue/references/secret-scanner.md`
+- `skills/github-issue/fixtures.json`
+
 ## 1.70.0
 
 品質ゲート契約 v1（issue #143 の 4 作業単位）と #86 の hooks 配送レールをまとめて配布する

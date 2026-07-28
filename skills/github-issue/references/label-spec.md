@@ -93,12 +93,13 @@ For the definition of the `state_of_failure()` function, see [`polling-adapter.m
 
 ### On write (Atomic Dual-Write + Verification)
 
-`mark_failed(slug, kind)` **adds the new and old labels together in a single `gh issue edit` command** (avoiding both the doubling of API calls and partial failure):
+`mark_failed(slug, kind)` **adds the new and old labels together in one selected-transport
+`edit_issue_labels` operation** (avoiding both doubled API calls and partial failure):
 
-- `gh issue edit ${N} --add-label claude-failed-transient --add-label claude-failed`
-- or `gh issue edit ${N} --add-label claude-failed-permanent --add-label claude-failed`
+- `edit_issue_labels(${N}, add=["claude-failed-transient", "claude-failed"], remove=[])`
+- or `edit_issue_labels(${N}, add=["claude-failed-permanent", "claude-failed"], remove=[])`
 
-After adding them, re-fetch the label set with `gh issue view ${N} --json labels` and verify:
+After adding them, re-fetch the label set with `get_issue(${N}, fields=["labels"])` and verify:
 
 - On a mismatch, **retry with backoff up to 3 times** (0s / 1s / 2s)
 - On final failure, write a `<state_root>/recovery/{N}` marker plus `release(slug)` so the next tick's `rollback_orphans()` re-evaluates it
