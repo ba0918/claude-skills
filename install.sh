@@ -14,8 +14,12 @@ Use the plugin installers instead:
   codex plugin marketplace add ba0918/claude-skills
   codex plugin add claude-skills@claude-skills
 
-Optional: Claude Code rules are not installed by the plugin format.
-If you want to use the repository rules as global Claude Code rules, copy them manually:
+Note: Claude Code plugin users do NOT need to copy rules/ manually.
+The plugin's SessionStart hook (hooks/hooks.json) injects rules/skill-routing.md
+into the session context automatically.
+
+Optional manual copy — only for users who install skills individually without
+the plugin, or for agents other than Claude Code:
 
   mkdir -p ~/.claude/rules
   cp rules/*.md ~/.claude/rules/

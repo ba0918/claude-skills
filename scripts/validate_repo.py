@@ -30,6 +30,8 @@
   18. デザイントークンの authoring 層 ⇔ 配布層同期
   19. agent 生成物の置き場に `.claude/` を使っていないか
   20. リネーム許可表（scripts/rename-allowlist.json）の失効エントリ検出
+  21. plugin hooks の整合性（hooks.json のパース / command パスの実在と実行ビット /
+      hook スクリプトが参照する rules/skill-routing.md の実在）
 
 チェック 10・11 と store 実在性:
   チェック 10（dossier lint）は local store が ignore されている環境では対象ファイルが
@@ -43,6 +45,7 @@
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 
@@ -603,6 +606,74 @@ def check_design_token_sync(root):
     return errors
 
 
+_HOOKS_JSON_REL = os.path.join("hooks", "hooks.json")
+_HOOK_ROUTING_TABLE_REL = os.path.join("rules", "skill-routing.md")
+_HOOK_ROUTING_SCRIPT_REL = os.path.join("hooks", "inject-skill-routing.sh")
+
+
+def check_plugin_hooks(root):
+    """チェック21: plugin hooks の整合性を検証する。
+
+    SessionStart hook はスキル発火の想起を支える配送機構だが、壊れても CI も
+    ローカルも緑のまま、コンテキスト注入だけが黙って止まる。ここで
+    hooks.json のパース可否・command パスの実在と実行ビット・hook スクリプトが
+    参照する正本（rules/skill-routing.md）の実在を機械検証して塞ぐ。
+
+    hooks/hooks.json が存在しないリポジトリでは no-op で pass する。
+    """
+    hooks_path = os.path.join(root, _HOOKS_JSON_REL)
+    if not os.path.isfile(hooks_path):
+        return []
+    try:
+        config = json.loads(_read(hooks_path))
+    except json.JSONDecodeError as exc:
+        return [f"[hooks] JSON として読めない: {_HOOKS_JSON_REL} ({exc})"]
+
+    errors = []
+    for event, entries in config.get("hooks", {}).items():
+        for entry in entries:
+            for hook in entry.get("hooks", []):
+                command = hook.get("command", "")
+                if not command:
+                    errors.append(
+                        f"[hooks] {event} の hook に command がない: {_HOOKS_JSON_REL}"
+                    )
+                    continue
+                # "${CLAUDE_PLUGIN_ROOT}"/path 形式のクォートは shell 規則で解き、
+                # 引数付き command を許すため先頭トークンだけ検査する
+                try:
+                    tokens = shlex.split(command)
+                except ValueError as exc:
+                    errors.append(
+                        f"[hooks] command をシェル語彙として解釈できない: "
+                        f"{command!r}（{event}, {exc}）"
+                    )
+                    continue
+                script = tokens[0].replace("${CLAUDE_PLUGIN_ROOT}", root)
+                rel = os.path.relpath(script, root)
+                if not os.path.isfile(script):
+                    errors.append(
+                        f"[hooks] command の実体が存在しない: {rel}（{event}）"
+                    )
+                elif not os.access(script, os.X_OK):
+                    errors.append(
+                        f"[hooks] command に実行ビットがない: {rel}（{event}）"
+                        f"（`chmod +x {rel}` で付与する）"
+                    )
+
+    # hook スクリプトが cat する正本の実在（現時点で必要なのはこの 1 本。
+    # スクリプトを増やすたびに一般化する必要はない）
+    script_path = os.path.join(root, _HOOK_ROUTING_SCRIPT_REL)
+    if os.path.isfile(script_path):
+        table_path = os.path.join(root, _HOOK_ROUTING_TABLE_REL)
+        if not os.path.isfile(table_path):
+            errors.append(
+                f"[hooks] {_HOOK_ROUTING_SCRIPT_REL} が参照する正本が存在しない: "
+                f"{_HOOK_ROUTING_TABLE_REL}"
+            )
+    return errors
+
+
 _VERSION_HEADING_RE = re.compile(r"^##\s+(\d+(?:\.\d+)*)(?:\s.*)?$", re.M)
 
 
@@ -1007,6 +1078,9 @@ def run_checks(root):
 
     # 20. リネーム許可表の失効エントリ（baseline に old が残っていないなら削除すべき）
     errors += check_rename_allowlist_staleness(root)
+
+    # 21. plugin hooks の整合性（hooks.json / command 実在・実行ビット / 正本実在）
+    errors += check_plugin_hooks(root)
 
     return errors
 
