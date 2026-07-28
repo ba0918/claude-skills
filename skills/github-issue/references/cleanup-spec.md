@@ -91,7 +91,7 @@ for wt in candidates:
   ts = extract_timestamp(wt.name)
 
   if age(ts) < 24h: skip
-  state = gh issue view ${N} --json state,labels
+  state = get_issue(${N}, fields=["state", "labels"])
   if "claude-running" in state.labels: skip   # the immediately-preceding re-check
   if not (issue closed or branch merged): skip
 
@@ -109,8 +109,8 @@ for wt in candidates:
 
 Because the atomic-claim 3 layers of defense in Cycle Workflow Step 2 (see [`polling-adapter.md §claim() 3 Layers of Defense`](polling-adapter.md#claim-3-layers-of-defense)) execute in sequence, side effects can remain when an intermediate stage fails. The case where acquiring the lockfile succeeded but setting the assignee / label failed is rolled back explicitly by the following procedure:
 
-1. Run `gh issue edit ${N} --remove-label claude-running` best-effort (in case it had already been added)
-2. Run `gh issue edit ${N} --remove-assignee @me` best-effort (in case you had become the assignee)
+1. Call `edit_issue_labels(${N}, add=[], remove=["claude-running"])` best-effort (in case it had already been added)
+2. Call `remove_issue_actor(${N})` best-effort (in case you had become the assignee)
 3. If the dual-write labels were partially added, remove them **in the order `-transient -permanent -claude-failed`** (keeping consistency with the precedence rule)
 4. Releasing the `flock` happens automatically on process exit. Closing it explicitly with `exec 8>&-` is also acceptable
 5. Even if the rollback itself fails, the process continues aborting (recovery comes from the next tick's idempotency)

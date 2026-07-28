@@ -42,9 +42,9 @@ All 13 methods of the shared contract [§3 Interface Table](../../shared/referen
 
 ### list_ready(limit)
 
-The `list_ready(limit)` requirement of shared contract §3 mandates **early termination** (a full scan is forbidden; return as soon as `limit` entries are found). The Label adapter satisfies the early-termination contract with the combination of a server-side limit via `gh issue list --limit {limit}`, a single invocation, and a client-side filter (no re-fetch).
+The `list_ready(limit)` requirement of shared contract §3 mandates **early termination** (a full scan is forbidden; return as soon as `limit` entries are found). The Label adapter satisfies the early-termination contract with a server-side limit in one `list_issues` operation and a client-side filter (no re-fetch).
 
-Fetch with a **single invocation** of `gh issue list --label claude-auto --state open --json number,title,labels,author,authorAssociation,body,stateReason --limit {limit}`.
+Fetch with one `list_issues` operation: label `claude-auto`, state open, fields number/title/labels/author/authorAssociation/body/stateReason, limit `{limit}`.
 
 `body` and `stateReason` ride along in the **same single call** — they add no API round trip. `body` feeds the Gate 0a / Gate 1 filters below; `stateReason` is carried through to the plan builder for Gate 2 (§Self-Drive Gates).
 
@@ -69,9 +69,8 @@ For details see §`claim() 3 Layers of Defense`. On failure it returns `ClaimFai
 
 ### release(slug)
 
-```
-gh issue edit ${N} --remove-label claude-running --remove-assignee @me
-```
+Call `edit_issue_labels(${N}, add=[], remove=["claude-running"])`, then
+`remove_issue_actor(${N})`.
 
 Executed best-effort. Even on failure, only a warning is logged and processing continues (the next tick's `rollback_orphans()` reclaims it).
 
@@ -79,27 +78,15 @@ Executed best-effort. Even on failure, only a warning is logged and processing c
 
 Execute the 3 steps **in this order**. A failure at any step is recovered by the next tick's `rollback_orphans()` step ⑤ (cleaning up leftover labels on closed issues).
 
-```
-# 1. PR merge
-gh pr merge <PR> --squash --delete-branch
-
-# 2. Issue close
-gh issue close ${N}
-
-# 3. Label cleanup (a single edit)
-gh issue edit ${N} \
-  --remove-label claude-auto \
-  --remove-label claude-review \
-  --remove-label claude-failed-transient \
-  --remove-label claude-failed-permanent \
-  --remove-label claude-failed
-```
+1. `merge_pr(<PR>, strategy="squash", delete_branch=true)`
+2. `close_issue(${N})`
+3. `edit_issue_labels(${N}, add=[], remove=["claude-auto", "claude-review", "claude-failed-transient", "claude-failed-permanent", "claude-failed"])`
 
 A partial failure (for example, close succeeded and the label cleanup failed) is detected as "a closed issue with a `claude-*` label" by the next tick's `rollback_orphans()` step ⑤ and cleaned up.
 
 ### mark_failed(slug, kind)
 
-**An atomic dual-write of the new and old labels in a single `gh issue edit`, plus verification, plus a recovery marker.**
+**An atomic dual-write of the new and old labels in one `edit_issue_labels` operation, plus verification, plus a recovery marker.**
 
 ```
 mark_failed(slug, kind) -> Result:
@@ -108,8 +95,8 @@ mark_failed(slug, kind) -> Result:
 
   for attempt in [1, 2, 3]:  # up to 3 times, backoff intervals 0s/1s/2s
     try:
-      gh issue edit ${N} --add-label <labels_add[0]> --add-label <labels_add[1]>
-      labels_now = gh issue view ${N} --json labels --jq '.labels[].name'
+      edit_issue_labels(${N}, add=labels_add, remove=[])
+      labels_now = get_issue(${N}, fields=["labels"]).labels
       if all(L in labels_now for L in labels_add):
         record_fs_state(slug, kind)  # completes in the same tick as the FS retry state update
         return Ok
@@ -461,10 +448,10 @@ def fetch_git_remote_url() -> str:
     return shell("git remote get-url origin").strip()
   except GitNotFound:
     pass
-  # Fallback: gh repo view
+  # Fallback: the selected transport's repository metadata
   try:
-    return shell("gh repo view --json url --jq .url").strip()
-  except GhError:
+    return github.repository_info().url
+  except GitHubTransportError:
     fail_closed("cannot resolve git remote URL")
 
 def normalize_git_url(url: str) -> str:
@@ -621,7 +608,7 @@ error_kind ∈ {
   # Transient (retryable)
   "network",           # Network I/O error, HTTP 5xx, SIGPIPE, broken pipe
   "rate_limit",        # GitHub/Codex API rate limit (HTTP 403 rate, 429)
-  "timeout",           # Codex or gh CLI timeout
+  "timeout",           # Codex or selected GitHub transport timeout
   "lock",              # lockfile contention (held by another process on the same machine)
                        # SPECIAL: not counted toward failed_streak (silent skip)
 
@@ -632,8 +619,8 @@ error_kind ∈ {
   "lgtm_parse_fail",   # Codex JSON parse error (still failing after 1 retry)
   "sanitize_failed",   # sanitize_slug rejection
   "security",          # secret scanner hit, auth failure, untrusted content policy violation
-  "not_found",         # gh CLI 404 (the issue/PR disappeared)
-  "tool_missing",      # gh CLI absent, an unsupported gh version, git absent
+  "not_found",         # selected transport reports that the issue/PR disappeared
+  "tool_missing",      # no selected GitHub transport is usable, or git is absent
   "unknown"            # an unknown exception (Permanent, as fail-closed)
 }
 ```
@@ -681,18 +668,20 @@ claim(slug) -> ClaimResult:
   except BlockingIOError:
     return ClaimFailed("LockBusy")  # quiet abort
 
-  # ② add the assignee + claude-running with gh issue edit
+  # ② add the current actor + claude-running through the selected transport
   try:
-    shell(f"gh issue edit {N} --add-assignee @me --add-label claude-running")
-  except GhError as e:
+    github.add_issue_actor(N)
+    github.edit_issue_labels(N, add=["claude-running"], remove=[])
+  except GitHubTransportError as e:
     close(lock_fd)
-    return ClaimFailed(f"gh edit failed: {e}")
+    return ClaimFailed(f"github update failed: {e}")
 
   # ③ re-verify (detecting a post-claim race)
-  result = shell(f"gh issue view {N} --json assignees,labels")
-  if "@me" not in result.assignees or "claude-running" not in result.labels:
+  result = github.get_issue(N, fields=["assignees", "labels"])
+  if current_actor not in result.assignees or "claude-running" not in result.labels:
     # Partial claim rollback
-    shell(f"gh issue edit {N} --remove-label claude-running --remove-assignee @me")
+    github.edit_issue_labels(N, add=[], remove=["claude-running"])
+    github.remove_issue_actor(N)
     close(lock_fd)
     return ClaimFailed("post-claim verify failed")
 
@@ -735,7 +724,7 @@ Scan `<state_root>/claim/*.lock`:
 
 `release()` issues that have carried `claude-running` for a long time:
 
-1. Enumerate with `gh issue list --label claude-running --state open --json number,createdAt,updatedAt`
+1. Enumerate with one `list_issues` operation filtered by `claude-running` and open state, requesting number/createdAt/updatedAt
 2. Decide the reference time for each issue:
    - No PR created yet: use `issue.created_at` as the reference → `release()` past 48h
    - A PR exists: use `pr.head commit pushed_at` (or `pr.created_at` if absent) as the reference → `release()` past 48h
@@ -743,7 +732,7 @@ Scan `<state_root>/claim/*.lock`:
    - Reason: `updated_at` is refreshed by comments, which carries a risk of orphan-pinning DoS by an external user, so it is not adopted
    - The 7-day hard cap guarantees that an external attacker cannot stretch the running state indefinitely
 
-**The per-tick API cap**: `gh issue view` calls are limited to at most `rollback_gh_fetch_cap` (default 10) per tick. The excess carries over to the next tick.
+**The per-tick API cap**: `get_issue` calls are limited to at most `rollback_gh_fetch_cap` (default 10) per tick. The excess carries over to the next tick.
 
 ### ④ `_check_recovery_markers(now)`
 
@@ -766,10 +755,8 @@ For each marker, the state of the corresponding issue:
 
 Clean up any `claude-*` labels left on a closed issue (recovering from a partial failure of `mark_done`):
 
-```
-gh issue list --state closed --label claude-auto --json number --limit 100
-# run the label cleanup for each issue (re-running mark_done step 3)
-```
+Call `list_issues` for closed issues carrying `claude-auto`, requesting number with limit 100,
+then run label cleanup for each issue (re-running `mark_done` step 3).
 
 ---
 

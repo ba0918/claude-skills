@@ -203,15 +203,15 @@
   },
   "github-issue": {
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "4f78886eb4860105d36ad667926366d5c59a721a38af7679ca9a60629fa75511",
-      "skills/github-issue/fixtures.json": "6a62e882d8c576aa94bc24f3346b4d1d56169bff9215d885ba88a2458dbd85ae",
-      "skills/github-issue/references/cleanup-spec.md": "cca0c1f7e73ddb22bfc79719fe486e37be9a62868dd13c4465944315f52f05e0",
-      "skills/github-issue/references/codex-review-loop.md": "616fec7c7da33d18cdecc60b20b02e1be461cb0029eeffbeca19a6b7554755ed",
-      "skills/github-issue/references/config-defaults.md": "00a4c5904bd23f14f2893e50f51470198d4f9603d0c8d1486a9eaae1383dc06e",
-      "skills/github-issue/references/gh-commands.md": "cc3f6ec5bda0d660e5ff86aea58c8bac181c8c660b1a2c405a68f9623b4732e3",
-      "skills/github-issue/references/label-spec.md": "d43e607c70abba0b17755a7c59cd7acf4ba39dce8b83be93e02db1c478358683",
-      "skills/github-issue/references/polling-adapter.md": "f97b84e9106b7564636a9c2e29b962ef78c5a7c6055ebcbecfffb2b64a0780d8",
-      "skills/github-issue/references/secret-scanner.md": "d9a01874b251afdef4501d5a5c0f997a6ec6069f88f27f61e2dcfe2630276668",
+      "skills/github-issue/SKILL.md": "447ebb01ccdb7a9e859ec714b24247e6b6bd9b0673da71b86e76c54b8f8df24f",
+      "skills/github-issue/fixtures.json": "d03d59823016357f639ffa007d5bb7e3d041b4f9959e66a624363cd0648e82de",
+      "skills/github-issue/references/cleanup-spec.md": "937919142e245125cad2ac6f8cd2bea7dabd7d7f6619765e01ce380a088c4913",
+      "skills/github-issue/references/codex-review-loop.md": "715d028c6561e3ec4b08f28605075c80d3bfe56728b10f32c6750a273ed5f6cd",
+      "skills/github-issue/references/config-defaults.md": "e02882151e826cf18f36f946bc1ca61e62c85f612c9f6b2e26ce0e51a1036694",
+      "skills/github-issue/references/gh-commands.md": "c6e291c0afb5ddc195be1a9ff14ea7e47f4379ec46c2bdfb0e8e65e80fbaf6aa",
+      "skills/github-issue/references/label-spec.md": "67a99e03b4edade1dc96b2bbb8b01fd055581eb4e01c009c2af70d916c86b362",
+      "skills/github-issue/references/polling-adapter.md": "014cc07036f2f5f3069287b6f63b5b6c28f69cec17844e687666fbbefcb02c19",
+      "skills/github-issue/references/secret-scanner.md": "623fa30ed568e71f32db9dcbe8098d81825582e15000104560c2db059dd073df",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
@@ -219,8 +219,8 @@
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/skill-regression/scripts/ledger.py": "10e0772dac58f097e47c9b8e0f902d084fddd52505b47a4a2aa0a5a298d78de1"
     },
-    "note": "dep_graph.py の _BARE_PATH_RE を .py/.sh に拡張。挙動面に ledger.py スクリプト参照が追加されたが、スキル本文の変更はなく fixture への影響なし",
-    "result": "accepted-without-run",
+    "note": "post-review rerun: 7/7 scenarios pass via fresh standard-tier executors; 0 watchdog queries; gi-001 corrected to fixture remote in fresh r3 executor; gi-007 revised prompt pass",
+    "result": "pass",
     "surface": [
       "skills/github-issue/SKILL.md",
       "skills/github-issue/fixtures.json",
@@ -238,8 +238,8 @@
       "skills/shared/references/polling-pattern.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "3e60fa9f7bc3f73c8223a8a415c24ef518e0f6da643b67cacf7c9d41a429cebf",
-    "verified": "2026-07-28"
+    "surface_sha256": "7da875d030dd4e1dca022592729ebdefec8742e8f026a944ced6f7897b7555ba",
+    "verified": "2026-07-29"
   },
   "handoff": {
     "file_sha256": {
