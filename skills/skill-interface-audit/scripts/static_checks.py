@@ -269,6 +269,19 @@ _TOOL_JA_RE = re.compile(
     r"(" + "|".join(re.escape(t) for t in _TOOL_NAMES_SORTED) + r")\s*ツール"
 )
 
+# English high-confidence pattern: "the Read tool" / "Read tool's" / "Read tool"
+_TOOL_EN_RE = re.compile(
+    r"(?:the\s+)?(" + "|".join(re.escape(t) for t in _TOOL_NAMES_SORTED) + r")\s+tool(?:'s)?\b"
+)
+
+# Domain-word whitelist: patterns that look like tool names but are repository domain terms
+_DOMAIN_WHITELIST_RE = re.compile(
+    r"Agent\s+Artifact\s+Store"
+    r"|Agent\s+Skills"
+    r"|Agent\s+\d"
+    r"|[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+Workflow"
+)
+
 _MODEL_RE = re.compile(
     r"claude-(?:opus|sonnet|haiku)-[\d.*]+|gpt-[\d.]+|o1-[\d.]+",
     re.IGNORECASE,
@@ -283,9 +296,38 @@ def _is_at_sentence_start(line: str, match_start: int) -> bool:
         return True
     if before[-1] in ".!?。！？:：":
         return True
+    # Numbered list: "1. Read ..." / "2) Write ..."
     m = re.match(r"^\s*\d+[.)]\s", line)
     if m and match_start <= m.end():
         return True
+    # Bullet list: "- Read ..." / "* Write ..." / "+ Edit ..."
+    m_bullet = re.match(r"^\s*[-*+]\s", line)
+    if m_bullet and match_start <= m_bullet.end():
+        return True
+    # Table cell start: "| Read ..."
+    m_table = re.match(r"^\s*\|\s*", line)
+    if m_table and match_start <= m_table.end():
+        return True
+    # After mid-line table separator: "... | Read ..."
+    if match_start > 0 and before[-1] == "|":
+        return True
+    # After markdown emphasis at list/sentence start:
+    # e.g. "1. **Read** ..." / "- **Edit** ..." / "| **Write** ..."
+    # Strip trailing emphasis markers to check if what remains is a list marker or sentence start
+    before_no_emph = before.rstrip("*_")
+    if before_no_emph != before and before_no_emph:
+        # There were emphasis markers; check if what's left is a list/table start
+        b = before_no_emph.rstrip()
+        if not b:
+            return True
+        if b[-1] in ".!?。！？:：|":
+            return True
+        m2 = re.match(r"^\s*\d+[.)]\s*$", b)
+        if m2:
+            return True
+        m3 = re.match(r"^\s*[-*+]\s*$", b)
+        if m3:
+            return True
     return False
 
 
@@ -321,12 +363,28 @@ def check_si_s004(targets: list[dict], ctx: dict) -> list[dict]:
 
                 clean = _strip_inline_code(line)
 
-                # Track positions consumed by JA pattern to avoid double-counting
-                ja_consumed: set[int] = set()
+                # Track positions consumed by high-confidence patterns
+                consumed: set[int] = set()
 
+                # JA high-confidence: "Edit ツール" etc.
                 for m in _TOOL_JA_RE.finditer(clean):
                     for pos in range(m.start(), m.end()):
-                        ja_consumed.add(pos)
+                        consumed.add(pos)
+                    findings.append(make_finding(
+                        rule_id="SI-S004",
+                        severity="WARN", action="NEEDS_JUDGMENT",
+                        where=f"{skill_name}:{relpath}:{lineno}",
+                        what=f"プラットフォーム固有ツール語彙: {m.group(0)}",
+                        why="AGENTS.md: 特定プラットフォームのツール API 名を避ける",
+                        how="プラットフォーム非依存の表現に置換する",
+                    ))
+
+                # EN high-confidence: "the Read tool" / "Read tool's" etc.
+                for m in _TOOL_EN_RE.finditer(clean):
+                    if any(pos in consumed for pos in range(m.start(), m.end())):
+                        continue
+                    for pos in range(m.start(), m.end()):
+                        consumed.add(pos)
                     findings.append(make_finding(
                         rule_id="SI-S004",
                         severity="WARN", action="NEEDS_JUDGMENT",
@@ -339,16 +397,38 @@ def check_si_s004(targets: list[dict], ctx: dict) -> list[dict]:
                 for tool in _TOOL_NAMES_SORTED:
                     pattern = re.compile(r"\b" + re.escape(tool) + r"\b")
                     for tm in pattern.finditer(clean):
-                        if any(pos in ja_consumed for pos in range(tm.start(), tm.end())):
+                        if any(pos in consumed for pos in range(tm.start(), tm.end())):
+                            continue
+                        # Domain whitelist: skip tool names that are part of domain terms
+                        if _DOMAIN_WHITELIST_RE.search(clean) and \
+                                any(dm.start() <= tm.start() < dm.end()
+                                    for dm in _DOMAIN_WHITELIST_RE.finditer(clean)):
                             continue
                         if tool == "LSP":
                             context_after = clean[tm.end():tm.end() + 10].strip()
+                            context_line_lower = clean.lower()
                             if any(kw in context_after for kw in
                                    ["準拠", "サポート", "対応", "プロトコル"]):
                                 continue
+                            # English LSP protocol context: "language server"
+                            if "language server" in context_line_lower:
+                                continue
                         if _is_at_sentence_start(clean, tm.start()):
                             continue
-                        if tm.start() > 0 and clean[tm.start() - 1] in "/#.":
+                        # Path guard: "/" suppresses only for file paths, not
+                        # enumerations like "Read/Write/Edit"
+                        if tm.start() > 0 and clean[tm.start() - 1] == "/":
+                            # Check if the word before "/" is also a tool name
+                            # (enumeration pattern like Read/Write/Edit)
+                            pre_slash = clean[:tm.start() - 1]
+                            pre_word_m = re.search(r"(\w+)$", pre_slash)
+                            pre_word = pre_word_m.group(1) if pre_word_m else ""
+                            if pre_word not in _TOOL_NAMES_SORTED:
+                                # Not an enumeration; check path context
+                                ch_after = clean[tm.end()] if tm.end() < len(clean) else ""
+                                if ch_after == "" or re.match(r"[A-Za-z0-9._\-/]", ch_after):
+                                    continue
+                        if tm.start() > 0 and clean[tm.start() - 1] in "#.":
                             continue
                         findings.append(make_finding(
                             rule_id="SI-S004",
