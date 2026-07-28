@@ -69,7 +69,7 @@ After the transformation, can you **prove** that "the behavior has not changed"?
 
 A two-stage check. First determine whether the transformation could affect performance at all, then check the hot-path status only when it could.
 
-1. **Does the transformation change performance characteristics?** — check whether evaluation order, call count, allocation, or computational complexity change. If none of these change (e.g. a rename, comment cleanup, extraction with identical call structure), the transformation is **performance-neutral** and passes this check regardless of hot-path status
+1. **Does the transformation change performance characteristics?** — check whether evaluation order, call count, allocation, or computational complexity change. If none of these change (e.g. a rename, comment cleanup), the transformation is **performance-neutral** and passes this check regardless of hot-path status
 2. **Hot-path check** (only when stage 1 answered "yes" or "indeterminate"): is this site on a hot path, a benchmark target, or annotated with measurements?
    - The "simpler version" may be slower, and it cannot be rewritten without measurement → **UNCERTAIN**
    - **When it is unknown whether it is a hot path, fall to UNCERTAIN as well** (completing the fail-safe)
