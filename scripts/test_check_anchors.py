@@ -48,6 +48,24 @@ class TestAnchors(unittest.TestCase):
         path = self._write("# A\n\n### B C\n")
         self.assertEqual({"a", "b-c"}, anchors(path))
 
+    def test_duplicate_headings_get_numbered_slugs(self):
+        """同一見出しが複数回出現したら -1, -2 のスラグも生成される。"""
+        path = self._write("# A\n\n## B\n\n## B\n\n## B\n")
+        result = anchors(path)
+        self.assertIn("b", result)
+        self.assertIn("b-1", result)
+        self.assertIn("b-2", result)
+        self.assertEqual({"a", "b", "b-1", "b-2"}, result)
+
+    def test_headings_inside_nested_fence_are_ignored(self):
+        """4 連バッククォート内の 3 連を跨いで見出しが拾われてはならない。"""
+        path = self._write("# Real\n\n````\n```\n# Fake\n```\n````\n")
+        self.assertEqual({"real"}, anchors(path))
+
+    def test_tilde_fence_hides_headings(self):
+        path = self._write("# Real\n\n~~~\n# Fake\n~~~\n")
+        self.assertEqual({"real"}, anchors(path))
+
 
 class TestScan(unittest.TestCase):
     def _repo(self, files):
@@ -86,3 +104,28 @@ class TestScan(unittest.TestCase):
             "b.md": "# B\n",
         })
         self.assertEqual([], scan([root]))
+
+    def test_links_inside_fences_are_not_checked(self):
+        """scan() がフェンス内のリンクを除外する（anchors() との対称性）。"""
+        root = self._repo({
+            "a.md": "# A\n\n```\n[link](b.md#nonexistent)\n```\n",
+            "b.md": "# B\n",
+        })
+        self.assertEqual([], scan([root]))
+
+    def test_duplicate_heading_anchor_is_reachable(self):
+        """重複見出しの -1 スラグへのリンクが壊れたと報告されない。"""
+        root = self._repo({
+            "a.md": "# A\n\nSee [B](b.md#section) and [B2](b.md#section-1).\n",
+            "b.md": "# B\n\n## Section\n\n## Section\n",
+        })
+        self.assertEqual([], scan([root]))
+
+    def test_subdirectories_are_walked(self):
+        """走査範囲が再帰的にサブディレクトリを含む。"""
+        root = self._repo({
+            "commands/a.md": "# A\n\nSee [B](../skills/b.md#gone).\n",
+            "skills/b.md": "# B\n",
+        })
+        broken = scan([root])
+        self.assertEqual(1, len(broken))

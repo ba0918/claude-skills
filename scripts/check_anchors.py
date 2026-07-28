@@ -37,26 +37,45 @@ def slugify(text):
 
 
 def anchors(path):
-    """ファイル内の見出しから生成されるアンカーの集合を返す。"""
+    """ファイル内の見出しから生成されるアンカーの集合を返す。
+
+    アンカー生成規則は GitHub 準拠:
+      1. インラインコードとリンク記法を中身へ展開する
+      2. lowercase 化する
+      3. 単語構成文字・空白・ハイフン以外を除去する
+      4. 空白 1 個をハイフン 1 個へ写す（連続空白は連続ハイフンになる）
+      5. 同一スラグが複数回出現したら 2 つ目以降に ``-1``, ``-2`` を付ける
+    """
     found = set()
+    slug_counts: dict[str, int] = {}
     with open(path, encoding="utf-8") as handle:
         lines = handle.read().splitlines()
     for line in iter_outside_fence(lines):
         matched = HEADING.match(line.rstrip("\n"))
         if matched:
-            found.add(slugify(matched.group(1)))
+            slug = slugify(matched.group(1))
+            count = slug_counts.get(slug, 0)
+            if count == 0:
+                found.add(slug)
+            else:
+                found.add(f"{slug}-{count}")
+            slug_counts[slug] = count + 1
     return found
 
 
 def scan(roots):
-    """壊れたアンカー参照を (参照元, リンク先) の列で返す。"""
+    """壊れたアンカー参照を (参照元, リンク先) の列で返す。
+
+    フェンス内のリンクは走査対象から除外する（anchors() と対称にする）。
+    """
     cache = {}
     broken = []
     for root in roots:
         for path in sorted(glob.glob(f"{root}/**/*.md", recursive=True)):
             with open(path, encoding="utf-8") as handle:
-                text = handle.read()
-            for target in LINK.findall(text):
+                lines = handle.read().splitlines()
+            prose_text = "\n".join(iter_outside_fence(lines))
+            for target in LINK.findall(prose_text):
                 if target.startswith(("http://", "https://")) or "#" not in target:
                     continue
                 rel, _, anchor = target.partition("#")
@@ -85,10 +104,10 @@ def report(broken):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="md アンカー参照の飛び先を検証する")
-    parser.add_argument("roots", nargs="*", default=["skills"],
-                        help="走査するディレクトリ（既定: skills）")
+    parser.add_argument("roots", nargs="*", default=["."],
+                        help="走査するディレクトリ（既定: .）")
     args = parser.parse_args(argv)
-    return report(scan(args.roots or ["skills"]))
+    return report(scan(args.roots or ["."]))
 
 
 if __name__ == "__main__":
