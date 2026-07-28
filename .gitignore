@@ -4,7 +4,6 @@ __pycache__
 # claude
 .claude/settings.local.json
 .claude/worktrees
-.claude/tmp
 # 中間生成物と baseline の置き場は .agents/tmp/ と .agents/config/ へ移行済み
 # （skills/shared/references/artifact-store.md「Ephemeral area」「Configuration area」）。
 # 移行前にこのリポジトリで書かれたローカルの .claude/tmp/ が残っている場合は、
