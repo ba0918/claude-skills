@@ -628,6 +628,8 @@ def check_plugin_hooks(root):
         config = json.loads(_read(hooks_path))
     except json.JSONDecodeError as exc:
         return [f"[hooks] JSON として読めない: {_HOOKS_JSON_REL} ({exc})"]
+    if not isinstance(config, dict):
+        return [f"[hooks] トップレベルが object でない: {_HOOKS_JSON_REL}"]
 
     hooks_map = config.get("hooks")
     if not isinstance(hooks_map, dict):

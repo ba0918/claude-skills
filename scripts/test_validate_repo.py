@@ -1284,6 +1284,15 @@ class TestCheckPluginHooks(unittest.TestCase):
             self.assertEqual(len(errors), 1)
             self.assertIn("command がない", errors[0])
 
+    def test_non_object_top_level_is_flagged_not_crash(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            for payload in ("[]", "null", '"hooks"'):
+                self._write(root, "hooks/hooks.json", payload)
+                errors = check_plugin_hooks(root)
+                self.assertEqual(len(errors), 1, payload)
+                self.assertIn("トップレベルが object でない", errors[0])
+
     def test_non_object_hooks_key_is_flagged_not_crash(self):
         with tempfile.TemporaryDirectory() as root:
             self._full_setup(root)
