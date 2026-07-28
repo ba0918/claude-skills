@@ -8,7 +8,11 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
-## Unreleased
+## 1.70.0
+
+品質ゲート契約 v1（issue #143 の 4 作業単位）と #86 の hooks 配送レールをまとめて配布する
+リリース。README の rules 節を hook 2 本構成へ追随させ、品質ゲート契約の紹介節を追加した
+（`README.md`）。
 
 品質ゲート契約 v1 の想起層アダプタ第 1 号として、SessionStart hook
 `hooks/inject-quality-gate.sh` を新設した（issue #143 の v1 作業単位 4/4）。#86 で敷いた

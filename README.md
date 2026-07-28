@@ -30,13 +30,16 @@ codex plugin add claude-skills@claude-skills
 
 ### Claude Code rules（Plugin 利用者は手動コピー不要）
 
-Plugin をインストールすると、SessionStart hook（`hooks/hooks.json`）が
-`rules/skill-routing.md` をセッション開始時（startup / resume / clear / compact / fork）に
-常駐コンテキストへ自動注入する。Plugin 利用者に手動コピーは不要である。
+Plugin をインストールすると、SessionStart hook（`hooks/hooks.json`）がセッション開始時
+（startup / resume / clear / compact / fork）に次の 2 本を常駐コンテキストへ自動注入する。
+Plugin 利用者に手動コピーは不要である。
 
-hook が注入するのは skill-routing のみ。常駐コンテキストの予算を使うのは、
-実測で発火漏れが確認された表だけに限るという意図的な選択で、
-`rules/` の他の文書（`information-placement.md` 等）は注入しない。
+- `rules/skill-routing.md` — スキル発火の routing 表（正本 47 行を全文注入）
+- 品質ゲート契約のポインタ（`hooks/inject-quality-gate.sh`）— 契約の存在・正本パス・事前条件の
+  要旨のみ 4 行を注入し、契約本文（約 230 行）は複製しない
+
+注入対象は上記 2 本のみ。常駐コンテキストの予算を使うのは、実測で必要性が確認されたものだけに
+限るという意図的な選択で、`rules/` の他の文書（`information-placement.md` 等）は注入しない。
 
 手動コピーは「Plugin を使わず個別インストールする利用者」と
 「Claude Code 以外のエージェント」向けに残している。
@@ -201,6 +204,15 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 | `skill-regression` | 共有契約の変更による回帰を検出 |
 | `skill-interface-audit` | SKILL.md の API 契約完備性を静的監査 |
 | `migrate-cycles-to-plans` | 旧 docs/cycles/ から .agents/artifacts/plans/ への移行（一回限りの移行専用） |
+
+## 品質ゲート契約
+
+「保護対象への状態遷移は、対象版に結びついた有効な検証証拠なしには成立しない」を中核性質とする、プラットフォーム非依存の保証条件契約。正本・強制・想起の 3 層で構成され、レビュー・検証系スキルの証跡と収束判定の共通基盤になる。先行 spike（issue #142）の実測に基づき、観点の精緻化よりも証跡・収束判定に重心を置いた設計である。
+
+- 正本: [quality-gate-contract.md](skills/shared/references/quality-gate-contract.md) — 状態機械（machine_verified ⊥ semantic_reviewed → publishable）・証跡の失効規則・独立性の定義・収束条件
+- 証跡: [evidence-format.md](skills/shared/references/evidence-format.md) + `skills/shared/scripts/evidence_check.py` — publishable 判定の機械検証（証跡不在は否定判定に倒す fail-closed）
+- 適合プロファイル: [skill-repository-profile.md](skills/shared/references/skill-repository-profile.md) — 公開済みだが未発効（発効は profile 対応 verifier の出荷に結合）
+- 想起: SessionStart hook によるポインタ注入（インストール節を参照）
 
 ## プロンプト設計方針
 
