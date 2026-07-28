@@ -81,10 +81,11 @@
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
-      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
+      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
+      "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "#76 の .claude/ → .agents/ パス移行に伴う再評価。パスは機械解釈されるトークンなので accept せず process-queue 経路で実走し、6 スキル 17 シナリオ critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて 17/17 一致。移行が実際に効いていることを成果物で裏取り済み（executor は .agents/tmp/ 配下へ書き、.claude/tmp/ への書き込みは 0 件）。sweep-fix は sf-002（置き場を残していない=critical）が残存 0 件、sf-001（置き場が ignore 対象外であることを検出・報告し自力解決しない）が残存 3 件で、いずれも要件どおり。executor は --allowedTools にサブエージェント委譲を含まないため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
-    "result": "pass",
+    "note": "dep_graph.py の _BARE_PATH_RE を .py/.sh に拡張。挙動面に共有スクリプトが追加されたが、スキル本文の変更はなく fixture への影響なし",
+    "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/SKILL.md",
       "skills/context-audit/fixtures.json",
@@ -98,10 +99,11 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/fix-action-taxonomy.md",
       "skills/shared/references/severity-and-verdicts.md",
-      "skills/shared/references/verification-gate.md"
+      "skills/shared/references/verification-gate.md",
+      "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "0679f9294fa6f199b202dea76e4cbc3ce00e9ce056083f42abb1fcf15f267429",
-    "verified": "2026-07-27"
+    "surface_sha256": "3d51d34c814fae4c6db0aaa0f04c11f58f1821afae3c18f9a06f27882c5fac72",
+    "verified": "2026-07-28"
   },
   "cycle": {
     "file_sha256": {
@@ -214,10 +216,11 @@
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
-      "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
+      "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
+      "skills/skill-regression/scripts/ledger.py": "10e0772dac58f097e47c9b8e0f902d084fddd52505b47a4a2aa0a5a298d78de1"
     },
-    "note": "issue #83 worktree 分離契約の変更後、gi-001〜gi-006 を process-queue（claude-exec、並列3）で実走。全 6 件 critical 欠落ゼロ・baseline drift ゼロ（verdict は unadjudicated_pass）。バッチはスクラッチパッド regression-83",
-    "result": "pass",
+    "note": "dep_graph.py の _BARE_PATH_RE を .py/.sh に拡張。挙動面に ledger.py スクリプト参照が追加されたが、スキル本文の変更はなく fixture への影響なし",
+    "result": "accepted-without-run",
     "surface": [
       "skills/github-issue/SKILL.md",
       "skills/github-issue/fixtures.json",
@@ -232,9 +235,10 @@
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/measurement-identity.md",
-      "skills/shared/references/polling-pattern.md"
+      "skills/shared/references/polling-pattern.md",
+      "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "a2778ebdbfb1abaeae1a202a3674820a011d14d7afa500cf94be8e462f8356db",
+    "surface_sha256": "3e60fa9f7bc3f73c8223a8a415c24ef518e0f6da643b67cacf7c9d41a429cebf",
     "verified": "2026-07-28"
   },
   "handoff": {
@@ -243,19 +247,21 @@
       "skills/handoff/fixtures.json": "2b5028db210b7dc154d45862acaf9b579fe870ca30275c745bf751627190485f",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
-      "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
+      "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec",
+      "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "artifact-store.md への ephemeral/config 2 節追加に伴う再評価。process-queue 経路（claude-exec backend）で実走し critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて全一致を確認（unadjudicated_pass を素通しにしていない）。executor は --allowedTools が Bash/Read/Write/Edit/Glob/Grep でサブエージェント委譲が構造的に不可のため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
-    "result": "pass",
+    "note": "dep_graph.py の _BARE_PATH_RE を .py/.sh に拡張。挙動面に checkpoint.py が追加されたが、スキル本文の変更はなく fixture への影響なし",
+    "result": "accepted-without-run",
     "surface": [
       "skills/handoff/SKILL.md",
       "skills/handoff/fixtures.json",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md",
-      "skills/shared/references/human-readable-summary.md"
+      "skills/shared/references/human-readable-summary.md",
+      "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "9fcc6c848aa9360f8ab4fdd2fb2621683d4260fd4bd99d1c2fd525ac6e639083",
-    "verified": "2026-07-27"
+    "surface_sha256": "a86e963069761a21252f832a50c8997ff53f9c2c316bf342f0a0c49490358724",
+    "verified": "2026-07-28"
   },
   "investigate": {
     "file_sha256": {
@@ -309,10 +315,11 @@
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
-      "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153"
+      "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
+      "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "artifact-store.md への ephemeral/config 2 節追加に伴う再評価。process-queue 経路（claude-exec backend）で実走し critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて全一致を確認（unadjudicated_pass を素通しにしていない）。executor は --allowedTools が Bash/Read/Write/Edit/Glob/Grep でサブエージェント委譲が構造的に不可のため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
-    "result": "pass",
+    "note": "dep_graph.py の _BARE_PATH_RE を .py/.sh に拡張。挙動面に checkpoint.py が追加されたが、スキル本文の変更はなく fixture への影響なし",
+    "result": "accepted-without-run",
     "surface": [
       "skills/plan/SKILL.md",
       "skills/plan/fixtures.json",
@@ -320,10 +327,11 @@
       "skills/plan/references/status-template.md",
       "skills/plan/references/status-update-guide.md",
       "skills/shared/references/artifact-store.md",
-      "skills/shared/references/checkpoint-pattern.md"
+      "skills/shared/references/checkpoint-pattern.md",
+      "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "ebe3771f676c10843ff4e82e96890cd2cc31a2eac6e143a076a1552709bacfb9",
-    "verified": "2026-07-27"
+    "surface_sha256": "307a7eb93e4a836d49ff1a0f2e18e7c04a1d3c7a25896f2a2ad12284e2c4e05c",
+    "verified": "2026-07-28"
   },
   "plan-implement": {
     "file_sha256": {
