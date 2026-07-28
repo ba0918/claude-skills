@@ -40,11 +40,13 @@ Field rules:
 - `contract` MUST be `quality-gate-contract`; `contract_version` MUST resolve to the
   published version declared in the canonical contract's §Contract Identity. A version
   that does not resolve is invalid evidence (contract §Contract Identity).
-- `profile` is `null` until a conformance profile ships; once one applies, it becomes
-  `{"name": ..., "version": ...}` and binding extends to the profile version
-  (contract §2). Because no profile is published in v1, the v1 verifier rejects every
-  non-null `profile` as unresolvable — and therefore invalid — evidence; a profile-aware
-  verifier version will compare name and version exactly instead.
+- `profile` is `null` until a conformance profile is **in force**; once one applies, it
+  becomes `{"name": ..., "version": ...}` and binding extends to the profile version
+  (contract §2). A profile document may be published ahead of taking force (as a forward
+  declaration), but no profile is in force in v1 — taking force requires a profile-aware
+  verifier — so the v1 verifier rejects every non-null `profile` as unresolvable — and
+  therefore invalid — evidence; a profile-aware verifier version will compare name and
+  version exactly instead.
 - `grounds` is required and non-empty: evidence that cannot say what produced it is not
   evidence (the same Iron Law as CONFIRMED in
   [severity-and-verdicts.md](severity-and-verdicts.md)).
