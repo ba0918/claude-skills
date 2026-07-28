@@ -14,6 +14,10 @@
 この定義でも、鉤括弧を使わずに地の文へユーザー向け文言を書いた箇所は日本語として
 数えられる。これは指標の欠陥ではなく、そういう箇所は引用形に直すべきという設計上の
 要求として扱う。
+
+本モジュールは測定 CLI であると同時に、check_translation_parity（ゲート）が
+strip_frontmatter / measure / untranslated / prose_lines を import する
+共有ライブラリでもある。識別子の挙動を変えるとゲートの判定が動く。
 """
 import argparse
 import json
@@ -27,6 +31,8 @@ JP = re.compile(r"[ぁ-んァ-ヴ一-龥]")
 QUOTED = re.compile(r"[「『][^」』]*[」』]")
 DEFAULT_THRESHOLD = 0.15
 
+_FM_LINE = re.compile(r"""^\s*(#|[\w."'-]+\s*:|-)""")
+
 
 def strip_frontmatter(lines: list[str]) -> list[str]:
     """先頭の `---` で囲まれた frontmatter を落とす。無ければそのまま返す。"""
@@ -34,14 +40,24 @@ def strip_frontmatter(lines: list[str]) -> list[str]:
         return lines
     for i, line in enumerate(lines[1:], start=1):
         if line.strip() == "---":
-            return lines[i + 1:]
-    return lines  # 閉じられていない frontmatter は本文として扱う
+            block = lines[1:i]
+            if block and any(
+                _FM_LINE.match(l) for l in block if l.strip()
+            ) and all(
+                (not l.strip()) or _FM_LINE.match(l) for l in block
+            ):
+                return lines[i + 1:]
+            return lines  # key: value でない → frontmatter ではなく水平線
+    return lines  # 閉じられていない → 本文として扱う
+
+
+_HR = re.compile(r"^\s*(?:-{3,}|\*{3,}|_{3,})\s*$")
 
 
 def prose_lines(text: str) -> list[str]:
-    """判定対象の散文行だけを返す（frontmatter / コードブロック / 空行を除く）。"""
+    """判定対象の散文行だけを返す（frontmatter / コードブロック / 空行 / 水平線を除く）。"""
     return [line for line in iter_outside_fence(strip_frontmatter(text.splitlines()))
-            if line.strip()]
+            if line.strip() and not _HR.match(line)]
 
 
 def untranslated(line: str) -> bool:
