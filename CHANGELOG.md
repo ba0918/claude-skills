@@ -10,6 +10,20 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+品質ゲート契約 v1 の適合プロファイル第 1 号 `skills/shared/references/skill-repository-profile.md`
+を新設した（issue #143 の v1 作業単位 3/4）。汎用契約 §6 の 3 層設定の中間層で、自然言語スキル
+リポジトリという 1 ドメインについて最低証拠・必須義務・弱体化禁止リストを確定する。汎用契約の
+発火表を本ドメインの変更種別（スキル指示文書 / 共有契約 / バリデータ / 薄いコマンド / 配布
+manifest）で具体化し、機械検査が既にカバーする義務を semantic review へ二重計上しない帰属規則、
+および発火率・採用率のように運用測定でしか顕在化しない欠陥型を review 義務から外して運用センサー
+へ回す routing を定めた（根拠は spike #142 実測）。semantic 側の比重が高いというドメイン特性は
+汎用契約ではなく本プロファイルに置く（2026-07-28 壁打ちの裁定どおり）。証跡へのプロファイル束縛は
+v1 verifier が profile 非 null を拒否する現行仕様と矛盾しないよう、v2 の profile 対応 verifier
+までは定義のみの先行宣言であることを明記した。このリポジトリは本プロファイルの規範的リファレンス
+ではなく適合標本の 1 つである。
+
+- `skills/shared/references/skill-repository-profile.md`（新設）
+
 品質ゲート契約 v1 の縦切り 1 本 `verified(対象SHA, 契約版) → publishable` を機械検証可能にした
 （issue #143 の v1 作業単位 2/4）。証跡レコードの schema（状態ごと 1 JSON、対象 SHA × 公開済み
 契約版へのバインド、grounds 必須）を `skills/shared/references/evidence-format.md` に定義し、
