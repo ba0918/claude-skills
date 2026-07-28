@@ -266,16 +266,16 @@
   "investigate": {
     "file_sha256": {
       "skills/investigate/SKILL.md": "05e3447d808972adbe90f75d3d95ab405600810baca341c9a8cac0365cdb3829",
-      "skills/investigate/fixtures.json": "7698fd56a2c19b2d0afda45329015e5cdd555f949a8e542b5b67430c4ec7f6b4"
+      "skills/investigate/fixtures.json": "50acadf2b1d39619a18dfc192560bfd59edc1f807bcb64cb06eae0e34ef887ec"
     },
-    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；読み取り専用要件 iv-001/iv-002/iv-003 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
-    "result": "pass",
+    "note": "iv-003 要件2を一意な読みに確定（達成不能な読みの排除のみ、検出力変更なし）",
+    "result": "accepted-without-run",
     "surface": [
       "skills/investigate/SKILL.md",
       "skills/investigate/fixtures.json"
     ],
-    "surface_sha256": "6a55e2cdf955746129b44c23f9b3f2b523d2bea501f80593e728d1849e9c795d",
-    "verified": "2026-07-27"
+    "surface_sha256": "95bcfc54c089e355bcbb13e191c209d2fad04b321ccccecade75c81a9603e9f4",
+    "verified": "2026-07-28"
   },
   "issue": {
     "file_sha256": {
