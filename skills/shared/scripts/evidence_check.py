@@ -89,6 +89,10 @@ def judge_state(evidence_dir, state, target_sha, published_version):
             f"invalid (contract_version {record.get('contract_version')!r} does not resolve "
             f"to the published version {published_version})"
         )
+    # v1 にはプロファイルが存在しないため、非 null の profile は解決不能な束縛 = 無効証跡。
+    # プロファイル出荷後は名前×版の厳密比較へ拡張する（evidence-format.md §schema）
+    if record.get("profile") is not None:
+        return False, f"invalid (profile {record.get('profile')!r} cannot resolve — no profile is published in v1)"
     if recorded_sha != target_sha:
         return False, f"expired (bound to {recorded_sha[:12]}, target is {target_sha[:12]})"
     return True, "valid"
@@ -115,6 +119,9 @@ def run(argv=None):
         target_sha = args.target_sha
     else:
         target_sha = resolve_head_sha(args.repo_root)
+
+    if os.path.exists(evidence_dir) and not os.path.isdir(evidence_dir):
+        raise CheckBroken(f"evidence dir path is not a directory: {evidence_dir}")
 
     print(f"target: {target_sha}")
     print(f"contract: {CONTRACT_NAME} {published_version}")

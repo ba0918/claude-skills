@@ -115,6 +115,12 @@ class TestInvalidEvidenceIsJudgedNotSkipped(EvidenceCheckHarness):
         write_record(self.evidence_dir, "semantic_reviewed")
         self.assertEqual(self.run_check(), 1)
 
+    def test_non_null_profile_is_unresolvable_in_v1_and_blocks_publishable(self):
+        write_record(self.evidence_dir, "machine_verified",
+                     profile={"name": "skill-repository", "version": "1.0.0"})
+        write_record(self.evidence_dir, "semantic_reviewed")
+        self.assertEqual(self.run_check(), 1)
+
 
 class TestBrokenCheckIsDistinguishedFromNegativeJudgment(EvidenceCheckHarness):
     def test_unreadable_contract_file_breaks_the_check(self):
@@ -140,6 +146,28 @@ class TestBrokenCheckIsDistinguishedFromNegativeJudgment(EvidenceCheckHarness):
         write_record(self.evidence_dir, "semantic_reviewed")
         with self.assertRaises(evidence_check.CheckBroken):
             self.run_check(target_sha="HEAD")
+
+    def test_evidence_dir_path_that_is_a_file_breaks_the_check(self):
+        file_path = os.path.join(self.root, "evidence-as-file")
+        with open(file_path, "w", encoding="utf-8") as handle:
+            handle.write("not a directory")
+        with self.assertRaises(evidence_check.CheckBroken):
+            self.run_check(evidence_dir=file_path)
+
+    def test_cli_maps_file_evidence_dir_to_exit_2(self):
+        file_path = os.path.join(self.root, "evidence-as-file")
+        with open(file_path, "w", encoding="utf-8") as handle:
+            handle.write("not a directory")
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "evidence_check.py")
+        proc = subprocess.run(
+            ["python3", script, "--repo-root", self.root,
+             "--evidence-dir", file_path,
+             "--target-sha", SHA_A,
+             "--contract", self.contract_path],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("check broken", proc.stderr)
 
     def test_cli_maps_broken_check_to_exit_2(self):
         script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "evidence_check.py")
