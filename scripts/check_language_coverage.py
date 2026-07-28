@@ -21,9 +21,10 @@ import pathlib
 import re
 import sys
 
+from md_fence import iter_outside_fence
+
 JP = re.compile(r"[ぁ-んァ-ヴ一-龥]")
 QUOTED = re.compile(r"[「『][^」』]*[」』]")
-FENCE = re.compile(r"^\s*```")
 DEFAULT_THRESHOLD = 0.15
 
 
@@ -39,15 +40,8 @@ def strip_frontmatter(lines: list[str]) -> list[str]:
 
 def prose_lines(text: str) -> list[str]:
     """判定対象の散文行だけを返す（frontmatter / コードブロック / 空行を除く）。"""
-    out, in_fence = [], False
-    for line in strip_frontmatter(text.splitlines()):
-        if FENCE.match(line):
-            in_fence = not in_fence
-            continue
-        if in_fence or not line.strip():
-            continue
-        out.append(line)
-    return out
+    return [line for line in iter_outside_fence(strip_frontmatter(text.splitlines()))
+            if line.strip()]
 
 
 def untranslated(line: str) -> bool:

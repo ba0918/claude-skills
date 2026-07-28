@@ -71,12 +71,12 @@ from check_language_coverage import (
     measure,
     strip_frontmatter,
 )
+from md_fence import classify_lines
 from validate_repo import CONTRACT_VOCAB
 
 SENSOR = "sensor:translation-damage"
 FIX_ACTION = "NEEDS_JUDGMENT"
 
-FENCE = re.compile(r"^\s*(?:```|~~~)")
 HEADING = re.compile(r"^(#{1,6})\s")
 ORDERED = re.compile(r"^\s*\d+\.\s")
 BULLET = re.compile(r"^\s*[-*+]\s")
@@ -131,17 +131,16 @@ def is_identifier(token):
 def fingerprint(text):
     """翻訳前後で不変であるべき構造の指紋を返す。"""
     frontmatter, body = split_frontmatter(text)
-    prose, fence_lines, fences, in_fence = [], 0, 0, False
-    for line in body:
-        if FENCE.match(line):
-            in_fence = not in_fence
-            if in_fence:
-                fences += 1
-            continue
-        if in_fence:
+    prose, fence_lines, fences = [], 0, 0
+    prev_tag = "prose"
+    for tag, line in classify_lines(body):
+        if tag == "fence_marker" and prev_tag != "fenced":
+            fences += 1  # 開始マーカーだけを数える
+        elif tag == "fenced":
             fence_lines += 1
-            continue
-        prose.append(line)
+        elif tag == "prose":
+            prose.append(line)
+        prev_tag = tag
 
     prose_text = "\n".join(prose)
     body_text = "\n".join(body)
