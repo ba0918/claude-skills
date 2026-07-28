@@ -31,6 +31,7 @@ from validate_repo import (
     check_command_skill_mapping,
     check_design_token_sync,
     check_legacy_claude_paths,
+    check_plugin_hooks,
     check_fixtures,
     check_rename_allowlist_staleness,
     parse_version,
@@ -1209,6 +1210,115 @@ class TestCheckDesignTokenSync(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             self._write(root, "skills/brief/assets/tokens.css", ":root { --a: 1px; }\n")
             self.assertEqual(check_design_token_sync(root), [])
+
+class TestCheckPluginHooks(unittest.TestCase):
+    """チェック21: hook が壊れても CI が緑のまま注入だけ止まる状態を塞ぐ。"""
+
+    HOOKS_JSON = (
+        '{"hooks": {"SessionStart": [{"matcher": "startup",'
+        ' "hooks": [{"type": "command",'
+        ' "command": "\\"${CLAUDE_PLUGIN_ROOT}\\"/hooks/inject-skill-routing.sh"}]}]}}'
+    )
+
+    def _write(self, root, rel, content, executable=False):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+        if executable:
+            os.chmod(path, 0o755)
+
+    def _full_setup(self, root):
+        self._write(root, "hooks/hooks.json", self.HOOKS_JSON)
+        self._write(root, "hooks/inject-skill-routing.sh",
+                    "#!/bin/sh\ncat rules/skill-routing.md\n", executable=True)
+        self._write(root, "rules/skill-routing.md", "# routing\n")
+
+    def test_absent_hooks_json_is_noop(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.assertEqual(check_plugin_hooks(root), [])
+
+    def test_conforming_hooks_pass(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            self.assertEqual(check_plugin_hooks(root), [])
+
+    def test_unparseable_hooks_json_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            self._write(root, "hooks/hooks.json", "{not json")
+            errors = check_plugin_hooks(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("JSON として読めない", errors[0])
+
+    def test_missing_command_script_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            os.remove(os.path.join(root, "hooks/inject-skill-routing.sh"))
+            errors = check_plugin_hooks(root)
+            self.assertTrue(any("実体が存在しない" in e for e in errors))
+
+    def test_missing_exec_bit_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            os.chmod(os.path.join(root, "hooks/inject-skill-routing.sh"), 0o644)
+            errors = check_plugin_hooks(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("実行ビットがない", errors[0])
+
+    def test_missing_routing_table_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            os.remove(os.path.join(root, "rules/skill-routing.md"))
+            errors = check_plugin_hooks(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("正本が存在しない", errors[0])
+
+    def test_whitespace_only_command_is_flagged_not_crash(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            self._write(root, "hooks/hooks.json",
+                        '{"hooks": {"SessionStart": [{"hooks":'
+                        ' [{"type": "command", "command": "   "}]}]}}')
+            errors = check_plugin_hooks(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("command がない", errors[0])
+
+    def test_non_object_top_level_is_flagged_not_crash(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            for payload in ("[]", "null", '"hooks"'):
+                self._write(root, "hooks/hooks.json", payload)
+                errors = check_plugin_hooks(root)
+                self.assertEqual(len(errors), 1, payload)
+                self.assertIn("トップレベルが object でない", errors[0])
+
+    def test_non_object_hooks_key_is_flagged_not_crash(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            self._write(root, "hooks/hooks.json", '{"hooks": []}')
+            errors = check_plugin_hooks(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("object でない", errors[0])
+
+    def test_non_list_event_entries_are_flagged_not_crash(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            self._write(root, "hooks/hooks.json",
+                        '{"hooks": {"SessionStart": {"hooks": []}}}')
+            errors = check_plugin_hooks(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("配列でない", errors[0])
+
+    def test_malformed_entry_structure_is_flagged_not_crash(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            self._write(root, "hooks/hooks.json",
+                        '{"hooks": {"SessionStart": ["not-an-object"]}}')
+            errors = check_plugin_hooks(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("構造が不正", errors[0])
+
 
 class TestCheckLegacyClaudePaths(unittest.TestCase):
     """チェック19: agent 生成物の置き場に `.claude/` を使っていないこと。

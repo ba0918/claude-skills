@@ -28,10 +28,18 @@ codex plugin add claude-skills@claude-skills
 
 スキル本文はプラットフォーム非依存の自然言語で記述されており、そのまま利用できる。
 
-### Claude Code rules（任意）
+### Claude Code rules（Plugin 利用者は手動コピー不要）
 
-`rules/` は Claude Code の常駐ルールとしても使えるが、Plugin フォーマットでは自動配置されない。
-必要な場合のみ手動でコピーする。
+Plugin をインストールすると、SessionStart hook（`hooks/hooks.json`）が
+`rules/skill-routing.md` をセッション開始時（startup / resume / clear / compact / fork）に
+常駐コンテキストへ自動注入する。Plugin 利用者に手動コピーは不要である。
+
+hook が注入するのは skill-routing のみ。常駐コンテキストの予算を使うのは、
+実測で発火漏れが確認された表だけに限るという意図的な選択で、
+`rules/` の他の文書（`information-placement.md` 等）は注入しない。
+
+手動コピーは「Plugin を使わず個別インストールする利用者」と
+「Claude Code 以外のエージェント」向けに残している。
 
 ```bash
 mkdir -p ~/.claude/rules

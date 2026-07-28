@@ -10,6 +10,16 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+`rules/skill-routing.md` が標準インストール経路のどれにも乗っておらず、Plugin 利用者に
+想起ルーティング表が届かない状態だった（issue #86）。trigger-eval では 138 ケース全問正解の
+弁別性がある一方、実セッション 30 日間の自発発火は 68 プロンプト中 11 件（16%）で、
+差分は「会話として自然に返せる指示ではスキル照合が走らない」想起の問題である。SessionStart
+hook（`hooks/hooks.json` + `hooks/inject-skill-routing.sh`）を追加し、startup / resume /
+clear / compact / fork の各セッション開始時に正本をそのまま stdout 注入する（本文の複製なし）。
+hook が壊れても CI が緑のまま注入だけ黙って止まる状態は、validate_repo.py のチェック 21
+（hooks.json パース / command 実在・実行ビット / 正本実在）で塞いだ。issue は「チェック 18」
+と指定していたが採番が 20 まで進んでいたため 21 として実装した。
+
 cycle の Delegation result relay に、共有契約が明記を要求している role-specific values
 （timeout minutes / redelegation limit / optional viewpoints）が書かれていなかった（issue #58）。
 実害として、N=10 分の契約に対し約 1 分で委譲を見切って inline へ倒れ、委譲結果の着弾 1 秒前に
