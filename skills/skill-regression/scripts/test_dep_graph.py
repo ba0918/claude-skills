@@ -118,6 +118,64 @@ class TestBehaviorSurface(unittest.TestCase):
                 dep_graph.behavior_surface(root, "a"),
             )
 
+    def test_bare_path_py_reference_is_a_dependency(self):
+        # SKILL.md 内で素パスとして書かれた共有スクリプト(.py)も挙動面に入る
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md",
+                   "Run `python3 skills/shared/scripts/checkpoint.py classify`")
+            _write(root, "skills/shared/scripts/checkpoint.py", "# script")
+            self.assertIn(
+                "skills/shared/scripts/checkpoint.py",
+                dep_graph.behavior_surface(root, "a"),
+            )
+
+    def test_bare_path_sh_reference_is_a_dependency(self):
+        # .sh スクリプトへの素パス参照も挙動面に入る
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md",
+                   "Execute `skills/shared/scripts/run.sh`")
+            _write(root, "skills/shared/scripts/run.sh", "#!/bin/sh")
+            self.assertIn(
+                "skills/shared/scripts/run.sh",
+                dep_graph.behavior_surface(root, "a"),
+            )
+
+    def test_bare_path_test_py_is_excluded(self):
+        # test_*.py は面に入れない
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md",
+                   "See `skills/shared/scripts/test_checkpoint.py`")
+            _write(root, "skills/shared/scripts/test_checkpoint.py", "# test")
+            self.assertNotIn(
+                "skills/shared/scripts/test_checkpoint.py",
+                dep_graph.behavior_surface(root, "a"),
+            )
+
+    def test_shared_script_change_impacts_referencing_skill(self):
+        # 共有スクリプトを参照するスキルは、そのスクリプトの変更で impact に入る
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md",
+                   "`python3 skills/shared/scripts/checkpoint.py skeleton`")
+            _write(root, "skills/shared/scripts/checkpoint.py", "# script")
+            _write(root, "skills/b/SKILL.md", "no refs")
+            graph = dep_graph.build_graph(root)
+            self.assertEqual(
+                dep_graph.impacted_skills(
+                    graph, ["skills/shared/scripts/checkpoint.py"]),
+                ["a"],
+            )
+
+    def test_bare_path_re_matches_py_paths(self):
+        # _BARE_PATH_RE が .py パスを拾うことの直接テスト
+        matches = dep_graph._BARE_PATH_RE.findall(
+            "Run skills/shared/scripts/checkpoint.py to verify")
+        self.assertIn("skills/shared/scripts/checkpoint.py", matches)
+
+    def test_bare_path_re_matches_sh_paths(self):
+        matches = dep_graph._BARE_PATH_RE.findall(
+            "Execute scripts/run.sh for setup")
+        self.assertIn("scripts/run.sh", matches)
+
     def test_bare_path_to_missing_file_is_ignored(self):
         with tempfile.TemporaryDirectory() as root:
             _write(root, "skills/a/SKILL.md", "skills/shared/references/nope.md")

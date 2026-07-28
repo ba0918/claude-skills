@@ -60,16 +60,18 @@ def _skill_dir_files(root, skill):
 
 
 # 委譲プロンプトや手順文の中では、契約が md リンクではなく素のパスで書かれる
-# （例: cycle の Phase 2 プロンプト内の `skills/shared/references/tdd-contract.md`）。
+# （例: cycle の Phase 2 プロンプト内の `skills/shared/references/tdd-contract.md`、
+#   plan の SKILL.md 内の `skills/shared/scripts/checkpoint.py`）。
 # md リンクだけを見ると、これらの実依存が挙動面から落ちて偽陰性になる。
-_BARE_PATH_RE = re.compile(r"[A-Za-z0-9_./-]+\.md")
+_BARE_PATH_RE = re.compile(r"[A-Za-z0-9_./-]+\.(?:md|py|sh)")
 
 
 def _bare_path_refs(root, rel):
-    """rel の本文に素のパスとして現れる実在 .md を root 相対で返す。
+    """rel の本文に素のパスとして現れる実在ファイル(.md/.py/.sh)を root 相対で返す。
 
     repo root 起点とファイル位置起点の両方で解決を試みる（手順文は前者、
     相対リンク風の記述は後者で書かれる）。実在しないものは無視する。
+    test_*.py は面に入れない（テストは挙動面ではない）。
     """
     # 手順文は成果物パス（.agents/artifacts/status.md 等）にも言及する。これらは
     # スキル定義ではなく実行時に書き換わるファイルなので、面に入れると恒久 stale になる。
@@ -85,6 +87,9 @@ def _bare_path_refs(root, rel):
     found = set()
     for token in _BARE_PATH_RE.findall(text):
         if "{" in token or "*" in token:
+            continue
+        basename = os.path.basename(token)
+        if basename.startswith("test_") and basename.endswith(".py"):
             continue
         for candidate in (os.path.join(abs_root, token), os.path.join(base, token)):
             resolved = os.path.normpath(candidate)
