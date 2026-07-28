@@ -253,6 +253,49 @@ class TestIdentifierPreservation(unittest.TestCase):
         self.assertEqual("BLOCK", findings[0]["severity"])
 
 
+class TestRenameAllowlist(unittest.TestCase):
+    """#97: 意図的リネームの申告経路。許可表で old→new を申告すると
+    identifier_preservation が消失扱いしないことを検証する。"""
+
+    ALLOWLIST = [{"old": "executor_model", "new": "executor_tier",
+                  "reason": "platform-independent expression", "added": "2026-07-28"}]
+
+    def test_declared_rename_is_not_blocked(self):
+        """完遂されたリネーム（old が消え new に置き換わった）が BLOCK にならない。"""
+        before = doc("# H\n\n`executor_model` を指定する。\n")
+        after = doc("# H\n\nSpecify `executor_tier`.\n")
+        self.assertEqual([], compare("SKILL.md", before, after,
+                                     rename_allowlist=self.ALLOWLIST))
+
+    def test_undeclared_rename_is_blocked(self):
+        """申告されていない識別子の消失は従来どおり BLOCK。"""
+        before = doc("# H\n\n`executor_model` を指定する。\n")
+        after = doc("# H\n\nSpecify `executor_tier`.\n")
+        findings = compare("SKILL.md", before, after, rename_allowlist=[])
+        self.assertTrue(any(f["rule"] == "identifier_preservation" for f in findings))
+
+    def test_declared_rename_where_new_is_absent_is_blocked(self):
+        """old が消えたが new が存在しない場合は許可しない。"""
+        before = doc("# H\n\n`executor_model` を指定する。\n")
+        after = doc("# H\n\nSpecify the model.\n")
+        findings = compare("SKILL.md", before, after,
+                           rename_allowlist=self.ALLOWLIST)
+        self.assertTrue(any(f["rule"] == "identifier_preservation" for f in findings))
+
+    def test_multiple_renames_are_all_handled(self):
+        """複数のリネームが同時に許可される。"""
+        allowlist = [
+            {"old": "executor_model", "new": "executor_tier",
+             "reason": "r", "added": "2026-07-28"},
+            {"old": "max_retries", "new": "retry_limit",
+             "reason": "r", "added": "2026-07-28"},
+        ]
+        before = doc("# H\n\n`executor_model` と `max_retries` を指定する。\n")
+        after = doc("# H\n\nSpecify `executor_tier` and `retry_limit`.\n")
+        self.assertEqual([], compare("SKILL.md", before, after,
+                                     rename_allowlist=allowlist))
+
+
 class TestFrontmatterImmutability(unittest.TestCase):
     def test_changed_skill_name_is_blocked(self):
         after = doc(EN_BODY, frontmatter=FRONTMATTER.replace("name: demo", "name: demo2"))

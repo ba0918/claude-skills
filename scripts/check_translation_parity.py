@@ -108,6 +108,18 @@ MAX_PROSE_SHRINK = 0.10
 # 検出できない。消失側は本 sensor が持つ。
 VOCAB_TERMS = sorted({term for _, terms, _ in CONTRACT_VOCAB for term in terms})
 
+RENAME_ALLOWLIST_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "rename-allowlist.json")
+
+
+def load_rename_allowlist(path=None):
+    """リネーム許可表を読み込む。ファイルが無ければ空リスト。"""
+    path = path or RENAME_ALLOWLIST_PATH
+    if not os.path.isfile(path):
+        return []
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
 
 def split_frontmatter(text):
     """(frontmatter の生テキスト, 本文行) に分ける。frontmatter が無ければ ("", 全行)。"""
@@ -215,8 +227,10 @@ def _lost(base_set, cur_set, limit=8):
     return lost, shown
 
 
-def compare(path, base_text, cur_text):
+def compare(path, base_text, cur_text, rename_allowlist=None):
     """翻訳前後の指紋を突き合わせ、finding のリストを返す。"""
+    if rename_allowlist is None:
+        rename_allowlist = load_rename_allowlist()
     base, cur = fingerprint(base_text), fingerprint(cur_text)
     findings = []
 
@@ -240,7 +254,14 @@ def compare(path, base_text, cur_text):
     # 差分で見ると、`(none)` → `branch: (none)` のようにインラインコードの括り方が
     # 変わっただけで消失と報告される（過去 41 ペアの実測で確認した偽陽性）。
     for key, label in (("identifiers", "識別子"), ("vocab", "契約語彙")):
-        lost, shown = _lost(base[key], {t for t in base[key] if t in cur["text"]})
+        survived = {t for t in base[key] if t in cur["text"]}
+        # 許可表に申告済みのリネーム: old が消え new が存在するなら消失扱いしない
+        for entry in rename_allowlist:
+            old = entry.get("old", "")
+            new = entry.get("new", "")
+            if old in base[key] and old not in survived and new in cur["text"]:
+                survived.add(old)
+        lost, shown = _lost(base[key], survived)
         if lost:
             findings.append(_finding(
                 path, "identifier_preservation", "BLOCK",
@@ -308,6 +329,7 @@ def scan(repo, baseline, paths, force=False):
     「対象外」に埋めると素通しと検証済みが出力で区別できない。
     """
     findings, checked, skipped, unverified = [], 0, 0, []
+    rename_allowlist = load_rename_allowlist()
     for rel in changed_md(repo, baseline, paths):
         full = os.path.join(repo, rel)
         if not os.path.isfile(full):
@@ -323,7 +345,7 @@ def scan(repo, baseline, paths, force=False):
                 unverified.append((rel, base_n, cur_n))
             continue
         checked += 1
-        findings += compare(rel, base, cur)
+        findings += compare(rel, base, cur, rename_allowlist=rename_allowlist)
     return findings, checked, skipped, unverified
 
 
