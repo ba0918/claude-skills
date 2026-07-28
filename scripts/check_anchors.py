@@ -20,9 +20,10 @@ import os
 import re
 import sys
 
+from md_fence import iter_outside_fence
+
 LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 HEADING = re.compile(r"^#{1,6}\s+(.+?)\s*$")
-FENCE = re.compile(r"^\s*(?:```|~~~)")
 
 
 def slugify(text):
@@ -38,17 +39,12 @@ def slugify(text):
 def anchors(path):
     """ファイル内の見出しから生成されるアンカーの集合を返す。"""
     found = set()
-    in_fence = False
     with open(path, encoding="utf-8") as handle:
-        for line in handle:
-            if FENCE.match(line):
-                in_fence = not in_fence
-                continue
-            if in_fence:
-                continue
-            matched = HEADING.match(line.rstrip("\n"))
-            if matched:
-                found.add(slugify(matched.group(1)))
+        lines = handle.read().splitlines()
+    for line in iter_outside_fence(lines):
+        matched = HEADING.match(line.rstrip("\n"))
+        if matched:
+            found.add(slugify(matched.group(1)))
     return found
 
 
