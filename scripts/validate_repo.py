@@ -62,6 +62,10 @@ from frontmatter import (  # noqa: E402,F401
     parse_frontmatter_lines,
 )
 from artifact_store import ArtifactStoreError, inspect as inspect_artifact_store  # noqa: E402
+from workspace_isolation import (  # noqa: E402
+    WorkspaceIsolationError,
+    resolve_isolation,
+)
 
 EXCLUDED_DIRS = {".git", ".claude", ".codex", "node_modules", "__pycache__"}
 
@@ -446,6 +450,18 @@ def check_artifact_store(root):
         return [f"[artifact-store] {error}" for error in status["errors"]]
     except ArtifactStoreError as exc:
         return [f"[artifact-store] {exc}"]
+
+
+def check_workspace_policy(root):
+    """Tracked workspace policy must parse when present; absence stays valid."""
+    policy = os.path.join(root, ".agents", "workspace.yml")
+    if not os.path.lexists(policy):
+        return []
+    try:
+        resolve_isolation(root)
+        return []
+    except WorkspaceIsolationError as exc:
+        return [f"[workspace-policy] .agents/workspace.yml: {exc}"]
 
 
 DESIGN_TOKEN_LAYERS = [
@@ -1081,6 +1097,9 @@ def run_checks(root):
 
     # 11. Agent Artifact Store policy / Git safety
     errors += check_artifact_store(root)
+
+    # 11b. Workspace isolation policy（存在する場合のみ検証。不在は inplace 扱いで正）
+    errors += check_workspace_policy(root)
 
     # 12. plugin.json version ⇔ CHANGELOG.md エントリ同期（双方向）
     errors += check_changelog_sync(root)

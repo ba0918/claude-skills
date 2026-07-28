@@ -87,7 +87,8 @@
         "files": {
           "CLAUDE.md": "# webapi\n\n小さな Web API サーバー。\n",
           "src/cache.py": "\"\"\"素朴な in-process キャッシュ。あちこちから直接触られている。\"\"\"\n_cache: dict = {}\n\n\ndef get(key):\n    return _cache.get(key)\n\n\ndef put(key, value):\n    _cache[key] = value\n\n\ndef invalidate(key=None):\n    # 呼び出し側ごとに key 指定だったり全消しだったりで一貫性がない\n    if key is None:\n        _cache.clear()\n    else:\n        _cache.pop(key, None)\n"
-        }
+        },
+        "git": {"init": true, "commit": true}
       },
       "prompt": "brainstorm でテーマ「キャッシュ層の invalidation 再設計」の壁打ちを開始して。ユーザーの最初の発言はこれ:\n\n「今の実装、キャッシュの invalidation がぐちゃぐちゃで、どこから手を付ければいいか行き詰まってる。」\n\nこの発言への 1 ターン分の応答を生成するところまで実行して。生成した応答の全文を成果物レポートに含めること。",
       "requirements": [

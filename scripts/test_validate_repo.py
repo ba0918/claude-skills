@@ -34,6 +34,7 @@ from validate_repo import (
     check_plugin_hooks,
     check_fixtures,
     check_rename_allowlist_staleness,
+    check_workspace_policy,
     parse_version,
     HUMAN_READABLE_SUMMARY_LABEL,
     HUMAN_READABLE_SUMMARY_SKILLS,
@@ -170,6 +171,46 @@ class TestCheckArtifactStore(unittest.TestCase):
         errors = check_artifact_store(root)
         self.assertEqual(1, len(errors))
         self.assertIn("schema_version", errors[0])
+
+
+class TestCheckWorkspacePolicy(unittest.TestCase):
+    def _repo(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        root = temp.name
+        os.makedirs(os.path.join(root, ".agents"), exist_ok=True)
+        return root
+
+    def _write_policy(self, root, text):
+        with open(os.path.join(root, ".agents", "workspace.yml"), "w", encoding="utf-8") as handle:
+            handle.write(text)
+
+    def test_missing_policy_is_valid(self):
+        self.assertEqual([], check_workspace_policy(self._repo()))
+
+    def test_worktree_policy_passes(self):
+        root = self._repo()
+        self._write_policy(root, "isolation: worktree\n")
+        self.assertEqual([], check_workspace_policy(root))
+
+    def test_inplace_policy_passes(self):
+        root = self._repo()
+        self._write_policy(root, "isolation: inplace\n")
+        self.assertEqual([], check_workspace_policy(root))
+
+    def test_unknown_isolation_value_is_reported(self):
+        root = self._repo()
+        self._write_policy(root, "isolation: hybrid\n")
+        errors = check_workspace_policy(root)
+        self.assertEqual(1, len(errors))
+        self.assertIn("[workspace-policy]", errors[0])
+
+    def test_extra_key_is_reported(self):
+        root = self._repo()
+        self._write_policy(root, "isolation: worktree\nmode: fast\n")
+        errors = check_workspace_policy(root)
+        self.assertEqual(1, len(errors))
+        self.assertIn("[workspace-policy]", errors[0])
 
 
 class TestExtractMdLinks(unittest.TestCase):

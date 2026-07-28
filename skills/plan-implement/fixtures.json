@@ -128,7 +128,7 @@
         { "text": "repository-relative pinned_plan を直接読み、その plan の進捗だけを更新している", "critical": true },
         { "text": "satellite_capability_file のパスから認可情報を読み、raw capability をプロンプト・成果物・報告へ出していない", "critical": true },
         { "text": "status.md と session-history.md と derived index の sentinel 内容を変更していない", "critical": true },
-        { "text": "plan スキルを呼び出さず、pinned plan を認可済みの衛星書き込み経路で更新している", "critical": true },
+        { "text": "plan スキルを呼び出さず、pinned plan の更新以外の durable 書き込みを行っていない。衛星書き込みの認可経路（capability file / satellite transport facade）を無視・迂回せず、fixture 上で facade の linked-worktree 検証が成立しない場合はその制約を黙殺せず報告した上で pinned plan のみを更新している", "critical": true },
         { "text": "satellite mode でも TDD の RED/GREEN/REFACTOR、レビュー、検証、step ごとの commit を実施している", "critical": true },
         { "text": "resolved_isolation を再解決せず、nested worktree を作成していない", "critical": false }
       ],

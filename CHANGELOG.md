@@ -10,6 +10,34 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+worktree 分離の共有契約と satellite artifact transport を導入した（issue #93 正本、#105 の
+stale satellite ガード、#92 の parallel-cycle 適用。進捗の transport は #93 が #92 を上書き）。
+tracked な `.agents/workspace.yml`（`isolation: worktree | inplace`、不在は `inplace`）で
+workspace policy を店舗 policy から分離し、外側 orchestrator が ingress（pinned plan の複製と
+run-scoped capability の発行）→ 委譲 → 全 terminal path での collect → merge・検証後のみ
+publish → 証跡付き cleanup という transaction lifecycle を所有する。satellite からの durable
+write は linked-worktree 判定と live capability の両方を要求して fail-closed にし、
+singleton（status.md / session-history.md / derived index）の合成は main-tree orchestrator に
+固定した。復旧の入口は `/claude-skills:artifacts recover --run-id {run_id}` に一本化し、
+拒否・conflict・中断の診断は閉じた六行フォーマットへ統一した。`cycle` / `iterate` /
+`parallel-cycle` / `github-issue` / `plan-implement` が同一の解決済み inner context を中継し、
+入れ子の worktree 生成と policy 再解決を禁止する。`validate_repo` は存在する場合のみ
+workspace policy を機械検証する（不在は正）。
+
+- `skills/shared/references/workspace-isolation.md`（新規）
+- `skills/shared/references/artifact-store.md`
+- `skills/shared/scripts/workspace_isolation.py` / `test_workspace_isolation.py`（新規）
+- `skills/shared/scripts/satellite_transport.py` / `test_satellite_transport.py`（新規）
+- `skills/shared/scripts/artifact_store.py` / `test_artifact_store.py`
+- `skills/artifacts/SKILL.md`（`recover` workflow / fresh-only policy 初期化）
+- `skills/parallel-cycle/SKILL.md` / `references/merge-strategy.md`
+- `skills/plan-implement/SKILL.md` / `fixtures.json`
+- `skills/cycle/SKILL.md` / `fixtures.json`
+- `skills/iterate/SKILL.md` / `fixtures.json`
+- `skills/github-issue/SKILL.md` / `fixtures.json` / `references/worktree-cycle.md`
+- `skills/brainstorm/fixtures.json`（bs-003 の git 前提を実体化）
+- `scripts/validate_repo.py` / `test_validate_repo.py`
+
 `github-issue` の GitHub 操作を `gh` CLI 固定から18個の意味的 transport operation へ分離した
 （issue #123）。既定の `github_transport=auto` は `gh` がインストール済みなら従来経路を維持し、
 `gh` 自体が存在しない場合だけ接続済み GitHub integration へフォールバックする。

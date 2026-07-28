@@ -5,13 +5,30 @@
       "id": "it-outer-worktree",
       "title": "standalone worktree isolation uses one outer transport lifecycle",
       "source": "manual:worktree-artifact-transport-step4",
-      "executor_tier": "standard",
+      "executor_tier": "high",
       "isolation": "worktree",
-      "prompt": "Run iterate for this follow-up in a project whose workspace policy is worktree.",
+      "notes": "high tier: the executor acts as the outer orchestrator and must drive worktree creation, satellite ingress, an inner run, collect, merge, post-merge verification, publish, and evidenced cleanup end to end.",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n/.agents/artifacts/\n/.agents/runtime/\n/worktrees/\n",
+          ".agents/workspace.yml": "isolation: worktree\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/greet.py": "def greet(name):\n    return f\"Hello, {name}!\"\n",
+          "tests/__init__.py": "",
+          "tests/test_greet.py": "import unittest\n\nfrom src.greet import greet\n\n\nclass TestGreet(unittest.TestCase):\n    def test_greets_by_name(self):\n        self.assertEqual(greet(\"Ada\"), \"Hello, Ada!\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-07-28 09:30:00\n\n## 🎯 Current Session\n\n_No active session._\n\n## 📜 Session History\n\nSee [session-history.md](./session-history.md).\n",
+          ".agents/artifacts/session-history.md": "# Session History\n\n| Cycle ID | Feature | Started | Completed |\n|---|---|---|---|\n| 20260728090000 | Greeting module | 2026-07-28 | 2026-07-28 |\n",
+          ".agents/artifacts/plans/20260728090000_greeting.md": "# Greeting module\n\n**Cycle ID:** `20260728090000`\n**Status:** 🟢 Complete\n\n## Progress\n\n| Step | Status |\n|---|---|\n| 1. greet() | 🟢 |\n"
+        },
+        "git": {"init": true, "commit": true}
+      },
+      "prompt": "Run iterate for this follow-up: greet() must raise ValueError when name is an empty string. This project's workspace policy file .agents/workspace.yml declares isolation: worktree, so execute the standalone worktree protocol yourself as the outer orchestrator, using the shared workspace-isolation facade and satellite transport scripts referenced by the skill.",
       "requirements": [
         {"text": "Isolation is resolved once and exactly one outer worktree is created.", "critical": true},
-        {"text": "Ingress precedes the inner run; collection runs on every terminal path and precedes merge.", "critical": true},
-        {"text": "Publication follows post-merge verification and cleanup requires cleanup_allowed evidence.", "critical": true}
+        {"text": "Ingress precedes the inner run, and on the exercised terminal path collection runs and precedes merge.", "critical": true},
+        {"text": "Publication follows post-merge verification and cleanup requires cleanup_allowed evidence.", "critical": true},
+        {"text": "States, with contract grounding, that failure, cancellation, and verification-failure paths also collect before any cleanup.", "critical": false}
       ]
     },
     {
@@ -20,10 +37,27 @@
       "source": "manual:worktree-artifact-transport-step4",
       "executor_tier": "standard",
       "isolation": "worktree",
-      "prompt": "Run iterate with pinned_plan, resolved_isolation=worktree, satellite_run_id, and satellite_capability_file.",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "Makefile": "test:\n\tpython3 -m unittest discover -t . -s tests\n",
+          "src/__init__.py": "",
+          "src/greet.py": "def greet(name):\n    return f\"Hello, {name}!\"\n",
+          "tests/__init__.py": "",
+          "tests/test_greet.py": "import unittest\n\nfrom src.greet import greet\n\n\nclass TestGreet(unittest.TestCase):\n    def test_greets_by_name(self):\n        self.assertEqual(greet(\"Ada\"), \"Hello, Ada!\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/status.md": "SENTINEL STATUS\n",
+          ".agents/artifacts/session-history.md": "SENTINEL HISTORY\n",
+          ".agents/artifacts/idea-status.md": "SENTINEL DERIVED INDEX\n",
+          ".agents/artifacts/plans/20260728090000_greeting.md": "# Greeting module\n\n**Cycle ID:** `20260728090000`\n**Status:** 🟢 Complete\n\n## Progress\n\n| Step | Status |\n|---|---|\n| 1. greet() | 🟢 |\n",
+          ".agents/runtime/satellite-capability": "fixture-capability\n"
+        },
+        "git": {"init": true, "commit": true}
+      },
+      "prompt": "Run iterate with pinned_plan=.agents/artifacts/plans/20260728090000_greeting.md, resolved_isolation=worktree, satellite_run_id=fixture-run-inner, and satellite_capability_file=.agents/runtime/satellite-capability. Additional instruction: greet() must raise ValueError when name is an empty string.",
       "requirements": [
         {"text": "The complete context is accepted unchanged without policy re-resolution.", "critical": true},
-        {"text": "No nested worktree or main-tree singleton write occurs.", "critical": true}
+        {"text": "No nested worktree or main-tree singleton write occurs (the status.md, session-history.md, and idea-status.md sentinels stay unmodified).", "critical": true},
+        {"text": "The raw capability value never appears in prompts, artifacts, or the report.", "critical": true}
       ]
     },
     {
@@ -32,10 +66,21 @@
       "source": "manual:worktree-artifact-transport-step4",
       "executor_tier": "standard",
       "isolation": "worktree",
-      "prompt": "Handle an iterate run whose artifact collection conflicts.",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n/.agents/artifacts/\n/.agents/runtime/\n/worktrees/\n",
+          ".agents/workspace.yml": "isolation: worktree\n",
+          ".agents/artifacts/plans/20260728090000_greeting.md": "# Greeting module\n\n**Cycle ID:** `20260728090000`\n**Status:** 🟡 In Progress\n\n## Progress\n\n| Step | Status |\n|---|---|\n| 1. greet() | 🟡 |\n\nMain-tree edit: step 1 review notes added on 2026-07-28.\n",
+          ".agents/runtime/satellite-runs/20260728100000-rec/collect-report.json": "{\n  \"run_id\": \"20260728100000-rec\",\n  \"phase\": \"collect\",\n  \"outcome\": \"conflict\",\n  \"conflicts\": [\n    {\n      \"path\": \".agents/artifacts/plans/20260728090000_greeting.md\",\n      \"classification\": \"conflict\",\n      \"detail\": \"ingress baseline, current main, and current satellite all differ\"\n    }\n  ]\n}\n",
+          ".agents/runtime/satellite-runs/20260728100000-rec/staging/.agents/artifacts/plans/20260728090000_greeting.md": "# Greeting module\n\n**Cycle ID:** `20260728090000`\n**Status:** 🟢 Complete\n\n## Progress\n\n| Step | Status |\n|---|---|\n| 1. greet() | 🟢 |\n\nSatellite edit: step 1 finished inside the worktree.\n",
+          "worktrees/rec/.agents/artifacts/plans/20260728090000_greeting.md": "# Greeting module\n\n**Cycle ID:** `20260728090000`\n**Status:** 🟢 Complete\n\n## Progress\n\n| Step | Status |\n|---|---|\n| 1. greet() | 🟢 |\n\nSatellite edit: step 1 finished inside the worktree.\n"
+        },
+        "git": {"init": true, "commit": true}
+      },
+      "prompt": "The iterate run with satellite_run_id=20260728100000-rec just hit an artifact collection conflict: collect classified .agents/artifacts/plans/20260728090000_greeting.md as conflict because the main tree and the satellite both changed it (see .agents/runtime/satellite-runs/20260728100000-rec/collect-report.json; the preserved worktree copy is at worktrees/rec/). Handle this terminal transport failure as iterate requires.",
       "requirements": [
-        {"text": "The worktree is preserved and no publication or cleanup occurs.", "critical": true},
-        {"text": "The diagnostic is /claude-skills:artifacts recover --run-id {satellite_run_id}.", "critical": true}
+        {"text": "The preserved worktree copy and the staging under .agents/runtime/satellite-runs/20260728100000-rec/ still exist with both conflicting versions retained, and no publication, discard, or cleanup occurs.", "critical": true},
+        {"text": "The failure diagnostic uses the shared six-line format with reason_code=HARVEST_CONFLICT and ends with recovery_command=/claude-skills:artifacts recover --run-id 20260728100000-rec.", "critical": true}
       ]
     }
   ]
