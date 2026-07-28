@@ -28,8 +28,9 @@ LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 HEADING = re.compile(r"^#{1,6}\s+(.+?)\s*$")
 SECTION_REFERENCE = re.compile(
     r'§\s*"([^"\n]+)"'
-    r'|§\s*([^§\n]+?)(?=\s+(?:from|in|of)\s+\[|[.;。；)|:]|$)'
+    r'|§\s*([^§\n]+?)(?=\s+(?:from|in|of)\s+\[|[,.、;。；()|:（`]|$)'
     r'|"([^"\n]+)"\s+section\b')
+BACKTICK_RUN = re.compile(r"(?<!\\)`+")
 
 
 def slugify(text):
@@ -92,9 +93,32 @@ def _inside_markdown_link(line, position):
                for match in LINK.finditer(line))
 
 
+def _inside_inline_code(line, position):
+    """同じ長さの backtick run で囲まれた code span 内か判定する。"""
+    runs = list(BACKTICK_RUN.finditer(line))
+    opener_index = 0
+    while opener_index < len(runs):
+        opener = runs[opener_index]
+        closing_index = next(
+            (index for index in range(opener_index + 1, len(runs))
+             if len(runs[index].group()) == len(opener.group())),
+            None,
+        )
+        if closing_index is None:
+            opener_index += 1
+            continue
+        closing = runs[closing_index]
+        if opener.start() <= position < closing.end():
+            return True
+        opener_index = closing_index + 1
+    return False
+
+
 def _section_exists(section, available):
     """完全な節名または一意な見出し接頭辞なら参照可能とみなす。"""
     requested = slugify(section)
+    if not requested:
+        return False
     if requested in available:
         return True
     return sum(anchor.startswith(requested) for anchor in available) == 1
@@ -133,7 +157,14 @@ def scan_details(roots):
             previous_nonempty = None
             for line in prose_lines:
                 for matched in SECTION_REFERENCE.finditer(line):
-                    if _inside_markdown_link(line, matched.start()):
+                    # An opening Japanese parenthesis immediately after the
+                    # match means branch 2 merely cut a prose sentence at its
+                    # parenthetical aside; it is not a section reference.
+                    if (matched.group(2) is not None
+                            and line[matched.end():].startswith(("(", "（"))):
+                        continue
+                    if (_inside_markdown_link(line, matched.start())
+                            or _inside_inline_code(line, matched.start())):
                         continue
                     section = next(
                         group for group in matched.groups() if group is not None

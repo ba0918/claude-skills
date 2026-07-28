@@ -200,3 +200,79 @@ class TestScan(unittest.TestCase):
             "b.md": "# B\n",
         })
         self.assertEqual(([], []), scan_details([root]))
+
+    def test_this_file_table_cell_resolves_to_the_source_file(self):
+        root = self._repo({
+            "a.md": "# A\n\n| Scope | this file, §Missing Rules. |\n",
+        })
+        broken, warnings = scan_details([root])
+        self.assertEqual([], warnings)
+        self.assertEqual([(os.path.join(root, "a.md"), "a.md#missing-rules")],
+                         broken)
+
+    def test_nearest_of_multiple_same_line_links_supplies_the_target(self):
+        root = self._repo({
+            "a.md": "[wrong](b.md) then [right](c.md) §Target Heading.\n",
+            "b.md": "# B\n",
+            "c.md": "# C\n\n## Target Heading\n",
+        })
+        self.assertEqual(([], []), scan_details([root]))
+
+    def test_an_ambiguous_heading_prefix_is_broken(self):
+        root = self._repo({
+            "a.md": "See [criteria](b.md) §Agent.\n",
+            "b.md": "# B\n\n## Agent One\n\n## Agent Two\n",
+        })
+        broken, warnings = scan_details([root])
+        self.assertEqual([], warnings)
+        self.assertEqual([(os.path.join(root, "a.md"), "b.md#agent")], broken)
+
+    def test_a_symbol_only_section_name_is_broken(self):
+        root = self._repo({
+            "a.md": "See [criteria](b.md) §!!!.\n",
+            "b.md": "# B\n\n## A Real Heading\n",
+        })
+        broken, warnings = scan_details([root])
+        self.assertEqual([], warnings)
+        self.assertEqual([(os.path.join(root, "a.md"), "b.md#")], broken)
+
+    def test_inline_code_section_notation_is_not_a_section_reference(self):
+        root = self._repo({
+            "a.md": "Fixed `§restore 判定` / `\"CLI 呼び出し規約\"`.\n",
+        })
+        self.assertEqual(([], []), scan_details([root]))
+
+    def test_parenthetical_prose_after_section_notation_is_not_swallowed(self):
+        root = self._repo({
+            "a.md": "The §モデル指定表（sonnet、legacy residue）が矛盾していた。\n",
+        })
+        self.assertEqual(([], []), scan_details([root]))
+
+    def test_comma_terminates_a_section_name_before_following_prose(self):
+        root = self._repo({
+            "a.md": "See [contract](b.md) §Target Heading, for details.\n",
+            "b.md": "# B\n\n## Target Heading\n",
+        })
+        self.assertEqual(([], []), scan_details([root]))
+
+    def test_parenthesis_does_not_hide_a_quoted_section_reference(self):
+        root = self._repo({
+            "a.md": "See [contract](b.md) §\"Missing Heading\"（補足）.\n",
+            "b.md": "# B\n",
+        })
+        broken, warnings = scan_details([root])
+        self.assertEqual([], warnings)
+        self.assertEqual(
+            [(os.path.join(root, "a.md"), "b.md#missing-heading")], broken)
+
+    def test_double_backtick_code_span_is_not_a_section_reference(self):
+        root = self._repo({
+            "a.md": "The notation ``§ Missing `literal` Heading`` is an example.\n",
+        })
+        self.assertEqual(([], []), scan_details([root]))
+
+    def test_ascii_parenthetical_prose_is_not_a_section_reference(self):
+        root = self._repo({
+            "a.md": "The §model table(sonnet, legacy residue) was inconsistent.\n",
+        })
+        self.assertEqual(([], []), scan_details([root]))
