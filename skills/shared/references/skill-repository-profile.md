@@ -18,13 +18,17 @@ Machine-readable identifier: **`skill-repository-profile 1.0.0`**, conforming to
 §Contract Identity apply unchanged: semantic changes bump the version, editorial changes do
 not, and versions identify **published** states only.
 
-Evidence binding to this profile (the `profile` field of
-[evidence-format.md](evidence-format.md)) is **not active in v1**: the v1 verifier rejects
-any non-null `profile` field, deliberately. This file therefore defines obligations for
-reviews to execute now, while the mechanical binding of evidence to
-`{"name": "skill-repository-profile", "version": ...}` waits for the profile-aware verifier
-(contract §8). Nothing in this file contradicts the v1 verifier; it only pre-declares what
-the v2 binding will point at.
+**This profile is published but not yet in force.** "In force" means a profile *applies*
+in the sense of contract §2, which then requires every piece of evidence to bind to the
+profile's version — and the v1 verifier of [evidence-format.md](evidence-format.md)
+deliberately rejects any non-null `profile` field. Requiring this profile's obligations
+while its binding is unrecordable would make valid evidence impossible, so the two are
+coupled: this profile **takes force only when a profile-aware verifier ships** (contract
+§8). Until that moment, no change is judged against this profile; evidence keeps
+`profile: null` and binds to the generic contract alone, and reviews may use this file as
+forward guidance without recording profile conformance. This paragraph is the
+non-contradiction rule, not a loophole — a repository claiming conformance to this profile
+before it is in force is making an unverifiable claim.
 
 ## Domain Characteristics
 
@@ -72,7 +76,7 @@ several rows at once; each fired row produces its own ledger entries.
 | Skill instruction document added/changed | Trigger conditions are decidable and non-colliding; every described workflow terminates (loops carry caps or convergence conditions); fallback and edge-case paths carry the same guarantees as the main path; the document is consistent with every shared contract it links |
 | Shared contract added/changed | Every consumer of the contract re-checked against the new text; vocabulary and semantics stay compatible, or every consumer is migrated in the same change |
 | Validator or executable script added/changed | Input ranges and defaults; boundary conditions; false-positive and false-negative paths (including the empty-scan case: zero targets must be distinguishable from zero findings); symmetry of checking rules across functions in the same file |
-| Thin command wrapper added/changed | The wrapper stays thin: dispatch only, no obligations or contract content of its own; name-to-skill correspondence holds |
+| Thin command wrapper added/changed | The wrapper stays thin: dispatch only, no obligations or contract content of its own (name-to-skill correspondence is a machine-gate concern, not re-reviewed here) |
 | Distribution manifest or install path changed | The change reaches every distribution channel the repository declares; partial-channel updates are treated as incomplete |
 
 ### Machine-covered obligations are not re-reviewed
@@ -80,11 +84,15 @@ several rows at once; each fired row produces its own ledger entries.
 Obligations the repository's mechanical validators already enforce — link resolution,
 schema and frontmatter shape, name coverage in indexes, vocabulary-linkage rules,
 translation parity, anchor resolution, and whatever else the canonical verification entry
-point checks — belong to `machine_verified` and are **not** counted again as semantic
-review obligations. The semantic ledger records them as covered by machine gates rather
-than re-deriving them; double-counting produces ritual review and hides where judgment was
-actually spent. When a reviewer doubts a machine gate's coverage, the finding is a defect
-report against the validator (a "Validator changed" row concern), not a manual re-check.
+point checks — belong to `machine_verified` and are **removed from the fired semantic
+obligation set before the ledger is written**: they produce no semantic ledger entries at
+all, in any coverage state. (The four coverage states of
+[coverage-ledger.md](coverage-ledger.md) describe semantic evaluation scope; machine-gate
+results live in `machine_verified` evidence, not in the semantic ledger.) The trigger
+table above names only predicates the machine gates do not prove. Double-counting produces
+ritual review and hides where judgment was actually spent. When a reviewer doubts a
+machine gate's coverage, the finding is a defect report against the validator (a
+"Validator changed" row concern), not a manual re-check.
 
 ### Outside static semantic review
 
