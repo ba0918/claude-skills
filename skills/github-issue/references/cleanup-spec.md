@@ -60,9 +60,9 @@ Example: `gh-issue-42-20260408041530`
 Branch names use the same `gh-issue-{N}-{timestamp}`.
 
 The Cycle Workflow creates its dedicated worktree under this name at Step 4 (branching from
-`origin/{default_branch}`, never from the primary checkout's HEAD) and removes it itself when the
-run ends, on success and failure alike. The orphan detection below is therefore the safety net for
-runs that died before reaching their own removal step, not the primary cleanup path.
+`origin/{default_branch}`, never from the primary checkout's HEAD). It removes the worktree only
+after the shared transport proves `cleanup_allowed`. Failed runs preserve it. Orphan detection is
+a discovery safety net and never bypasses the transport cleanup gate.
 
 ## Orphan Detection Rules (the 24h condition)
 
@@ -74,8 +74,9 @@ Only a worktree satisfying **all** of the following is a cleanup target.
    - The issue is closed
    - The issue does **not** carry the `claude-running` label
 4. The corresponding branch is merged (it appears in `git branch --merged main`), or the corresponding PR is closed/merged
+5. The shared transport runtime for the run exists and mechanically proves `cleanup_allowed`
 
-> **Conservative cleanup**: all 4 conditions above are required, ANDed together. If even one is doubtful, do not delete.
+> **Conservative cleanup**: all 5 conditions above are required, ANDed together. If even one is doubtful, do not delete.
 
 This detection is called from `rollback_orphans()` step ① (`_check_worktree_orphans`). See [`polling-adapter.md §rollback_orphans Sub-Steps`](polling-adapter.md#rollback_orphans-sub-steps) for details.
 
@@ -94,6 +95,7 @@ for wt in candidates:
   state = get_issue(${N}, fields=["state", "labels"])
   if "claude-running" in state.labels: skip   # the immediately-preceding re-check
   if not (issue closed or branch merged): skip
+  if not satellite_cleanup_allowed(run_id): skip
 
   # 3. Perform the deletion
   git worktree remove <path> --force
