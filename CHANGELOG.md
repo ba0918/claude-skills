@@ -10,6 +10,20 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+品質ゲート契約 v1 の縦切り 1 本 `verified(対象SHA, 契約版) → publishable` を機械検証可能にした
+（issue #143 の v1 作業単位 2/4）。証跡レコードの schema（状態ごと 1 JSON、対象 SHA × 公開済み
+契約版へのバインド、grounds 必須）を `skills/shared/references/evidence-format.md` に定義し、
+検査スクリプト `skills/shared/scripts/evidence_check.py` が publishable 可否を exit code で返す
+（0 = publishable / 1 = 否定判定 / 2 = 検査自体が実行不能）。証跡不在・失効（SHA 不一致）・無効
+（契約版が公開版に解決しない、record 破損）はすべて否定判定に落ちる fail-closed 設計で、
+spike #142 の実測で 3 レビュアーが指摘した「対象 0 件で黙って緑になる」型の欠陥（vacuous pass）を
+構造的に排除した。証跡の置き場所は artifact store の `reviews` 配下（Git 追跡外）——証跡をコミットに
+含めると束縛先の SHA 自体が変わる鶏卵になるため、追跡外は要件である。
+
+- `skills/shared/references/evidence-format.md`（新設）
+- `skills/shared/scripts/evidence_check.py`（新設）
+- `skills/shared/scripts/test_evidence_check.py`（新設）
+
 品質ゲート契約 v1 の正本 `skills/shared/references/quality-gate-contract.md` を新設した
 （issue #143 の v1 作業単位 1/4）。オーケストレーション運用で実測された「PR 前に品質ゲートを
 通さない」失敗に対し、hook という機構ではなく保証条件を正本として標準化する 3 層構成
