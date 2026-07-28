@@ -64,13 +64,17 @@ if raw:
 else:
     print(-1)
 " 2>/dev/null) || tp_checked=-1
+# 判定: skip テキスト → checked=0 (no-op) → checked>0 (ran) → それ以外 (unavailable)
+# -1 やパース失敗を ran に倒すと fail-closed が破れるので、正の整数だけを ran とする
 case "$tp_text" in
   *"skip"*) _mark_skipped "translation-parity (skip: baseline unresolved or stale)" ;;
   *)
     if [ "$tp_checked" = "0" ]; then
       _mark_skipped "translation-parity (no-op: checked 0 files)"
-    else
+    elif echo "$tp_checked" | grep -qE '^[1-9][0-9]*$'; then
       _mark_ran
+    else
+      _mark_skipped "translation-parity (status unavailable: could not determine checked count)"
     fi
     ;;
 esac
