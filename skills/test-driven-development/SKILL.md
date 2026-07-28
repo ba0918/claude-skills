@@ -34,12 +34,7 @@ Transitions based on guesswork — "it should pass", "I'm confident" — are for
 
 1. Take the user's task from `$ARGUMENTS`
    - If `$ARGUMENTS` is empty: ask the user "Tell me the task you want to implement with TDD."
-2. Auto-detect the test framework:
-   - `package.json` → `npm test` / `npx vitest` / `npx jest`
-   - `Cargo.toml` → `cargo test`
-   - `go.mod` → `go test ./...`
-   - `pyproject.toml` / `pytest.ini` → `pytest`
-   - `Makefile` (test target) → `make test`
+2. Auto-detect the test framework per the [detection table in tdd-contract.md](../shared/references/tdd-contract.md#automatic-test-framework-detection)
 3. **When test framework detection fails**:
    - **Interactive mode**: ask the user "Tell me the test command (for example `npm test`, `pytest`, `cargo test`)."
      - The user answers "none" → display "TDD requires a test framework. Set up the test environment first." and finish

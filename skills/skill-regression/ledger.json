@@ -283,15 +283,15 @@
       "skills/issue/fixtures.json": "40065f95ee8d35d14806fcc5a922fb9525d75658cac163cd9fc0c8d1ca894ad7",
       "skills/issue/references/issue-template.md": "6c27174d5b7b8c6fa00b66b69d4a90df0c38af36ebf8c3b90fcef78c57a0715f",
       "skills/issue/references/polling-state-machine.md": "7c65e6079934335d3a891e49c798e2a8761ce443dc63b6f1600be21a96131d70",
-      "skills/issue/references/polling-state.md": "11c6169d79da16612e1a06dcd8a372570aac6fd2f6b87c30611aebaee7713f0f",
+      "skills/issue/references/polling-state.md": "98c1614b8a7c03bf5dddc90c238582f394bca03eeb204620c763e312e1c6bbfd",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec",
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "artifact-store.md への ephemeral/config 2 節追加に伴う再評価。process-queue 経路（claude-exec backend）で実走し critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて全一致を確認（unadjudicated_pass を素通しにしていない）。executor は --allowedTools が Bash/Read/Write/Edit/Glob/Grep でサブエージェント委譲が構造的に不可のため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
-    "result": "pass",
+    "note": "SI-S006 解消: polling-state.md の retain policy をリンクに置き換え。挙動不変",
+    "result": "accepted-without-run",
     "surface": [
       "skills/issue/SKILL.md",
       "skills/issue/fixtures.json",
@@ -304,8 +304,8 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "c4ee031b497cf23b52a6c8accc9308b23da2bf8d77e33498b1d2d3460afb5fba",
-    "verified": "2026-07-27"
+    "surface_sha256": "bfbd136b049b03995b8fb95a19312f581c08555f7b5530569552b2cc14e8a4cf",
+    "verified": "2026-07-29"
   },
   "plan": {
     "file_sha256": {
@@ -480,10 +480,10 @@
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/test-driven-development/SKILL.md": "8d7ce1608d7f35ddee6fdf5428ad6d023513eaa61d63386493aa94efbed1004b",
+      "skills/test-driven-development/SKILL.md": "ff000f5c43d7d05477adf0cc8bcfa9e26f4fc08f087779b5e8b3239662700fc4",
       "skills/test-driven-development/fixtures.json": "ad73bf8a0daf85dad9eabdb049e48d449310be0db1ba0823a26aaa1376fb3ad4"
     },
-    "note": "tdd-contract REFACTOR節に変更不要の出口を追加（plan-implementで確定済みの方針の転記、新たな設計判断なし）",
+    "note": "SI-S006 解消: 検出表をリンクに置き換え。挙動不変",
     "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/tdd-contract.md",
@@ -492,7 +492,7 @@
       "skills/test-driven-development/SKILL.md",
       "skills/test-driven-development/fixtures.json"
     ],
-    "surface_sha256": "e7fe75728448d680b21e94f4dd1e518648409573a4e68240c127940938ad7c3e",
-    "verified": "2026-07-28"
+    "surface_sha256": "83118266d553742582b1712e9c2d3f50b1975cadb4da8f64e81ba49048a77350",
+    "verified": "2026-07-29"
   }
 }

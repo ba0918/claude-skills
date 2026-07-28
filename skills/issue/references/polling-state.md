@@ -114,13 +114,10 @@ The `.claim` permission follows the SHOULD of shared contract [§6.4](../../shar
 
 ### 4.1 `mark_failed` Retain Policy
 
-The retain policy for cycle output at the moment of promotion to `failed/{kind}/{slug}.md`:
+The retain policy follows [polling-pattern.md §mark_failed](../../shared/references/polling-pattern.md) (the "structured-only" rule).
 
-- Standard output / stderr / test logs / stack traces are **not saved** (they are discarded)
-- What is saved in the frontmatter is **only structured errors**: `error_kind` (an enum), `retry_count` (int), `run_id` (the UUID of the tick/loop session), `failed_at` (ISO8601)
-- Free-text error messages and logs of arbitrary length are not included in the frontmatter or the body (preventing context bloat and PII contamination)
-- The ability to trace causes is guaranteed at the granularity of the `error_kind` enum (when the granularity is insufficient, extend the enum rather than escaping into free text)
-- A postmortem is expected to correlate against other storage (for example, a temporary file holding the cycle's stdout, or an external log) keyed by `run_id` + `failed_at`
+Issue-polling specific addition:
+- When `error_kind` granularity is insufficient, extend the enum rather than escaping into free text
 
 ---
 
