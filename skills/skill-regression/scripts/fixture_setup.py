@@ -366,6 +366,8 @@ def validate_with_warnings(fixture, source="fixtures.json"):
     return errors, warnings
 
 
+# `.` 始まりのパスだけを拾う（.agents/ 等）。skills/foo のような裸の相対パスまで
+# 広げると散文中の英単語列で偽陽性が量産されるため、意図的に絞っている（#54 Fable 裁定）
 _PATH_LIKE = re.compile(
     r"(?:^|[\s`\"'])(\.[A-Za-z0-9_/-]+(?:/[A-Za-z0-9_./-]+)+)"
 )
