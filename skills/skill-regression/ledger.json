@@ -107,7 +107,7 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "3fbba29e65755745a99699da95506a03bbed09b2546472dc8307e7897e6d5122",
+      "skills/cycle/SKILL.md": "ec52aea137eecf4ca96eeebab53f90a84716675f6408a6cfd0ee62059e613b49",
       "skills/cycle/fixtures.json": "54a6abd5f6948d75a4912e30bb9ca9529847850e8ebf4b770f43715118d14b88",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
@@ -116,7 +116,7 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "tdd-contract REFACTOR節に変更不要の出口を追加（plan-implementで確定済みの方針の転記、新たな設計判断なし）",
+    "note": "Phase 0 にブランチ前提判定を追加（デフォルトブランチ上なら作業ブランチを切る明文化、実走4/6がこの回避策を取っていた）",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -128,7 +128,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "9deba71e50002674185290ba999c9a97e2049b4e5906995c4c31466ea595289b",
+    "surface_sha256": "5c587a730465bc033dd663e0a7311652000c08978b17c69fbcfdaf8cd0ecb89a",
     "verified": "2026-07-28"
   },
   "decision-journal": {

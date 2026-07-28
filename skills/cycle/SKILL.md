@@ -66,6 +66,13 @@ launched, perform its core action yourself following that skill's documented pro
      a note that the simple `mv` hint targets misplaced newly-created files. Rule of thumb:
      a file under a legacy root (e.g. `docs/plans/`) that already has plan structure and a
      Cycle ID is a migration case, not an mv case
+1.7. **Branch precondition**: check the current branch
+   - If the current branch is the repository's default branch (`main` or `master`):
+     create and switch to a working branch named `cycle/{plan_timestamp}` (where
+     `{plan_timestamp}` is the timestamp portion of the plan filename). This prevents
+     Phase 3 Step 4 from being blocked by the commit skill's default-branch guard, and
+     keeps cycle work on a reviewable branch
+   - If already on a non-default branch: continue on the current branch
 2. Read the plan file and grasp the overview (feature name, step count = the rows of the
    plan's Progress table, current progress)
 3. Display the cycle start:
