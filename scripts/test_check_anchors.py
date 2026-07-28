@@ -11,7 +11,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from check_anchors import anchors, scan, slugify  # noqa: E402
+from check_anchors import anchors, scan, scan_details, slugify  # noqa: E402
 
 
 class TestSlugify(unittest.TestCase):
@@ -129,3 +129,74 @@ class TestScan(unittest.TestCase):
         })
         broken = scan([root])
         self.assertEqual(1, len(broken))
+
+    def test_a_live_section_reference_on_the_same_line_is_not_reported(self):
+        root = self._repo({
+            "a.md": "See [the contract](b.md) §Target Heading.\n",
+            "b.md": "# B\n\n## Target Heading\n",
+        })
+        self.assertEqual(([], []), scan_details([root]))
+
+    def test_a_renamed_section_reference_on_the_same_line_is_reported(self):
+        root = self._repo({
+            "a.md": "See [the contract](b.md) §Old Heading.\n",
+            "b.md": "# B\n\n## New Heading\n",
+        })
+        broken, warnings = scan_details([root])
+        self.assertEqual([], warnings)
+        self.assertEqual([(os.path.join(root, "a.md"), "b.md#old-heading")],
+                         broken)
+
+    def test_a_quoted_section_reference_is_checked(self):
+        root = self._repo({
+            "a.md": 'See the [contract](b.md) "Old Heading" section.\n',
+            "b.md": "# B\n\n## New Heading\n",
+        })
+        broken, warnings = scan_details([root])
+        self.assertEqual([], warnings)
+        self.assertEqual([(os.path.join(root, "a.md"), "b.md#old-heading")],
+                         broken)
+
+    def test_the_previous_nonempty_line_can_supply_the_target_file(self):
+        root = self._repo({
+            "a.md": "See [the contract](b.md).\n\nContract §Target Heading.\n",
+            "b.md": "# B\n\n## Target Heading\n",
+        })
+        self.assertEqual(([], []), scan_details([root]))
+
+    def test_an_unresolved_section_reference_warns_without_failing(self):
+        root = self._repo({
+            "a.md": "The contract §Missing Context.\n",
+        })
+        broken, warnings = scan_details([root])
+        self.assertEqual([], broken)
+        self.assertEqual(
+            [(os.path.join(root, "a.md"), "§Missing Context")], warnings)
+        self.assertEqual([], scan([root]))
+
+    def test_section_references_inside_fences_are_ignored(self):
+        root = self._repo({
+            "a.md": "```\n[contract](b.md) §Missing Heading\n```\n",
+            "b.md": "# B\n",
+        })
+        self.assertEqual(([], []), scan_details([root]))
+
+    def test_a_same_file_section_reference_is_resolved(self):
+        root = self._repo({
+            "a.md": "# A\n\nSee the \"Local Rules\" section.\n\n## Local Rules\n",
+        })
+        self.assertEqual(([], []), scan_details([root]))
+
+    def test_a_unique_heading_prefix_is_an_allowed_shorthand(self):
+        root = self._repo({
+            "a.md": "See [criteria](b.md) §Agent 1.\n",
+            "b.md": "# B\n\n## Agent 1: Injection\n",
+        })
+        self.assertEqual(([], []), scan_details([root]))
+
+    def test_numeric_section_references_are_out_of_scope(self):
+        root = self._repo({
+            "a.md": "See [the contract](b.md) §10 for defaults.\n",
+            "b.md": "# B\n",
+        })
+        self.assertEqual(([], []), scan_details([root]))
