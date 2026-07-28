@@ -335,7 +335,7 @@
   },
   "plan-implement": {
     "file_sha256": {
-      "skills/plan-implement/SKILL.md": "b28685383dbd729fce514fbe4a3bb8aa75a2d539b342e2054fe48d52cea8145a",
+      "skills/plan-implement/SKILL.md": "886d05e1c333800292a50a4f0f7f9ff8b12e9536446a7454945a310b6029310d",
       "skills/plan-implement/fixtures.json": "ac9e21291f9c3d7ae270cf6fbb14dcffa7e4848e3813f8b93a8507441991cbc0",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
@@ -345,7 +345,7 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "tdd-contract REFACTOR節に変更不要の出口を追加（plan-implementで確定済みの方針の転記、新たな設計判断なし）",
+    "note": "Phase Final に反復上限3回を追加し、受容済みWARNの差し戻し除外を明記（イテレーション規定の穴を塞ぐ）",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan-implement/SKILL.md",
@@ -358,7 +358,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "c6439e707107f50d6971eab0b30fd82c92b9cb1d5a6d1ca216b8cb745c72dc1b",
+    "surface_sha256": "f1877bc45050a58d4fbda80fa4da0826bc8e988a23363c8d4d344a52e702c06d",
     "verified": "2026-07-28"
   },
   "plan-reviewer": {

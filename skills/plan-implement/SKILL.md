@@ -101,7 +101,7 @@ Receive the implementation result.
    - **BLOCK**: a fix is mandatory → return to Step A (issue fix instructions)
    - **WARN**: an improvement is desirable → consider the content and decide whether to fix it
      - Fixing it → return to Step A
-     - Accepting it → state the reason and move on
+     - Accepting it → record the rationale in the step's notes in the plan file (written during Step D) and move on
    - **INFO**: reference information → record it and move on
 2. When BLOCK/WARN remain, launch a fix agent and address them
 3. After the fix, run the Step B review again
@@ -131,7 +131,11 @@ After every step is complete:
    - Verify exhaustively that every issue in the implementation plan has been resolved
    - Run the project's test command and confirm everything passes (e.g. `cargo test`, `npm test`, `go test ./...`)
    - Run the project's lint command and confirm there are no warnings (e.g. `cargo clippy`, `eslint`, `golangci-lint`). In a project with no lint configured, skip it and report that
-2. If the final review has any finding of WARN or above, go back to the fix loop
+2. If the final review has any finding of WARN or above, go back to the fix loop (maximum 3 iterations — same budget as Step C)
+   - **WARN findings that were accepted with recorded rationale during Step C are excluded** from the fix-loop trigger.
+     The authoritative record is each step's notes in the plan file, written during Step D
+   - A review round with zero actionable findings (after exclusions) ends the loop
+   - If 3 iterations are exhausted with findings still open, escalate to the user with the remaining findings
 3. Once everything is resolved:
    - Invoke the skill `claude-skills:plan` and update the status to 🟢 Complete
    - If uncommitted changes (the status update, etc.) remain, commit them
