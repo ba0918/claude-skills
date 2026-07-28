@@ -288,10 +288,17 @@ def _validate_setup(where, setup):
 
 
 def validate(fixture, source="fixtures.json"):
-    """fixtures.json の内容を検証し、違反メッセージ一覧を返す（空なら合格）。"""
+    """fixtures.json の内容を検証し、違反メッセージ一覧を返す（空なら合格）。後方互換。"""
+    errors, _ = validate_with_warnings(fixture, source)
+    return errors
+
+
+def validate_with_warnings(fixture, source="fixtures.json"):
+    """fixtures.json の内容を検証し、(errors, warnings) を返す。errors が空なら合格。"""
     errors = []
+    warnings = []
     if not isinstance(fixture, dict):
-        return [_err(source, "トップレベルはオブジェクトである必要がある")]
+        return [_err(source, "トップレベルはオブジェクトである必要がある")], []
     # 未知キーは黙って無視されるのが最も危険な失敗の形（宣言したつもりの前提が
     # 実体化されず、run のたびに実行者の裁量で埋まる）。タイポも含めて拒否する
     for key in fixture:
@@ -302,7 +309,7 @@ def validate(fixture, source="fixtures.json"):
         errors.append(_err(source, "skill がない"))
     scenarios = fixture.get("scenarios")
     if not isinstance(scenarios, list) or not scenarios:
-        return errors + [_err(source, "scenarios が空、または配列でない")]
+        return errors + [_err(source, "scenarios が空、または配列でない")], []
 
     seen = set()
     for index, scenario in enumerate(scenarios):
@@ -352,7 +359,53 @@ def validate(fixture, source="fixtures.json"):
         # critical が 1 つも無い fixture は「落ちても合格」になり回帰を検出しない
         if not any(isinstance(r, dict) and r.get("critical") for r in requirements):
             errors.append(_err(where, "critical: true の要件が 1 つもない（回帰を検出できない）"))
-    return errors
+
+        # --- #54 案 3 縮小版: 実体化できない前提の機械検出 ---
+        warnings += _check_unmaterialized_paths(where, scenario)
+        warnings += _check_env_usage(where, setup if setup else {})
+    return errors, warnings
+
+
+_PATH_LIKE = re.compile(
+    r"(?:^|[\s`\"'])(\.[A-Za-z0-9_/-]+(?:/[A-Za-z0-9_./-]+)+)"
+)
+
+
+def _check_unmaterialized_paths(where, scenario):
+    """prompt / requirements 中のパス様文字列が setup.files に未宣言なら warning。"""
+    setup = scenario.get("setup") or {}
+    files = set((setup.get("files") or {}).keys())
+    texts = [scenario.get("prompt", "")]
+    for r in scenario.get("requirements", []):
+        if isinstance(r, dict):
+            texts.append(r.get("text", ""))
+    warnings = []
+    seen = set()
+    for text in texts:
+        for match in _PATH_LIKE.finditer(text):
+            path = match.group(1)
+            if path in seen or path in files:
+                continue
+            seen.add(path)
+            if path.startswith("./"):
+                path = path[2:]
+            if path not in files:
+                warnings.append(
+                    f"[info] {where}: prompt/requirements にパス様文字列 {path!r} が"
+                    f"あるが setup.files に宣言がない（前提なら files に足す、"
+                    f"prompt 注入なら notes に注入契約を明記する）")
+    return warnings
+
+
+def _check_env_usage(where, setup):
+    """setup.env を使っているシナリオに info を出す。"""
+    env = setup.get("env")
+    if not env or not isinstance(env, dict):
+        return []
+    keys = ", ".join(sorted(env.keys()))
+    return [
+        f"[info] {where}: setup.env を使用中（{keys}）。env はプロンプト転記のみで"
+        f"実体化されない。注入契約を notes に明記すること"]
 
 
 def _run_git(args, cwd):
@@ -447,6 +500,7 @@ def main(argv):
     if "--validate" in args:
         args.remove("--validate")
         errors = []
+        all_warnings = []
         for path in args:
             try:
                 with open(path, encoding="utf-8") as handle:
@@ -454,8 +508,12 @@ def main(argv):
             except (OSError, json.JSONDecodeError) as exc:
                 errors.append(_err(path, f"読み込めない: {exc}"))
                 continue
-            errors += validate(fixture, source=path)
+            errs, warns = validate_with_warnings(fixture, source=path)
+            errors += errs
+            all_warnings += warns
         for message in errors:
+            print(message)
+        for message in all_warnings:
             print(message)
         if errors:
             print(f"✗ {len(errors)} 件の違反")

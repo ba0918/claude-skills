@@ -100,7 +100,7 @@
           "critical": true
         },
         {
-          "text": "Codex 連携が利用不可の環境で「⚠️ Codex unavailable — proceeding with Claude only」の初回警告が表示され、かつ Codex の意見を捏造した「💡 Codex's perspective:」セクションを出力していない",
+          "text": "Codex 連携が利用可であれば実出力に基づいた Codex セクションを出力し、利用不可であれば unavailable 警告を表示している。いずれの場合も、Codex の意見を捏造した「💡 Codex's perspective:」セクションを出力していない",
           "critical": true
         },
         {
@@ -112,7 +112,7 @@
           "critical": false
         }
       ],
-      "notes": "edge シナリオ。Session Workflow は対話型のため単一ターンをシナリオ化。編集ゼロ制約・stuck 検出の出力順（誘導ブロック → ⚠️ 通知 → 本文）・Codex 不在フォールバックの非捏造を固定する。実行時は環境ノートで「Codex 用ヘルパー不在」を与えること（実試行での失敗確定が不可能なため）。"
+      "notes": "edge シナリオ。Session Workflow は対話型のため単一ターンをシナリオ化。編集ゼロ制約・stuck 検出の出力順（誘導ブロック → 本文）・Codex 非捏造を固定する。要件 3 は分岐許容形: Codex が利用可なら実出力、不可なら警告。いずれも捏造しないことが本体。サンドボックス下では子プロセスの agent CLI が空振りして成功を返す実測があり（#54 comment 1）、特定の到達可否を前提にしない形にしてある。"
     }
   ]
 }

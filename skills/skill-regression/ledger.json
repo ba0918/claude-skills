@@ -2,14 +2,14 @@
   "brainstorm": {
     "file_sha256": {
       "skills/brainstorm/SKILL.md": "c22308e7f25bbacb7bc1753af0f276be72a6aeaabd8e8cb7de1676a43d68d7da",
-      "skills/brainstorm/fixtures.json": "d586b9917ed9a7325b167c586873ff8d34a12993aa68d17933463c4f87b9c2dd",
+      "skills/brainstorm/fixtures.json": "19c680904aa3521f52d02b3d2cf668eedda96ff12c970823390da04005131471",
       "skills/brainstorm/references/idea-template.md": "6c5bd8a88f69f97cd4e42fe00bb86bedf25060ee0f2227902d96bea51ef61b21",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "artifact-store.md への ephemeral/config 2 節追加に伴う再評価。process-queue 経路（claude-exec backend）で実走し critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて全一致を確認（unadjudicated_pass を素通しにしていない）。executor は --allowedTools が Bash/Read/Write/Edit/Glob/Grep でサブエージェント委譲が構造的に不可のため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
-    "result": "pass",
+    "note": "#54: bs-003 要件3を分岐許容形に書き換え。Codex 捏造禁止が本体で、到達可否に依存しない形",
+    "result": "accepted-without-run",
     "surface": [
       "skills/brainstorm/SKILL.md",
       "skills/brainstorm/fixtures.json",
@@ -18,8 +18,8 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "0376097a0e056aba922140cd533b4c6084e6fda5f60b21a8fd780bee59f99b71",
-    "verified": "2026-07-27"
+    "surface_sha256": "6f8049fefbaef68cdfb9ab71eb887926637f747dba3fade42cd9aa8729fae2cf",
+    "verified": "2026-07-29"
   },
   "brief": {
     "file_sha256": {
@@ -134,13 +134,13 @@
   "decision-journal": {
     "file_sha256": {
       "skills/decision-journal/SKILL.md": "35e860aa0927307a853e76d843a0e23178857c61c1d614b99179e9437f12a2c2",
-      "skills/decision-journal/fixtures.json": "f72c390c8ad36049282da249b32506f205e4ab17654d3df5a00ee425e0001a76",
+      "skills/decision-journal/fixtures.json": "cde54d8a3acff382035760ca776e7cbb4cbcaa0cd3c4e247738c49465516a39a",
       "skills/decision-journal/references/decision-record-template.md": "43630f34fc89c487d055d64b2cae9a3d757da3dc443920e3438451ebeca68ac1",
       "skills/decision-journal/references/interview-guide.md": "6bd1bc4e989833d75637316c2380f4edd4a385a328f9f7a8186348bc330028b6",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/decision-protocol.md": "9385ac847f75b4b23daaba710f72faee1f5319e88ef57ab45058c3d1a5db9629"
     },
-    "note": "artifact-store.md への 2 節追加に伴う再評価。dj-001〜003 は process-queue 経路で critical 全 ○。dj-004 のみ fail だが原因は #54（fixture の前提が実体化されない）で、本変更の回帰ではない: 本文が「環境条件: .agents/artifacts/decisions/20260725103000_receipt-ocr-household-app.md が既に存在し封印セクションのみが書かれている」と宣言するのに manifest の baseline が空で、staged tree に当該ファイルが無い。critical 要件「既存の封印セクションを書き換えていない」は保全すべき対象が存在せず原理的に検証不能。fixture を通しやすい方向へ直すことはせず、前提の実体化（#54）の解決を待つ。",
+    "note": "#54: dj-004 の前提ファイルを setup.files に実体化。prompt の散文から宣言へ移動。要件は不変",
     "result": "accepted-without-run",
     "surface": [
       "skills/decision-journal/SKILL.md",
@@ -150,8 +150,8 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/decision-protocol.md"
     ],
-    "surface_sha256": "22f2b26d2c042288eed0a07d76f1ea03118fc9e256e8a4bc45aff51558a00580",
-    "verified": "2026-07-27"
+    "surface_sha256": "b303cf4170609a00c070385e0a081aa1f8d064a09e39bc680cdebc9d6b36fcae",
+    "verified": "2026-07-29"
   },
   "design-guide": {
     "file_sha256": {
@@ -178,7 +178,7 @@
   "doc-write": {
     "file_sha256": {
       "skills/doc-write/SKILL.md": "30a5acf30a70b7d754d1a025004ec8ea39a700a823ec695c1caab65e090ab43a",
-      "skills/doc-write/fixtures.json": "5cb93e4a2dd5a03deb5fb80501fc8d0c6706712606a26aa23d7d8243b6bb2773",
+      "skills/doc-write/fixtures.json": "ebc0d7a057c2e98ffe5c9f279f05600f0bf921919581600f94ea9a7759a64807",
       "skills/doc-write/references/adr-template.md": "67384d585ee51ab5093757397be8470cc1c65357b21c9096e61ccc73fe8ee28f",
       "skills/doc-write/references/discussion-summary-template.md": "130ccf87b8c2bee7840d2bb2611e46454df5addc25e254b8af287bdd12f2faa6",
       "skills/doc-write/references/mermaid-guidelines.md": "175dbb2f8dfbb7aa88c0d98b7a89f000971b3c7098b4101c306e4763feabfe2e",
@@ -186,7 +186,7 @@
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "artifact-store.md への ephemeral/config 2 節追加による stale。実走せず accept。根拠は実測で、本スキルの fixtures.json 全シナリオ（JSON 全文）が artifact store 関連語彙（.agents/ / artifact / artifacts.yml / store / migration / visibility / runtime）を 1 件も含まない。追加は純粋な新節で既存ルール・スキーマキー・コマンドの変更を含まないため、本スキルの挙動面に到達する経路が無い。",
+    "note": "#54: dw-003 の架空 setup.env を削除。前提は notes の注入契約に一本化。要件は不変",
     "result": "accepted-without-run",
     "surface": [
       "skills/doc-write/SKILL.md",
@@ -198,8 +198,8 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "198f3c8e0d326564751733b75fafbbd0bc35f6edcba23ce34df16035f77f9589",
-    "verified": "2026-07-27"
+    "surface_sha256": "d0ff453630d831d5e1b00e6b66784bea9608ad295fbe568f22ae19ba51303ab1",
+    "verified": "2026-07-29"
   },
   "github-issue": {
     "file_sha256": {

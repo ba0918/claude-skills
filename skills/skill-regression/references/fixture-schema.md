@@ -135,6 +135,14 @@ same in every case: **premises other than contents cannot be declared**.
 not, either reshape the premise into something declarable, or rewrite the requirement so it does not depend on that premise.
 "The executor kindly filled it in" also means what you were measuring drifted.
 
+**Unmaterializable premises** (#54): do not disguise an unmaterializable premise as a `setup` declaration.
+When a premise can only be conveyed via prompt injection (e.g. "web search is unavailable"), document the
+injection contract in `notes` and write requirements that are judgeable regardless of whether the injection
+succeeds. A requirement that can only pass when the injected condition holds — but the condition cannot be
+enforced — produces a structurally unjudgeable scenario.
+For capability constraints (e.g. "Codex is unavailable"), write requirements in branch-tolerant form:
+"if available, use real output; if unavailable, show a warning; in either case, do not fabricate".
+
 ## Conversion guide by source material
 
 - **From [empirical tuning](../../empirical-prompt-tuning/SKILL.md) measurements**: copy the `scenarios` / `requirements` of the
