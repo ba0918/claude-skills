@@ -607,8 +607,16 @@ def check_design_token_sync(root):
 
 
 _HOOKS_JSON_REL = os.path.join("hooks", "hooks.json")
-_HOOK_ROUTING_TABLE_REL = os.path.join("rules", "skill-routing.md")
-_HOOK_ROUTING_SCRIPT_REL = os.path.join("hooks", "inject-skill-routing.sh")
+# hook スクリプト → そのスクリプトが読む正本。スクリプトが存在するときだけ正本の
+# 実在を検査する（条件出力の補助正本はここに載せない — 欠落時はスクリプト側が沈黙する）
+_HOOK_CANONICAL_SOURCES = {
+    os.path.join("hooks", "inject-skill-routing.sh"): os.path.join(
+        "rules", "skill-routing.md"
+    ),
+    os.path.join("hooks", "inject-quality-gate.sh"): os.path.join(
+        "skills", "shared", "references", "quality-gate-contract.md"
+    ),
+}
 
 
 def check_plugin_hooks(root):
@@ -617,7 +625,7 @@ def check_plugin_hooks(root):
     SessionStart hook はスキル発火の想起を支える配送機構だが、壊れても CI も
     ローカルも緑のまま、コンテキスト注入だけが黙って止まる。ここで
     hooks.json のパース可否・command パスの実在と実行ビット・hook スクリプトが
-    参照する正本（rules/skill-routing.md）の実在を機械検証して塞ぐ。
+    参照する正本（_HOOK_CANONICAL_SOURCES）の実在を機械検証して塞ぐ。
 
     hooks/hooks.json が存在しないリポジトリでは no-op で pass する。
     """
@@ -683,16 +691,16 @@ def check_plugin_hooks(root):
                         f"（`chmod +x {rel}` で付与する）"
                     )
 
-    # hook スクリプトが cat する正本の実在（現時点で必要なのはこの 1 本。
-    # スクリプトを増やすたびに一般化する必要はない）
-    script_path = os.path.join(root, _HOOK_ROUTING_SCRIPT_REL)
-    if os.path.isfile(script_path):
-        table_path = os.path.join(root, _HOOK_ROUTING_TABLE_REL)
-        if not os.path.isfile(table_path):
-            errors.append(
-                f"[hooks] {_HOOK_ROUTING_SCRIPT_REL} が参照する正本が存在しない: "
-                f"{_HOOK_ROUTING_TABLE_REL}"
-            )
+    # hook スクリプトが読む正本の実在（2 本目のスクリプトが現れたためマッピング化）
+    for script_rel, source_rel in _HOOK_CANONICAL_SOURCES.items():
+        script_path = os.path.join(root, script_rel)
+        if os.path.isfile(script_path):
+            source_path = os.path.join(root, source_rel)
+            if not os.path.isfile(source_path):
+                errors.append(
+                    f"[hooks] {script_rel} が参照する正本が存在しない: "
+                    f"{source_rel}"
+                )
     return errors
 
 

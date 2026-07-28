@@ -10,6 +10,22 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+品質ゲート契約 v1 の想起層アダプタ第 1 号として、SessionStart hook
+`hooks/inject-quality-gate.sh` を新設した（issue #143 の v1 作業単位 4/4）。#86 で敷いた
+hooks 配送レールに 2 本目の command として後乗りし、契約の存在・3 正本のパス・「公開型の
+状態遷移には対象 SHA × 発効契約版に束縛された検証証跡が要る」という事前条件の要旨だけを
+注入する。skill-routing（正本 47 行を全文 cat）と違い契約は約 230 行あり、全文注入は常駐
+コンテキスト予算を圧迫するため、本文を複製しないポインタ注入とした（アダプタの責務は
+SessionStart = 語彙配布に限定。UserPromptSubmit の閾値判定・実行直前の機械検証は v1 対象外
+— 2026-07-28 壁打ちの責務分割裁定どおり）。契約 md を含まない配布形態では沈黙して exit 0
+し、セッション開始を壊さない。validate_repo チェック 21 の「hook スクリプトが参照する正本の
+実在」検査は 2 本目の出現に伴いスクリプト→正本のマッピングへ一般化した。
+
+- `hooks/inject-quality-gate.sh`（新設）
+- `hooks/hooks.json`（SessionStart に 2 本目の command を追加）
+- `scripts/validate_repo.py`（チェック 21 の正本実在検査をマッピング化）
+- `scripts/test_validate_repo.py`（quality-gate 正本欠落 / スクリプト不在時スキップの 2 テスト追加、fixture を 2 hook 構成へ更新）
+
 品質ゲート契約 v1 の適合プロファイル第 1 号 `skills/shared/references/skill-repository-profile.md`
 を新設した（issue #143 の v1 作業単位 3/4）。汎用契約 §6 の 3 層設定の中間層で、自然言語スキル
 リポジトリという 1 ドメインについて最低証拠・必須義務・弱体化禁止リストを確定する。汎用契約の
