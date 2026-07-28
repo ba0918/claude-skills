@@ -49,6 +49,10 @@ REFACTOR → improve while the tests stay green → confirm everything passes (r
 - Runnable only after GREEN has been reached
 - Remove duplication, improve naming, extract helpers
 - Adding new behavior is forbidden
+- If there is nothing to tidy (no duplication, naming is clear, responsibilities are well separated),
+  **record that basis and move on** — REFACTOR has an explicit exit for "no change needed".
+  Do not rearrange the structure just to have performed a REFACTOR (that is a YAGNI violation).
+  Recording only "REFACTOR done" without stating what was changed, or what made a change unnecessary, is not acceptable
 
 **Required**: run the tests and **confirm that everything still passes**.
 
