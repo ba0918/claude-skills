@@ -112,11 +112,11 @@
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
-      "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
+      "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "fixture要件を反転（artifact store配下のコミット不在を検査）。judge裁定により検出力は純増と判断。恒常failだった要件の弁別力はゼロで禁止規定に非抵触",
+    "note": "tdd-contract REFACTOR節に変更不要の出口を追加（plan-implementで確定済みの方針の転記、新たな設計判断なし）",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -128,7 +128,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "ec094b2d804f711346d23e24a2e8720fef29fbd057ddbf5ad8dbfa2af47b8185",
+    "surface_sha256": "9deba71e50002674185290ba999c9a97e2049b4e5906995c4c31466ea595289b",
     "verified": "2026-07-28"
   },
   "decision-journal": {
@@ -340,12 +340,12 @@
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
-      "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
+      "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "pi-002要件4を反転（artifact store配下のコミット不在を検査）。#109のcycle側と同じ裁定根拠",
+    "note": "tdd-contract REFACTOR節に変更不要の出口を追加（plan-implementで確定済みの方針の転記、新たな設計判断なし）",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan-implement/SKILL.md",
@@ -358,7 +358,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "bbc0904a01fd6e43e89fa19b71aee85f7c4f71df83bcfd744952c3c268b739a5",
+    "surface_sha256": "c6439e707107f50d6971eab0b30fd82c92b9cb1d5a6d1ca216b8cb745c72dc1b",
     "verified": "2026-07-28"
   },
   "plan-reviewer": {
@@ -457,14 +457,14 @@
   },
   "systematic-debugging": {
     "file_sha256": {
-      "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
+      "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/systematic-debugging/SKILL.md": "ce3a5e0dc0e6401a8bfb818054f49f9b85a211878a534fa5877d7b50824aba92",
       "skills/systematic-debugging/fixtures.json": "3581f610b0b790518266ab8be0e3375bed56165386767c29740cbc681523a99f",
       "skills/systematic-debugging/references/root-cause-tracing.md": "27fb3aa57781e5fc843a459ab3ec53343a18fb979cd4525010603c2353ccdaef"
     },
-    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；外部からの状況照会 0 回",
-    "result": "pass",
+    "note": "tdd-contract REFACTOR節に変更不要の出口を追加（plan-implementで確定済みの方針の転記、新たな設計判断なし）",
+    "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md",
@@ -472,19 +472,19 @@
       "skills/systematic-debugging/fixtures.json",
       "skills/systematic-debugging/references/root-cause-tracing.md"
     ],
-    "surface_sha256": "0ce16f08560695aefa3b8b5ada89f369db21f7c7113632d811a354d5b0b5f5f1",
-    "verified": "2026-07-27"
+    "surface_sha256": "a245f91e5889d1e8891ecaccb6e37842d8d33bc23ff1d53d11d6bdde4cecf084",
+    "verified": "2026-07-28"
   },
   "test-driven-development": {
     "file_sha256": {
-      "skills/shared/references/tdd-contract.md": "4b26061c818258f41599a1f8f19170abbc29a5d46cde5f6d181682c0c0226d23",
+      "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/test-driven-development/SKILL.md": "8d7ce1608d7f35ddee6fdf5428ad6d023513eaa61d63386493aa94efbed1004b",
       "skills/test-driven-development/fixtures.json": "ad73bf8a0daf85dad9eabdb049e48d449310be0db1ba0823a26aaa1376fb3ad4"
     },
-    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；読み取り専用要件 td-002 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
-    "result": "pass",
+    "note": "tdd-contract REFACTOR節に変更不要の出口を追加（plan-implementで確定済みの方針の転記、新たな設計判断なし）",
+    "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/testing-anti-patterns.md",
@@ -492,7 +492,7 @@
       "skills/test-driven-development/SKILL.md",
       "skills/test-driven-development/fixtures.json"
     ],
-    "surface_sha256": "34942c0a67295d4317e895f52946fa2fd48f5ad1c3cb8b271ace4be14f2cc974",
-    "verified": "2026-07-27"
+    "surface_sha256": "e7fe75728448d680b21e94f4dd1e518648409573a4e68240c127940938ad7c3e",
+    "verified": "2026-07-28"
   }
 }
