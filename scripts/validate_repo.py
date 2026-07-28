@@ -629,12 +629,27 @@ def check_plugin_hooks(root):
     except json.JSONDecodeError as exc:
         return [f"[hooks] JSON として読めない: {_HOOKS_JSON_REL} ({exc})"]
 
+    hooks_map = config.get("hooks")
+    if not isinstance(hooks_map, dict):
+        return [f"[hooks] hooks キーが object でない: {_HOOKS_JSON_REL}"]
+
     errors = []
-    for event, entries in config.get("hooks", {}).items():
+    for event, entries in hooks_map.items():
+        if not isinstance(entries, list):
+            errors.append(
+                f"[hooks] {event} のエントリが配列でない: {_HOOKS_JSON_REL}"
+            )
+            continue
         for entry in entries:
-            for hook in entry.get("hooks", []):
-                command = hook.get("command", "")
-                if not command:
+            hook_list = entry.get("hooks", []) if isinstance(entry, dict) else None
+            if not isinstance(hook_list, list):
+                errors.append(
+                    f"[hooks] {event} のエントリ構造が不正: {_HOOKS_JSON_REL}"
+                )
+                continue
+            for hook in hook_list:
+                command = hook.get("command", "") if isinstance(hook, dict) else ""
+                if not isinstance(command, str) or not command.strip():
                     errors.append(
                         f"[hooks] {event} の hook に command がない: {_HOOKS_JSON_REL}"
                     )
@@ -647,6 +662,11 @@ def check_plugin_hooks(root):
                     errors.append(
                         f"[hooks] command をシェル語彙として解釈できない: "
                         f"{command!r}（{event}, {exc}）"
+                    )
+                    continue
+                if not tokens:
+                    errors.append(
+                        f"[hooks] {event} の hook に command がない: {_HOOKS_JSON_REL}"
                     )
                     continue
                 script = tokens[0].replace("${CLAUDE_PLUGIN_ROOT}", root)

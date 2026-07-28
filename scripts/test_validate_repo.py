@@ -1274,6 +1274,42 @@ class TestCheckPluginHooks(unittest.TestCase):
             self.assertEqual(len(errors), 1)
             self.assertIn("正本が存在しない", errors[0])
 
+    def test_whitespace_only_command_is_flagged_not_crash(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            self._write(root, "hooks/hooks.json",
+                        '{"hooks": {"SessionStart": [{"hooks":'
+                        ' [{"type": "command", "command": "   "}]}]}}')
+            errors = check_plugin_hooks(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("command がない", errors[0])
+
+    def test_non_object_hooks_key_is_flagged_not_crash(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            self._write(root, "hooks/hooks.json", '{"hooks": []}')
+            errors = check_plugin_hooks(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("object でない", errors[0])
+
+    def test_non_list_event_entries_are_flagged_not_crash(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            self._write(root, "hooks/hooks.json",
+                        '{"hooks": {"SessionStart": {"hooks": []}}}')
+            errors = check_plugin_hooks(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("配列でない", errors[0])
+
+    def test_malformed_entry_structure_is_flagged_not_crash(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._full_setup(root)
+            self._write(root, "hooks/hooks.json",
+                        '{"hooks": {"SessionStart": ["not-an-object"]}}')
+            errors = check_plugin_hooks(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("構造が不正", errors[0])
+
 
 class TestCheckLegacyClaudePaths(unittest.TestCase):
     """チェック19: agent 生成物の置き場に `.claude/` を使っていないこと。
