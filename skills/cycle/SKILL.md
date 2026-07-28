@@ -98,6 +98,15 @@ Subagent delegation in Phases 1 / 1.5 / 2 follows
   procedure is the silent-stall row in "Error handling" below (single source, not repeated
   here). A nudge is a status check, not a re-delegation; it does not multiply the retry
   budget of the fallbacks below.
+- **Role-specific values** (the shared contract requires each referencing skill to state
+  these): silent-wait timeout **N = 10 minutes** per delegate, for Phases 1 / 1.5 / 2
+  alike — the shared default of
+  [§ wait discipline pillar 2](../shared/references/orchestration-patterns.md), adopted
+  as-is by the 2026-07-28 ruling on issue #58; revisit only if accumulated cycle-specific
+  arrival measurements justify a different value. Budget expiry does not open a new path:
+  it only marks when the silent-stall row in "Error handling" below may start.
+  Redelegation limit: pillar 2's "once per viewpoint", no cycle-specific extra budget.
+  Optional viewpoints: none — every delegate cycle launches is mandatory for its phase.
 
 Path conventions / writer duties / reader duties (inspect the result file on completion or
 stall notice; fall back to artifact inspection when missing; retry only when undecidable) /
