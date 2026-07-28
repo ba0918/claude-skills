@@ -20,9 +20,12 @@ This contract carries an explicit, machine-readable version: **`quality-gate-con
 Evidence and profiles reference this identifier, never the prose. Update rule: a change that
 alters any guarantee condition, state definition, obligation, or convergence rule is a
 **semantic** change and bumps this version; editorial changes (wording, examples, links) do
-not. Verifiers compare the version recorded in evidence against this declared value —
-a version string that does not resolve to a published contract version is invalid evidence.
-(Content-hash identity is a v2 candidate; out of scope here.)
+not. Versions identify **published** states of the contract: revisions made while a change
+to this file is still unpublished do not bump the version, because no evidence can have
+been produced against an unpublished draft. Verifiers compare the version recorded in
+evidence against the published declared value — a version string that does not resolve to
+a published contract version is invalid evidence. (Content-hash identity is a v2
+candidate; out of scope here.)
 
 ## The Core Property
 
