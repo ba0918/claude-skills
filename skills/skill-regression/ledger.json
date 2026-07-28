@@ -405,9 +405,9 @@
   },
   "refactor": {
     "file_sha256": {
-      "skills/refactor/SKILL.md": "edc8ee31a7db7bee1075104bb81e7508d172f855f7976eef3d4c4381d2721a4b",
+      "skills/refactor/SKILL.md": "92d47540bb827c92639d61ed6b67ce44f579af13161dc60d8799b72d9d2e221e",
       "skills/refactor/fixtures.json": "52a1627a3a378531cbda915806f25d8dd7d94815991147a685ef06693b14f795",
-      "skills/refactor/references/behavior-preservation-checks.md": "57f718e8eaa6dc02ef2c2df1e93207a315209f7f2c2484512d677097b8d3cd23",
+      "skills/refactor/references/behavior-preservation-checks.md": "35833e2e68e1b2a550ab12af4985e90a416642193d0d6881c9704ee5c8929284",
       "skills/refactor/references/refactoring-catalog.md": "90cb3d767e3f0c432c80334dc0f0bf56a59b04777e78d909bd4e60fbc2bf5569",
       "skills/refactor/references/similarity-detection.md": "a4ef8d314ff0bbeb89126d469eb1c3564b045dec08c4abfed9801ed258f6af33",
       "skills/shared/references/artifact-store.md": "411e0370cd342bf006dfd7a11bae3b7196eeb4cf4c3d6e90b00ae96c300599ab",
@@ -415,8 +415,8 @@
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "#76 の .claude/ → .agents/ パス移行に伴う再評価。パスは機械解釈されるトークンなので accept せず process-queue 経路で実走し、6 スキル 17 シナリオ critical 全 ○。自己申告の baseline_drift を manifest の baseline hash と突き合わせて 17/17 一致。移行が実際に効いていることを成果物で裏取り済み（executor は .agents/tmp/ 配下へ書き、.claude/tmp/ への書き込みは 0 件）。sweep-fix は sf-002（置き場を残していない=critical）が残存 0 件、sf-001（置き場が ignore 対象外であることを検出・報告し自力解決しない）が残存 3 件で、いずれも要件どおり。executor は --allowedTools にサブエージェント委譲を含まないため、各スキルの規定どおり sequential/inline の fallback 経路を通った。",
-    "result": "pass",
+    "note": "performance gate を二段構えに変更 + Fable レビューで extraction の例示を除去（性能中立な変換の不当ブロック解消、fail-safe は保持）",
+    "result": "accepted-without-run",
     "surface": [
       "skills/refactor/SKILL.md",
       "skills/refactor/fixtures.json",
@@ -428,8 +428,8 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "a66dc624e2a625ab02dab4fafbca28c0bec38631bf48a9650a94c88e57d46575",
-    "verified": "2026-07-27"
+    "surface_sha256": "e0c554e0ce4a413e7899c4729b8799da04eedda6e037ae68d693f0d0a377dc6e",
+    "verified": "2026-07-28"
   },
   "sweep-fix": {
     "file_sha256": {

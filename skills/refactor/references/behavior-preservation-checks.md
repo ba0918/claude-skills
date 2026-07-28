@@ -67,10 +67,13 @@ After the transformation, can you **prove** that "the behavior has not changed"?
 
 ### 5. Performance sensitivity
 
-Is this site on a hot path, a benchmark target, or annotated with measurements?
+A two-stage check. First determine whether the transformation could affect performance at all, then check the hot-path status only when it could.
 
-- The "simpler version" may be slower, and it cannot be rewritten without measurement → **UNCERTAIN**
-- **When it is unknown whether it is a hot path, fall to UNCERTAIN as well** (completing the fail-safe)
+1. **Does the transformation change performance characteristics?** — check whether evaluation order, call count, allocation, or computational complexity change. If none of these change (e.g. a rename, comment cleanup), the transformation is **performance-neutral** and passes this check regardless of hot-path status
+2. **Hot-path check** (only when stage 1 answered "yes" or "indeterminate"): is this site on a hot path, a benchmark target, or annotated with measurements?
+   - The "simpler version" may be slower, and it cannot be rewritten without measurement → **UNCERTAIN**
+   - **When it is unknown whether it is a hot path, fall to UNCERTAIN as well** (completing the fail-safe)
+3. **When stage 1 itself is indeterminate** (cannot tell whether the transformation changes performance characteristics), fall to **UNCERTAIN** as well
 
 ### 6. Consistency with convention
 
