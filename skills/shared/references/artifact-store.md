@@ -234,9 +234,9 @@ records that decision and the validated staging-set digest.
 | `run_id` | exactly the lifecycle run identifier |
 | `staging_manifest_digest` | SHA-256 of the validated staging manifest; required for `discarded` |
 | `partial_staging_inventory` | `null` for `discarded`; failure evidence uses this field instead of a digest when validation was incomplete |
-| `reason_code` | closed implementation-defined discard reason code |
+| `reason_code` | one of the closed set `REJECTED`, `USER_REJECTED`, `MERGE_REVERTED`, `VERIFICATION_FAILED`, `SUPERSEDED` |
 | `actor` | authenticated identity that authorized the discard |
-| `discarded_at` | UTC decision timestamp |
+| `discarded_at` | RFC 3339 UTC decision timestamp ending in literal `Z` |
 | `preserved_satellite` | boolean; `true` until separate cleanup succeeds |
 | `lifecycle_version` | target version of the `discarded` transition |
 

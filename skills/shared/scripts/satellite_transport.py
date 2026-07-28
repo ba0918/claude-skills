@@ -26,6 +26,13 @@ SINGLETONS = frozenset({"status.md", "session-history.md"})
 DERIVED = frozenset({"idea-status.md", "issue-status.md"})
 EXCLUDED_PARTS = frozenset({"archives", "done", "failed", "ready", "running"})
 RUN_ID_RE = __import__("re").compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+DISCARD_REASON_CODES = frozenset({
+    "REJECTED",
+    "USER_REJECTED",
+    "MERGE_REVERTED",
+    "VERIFICATION_FAILED",
+    "SUPERSEDED",
+})
 ALLOWED_EDGES = {
     "created": {"active", "failed_readonly"},
     "active": {"harvesting", "failed_readonly"},
@@ -55,12 +62,33 @@ def canonical_json(value: object) -> bytes:
     ).encode("utf-8")
 
 
+def derive_satellite_run_id(batch_run_id: str, plan_id: str) -> str:
+    """Return the collision-free lifecycle identity for one plan in a batch."""
+    if not RUN_ID_RE.fullmatch(batch_run_id):
+        raise TransportError("invalid batch run id")
+    if not RUN_ID_RE.fullmatch(plan_id):
+        raise TransportError("invalid plan id")
+    satellite_run_id = f"{batch_run_id}-{plan_id}"
+    if not RUN_ID_RE.fullmatch(satellite_run_id):
+        raise TransportError("derived satellite run id is too long")
+    return satellite_run_id
+
+
 def _digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _is_utc_timestamp(value: object) -> bool:
+    if not isinstance(value, str) or not value.endswith("Z"):
+        return False
+    try:
+        return datetime.fromisoformat(value[:-1] + "+00:00").tzinfo == timezone.utc
+    except ValueError:
+        return False
 
 
 def _atomic_bytes(path: Path, data: bytes, mode: int = 0o600) -> None:
@@ -483,6 +511,8 @@ def collect(
 def discard_staging(
     runtime_dir: Path, expected_version: int, *, actor: str, reason_code: str,
 ) -> dict:
+    if reason_code not in DISCARD_REASON_CODES:
+        raise TransportError("discard reason_code is outside the closed set")
     with _locked(runtime_dir):
         provenance = _load(runtime_dir)
         _validate_identity_and_destination(provenance)
@@ -766,12 +796,10 @@ def _validate_cleanup_evidence(
             raise TransportError("publish evidence is incomplete")
     elif disposition == "discarded":
         if (
-            not isinstance(evidence.get("reason_code"), str)
-            or not evidence["reason_code"]
+            evidence.get("reason_code") not in DISCARD_REASON_CODES
             or not isinstance(evidence.get("actor"), str)
             or not evidence["actor"]
-            or not isinstance(evidence.get("discarded_at"), str)
-            or not evidence["discarded_at"]
+            or not _is_utc_timestamp(evidence.get("discarded_at"))
             or evidence.get("preserved_satellite") is not True
             or evidence.get("partial_staging_inventory") is not None
         ):

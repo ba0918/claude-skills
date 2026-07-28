@@ -24,11 +24,36 @@ launched, perform its core action yourself following that skill's documented pro
 
 - First path in the arguments: plan file path (when omitted, auto-select from `.agents/artifacts/plans/`)
 - A number in the arguments: max refine iterations (default: 4)
+- Inner satellite context: a repository-relative `pinned_plan`, `resolved_isolation=worktree`,
+  `satellite_run_id`, and `satellite_capability_file`. The capability parameter is the file path,
+  never the bearer value.
+
+When all four inner satellite fields are present, treat them as an authoritative context resolved
+by the outer orchestrator:
+
+- Validate the complete context and pinned-plan/provenance binding, then do not auto-select or
+  re-resolve the plan. A partial context is an error.
+- This inner cycle MUST skip workspace claim and release; do not create or switch branches or
+  create a nested worktree; the outer orchestrator already created and owns the isolation boundary.
+- It must still run `plan-refine` and preserve every refine verdict and iteration gate. Resolved
+  isolation changes ownership, not the refine quality gate.
+- When Phase 2 invokes implementation, pass the complete satellite context unchanged to
+  `plan-implement`, including the capability file path rather than its contents.
+- Across the inner cycle, suppress `status.md`, `session-history.md`, and derived-index writes.
+  Refine and implementation update only the authorized pinned plan; singleton composition belongs
+  to the outer main-tree orchestrator.
+- In inner satellite mode, append the complete resolved context to every refine prompt: the
+  initial refine, the Phase 1.5 fix, and the re-refine; append the same complete resolved context
+  to the implementation prompt. No delegate may infer, shorten, or re-resolve that context.
+
+Without the complete context, retain the standalone behavior below. This contract only defines the
+inner path used by an existing outer worktree; standalone outer-worktree resolution is separate.
 
 ## Phase 0: Preparation
 
 0. **Take the working tree** per the [Workspace Lock contract](../shared/references/workspace-lock.md),
    before plan validation and before writing a single byte of project state.
+   In inner satellite mode, skip this entire claim/release step as specified above.
    - `ACQUIRED` / `STALE_RECLAIMED` → continue. Report `STALE_RECLAIMED` in the CYCLE START
      block so a recovered crash is visible rather than silent
    - `LOCK_HELD` → **abort here**, showing the holder's `skill` / `pid` / `branch` /
@@ -38,6 +63,7 @@ launched, perform its core action yourself following that skill's documented pro
    - Release the token when the cycle ends, on every exit path including abort
 
 1. Identify the plan file
+   - In inner satellite mode, use the validated `pinned_plan` directly
    - If the arguments contain a path, use it
    - Otherwise auto-select: list the `*.md` files directly under `.agents/artifacts/plans/`
      in filename-timestamp descending order and pick the first **incomplete** plan (one whose
@@ -67,6 +93,7 @@ launched, perform its core action yourself following that skill's documented pro
      a file under a legacy root (e.g. `docs/plans/`) that already has plan structure and a
      Cycle ID is a migration case, not an mv case
 1.7. **Branch precondition**: check the current branch
+   - In inner satellite mode, skip this step; do not create or switch a branch
    - If the current branch is the repository's default branch (`main` or `master`):
      create and switch to a working branch named `cycle/{plan_timestamp}` (where
      `{plan_timestamp}` is the timestamp portion of the plan filename). This prevents
@@ -128,6 +155,9 @@ cleanup are owned by the contract.
      and every iteration's total score (used for cumulative-stall detection) — to
      `.agents/runtime/delegation/{run_id}_refine.md`. The report message is merely a
      notification that the file was written."
+   - In inner satellite mode, append the complete resolved context and instruct refine to update
+     only `pinned_plan` through the authorized write path. It must not touch singleton or derived
+     artifacts and must not resolve isolation.
 2. Receive the result (per "Delegation result relay" above)
    - On receiving either refine's completion report **or** a stop/wait notice, read
      `.agents/runtime/delegation/{run_id}_refine.md` for per-dimension scores, verdicts, and
@@ -162,13 +192,16 @@ Iterations: {N}
      `.agents/runtime/delegation/{run_id}_refine-fix.md` before sending your completion
      report** (the report is merely a notification that the file was written).\n\nRemaining
      BLOCKs:\n{block_list}"
+   - In inner satellite mode, append the complete resolved context and the same authorized-write,
+     singleton-suppression, and no-isolation-resolution instructions used by the initial refine.
 3. Receive the fix result (per "Delegation result relay" above)
    - On completion report **or** stop/wait notice, read
      `.agents/runtime/delegation/{run_id}_refine-fix.md`. If missing or incomplete, inspect
      the BLOCK-related parts of the plan file and the Git diff directly to confirm whether
      fixes landed
 4. **Re-refine**: relaunch the refine agent as in Phase 1 (iterations = the smaller of the
-   remaining budget or 2)
+   remaining budget or 2). In inner satellite mode this includes the complete resolved context;
+   do not omit it on the fallback path.
 5. **Re-verdict**:
    - All PASS or WARN only → Phase 2
    - BLOCKs still remain → abort the cycle; list the remaining BLOCKs and stop
@@ -192,6 +225,10 @@ BLOCKs addressed: {N}/{total}
      commits, per-step completion) and test-run evidence — to the result file
      `.agents/runtime/delegation/{run_id}_implement.md` (the report is merely a notification
      that the file was written). Commit after each completed step and update the status."
+   - In inner satellite mode, append `pinned_plan`, `resolved_isolation=worktree`,
+     `satellite_run_id`, and `satellite_capability_file` verbatim to this prompt. This is how Cycle
+     must pass the complete satellite context unchanged to `plan-implement`; replace “update the
+     status” with “update only the pinned plan and suppress singleton/derived writes.”
 2. Receive the result (per "Delegation result relay" above)
    - On completion report **or** stop/wait notice, read
      `.agents/runtime/delegation/{run_id}_implement.md` for the implementation summary, test
@@ -233,6 +270,9 @@ whole cycle for it.
 2. Generate the summary file at `.agents/artifacts/plans/results/{plan_basename}_result.md`,
    where `{plan_basename}` is the plan filename without its `.md` extension
    (`mkdir -p` the directory if missing)
+   - **Inner satellite mode:** defer result-artifact composition to the outer orchestrator. Do
+     not create this file in the satellite; retain the facts listed in Step 6 for the completion
+     relay.
    - **On failure**: append `"result file generation"` to `phase3_failures` and move on
 
 Summary file content:
@@ -263,6 +303,8 @@ Artifact paths follow the Agent Artifact Store contract.
 ```
 
 3. Mark status.md as completed:
+   - **Inner satellite mode:** skip all of Step 3; skip singleton status and session-history
+     composition. The outer orchestrator owns those writes.
    - **Step 3a: Pre-check (failure detection first)**: Read `.agents/artifacts/status.md`
      and confirm the Current Session section exists
      - If the Current Session heading itself is absent, or the table is unparsable
@@ -291,6 +333,7 @@ Artifact paths follow the Agent Artifact Store contract.
 
 4. **Commit tracked changes**: commit any tracked (non-ignored) changes remaining in the
    working tree after Phase 2
+   - Inner satellite mode does not skip this step: tracked implementation commits remain mandatory.
    - Files under the artifact store (`.agents/artifacts/`) are structurally excluded from
      Git by [safety invariant 3 of the artifact-store contract](../shared/references/artifact-store.md)
      and will never appear in `git status` — do not attempt to stage or commit them
@@ -302,6 +345,9 @@ Artifact paths follow the Agent Artifact Store contract.
    - **On failure**: append `"commit"` to `phase3_failures` and move on
 
 5. **Auto-close the issue**: read the plan file and check for an `**Issue:**` line
+   - **Inner satellite mode:** must not auto-close a linked issue. Return its slug to the outer
+     orchestrator, which may close it only after merge, post-merge verification, and artifact
+     publication all succeed.
    - If present: extract the issue slug and execute the skill `claude-skills:issue` with
      `close {slug}`
      - If close fails, display a warning only; the cycle itself still counts as a success
@@ -326,6 +372,13 @@ Issue: {closed ✅ / ⚠️ close failed: {slug} — manual close required / (no
 💡 Need tweaks? Use /iterate for quick fixes and polish.
 ══════════════════════════════════════
 ```
+
+In inner satellite mode, the completion relay must return the refine verdict, iteration count,
+implementation counts, commit list, plan status, linked issue slug, and phase failures. These are
+non-authoritative facts for the outer orchestrator to compose the result artifact and decide issue
+closure after harvest, merge, verification, and publication. Show `Result: deferred to outer
+orchestrator`, `Session: deferred to outer orchestrator`, and `Issue: deferred to outer
+orchestrator: {slug | none}`.
 
 ## Error handling
 

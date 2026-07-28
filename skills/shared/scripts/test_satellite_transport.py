@@ -19,6 +19,7 @@ from satellite_transport import (  # noqa: E402
     create_run,
     discard_staging,
     durable_write,
+    derive_satellite_run_id,
     format_diagnostic,
     lifecycle_transition,
     publish,
@@ -85,6 +86,47 @@ class SatelliteTransportTest(unittest.TestCase):
             create_run(main, worktree, "run-1", "plans/p.md")
         self.assertEqual(b"delegate work", plan.read_bytes())
         self.assertEqual(record.capability, record.capability_path.read_text())
+
+    def test_satellite_run_id_is_unique_per_plan_and_bound_to_batch(self):
+        self.assertEqual("batch-42-A", derive_satellite_run_id("batch-42", "A"))
+        self.assertEqual("batch-42-B", derive_satellite_run_id("batch-42", "B"))
+        self.assertNotEqual(
+            derive_satellite_run_id("batch-42", "A"),
+            derive_satellite_run_id("batch-42", "B"),
+        )
+        for batch_run_id, plan_id in (("", "A"), ("batch-42", ""), ("../batch", "A"), ("batch", "A/B")):
+            with self.subTest(batch_run_id=batch_run_id, plan_id=plan_id):
+                with self.assertRaises(TransportError):
+                    derive_satellite_run_id(batch_run_id, plan_id)
+
+    def test_two_plan_ingress_has_no_runtime_collision_and_recovery_uses_satellite_id(self):
+        main, worktree_a = self.roots()
+        worktree_b = main.parent / "worktree-b"
+        subprocess = __import__("subprocess")
+        subprocess.run(
+            ["git", "worktree", "add", "-q", "-b", "plan-b", str(worktree_b), "HEAD"],
+            cwd=main, check=True,
+        )
+        (worktree_b / ".agents/artifacts/plans").mkdir(parents=True)
+        self.addCleanup(
+            lambda: subprocess.run(
+                ["git", "worktree", "remove", "--force", str(worktree_b)],
+                cwd=main, check=False, capture_output=True,
+            )
+        )
+        plan = Path("plans/p.md")
+        (main / ".agents/artifacts" / plan).write_bytes(b"base")
+        run_a = create_run(
+            main, worktree_a, derive_satellite_run_id("batch-42", "A"), plan,
+        )
+        run_b = create_run(
+            main, worktree_b, derive_satellite_run_id("batch-42", "B"), plan,
+        )
+        self.assertNotEqual(run_a.runtime_dir, run_b.runtime_dir)
+        self.assertTrue(run_a.runtime_dir.is_dir())
+        self.assertTrue(run_b.runtime_dir.is_dir())
+        self.assertEqual("batch-42-A", recovery_report(run_a.runtime_dir)["run_id"])
+        self.assertEqual("batch-42-B", recovery_report(run_b.runtime_dir)["run_id"])
 
     def test_authorization_requires_active_live_matching_capability_and_path(self):
         _, _, record = self.active_run()
@@ -234,6 +276,39 @@ class SatelliteTransportTest(unittest.TestCase):
         evidence = json.loads((record.runtime_dir / "discard-evidence.json").read_text())
         self.assertEqual(4, evidence["lifecycle_version"])
         self.assertIsNone(evidence["partial_staging_inventory"])
+
+    def test_discard_rejects_reason_outside_closed_set(self):
+        _, worktree, record = self.active_run()
+        (worktree / ".agents/artifacts/plans/p.md").write_bytes(b"satellite")
+        lifecycle_transition(record.runtime_dir, "active", 1, "harvesting",
+                             capability=record.capability, consume=True, expected_epoch=1)
+        collect(record.runtime_dir, expected_version=2, raw_capability=record.capability)
+        with self.assertRaisesRegex(TransportError, "discard reason_code"):
+            discard_staging(
+                record.runtime_dir, 3, actor="human", reason_code="FREE_FORM_REASON",
+            )
+
+    def test_discard_evidence_timestamp_is_strict_utc(self):
+        _, worktree, record = self.active_run()
+        (worktree / ".agents/artifacts/plans/p.md").write_bytes(b"satellite")
+        lifecycle_transition(record.runtime_dir, "active", 1, "harvesting",
+                             capability=record.capability, consume=True, expected_epoch=1)
+        collect(record.runtime_dir, expected_version=2, raw_capability=record.capability)
+        discard_staging(
+            record.runtime_dir, 3, actor="human", reason_code="USER_REJECTED",
+        )
+        evidence = json.loads((record.runtime_dir / "discard-evidence.json").read_text())
+        parsed = __import__("datetime").datetime.fromisoformat(
+            evidence["discarded_at"].replace("Z", "+00:00"),
+        )
+        self.assertTrue(evidence["discarded_at"].endswith("Z"))
+        self.assertEqual(__import__("datetime").timezone.utc, parsed.tzinfo)
+        evidence["discarded_at"] = "2026-07-29T12:00:00+09:00"
+        (record.runtime_dir / "discard-evidence.json").write_bytes(
+            canonical_json(evidence),
+        )
+        with self.assertRaisesRegex(TransportError, "discard evidence"):
+            transition_cleanup_allowed(record.runtime_dir, "discarded", 4)
 
     def test_lifecycle_cas_rejects_stale_and_illegal_transitions(self):
         _, _, record = self.active_run()

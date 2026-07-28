@@ -13,13 +13,33 @@ Act as the orchestrator and drive implementation → review → feedback incorpo
 When any of the following applies, you may perform that role inline yourself instead of delegating or invoking another skill:
 you cannot launch a subagent / another skill (`claude-skills:plan`, etc.) cannot correctly point at the target project /
 the step is a trivial change of a few lines where the overhead of delegation does not pay off.
-When updating status inline, edit status.md and the plan file directly.
+When updating status inline in direct mode, edit status.md and the plan file directly. In
+satellite mode, update only the pinned plan through the authorized write path.
 Even inline, the review (Step B) takes the stance of an independent, critical reviewer: do not assume the judgments made
 while implementing — re-read only the code and the tests to evaluate them, and state findings explicitly as BLOCK / WARN / INFO.
 
 ## Parameters
 
 - Argument: additional instructions (naming a specific step, narrowing the scope, etc.)
+- Satellite execution context: a repository-relative `pinned_plan`, the already resolved
+  `resolved_isolation=worktree`, `satellite_run_id`, and `satellite_capability_file`.
+  The capability parameter is a file path, never the raw bearer value.
+
+When this complete context is present, run in **satellite mode**:
+
+- Validate that `pinned_plan` is repository-relative, remains inside the canonical satellite
+  artifact store, and matches the run provenance. Read that plan directly; do not select a plan
+  through `status.md`.
+- read the capability from `satellite_capability_file` only when authorizing a durable plan
+  update. Never copy the raw capability into a prompt, artifact, log, commit, or report.
+- The delegate updates the pinned plan directly through the authorized satellite-store write
+  path. It must not invoke `plan` and must not write `status.md`, `session-history.md`, or derived
+  indexes. The main-tree orchestrator composes those singleton files after harvest.
+- TDD, review, verification, and per-step commits remain mandatory. Satellite mode changes
+  artifact ownership only; it does not weaken any implementation or quality gate below.
+
+Without the complete satellite context, use direct mode exactly as before. A partial context is
+an error; do not guess paths, isolation, or capability data.
 
 ## Phase 0: Load the Plan and Update Status
 
@@ -32,12 +52,16 @@ while implementing — re-read only the code and the tests to evaluate them, and
      `STALE_RECLAIMED` → report it and continue; `UNAVAILABLE` → warn once and continue
      (fail-open). Release on every exit path
 
-1. Read `.agents/artifacts/status.md` and identify the session currently at 🟡 Planning
+1. In direct mode, read `.agents/artifacts/status.md` and identify the session currently at
+   🟡 Planning. In satellite mode, read the validated `pinned_plan` directly.
    - Re-entry from a step partway through (a session already at 🔵 Implementing) is also a normal case
 2. Load the corresponding plan file (inside `.agents/artifacts/plans/`)
 3. Grasp the overall picture of the plan, the list of steps, and the current progress (do not re-implement 🟢 Done steps)
 4. If the argument names a specific step, start from there
-5. **Update the status to 🔵 Implementing** (invoke the skill `claude-skills:plan` to update status. No update is needed if it is already 🔵 Implementing)
+5. **Direct mode:** update the status to 🔵 Implementing (invoke the skill
+   `claude-skills:plan`; no update is needed if already 🔵 Implementing).
+   **Satellite mode:** update only the pinned plan through the authorized write path; do not
+   invoke `plan` or write singleton/derived state.
 
 ## Phase 1-N: Implementation Loop (repeated per step)
 
@@ -109,11 +133,13 @@ Receive the implementation result.
    - A review round that produced **zero findings is not counted as an iteration** — an iteration is a round trip that
      actually incorporated a fix. A review with nothing to fix ends the loop instead of consuming the iteration budget
 
-### Step D: Status Update and Commit (mandatory — must not be skipped)
+### Step D: Progress Update and Commit (mandatory — must not be skipped)
 
 **Always do this on completing each step. You must not skip it.**
 
-1. Invoke the skill `claude-skills:plan` and update the following:
+1. In direct mode, invoke the skill `claude-skills:plan` and update the following. In satellite
+   mode, perform the same progress and notes update directly in the pinned plan through the
+   authorized write path, without invoking `plan` or updating singleton/derived state:
    - Change the status of the completed step to 🟢 Done
    - Note the information for the next step
    - Record a summary of the implementation (changed files, test count, etc.)
@@ -137,13 +163,17 @@ After every step is complete:
    - A review round with zero actionable findings (after exclusions) ends the loop
    - If 3 iterations are exhausted with findings still open, escalate to the user with the remaining findings
 3. Once everything is resolved:
-   - Invoke the skill `claude-skills:plan` and update the status to 🟢 Complete
+   - In direct mode, invoke the skill `claude-skills:plan` and update the status to 🟢 Complete.
+     In satellite mode, mark the pinned plan complete through the authorized write path and leave
+     singleton/derived composition to the main-tree orchestrator
    - If uncommitted changes (the status update, etc.) remain, commit them
    - Present the implementation summary to the user
 
 ## Key Rules
 
-- **Always update the status when each step completes. Do not defer it.**
+- **Direct mode always updates status when each step completes. Satellite mode updates only the
+  pinned plan and leaves singleton status composition to its orchestrator. Do not defer the
+  applicable progress update.**
 - **Strictly observe the TDD cycle (Red → Green → Refactor). Write the test before the implementation code.**
 - **Implementation without tests is forbidden. If a test cannot be written, revisit the design.**
 - **A BLOCK finding must be resolved before moving on.**
