@@ -174,15 +174,20 @@ Convergence is a state, not a feeling of having iterated enough. The gate conver
      **ACCEPTED_RISK** (an explicitly recorded acceptance);
    - **FALSE_POSITIVE** → a recorded dismissal with the reason it does not apply;
    - **UNCERTAIN** → stays report-only, never marked fixed or accepted. Blocking-severity
-     UNCERTAIN blocks convergence until resolved to CONFIRMED / FALSE_POSITIVE or
-     explicitly escalated to a human; non-blocking UNCERTAIN is recorded as-is and does
+     UNCERTAIN blocks convergence until a recorded adjudication resolves it to CONFIRMED
+     or FALSE_POSITIVE and the corresponding disposition is applied. Escalation is **not**
+     an alternative to resolution: escalating transitions the change to the non-converged
+     *explicit human decision required* state, and only the human's recorded adjudication
+     re-opens the path to convergence. Non-blocking UNCERTAIN is recorded as-is and does
      not block.
 4. At least one history-free (§3) review pass completed without new blocking findings.
 
 Non-convergence rules:
 
 - Blocking-severity findings left UNCERTAIN, and mandatory-obligation areas left
-  `inconclusive`, never converge silently — they either get resolved or escalate to a human.
+  `inconclusive`, never converge silently. Escalating them to a human is a transition to
+  *explicit human decision required* — a non-converged state — never a substitute for
+  resolution; convergence resumes only from the human's recorded adjudication.
 - **Oscillation** — a fix followed by a finding pushing in the opposite direction — escalates
   to a human immediately.
 - An iteration cap is a **detector of undecidability, not a quality condition**. Reaching it
