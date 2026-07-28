@@ -37,8 +37,8 @@ Phase 5: REPORT  — structured report, then delete intermediate files
 1. Parse from `$ARGUMENTS` the target scope (file / directory / glob / function name) and, if present, the aspect to focus on (e.g. "error handling", "null safety")
 2. When no scope is specified:
    - **Interactive mode**: present the user with choices and confirm the target scope
-   - **headless / Auto mode**: do not guess a scope and continue. Report that the target scope is unspecified and abort (a whole-codebase scan with no scope is codebase-review's territory)
-3. Confirm that the specified paths exist (`ls` / list the files). Abort with an error immediately if they do not
+   - **headless / Auto mode**: do not guess a scope. Jump directly to the Report Phase with exit point "Phase 0 abort" (a whole-codebase scan with no scope is codebase-review's territory)
+3. Confirm that the specified paths exist (`ls` / list the files). If they do not exist, jump directly to the Report Phase with exit point "Phase 0 abort"
 
 > Do not create the intermediate-file location `.agents/tmp/sweep-fix/` at this point. Create it at the moment the first file is saved (the problem list in Phase 1) — so that finishing early with zero problems leaves no litter.
 
@@ -58,7 +58,7 @@ Analyze the code in the specified scope and build a problem list.
    - **Generalizability** — is this problem a structure that can occur elsewhere? If it is specific to that site (a spec local to it), drop it from the sweep
 4. **When there are zero problems (the early-exit path)**: report that no problem was detected in the specified range and finish normally. Do not manufacture findings
    - Do not create intermediate files (if you already created them, delete them with `rm -rf .agents/tmp/sweep-fix`)
-   - The report is not Phase 5's full version but an abbreviated one — the "problems detected" section plus the basis of the analysis — printed in the conversation
+   - Skip Phases 2-4 and jump directly to the Report Phase with exit point "Early exit (no findings)"
    - No fix happened, so the verification gate (running tests) is unnecessary. "nothing to verify because nothing changed" suffices
 5. Save the problem list: **before creating the directory, check whether the intermediate-file location is ignored by the VCS** (`git check-ignore -q .agents/tmp/sweep-fix`. If the check itself cannot be run, treat the state as unknown and handle it the same as not-ignored). Then run `mkdir -p .agents/tmp/sweep-fix` and write `.agents/tmp/sweep-fix/problems.json`
    - **When it is not ignored**: do not move the location, and do not edit the project's ignore settings on your own (rewriting the user's repository setup is outside this skill's scope). Proceed as is and **state in the report that the intermediate files are visible to the VCS at that path**. Whether to add an ignore entry is the user's call
@@ -128,6 +128,28 @@ Fix **CONFIRMED sites only**. Do not create any path by which a change touches a
 4. **Do not commit**. The user commits with `/claude-skills:commit` (this skill's responsibility ends at the fix)
 
 ## Phase 5: REPORT — Structured Report
+
+**Gate early-exit rule**: when a Gate in any Phase triggers an early exit, skip all subsequent Phases and jump directly to this Report Phase. Do not pass through empty intermediate Phases.
+
+### Exit Point × Report Format
+
+| Exit point | Trigger | Format |
+|---|---|---|
+| **Phase 0 abort** | Scope unspecified (headless) or path not found | Abort format |
+| **Early exit (no findings)** | Phase 1: zero problems detected | Early-exit format |
+| **Normal completion** | Phase 4 complete | Full structure (§1-§6 below) |
+
+**Abort format** — required sections:
+1. Scope status (what was specified, or that nothing was specified)
+2. Abort reason
+
+**Early-exit format** — required sections:
+1. Scope (the specified range)
+2. Analysis basis (what was examined and how)
+3. Conclusion ("no problems detected")
+4. Verification ("nothing to verify because nothing changed")
+
+### Full Structure (Normal Completion)
 
 Print a report in the conversation with the structure below, then delete the intermediate files (`rm -rf .agents/tmp/sweep-fix`).
 

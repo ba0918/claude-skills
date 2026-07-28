@@ -60,7 +60,7 @@ Phase 6: REPORT     — report the results + present proposed issue-creation com
    - A git period expression ("the last 5 commits", "this week's changes" → expand to the set of target files with `git log --since=...` / `git diff HEAD~N --name-only`)
 2. **Quote rigorously**: when a path or argument contains whitespace or shell metacharacters, always wrap it in quotes when assembling the command (`git diff HEAD~5 --name-only -- "src/my dir"`)
 3. **With no argument**: present the changed files of the most recent commit (`git diff HEAD~1 --name-only`) as the default scope and confirm it
-4. **Existence check**: confirm that the expanded target paths exist with `ls` / by listing files. Abort with an error immediately if they do not
+4. **Existence check**: confirm that the expanded target paths exist with `ls` / by listing files. If they do not exist, jump directly to the Report Phase with exit point "Phase 0 abort"
 5. **Handling of test files**: even when scope expansion (a git period specification, etc.) includes test files, treat the tests **not as improvement targets but as the means of verification** (immutable. Same root as the Phase 5 rule "do not modify the tests")
 6. **Safety cap**: when the expanded targets exceed **50 files**, do not press on — present a proposal for splitting the scope and confirm it with the user (preventing a runaway in total scope volume. Phase 5's Rule of 500 controls the size of a single improvement and is a separate layer)
 7. **Gate: temporary-code judgment** — prototypes, throwaway scripts, and code slated for deletion (signals such as `TODO: remove` / `experimental` / `scratch` + confirmation with the user) are **excluded from the improvement targets** and reported as such (spending effort on temporary code is a waste of time). Because there is code that looks temporary but has become specified (a migration shim, etc.), **deletion and consolidation transformations are out of scope for the first version** — limit yourself to highly reversible transformations such as tidying names, extraction, and removing duplication
@@ -95,7 +95,7 @@ Phase 6: REPORT     — report the results + present proposed issue-creation com
 
 3. **The boundary rule with sweep-fix**: when a candidate's improvement value is grounded in correctness / security / data loss / behavior mismatch, it is not a refactor candidate but a `BUG_FOUND`. If fixing the bug is the goal, use sweep-fix
 4. Apply the test "**can a new team member understand it faster than before?**" to each `REFACTOR_CANDIDATE`
-5. **Gate: already-clean** — zero improvement candidates, or every candidate is "low value" → **finish with a no-op**. Report "already simple and highly readable" as a legitimate result (do not force an application). In this case no change occurs, so the verification gate (running tests) is **not mandatory** (running the existing tests once, read-only, to grasp the behavioral contract is not precluded). Print an abbreviated report (scope / verdict summary / reasons only. The rule for choosing the format is at the top of Phase 6) in the conversation
+5. **Gate: already-clean** — zero improvement candidates, or every candidate is "low value" → **finish with a no-op**. Report "already simple and highly readable" as a legitimate result (do not force an application). In this case no change occurs, so the verification gate (running tests) is **not mandatory** (running the existing tests once, read-only, to grasp the behavioral contract is not precluded). Skip Phases 3-5 and jump directly to the Report Phase with exit point "Early exit (no findings)"
 6. **Gate: performance-critical** — a two-stage check:
    1. **Does the transformation change performance characteristics?** — determine whether evaluation order, call count, allocation, or computational complexity change. If none of these change (e.g. a rename, comment cleanup), the transformation is **performance-neutral** and passes the gate regardless of hot-path status
    2. **Hot-path check** (only when stage 1 answered "yes" or "indeterminate"): for a hot path, a benchmark target, or a site with a measurement comment, state that the "simpler version" may be slower, and do not rewrite it without measurement → **UNCERTAIN**. **When it is unclear whether it is a hot path, fall to UNCERTAIN as well** (completing the fail-safe)
@@ -157,10 +157,26 @@ For the verification viewpoints, use the question list in refactor's own [refere
 
 ## Phase 6: REPORT — Report the Results + Proposed Issue-Creation Commands
 
-Choose the report format by the following rule:
+**Gate early-exit rule**: when a Gate in any Phase triggers an early exit, skip all subsequent Phases and jump directly to this Report Phase. Do not pass through empty intermediate Phases.
 
-- **Abbreviated** (scope / verdict summary / reasons only): when there are zero changes **and** zero items to present (UNCERTAIN / report-only `sweep_candidates` / `BUG_FOUND`) as well (an already-clean ending is the typical case)
-- **Full structure** (below): everything else. Even with 0 APPLYs, use the full structure if there is even one item to present, such as an UNCERTAIN or a `BUG_FOUND` (sections with nothing to report may be omitted)
+### Exit Point × Report Format
+
+| Exit point | Trigger | Format |
+|---|---|---|
+| **Phase 0 abort** | Scope unresolvable or path not found | Abort format |
+| **Early exit (no findings)** | Phase 2 Gate: already-clean (zero candidates or all low-value) | Early-exit format |
+| **Normal completion** | Phase 5 complete | Full structure (§1-§7 below). Even with 0 APPLYs, use this if there is any item to present (UNCERTAIN / BUG_FOUND / report-only sweep_candidates). Sections with nothing to report may be omitted |
+
+**Abort format** — required sections:
+1. Scope status (what was specified, or that nothing was specified)
+2. Abort reason
+
+**Early-exit format** — required sections:
+1. Scope (the specified range)
+2. Verdict summary (ALREADY_CLEAN / OUT_OF_SCOPE per candidate)
+3. Reasons for the judgment
+
+### Full Structure (Normal Completion)
 
 Print the full structure in the conversation in the following form:
 
