@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parent))
 from artifact_store import (  # noqa: E402
@@ -17,6 +18,21 @@ from artifact_store import (  # noqa: E402
     rebuild_index,
     require_writable,
     stage_migration,
+    satellite_create,
+    satellite_collect,
+    satellite_publish,
+    satellite_activate,
+    satellite_transition,
+    satellite_write,
+    satellite_cleanup_transition,
+    satellite_cleanup_allowed,
+    satellite_revoke,
+    satellite_rotate,
+    satellite_reconcile,
+    satellite_recovery_report,
+    satellite_discard,
+    satellite_format_diagnostic,
+    satellite_authorize_write,
 )
 
 
@@ -40,6 +56,74 @@ class ArtifactStoreTest(unittest.TestCase):
         path = repo / ".agents/artifacts.yml"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("".join(f"{k}: {v}\n" for k, v in policy.items()), encoding="utf-8")
+
+    def test_satellite_facade_delegates_to_transport_api(self):
+        with mock.patch("artifact_store.create_satellite_run", return_value="created") as create:
+            self.assertEqual("created", satellite_create("/main", "/work", "run-1", "plans/p.md"))
+            create.assert_called_once_with(Path("/main"), Path("/work"), "run-1", "plans/p.md")
+        with mock.patch("artifact_store.collect_satellite", return_value="staged") as collect:
+            self.assertEqual("staged", satellite_collect("/runtime", 2, "cap"))
+            collect.assert_called_once_with(
+                Path("/runtime"), expected_version=2, raw_capability="cap",
+            )
+        with mock.patch("artifact_store.publish_satellite", return_value="published") as publish:
+            self.assertEqual("published", satellite_publish("/runtime", 3))
+            publish.assert_called_once_with(Path("/runtime"), expected_version=3)
+
+    def test_satellite_facade_exposes_complete_transport_workflow(self):
+        with mock.patch("artifact_store.lifecycle_transition", return_value="active") as call:
+            self.assertEqual("active", satellite_activate("/r", 0))
+            call.assert_called_once_with(Path("/r"), "created", 0, "active")
+        with mock.patch("artifact_store.lifecycle_transition", return_value="next") as call:
+            self.assertEqual(
+                "next", satellite_transition("/r", "active", 1, "harvesting",
+                                             capability="cap", consume=True,
+                                             expected_epoch=1),
+            )
+            call.assert_called_once_with(
+                Path("/r"), "active", 1, "harvesting",
+                capability="cap", consume=True, expected_epoch=1,
+            )
+        with mock.patch("artifact_store.durable_satellite_write", return_value=None) as call:
+            satellite_write("/r", "cap", "plans/p.md", b"x")
+            call.assert_called_once_with(Path("/r"), "cap", "plans/p.md", b"x")
+        with mock.patch("artifact_store.transition_cleanup_allowed",
+                        return_value="cleanup") as call:
+            self.assertEqual("cleanup", satellite_cleanup_transition("/r", "published", 4))
+            call.assert_called_once_with(Path("/r"), "published", 4)
+        with mock.patch("artifact_store.discard_satellite_staging",
+                        return_value="discarded") as call:
+            self.assertEqual(
+                "discarded",
+                satellite_discard("/r", 3, actor="human", reason_code="REJECTED"),
+            )
+            call.assert_called_once_with(
+                Path("/r"), 3, actor="human", reason_code="REJECTED",
+            )
+        with mock.patch("artifact_store.format_satellite_diagnostic",
+                        return_value="diagnostic") as call:
+            self.assertEqual(
+                "diagnostic",
+                satellite_format_diagnostic("DENIED", "/r", "reason"),
+            )
+            call.assert_called_once_with("DENIED", Path("/r"), "reason")
+        with mock.patch("artifact_store.authorize_satellite_write",
+                        return_value=None) as call:
+            satellite_authorize_write("/r", "cap", "plans/p.md")
+            call.assert_called_once_with(Path("/r"), "cap", "plans/p.md")
+        delegates = (
+            ("cleanup_allowed_satellite", satellite_cleanup_allowed, ("/r",)),
+            ("revoke_satellite_capability", satellite_revoke, ("/r", 1)),
+            ("rotate_satellite_capability", satellite_rotate, ("/r", 1, 2)),
+            ("reconcile_satellite_owner", satellite_reconcile, ("/r",)),
+            ("satellite_recovery", satellite_recovery_report, ("/r",)),
+        )
+        for target, facade, args in delegates:
+            with self.subTest(target=target), mock.patch(
+                f"artifact_store.{target}", return_value=target,
+            ) as call:
+                self.assertEqual(target, facade(*args))
+                call.assert_called_once()
 
     def test_missing_policy_uses_safe_local_default(self):
         root = self.repo()

@@ -15,6 +15,22 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from frontmatter import parse_frontmatter_fields  # noqa: E402
+from satellite_transport import (  # noqa: E402
+    authorize_write as authorize_satellite_write,
+    collect as collect_satellite,
+    create_run as create_satellite_run,
+    cleanup_allowed as cleanup_allowed_satellite,
+    durable_write as durable_satellite_write,
+    discard_staging as discard_satellite_staging,
+    format_diagnostic as format_satellite_diagnostic,
+    lifecycle_transition,
+    publish as publish_satellite,
+    reconcile_owner as reconcile_satellite_owner,
+    recovery_report as satellite_recovery,
+    revoke_capability as revoke_satellite_capability,
+    rotate_capability as rotate_satellite_capability,
+    transition_cleanup_allowed,
+)
 
 
 CONFIG_REL = Path(".agents/artifacts.yml")
@@ -40,6 +56,90 @@ DEFAULT_POLICY = {
 }
 IGNORE_RULE = "/.agents/artifacts/"
 ARTIFACT_KINDS = ("plans", "issues", "ideas", "loop", "handoff", "reviews", "decisions")
+
+
+def satellite_create(main_tree, worktree, run_id, pinned_plan):
+    """Thin public facade for the shared satellite transport implementation."""
+    return create_satellite_run(
+        Path(main_tree), Path(worktree), run_id, pinned_plan,
+    )
+
+
+def satellite_collect(runtime_dir, expected_version, raw_capability):
+    return collect_satellite(
+        Path(runtime_dir), expected_version=expected_version,
+        raw_capability=raw_capability,
+    )
+
+
+def satellite_publish(runtime_dir, expected_version):
+    return publish_satellite(Path(runtime_dir), expected_version=expected_version)
+
+
+def satellite_activate(runtime_dir, expected_version):
+    return lifecycle_transition(
+        Path(runtime_dir), "created", expected_version, "active",
+    )
+
+
+def satellite_transition(
+    runtime_dir, expected_state, expected_version, target_state, **authorization,
+):
+    return lifecycle_transition(
+        Path(runtime_dir), expected_state, expected_version, target_state,
+        **authorization,
+    )
+
+
+def satellite_write(runtime_dir, capability, relative_path, data):
+    return durable_satellite_write(
+        Path(runtime_dir), capability, relative_path, data,
+    )
+
+
+def satellite_authorize_write(runtime_dir, capability, relative_path):
+    return authorize_satellite_write(
+        Path(runtime_dir), capability, relative_path,
+    )
+
+
+def satellite_discard(runtime_dir, expected_version, *, actor, reason_code):
+    return discard_satellite_staging(
+        Path(runtime_dir), expected_version, actor=actor, reason_code=reason_code,
+    )
+
+
+def satellite_format_diagnostic(reason_code, runtime_dir, reason):
+    return format_satellite_diagnostic(reason_code, Path(runtime_dir), reason)
+
+
+def satellite_cleanup_transition(runtime_dir, expected_state, expected_version):
+    return transition_cleanup_allowed(
+        Path(runtime_dir), expected_state, expected_version,
+    )
+
+
+def satellite_cleanup_allowed(runtime_dir):
+    return cleanup_allowed_satellite(Path(runtime_dir))
+
+
+def satellite_revoke(runtime_dir, expected_epoch):
+    return revoke_satellite_capability(Path(runtime_dir), expected_epoch)
+
+
+def satellite_rotate(runtime_dir, expected_epoch, expected_version):
+    return rotate_satellite_capability(
+        Path(runtime_dir), expected_epoch=expected_epoch,
+        expected_version=expected_version,
+    )
+
+
+def satellite_reconcile(runtime_dir):
+    return reconcile_satellite_owner(Path(runtime_dir))
+
+
+def satellite_recovery_report(runtime_dir):
+    return satellite_recovery(Path(runtime_dir))
 
 # Runtime area (machine-specific, never shared, never migrated). See the
 # "Runtime area" section of skills/shared/references/artifact-store.md. Files
