@@ -45,14 +45,34 @@ _mark_ran
 # pre-push hook は push ネゴシエーションで得た remote sha を環境変数で渡す。fetch
 # していない作業ディレクトリの古い remote-tracking ref で偽 BLOCK を出さないため。
 echo "=== Translation parity"
-tp_output=$(python3 scripts/check_translation_parity.py 2>&1) || {
-  echo "$tp_output"
+# 人間向けテキスト出力（従来どおり）
+tp_text=$(python3 scripts/check_translation_parity.py 2>&1) || {
+  echo "$tp_text"
   exit 1
 }
-echo "$tp_output"
-case "$tp_output" in
-  *"skip"*) _mark_skipped "translation-parity (skip)" ;;
-  *)        _mark_ran ;;
+echo "$tp_text"
+# 構造化出力で実行状態を判定。skip 時は JSON が出ない（baseline 解決前に return）
+tp_json=$(python3 scripts/check_translation_parity.py --json 2>/dev/null) || true
+tp_checked=$(echo "$tp_json" | python3 -c "
+import sys, json
+raw = sys.stdin.read().strip()
+if raw:
+    try:
+        print(json.loads(raw).get('checked', -1))
+    except (json.JSONDecodeError, AttributeError):
+        print(-1)
+else:
+    print(-1)
+" 2>/dev/null) || tp_checked=-1
+case "$tp_text" in
+  *"skip"*) _mark_skipped "translation-parity (skip: baseline unresolved or stale)" ;;
+  *)
+    if [ "$tp_checked" = "0" ]; then
+      _mark_skipped "translation-parity (no-op: checked 0 files)"
+    else
+      _mark_ran
+    fi
+    ;;
 esac
 
 # アンカー参照の飛び先。validate_repo.py のリンク検証はパス部分しか見ず `#` 以降を
