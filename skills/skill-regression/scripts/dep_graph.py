@@ -135,13 +135,37 @@ def build_graph(root):
     return graph
 
 
-def impacted_skills(graph, changed_paths):
+def normalize_path(path, root=None):
+    """パスをリポジトリ相対 POSIX 形式へ正規化する。解決できなければ None。"""
+    p = os.path.normpath(path)
+    if root and os.path.isabs(p):
+        abs_root = os.path.abspath(root)
+        if os.path.commonpath([abs_root, p]) != abs_root:
+            return None
+        p = os.path.relpath(p, abs_root)
+    else:
+        p = os.path.relpath(p) if os.path.isabs(p) else p
+        p = os.path.normpath(p)
+    result = p.replace(os.sep, "/")
+    if result.startswith("../"):
+        return None
+    return result
+
+
+def impacted_skills(graph, changed_paths, root=None):
     """変更ファイル集合に挙動面が交差するスキル名をソートして返す。"""
-    changed = {p.replace(os.sep, "/") for p in changed_paths}
+    changed = set()
+    unresolved = []
+    for p in changed_paths:
+        norm = normalize_path(p, root)
+        if norm is None:
+            unresolved.append(p)
+        else:
+            changed.add(norm)
     return sorted(
         skill for skill, surface in graph.items()
         if changed.intersection(surface)
-    )
+    ), unresolved
 
 
 def main(argv):
@@ -161,8 +185,13 @@ def main(argv):
     if changed is None:
         print(json.dumps(graph, ensure_ascii=False, indent=2))
     else:
-        for skill in impacted_skills(graph, changed):
+        skills, unresolved = impacted_skills(graph, changed, root)
+        for skill in skills:
             print(skill)
+        for p in unresolved:
+            print(f"warning: unresolvable path: {p}", file=sys.stderr)
+        if unresolved:
+            return 2
     return 0
 
 

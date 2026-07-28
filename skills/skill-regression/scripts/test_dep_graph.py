@@ -159,11 +159,9 @@ class TestBehaviorSurface(unittest.TestCase):
             _write(root, "skills/shared/scripts/checkpoint.py", "# script")
             _write(root, "skills/b/SKILL.md", "no refs")
             graph = dep_graph.build_graph(root)
-            self.assertEqual(
-                dep_graph.impacted_skills(
-                    graph, ["skills/shared/scripts/checkpoint.py"]),
-                ["a"],
-            )
+            skills, _ = dep_graph.impacted_skills(
+                graph, ["skills/shared/scripts/checkpoint.py"], root)
+            self.assertEqual(skills, ["a"])
 
     def test_bare_path_re_matches_py_paths(self):
         # _BARE_PATH_RE が .py パスを拾うことの直接テスト
@@ -209,28 +207,94 @@ class TestImpactedSkills(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             _repo(root)
             graph = dep_graph.build_graph(root)
-            self.assertEqual(
-                dep_graph.impacted_skills(
-                    graph, ["skills/shared/references/gate.md"]),
-                ["a", "b"],
-            )
+            skills, unresolved = dep_graph.impacted_skills(
+                graph, ["skills/shared/references/gate.md"], root)
+            self.assertEqual(skills, ["a", "b"])
+            self.assertEqual(unresolved, [])
 
     def test_own_file_change_impacts_only_owner(self):
         with tempfile.TemporaryDirectory() as root:
             _repo(root)
             graph = dep_graph.build_graph(root)
-            self.assertEqual(
-                dep_graph.impacted_skills(
-                    graph, ["skills/a/references/unlinked.md"]),
-                ["a"],
-            )
+            skills, unresolved = dep_graph.impacted_skills(
+                graph, ["skills/a/references/unlinked.md"], root)
+            self.assertEqual(skills, ["a"])
+            self.assertEqual(unresolved, [])
 
     def test_unrelated_change_impacts_nothing(self):
         with tempfile.TemporaryDirectory() as root:
             _repo(root)
             graph = dep_graph.build_graph(root)
-            self.assertEqual(
-                dep_graph.impacted_skills(graph, ["README.md"]), [])
+            skills, unresolved = dep_graph.impacted_skills(
+                graph, ["README.md"], root)
+            self.assertEqual(skills, [])
+            self.assertEqual(unresolved, [])
+
+
+class TestPathNormalization(unittest.TestCase):
+    """#139: パス表記の違いで impacted_skills の結果が変わらないことを検証。"""
+
+    def test_dot_slash_prefix(self):
+        with tempfile.TemporaryDirectory() as root:
+            _repo(root)
+            graph = dep_graph.build_graph(root)
+            skills, unresolved = dep_graph.impacted_skills(
+                graph, ["./skills/a/SKILL.md"], root)
+            self.assertEqual(skills, ["a"])
+            self.assertEqual(unresolved, [])
+
+    def test_absolute_path(self):
+        with tempfile.TemporaryDirectory() as root:
+            _repo(root)
+            graph = dep_graph.build_graph(root)
+            abs_path = os.path.join(root, "skills/a/SKILL.md")
+            skills, unresolved = dep_graph.impacted_skills(
+                graph, [abs_path], root)
+            self.assertEqual(skills, ["a"])
+            self.assertEqual(unresolved, [])
+
+    def test_non_normalized_path(self):
+        with tempfile.TemporaryDirectory() as root:
+            _repo(root)
+            graph = dep_graph.build_graph(root)
+            skills, unresolved = dep_graph.impacted_skills(
+                graph, ["skills/a/../a/SKILL.md"], root)
+            self.assertEqual(skills, ["a"])
+            self.assertEqual(unresolved, [])
+
+    def test_path_outside_root_is_unresolved(self):
+        with tempfile.TemporaryDirectory() as root:
+            _repo(root)
+            graph = dep_graph.build_graph(root)
+            skills, unresolved = dep_graph.impacted_skills(
+                graph, ["/completely/outside/path.md"], root)
+            self.assertEqual(skills, [])
+            self.assertEqual(unresolved, ["/completely/outside/path.md"])
+
+    def test_nonexistent_relative_path_resolves(self):
+        """存在しないが正規化可能な相対パスは影響なし（解決不能ではない）。"""
+        with tempfile.TemporaryDirectory() as root:
+            _repo(root)
+            graph = dep_graph.build_graph(root)
+            skills, unresolved = dep_graph.impacted_skills(
+                graph, ["skills/nope/SKILL.md"], root)
+            self.assertEqual(skills, [])
+            self.assertEqual(unresolved, [])
+
+    def test_all_variants_return_same_result(self):
+        """issue #139 の再現テスト: 同一ファイルの表記違いがすべて同じ結果を返す。"""
+        with tempfile.TemporaryDirectory() as root:
+            _repo(root)
+            graph = dep_graph.build_graph(root)
+            variants = [
+                "skills/a/SKILL.md",
+                "./skills/a/SKILL.md",
+                os.path.join(root, "skills/a/SKILL.md"),
+                "skills/a/../a/SKILL.md",
+            ]
+            for v in variants:
+                skills, _ = dep_graph.impacted_skills(graph, [v], root)
+                self.assertEqual(skills, ["a"], f"Failed for variant: {v}")
 
 
 if __name__ == "__main__":

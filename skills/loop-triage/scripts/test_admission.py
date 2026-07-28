@@ -293,3 +293,24 @@ class TestGateDecisionPerPathStrictness(unittest.TestCase):
         self.assertTrue(result["demote"])
         self.assertIn("(unresolved)", result["missing_fixtures"])
         self.assertEqual(result["affected_skills"], ["issue"])
+
+
+class TestPathNormalization(unittest.TestCase):
+    """#139: is_loop_defining がパス表記の違いで結果が変わらないことを検証。"""
+
+    def test_dot_slash_prefix(self):
+        self.assertTrue(admission.is_loop_defining("./skills/issue/SKILL.md"))
+
+    def test_non_normalized_path(self):
+        self.assertTrue(
+            admission.is_loop_defining("skills/issue/../issue/SKILL.md"))
+
+    def test_gate_decision_with_dot_slash(self):
+        """./前置の affected_paths でもゲートが掛かる。"""
+        result = admission.gate_decision(
+            ["./skills/a/SKILL.md"],
+            path_to_skills=lambda p: ["a"],
+            skills_with_fixtures={"a"},
+        )
+        self.assertTrue(result["gated"])
+        self.assertFalse(result["demote"])

@@ -5,6 +5,7 @@ loop-engineering.md 契約の §4 Admission Policy（fix_action x severity -> ro
 enqueue 降格）を実装する。I/O・time・random を一切使わない。呼び出し側（orchestrator）が
 ファイルシステム走査・dep_graph 逆引き関数を DI で注入する。
 """
+import os
 
 # --- §5.1 loop-defining glob ------------------------------------------------
 
@@ -54,9 +55,18 @@ def _glob_match(pattern, path):
     return _match_segments(pattern.split("/"), path.split("/"))
 
 
+def normalize_path(path):
+    """パスをリポジトリ相対 POSIX 形式へ正規化する。"""
+    p = os.path.normpath(path).replace(os.sep, "/")
+    if p.startswith("./"):
+        p = p[2:]
+    return p
+
+
 def is_loop_defining(path):
-    """posix 相対パスが LOOP_DEFINING_GLOBS のいずれかに一致するか。"""
-    return any(_glob_match(pattern, path) for pattern in LOOP_DEFINING_GLOBS)
+    """posix 相対パスが LOOP_DEFINING_GLOBS のいずれかに一致するか。パスは正規化される。"""
+    normed = normalize_path(path)
+    return any(_glob_match(pattern, normed) for pattern in LOOP_DEFINING_GLOBS)
 
 
 # --- §4 Admission Policy -----------------------------------------------------

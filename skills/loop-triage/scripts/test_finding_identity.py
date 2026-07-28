@@ -82,6 +82,14 @@ class TestFindingId(unittest.TestCase):
             finding_id("sensor", "rule", "path", "what"),
         )
 
+    def test_path_normalization_same_id(self):
+        """#139: 表記が異なる同一パスから同じ finding_id が得られる。"""
+        canonical = finding_id("s", "r", "skills/plan/SKILL.md", "w")
+        self.assertEqual(
+            finding_id("s", "r", "./skills/plan/SKILL.md", "w"), canonical)
+        self.assertEqual(
+            finding_id("s", "r", "skills/plan/../plan/SKILL.md", "w"), canonical)
+
 
 class TestValidateFinding(unittest.TestCase):
     def test_valid_finding_has_no_errors(self):
@@ -229,6 +237,19 @@ class TestNormalizeFinding(unittest.TestCase):
         d = _valid_finding()
         result = normalize_finding(d)
         self.assertIsNot(result, d)
+
+    def test_normalizes_where_path(self):
+        """#139: where.path が正規化される。"""
+        d = _valid_finding(where={"path": "./skills/foo/SKILL.md", "line": 12})
+        result = normalize_finding(d)
+        self.assertEqual(result["where"]["path"], "skills/foo/SKILL.md")
+
+    def test_normalizes_affected_paths(self):
+        """#139: affected_paths が正規化される。"""
+        d = _valid_finding(affected_paths=["./skills/foo/SKILL.md", "skills/a/../a/x.md"])
+        result = normalize_finding(d)
+        self.assertEqual(result["affected_paths"],
+                         ["skills/foo/SKILL.md", "skills/a/x.md"])
 
 
 class TestBuildBaseline(unittest.TestCase):

@@ -68,17 +68,33 @@ def validate_finding(d):
     return errors
 
 
+def _normalize_posix_path(path):
+    """パスをリポジトリ相対 POSIX 形式へ正規化する。"""
+    p = os.path.normpath(path).replace(os.sep, "/")
+    if p.startswith("./"):
+        p = p[2:]
+    return p
+
+
 def normalize_finding(d):
-    """新しい dict を返す（入力を変異しない）。fix_action を fail-safe 正規化する。"""
+    """新しい dict を返す（入力を変異しない）。fix_action とパスを正規化する。"""
     result = dict(d)
     if result.get("fix_action") not in FIX_ACTIONS:
         result["fix_action"] = "REPORT_ONLY"
+    where = result.get("where")
+    if isinstance(where, dict) and isinstance(where.get("path"), str):
+        result["where"] = dict(where, path=_normalize_posix_path(where["path"]))
+    ap = result.get("affected_paths")
+    if isinstance(ap, list):
+        result["affected_paths"] = [_normalize_posix_path(p) for p in ap if isinstance(p, str)]
     return result
 
 
 def finding_id(sensor, rule, path, what):
-    """sha256(f"{sensor}|{rule}|{path}|{what}") の hex 先頭 16 文字（契約 §3.1）。"""
-    signature = f"{sensor}|{rule}|{path}|{what}"
+    """sha256(f"{sensor}|{rule}|{path}|{what}") の hex 先頭 16 文字（契約 §3.1）。
+    path は正規化してから hash する。"""
+    norm_path = _normalize_posix_path(path)
+    signature = f"{sensor}|{rule}|{norm_path}|{what}"
     return hashlib.sha256(signature.encode("utf-8")).hexdigest()[:16]
 
 
