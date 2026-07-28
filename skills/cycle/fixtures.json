@@ -43,7 +43,7 @@
           "critical": false
         },
         {
-          "text": "Phase 3 の成果物（result ファイル・status.md / session-history.md 更新）がコミットされ、最終的に作業ツリーが clean になっている",
+          "text": "No artifact-store file (.agents/artifacts/) appears in any commit — git log --all --name-only shows no path under .agents/artifacts/ — and only implementation commits from Phase 2 exist in git log",
           "critical": false
         }
       ],

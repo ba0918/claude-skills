@@ -282,15 +282,15 @@ Artifact paths follow the Agent Artifact Store contract.
      if it is stale) — otherwise the next cycle's Phase 0 would reselect this plan. On
      failure, append `"plan status update"` to `phase3_failures` and move on
 
-4. **Commit the cycle artifacts**: commit all uncommitted changes left in the working tree
-   after Phase 2
-   - Typical targets: the result file from step 2 / `.agents/artifacts/status.md` /
-     `.agents/artifacts/session-history.md` updated in step 3 / plan-file updates the
-     Phase 2 agent failed to commit
+4. **Commit tracked changes**: commit any tracked (non-ignored) changes remaining in the
+   working tree after Phase 2
+   - Files under the artifact store (`.agents/artifacts/`) are structurally excluded from
+     Git by [safety invariant 3 of the artifact-store contract](../shared/references/artifact-store.md)
+     and will never appear in `git status` — do not attempt to stage or commit them
+   - Typical tracked targets: implementation files or project configuration the Phase 2
+     agent failed to commit
    - Execute the skill `claude-skills:commit` **with no arguments** (the commit skill
      auto-detects targets from `git status` / `git diff` and splits commit units)
-   - If step 3 failed, status.md / session-history.md were not updated and naturally stay
-     out of the commit (only the result file gets committed)
    - If there is nothing to commit, the commit skill handles the skip
    - **On failure**: append `"commit"` to `phase3_failures` and move on
 

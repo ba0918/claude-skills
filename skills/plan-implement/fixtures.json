@@ -63,7 +63,7 @@
         { "text": "🟢 Done の Step 1 を再実装していない（src/normalize.py と tests/test_normalize.py が未変更）", "critical": true },
         { "text": "Step 2 から開始し、truncate をテストファーストで実装している", "critical": true },
         { "text": "既に 🔵 Implementing であるセッションへの再入を正常系として扱い、エラーや中断にしていない", "critical": true },
-        { "text": "Step 2 完了後に status.md と計画ファイルのステップ状態を更新し、変更をコミットしている", "critical": false },
+        { "text": "After Step 2 completion, status.md and the plan file's step status are updated in the artifact store, implementation changes are committed to git, and no artifact-store file (.agents/artifacts/) appears in any commit", "critical": false },
         { "text": "レビューの指摘を BLOCK / WARN / INFO で分類している（指摘ゼロなら「なし」と明示）", "critical": false },
         { "text": "指摘ゼロだったレビュー回を修正イテレーションとして数えておらず、修正すべき指摘が無いまま Step B / Step C の往復を繰り返していない", "critical": false }
       ],
