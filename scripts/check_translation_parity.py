@@ -295,8 +295,11 @@ def resolve_baseline(repo, explicit=None):
             continue
         # fork point を使う。baseline の tip を直接使うと、main 側が同じファイルを
         # 触っていた場合にこちらの変更でない差分まで拾う。
+        # 共通祖先がない（無関係履歴）場合は比較が成立しないため次の候補へ送る。
         merged = git(["merge-base", "HEAD", rev], repo)
-        return merged.strip() if merged else rev
+        if not merged:
+            continue
+        return merged.strip()
     return None
 
 
