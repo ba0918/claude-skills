@@ -363,7 +363,7 @@ class TestGitIntegration(unittest.TestCase):
         # git hook 経由では GIT_DIR 等が環境に置かれており、引き継ぐと
         # この init が呼び出し元のリポジトリを操作してしまう。
         self.env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
-        self._git("init", "-q")
+        self._git("init", "-q", "-b", "main")
         self._git("config", "user.email", "test@example.com")
         self._git("config", "user.name", "test")
 

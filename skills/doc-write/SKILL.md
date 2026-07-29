@@ -158,6 +158,15 @@ docs/writings/
 
 - [references/mermaid-guidelines.md](references/mermaid-guidelines.md)
 
+## Output language
+
+Follow the [output language contract](../shared/references/output-language.md).
+
+- **Contract tokens (English, fixed)**: template section headings, frontmatter keys
+  (`title`, `audience`, `template`, `created`, `updated`), slug components.
+- **Reader-facing content (language of the request)**: the document body, frontmatter
+  values (the title string, the audience description), completion message body text.
+
 ## Notes
 
 - Start with the three template types and add more as needed

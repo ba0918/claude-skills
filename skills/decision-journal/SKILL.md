@@ -214,6 +214,20 @@ interruption**.
 
 ---
 
+## Output language
+
+Follow the [output language contract](../shared/references/output-language.md).
+
+- **Contract tokens (English, fixed)**: template section headings (`## The sealed section`,
+  `## The selection-time section`, etc.), field labels (`Candidates`, `Constraints`,
+  `Confidence`, etc.), evidence-strength labels (`OBSERVED` / `REPORTED` /
+  `INTERPRETATION` / `HYPOTHESIS`), state and provenance enum values, slug components.
+- **Reader-facing content (language of the request)**: field values, the title inside
+  the record, explanations, the body text of completion messages.
+
+The slug's kebab-title component is always ASCII (`[a-z0-9-]`); the title inside the
+record stays in the language of the request.
+
 ## Design policy
 
 - **skills-first**: add no command. The workflow branches on the leading keyword of $ARGUMENTS

@@ -204,6 +204,9 @@ listing it twice makes a reader look for a disagreement that was already settled
 
 ## Reader-facing language
 
+This section is a brief-specific application of the
+[output language contract](../../shared/references/output-language.md).
+
 **Which language to write in.** Everything a reader sees — `summary`, group fields, `deferred`
 reasons, the questions — is written in the language of the material being explained and of the
 request that started the run. When those differ, follow the request; the reader is the one who
