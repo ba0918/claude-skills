@@ -90,6 +90,97 @@ class TestCheck(unittest.TestCase):
             os.remove(os.path.join(root, "skills/a/fixtures.json"))
             self.assertEqual(ledger.check(root, {}), [])
 
+    def test_check_output_shows_result_breakdown(self):
+        """--check 合格時の出力に pass / accepted-without-run の内訳が含まれる。"""
+        import io
+        import contextlib
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            _write(root, "skills/skill-regression/SKILL.md", "self")
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-07-01")}
+            ledger.save(root, entries)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = ledger.main(["--check", root])
+            self.assertEqual(rc, 0)
+            output = buf.getvalue()
+            self.assertIn("pass 1", output)
+            self.assertIn("accepted-without-run 0", output)
+
+
+class TestAcceptGuard(unittest.TestCase):
+    """--accept は fixtures.json が変わっていたら拒否する。"""
+
+    def _repo(self, root):
+        _write(root, "skills/a/SKILL.md", "body")
+        _write(root, "skills/a/fixtures.json",
+               '{"skill": "a", "scenarios": []}')
+
+    def test_accept_allowed_when_fixtures_unchanged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-07-01")}
+            _write(root, "skills/a/SKILL.md", "body CHANGED")
+            fixtures_rel = "skills/a/fixtures.json"
+            prev_hash = entries["a"]["file_sha256"].get(fixtures_rel)
+            curr_hash = ledger._file_sha256(root, fixtures_rel)
+            self.assertEqual(prev_hash, curr_hash)
+
+    def test_accept_blocked_when_fixtures_changed(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-07-01")}
+            _write(root, "skills/a/fixtures.json",
+                   '{"skill": "a", "scenarios": [{"id": "new"}]}')
+            fixtures_rel = "skills/a/fixtures.json"
+            prev_hash = entries["a"]["file_sha256"].get(fixtures_rel)
+            curr_hash = ledger._file_sha256(root, fixtures_rel)
+            self.assertNotEqual(prev_hash, curr_hash)
+
+    def test_accept_allowed_for_new_skill(self):
+        """台帳に前回エントリがないスキルへの初回 --accept は許可する。"""
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            fixtures_rel = "skills/a/fixtures.json"
+            entries = {}
+            prev = entries.get("a", {}).get("file_sha256", {})
+            prev_hash = prev.get(fixtures_rel)
+            self.assertIsNone(prev_hash)
+
+    def test_accept_cli_rejects_when_fixtures_changed(self):
+        """CLI 経由で --accept が拒否されることの統合テスト。"""
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            _write(root, "skills/skill-regression/SKILL.md", "self")
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-07-01")}
+            ledger.save(root, entries)
+            _write(root, "skills/a/fixtures.json",
+                   '{"skill": "a", "scenarios": [{"id": "changed"}]}')
+            rc = ledger.main(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 1)
+            reloaded = ledger.load(root)
+            self.assertEqual(reloaded["a"]["result"], "pass")
+
+    def test_accept_cli_passes_when_fixtures_unchanged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            _write(root, "skills/skill-regression/SKILL.md", "self")
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-07-01")}
+            ledger.save(root, entries)
+            _write(root, "skills/a/SKILL.md", "body CHANGED")
+            rc = ledger.main([
+                "--update", "a", "--accept",
+                "--note", "prose-only change", root,
+            ])
+            self.assertEqual(rc, 0)
+            reloaded = ledger.load(root)
+            self.assertEqual(reloaded["a"]["result"], "accepted-without-run")
+
 
 class TestEntryRoundtrip(unittest.TestCase):
     def test_entry_records_result_and_date(self):
