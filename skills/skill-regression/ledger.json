@@ -385,7 +385,7 @@
   },
   "plan-implement": {
     "file_sha256": {
-      "skills/plan-implement/SKILL.md": "562fbe88f14f4372cb96c5147587ef159cd65413291ef0dcaf90343aaba594c5",
+      "skills/plan-implement/SKILL.md": "79bb8b6151e80dd0fa68e04d0aa5c6e775b8048e9e06f890840628dc6e76edc2",
       "skills/plan-implement/fixtures.json": "df3955a24dd89ec1437a303946e5e2b10d39072c62cda6a528e40fa632b96fd2",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
@@ -395,7 +395,7 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
+    "note": "inline status result conditions added; vocabulary unified to status-update-guide (🔵→🟡, Complete→Completed)",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan-implement/SKILL.md",
@@ -408,7 +408,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "268224a56d55e1046e288174b0d5f112e88e92b411acf90dffbd736bc36559d3",
+    "surface_sha256": "567204650c0ec03708b07f4ffde7365117efd749fc04680813c6f43da3373d48",
     "verified": "2026-07-29"
   },
   "plan-reviewer": {
