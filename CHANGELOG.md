@@ -8,6 +8,32 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## 1.72.0
+
+共有契約 2 本（output-language / execution-context）の新設と、既存スキルの仕様欠落 3 件の
+解消。ユーザー向けの挙動変更は sweep-fix の早期終了レポートに誘導が追加された点のみ。
+
+### 共有契約の新設
+
+- **output-language** (#66): 「契約トークンは英語固定、読み手向きの値はリクエストの言語に従う」
+  を横断契約として定義。brief の先例を昇格させ、decision-journal / doc-write の未規定を解消
+- **execution-context** (#29): headless / interactive 判定の共有契約。応答可能性を主基準、
+  呼び出し元 identity は例示、ユーザー明示指定は override として分離。
+  context-audit / plan / refactor / sweep-fix / tdd の 5 スキルに参照を追加
+
+### スキルの仕様修正
+
+- **plan-implement** (#35): インライン代行時のステータス更新仕様を結果条件 4 項目で定義。
+  ステータス語彙を status-update-guide に統一（🔵 Implementing → 🟡 In Progress）
+- **plan** (#115): caller-supplied モードを正式契約として追加（output_path + skip_status）。
+  parallel-cycle の自然言語上書き指示を正式契約の呼び出しに置換
+- **sweep-fix** (#38): 指定範囲がクリーンな場合に「観点スキャンは codebase-review の領分」と
+  明文化し、早期終了レポートに codebase-review への誘導を追加
+
+### テスト修正
+
+- TestGitIntegration の git init でデフォルトブランチ名を main に固定（CI 環境依存の失敗を解消）
+
 ## 1.71.0
 
 worktree 分離の共有契約と satellite artifact transport を導入した（issue #93 正本、#105 の
