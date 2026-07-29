@@ -4,6 +4,7 @@
 挙動面 = スキルの実行時挙動に影響しうるファイル集合:
   - skills/<name>/ 配下の全ファイル（test_*.py / __pycache__ / *.pyc を除く）
   - そのスキル自身の .md から相対リンクで **1 ホップ**到達するファイル（共有契約を含む）
+  - そのスキル自身の .py が import する skills/shared/scripts/ のモジュール（**1 ホップ**）
 
 共有契約を 1 つ編集すると、それを参照する全スキルの挙動が変わりうる。
 この逆引き（変更ファイル → 影響スキル）が回帰評価のトリガーになる。
@@ -65,6 +66,46 @@ def _skill_dir_files(root, skill):
 # md リンクだけを見ると、これらの実依存が挙動面から落ちて偽陰性になる。
 _BARE_PATH_RE = re.compile(r"[A-Za-z0-9_./-]+\.(?:md|py|sh)")
 
+_IMPORT_RE = re.compile(r"^\s*(?:import|from)\s+([A-Za-z_][A-Za-z0-9_]*)")
+
+
+def _python_import_edges(root, skill):
+    """スキル配下の .py が skills/shared/scripts/ のモジュールを import している辺を返す。
+
+    1 ホップのみ: スキル自身の .py → 共有モジュール。共有モジュール間の import は辿らない
+    （md リンクの 1 ホップ原則と同型）。sys.path.insert による動的 import path を使う
+    パターンを対象とするため、モジュール名が skills/shared/scripts/ に実在するものだけを
+    辺として認める（同名の別モジュールを誤って結ぶ偽陽性を防ぐ）。
+    """
+    shared_scripts = os.path.join(root, "skills", "shared", "scripts")
+    if not os.path.isdir(shared_scripts):
+        return set()
+    shared_modules = {
+        os.path.splitext(f)[0]
+        for f in os.listdir(shared_scripts)
+        if f.endswith(".py") and not f.startswith("test_")
+    }
+    skill_dir = os.path.join(root, "skills", skill)
+    found = set()
+    for dirpath, dirnames, filenames in os.walk(skill_dir):
+        dirnames[:] = [d for d in dirnames if d not in _EXCLUDED_DIR_NAMES]
+        for name in filenames:
+            if not name.endswith(".py"):
+                continue
+            if name.startswith("test_"):
+                continue
+            filepath = os.path.join(dirpath, name)
+            try:
+                with open(filepath, encoding="utf-8") as f:
+                    for line in f:
+                        m = _IMPORT_RE.match(line)
+                        if m and m.group(1) in shared_modules:
+                            rel = f"skills/shared/scripts/{m.group(1)}.py"
+                            found.add(rel)
+            except OSError:
+                continue
+    return found
+
 
 def _bare_path_refs(root, rel):
     """rel の本文に素のパスとして現れる実在ファイル(.md/.py/.sh)を root 相対で返す。
@@ -106,9 +147,10 @@ def _bare_path_refs(root, rel):
 def behavior_surface(root, skill):
     """スキル 1 つの挙動面をソート済みリストで返す。SKILL.md が無ければ空。
 
-    起点はスキルディレクトリ内の全 .md（SKILL.md と references/**）。そこから
-    1 ホップだけ辿る。スキル外のファイル（共有契約・他スキルの文書）は面に含めるが、
-    その先のリンクは辿らない。
+    起点はスキルディレクトリ内の全 .md および .py。.md からは md リンクと素パスを
+    1 ホップだけ辿り、.py からは skills/shared/scripts/ への import を 1 ホップだけ
+    辿る。スキル外のファイル（共有契約・共有スクリプト）は面に含めるが、
+    その先のリンク・import は辿らない。
     """
     skill_md = os.path.join(root, "skills", skill, "SKILL.md")
     if not os.path.isfile(skill_md):
@@ -119,6 +161,7 @@ def behavior_surface(root, skill):
     surface.update(md_links.closure(root, own_md, max_depth=1))
     for rel in own_md:
         surface.update(_bare_path_refs(root, rel))
+    surface.update(_python_import_edges(root, skill))
     return sorted(rel for rel in surface if rel not in _EXCLUDED_RELS)
 
 
