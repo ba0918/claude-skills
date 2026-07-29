@@ -32,6 +32,31 @@ date +%Y%m%d%H%M%S
 mkdir -p .agents/artifacts/plans
 ```
 
+### Caller-supplied mode
+
+When a caller passes **both** of the following parameters, the skill runs in
+caller-supplied mode. Both must be present; a partial set is an error.
+
+| Parameter | Meaning |
+|-----------|---------|
+| `output_path` | The exact repository-relative path for the plan file (e.g. `.agents/artifacts/plans/20260729_A_feature.md`) |
+| `skip_status` | When true, do not read, create, migrate, or update `status.md` or `session-history.md` |
+
+In caller-supplied mode:
+
+- **Phase 1**: skip timestamp generation (the caller already embedded it in the path)
+- **Phase 3**: write the plan to `output_path` exactly as given. Do not generate a
+  timestamp, a slug, or a filename of your own. The `CRITICAL` constraint on the
+  `.agents/artifacts/plans/` directory still applies — reject an `output_path` that
+  points elsewhere
+- **Phase 4**: skip entirely (no status.md or session-history.md updates)
+- **Phase 5**: report the path the caller supplied, not a self-generated one
+
+All other phases (requirements gathering, plan content, template) run unchanged.
+
+When neither parameter is passed, every phase runs as specified below (the default
+standalone mode). This is the existing behavior and is not affected.
+
 ### Phase 2: Gather Requirements
 
 Determine the [execution context](../shared/references/execution-context.md) (interactive
