@@ -26,6 +26,11 @@ This file is the shared project instruction source for Claude Code, Codex CLI, a
 - command は薄い入口に留め、判断・手順・契約は `skills/<name>/SKILL.md` または `references/` に置く。
 - 主要スキルの一覧と用途は `README.md` を参照する。常時ロードされるこのファイルへ詳細なスキルカタログを複製しない。
 
+## ブランチ規律
+
+変更を伴う作業はフィーチャーブランチで行う。main への直接コミットはしない。
+worktree を使うかどうかは `.agents/workspace.yml` の `isolation` 設定に従う（不在時は `inplace`）。
+
 ## 編集ルール
 
 - `SKILL.md` と `references/` では、特定プラットフォームのツール API 名やモデル名に依存しない表現を使う。
