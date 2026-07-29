@@ -34,7 +34,10 @@ mkdir -p .agents/artifacts/plans
 
 ### Phase 2: Gather Requirements
 
-A feature name, a summary, and a type (new feature / modification / bug fix / refactor) are required. If they can be read clearly from the user input, proceed without asking. When something is missing, ask briefly in interactive mode; in Auto mode (a headless invocation such as `cycle` / `issue-cycle`), do not block — infer it from context.
+Determine the [execution context](../shared/references/execution-context.md) (interactive
+or headless) if not already determined.
+
+A feature name, a summary, and a type (new feature / modification / bug fix / refactor) are required. If they can be read clearly from the user input, proceed without asking. When something is missing, ask briefly in interactive mode; in Auto mode (headless), do not block — infer it from context.
 
 State every inferred item explicitly in the final response, in a form the user can correct.
 
@@ -80,7 +83,7 @@ If the existing Current Session is still `🟡 Planning` or `🟡 In Progress` w
    - (a) Resume the previous session (suggest `/claude-skills:plan-resume` and abort the new plan creation)
    - (b) Archive the previous session as **abandoned** (move to `session-history.md` with `Completed` = current timestamp and append `(abandoned)` suffix to the Feature column so it's visually distinguishable). Follow `session-history.md`'s existing convention for the Started / Completed columns: date only (`YYYY-MM-DD`), no time-of-day, even though the source status.md session used a full timestamp.
    - (c) Archive the previous session as **completed** (if the user confirms it was actually finished but status wasn't updated)
-2. **Auto mode / headless invocation** (e.g. called from `cycle`, `issue-cycle`, `parallel-cycle`): default to **(b) archive as abandoned** without prompting. Log the archival action in the "Next Steps" output so the user can correct it if needed.
+2. **Headless mode** (per the [execution context](../shared/references/execution-context.md)): default to **(b) archive as abandoned** without prompting. Log the archival action in the "Next Steps" output so the user can correct it if needed.
 
 In all cases, after the previous session is resolved, proceed with adding the new session as Current Session.
 
