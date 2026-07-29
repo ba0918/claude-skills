@@ -202,9 +202,17 @@ def main(argv):
         # 合格表示に必ず母数を添える。fixture を持つスキルだけを見るゲートなので、
         # 「全スキル検証済み」と書くと未検証領域が検証済みに見える（実際に誤読を招いた）。
         cov = coverage(root)
+        entries = load(root)
+        n_pass = sum(1 for e in entries.values() if e.get("result") == "pass")
+        n_accept = sum(
+            1 for e in entries.values()
+            if e.get("result") == "accepted-without-run"
+        )
+        breakdown = f"pass {n_pass} / accepted-without-run {n_accept}"
         print(
             f"✓ regression ledger: fixture 保有 {len(cov['covered'])} スキルすべて検証済み"
-            f"（対象外 {len(cov['exempt'])} / 未保有 {len(cov['uncovered'])} "
+            f"（{breakdown}"
+            f" / 対象外 {len(cov['exempt'])} / 未保有 {len(cov['uncovered'])} "
             f"/ 全 {cov['total']}）"
         )
         return 0
@@ -256,6 +264,17 @@ def main(argv):
             if skill not in _fixtures_skills(root):
                 print(f"✗ skills/{skill}/fixtures.json が存在しない")
                 return 1
+            if accept:
+                fixtures_rel = f"skills/{skill}/fixtures.json"
+                prev = entries.get(skill, {}).get("file_sha256", {})
+                prev_hash = prev.get(fixtures_rel)
+                curr_hash = _file_sha256(root, fixtures_rel)
+                if prev_hash is not None and prev_hash != curr_hash:
+                    print(
+                        f"✗ skills/{skill}/fixtures.json が前回検証時から変更されている。"
+                        f"合否基準の変更は実走で検証すること（--accept を外して run → --update）"
+                    )
+                    return 1
             result = "accepted-without-run" if accept else "pass"
             entries[skill] = make_entry(
                 root, skill_surface(root, skill), result,
