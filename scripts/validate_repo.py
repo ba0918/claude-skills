@@ -394,6 +394,24 @@ def collect_link_sources(root):
     return sources
 
 
+def collect_doc_link_sources(root):
+    """リンク実在チェックだけの追加対象: root 直下の md と rules/*.md。
+
+    check_portable_resource_refs には含めない（README/CHANGELOG が
+    rules/ を参照するのは正当）。
+    """
+    sources = []
+    for name in sorted(os.listdir(root)):
+        if name.endswith(".md") and os.path.isfile(os.path.join(root, name)):
+            sources.append(os.path.join(root, name))
+    rules_dir = os.path.join(root, "rules")
+    if os.path.isdir(rules_dir):
+        sources += [os.path.join(rules_dir, n)
+                    for n in sorted(os.listdir(rules_dir))
+                    if n.endswith(".md") and os.path.isfile(os.path.join(rules_dir, n))]
+    return sources
+
+
 # リンク検査の免除リスト。免除はファイル側ではなくここに置く
 # （ファイル編集だけで検証を迂回できないようにするため）。必ず理由を書くこと。
 LINK_CHECK_EXEMPT = {
@@ -998,7 +1016,7 @@ def check_manifests(root):
 def check_relative_links(root, sources=None, exempt=None):
     """各ソース内の相対 .md リンクの実在を検証し、違反メッセージを返す。"""
     if sources is None:
-        sources = collect_link_sources(root)
+        sources = collect_link_sources(root) + collect_doc_link_sources(root)
     if exempt is None:
         exempt = LINK_CHECK_EXEMPT
     errors = []

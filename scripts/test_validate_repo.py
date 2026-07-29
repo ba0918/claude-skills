@@ -21,6 +21,7 @@ from validate_repo import (
     check_description_quality,
     check_frontmatter_yaml_compat,
     collect_link_sources,
+    collect_doc_link_sources,
     check_relative_links,
     check_portable_resource_refs,
     mentions_name,
@@ -418,6 +419,53 @@ class TestCheckRelativeLinks(unittest.TestCase):
             self.assertEqual(len(check_relative_links(root, exempt={})), 1)
 
 
+    def test_broken_link_in_root_md_is_reported(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/shared/references/real.md")
+            self._write(root, "AGENTS.md",
+                        "[authoring](skills/shared/references/gone.md) を参照。")
+            errors = check_relative_links(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("AGENTS.md", errors[0])
+            self.assertIn("gone.md", errors[0])
+
+    def test_valid_link_in_root_md_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "skills/shared/references/real.md")
+            self._write(root, "AGENTS.md",
+                        "[authoring](skills/shared/references/real.md) を参照。")
+            self.assertEqual(check_relative_links(root), [])
+
+    def test_broken_link_in_readme_is_reported(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "README.md",
+                        "[contract](skills/shared/references/moved.md) 参照。")
+            errors = check_relative_links(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("README.md", errors[0])
+
+    def test_broken_link_in_rules_md_is_reported(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "rules/example.md",
+                        "[ref](../skills/shared/references/ghost.md) 参照。")
+            errors = check_relative_links(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("rules/example.md", errors[0])
+
+    def test_collect_doc_link_sources_includes_root_and_rules(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "README.md")
+            self._write(root, "AGENTS.md")
+            self._write(root, "rules/routing.md")
+            self._write(root, "skills/a/SKILL.md")
+            sources = collect_doc_link_sources(root)
+            rels = {os.path.relpath(p, root) for p in sources}
+            self.assertIn("AGENTS.md", rels)
+            self.assertIn("README.md", rels)
+            self.assertIn(os.path.join("rules", "routing.md"), rels)
+            self.assertNotIn(os.path.join("skills", "a", "SKILL.md"), rels)
+
+
 class TestCheckPortableResourceRefs(unittest.TestCase):
     def _write(self, root, rel, content="x"):
         path = os.path.join(root, rel)
@@ -443,6 +491,14 @@ class TestCheckPortableResourceRefs(unittest.TestCase):
                 "skills/a/SKILL.md",
                 "[rules](../shared/references/testing-anti-patterns.md)",
             )
+            self.assertEqual(check_portable_resource_refs(root), [])
+
+    def test_root_md_rules_reference_is_not_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "README.md",
+                        "See `rules/skill-routing.md` for details.")
+            self._write(root, "CHANGELOG.md",
+                        "Updated `rules/skill-routing.md`.")
             self.assertEqual(check_portable_resource_refs(root), [])
 
     def test_claude_rules_path_and_glob_are_not_resource_dependencies(self):
