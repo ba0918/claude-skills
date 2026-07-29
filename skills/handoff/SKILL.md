@@ -90,6 +90,10 @@ Pick `status` strictly from these 3 values:
 
 When unsure, use `in-progress`. Do not invent new values.
 
+Per the [output language contract](../shared/references/output-language.md), section
+headings are contract tokens (keep in English); field values follow the language of the
+request.
+
 Template (section headings are part of the artifact format — keep them as-is):
 
 ```markdown

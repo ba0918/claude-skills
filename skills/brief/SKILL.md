@@ -114,9 +114,10 @@ Writing rules, in priority order:
   scales in [references/brief-model.md](references/brief-model.md) turn each into a question
   with an observable answer. They move independently — well understood and still dangerous is a
   normal combination.
-- **Write in the reader's language.** Reader-facing text follows the language of the material
-  and of the request. This file being in English is an authoring convention for a multi-agent
-  repository; it is not the output language.
+- **Write in the reader's language.** Per the
+  [output language contract](../shared/references/output-language.md), reader-facing text
+  follows the language of the request. This file being in English is an authoring convention
+  for a multi-agent repository; it is not the output language.
 - **Exactly three comprehension questions.** Not scored, no input field, they block nothing.
   Write questions that cannot be answered without having read the page.
 

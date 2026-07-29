@@ -23,19 +23,20 @@
   },
   "brief": {
     "file_sha256": {
-      "skills/brief/SKILL.md": "8fb7ab345939cb3b80ea520b65b51de6ef582e6b6e98007e640bc3fd0d33fbbc",
+      "skills/brief/SKILL.md": "48731ead848de3f6e7b8f7968bd59463645642139ece4d4ff7f547b088843990",
       "skills/brief/assets/brief.css": "9ef1a533765cd3463be8fcdf0ab59a694983f43143ffce2d33c31647209aa8cd",
       "skills/brief/assets/brief.js": "3448e3dc90bbfe4451e9f2cff5981cdc42ce3b021411ccc3a16c3a52e86bbfc3",
       "skills/brief/assets/tokens.brief.json": "c3b5edd00e3451f313f7dbdb676baa8f2f763652bc7ef179627002dab242e9db",
       "skills/brief/assets/tokens.css": "e62f02714ff77cb803993cf9796f09b5adafff8523418c3ec7a3c73f80947a2c",
       "skills/brief/fixtures.json": "4687d1a2567ebe2897b52b5d5c0420e3ce4f59a99f97a5c7518c1d3b1db63ace",
-      "skills/brief/references/brief-model.md": "5e3adb51c462a65ad7df26e621ebec577c222ffff6e4b23938102deb372e54c4",
+      "skills/brief/references/brief-model.md": "611aa43751ad6fe4957bb09931e418c22a6c92078dc8abf61c4fc8560feeafb4",
       "skills/brief/scripts/brief_collect.py": "6d0e638d5d36e3f62008c27967695e76f42f9cbe2afd659391e7118b4866d986",
       "skills/brief/scripts/brief_render.py": "b4fc93158220b7b1fce0ca7cf0e0cbcdaf644a93ebee1e7f4f39ca9c9dd5eba0",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
+      "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "#163 で surface が拡大（secret_detect.py 追加）。fixtures.json 不変。proper regression run は follow-up issue で実施",
+    "note": "output-language contract added; language rule was already present — only added cross-reference link",
     "result": "accepted-without-run",
     "surface": [
       "skills/brief/SKILL.md",
@@ -48,9 +49,10 @@
       "skills/brief/scripts/brief_collect.py",
       "skills/brief/scripts/brief_render.py",
       "skills/shared/references/artifact-store.md",
+      "skills/shared/references/output-language.md",
       "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "b40a23d2ddf9b6106fbbe2ea84eab37c719309ff52cd1d4f4c18b15b9d0786ad",
+    "surface_sha256": "c8f1f29d0b3995064fdc99987a6f0797d63bb7ad1aadb3511cf31c3573be6e35",
     "verified": "2026-07-29"
   },
   "commit": {
@@ -137,24 +139,26 @@
   },
   "decision-journal": {
     "file_sha256": {
-      "skills/decision-journal/SKILL.md": "35e860aa0927307a853e76d843a0e23178857c61c1d614b99179e9437f12a2c2",
+      "skills/decision-journal/SKILL.md": "c798f2888f1d79d067dd26e0e08d6683da45e0c02e3ae763c29279198b23dc78",
       "skills/decision-journal/fixtures.json": "0de02b85afcd969710a4717b8ec810834236d11457de16806ae2322bc0a0c613",
       "skills/decision-journal/references/decision-record-template.md": "43630f34fc89c487d055d64b2cae9a3d757da3dc443920e3438451ebeca68ac1",
       "skills/decision-journal/references/interview-guide.md": "6bd1bc4e989833d75637316c2380f4edd4a385a328f9f7a8186348bc330028b6",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
-      "skills/shared/references/decision-protocol.md": "9385ac847f75b4b23daaba710f72faee1f5319e88ef57ab45058c3d1a5db9629"
+      "skills/shared/references/decision-protocol.md": "9385ac847f75b4b23daaba710f72faee1f5319e88ef57ab45058c3d1a5db9629",
+      "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452"
     },
-    "note": "dj-003 再設計後の初回 run。Sonnet 5 executor、シングルターン。R3 は executor partial→caller ○ に re-judge（自由再生を prompt 入力として処理、判例語彙なし）。R7 は改定後要件で ○（確認質問を出力）",
-    "result": "pass",
+    "note": "output-language section added; contract tokens and reader-facing content boundaries defined",
+    "result": "accepted-without-run",
     "surface": [
       "skills/decision-journal/SKILL.md",
       "skills/decision-journal/fixtures.json",
       "skills/decision-journal/references/decision-record-template.md",
       "skills/decision-journal/references/interview-guide.md",
       "skills/shared/references/artifact-store.md",
-      "skills/shared/references/decision-protocol.md"
+      "skills/shared/references/decision-protocol.md",
+      "skills/shared/references/output-language.md"
     ],
-    "surface_sha256": "8631117e9c772f19c80609d106d915d981104b500558b8cbdb5d53a176eda59e",
+    "surface_sha256": "9b58d2b291d8e98a16ea572882e8f83b6befc2fd00d3bbc5997b8cfc88a72d60",
     "verified": "2026-07-29"
   },
   "design-guide": {
@@ -181,17 +185,18 @@
   },
   "doc-write": {
     "file_sha256": {
-      "skills/doc-write/SKILL.md": "30a5acf30a70b7d754d1a025004ec8ea39a700a823ec695c1caab65e090ab43a",
+      "skills/doc-write/SKILL.md": "7098daac2334a373d1483b56f875a8adafa10dd0cc4b894297937174aca2af88",
       "skills/doc-write/fixtures.json": "25923dc521df83866b6ecab0f94dfe23a9853f12180fad532182d268d8d18def",
       "skills/doc-write/references/adr-template.md": "67384d585ee51ab5093757397be8470cc1c65357b21c9096e61ccc73fe8ee28f",
       "skills/doc-write/references/discussion-summary-template.md": "130ccf87b8c2bee7840d2bb2611e46454df5addc25e254b8af287bdd12f2faa6",
       "skills/doc-write/references/mermaid-guidelines.md": "175dbb2f8dfbb7aa88c0d98b7a89f000971b3c7098b4101c306e4763feabfe2e",
       "skills/doc-write/references/tech-note-template.md": "8f287b7120f738f72ac65a0d17af8683828f14b00afca0eb81009147a9887975",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
-      "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
+      "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec",
+      "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452"
     },
-    "note": "dw-003 再設計後の初回 run。Sonnet 5 executor。WebSearch を実行→結果を不採用→手動入力切替を提案。全 5 要件 ○",
-    "result": "pass",
+    "note": "output-language section added; contract tokens and reader-facing content boundaries defined",
+    "result": "accepted-without-run",
     "surface": [
       "skills/doc-write/SKILL.md",
       "skills/doc-write/fixtures.json",
@@ -200,9 +205,10 @@
       "skills/doc-write/references/mermaid-guidelines.md",
       "skills/doc-write/references/tech-note-template.md",
       "skills/shared/references/artifact-store.md",
-      "skills/shared/references/human-readable-summary.md"
+      "skills/shared/references/human-readable-summary.md",
+      "skills/shared/references/output-language.md"
     ],
-    "surface_sha256": "102896c165ac27b0b53c2531aa6dd2cf751b918b8eecca4dbc636f5ed25cac2f",
+    "surface_sha256": "0c40c2c59ac5287647c18b4ecbc03a8eae6e4efc9edff696a49a04d91cc64a39",
     "verified": "2026-07-29"
   },
   "github-issue": {
@@ -251,14 +257,15 @@
   },
   "handoff": {
     "file_sha256": {
-      "skills/handoff/SKILL.md": "f188d6ebe2df8518fba55f284d49599c625d3810487ec2541798d1b12fd66501",
+      "skills/handoff/SKILL.md": "d71249ea2150a82b6b5768144e278b8d479ed2e87bc9ccd1c634ed363696f197",
       "skills/handoff/fixtures.json": "2b5028db210b7dc154d45862acaf9b579fe870ca30275c745bf751627190485f",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec",
+      "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
+    "note": "output-language contract cross-reference added; existing heading rule unchanged",
     "result": "accepted-without-run",
     "surface": [
       "skills/handoff/SKILL.md",
@@ -266,9 +273,10 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/human-readable-summary.md",
+      "skills/shared/references/output-language.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "225dc8f297fb2659d622cc6dd5425f1ba061e72004137b0c84ba3aa986140bc4",
+    "surface_sha256": "bfef20ede54fd46b7104aa1d9f47403c66effb25fd7a025b6576223e0079af3b",
     "verified": "2026-07-29"
   },
   "investigate": {
