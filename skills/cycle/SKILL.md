@@ -24,7 +24,7 @@ launched, perform its core action yourself following that skill's documented pro
 
 - First path in the arguments: plan file path (when omitted, auto-select from `.agents/artifacts/plans/`)
 - A number in the arguments: max refine iterations (default: 4)
-- Inner satellite context: a repository-relative `pinned_plan`, `resolved_isolation=worktree`,
+- Inner satellite context: a store-relative `pinned_plan`, `resolved_isolation=worktree`,
   `satellite_run_id`, and `satellite_capability_file`. The capability parameter is the file path,
   never the bearer value.
 
@@ -56,7 +56,7 @@ In `inplace` mode, preserve the existing workflow unchanged. In `worktree` mode 
 invocation is the main-tree outer orchestrator and performs this ordered protocol:
 
 1. Create exactly one outer worktree and derive `{satellite_run_id}`.
-2. Initialize satellite ingress for the repository-relative pinned plan and capability file.
+2. Initialize satellite ingress for the store-relative pinned plan and capability file.
 3. Launch one inner run with `pinned_plan`, `resolved_isolation=worktree`,
    `satellite_run_id`, and `satellite_capability_file`. The inner run must not re-resolve
    isolation or create a nested worktree.

@@ -61,7 +61,10 @@ Callers do not supply unresolved absolute destinations.
   A satellite MUST NOT write these; the main orchestrator composes them after collection.
 - **Derived indexes:** regenerated in the main tree, never transported or merged.
 - **Control state:** runtime, ephemeral, dotfiles, migration data, and transport metadata.
-  These are never harvestable artifacts.
+  These are never harvestable artifacts. Delegation result files
+  (`.agents/runtime/delegation/{run_id}_*.md`) are control state; in worktree mode they
+  reside in the satellite's runtime area (the delegate writes them) and are not transported
+  — the orchestrator reads them directly from the satellite path before cleanup.
 
 Unknown future artifact kinds are eligible when they satisfy the generic mergeable-entry
 rules. Transport MUST sweep the complete store and then fail closed on exclusions rather
@@ -92,7 +95,7 @@ The concrete discard-evidence record is
 | `main_tree_path` | canonical local main-tree path |
 | `worktree_path` | canonical linked-worktree path |
 | `worktree_id` | identity derived from Git common-dir metadata |
-| `pinned_plan` | repository-relative plan path |
+| `pinned_plan` | store-relative plan path (relative to the canonical artifact root) |
 | `created_at` | UTC timestamp |
 | `owner_pid` | orchestrator process ID used as one part of reconciliation identity |
 | `owner_pid_start_time` | OS-reported process start time paired with `owner_pid` |
