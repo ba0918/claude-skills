@@ -471,6 +471,39 @@ class TestGitIntegration(unittest.TestCase):
         self._git("branch", "-m", "detached-work")
         self.assertIsNone(resolve_baseline(self.root, "no-such-rev"))
 
+    def test_no_common_ancestor_skips_to_next_candidate(self):
+        """#159: 共通祖先を持たない ref は baseline として採用せず次の候補へ送る。"""
+        self._write("README.md", "# readme\n")
+        self._commit("init")
+        self._git("checkout", "-b", "work")
+        self._write("work.md", "# work\n")
+        self._commit("work commit")
+        # 無関係履歴の orphan ブランチを origin/main として作る
+        self._git("checkout", "--orphan", "unrelated")
+        self._write("other.md", "# unrelated\n")
+        self._commit("unrelated history")
+        self._git("checkout", "work")
+        self._git("branch", "origin/main", "unrelated")
+        # origin/main は共通祖先がないため skip → 次の候補 main が使われる
+        result = resolve_baseline(self.root)
+        self.assertIsNotNone(result, "共通祖先なしの ref を skip して次の候補を使う")
+
+    def test_all_candidates_without_common_ancestor_returns_none(self):
+        """全候補が共通祖先を持たなければ None を返す。"""
+        # main を持たないリポジトリを作り、HEAD は orphan-a に置く
+        self._git("checkout", "--orphan", "orphan-a")
+        self._write("a.md", "# a\n")
+        self._commit("orphan a")
+        # 無関係履歴を origin/main として作る
+        self._git("checkout", "--orphan", "orphan-b")
+        self._write("b.md", "# b\n")
+        self._commit("orphan b")
+        self._git("checkout", "orphan-a")
+        self._git("branch", "origin/main", "orphan-b")
+        # origin/main も main も共通祖先なし → None
+        result = resolve_baseline(self.root)
+        self.assertIsNone(result)
+
 
 class TestBaselineFreshness(unittest.TestCase):
     """古い remote-tracking ref を比較元にすると偽 BLOCK が出る（#88）。
