@@ -180,6 +180,75 @@ class TestBehaviorSurface(unittest.TestCase):
             self.assertEqual(
                 dep_graph.behavior_surface(root, "a"), ["skills/a/SKILL.md"])
 
+    def test_python_import_of_shared_module_is_a_dependency(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "skill body")
+            _write(root, "skills/a/scripts/run.py",
+                   "import secret_detect  # noqa: E402\n")
+            _write(root, "skills/shared/scripts/secret_detect.py", "# module")
+            surface = dep_graph.behavior_surface(root, "a")
+            self.assertIn("skills/shared/scripts/secret_detect.py", surface)
+
+    def test_python_from_import_of_shared_module_is_a_dependency(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "skill body")
+            _write(root, "skills/a/scripts/run.py",
+                   "from frontmatter import parse_frontmatter_lines\n")
+            _write(root, "skills/shared/scripts/frontmatter.py", "# module")
+            surface = dep_graph.behavior_surface(root, "a")
+            self.assertIn("skills/shared/scripts/frontmatter.py", surface)
+
+    def test_python_import_alias_is_a_dependency(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "skill body")
+            _write(root, "skills/a/scripts/run.py",
+                   "import secret_detect as _sd  # noqa: E402\n")
+            _write(root, "skills/shared/scripts/secret_detect.py", "# module")
+            surface = dep_graph.behavior_surface(root, "a")
+            self.assertIn("skills/shared/scripts/secret_detect.py", surface)
+
+    def test_python_import_of_nonexistent_shared_module_is_ignored(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "skill body")
+            _write(root, "skills/a/scripts/run.py", "import nonexistent\n")
+            _write(root, "skills/shared/scripts/secret_detect.py", "# module")
+            surface = dep_graph.behavior_surface(root, "a")
+            self.assertNotIn("skills/shared/scripts/nonexistent.py", surface)
+
+    def test_python_import_does_not_traverse_shared_module_imports(self):
+        """共有モジュール間の import は辿らない（1 ホップ原則）。"""
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "skill body")
+            _write(root, "skills/a/scripts/run.py",
+                   "import checkpoint  # noqa: E402\n")
+            _write(root, "skills/shared/scripts/checkpoint.py",
+                   "from secret_detect import mask_secrets\n")
+            _write(root, "skills/shared/scripts/secret_detect.py", "# module")
+            surface = dep_graph.behavior_surface(root, "a")
+            self.assertIn("skills/shared/scripts/checkpoint.py", surface)
+            self.assertNotIn("skills/shared/scripts/secret_detect.py", surface)
+
+    def test_python_import_in_test_file_is_ignored(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "skill body")
+            _write(root, "skills/a/scripts/test_run.py",
+                   "import secret_detect\n")
+            _write(root, "skills/shared/scripts/secret_detect.py", "# module")
+            surface = dep_graph.behavior_surface(root, "a")
+            self.assertNotIn("skills/shared/scripts/secret_detect.py", surface)
+
+    def test_shared_script_import_change_impacts_importing_skill(self):
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "skill body")
+            _write(root, "skills/a/scripts/run.py",
+                   "import secret_detect  # noqa: E402\n")
+            _write(root, "skills/shared/scripts/secret_detect.py", "# module")
+            _write(root, "skills/b/SKILL.md", "no imports")
+            graph = dep_graph.build_graph(root)
+            skills, _ = dep_graph.impacted_skills(
+                graph, ["skills/shared/scripts/secret_detect.py"], root)
+            self.assertEqual(skills, ["a"])
+
     def test_missing_skill_returns_empty(self):
         with tempfile.TemporaryDirectory() as root:
             _repo(root)
