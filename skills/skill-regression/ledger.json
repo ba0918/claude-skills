@@ -138,14 +138,14 @@
   "decision-journal": {
     "file_sha256": {
       "skills/decision-journal/SKILL.md": "35e860aa0927307a853e76d843a0e23178857c61c1d614b99179e9437f12a2c2",
-      "skills/decision-journal/fixtures.json": "cde54d8a3acff382035760ca776e7cbb4cbcaa0cd3c4e247738c49465516a39a",
+      "skills/decision-journal/fixtures.json": "0de02b85afcd969710a4717b8ec810834236d11457de16806ae2322bc0a0c613",
       "skills/decision-journal/references/decision-record-template.md": "43630f34fc89c487d055d64b2cae9a3d757da3dc443920e3438451ebeca68ac1",
       "skills/decision-journal/references/interview-guide.md": "6bd1bc4e989833d75637316c2380f4edd4a385a328f9f7a8186348bc330028b6",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/decision-protocol.md": "9385ac847f75b4b23daaba710f72faee1f5319e88ef57ab45058c3d1a5db9629"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
-    "result": "accepted-without-run",
+    "note": "dj-003 再設計後の初回 run。Sonnet 5 executor、シングルターン。R3 は executor partial→caller ○ に re-judge（自由再生を prompt 入力として処理、判例語彙なし）。R7 は改定後要件で ○（確認質問を出力）",
+    "result": "pass",
     "surface": [
       "skills/decision-journal/SKILL.md",
       "skills/decision-journal/fixtures.json",
@@ -154,7 +154,7 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/decision-protocol.md"
     ],
-    "surface_sha256": "dfd36f3d230c7726902987fa5ca22fe70e689d1d210892bd1fc15cc702e6288d",
+    "surface_sha256": "8631117e9c772f19c80609d106d915d981104b500558b8cbdb5d53a176eda59e",
     "verified": "2026-07-29"
   },
   "design-guide": {
@@ -182,7 +182,7 @@
   "doc-write": {
     "file_sha256": {
       "skills/doc-write/SKILL.md": "30a5acf30a70b7d754d1a025004ec8ea39a700a823ec695c1caab65e090ab43a",
-      "skills/doc-write/fixtures.json": "ebc0d7a057c2e98ffe5c9f279f05600f0bf921919581600f94ea9a7759a64807",
+      "skills/doc-write/fixtures.json": "25923dc521df83866b6ecab0f94dfe23a9853f12180fad532182d268d8d18def",
       "skills/doc-write/references/adr-template.md": "67384d585ee51ab5093757397be8470cc1c65357b21c9096e61ccc73fe8ee28f",
       "skills/doc-write/references/discussion-summary-template.md": "130ccf87b8c2bee7840d2bb2611e46454df5addc25e254b8af287bdd12f2faa6",
       "skills/doc-write/references/mermaid-guidelines.md": "175dbb2f8dfbb7aa88c0d98b7a89f000971b3c7098b4101c306e4763feabfe2e",
@@ -190,8 +190,8 @@
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
-    "result": "accepted-without-run",
+    "note": "dw-003 再設計後の初回 run。Sonnet 5 executor。WebSearch を実行→結果を不採用→手動入力切替を提案。全 5 要件 ○",
+    "result": "pass",
     "surface": [
       "skills/doc-write/SKILL.md",
       "skills/doc-write/fixtures.json",
@@ -202,7 +202,7 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "d768d016d1b84adb20b1927cd52f7c238d8a0e23910b4c3c00478df6baf6b94f",
+    "surface_sha256": "102896c165ac27b0b53c2531aa6dd2cf751b918b8eecca4dbc636f5ed25cac2f",
     "verified": "2026-07-29"
   },
   "github-issue": {
