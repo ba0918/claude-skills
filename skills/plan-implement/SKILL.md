@@ -13,8 +13,18 @@ Act as the orchestrator and drive implementation → review → feedback incorpo
 When any of the following applies, you may perform that role inline yourself instead of delegating or invoking another skill:
 you cannot launch a subagent / another skill (`claude-skills:plan`, etc.) cannot correctly point at the target project /
 the step is a trivial change of a few lines where the overhead of delegation does not pay off.
-When updating status inline in direct mode, edit status.md and the plan file directly. In
-satellite mode, update only the pinned plan through the authorized write path.
+When updating status inline in direct mode, the update must satisfy all of the following
+result conditions (what to achieve, not how):
+
+1. The completed step is marked 🟢 Done in the plan file
+2. The plan file's top-level `**Status:**` field matches the phase shown in status.md
+   (use the status-update-guide vocabulary: 🟡 Planning / 🟡 In Progress / 🟢 Completed)
+3. Session History in status.md (or session-history.md) contains a completion row when
+   the cycle finishes
+4. Each step's notes section in the plan file records the implementation summary
+   (changed files, test count) and any accepted WARN/INFO findings
+
+In satellite mode, update only the pinned plan through the authorized write path.
 Even inline, the review (Step B) takes the stance of an independent, critical reviewer: do not assume the judgments made
 while implementing — re-read only the code and the tests to evaluate them, and state findings explicitly as BLOCK / WARN / INFO.
 
@@ -54,12 +64,12 @@ an error; do not guess paths, isolation, or capability data.
 
 1. In direct mode, read `.agents/artifacts/status.md` and identify the session currently at
    🟡 Planning. In satellite mode, read the validated `pinned_plan` directly.
-   - Re-entry from a step partway through (a session already at 🔵 Implementing) is also a normal case
+   - Re-entry from a step partway through (a session already at 🟡 In Progress) is also a normal case
 2. Load the corresponding plan file (inside `.agents/artifacts/plans/`)
 3. Grasp the overall picture of the plan, the list of steps, and the current progress (do not re-implement 🟢 Done steps)
 4. If the argument names a specific step, start from there
-5. **Direct mode:** update the status to 🔵 Implementing (invoke the skill
-   `claude-skills:plan`; no update is needed if already 🔵 Implementing).
+5. **Direct mode:** update the status to 🟡 In Progress (invoke the skill
+   `claude-skills:plan`; no update is needed if already 🟡 In Progress).
    **Satellite mode:** update only the pinned plan through the authorized write path; do not
    invoke `plan` or write singleton/derived state.
 
@@ -163,7 +173,7 @@ After every step is complete:
    - A review round with zero actionable findings (after exclusions) ends the loop
    - If 3 iterations are exhausted with findings still open, escalate to the user with the remaining findings
 3. Once everything is resolved:
-   - In direct mode, invoke the skill `claude-skills:plan` and update the status to 🟢 Complete.
+   - In direct mode, invoke the skill `claude-skills:plan` and update the status to 🟢 Completed.
      In satellite mode, mark the pinned plan complete through the authorized write path and leave
      singleton/derived composition to the main-tree orchestrator
    - If uncommitted changes (the status update, etc.) remain, commit them
