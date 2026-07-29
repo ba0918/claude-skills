@@ -493,12 +493,12 @@
       "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/sweep-fix/SKILL.md": "e9e6b447efe1a582d753420fdfe102f271121a386d86d5670eb133911a766396",
+      "skills/sweep-fix/SKILL.md": "03c5f2beedfef324c844c8fa06eaed3d1d672fef9d6a103c00593d7d7b07c465",
       "skills/sweep-fix/fixtures.json": "5406b7dba570b6294cdd9e978fc618eb2fa8c0e504ef014438853e37d0338b88",
       "skills/sweep-fix/references/context-verification.md": "1e835b97a51ea34723c6b20f23a16b0c3e690a32316208dd0a1ec91c50b07104",
       "skills/sweep-fix/references/pattern-extraction.md": "9f4c15f68c82b80c7d97ee28010270f6adbd65266bf7df1ca980f7871364ffa8"
     },
-    "note": "execution-context.md contract link added; no behavioral change, existing headless definitions replaced with shared contract reference",
+    "note": "boundary clarification and early-exit guidance added; no behavioral change to fix flow",
     "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/execution-context.md",
@@ -510,7 +510,7 @@
       "skills/sweep-fix/references/context-verification.md",
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
-    "surface_sha256": "deffdf5bc07a34b0d1c4a757e0dd05b9289d042cbdd5e94ad350238e5d51c45f",
+    "surface_sha256": "d3adbe53dbb76569a152b98d1617b9d68b7b3654f8f08fb9f049da85120d7e43",
     "verified": "2026-07-29"
   },
   "systematic-debugging": {

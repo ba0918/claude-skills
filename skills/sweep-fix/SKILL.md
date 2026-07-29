@@ -11,7 +11,7 @@ A find-one-fix-all workflow: **local discovery → generalize into a pattern →
 ### Differentiation from Other Skills
 
 - **vs investigate**: investigate is read-only and fixes nothing. sweep-fix actually fixes the sites that pass verification
-- **vs codebase-review / attack-review**: the review skills have a fixed whole-codebase scope and stop at a report. sweep-fix starts from a local scope the user names and propagates only the problems it found there
+- **vs codebase-review / attack-review**: the review skills have a fixed whole-codebase scope and stop at a report. sweep-fix starts from a local scope the user names and propagates only the problems it found there. **Scanning the whole codebase for a named aspect (e.g. "error handling") without a local finding to anchor the sweep is codebase-review's territory, not sweep-fix's**
 - **vs iterate**: iterate assumes the user brings the problem (a fix instruction) with them. sweep-fix includes the discovery phase itself
 - **vs systematic-debugging**: debugging chases the root cause of a known symptom. sweep-fix explores a scope for problems with no symptom reported
 
@@ -150,6 +150,10 @@ Fix **CONFIRMED sites only**. Do not create any path by which a change touches a
 2. Analysis basis (what was examined and how)
 3. Conclusion ("no problems detected")
 4. Verification ("nothing to verify because nothing changed")
+5. Guidance — when the user named an aspect to focus on, add: "The specified range
+   was clean for this aspect. To scan the whole codebase for the same aspect, use
+   `codebase-review`." (Omit when no aspect was specified — a bare "no problems" is
+   sufficient)
 
 ### Full Structure (Normal Completion)
 
