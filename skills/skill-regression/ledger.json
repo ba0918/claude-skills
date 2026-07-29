@@ -32,9 +32,10 @@
       "skills/brief/references/brief-model.md": "5e3adb51c462a65ad7df26e621ebec577c222ffff6e4b23938102deb372e54c4",
       "skills/brief/scripts/brief_collect.py": "6d0e638d5d36e3f62008c27967695e76f42f9cbe2afd659391e7118b4866d986",
       "skills/brief/scripts/brief_render.py": "b4fc93158220b7b1fce0ca7cf0e0cbcdaf644a93ebee1e7f4f39ca9c9dd5eba0",
-      "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d"
+      "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
+      "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
+    "note": "#163 で surface が拡大（secret_detect.py 追加）。fixtures.json 不変。proper regression run は follow-up issue で実施",
     "result": "accepted-without-run",
     "surface": [
       "skills/brief/SKILL.md",
@@ -46,9 +47,10 @@
       "skills/brief/references/brief-model.md",
       "skills/brief/scripts/brief_collect.py",
       "skills/brief/scripts/brief_render.py",
-      "skills/shared/references/artifact-store.md"
+      "skills/shared/references/artifact-store.md",
+      "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "6398aedd50f886ef35596f09515de1750a3e4c3be87d21e776300686f35e436e",
+    "surface_sha256": "b40a23d2ddf9b6106fbbe2ea84eab37c719309ff52cd1d4f4c18b15b9d0786ad",
     "verified": "2026-07-29"
   },
   "commit": {
@@ -82,9 +84,10 @@
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
+      "skills/shared/scripts/frontmatter.py": "3c6d76a04346f1b2251d39b005f526073981a3425ce9fabc7523d99a791fedb8",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
+    "note": "#163 で surface が拡大（frontmatter.py, secret_detect.py 追加）。fixtures.json 不変。proper regression run は follow-up issue で実施",
     "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/SKILL.md",
@@ -100,9 +103,10 @@
       "skills/shared/references/fix-action-taxonomy.md",
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md",
+      "skills/shared/scripts/frontmatter.py",
       "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "2894238b5531ab4d8adae44a42964cab3075676a9006c2dac314856b10f4e79d",
+    "surface_sha256": "970fc77eea6e16eb576cd59fcd2a513f3022c83888276a83f922764e2f858a9f",
     "verified": "2026-07-29"
   },
   "cycle": {
@@ -219,9 +223,9 @@
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
-      "skills/skill-regression/scripts/ledger.py": "10e0772dac58f097e47c9b8e0f902d084fddd52505b47a4a2aa0a5a298d78de1"
+      "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
+    "note": "#165 で ledger.py が変更。fixtures.json 不変。proper regression run は follow-up issue で実施",
     "result": "accepted-without-run",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -242,7 +246,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "a9858fc71665511890ec16e4998035e99c4ab05aa412b35fc236da3016f81ec3",
+    "surface_sha256": "656d39e7cb1961553cc512cffaea86d77c649c768a2f9b1dd1039af5b390ccc6",
     "verified": "2026-07-29"
   },
   "handoff": {
