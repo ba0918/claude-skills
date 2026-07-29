@@ -361,7 +361,7 @@
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "ce22934f32c0364b5326c20d54346897bf02c46b473a66bcc34b7e8fd33f76e4",
+      "skills/plan/SKILL.md": "7f78baf3af0ab8bcc52d23b23786c5ae809408df2cd1a4b202dd71b161932e85",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
       "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
@@ -371,7 +371,7 @@
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "execution-context.md contract link added; no behavioral change, existing headless definitions replaced with shared contract reference",
+    "note": "caller-supplied mode contract added; standalone mode unchanged",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan/SKILL.md",
@@ -384,7 +384,7 @@
       "skills/shared/references/execution-context.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "63836da4090ab91b3ff6b7840b33412ffa9655a682c97d266fb3f8544c30cf8b",
+    "surface_sha256": "c66562c7aa8cabb513cf63c43f5dcdbc3210b45d78cb536525433fff8785cfe4",
     "verified": "2026-07-29"
   },
   "plan-implement": {

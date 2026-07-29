@@ -146,18 +146,20 @@ yourself. The path is then handed to the subagent — it is not something the de
 
 **Subagent instruction:**
 ```
-Invoke the `claude-skills:plan` skill and create a plan for the following feature.
+Invoke the `claude-skills:plan` skill in caller-supplied mode and create a plan for
+the following feature.
 Feature: {plan_title}
 Description: {plan_description}
 Affected files: {file_list}
 
-Save the plan to exactly this path, relative to the repository root: {plan_file_path}
-This path is assigned by the caller and **overrides the plan skill's own filename rule**.
-Do not generate a timestamp or a filename of your own.
-
-Do not update .agents/artifacts/status.md or .agents/artifacts/session-history.md.
-This run updates them once, from the orchestrator, in Phase 4.
+Caller-supplied parameters:
+  output_path: {plan_file_path}
+  skip_status: true
 ```
+
+The `output_path` and `skip_status` parameters are the plan skill's formal
+[caller-supplied mode](../plan/SKILL.md#caller-supplied-mode) contract. Do not
+override the plan skill's behavior with ad-hoc natural-language instructions.
 
 `{plan_file_path}` is `.agents/artifacts/plans/{timestamp}_{plan_id}_{slug}.md` — **relative to the
 repository root**, not to the delegate's working directory — where `{plan_id}` is the plan letter
