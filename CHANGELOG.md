@@ -8,7 +8,7 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
-## Unreleased
+## 1.71.0
 
 worktree 分離の共有契約と satellite artifact transport を導入した（issue #93 正本、#105 の
 stale satellite ガード、#92 の parallel-cycle 適用。進捗の transport は #93 が #92 を上書き）。
