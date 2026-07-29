@@ -246,6 +246,37 @@
         }
       ],
       "notes": "Issue #123 の transport seam を固定する回帰面。fallback の可用性と、認証失敗で backend を切り替えて fail-closed を迂回しない境界を1シナリオで対比する。読み取り専用のため isolation: none。"
+    },
+    {
+      "id": "gi-008",
+      "title": "issue cycle uses shared satellite transport and preserves failures",
+      "source": "manual:worktree-artifact-transport-step4",
+      "executor_tier": "standard",
+      "isolation": "none",
+      "prompt": "Explain, grounded in references/worktree-cycle.md and the shared workspace-isolation and artifact-store contracts, exactly how github-issue cycle drives an accepted issue through the shared satellite transport. Cover: (a) what shared ingress creates before the inner cycle starts and what resolved context the inner cycle receives, (b) what the inner cycle may and may not do with worktrees and the main artifact store, (c) the exact ordering of collect, merge, post-merge verification, publish, and cleanup on success, and (d) what is preserved and what exact command is reported when collect fails. Do not execute the pipeline; this environment has no usable GitHub transport.",
+      "requirements": [
+        {
+          "text": "States that shared ingress creates the pinned plan and the run-scoped capability before the inner cycle receives the complete resolved context (pinned_plan, resolved_isolation, satellite_run_id, satellite_capability_file).",
+          "critical": true
+        },
+        {
+          "text": "States that the inner cycle creates no nested worktree and never writes the main artifact store directly; singleton composition stays with the outer orchestrator.",
+          "critical": true
+        },
+        {
+          "text": "States that every terminal path collects before cleanup and that success publishes only after merge and post-merge verification.",
+          "critical": true
+        },
+        {
+          "text": "States that a transport failure preserves the worktree and staging and reports recovery_command=/claude-skills:artifacts recover --run-id {satellite_run_id}.",
+          "critical": true
+        },
+        {
+          "text": "Performs no GitHub writes and edits no files.",
+          "critical": false
+        }
+      ],
+      "notes": "The existing GitHub issue gates, draft PR, review, retry, label, and merge semantics remain unchanged around the shared transport. Contract-explanation scenario in the gi-007 style: a real end-to-end issue cycle needs a live GitHub transport, which fixtures cannot materialize offline; the executable transport ordering is covered by the iterate/cycle/plan-implement behavioral scenarios and the shared-script test suites."
     }
   ]
 }

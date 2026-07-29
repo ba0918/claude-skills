@@ -6,12 +6,12 @@ Strategy for merging completed cycle branches back into the main branch.
 
 ```
 For each successful cycle in completion order:
-  1. Checkout main branch
-  2. Pull latest (fast-forward only)
+  1. Collect before merge into validated main-runtime staging
+  2. Checkout main branch and pull latest (fast-forward only)
   3. Merge cycle branch with --no-ff
   4. Run tests (if test runner exists)
-  5. If tests pass → continue to next
-  6. If tests fail → revert merge, mark cycle as merge-failed
+  5. If tests pass → publish staged artifacts, then enter cleanup_allowed
+  6. If tests fail → revert merge, do not publish, preserve the worktree
 ```
 
 ## Merge Commands
@@ -68,6 +68,17 @@ Skipped cycles are reported as "skipped due to dependency failure" — distinct 
 
 ## Worktree Cleanup
 
+Every recovery instruction in this reference uses the shared exact six-line formatter:
+
+```text
+reason_code={reason_code}
+run_id={satellite_run_id}
+main_tree_path={main_tree_path}
+worktree_path={worktree_path_or_unavailable}
+reason={reason}
+recovery_command=/claude-skills:artifacts recover --run-id {satellite_run_id}
+```
+
 After merging (or deciding not to merge), clean up worktrees:
 
 ```bash
@@ -77,10 +88,13 @@ git worktree list
 git worktree prune
 ```
 
-Remove the worktree of a cycle that **merged and passed its post-merge test** — that is Step 3.4,
-after the decisions above, not during Phase 2. Every other worktree stays: failed, merge-reverted,
-and skipped cycles keep theirs for diagnosis, and those are removed only when a human says so
-(§Preserved Worktrees in [SKILL.md](../SKILL.md)).
+Publish only after the merge and post-merge verification pass. Remove the worktree of a cycle
+only after publication has passed destination CAS, the capability is non-live, and lifecycle is
+`cleanup_allowed` — that is Step 3.4, after the decisions above, not during Phase 2. If collect or
+publish fails, or a conflict occurs, preserve the worktree and staging and emit the formatter with
+the applicable closed reason code. Failed, merge-reverted, and skipped cycles also keep their
+worktrees for diagnosis, and those are removed only when a human says so (§Preserved Worktrees in
+[SKILL.md](../SKILL.md)).
 
 `git worktree prune` only discards bookkeeping for worktrees whose directory is already gone, so
 it never removes a preserved one and is not a substitute for the explicit removal above.

@@ -17,6 +17,7 @@ Select the workflow with the leading argument.
 - `init` → initialize a safe local store
 - `status` or no argument → diagnose the configuration and the store, read-only
 - `migrate` → inventory, classify, and incrementally migrate legacy `docs/{plans,issues,ideas,loop,handoff,reviews}`
+- `recover --run-id {run_id}` → safely reconcile and report an interrupted satellite transport
 
 `{artifact_store.py}` is the path obtained by resolving
 `../shared/scripts/artifact_store.py` from this skill's directory.
@@ -44,10 +45,35 @@ Select the workflow with the leading argument.
    ```
 
 4. Confirm `.agents/artifacts.yml`, `.gitignore`, and the standard subdirectories.
+   A fresh initialization writes `.agents/workspace.yml` with `isolation: worktree` only when no
+   workspace policy, artifact policy, canonical store, or legacy store existed at command start.
+   For an existing or partially initialized project, init is idempotent: it leaves the compatible
+   `inplace` default unchanged and reports the explicit opt-in content instead of creating the file.
 5. Re-run status and treat `errors: []` together with `writable: true` as the completion condition.
 
 Never select `public` or `shared-private` implicitly during init. Do not widen visibility without an
 administrator's explicit policy change and inspection.
+
+## Recover workflow
+
+Run this workflow from the canonical main tree:
+
+```text
+/claude-skills:artifacts recover --run-id {run_id}
+```
+
+Validate `{run_id}` as one safe identifier, locate its main-runtime provenance under
+`.agents/runtime/satellite-runs/`, reconcile a dead owner and any interrupted atomic publication,
+then report lifecycle state, capability state, staging presence, conflicts, and the preserved
+worktree path. The command issues a newly authorized inner resume context only when the state is
+`failed_readonly`. For every other state it reports the next action that can be justified by
+mechanically checked runtime facts, or stops for human judgment.
+
+Recovery never chooses a conflict winner, never publishes across a failed destination CAS, and
+never deletes a preserved worktree. Recovery never publishes automatically: publish is a separate
+action requiring explicit approval and all preconditions from the
+[Workspace Isolation contract](../shared/references/workspace-isolation.md). Every stopped result
+repeats the exact command above.
 
 ## Migrate workflow
 

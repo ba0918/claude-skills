@@ -9,6 +9,32 @@ Artifact paths follow the [Agent Artifact Store contract](../shared/references/a
 
 Skill that auto-determines task size for additional instructions after a cycle, then runs the appropriate improvement loop.
 
+## Resolved execution context
+
+An outer caller may provide the complete inner context: repository-relative `pinned_plan`,
+`resolved_isolation=worktree`, `satellite_run_id`, and `satellite_capability_file`. Treat it as
+authoritative; a partial context is an error. The inner run must not re-resolve isolation or create
+a nested worktree, and it updates only mergeable satellite state through the capability file.
+Singleton composition remains with the main-tree orchestrator.
+
+For a standalone call, Resolve isolation exactly once through the shared workspace-isolation
+facade. In `inplace` mode, preserve the existing workflow unchanged. In `worktree` mode:
+
+1. Create exactly one outer worktree and derive `{satellite_run_id}`.
+2. Initialize satellite ingress for the repository-relative pinned plan (or the current durable
+   task context when no plan exists).
+3. Launch one inner run with the complete resolved context above.
+4. Collect on every terminal path: success, failure, cancellation, and verification failure.
+5. Merge and run post-merge verification in the main tree.
+6. Publish only after verification passes. Every failure path preserves staging and the worktree;
+   discard requires explicit human authorization.
+7. Cleanup only when cleanup_allowed is proven and the capability is revoked.
+
+On every new terminal transport failure, preserve the worktree and invoke the shared exact six-line
+formatter with its closed reason code. Its final line is
+`recovery_command=/claude-skills:artifacts recover --run-id {satellite_run_id}`. Never mark that
+path cleanup-eligible.
+
 ## Flow Overview
 
 ```

@@ -127,6 +127,37 @@
         }
       ],
       "notes": "自動選択（完了済みスキップ）+ Phase 3 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase3_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。"
+    },
+    {
+      "id": "cy-004",
+      "title": "inner satellite context — refine を維持して外側の worktree 解決を再実行しない",
+      "source": "manual:worktree-artifact-transport-step3",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n/.agents/artifacts/\n/.agents/runtime/\n",
+          ".agents/artifacts/status.md": "SENTINEL STATUS\n",
+          ".agents/artifacts/session-history.md": "SENTINEL HISTORY\n",
+          ".agents/artifacts/idea-status.md": "SENTINEL DERIVED INDEX\n",
+          ".agents/artifacts/plans/20260729000000_inner.md": "# Inner plan\n\n**Status:** 🟡 Planning\n\n## Progress\n\n| Step | Status |\n|---|---|\n| Step 1 | ⚪ Pending |\n",
+          ".agents/runtime/satellite-capability": "fixture-capability"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "Run cycle with pinned_plan=.agents/artifacts/plans/20260729000000_inner.md, resolved_isolation=worktree, satellite_run_id=batch-42-A, and satellite_capability_file=.agents/runtime/satellite-capability.",
+      "requirements": [
+        { "text": "pinned_plan を直接採用し、resolved_isolation を再解決せず workspace claim/release を行っていない", "critical": true },
+        { "text": "現在の branch のまま nested worktree を作らず実行している", "critical": true },
+        { "text": "plan-refine の判定と反復 gate を省略せずに実行している", "critical": true },
+        { "text": "初回 plan-refine、refine-fix、re-refine の全 delegate に完全な satellite context を中継している", "critical": true },
+        { "text": "pinned_plan、resolved_isolation、satellite_run_id、satellite_capability_file の完全な context を plan-implement へ変更せず中継している", "critical": true },
+        { "text": "status.md、session-history.md、derived index の singleton sentinel を変更していない", "critical": true },
+        { "text": "inner Phase 3 では result artifact と issue close を outer orchestrator へ延期し、必要な facts を返している", "critical": true },
+        { "text": "inner mode でも tracked commit は省略していない", "critical": true },
+        { "text": "raw capability を prompt、artifact、report に含めていない", "critical": true }
+      ],
+      "notes": "parallel-cycle の 1-plan 経路が Cycle の refine semantics を保ちつつ、解決済み satellite isolation を二重に作らないことを固定する。"
     }
   ]
 }

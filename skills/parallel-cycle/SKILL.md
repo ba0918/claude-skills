@@ -22,10 +22,10 @@ Input (natural language or plan files)
   │     Extract affected files → intersection check → execution groups
   │
   ├── Phase 2: Parallel Execution (per group)
-  │     Create worktree → subagent (cycle) → collect results (worktree kept)
+  │     Create worktree → ingress plan/capability → delegate → collect satellite
   │
   ├── Phase 3: Merge
-  │     Merge successful branches → test → revert on failure → remove merged worktrees
+  │     Merge → verify → publish collected artifacts → cleanup when allowed
   │
   └── Phase 4: Summary
         Unified report of all cycles
@@ -210,7 +210,7 @@ Phase 4 (§Important: status.md Write Suppression).
   3. Skip Phase 1 — one plan has nothing to intersect — and carry forward the execution state it
      would have produced: **Group 1 = `[A]`, `{N}` = 1, `{M}` = 1, no dependencies**. Phase 3's
      merge order and Phase 4's `Groups:` line read those values, so they have to exist
-  4. Enter Phase 2 normally. `{run_id}` is captured at its entry as always, the worktree is created
+  4. Enter Phase 2 normally. `{batch_run_id}` is captured at its entry as always, the worktree is created
      by step 1's rule, and the delegate is invoked **inside it** — but running
      `claude-skills:cycle` against the generated plan path, not `claude-skills:plan-implement`, so a
      single plan still passes the refine gate:
@@ -219,14 +219,17 @@ Phase 4 (§Important: status.md Write Suppression).
      You are working in a worktree at: {worktree_path}
      Branch: {branch_name}
 
-     Invoke the `claude-skills:cycle` skill against the plan file {plan_file_path}.
+     Invoke the `claude-skills:cycle` skill with this resolved execution context:
+     pinned_plan={repository_relative_plan_path}
+     resolved_isolation=worktree
+     satellite_run_id={batch_run_id}-{plan_id}
+     satellite_capability_file={capability_file_path}
 
-     Do not update .agents/artifacts/status.md or .agents/artifacts/session-history.md.
-     This run updates them once, from the orchestrator, in Phase 4.
+     Treat this as an inner run: do not resolve isolation again or create a nested worktree.
      ```
 
-     Pass no workspace-lock token — the worktree is its own resource and the delegate claims it
-     itself (§Phase 2)
+     Pass no workspace-lock token — the outer orchestrator owns this resolved satellite isolation,
+     so the inner delegate neither claims nor releases it (§Phase 2).
   5. Continue through Phase 3 and Phase 4 as usual: the branch is merged, and the worktree is
      removed or preserved by the **same rule as every other cycle** (§Step 3.4,
      §Preserved Worktrees). The result file's `Plan batch` is Step 0.3's `{timestamp}` and its
@@ -291,16 +294,31 @@ Total rounds: 3
 
 Execute each group sequentially. Within each group, execute cycles in parallel.
 
+### Recovery diagnostic formatter
+
+Every recovery instruction in this skill, including ingress, collect, publish, preserved-cycle,
+and interrupted paths, MUST be emitted through this shared exact six-line formatter. Substitute
+the closed reason code and the satellite identity; do not emit an additional shortened command.
+
+```text
+reason_code={reason_code}
+run_id={satellite_run_id}
+main_tree_path={main_tree_path}
+worktree_path={worktree_path_or_unavailable}
+reason={reason}
+recovery_command=/claude-skills:artifacts recover --run-id {satellite_run_id}
+```
+
 ### For Each Group
 
 For each cycle in the group, **in parallel**:
 
 1. **Create the worktree**: create an isolated working tree and branch with git worktree.
 
-   Name both after the **run**, not the plan: branch `parallel/{run_id}-{plan_id}-{slug}` and a
+   Name both after the **run**, not the plan: branch `parallel/{batch_run_id}-{plan_id}-{slug}` and a
    worktree path carrying the same suffix.
 
-   - `{run_id}` is captured **once at Phase 2 entry** and shared across the batch. Derive it from
+   - `{batch_run_id}` is captured **once at Phase 2 entry** and shared across the batch. Derive it from
      the current time at a precision that cannot repeat across back-to-back runs (sub-second, or
      seconds plus a short random suffix). It must **not** come from the plan file: a preserved
      worktree still holds its branch checked out, git refuses to hand that branch to a second
@@ -310,27 +328,66 @@ For each cycle in the group, **in parallel**:
    - `{slug}` is for readability only. **Uniqueness must never depend on it**, since two plans can
      legitimately share a slug
 
+   Before ingress, derive `{satellite_run_id}` from `{batch_run_id}` and `{plan_id}` using the
+   shared transport helper: `{satellite_run_id}={batch_run_id}-{plan_id}`. This is the lifecycle
+   identity for exactly one satellite. For example:
+   `Plan A: satellite_run_id={batch_run_id}-A; Plan B: satellite_run_id={batch_run_id}-B`.
+   The runtime/provenance, capability file, staging, lifecycle, and recovery command are keyed by
+   `{satellite_run_id}`; the batch summary and result filename are keyed only by `{batch_run_id}`.
+
    If `git worktree add` still fails, do not improvise another path: record that cycle as failed
    and continue (§Failure Handling).
-2. **Run the cycle**: launch a subagent (high-performance model — implementation is protected by verification gates, so do not inherit the expensive session model) and run the cycle inside the worktree.
-   **Pass no workspace-lock token.** The worktree is a different resource from the main tree
-   (its own `.agents/runtime/`), so the delegate claims it itself:
+2. **Initialize satellite and ingress the pinned plan** immediately after worktree creation and
+   before launching any delegate. Use the shared satellite transport to create authoritative
+   main-tree provenance, copy the plan to the same repository-relative path in the satellite,
+   create its ingress manifest, and write the mode-`0600` capability file. If ingress fails,
+   record the terminal failure, revoke any created capability, preserve the worktree, and emit the
+   Recovery diagnostic formatter with `reason_code=SATELLITE_PRESERVED`. Never launch the delegate
+   without a complete ingress.
+
+3. **Run the cycle**: launch a subagent (high-performance model — implementation is protected by verification gates, so do not inherit the expensive session model) and run the cycle inside the worktree.
+   **Pass no workspace-lock token.** The outer orchestrator owns this resolved satellite
+   isolation; the inner delegate neither claims nor releases it:
 
    **Subagent instruction:**
    ```
    You are working in a worktree at: {worktree_path}
    Branch: {branch_name}
 
-   Invoke the `claude-skills:plan-implement` skill and implement the plan file {plan_file_path}.
+   Invoke the `claude-skills:plan-implement` skill with this resolved execution context:
+   pinned_plan={repository_relative_plan_path}
+   resolved_isolation=worktree
+   batch_run_id={batch_run_id}
+   satellite_run_id={batch_run_id}-{plan_id}
+   satellite_capability_file={capability_file_path}
+
    Implement every step, commit after each step, and update the progress table.
    On completion, report: number of files changed, number of tests added, number of commits.
-
-   Do not update .agents/artifacts/status.md or .agents/artifacts/session-history.md.
-   This run updates them once, from the orchestrator, in Phase 4.
    ```
 
-3. **Collect the results**: record success/failure and a summary for each cycle
-4. **Do not remove the worktree here.** Removal is Step 3.4's decision, and only for a cycle that
+   The context is authoritative and already resolved; the delegate must not resolve workspace
+   policy again or create a nested worktree. Never place the raw capability in this prompt or any
+   completion output. Pass only `satellite_capability_file`.
+
+4. **Collect the satellite store** before leaving Phase 2. Enter harvesting, consume or revoke
+   the capability as appropriate, and collect validated satellite artifacts into main-runtime
+   staging on success, implementation failure, cancellation, and verification failure. The
+   durable satellite plan, not completion prose, is the source of progress. Record the delegate
+   summary separately as non-authoritative completion prose.
+
+   A collect failure or conflict enters `recovery_required`: must not remove the worktree, must
+   retain staging and both source versions, and must emit the Recovery diagnostic formatter. A
+   successfully collected failed cycle is also preserved; collected state is not published unless
+   its branch later merges and verifies.
+
+   Every preserved, conflict, or interrupted terminal path MUST use the shared six-line structured
+   diagnostic formatter from the workspace-isolation contract. Use
+   `reason_code=SATELLITE_PRESERVED` for a preserved satellite,
+   `reason_code=HARVEST_CONFLICT` for an artifact conflict, and
+   `reason_code=HARVEST_INTERRUPTED` when harvest does not complete. Do not hand-compose a shortened
+   message: all six fields, including the `{satellite_run_id}` recovery command, are required.
+
+5. **Do not remove the worktree here.** Removal is Step 3.4's decision, and only for a cycle that
    merged cleanly — a worktree torn down in Phase 2 is unavailable when Phase 3's post-merge test
    fails and the revert has to be explained. On cycle failure it is preserved outright
    (§Failure Handling)
@@ -389,9 +446,16 @@ If the project has a test runner:
 
 If no test runner exists, skip this step.
 
+**Publish collected artifacts** only after that cycle's merge and post-merge verification pass.
+Publication must revalidate destination hashes under the lifecycle lock. If publish fails or
+detects a conflict, publish nothing, mark `recovery_required`, preserve the worktree and staging,
+and emit the Recovery diagnostic formatter with `reason_code=HARVEST_CONFLICT`. If verification
+fails and the merge is reverted, do not publish completed progress.
+
 ### Step 3.4: Cleanup
 
-Remove the worktree of every cycle that **merged and passed its post-merge test**. Leave every
+Remove the worktree only after the cycle merged, passed its post-merge test, published its
+collected artifacts, revoked/consumed its capability, and reached `cleanup_allowed`. Leave every
 other worktree in place — failed, merge-reverted, and skipped cycles all keep theirs
 (§Preserved Worktrees).
 
@@ -429,8 +493,8 @@ Files changed: {total_files}
 
 ### Step 4.3: Generate Result File
 
-Save the summary to `.agents/artifacts/plans/results/{run_id}_parallel_result.md`, using the same
-`{run_id}` that Phase 2 captured.
+Save the summary to `.agents/artifacts/plans/results/{batch_run_id}_parallel_result.md`, using the
+same `{batch_run_id}` that Phase 2 captured.
 
 The name comes from the **run**, not from the plans, for two reasons. A batch has one result file
 but many plans, so no single plan name can stand for it — and in plan-file mode the arguments are
@@ -442,7 +506,7 @@ what failed the first time.
 # Parallel Cycle Result
 
 **Executed:** {datetime}
-**Run ID:** {run_id}
+**Run ID:** {batch_run_id}
 **Plan batch:** {timestamp in natural-language mode; `external` in plan-file mode, where the
 arguments are pre-existing files that share no batch timestamp}
 **Plans:** {N}
