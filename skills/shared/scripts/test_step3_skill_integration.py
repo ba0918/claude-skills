@@ -93,7 +93,7 @@ class Step3SkillIntegrationTests(unittest.TestCase):
     def test_plan_implement_defines_satellite_mode_without_weakening_gates(self):
         text = " ".join(PLAN_IMPLEMENT.read_text(encoding="utf-8").split())
         self.assertIn("Satellite execution context", text)
-        self.assertIn("repository-relative `pinned_plan`", text)
+        self.assertIn("store-relative `pinned_plan`", text)
         self.assertIn("read the capability from `satellite_capability_file`", text)
         self.assertIn("updates the pinned plan directly", text)
         self.assertIn("must not invoke `plan`", text)
@@ -103,7 +103,7 @@ class Step3SkillIntegrationTests(unittest.TestCase):
     def test_cycle_accepts_resolved_satellite_context_without_outer_orchestration(self):
         text = " ".join(CYCLE.read_text(encoding="utf-8").split())
         self.assertIn(
-            "repository-relative `pinned_plan`, `resolved_isolation=worktree`, "
+            "store-relative `pinned_plan`, `resolved_isolation=worktree`, "
             "`satellite_run_id`, and `satellite_capability_file`", text,
         )
         self.assertIn("skip workspace claim and release", text)

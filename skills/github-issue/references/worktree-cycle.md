@@ -7,7 +7,7 @@ capability, collect, publish, and cleanup gate; it does not implement a second c
 protocol.
 
 The issue workflow chooses the branch point and worktree name. The shared facade then ingresses the
-repository-relative pinned plan, supplies a capability-file path to the inner cycle, and validates
+store-relative pinned plan, supplies a capability-file path to the inner cycle, and validates
 all returned artifact bytes. The raw capability is never placed in a prompt, artifact, or report.
 
 For every success, implementation failure, cancellation, and verification failure, harvest

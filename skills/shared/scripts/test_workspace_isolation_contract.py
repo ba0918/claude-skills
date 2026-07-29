@@ -308,6 +308,23 @@ class TestWorkspaceIsolationContract(unittest.TestCase):
         self.assertIn("[Agent Artifact Store](artifact-store.md)", workspace)
         self.assertIn("[Workspace Isolation](workspace-isolation.md)", artifact)
 
+    def test_pinned_plan_path_basis_is_store_relative(self):
+        artifact = ARTIFACT_CONTRACT.read_text(encoding="utf-8")
+        workspace = WORKSPACE_CONTRACT.read_text(encoding="utf-8")
+        self.assertIn("store-relative plan path", artifact)
+        self.assertIn("store-relative pinned plan", workspace)
+        self.assertNotIn("repository-relative plan path", artifact)
+        self.assertNotIn("repository-relative pinned plan", workspace)
+
+    def test_capability_consumption_edge_documented(self):
+        workspace = WORKSPACE_CONTRACT.read_text(encoding="utf-8")
+        self.assertIn("capability is consumed on this edge", workspace)
+
+    def test_delegation_runtime_classified(self):
+        artifact = ARTIFACT_CONTRACT.read_text(encoding="utf-8")
+        self.assertIn("Delegation result files", artifact)
+        self.assertIn(".agents/runtime/delegation/", artifact)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -21,7 +21,7 @@ while implementing — re-read only the code and the tests to evaluate them, and
 ## Parameters
 
 - Argument: additional instructions (naming a specific step, narrowing the scope, etc.)
-- Satellite execution context: a repository-relative `pinned_plan`, the already resolved
+- Satellite execution context: a store-relative `pinned_plan`, the already resolved
   `resolved_isolation=worktree`, `satellite_run_id`, and `satellite_capability_file`.
   The capability parameter is a file path, never the raw bearer value.
 

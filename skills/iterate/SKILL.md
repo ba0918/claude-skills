@@ -11,7 +11,7 @@ Skill that auto-determines task size for additional instructions after a cycle, 
 
 ## Resolved execution context
 
-An outer caller may provide the complete inner context: repository-relative `pinned_plan`,
+An outer caller may provide the complete inner context: store-relative `pinned_plan`,
 `resolved_isolation=worktree`, `satellite_run_id`, and `satellite_capability_file`. Treat it as
 authoritative; a partial context is an error. The inner run must not re-resolve isolation or create
 a nested worktree, and it updates only mergeable satellite state through the capability file.
@@ -21,14 +21,14 @@ For a standalone call, Resolve isolation exactly once through the shared workspa
 facade. In `inplace` mode, preserve the existing workflow unchanged. In `worktree` mode:
 
 1. Create exactly one outer worktree and derive `{satellite_run_id}`.
-2. Initialize satellite ingress for the repository-relative pinned plan (or the current durable
+2. Initialize satellite ingress for the store-relative pinned plan (or the current durable
    task context when no plan exists).
 3. Launch one inner run with the complete resolved context above.
 4. Collect on every terminal path: success, failure, cancellation, and verification failure.
 5. Merge and run post-merge verification in the main tree.
 6. Publish only after verification passes. Every failure path preserves staging and the worktree;
    discard requires explicit human authorization.
-7. Cleanup only when cleanup_allowed is proven and the capability is revoked.
+7. Cleanup only when cleanup_allowed is proven and the capability is non-live (consumed or revoked).
 
 On every new terminal transport failure, preserve the worktree and invoke the shared exact six-line
 formatter with its closed reason code. Its final line is
@@ -242,6 +242,9 @@ Common patterns: [../shared/references/codex-integration.md](../shared/reference
 ## Phase 5: Traceability
 
 1. Append an "Additional Changes" section to the latest plan file.
+   In worktree mode (resolved context present), write to the satellite copy of the pinned
+   plan through `durable_write` — never directly to the main-tree plan. The orchestrator
+   transports the updated plan during harvest.
    - **If no plan file was loaded in Phase 0** (fallback path was used), skip **this step only** (not step 2). Display:
      ```
      ⚠️ Traceability skipped: no plan file found. Changes are recorded in git commits only.

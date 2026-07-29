@@ -38,6 +38,20 @@ workspace policy を機械検証する（不在は正）。
 - `skills/brainstorm/fixtures.json`（bs-003 の git 前提を実体化）
 - `scripts/validate_repo.py` / `test_validate_repo.py`
 
+satellite transport 契約と実装の摩擦 5 点を修正した（issue #161）。`pinned_plan` のパス基準を
+「repository-relative」から「store-relative」へ統一（7 箇所）、capability 消費エッジを lifecycle
+表に明記、delegation result ファイルの worktree 所在を state 分類に追加、iterate 手順 7 の
+「revoked」を「non-live (consumed or revoked)」へ修正、iterate Phase 5 に worktree モードの
+衛星経由書き込みを明記した。相互参照テストを 3 件追加。
+
+- `skills/shared/references/artifact-store.md`
+- `skills/shared/references/workspace-isolation.md`
+- `skills/iterate/SKILL.md`
+- `skills/cycle/SKILL.md`
+- `skills/plan-implement/SKILL.md`
+- `skills/github-issue/references/worktree-cycle.md`
+- `skills/shared/scripts/test_workspace_isolation_contract.py`
+
 `github-issue` の GitHub 操作を `gh` CLI 固定から18個の意味的 transport operation へ分離した
 （issue #123）。既定の `github_transport=auto` は `gh` がインストール済みなら従来経路を維持し、
 `gh` 自体が存在しない場合だけ接続済み GitHub integration へフォールバックする。

@@ -37,7 +37,7 @@ In `inplace` mode, existing execution behavior is unchanged. In `worktree` mode,
 orchestrator owns creation, ingress, delegation, harvest, publication, and cleanup. This
 applies to `parallel-cycle`, standalone `cycle`, standalone `iterate`, and `github-issue`.
 
-The orchestrator copies the repository-relative pinned plan into the satellite before
+The orchestrator copies the store-relative pinned plan into the satellite before
 delegation and passes a resolved context. Delegates update the pinned plan and other permitted
 per-entity artifacts. They MUST NOT update main-tree state or satellite singleton state.
 The main orchestrator alone composes `status.md`, `session-history.md`, and derived indexes.
@@ -60,7 +60,7 @@ authorized human chose not to publish. Exceptional states are `failed_readonly` 
 | Current | Allowed next state | Condition |
 |---|---|---|
 | `created` | `active`, `failed_readonly` | ingress complete; or activation fails |
-| `active` | `harvesting`, `failed_readonly` | terminal-path harvest starts; or run fails before harvest |
+| `active` | `harvesting`, `failed_readonly` | terminal-path harvest starts (capability is consumed on this edge); or run fails before harvest |
 | `harvesting` | `staged`, `recovery_required` | collect succeeds; or validation/collection is interrupted |
 | `staged` | `published`, `discarded`, `recovery_required` | merge verification and destination CAS pass; explicit authorized discard; otherwise publish nothing |
 | `published` | `cleanup_allowed`, `recovery_required` | capability is non-live and staging disposition recorded |
