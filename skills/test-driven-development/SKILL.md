@@ -32,6 +32,8 @@ Transitions based on guesswork — "it should pass", "I'm confident" — are for
 
 ### Phase 0: Acquire Context
 
+0. Determine the [execution context](../shared/references/execution-context.md)
+   (interactive or headless) and let every subsequent branch refer to that result.
 1. Take the user's task from `$ARGUMENTS`
    - If `$ARGUMENTS` is empty: ask the user "Tell me the task you want to implement with TDD."
 2. Auto-detect the test framework per the [detection table in tdd-contract.md](../shared/references/tdd-contract.md#automatic-test-framework-detection)

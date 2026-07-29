@@ -73,7 +73,7 @@
   },
   "context-audit": {
     "file_sha256": {
-      "skills/context-audit/SKILL.md": "f0c803e5a101e17585a9a0e4131da7b1dbba7dc4692fe920ca685155752fa19a",
+      "skills/context-audit/SKILL.md": "8a7ce3362f2d0af8f400e5a48477770d49d4564fc3ee68dab774e6e11ec6518b",
       "skills/context-audit/fixtures.json": "2b733669b888e0578a108953fd3d41dfd7d1133b645ce478dbbdb9a358e0ac11",
       "skills/context-audit/references/baseline-format.md": "dcc394afc4d0eb9a3b0d1a9de69e50e2f49c76819f883e6c46c483522d24cd51",
       "skills/context-audit/references/memory-audit.md": "725e2cfc6c00e686959c9856d4badbbc6cb8c5ce183e40cb8487dbd37147016b",
@@ -83,13 +83,14 @@
       "skills/context-audit/scripts/collect_targets.py": "0d1df45689e6367ecfc9e50c058a061dc8da702f9288005fac407449ee1a57ce",
       "skills/context-audit/scripts/static_checks.py": "87d54d880ddfe445e4872378b0024893a848efc6592cef19255afde7179b9216",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
+      "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/scripts/frontmatter.py": "3c6d76a04346f1b2251d39b005f526073981a3425ce9fabc7523d99a791fedb8",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "#163 で surface が拡大（frontmatter.py, secret_detect.py 追加）。fixtures.json 不変。proper regression run は follow-up issue で実施",
+    "note": "execution-context.md contract link added; no behavioral change, existing headless definitions replaced with shared contract reference",
     "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/SKILL.md",
@@ -102,13 +103,14 @@
       "skills/context-audit/scripts/collect_targets.py",
       "skills/context-audit/scripts/static_checks.py",
       "skills/shared/references/artifact-store.md",
+      "skills/shared/references/execution-context.md",
       "skills/shared/references/fix-action-taxonomy.md",
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md",
       "skills/shared/scripts/frontmatter.py",
       "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "970fc77eea6e16eb576cd59fcd2a513f3022c83888276a83f922764e2f858a9f",
+    "surface_sha256": "940d74e3eee491b4250549deb741ce67cd4070113df33817a336785b27e5440e",
     "verified": "2026-07-29"
   },
   "cycle": {
@@ -359,16 +361,17 @@
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "b758b7fb9c394da0a4cd5323a50bf1403b6478f91e64a3829dbddf6f007acdb1",
+      "skills/plan/SKILL.md": "ce22934f32c0364b5326c20d54346897bf02c46b473a66bcc34b7e8fd33f76e4",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
       "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
+      "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
+    "note": "execution-context.md contract link added; no behavioral change, existing headless definitions replaced with shared contract reference",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan/SKILL.md",
@@ -378,9 +381,10 @@
       "skills/plan/references/status-update-guide.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md",
+      "skills/shared/references/execution-context.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "27ba3e9882a764820539cae215f864eafbc6dc1536221e87b9b192f328d36a5a",
+    "surface_sha256": "63836da4090ab91b3ff6b7840b33412ffa9655a682c97d266fb3f8544c30cf8b",
     "verified": "2026-07-29"
   },
   "plan-implement": {
@@ -455,17 +459,18 @@
   },
   "refactor": {
     "file_sha256": {
-      "skills/refactor/SKILL.md": "378fc30c864534e9f835c4f826517c209e402b410a11681afe7a33725f2ca913",
+      "skills/refactor/SKILL.md": "8f143d1a4c3ae2e18639b1b0708e5dbd28f3e13f0bf3ca49f14461514a4d9b8d",
       "skills/refactor/fixtures.json": "92339ba7db3548c4137b28dc2739a1673d3d158fb9af454993db68dd07ff8cee",
       "skills/refactor/references/behavior-preservation-checks.md": "35833e2e68e1b2a550ab12af4985e90a416642193d0d6881c9704ee5c8929284",
       "skills/refactor/references/refactoring-catalog.md": "90cb3d767e3f0c432c80334dc0f0bf56a59b04777e78d909bd4e60fbc2bf5569",
       "skills/refactor/references/similarity-detection.md": "a4ef8d314ff0bbeb89126d469eb1c3564b045dec08c4abfed9801ed258f6af33",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
+      "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
+    "note": "execution-context.md contract link added; no behavioral change, existing headless definitions replaced with shared contract reference",
     "result": "accepted-without-run",
     "surface": [
       "skills/refactor/SKILL.md",
@@ -474,26 +479,29 @@
       "skills/refactor/references/refactoring-catalog.md",
       "skills/refactor/references/similarity-detection.md",
       "skills/shared/references/artifact-store.md",
+      "skills/shared/references/execution-context.md",
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "5648edf5f3680bd37375cccd64046ea8d2e755cd787e1f47a2dd311b74f907c8",
+    "surface_sha256": "18af519db733ff02fb6c0a4c1d9318109c7a2077b82fb2ddd0c647217a45f045",
     "verified": "2026-07-29"
   },
   "sweep-fix": {
     "file_sha256": {
+      "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/sweep-fix/SKILL.md": "82e7ba3e87f0dc50ed89cd00242be19b8c8186f9d94589d4da72a17bdf7c705a",
+      "skills/sweep-fix/SKILL.md": "e9e6b447efe1a582d753420fdfe102f271121a386d86d5670eb133911a766396",
       "skills/sweep-fix/fixtures.json": "5406b7dba570b6294cdd9e978fc618eb2fa8c0e504ef014438853e37d0338b88",
       "skills/sweep-fix/references/context-verification.md": "1e835b97a51ea34723c6b20f23a16b0c3e690a32316208dd0a1ec91c50b07104",
       "skills/sweep-fix/references/pattern-extraction.md": "9f4c15f68c82b80c7d97ee28010270f6adbd65266bf7df1ca980f7871364ffa8"
     },
-    "note": "レポート形式を終了地点×形式の表で確定（散文定義の曖昧さを解消）",
+    "note": "execution-context.md contract link added; no behavioral change, existing headless definitions replaced with shared contract reference",
     "result": "accepted-without-run",
     "surface": [
+      "skills/shared/references/execution-context.md",
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md",
@@ -502,8 +510,8 @@
       "skills/sweep-fix/references/context-verification.md",
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
-    "surface_sha256": "9b8a7d1c2163788ee417427d321bc3b92d15ccac57029e241bd37674fd815c6e",
-    "verified": "2026-07-28"
+    "surface_sha256": "deffdf5bc07a34b0d1c4a757e0dd05b9289d042cbdd5e94ad350238e5d51c45f",
+    "verified": "2026-07-29"
   },
   "systematic-debugging": {
     "file_sha256": {
@@ -527,22 +535,24 @@
   },
   "test-driven-development": {
     "file_sha256": {
+      "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/test-driven-development/SKILL.md": "ff000f5c43d7d05477adf0cc8bcfa9e26f4fc08f087779b5e8b3239662700fc4",
+      "skills/test-driven-development/SKILL.md": "6de1aa0a3100dd4b8dcea152879ae996820b38d88d64e5d42e7a9d2409d027ef",
       "skills/test-driven-development/fixtures.json": "ad73bf8a0daf85dad9eabdb049e48d449310be0db1ba0823a26aaa1376fb3ad4"
     },
-    "note": "SI-S006 解消: 検出表をリンクに置き換え。挙動不変",
+    "note": "execution-context.md contract link added; no behavioral change, existing headless definitions replaced with shared contract reference",
     "result": "accepted-without-run",
     "surface": [
+      "skills/shared/references/execution-context.md",
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/testing-anti-patterns.md",
       "skills/shared/references/verification-gate.md",
       "skills/test-driven-development/SKILL.md",
       "skills/test-driven-development/fixtures.json"
     ],
-    "surface_sha256": "83118266d553742582b1712e9c2d3f50b1975cadb4da8f64e81ba49048a77350",
+    "surface_sha256": "47f2b1d8cde294e25aaa1a11ccfcbc52d5b07c23e0cfc770133b29fc56a1dad3",
     "verified": "2026-07-29"
   }
 }

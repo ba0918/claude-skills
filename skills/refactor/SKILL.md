@@ -38,6 +38,7 @@ behavior-preserving improvement of expression. A bug you find is **not fixed** �
 - [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md): reference **only the definitions** of the three-way verdict (CONFIRMED / FALSE_POSITIVE / UNCERTAIN). refactor does not use severity (BLOCK / WARN / INFO)
 - [verification-gate.md](../shared/references/verification-gate.md): pre-completion verification and the demand for evidence (the basis for the Phase 1 gate securing a means of verification and for the Phase 5 test evidence)
 - [orchestration-patterns.md](../shared/references/orchestration-patterns.md): the basis for the subagent delegation thresholds in the read-only phases (pattern 7: research isolation)
+- [execution-context.md](../shared/references/execution-context.md): the determination of interactive vs headless mode (Phase 0, referenced by the headless gates in Phase 1 and Phase 5)
 
 > **Own your verification viewpoints**: sweep-fix's `context-verification.md` is a question list aimed at verifying that a bug holds, and behavior-preservation verification asks different questions. A lateral dependency on a sibling skill's private reference also creates coupling, so do not reference it. Use refactor's own [references/behavior-preservation-checks.md](references/behavior-preservation-checks.md). The **definitions** of the three-way verdict conform to the shared contract severity-and-verdicts.md.
 
@@ -55,6 +56,8 @@ Phase 6: REPORT     — report the results + present proposed issue-creation com
 
 ## Phase 0: SCOPE — Interpret the Scope and Fix the Targets
 
+0. Determine the [execution context](../shared/references/execution-context.md)
+   (interactive or headless) and let every subsequent branch refer to that result.
 1. Interpret the scope from `$ARGUMENTS`:
    - File path / directory / glob / class name / function name
    - A git period expression ("the last 5 commits", "this week's changes" → expand to the set of target files with `git log --since=...` / `git diff HEAD~N --name-only`)
@@ -76,7 +79,7 @@ Phase 6: REPORT     — report the results + present proposed issue-creation com
    `no_history` / `dynamic_dispatch` / `public_api` / `generated_or_vendor` / `unclear_tests` (tests exist but their range and intent cannot be read) / `semantic_dependency` / `no_verification_means` (the means of verification itself — test, type check, probe, etc. — is absent. Use this term too for the exclusion and UNCERTAIN demotion by the next gate). **Do not simplify code you do not understand**
 5. **Gate: securing a means of verification (provability of behavior preservation)** — confirm whether existing tests are present and what they cover:
    - When no test exists, propose adding a characterization test (a test that pins the current behavior), and if the user agrees, create and run it before proceeding
-   - **In a headless run, agreement cannot be obtained, so do not generate a characterization test / probe on your own — drop those sites to UNCERTAIN / no-op** (test and probe are always treated alike by this gate). headless means any context where a confirmation or question to the user gets no response — via cycle, a subagent, an automation pipeline, and so on (the headless in Phase 5 is the same)
+   - **In a headless run (per the [execution context](../shared/references/execution-context.md) determined in Phase 0), agreement cannot be obtained, so do not generate a characterization test / probe on your own — drop those sites to UNCERTAIN / no-op** (test and probe are always treated alike by this gate)
    - **Do not make a site an APPLY target when you can prepare none of** an existing test, a build, a type check, a lint, or a runnable characterization probe (drop it to UNCERTAIN or no-op). Claiming "behavior fully preserved" without a means of proof violates the verification-gate contract
    - A characterization test / probe created in Phase 1 is **immutable** from then on (include it in the Phase 5 rule "do not modify the tests")
 6. **Delegation judgment**: when the scope exceeds **10 files**, delegate the UNDERSTAND read-only investigation to a read-only exploration subagent (orchestration-patterns.md pattern 7: research isolation. Preventing bloat of the main context)
@@ -146,7 +149,7 @@ For the verification viewpoints, use the question list in refactor's own [refere
 1. **Application policy**:
    - A CONFIRMED in `origin` (inside the Phase 0 scope) is APPLYed
    - A `sweep_candidates` entry (a sweep candidate outside the scope) is **report-only by default** even when CONFIRMED — present the count, the targets, and the transformation, and apply it only after obtaining the user's **opt-in confirmation**
-   - **In a headless run (via cycle, etc., a context where confirmation cannot be obtained), report-only is fixed**. "Clean up this file" does not necessarily mean "rewrite the 20 similar sites too"
+   - **In a headless run (per the [execution context](../shared/references/execution-context.md) determined in Phase 0), report-only is fixed**. "Clean up this file" does not necessarily mean "rewrite the 20 similar sites too"
 2. Apply **one improvement (`improvement_id`) at a time** → run the tests → move on when they pass (revert and reconsider on failure). Do not fix multiple candidates in parallel. **Cap the improvements APPLYed in one run at 10**, and defer the rest to the report (this 10 is the application batch cap. It is a different axis from the "10 files" delegation threshold in Phase 1/3)
 3. **Verifying behavior is maintained**: make the existing tests (and any characterization test / probe made in Phase 1) all pass **without modifying them**. The moment a test needs modifying, suspect a behavior change → **revert**
 4. **Optimizing test runs (optional)**: a structure of a targeted test for the affected module on each change, plus one whole-suite run after every improvement has been applied, is acceptable (avoiding N full runs on a large suite)

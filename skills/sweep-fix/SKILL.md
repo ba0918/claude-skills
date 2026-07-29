@@ -34,6 +34,8 @@ Phase 5: REPORT  — structured report, then delete intermediate files
 
 ## Phase 0: SCOPE — Fix the Target Scope
 
+0. Determine the [execution context](../shared/references/execution-context.md)
+   (interactive or headless) and let every subsequent branch refer to that result.
 1. Parse from `$ARGUMENTS` the target scope (file / directory / glob / function name) and, if present, the aspect to focus on (e.g. "error handling", "null safety")
 2. When no scope is specified:
    - **Interactive mode**: present the user with choices and confirm the target scope
