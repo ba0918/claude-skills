@@ -3,15 +3,15 @@
     "file_sha256": {
       "skills/brainstorm/SKILL.md": "dcbc1f72b1c04e159a56670c574a8b02a5ff032138bbd73076698ac54d98d437",
       "skills/brainstorm/fixtures.json": "c7540031f7d55c3bd016f3b451771f6adb4cb8edef1b400d3678cb1e9a7fcd3d",
-      "skills/brainstorm/references/exit-contract-template.md": "ae4423b47c984daba463e4768f48435fc848ce009b466556de80370fcb5de940",
+      "skills/brainstorm/references/exit-contract-template.md": "a7249ee0d2d0facfea7887607dcad2ae9b9541c7682f92fc3b9ff2ea1ed0370e",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
       "skills/brainstorm/references/spec-generation.md": "23150f03b3e7d4b8c5688320df66efafe785c758869fa9bb494ee682fcd9b42c",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "Added bs-004 for CONVERGED spec generation, fixed headless contract, spec path persistence",
-    "result": "pass",
+    "note": "Added Spec row to exit-contract-template Routing",
+    "result": "accepted-without-run",
     "surface": [
       "skills/brainstorm/SKILL.md",
       "skills/brainstorm/fixtures.json",
@@ -22,7 +22,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "72efba73fa825d80f093bc5470e0993be6b127d71ff13e4e8d64047d867bb41c",
+    "surface_sha256": "46fcad2c46398128c94f269606ac7b9c8c1f2802c0beb1ac57f806e74f175a5d",
     "verified": "2026-07-31"
   },
   "brief": {
@@ -365,7 +365,7 @@
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "0196a3f3e79d2efd2907506cc451339283eadb842e931a049c034c18ae3be21b",
+      "skills/plan/SKILL.md": "f297abf33271df2c04467ba426afe0027251de1b8cb521e5ef2052742b82877c",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
       "skills/plan/references/plan-template.md": "7ac2506290636ffaef6178f92413e89b6ab3c3ba1f3c8f372102123e62100e2f",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
@@ -375,8 +375,8 @@
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "Removed Progress table from template, added spec auto-detection",
-    "result": "pass",
+    "note": "Removed duplicate Implementation steps line",
+    "result": "accepted-without-run",
     "surface": [
       "skills/plan/SKILL.md",
       "skills/plan/fixtures.json",
@@ -388,7 +388,7 @@
       "skills/shared/references/execution-context.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "1db12f1249d22325a477653580cc1c051f8a417a5ee026c37bc2c4793d191568",
+    "surface_sha256": "4d43b30afe8c9fa4bb257d299f3e4074dbbc37fddd54d0aef4b000ce245a63ca",
     "verified": "2026-07-31"
   },
   "plan-implement": {
