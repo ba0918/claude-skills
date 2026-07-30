@@ -84,7 +84,6 @@ State every inferred item explicitly in the final response, in a form the user c
 - Implementation steps (numbered, with affected files)
 - Test list (organized by layer)
 - Security checklist
-- Implementation steps with affected files
 
 **Optional `Issue` field:**
 When creating a plan from an issue (via `issue-plan` or `issue-cycle`), add `**Issue:** {issue_slug}` to the plan header. This field is used by `cycle` to auto-close the issue upon completion. If the plan is not issue-originated, omit this line.
