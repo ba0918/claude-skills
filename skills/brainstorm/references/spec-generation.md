@@ -1,0 +1,110 @@
+# Spec Generation — Reference
+
+How brainstorm wrap generates and maintains human-readable specs in the consumer project's `docs/spec/` directory.
+
+## When It Runs
+
+Spec generation runs only when the exit contract status is `CONVERGED`. If the session is exploratory (no exit contract) or `BLOCKED`, skip spec generation entirely.
+
+## Domain Matching
+
+The agent autonomously decides which spec file to target:
+
+1. List existing files in `docs/spec/` (if the directory exists).
+2. Read each file's content and compare it with the brainstorm agreements.
+3. Decide:
+   - **Match found**: prepare an append draft for the matching file.
+   - **No match**: create a new domain file with a descriptive kebab-case name (e.g., `auth.md`, `workflow.md`, `data-pipeline.md`).
+   - **Directory absent or empty**: `mkdir -p docs/spec/` and create the first domain file.
+
+State the matching rationale in the draft presentation (e.g., "Appending to `auth.md` because OAuth2 token refresh belongs to the authentication domain").
+
+## Line Count Advisory
+
+Before appending, count the lines of the target file. If it exceeds 300 lines, present an advisory:
+
+```
+⚠️ docs/spec/{file}.md is {N} lines. Consider splitting into smaller domain files.
+```
+
+This is an advisory flag, not a hard constraint or automatic split trigger. The human decides whether to split.
+
+## Draft Presentation
+
+Present the spec draft to the human for approval before writing. The presentation differs by operation type:
+
+### New File
+
+```
+📝 Spec draft — new file: docs/spec/{domain}.md
+
+{full draft content}
+
+Write this file?
+```
+
+### Append to Existing File
+
+```
+📝 Spec draft — appending to docs/spec/{domain}.md
+Reason: {matching rationale}
+
+### Added section:
+{only the new content to append}
+
+📁 Changed files:
+- docs/spec/{domain}.md
+
+Full spec available at: docs/spec/{domain}.md
+```
+
+### Multiple Files Changed
+
+When a single brainstorm session affects multiple domain files:
+
+```
+📝 Spec draft — {N} files affected
+
+📁 Changed files:
+- docs/spec/{domain-a}.md (append)
+- docs/spec/{domain-b}.md (new)
+
+### docs/spec/{domain-a}.md — added section:
+{new content}
+
+### docs/spec/{domain-b}.md — full content:
+{full content}
+
+Full specs available at the paths above.
+Write these files?
+```
+
+## Human Gate
+
+Wait for the human's approval before writing. The human may:
+- **Approve**: write the file(s).
+- **Request changes**: adjust the draft and re-present.
+- **Change domain assignment**: move content to a different file.
+- **Reject**: skip spec generation for this session.
+
+When interaction is impossible (headless mode), write the draft and state the assumption in the completion message. The human can review and edit the file later.
+
+## Spec File Format
+
+Specs are human-readable prose with tables and code blocks as supplements. No frontmatter, no machine-consumable metadata. The spec is the source of truth for what to build; the plan references it but does not copy its content.
+
+```markdown
+# {Domain Name}
+
+## {Feature or Subsystem}
+
+{Human-readable description of the requirements, constraints, and design decisions.}
+
+### {Sub-section as needed}
+
+{Details, examples, edge cases.}
+```
+
+## Integration with Plan
+
+After spec generation, the wrap completion message includes the spec path. When `plan-create` runs later, it detects the spec in `docs/spec/` and populates the `**Spec:** {path}` field in the plan header automatically.
