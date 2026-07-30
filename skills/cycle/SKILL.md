@@ -177,7 +177,7 @@ cleanup are owned by the contract.
    - In inner satellite mode, append `pinned_plan`, `resolved_isolation=worktree`,
      `satellite_run_id`, and `satellite_capability_file` verbatim to this prompt. This is how Cycle
      must pass the complete satellite context unchanged to `plan-implement`; replace "update the
-     status" with "update the runtime progress file and the plan's top-level Status only; suppress singleton/derived writes."
+     runtime progress file" with "update the runtime progress file and the plan's top-level Status only; suppress singleton/derived writes."
 2. Receive the result (per "Delegation result relay" above)
    - On completion report **or** stop/wait notice, read
      `.agents/runtime/delegation/{run_id}_implement.md` for the implementation summary, test

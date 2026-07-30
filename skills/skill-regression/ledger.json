@@ -119,7 +119,7 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "f0f691640c9c86858324e32606ad5ceb126bd17d4f83091fc2364084aac36fea",
+      "skills/cycle/SKILL.md": "4e9d5492676d2d4908052479bb48abaecf166aa0db0157c02d24f7617b525660",
       "skills/cycle/fixtures.json": "e0a400399c5a74a58dee7d3f1ed4c1f7213be03a24a3b62ea773f76f4015e7d4",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -128,8 +128,8 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "Fixed satellite overview text to match runtime progress contract",
-    "result": "pass",
+    "note": "Fixed satellite replace target string to match updated base prompt",
+    "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
@@ -140,7 +140,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "5b66c08c731c90b4bd7a10edeed7ebb38430038956a684db45afcdeb83758151",
+    "surface_sha256": "75b815d9b0a08e17e988a9c2aa2024a244eb87a26baeee22107b2505eff062ec",
     "verified": "2026-07-31"
   },
   "decision-journal": {
