@@ -57,11 +57,23 @@ Allowed: read-only codebase investigation (file reads, pattern search, file list
       ```
    e. Investigate the codebase read-only as needed.
    f. Ask the user for the next input.
-   g. When the user says "wrap" / 「まとめて」 / 「終わり」 etc., exit the loop.
+   g. **Wrap gate with self-review**: When the user says "wrap" / 「まとめて」 / 「終わり」 etc., run the pre-wrap self-review (see below).
+      - **Clean**: exit the loop.
+      - **Issues found**: present them and stay in the loop — the findings become discussion points for the next turn. On the next wrap, re-run the review (do not skip — new issues may have emerged from the discussion).
+      - **Force exit**: When the user says "wrap!" / "wrap --force" / 「強制wrap」, exit the loop regardless of outstanding items. List the unresolved review items in the exit message so the Wrap Workflow captures them as Undecided Items with `blocks_plan: true`.
 4. On exit, show the pointer to Wrap:
    ```
+   {normal exit:}
    Ending the sparring session.
    Run `/claude-skills:brainstorm-wrap` to organize the ideas into a memo.
+
+   {force exit with unresolved items:}
+   Ending the sparring session (forced — unresolved review items remain).
+   ⚠️ Unresolved:
+   - {item 1}
+   - {item 2}
+   Run `/claude-skills:brainstorm-wrap` to organize the ideas into a memo.
+   Unresolved items will be recorded as blocking undecided items in the exit contract.
    ```
 
 **Note**: Response generation and subagent calls cannot run concurrently — call Codex first, then generate the response.
@@ -73,6 +85,39 @@ Shared contract details: [../shared/references/codex-integration.md](../shared/r
 - Probe with questions (Why? What if? How about?); state concerns frankly; propose alternative approaches; periodically summarize the discussion.
 - Back feasibility claims with read-only codebase investigation.
 - When the discussion starts converging on a specific technology, check the gravitational pull — ask "if you did not use that technology, what would you be trying to solve?" or "can you state the problem without naming the technology?" as questions, not blocks.
+
+### Pre-wrap Self-Review
+
+A lightweight inline review of the accumulated discussion, run every time the user signals wrap intent. No subagent — the agent reviews the conversation in its own context. Re-running on each wrap is intentional: post-review discussion may introduce new issues or resolve existing ones.
+
+#### Checklist
+
+Scan the discussion for:
+
+1. **Placeholders** — unresolved "TBD", "TODO", "後で決める", "later", or explicitly deferred decisions that would block downstream work (plan creation or implementation).
+2. **Internal contradictions** — agreements or positions taken during the session that conflict with each other, or with codebase evidence found during the session.
+3. **Scope deviation** — significant drift from the original theme without explicit acknowledgment from the user.
+4. **Ambiguity** — vague terms, unmeasurable conditions, or underspecified behaviors in candidate agreements (e.g., "high performance" without a metric, "simple API" without constraints).
+
+#### Output format
+
+Place the review block at the top of the response, before any other content:
+
+```
+🔍 Pre-wrap review:
+- {⚠️ description | ✅ No issues} per category (omit clean categories to keep it short)
+
+{if issues found:}
+{N} items to consider before wrapping. Discuss to resolve, or say "wrap!" to force exit with these items recorded as blocking undecided items.
+{if all clean:}
+✅ All clear — proceeding to wrap.
+```
+
+When all categories are clean, skip the per-category listing and output only the "All clear" line, then exit the loop immediately.
+
+#### Force exit contract
+
+When the user forces exit via "wrap!" / "wrap --force" / 「強制wrap」, unresolved review items are carried into the Wrap Workflow and must become Undecided Items with `blocks_plan: true` in the exit contract. This ensures the exit contract status is `BLOCKED`, preventing premature plan creation from incomplete agreements.
 
 ---
 
@@ -86,7 +131,7 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
 
 1. Organize the sparring content from the current conversation.
 2. Confirm the title and summary with the user. When interaction is impossible, derive them from the conversation and state that assumption in the completion message.
-3. **Exit contract judgment**: Determine whether the session produced actionable agreements (decisions with rationale, acceptance criteria, codebase evidence). If yes, generate the exit contract sections in the idea memo (Step 5). If the session was purely exploratory with no convergence, skip the exit contract sections — the memo remains a plain idea memo.
+3. **Exit contract judgment**: Determine whether the session produced actionable agreements (decisions with rationale, acceptance criteria, codebase evidence) OR the session ended with a force exit carrying unresolved review items. If either condition is true, generate the exit contract sections in the idea memo (Step 5). If the session was purely exploratory with no convergence and no force exit, skip the exit contract sections — the memo remains a plain idea memo. When force exit unresolved items are present, record them as Undecided Items with `blocks_plan: true` — this is mandatory even if no agreements were reached.
 4. Ensure `.agents/artifacts/ideas/` exists (`mkdir -p`).
 5. Generate the slug: `yyyymmddhhmmss_{kebab-title}` (`date +%Y%m%d%H%M%S`; kebab-title is a short ASCII translation of the title). If `.agents/artifacts/ideas/{slug}.md` already exists, re-run `date` for a fresh timestamp — overwriting an existing memo is reserved for Wrap after Resume.
 6. Create the memo at `.agents/artifacts/ideas/{slug}.md` from [references/idea-template.md](references/idea-template.md). When the exit contract judgment (Step 3) is positive, also populate the exit contract sections per [references/exit-contract-template.md](references/exit-contract-template.md):
@@ -217,7 +262,7 @@ Reload an existing idea memo and restart the sparring session with it as context
 
    Resuming the sparring session from here!
    ```
-4. Initialize `codex_available = true` and `stuck_hint_shown = false`, then run the same sparring loop as Session Workflow steps 3a–3g (stuck detection, Codex second opinion, and the failure fallback all included), using the previous Open Questions as the primary starting points.
+4. Initialize `codex_available = true` and `stuck_hint_shown = false`, then run the same sparring loop as Session Workflow steps 3a–3g (stuck detection, Codex second opinion, the failure fallback, and pre-wrap self-review all included), using the previous Open Questions as the primary starting points.
 5. On exit, point to Wrap in update mode:
    ```
    Ending the sparring session.

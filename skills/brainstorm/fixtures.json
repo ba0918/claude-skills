@@ -151,6 +151,112 @@
         }
       ],
       "notes": "CONVERGED exit contract での spec 生成フロー（#185 A1-A5）を固定する。spec パスの idea memo への永続化と人間ゲートの存在を検証する。プロンプトに承認指示を含めることで interactive パスを通す。"
+    },
+    {
+      "id": "bs-005",
+      "title": "Pre-wrap self-review — placeholder and ambiguity detection before exit",
+      "source": "manual:issue-186",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# cachelib\n\nキャッシュライブラリ。\n",
+          "src/cache.py": "\"\"\"Simple cache module.\"\"\"\n_store: dict = {}\n\ndef get(key): return _store.get(key)\ndef put(key, value): _store[key] = value\n"
+        }
+      },
+      "prompt": "これまでの会話で以下の壁打ちセッションを行った:\n\n---\n【テーマ】キャッシュの TTL 機能追加\n【ユーザー】キャッシュに TTL を付けたい\n【Claude】TTL の粒度は? アイテム単位? グローバル?\n【ユーザー】アイテム単位。put(key, value, ttl) で\n【Claude】TTL の単位は? 秒? ミリ秒?\n【ユーザー】秒でいい\n【Claude】期限切れアイテムの削除タイミングは? get 時の遅延削除 vs バックグラウンド掃除\n【ユーザー】パフォーマンスのいい方で。あとで決める\n【Claude】データ構造は? heapq で期限順管理が定番\n【ユーザー】シンプルな実装でいい\n---\n\nこの壁打ちを wrap して。",
+      "requirements": [
+        {
+          "text": "wrap 指示に対して即座に Wrap Workflow に入らず、pre-wrap self-review が実行されている（🔍 に相当する review 出力がある）",
+          "critical": true
+        },
+        {
+          "text": "self-review で「期限切れ削除タイミングが未決定（後で決める）」に相当するプレースホルダーまたは未決定項目が検出されている",
+          "critical": true
+        },
+        {
+          "text": "self-review で「パフォーマンスのいい方」「シンプルな実装」に相当する曖昧な表現が検出されている",
+          "critical": true
+        },
+        {
+          "text": "review 結果の提示後、wrap を即座に実行せず、ユーザーに項目の解決か force exit（wrap!）かの選択が提示されている",
+          "critical": false
+        },
+        {
+          "text": "ファイルの作成・編集が発生していない（セッションワークフローの編集ゼロ制約が維持されている）",
+          "critical": false
+        }
+      ],
+      "notes": "Self-review の pre-wrap gate (#186) を固定する。意図的にプレースホルダー（「あとで決める」）と曖昧表現（「パフォーマンスのいい方」「シンプルな実装」）を含む会話を渡し、検出されることを検証する。"
+    },
+    {
+      "id": "bs-006",
+      "title": "Pre-wrap self-review — contradiction and scope deviation detection",
+      "source": "manual:issue-186",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# orderapp\n\n注文管理 CLI ツール。\n",
+          "src/order.py": "\"\"\"Order module.\"\"\"\n\ndef create_order(items):\n    return {\"items\": items, \"status\": \"pending\"}\n"
+        }
+      },
+      "prompt": "これまでの会話で以下の壁打ちセッションを行った:\n\n---\n【テーマ】注文のバリデーションルール設計\n【ユーザー】注文の合計金額に上限 100 万円のバリデーションを入れたい\n【Claude】上限 100 万円、下限は?\n【ユーザー】下限なし。0 円注文も許可\n【Claude】0 円注文を許可する理由は?\n【ユーザー】サンプル品の無料配布に使う\n【Claude】バリデーションエラー時のメッセージは?\n【ユーザー】「上限の 50 万円を超えています」と表示する\n【Claude】先ほど上限は 100 万円とのことでしたが、エラーメッセージでは 50 万円になっています\n【ユーザー】あ、そうか。一旦それは置いといて。注文一覧の検索機能も一緒に作りたいんだけど、フリーテキスト検索がいい\n---\n\nこの壁打ちを wrap して。",
+      "requirements": [
+        {
+          "text": "self-review で上限金額の矛盾（バリデーション上限 100 万円 vs エラーメッセージの 50 万円が未解決のまま放置されている）が内部矛盾として検出されている",
+          "critical": true
+        },
+        {
+          "text": "self-review で注文一覧の検索機能がテーマ「注文のバリデーションルール設計」からのスコープ逸脱として検出されている（ユーザーは逸脱を認識も承認もしていない）",
+          "critical": true
+        },
+        {
+          "text": "review 結果の提示後、wrap を即座に実行せずセッションに留まっている",
+          "critical": true
+        },
+        {
+          "text": "ファイルの作成・編集が発生していない（セッションワークフローの編集ゼロ制約が維持されている）",
+          "critical": false
+        }
+      ],
+      "notes": "Self-review の内部矛盾検出とスコープ逸脱検出を固定する。矛盾は指摘後に「一旦それは置いといて」と放置された未解決の二重定義（100万 vs 50万）。スコープ逸脱は explicit acknowledgment なしの脱線（検索機能の話題）。bs-005 と合わせて 4 カテゴリ全てのカバレッジを確保する。"
+    },
+    {
+      "id": "bs-007",
+      "title": "Pre-wrap self-review — force exit carries unresolved items to exit contract",
+      "source": "manual:issue-186",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# notifyapp\n\n通知配信ツール。\n"
+        }
+      },
+      "prompt": "これまでの会話で以下の壁打ちセッションを行った:\n\n---\n【テーマ】通知のリトライ戦略\n【ユーザー】通知の送信が失敗したときのリトライ戦略を決めたい\n【Claude】リトライ回数と間隔は?\n【ユーザー】3 回まで。間隔は指数バックオフ\n【Claude】初回間隔と最大間隔は?\n【ユーザー】うーん、あとで決める\n【Claude】リトライ対象のエラー種別は? ネットワーク系のみ? アプリケーションエラーも?\n【ユーザー】全部リトライする\n---\n\nこの壁打ちを wrap して。\n\n---\n\n前回の wrap 指示に対して self-review が実行され、以下の指摘があった:\n- ⚠️ Placeholder: リトライ間隔の初回・最大値が未決定\n- ⚠️ Ambiguity: 「全部リトライする」が曖昧（4xx も含むか不明）\n\nこれらは解決せず、強制 wrap する。wrap! で。\n\nセッション終了後、そのまま brainstorm-wrap を実行してメモに整理して。タイトルは「通知リトライ戦略」で確定。サマリーは会話から適切にまとめて。",
+      "requirements": [
+        {
+          "text": "force exit（wrap!）が認識され、セッションが終了している",
+          "critical": true
+        },
+        {
+          "text": "終了メッセージに未解決の review 項目（リトライ間隔の未決定・リトライ対象の曖昧性）が明示的にリストされている",
+          "critical": true
+        },
+        {
+          "text": "Wrap Workflow が実行され、idea memo の exit contract に Undecided Items として未解決項目（リトライ間隔の未決定・リトライ対象の曖昧性に相当する内容）が blocks_plan: true で記録されている",
+          "critical": true
+        },
+        {
+          "text": "exit contract の Exit Status が BLOCKED になっている",
+          "critical": true
+        },
+        {
+          "text": "完了メッセージに 🚧 Exit contract: BLOCKED に相当する表示がある",
+          "critical": false
+        }
+      ],
+      "notes": "Force exit → Wrap Workflow → BLOCKED exit contract の end-to-end 経路を固定する。プロンプトに前回の self-review 結果を含めて multi-turn の状態遷移をシミュレートし、wrap まで実行させることで exit contract の最終状態（BLOCKED + Undecided Items with blocks_plan: true）を検証する。"
     }
   ]
 }
