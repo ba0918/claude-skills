@@ -5,12 +5,12 @@ The runtime progress file tracks implementation state separately from the plan. 
 ## Path
 
 ```
-.agents/runtime/progress/{cycle_id}.md
+.agents/artifacts/plans/progress/{cycle_id}.md
 ```
 
 `{cycle_id}` is resolved from the plan's `**Cycle ID:**` header, or from the plan filename's timestamp portion if absent.
 
-In satellite mode, the progress file lives in the satellite artifact store alongside the pinned plan, at the same relative path. Satellite ingress copies the plan; the progress file is created fresh in the satellite (no ingress needed for a new run). On harvest, the main-tree orchestrator collects the progress file alongside the plan.
+The progress file is a durable artifact (not runtime control state) and lives under the artifact store alongside plans. In satellite mode, it resides in the satellite artifact store at the same relative path. Satellite ingress copies the plan; the progress file is created fresh in the satellite. On harvest, the main-tree orchestrator collects the progress file alongside the plan — this is valid because artifacts under `.agents/artifacts/` are harvestable per the artifact-store contract.
 
 ## Format
 
@@ -43,7 +43,7 @@ In satellite mode, the progress file lives in the satellite artifact store along
 
 ## Rules
 
-- **Create on first step start**: `mkdir -p .agents/runtime/progress/` and create the file when Phase 1 begins. Initialize all steps as `⚪ Pending`.
+- **Create on first step start**: `mkdir -p .agents/artifacts/plans/progress/` and create the file when Phase 1 begins. Initialize all steps as `⚪ Pending`.
 - **Update on step completion**: mark the step `🟢 Done` and fill in Files Changed, Tests, and Notes.
 - **Re-entry**: on re-entry (session resume), read the progress file to identify completed steps. Do not re-implement `🟢 Done` steps.
 - **Plan changes**: if the plan's Implementation Steps change between sessions, steps present in the progress file but absent from the plan are stale — ignore them. Steps in the plan but absent from the progress file are new — add them as `⚪ Pending`.

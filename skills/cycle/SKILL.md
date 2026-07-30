@@ -37,8 +37,8 @@ by the outer orchestrator:
 - When invoking implementation, pass the complete satellite context unchanged to
   `plan-implement`, including the capability file path rather than its contents.
 - Across the inner cycle, suppress `status.md`, `session-history.md`, and derived-index writes.
-  Implementation updates only the authorized pinned plan; singleton composition belongs
-  to the outer main-tree orchestrator.
+  Implementation updates the progress file and the plan's top-level Status only;
+  singleton composition belongs to the outer main-tree orchestrator.
 - In inner satellite mode, append the complete resolved context to the implementation prompt.
   No delegate may infer, shorten, or re-resolve that context.
 

@@ -17,7 +17,7 @@ When updating status inline in direct mode, the update must satisfy all of the f
 result conditions (what to achieve, not how):
 
 1. The completed step is recorded in the runtime progress file at
-   `.agents/runtime/progress/{cycle_id}.md` (not in the plan file itself — the plan is
+   `.agents/artifacts/plans/progress/{cycle_id}.md` (not in the plan file itself — the plan is
    a human-readable spec of what to build, not a mutable execution log)
 2. The plan file's top-level `**Status:**` field matches the phase shown in status.md
    (use the status-update-guide vocabulary: 🟡 Planning / 🟡 In Progress / 🟢 Completed)
@@ -47,7 +47,7 @@ When this complete context is present, run in **satellite mode**:
 - read the capability from `satellite_capability_file` only when authorizing a durable plan
   update. Never copy the raw capability into a prompt, artifact, log, commit, or report.
 - The delegate records progress in the runtime progress file within the satellite artifact
-  store (same relative path `.agents/runtime/progress/{cycle_id}.md`). The pinned plan is
+  store (same relative path `.agents/artifacts/plans/progress/{cycle_id}.md`). The pinned plan is
   read-only except for its top-level `**Status:**` field. The delegate must not invoke `plan`
   and must not write `status.md`, `session-history.md`, or derived indexes. The main-tree
   orchestrator harvests the progress file alongside the plan after completion.
@@ -75,7 +75,7 @@ an error; do not guess paths, isolation, or capability data.
    Resolve `{cycle_id}` from the plan's `**Cycle ID:**` header field. If the header is
    absent, derive it from the plan filename's timestamp portion (the leading `yyyymmddhhmmss`).
 3. Grasp the overall picture of the plan, the list of steps, and the current progress.
-   Check `.agents/runtime/progress/{cycle_id}.md` for previously completed steps
+   Check `.agents/artifacts/plans/progress/{cycle_id}.md` for previously completed steps
    (do not re-implement steps marked 🟢 Done in the progress file)
 4. If the argument names a specific step, start from there
 5. **Direct mode:** update the status to 🟡 In Progress (invoke the skill
@@ -160,7 +160,7 @@ Receive the implementation result.
 
 1. Record progress in the runtime progress file (see
    [runtime-progress.md](../shared/references/runtime-progress.md) for format and rules).
-   Path: `.agents/runtime/progress/{cycle_id}.md` (`mkdir -p` if absent). In satellite
+   Path: `.agents/artifacts/plans/progress/{cycle_id}.md` (`mkdir -p` if absent). In satellite
    mode, use the same relative path within the satellite artifact store:
    - Mark the completed step number and title as 🟢 Done
    - Note the information for the next step

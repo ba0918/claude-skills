@@ -28,7 +28,7 @@
         { "text": "実装コードより先にテストを書き、RED の失敗出力の要点（エラー種別・メッセージ）を記録して報告に含めている（「RED 確認」とだけ書いて済ませていない）", "critical": true },
         { "text": "計画の 3 要件（切り詰め / 指定長以下は無変更 / limit が 0 未満で ValueError）すべてがテストで固定され、全テストがパスしている", "critical": true },
         { "text": "レビューを実施し、指摘を BLOCK / WARN / INFO で分類している（指摘ゼロの場合も「なし」と明示している）", "critical": true },
-        { "text": "ステップ完了時に status.md を更新し、runtime progress file (.agents/runtime/progress/{cycle_id}.md) にステップ状態を 🟢 Done で記録している（計画ファイル本文のステップ表記ではなく runtime progress file が進捗の正本）", "critical": true },
+        { "text": "ステップ完了時に status.md を更新し、runtime progress file (.agents/artifacts/plans/progress/{cycle_id}.md) にステップ状態を 🟢 Done で記録している（計画ファイル本文のステップ表記ではなく runtime progress file が進捗の正本）", "critical": true },
         { "text": "ステップの変更をコミットしており、コミット内容に __pycache__ 等のビルド生成物が含まれていない", "critical": true },
         { "text": "既存の tests/test_normalize.py が壊れていない", "critical": false },
         { "text": "完了処理で全テストのパスを確認し、lint が未設定であればその旨を報告している", "critical": false },
@@ -52,7 +52,7 @@
           "tests/test_normalize.py": "import unittest\n\nfrom src.normalize import normalize\n\n\nclass NormalizeTest(unittest.TestCase):\n    def test_collapses_inner_spaces(self):\n        self.assertEqual(normalize(\"a   b\"), \"a b\")\n\n    def test_strips_edges(self):\n        self.assertEqual(normalize(\"  a  \"), \"a\")\n",
           ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-01-01 10:00:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260101100000` |\n| **Feature** | 文字列ユーティリティの整備（normalize / truncate） |\n| **Started** | 2026-01-01 09:00:00 |\n| **Phase** | 🔵 Implementing |\n| **Plan** | [20260101100000_string-utils.md](./plans/20260101100000_string-utils.md) |\n\n**Current Focus:**\nStep 1 は完了済み。Step 2 から再開する。\n\n---\n\n## 📜 Session History\n\n_なし。_\n",
           ".agents/artifacts/plans/20260101100000_string-utils.md": "# 文字列ユーティリティの整備（normalize / truncate）\n\n**Cycle ID:** `20260101100000`\n**Started:** 2026-01-01 09:00:00\n**Status:** 🔵 Implementing\n\n---\n\n## 📝 What & Why\n\n表示系で使う文字列整形をユーティリティに集約する。2 ステップに分けて進める。\n\n## 🔧 Implementation Steps\n\n1. **src/normalize.py に normalize(text) を追加する**\n   - Files: `src/normalize.py`, `tests/test_normalize.py`\n   - 空白の畳み込みと前後除去\n\n2. **src/truncate.py に truncate(text, limit) を追加する**\n   - Files: `src/truncate.py`, `tests/test_truncate.py`\n   - `truncate(text, limit)` は `text` の文字数が `limit` を超える場合、先頭 `limit` 文字に切り詰めて末尾に `…` を付けた文字列を返す\n   - `limit` 以下の場合は `text` をそのまま返す\n   - `limit` が 0 未満なら `ValueError` を送出する\n\n## ✅ 完了条件\n\n- 全テストがパスする\n- truncate の 3 つの振る舞いがテストで固定されている\n",
-          ".agents/runtime/progress/20260101100000.md": "# Progress: 文字列ユーティリティの整備（normalize / truncate）\n\n**Plan:** .agents/artifacts/plans/20260101100000_string-utils.md\n**Cycle ID:** 20260101100000\n**Last Updated:** 2026-01-01 10:00:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | normalize(text) を追加 | 🟢 Done | src/normalize.py, tests/test_normalize.py | 2 | 空白の畳み込みと前後除去をテスト 2 件で固定 |\n| 2 | truncate(text, limit) を追加 | ⚪ Pending | | | |\n"
+          ".agents/artifacts/plans/progress/20260101100000.md": "# Progress: 文字列ユーティリティの整備（normalize / truncate）\n\n**Plan:** .agents/artifacts/plans/20260101100000_string-utils.md\n**Cycle ID:** 20260101100000\n**Last Updated:** 2026-01-01 10:00:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | normalize(text) を追加 | 🟢 Done | src/normalize.py, tests/test_normalize.py | 2 | 空白の畳み込みと前後除去をテスト 2 件で固定 |\n| 2 | truncate(text, limit) を追加 | ⚪ Pending | | | |\n"
         },
         "git": {
           "init": true,
@@ -103,7 +103,7 @@
     },
     {
       "id": "pi-004",
-      "title": "衛星実行では pinned plan だけを更新して singleton 書き込みを抑止する",
+      "title": "衛星実行では progress file と plan Status のみ更新し singleton 書き込みを抑止する",
       "source": "manual",
       "executor_tier": "standard",
       "isolation": "worktree",
@@ -133,7 +133,7 @@
         { "text": "satellite mode でも TDD の RED/GREEN/REFACTOR、レビュー、検証、step ごとの commit を実施している", "critical": true },
         { "text": "resolved_isolation を再解決せず、nested worktree を作成していない", "critical": false }
       ],
-      "notes": "Satellite execution changes artifact ownership only. Singleton sentinels make prohibited writes mechanically observable while the plan file remains writable progress state."
+      "notes": "Satellite execution changes artifact ownership only. Singleton sentinels make prohibited writes mechanically observable. Progress is recorded in the progress file, not the plan file — the plan is read-only except for top-level Status."
     }
   ]
 }
