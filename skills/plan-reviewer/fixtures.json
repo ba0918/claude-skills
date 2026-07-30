@@ -9,11 +9,16 @@
       "isolation": "worktree",
       "setup": {
         "files": {
+          ".gitignore": "/.agents/artifacts/\n/.agents/runtime/\n__pycache__/\n*.pyc\n.claude/\n.mcp.json\n",
           "CLAUDE.md": "# logtool\n\nログ集計 CLI ツール。\n\n- 依存追加は最小限にする（標準ライブラリ優先）\n- src/ 配下は型ヒント必須\n",
           "src/parser.py": "\"\"\"ログ行パーサ。\"\"\"\nimport re\n\nLINE_RE = re.compile(r\"^(?P<ts>\\S+) (?P<level>\\w+) (?P<msg>.*)$\")\n\n\ndef parse_line(line: str) -> dict | None:\n    m = LINE_RE.match(line.strip())\n    if not m:\n        return None\n    return m.groupdict()\n\n\ndef parse_lines(lines: list[str]) -> list[dict]:\n    out = []\n    for line in lines:\n        rec = parse_line(line)\n        if rec is not None:\n            out.append(rec)\n    return out\n",
           "src/report.py": "\"\"\"集計レポート出力。\"\"\"\nfrom collections import Counter\n\n\ndef summarize(records: list[dict]) -> dict:\n    levels = Counter(r[\"level\"] for r in records)\n    return {\"total\": len(records), \"by_level\": dict(levels)}\n",
           "src/export.py": "\"\"\"CSV エクスポート — 計画に基づいて実装済み。\"\"\"\nimport fastcsv\n\n\ndef to_csv(summary: dict) -> str:\n    rows = [[\"level\", \"count\"]]\n    for level, count in summary[\"by_level\"].items():\n        rows.append([level, count])\n    return fastcsv.dumps(rows)\n",
           ".agents/artifacts/plans/20260722100000_add-csv-export.md": "# 実装計画: CSV エクスポート機能の追加\n\n**Cycle ID:** `20260722100000`\n**Started:** 2026-07-22 10:00:00\n**Status:** 🟡 In Progress\n\n---\n\n## 📝 What & Why\n\nsummarize の結果を CSV でエクスポートしたいという要望がある。標準ライブラリの csv モジュールを使う。\n\n## 🎯 Goals\n\n- summarize() の結果を CSV 文字列に変換できる\n\n## 📐 Design\n\n### Files to Change\n\n```\nsrc/\n  export.py - 新規。to_csv(summary) を実装。標準ライブラリ csv を使用\ntests/\n  test_export.py - 新規。to_csv のユニットテスト\n```\n\n### Key Points\n\n- **to_csv(summary)**: csv.writer で「level, count」のヘッダ + データ行を出力\n- 標準ライブラリの csv モジュールのみ使用（CLAUDE.md の方針に準拠）\n\n## ✅ Tests\n\n- [ ] to_csv が正しい CSV 文字列を返す\n- [ ] 空の by_level でもヘッダ行だけ返す\n"
+        },
+        "git": {
+          "init": true,
+          "commit": [".gitignore", "CLAUDE.md", "src/parser.py", "src/report.py"]
         }
       },
       "prompt": "この実装をレビューして。",
@@ -36,10 +41,15 @@
       "isolation": "worktree",
       "setup": {
         "files": {
+          ".gitignore": "/.agents/artifacts/\n/.agents/runtime/\n__pycache__/\n*.pyc\n.claude/\n.mcp.json\n",
           "CLAUDE.md": "# todo-web\n\nシンプルな TODO 管理 Web アプリ（React + TypeScript）。\n\n- コンポーネントは関数コンポーネントで書く\n- 状態管理ライブラリは導入しない（useState のみ）\n",
           "src/components/TodoList.tsx": "import React from \"react\";\n\ntype Todo = { id: number; title: string; done: boolean };\n\nexport function TodoList({ todos }: { todos: Todo[] }) {\n  return (\n    <ul>\n      {todos.map((t) => (\n        <li key={t.id}>{t.done ? \"✓ \" : \"\"}{t.title}</li>\n      ))}\n    </ul>\n  );\n}\n",
           "src/components/App.tsx": "import React, { useState } from \"react\";\nimport { TodoList } from \"./TodoList\";\nimport { TodoFilter } from \"./TodoFilter\";\n\ntype Todo = { id: number; title: string; done: boolean };\n\nexport function App() {\n  const [todos] = useState<Todo[]>([\n    { id: 1, title: \"Buy milk\", done: false },\n    { id: 2, title: \"Walk dog\", done: true },\n  ]);\n  const [filter, setFilter] = useState<string>(\"all\");\n  const filtered = todos.filter(t => {\n    if (filter === \"active\") return !t.done;\n    if (filter === \"done\") return t.done;\n    return true;\n  });\n  return (\n    <div>\n      <TodoFilter current={filter} onChange={setFilter} />\n      <TodoList todos={filtered} />\n    </div>\n  );\n}\n",
           ".agents/artifacts/plans/20260722110000_todo-filter-buttons.md": "# 実装計画: TODO フィルタボタンの追加\n\n**Cycle ID:** `20260722110000`\n**Started:** 2026-07-22 11:00:00\n**Status:** 🟡 In Progress\n\n---\n\n## 📝 What & Why\n\nTODO 一覧画面に「すべて / 未完了 / 完了」のフィルタボタンを追加したい。\n\n## 📐 Design\n\n### Files to Change\n\n```\nsrc/components/\n  TodoFilter.tsx - 新規。フィルタ選択ボタン UI\n  App.tsx - 新規。TodoFilter と TodoList を組み合わせる親コンポーネント\n  TodoList.tsx - 既存。変更なし（フィルタ済み todos を受け取るだけ）\n```\n\n### Key Points\n\n- TodoFilter.tsx を新規作成し、3 つのフィルタボタン（all / active / done）を実装する\n- App.tsx で TodoFilter の状態を管理し、フィルタ済みリストを TodoList に渡す\n\n## ✅ Tests\n\n- [ ] フィルタ切り替えごとの表示件数をテストする\n"
+        },
+        "git": {
+          "init": true,
+          "commit": [".gitignore", "CLAUDE.md", "src/components/TodoList.tsx"]
         }
       },
       "prompt": "この実装をレビューして。",

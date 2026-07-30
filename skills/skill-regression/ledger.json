@@ -420,7 +420,7 @@
   "plan-reviewer": {
     "file_sha256": {
       "skills/plan-reviewer/SKILL.md": "df95dea6b1300ffaae9b8fd37a5ce70a2713f4708fb82517e55e657f8651aad8",
-      "skills/plan-reviewer/fixtures.json": "cecbff74e67f829803bd1633604d6f391071735d9cb77b5837f54d93bc70436d",
+      "skills/plan-reviewer/fixtures.json": "2cc32f3bd853aa54ec6c192d4fb3f7467e64fa429bc47200363b61865f939b0e",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan-reviewer/references/review-dimensions.md": "326db4f76dda4577fdea158b4967c0aefc9fe9fe7cd2569321e3d078e35c033c",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -429,8 +429,8 @@
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
       "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88"
     },
-    "note": "Opus 5 review fix: stale refine references removed from orchestration-patterns.md",
-    "result": "accepted-without-run",
+    "note": "Sonnet 5 sequential executor, both pr-001/pr-002 all critical ○, no external status queries, baseline hashes verified",
+    "result": "pass",
     "surface": [
       "skills/plan-reviewer/SKILL.md",
       "skills/plan-reviewer/fixtures.json",
@@ -442,7 +442,7 @@
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md"
     ],
-    "surface_sha256": "e037993124d743236ceec81f3a3d31c588cd6b057fd44940af36e489ea986e03",
+    "surface_sha256": "ee2194704392e808687bf4d1a1644544939e5fd68fd3e60280154ae539652c22",
     "verified": "2026-07-31"
   },
   "problem-solving": {
