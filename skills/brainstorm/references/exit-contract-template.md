@@ -1,72 +1,62 @@
-# Exit Contract
+# Exit Contract — Fill Guide
 
-The structured output that brainstorm's wrap workflow produces when the session converges on actionable agreements. Downstream consumers (ledger, plan, docs, spec-verify) read this format.
+How to populate the `## Exit Contract` section in an idea memo. The canonical form is the one embedded in [idea-template.md](idea-template.md) — this file explains what each field means and how downstream consumers use it.
 
-## Template
+## Where it lives
 
-```markdown
-# {{TITLE}} — Exit Contract
+The exit contract is a section within the idea memo, not a standalone file. When the wrap workflow determines that the session produced actionable agreements (Step 3), it populates the `## Exit Contract` section in the idea memo. The section heading, field names, and sub-heading levels must match [idea-template.md](idea-template.md) exactly — the Plan Workflow detects `## Exit Contract` and `**Exit Status:**` by text match.
 
-**Session:** {{session_timestamp}}
-**Status:** {{CONVERGED | BLOCKED}}
+## Field reference
 
----
+### Exit Status
 
-## Agreements
+`**Exit Status:** CONVERGED` or `**Exit Status:** BLOCKED`
 
-Decisions reached during the session. Each agreement becomes a candidate for the ledger.
+- **CONVERGED**: all blocking undecided items resolved, agreements reached. The Plan Workflow will proceed.
+- **BLOCKED**: undecided items with `Blocks plan? = true` remain. The Plan Workflow will refuse to create a plan.
 
-| # | Decision | Rationale | Destination |
-|---|----------|-----------|-------------|
-| A1 | {{what was decided}} | {{why}} | ledger |
-| A2 | {{what was decided}} | {{why}} | ledger |
+### Agreements
 
-## Undecided Items
+| Column | Meaning |
+|--------|---------|
+| # | Identifier (A1, A2, ...). Referenced by Acceptance Criteria and Routing |
+| Decision | What was decided, in one sentence |
+| Rationale | Why this was decided (the reason, not a restatement) |
+| Destination | Where this agreement goes next. Typically `ledger` |
 
-Items that remain open. If any item in this section has `blocks_plan: true`, the session MUST NOT proceed to plan creation.
+Each agreement becomes a candidate for `ledger extract`.
 
-| # | Item | Why undecided | Blocks plan? |
-|---|------|---------------|--------------|
-| U1 | {{open question}} | {{reason}} | true / false |
+### Undecided Items
 
-## Acceptance Criteria
+| Column | Meaning |
+|--------|---------|
+| # | Identifier (U1, U2, ...) |
+| Item | The open question |
+| Why undecided | What information or decision is missing |
+| Blocks plan? | `true` if this item must be resolved before plan creation. Any `true` entry sets Exit Status to BLOCKED |
 
-Observable behaviors and constraints that the implementation must satisfy. Each criterion becomes a candidate for clauses (spec-verify formalize).
+### Acceptance Criteria
 
-| # | Criterion | Verifiable? | Source |
-|---|-----------|-------------|--------|
-| C1 | {{observable behavior or constraint}} | yes / no | {{agreement # or discussion point}} |
+| Column | Meaning |
+|--------|---------|
+| # | Identifier (C1, C2, ...) |
+| Criterion | An observable behavior or constraint the implementation must satisfy |
+| Verifiable? | `yes` if this can be tested mechanically; `no` if it requires human judgment. Criteria with `no` are recorded but flagged — they cannot become clauses |
+| Source | Which agreement or discussion point produced this criterion |
 
-## Codebase Evidence
+Each verifiable criterion becomes a candidate for `spec-verify formalize`.
 
-Code investigation results that grounded the discussion. References only — no inline code.
+### Codebase Evidence
 
-| File | Finding | Relevance |
-|------|---------|-----------|
-| {{path}} | {{what was found}} | {{how it informed decisions}} |
+Code investigation results that grounded the discussion. File paths and findings only — no inline code blocks.
 
-## Routing
+### Routing
 
-Where each piece of the exit contract goes next.
+Where each piece of the exit contract goes next. This table is guidance for the human or orchestrator, not automatic execution.
 
-| Destination | Items | Action |
-|-------------|-------|--------|
-| Ledger | A1, A2, ... | Run `ledger extract` with agreements as input |
-| Plan | Agreements + acceptance criteria | Run `plan-create` with agreements as the What & Why seed |
+| Destination | What goes there | How |
+|-------------|----------------|-----|
+| Ledger | Agreements | `ledger extract` with agreements as input |
+| Plan | Agreements + acceptance criteria | `plan-create` with agreements as the What & Why seed |
 | Docs | Domain knowledge discovered | Update relevant docs (manual or via `doc-write`) |
-| Clauses | Verifiable acceptance criteria | Run `spec-verify formalize` (follow-up, not blocking) |
-```
-
-## Status values
-
-| Status | Meaning | Next step |
-|--------|---------|-----------|
-| CONVERGED | All blocking items resolved, agreements reached | Proceed to routing |
-| BLOCKED | Undecided items with `blocks_plan: true` remain | Continue brainstorm or escalate |
-
-## Rules
-
-- The exit contract is generated by wrap, not during the session itself (session remains file-edit-free).
-- A BLOCKED exit contract is still saved (as an idea memo with the exit contract appended), but the routing step is skipped.
-- The routing table is a guide for the human or orchestrator, not an automatic execution. Each destination is a manual invocation unless an outer workflow (e.g. brainstorm-cycle) automates it.
-- Acceptance criteria with `verifiable: no` are recorded but flagged — they cannot become clauses.
+| Clauses | Verifiable acceptance criteria | `spec-verify formalize` (follow-up, not blocking) |

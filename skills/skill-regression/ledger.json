@@ -3,13 +3,13 @@
     "file_sha256": {
       "skills/brainstorm/SKILL.md": "09f21aead45e4689901cea4a25f5d9b293d58072781e7123a7068b7d443bc506",
       "skills/brainstorm/fixtures.json": "5c6c040e48d3a0023e50a20a63ebc7ebff7e75c484d242a4d84db46523a32254",
-      "skills/brainstorm/references/exit-contract-template.md": "9e0f3ba14f84341f9e90fddefd581e7eb2af86d034b5717631c45d829c93b197",
+      "skills/brainstorm/references/exit-contract-template.md": "ae4423b47c984daba463e4768f48435fc848ce009b466556de80370fcb5de940",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "structural redesign #183: fixtures updated to match new workflow",
+    "note": "Codex review fix: exit-contract-template unified as fill guide for idea-template embedded form",
     "result": "accepted-without-run",
     "surface": [
       "skills/brainstorm/SKILL.md",
@@ -20,7 +20,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "33211b51bd9061a53d10c47276e85f51907e3b57c55bed55d2bacfa7fa21d377",
+    "surface_sha256": "7de1c0ae02398471baea672f82916567eb34bacbca593264ca3a2c6a82cb5c86",
     "verified": "2026-07-31"
   },
   "brief": {
@@ -420,7 +420,7 @@
   "plan-reviewer": {
     "file_sha256": {
       "skills/plan-reviewer/SKILL.md": "df95dea6b1300ffaae9b8fd37a5ce70a2713f4708fb82517e55e657f8651aad8",
-      "skills/plan-reviewer/fixtures.json": "858388f810c993929122823e42a9960aabf904b40162c24163e91e75640757aa",
+      "skills/plan-reviewer/fixtures.json": "cecbff74e67f829803bd1633604d6f391071735d9cb77b5837f54d93bc70436d",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan-reviewer/references/review-dimensions.md": "326db4f76dda4577fdea158b4967c0aefc9fe9fe7cd2569321e3d078e35c033c",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -429,7 +429,7 @@
       "skills/shared/references/orchestration-patterns.md": "cefaf33b1543b0a2df2255433ab552b1f92b548f3173c5c31f54ab14ade443e1",
       "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd"
     },
-    "note": "structural redesign #183: dimensions renamed (Feasibility→Correctness, Alternatives→Spec Conformance), fixtures updated",
+    "note": "Codex review fix: fixtures updated to seed defects in implementation code (not plan text). Verifies Correctness and Spec Conformance dimensions against actual code",
     "result": "pass",
     "surface": [
       "skills/plan-reviewer/SKILL.md",
@@ -442,7 +442,7 @@
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md"
     ],
-    "surface_sha256": "1dd994a55b621205895d8932d086d72dcd85764279c0b9e67449a33ba5471843",
+    "surface_sha256": "f1bdb1a90217ddbbfe345dae95173374079405345406b87b623104818b475d36",
     "verified": "2026-07-31"
   },
   "problem-solving": {
