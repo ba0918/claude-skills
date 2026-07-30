@@ -5,13 +5,13 @@
       "skills/brainstorm/fixtures.json": "4734d961e6ee327ffa0359b1cc75c5d75695079ab122f06e54c47029588a07d1",
       "skills/brainstorm/references/exit-contract-template.md": "0aa6389f378de90a5613c5dbe4517083ffdb4978e5e7849868c2a2d2a53f5d02",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
-      "skills/brainstorm/references/spec-generation.md": "23150f03b3e7d4b8c5688320df66efafe785c758869fa9bb494ee682fcd9b42c",
+      "skills/brainstorm/references/spec-generation.md": "219314a7f22cd2d7aaf395a0ae108e062d6c0b5fc28631e48edec9d1d990e23f",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "Fixed redundant link path in exit-contract-template",
-    "result": "accepted-without-run",
+    "note": "Pre-approval contract in spec-generation.md",
+    "result": "pass",
     "surface": [
       "skills/brainstorm/SKILL.md",
       "skills/brainstorm/fixtures.json",
@@ -22,7 +22,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "df155af7a47ffbe357be1f65b32e27853e6ecf778562bfd3007dff5f18e23e5f",
+    "surface_sha256": "7779dbe471b7be7e7d1c063eca06c8930a8a1d08ba242862be0e4530f3a74e2b",
     "verified": "2026-07-31"
   },
   "brief": {
@@ -120,7 +120,7 @@
   "cycle": {
     "file_sha256": {
       "skills/cycle/SKILL.md": "a9a1a1605563582704dceda7427bfc884b5b8230546255f76d17a33bd2838bfb",
-      "skills/cycle/fixtures.json": "10caeab7449db5dde9d04b60df3cdc657e3a1a2ee26ed37f5fd678460fae1ac1",
+      "skills/cycle/fixtures.json": "7a62740711bb05376479e9e2d99cac8f47aeced50de7ac0380a46a49eb2f05cc",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
@@ -128,8 +128,8 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "Updated Progress table references to implementation steps (D-2: Progress table separation)",
-    "result": "accepted-without-run",
+    "note": "Fixtures migrated to Implementation Steps format, removed Progress tables",
+    "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
@@ -140,7 +140,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "bac2315e288491f795852c3fc2e87f034b483433d5c3a34d3cbb22093e11db03",
+    "surface_sha256": "7d161801adce8734a05918352f0f7c4749581c9f0cfe63495c1e8af27dd4c140",
     "verified": "2026-07-31"
   },
   "decision-journal": {
@@ -393,30 +393,32 @@
   },
   "plan-implement": {
     "file_sha256": {
-      "skills/plan-implement/SKILL.md": "a437703206e13e37bcb65447325fa160e2068a730d606a4cd02b979bf589536d",
-      "skills/plan-implement/fixtures.json": "df3955a24dd89ec1437a303946e5e2b10d39072c62cda6a528e40fa632b96fd2",
+      "skills/plan-implement/SKILL.md": "21202bc354d7a657037f1dc1bf42cda50ebb2682cfc69c02dabc685572fdf6a8",
+      "skills/plan-implement/fixtures.json": "0dfa218a172b3eedebf28424a274f1d637bd70b87ed05f1f6417904fe24632c0",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
+      "skills/shared/references/runtime-progress.md": "cfea5c0d5f9a3121b6aca0411e49c0b4ca31e651596f15c073cdb235ba121817",
       "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "Fixed stale plan file reference in Step C, added cycle_id derivation",
+    "note": "Fixtures migrated to runtime progress + new plan format, satellite contract unified",
     "result": "pass",
     "surface": [
       "skills/plan-implement/SKILL.md",
       "skills/plan-implement/fixtures.json",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/design-principles.md",
+      "skills/shared/references/runtime-progress.md",
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/testing-anti-patterns.md",
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "0d1103bf651abd0acfb12644786b2e94151d8639b9f6503042a3d642f5e2e5bb",
+    "surface_sha256": "74067af324daf650afaea0ee1a4315e60399ac99c17b1a21593926740f84a860",
     "verified": "2026-07-31"
   },
   "plan-reviewer": {

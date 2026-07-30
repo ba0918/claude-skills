@@ -81,7 +81,7 @@ Write these files?
 
 ## Human Gate
 
-Wait for the human's approval before writing. The human may:
+Wait for the human's approval before writing. Pre-approval in the prompt (e.g., "approve the spec draft") counts as valid approval — a separate interactive turn is not required when the user has already signaled consent. The human may:
 - **Approve**: write the file(s).
 - **Request changes**: adjust the draft and re-present.
 - **Change domain assignment**: move content to a different file.

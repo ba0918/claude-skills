@@ -26,7 +26,9 @@ result conditions (what to achieve, not how):
 4. Each step's implementation summary (changed files, test count, accepted WARN/INFO
    findings) is recorded in the runtime progress file, not in the plan file
 
-In satellite mode, update only the pinned plan through the authorized write path.
+In satellite mode, update the runtime progress file in the satellite artifact store
+(same relative path as direct mode). The pinned plan is read-only except for its
+top-level `**Status:**` field.
 Even inline, the review (Step B) takes the stance of an independent, critical reviewer: do not assume the judgments made
 while implementing — re-read only the code and the tests to evaluate them, and state findings explicitly as BLOCK / WARN / INFO.
 
@@ -44,9 +46,11 @@ When this complete context is present, run in **satellite mode**:
   through `status.md`.
 - read the capability from `satellite_capability_file` only when authorizing a durable plan
   update. Never copy the raw capability into a prompt, artifact, log, commit, or report.
-- The delegate updates the pinned plan directly through the authorized satellite-store write
-  path. It must not invoke `plan` and must not write `status.md`, `session-history.md`, or derived
-  indexes. The main-tree orchestrator composes those singleton files after harvest.
+- The delegate records progress in the runtime progress file within the satellite artifact
+  store (same relative path `.agents/runtime/progress/{cycle_id}.md`). The pinned plan is
+  read-only except for its top-level `**Status:**` field. The delegate must not invoke `plan`
+  and must not write `status.md`, `session-history.md`, or derived indexes. The main-tree
+  orchestrator harvests the progress file alongside the plan after completion.
 - TDD, review, verification, and per-step commits remain mandatory. Satellite mode changes
   artifact ownership only; it does not weaken any implementation or quality gate below.
 
@@ -76,8 +80,9 @@ an error; do not guess paths, isolation, or capability data.
 4. If the argument names a specific step, start from there
 5. **Direct mode:** update the status to 🟡 In Progress (invoke the skill
    `claude-skills:plan`; no update is needed if already 🟡 In Progress).
-   **Satellite mode:** update only the pinned plan through the authorized write path; do not
-   invoke `plan` or write singleton/derived state.
+   **Satellite mode:** update only the plan's top-level `**Status:**` to 🟡 In Progress and
+   create the runtime progress file in the satellite store; do not invoke `plan` or write
+   singleton/derived state.
 
 ## Phase 1-N: Implementation Loop (repeated per step)
 
@@ -153,9 +158,10 @@ Receive the implementation result.
 
 **Always do this on completing each step. You must not skip it.**
 
-1. Record progress in the runtime progress file `.agents/runtime/progress/{cycle_id}.md`
-   (`mkdir -p .agents/runtime/progress/` if absent). In satellite mode, use the authorized
-   write path for the equivalent pinned progress record:
+1. Record progress in the runtime progress file (see
+   [runtime-progress.md](../shared/references/runtime-progress.md) for format and rules).
+   Path: `.agents/runtime/progress/{cycle_id}.md` (`mkdir -p` if absent). In satellite
+   mode, use the same relative path within the satellite artifact store:
    - Mark the completed step number and title as 🟢 Done
    - Note the information for the next step
    - Record a summary of the implementation (changed files, test count, etc.)
@@ -184,7 +190,7 @@ After every step is complete:
    - If 3 iterations are exhausted with findings still open, escalate to the user with the remaining findings
 3. Once everything is resolved:
    - In direct mode, invoke the skill `claude-skills:plan` and update the status to 🟢 Completed.
-     In satellite mode, mark the pinned plan complete through the authorized write path and leave
+     In satellite mode, update the plan's top-level `**Status:**` to 🟢 Completed and leave
      singleton/derived composition to the main-tree orchestrator
    - If uncommitted changes (the status update, etc.) remain, commit them
    - Present the implementation summary to the user

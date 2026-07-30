@@ -95,7 +95,7 @@ class Step3SkillIntegrationTests(unittest.TestCase):
         self.assertIn("Satellite execution context", text)
         self.assertIn("store-relative `pinned_plan`", text)
         self.assertIn("read the capability from `satellite_capability_file`", text)
-        self.assertIn("updates the pinned plan directly", text)
+        self.assertIn("records progress in the runtime progress file", text)
         self.assertIn("must not invoke `plan`", text)
         self.assertIn("must not write `status.md`, `session-history.md`, or derived indexes", text)
         self.assertIn("TDD, review, verification, and per-step commits remain mandatory", text)
