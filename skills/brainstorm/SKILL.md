@@ -32,7 +32,7 @@ Allowed: read-only codebase investigation (file reads, pattern search, file list
 ### Flow
 
 1. Take the theme from $ARGUMENTS (ask the user if absent).
-2. Initialize `codex_available = true`, `stuck_hint_shown = false`, and `review_passed = false`. Do not pre-create any state files.
+2. Initialize `codex_available = true` and `stuck_hint_shown = false`. Do not pre-create any state files.
 3. Enter the sparring loop:
    a. Receive the user's message.
    b. **Stuck detection** (only while `stuck_hint_shown == false`): if the message contains any of these keywords (substring match, case-insensitive) —
@@ -57,13 +57,23 @@ Allowed: read-only codebase investigation (file reads, pattern search, file list
       ```
    e. Investigate the codebase read-only as needed.
    f. Ask the user for the next input.
-   g. **Wrap gate with self-review**: When the user says "wrap" / 「まとめて」 / 「終わり」 etc.:
-      - If `review_passed == false`: run the pre-wrap self-review (see below), then set `review_passed = true`. If the review finds issues, stay in the loop — the findings become discussion points for the next turn. If the review is clean, exit the loop.
-      - If `review_passed == true` (user says "wrap" again after seeing review results): exit the loop regardless of outstanding items — the user has acknowledged them.
+   g. **Wrap gate with self-review**: When the user says "wrap" / 「まとめて」 / 「終わり」 etc., run the pre-wrap self-review (see below).
+      - **Clean**: exit the loop.
+      - **Issues found**: present them and stay in the loop — the findings become discussion points for the next turn. On the next wrap, re-run the review (do not skip — new issues may have emerged from the discussion).
+      - **Force exit**: When the user says "wrap!" / "wrap --force" / 「強制wrap」, exit the loop regardless of outstanding items. List the unresolved review items in the exit message so the Wrap Workflow captures them as Undecided Items with `blocks_plan: true`.
 4. On exit, show the pointer to Wrap:
    ```
+   {normal exit:}
    Ending the sparring session.
    Run `/claude-skills:brainstorm-wrap` to organize the ideas into a memo.
+
+   {force exit with unresolved items:}
+   Ending the sparring session (forced — unresolved review items remain).
+   ⚠️ Unresolved:
+   - {item 1}
+   - {item 2}
+   Run `/claude-skills:brainstorm-wrap` to organize the ideas into a memo.
+   Unresolved items will be recorded as blocking undecided items in the exit contract.
    ```
 
 **Note**: Response generation and subagent calls cannot run concurrently — call Codex first, then generate the response.
@@ -78,7 +88,7 @@ Shared contract details: [../shared/references/codex-integration.md](../shared/r
 
 ### Pre-wrap Self-Review
 
-A lightweight inline review of the accumulated discussion, run once when the user first signals wrap intent. No subagent — the agent reviews the conversation in its own context.
+A lightweight inline review of the accumulated discussion, run every time the user signals wrap intent. No subagent — the agent reviews the conversation in its own context. Re-running on each wrap is intentional: post-review discussion may introduce new issues or resolve existing ones.
 
 #### Checklist
 
@@ -98,12 +108,16 @@ Place the review block at the top of the response, before any other content:
 - {⚠️ description | ✅ No issues} per category (omit clean categories to keep it short)
 
 {if issues found:}
-{N} items to consider before wrapping. Discuss to resolve, or say "wrap" again to proceed as-is.
+{N} items to consider before wrapping. Discuss to resolve, or say "wrap!" to force exit with these items recorded as blocking undecided items.
 {if all clean:}
 ✅ All clear — proceeding to wrap.
 ```
 
 When all categories are clean, skip the per-category listing and output only the "All clear" line, then exit the loop immediately.
+
+#### Force exit contract
+
+When the user forces exit via "wrap!" / "wrap --force" / 「強制wrap」, unresolved review items are carried into the Wrap Workflow and must become Undecided Items with `blocks_plan: true` in the exit contract. This ensures the exit contract status is `BLOCKED`, preventing premature plan creation from incomplete agreements.
 
 ---
 
@@ -248,7 +262,7 @@ Reload an existing idea memo and restart the sparring session with it as context
 
    Resuming the sparring session from here!
    ```
-4. Initialize `codex_available = true`, `stuck_hint_shown = false`, and `review_passed = false`, then run the same sparring loop as Session Workflow steps 3a–3g (stuck detection, Codex second opinion, the failure fallback, and pre-wrap self-review all included), using the previous Open Questions as the primary starting points.
+4. Initialize `codex_available = true` and `stuck_hint_shown = false`, then run the same sparring loop as Session Workflow steps 3a–3g (stuck detection, Codex second opinion, the failure fallback, and pre-wrap self-review all included), using the previous Open Questions as the primary starting points.
 5. On exit, point to Wrap in update mode:
    ```
    Ending the sparring session.
