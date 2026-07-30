@@ -363,7 +363,7 @@ For each cycle in the group, **in parallel**:
    satellite_run_id={batch_run_id}-{plan_id}
    satellite_capability_file={capability_file_path}
 
-   Implement every step, commit after each step, and update the progress table.
+   Implement every step, commit after each step, and update the runtime progress file.
    On completion, report: number of files changed, number of tests added, number of commits.
    ```
 

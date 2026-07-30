@@ -114,6 +114,43 @@
         }
       ],
       "notes": "edge シナリオ。Session Workflow は対話型のため単一ターンをシナリオ化。編集ゼロ制約・stuck 検出の出力順（誘導ブロック → 本文）・Codex 非捏造を固定する。要件 3 は分岐許容形: Codex が利用可なら実出力、不可なら警告。いずれも捏造しないことが本体。サンドボックス下では子プロセスの agent CLI が空振りして成功を返す実測があり（#54 comment 1）、特定の到達可否を前提にしない形にしてある。"
+    },
+    {
+      "id": "bs-004",
+      "title": "Wrap (CONVERGED) — spec 草稿の生成・人間ゲート・idea memo への spec パス永続化",
+      "source": "manual:issue-185",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# taskapp\n\nタスク管理 CLI ツール。\n",
+          "README.md": "# taskapp\n\nシンプルなタスク管理ツール。\n"
+        }
+      },
+      "prompt": "これまでの会話で以下の壁打ちセッションを行った:\n\n---\n【テーマ】タスクの優先度スコアリング機能\n【ユーザー】タスクに優先度をつけたい。緊急度と重要度の 2 軸で\n【Claude】アイゼンハワーマトリクスに近い。4 象限に分けるか、数値スコアにするか\n【ユーザー】数値スコア。0-100 で、緊急度と重要度をそれぞれ 0-10 で入力して掛け算\n【Claude】掛け算だと緊急度 10 × 重要度 1 = 10 と 緊急度 1 × 重要度 10 = 10 が同じスコアになる。重み付けは？\n【ユーザー】重要度に 1.5 倍の重みをかける。score = urgency * importance * 1.5\n【Claude】それだと最大値が 150 になる。正規化するか、0-100 に収めるか\n【ユーザー】0-100 に正規化する。score = (urgency * importance * 1.5) / 1.5 で\n【Claude】それだと重みが相殺される。加重平均の方が適切: score = urgency * 0.4 + importance * 0.6 で 0-10 → 10 倍して 0-100\n【ユーザー】それでいい。受入基準: score コマンドが 2 引数（urgency, importance）を取り 0-100 の整数スコアを返す。テストは境界値（0,0）(10,10）(5,5）を含む\n---\n\nこの壁打ちを wrap して。タイトルは「タスク優先度スコアリング」で確定。exit contract を生成して、CONVERGED にして。spec 生成も実行して、docs/spec/ に書き出して。spec 草稿の承認を求められたら承認する。",
+      "requirements": [
+        {
+          "text": "exit contract が CONVERGED で生成され、Agreements にスコアリング方式（加重平均: urgency * 0.4 + importance * 0.6、10 倍で 0-100）が含まれている",
+          "critical": true
+        },
+        {
+          "text": "docs/spec/ 配下に spec ファイルが生成され、スコアリング方式と受入基準（score コマンド、境界値テスト）が human-readable な散文で記述されている",
+          "critical": true
+        },
+        {
+          "text": "idea memo の exit contract Routing テーブルに spec パス（docs/spec/ 配下の実パス）が永続化されている",
+          "critical": true
+        },
+        {
+          "text": "完了メッセージに spec パスの表示（📄 Spec: docs/spec/...）が含まれている",
+          "critical": false
+        },
+        {
+          "text": "spec 草稿の人間ゲートが実行されている（草稿を提示して承認を求める表示がある）",
+          "critical": false
+        }
+      ],
+      "notes": "CONVERGED exit contract での spec 生成フロー（#185 A1-A5）を固定する。spec パスの idea memo への永続化と人間ゲートの存在を検証する。プロンプトに承認指示を含めることで interactive パスを通す。"
     }
   ]
 }

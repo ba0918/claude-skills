@@ -58,5 +58,6 @@ Where each piece of the exit contract goes next. This table is guidance for the 
 |-------------|----------------|-----|
 | Ledger | Agreements | `ledger extract` with agreements as input |
 | Plan | Agreements + acceptance criteria | `plan-create` with agreements as the What & Why seed |
+| Spec | Agreements-based spec draft | Generate via [spec-generation.md](spec-generation.md) to `docs/spec/` (CONVERGED only) |
 | Docs | Domain knowledge discovered | Update relevant docs (manual or via `doc-write`) |
 | Clauses | Verifiable acceptance criteria | `spec-verify formalize` (follow-up, not blocking) |

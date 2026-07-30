@@ -16,15 +16,19 @@ the step is a trivial change of a few lines where the overhead of delegation doe
 When updating status inline in direct mode, the update must satisfy all of the following
 result conditions (what to achieve, not how):
 
-1. The completed step is marked 🟢 Done in the plan file
+1. The completed step is recorded in the runtime progress file at
+   `.agents/artifacts/plans/progress/{cycle_id}.md` (not in the plan file itself — the plan is
+   a human-readable spec of what to build, not a mutable execution log)
 2. The plan file's top-level `**Status:**` field matches the phase shown in status.md
    (use the status-update-guide vocabulary: 🟡 Planning / 🟡 In Progress / 🟢 Completed)
 3. Session History in status.md (or session-history.md) contains a completion row when
    the cycle finishes
-4. Each step's notes section in the plan file records the implementation summary
-   (changed files, test count) and any accepted WARN/INFO findings
+4. Each step's implementation summary (changed files, test count, accepted WARN/INFO
+   findings) is recorded in the runtime progress file, not in the plan file
 
-In satellite mode, update only the pinned plan through the authorized write path.
+In satellite mode, update the runtime progress file in the satellite artifact store
+(same relative path as direct mode). The pinned plan is read-only except for its
+top-level `**Status:**` field.
 Even inline, the review (Step B) takes the stance of an independent, critical reviewer: do not assume the judgments made
 while implementing — re-read only the code and the tests to evaluate them, and state findings explicitly as BLOCK / WARN / INFO.
 
@@ -42,9 +46,11 @@ When this complete context is present, run in **satellite mode**:
   through `status.md`.
 - read the capability from `satellite_capability_file` only when authorizing a durable plan
   update. Never copy the raw capability into a prompt, artifact, log, commit, or report.
-- The delegate updates the pinned plan directly through the authorized satellite-store write
-  path. It must not invoke `plan` and must not write `status.md`, `session-history.md`, or derived
-  indexes. The main-tree orchestrator composes those singleton files after harvest.
+- The delegate records progress in the runtime progress file within the satellite artifact
+  store (same relative path `.agents/artifacts/plans/progress/{cycle_id}.md`). The pinned plan is
+  read-only except for its top-level `**Status:**` field. The delegate must not invoke `plan`
+  and must not write `status.md`, `session-history.md`, or derived indexes. The main-tree
+  orchestrator harvests the progress file alongside the plan after completion.
 - TDD, review, verification, and per-step commits remain mandatory. Satellite mode changes
   artifact ownership only; it does not weaken any implementation or quality gate below.
 
@@ -65,13 +71,18 @@ an error; do not guess paths, isolation, or capability data.
 1. In direct mode, read `.agents/artifacts/status.md` and identify the session currently at
    🟡 Planning. In satellite mode, read the validated `pinned_plan` directly.
    - Re-entry from a step partway through (a session already at 🟡 In Progress) is also a normal case
-2. Load the corresponding plan file (inside `.agents/artifacts/plans/`)
-3. Grasp the overall picture of the plan, the list of steps, and the current progress (do not re-implement 🟢 Done steps)
+2. Load the corresponding plan file (inside `.agents/artifacts/plans/`).
+   Resolve `{cycle_id}` from the plan's `**Cycle ID:**` header field. If the header is
+   absent, derive it from the plan filename's timestamp portion (the leading `yyyymmddhhmmss`).
+3. Grasp the overall picture of the plan, the list of steps, and the current progress.
+   Check `.agents/artifacts/plans/progress/{cycle_id}.md` for previously completed steps
+   (do not re-implement steps marked 🟢 Done in the progress file)
 4. If the argument names a specific step, start from there
 5. **Direct mode:** update the status to 🟡 In Progress (invoke the skill
    `claude-skills:plan`; no update is needed if already 🟡 In Progress).
-   **Satellite mode:** update only the pinned plan through the authorized write path; do not
-   invoke `plan` or write singleton/derived state.
+   **Satellite mode:** update only the plan's top-level `**Status:**` to 🟡 In Progress and
+   create the runtime progress file in the satellite store; do not invoke `plan` or write
+   singleton/derived state.
 
 ## Phase 1-N: Implementation Loop (repeated per step)
 
@@ -135,7 +146,7 @@ Receive the implementation result.
    - **BLOCK**: a fix is mandatory → return to Step A (issue fix instructions)
    - **WARN**: an improvement is desirable → consider the content and decide whether to fix it
      - Fixing it → return to Step A
-     - Accepting it → record the rationale in the step's notes in the plan file (written during Step D) and move on
+     - Accepting it → record the rationale in the step's notes in the runtime progress file (written during Step D) and move on
    - **INFO**: reference information → record it and move on
 2. When BLOCK/WARN remain, launch a fix agent and address them
 3. After the fix, run the Step B review again
@@ -147,12 +158,17 @@ Receive the implementation result.
 
 **Always do this on completing each step. You must not skip it.**
 
-1. In direct mode, invoke the skill `claude-skills:plan` and update the following. In satellite
-   mode, perform the same progress and notes update directly in the pinned plan through the
-   authorized write path, without invoking `plan` or updating singleton/derived state:
-   - Change the status of the completed step to 🟢 Done
+1. Record progress in the runtime progress file (see
+   [runtime-progress.md](../shared/references/runtime-progress.md) for format and rules).
+   Path: `.agents/artifacts/plans/progress/{cycle_id}.md` (`mkdir -p` if absent). In satellite
+   mode, use the same relative path within the satellite artifact store:
+   - Mark the completed step number and title as 🟢 Done
    - Note the information for the next step
    - Record a summary of the implementation (changed files, test count, etc.)
+   - Record any accepted WARN/INFO findings with rationale
+   The plan file itself is not modified during implementation — it remains a stable
+   human-readable reference. Only the top-level `**Status:**` field in the plan header
+   is updated (Planning → In Progress → Completed).
 2. Commit that step's changes (implementation, tests, status update)
    - Do not track build artifacts or caches (e.g. `__pycache__`, `node_modules`, `target`). If they get mixed in, set up the ignore configuration first
    - In a project where `.agents/artifacts` is outside Git tracking, the status update is not part of the commit (commit only the implementation and the tests)
@@ -169,21 +185,22 @@ After every step is complete:
    - Run the project's lint command and confirm there are no warnings (e.g. `cargo clippy`, `eslint`, `golangci-lint`). In a project with no lint configured, skip it and report that
 2. If the final review has any finding of WARN or above, go back to the fix loop (maximum 3 iterations — same budget as Step C)
    - **WARN findings that were accepted with recorded rationale during Step C are excluded** from the fix-loop trigger.
-     The authoritative record is each step's notes in the plan file, written during Step D
+     The authoritative record is each step's notes in the runtime progress file, written during Step D
    - A review round with zero actionable findings (after exclusions) ends the loop
    - If 3 iterations are exhausted with findings still open, escalate to the user with the remaining findings
 3. Once everything is resolved:
    - In direct mode, invoke the skill `claude-skills:plan` and update the status to 🟢 Completed.
-     In satellite mode, mark the pinned plan complete through the authorized write path and leave
+     In satellite mode, update the plan's top-level `**Status:**` to 🟢 Completed and leave
      singleton/derived composition to the main-tree orchestrator
    - If uncommitted changes (the status update, etc.) remain, commit them
    - Present the implementation summary to the user
 
 ## Key Rules
 
-- **Direct mode always updates status when each step completes. Satellite mode updates only the
-  pinned plan and leaves singleton status composition to its orchestrator. Do not defer the
-  applicable progress update.**
+- **Direct mode always updates the runtime progress file when each step completes. Satellite mode
+  updates the pinned progress record and leaves singleton status composition to its orchestrator.
+  Do not defer the applicable progress update. The plan file is not modified during implementation
+  except for its top-level Status field.**
 - **Strictly observe the TDD cycle (Red → Green → Refactor). Write the test before the implementation code.**
 - **Implementation without tests is forbidden. If a test cannot be written, revisit the design.**
 - **A BLOCK finding must be resolved before moving on.**

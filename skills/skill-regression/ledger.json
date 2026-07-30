@@ -1,26 +1,28 @@
 {
   "brainstorm": {
     "file_sha256": {
-      "skills/brainstorm/SKILL.md": "09f21aead45e4689901cea4a25f5d9b293d58072781e7123a7068b7d443bc506",
-      "skills/brainstorm/fixtures.json": "5c6c040e48d3a0023e50a20a63ebc7ebff7e75c484d242a4d84db46523a32254",
-      "skills/brainstorm/references/exit-contract-template.md": "ae4423b47c984daba463e4768f48435fc848ce009b466556de80370fcb5de940",
+      "skills/brainstorm/SKILL.md": "dcbc1f72b1c04e159a56670c574a8b02a5ff032138bbd73076698ac54d98d437",
+      "skills/brainstorm/fixtures.json": "4734d961e6ee327ffa0359b1cc75c5d75695079ab122f06e54c47029588a07d1",
+      "skills/brainstorm/references/exit-contract-template.md": "0aa6389f378de90a5613c5dbe4517083ffdb4978e5e7849868c2a2d2a53f5d02",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
+      "skills/brainstorm/references/spec-generation.md": "219314a7f22cd2d7aaf395a0ae108e062d6c0b5fc28631e48edec9d1d990e23f",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "Codex review fix: exit-contract-template unified as fill guide for idea-template embedded form",
-    "result": "accepted-without-run",
+    "note": "Pre-approval contract in spec-generation.md",
+    "result": "pass",
     "surface": [
       "skills/brainstorm/SKILL.md",
       "skills/brainstorm/fixtures.json",
       "skills/brainstorm/references/exit-contract-template.md",
       "skills/brainstorm/references/idea-template.md",
+      "skills/brainstorm/references/spec-generation.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "7de1c0ae02398471baea672f82916567eb34bacbca593264ca3a2c6a82cb5c86",
+    "surface_sha256": "7779dbe471b7be7e7d1c063eca06c8930a8a1d08ba242862be0e4530f3a74e2b",
     "verified": "2026-07-31"
   },
   "brief": {
@@ -117,8 +119,8 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "8f81a87e20e7bd7c9da81e5ba6983ef2aaa771ac6594f6ffc14f6a054842ac49",
-      "skills/cycle/fixtures.json": "10caeab7449db5dde9d04b60df3cdc657e3a1a2ee26ed37f5fd678460fae1ac1",
+      "skills/cycle/SKILL.md": "4e9d5492676d2d4908052479bb48abaecf166aa0db0157c02d24f7617b525660",
+      "skills/cycle/fixtures.json": "e0a400399c5a74a58dee7d3f1ed4c1f7213be03a24a3b62ea773f76f4015e7d4",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
@@ -126,7 +128,7 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "Opus 5 review fix: stale refine references removed from orchestration-patterns.md",
+    "note": "Fixed satellite replace target string to match updated base prompt",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -138,7 +140,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "49c28b4e24e29a3946f6368fd0732207b5257e609866ceda8f14ea2046c6205d",
+    "surface_sha256": "75b815d9b0a08e17e988a9c2aa2024a244eb87a26baeee22107b2505eff062ec",
     "verified": "2026-07-31"
   },
   "decision-journal": {
@@ -363,9 +365,9 @@
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "b4b205448aac912b9582e893fc225ef7ad23131b0d510a5ca422fdbbc24a3de4",
+      "skills/plan/SKILL.md": "f297abf33271df2c04467ba426afe0027251de1b8cb521e5ef2052742b82877c",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
-      "skills/plan/references/plan-template.md": "32c7577770c228221aa6a07045acd1f6d647fb99eee90027db453b6bd97712f5",
+      "skills/plan/references/plan-template.md": "ded55b2eac510e7c08f04886bb2f0d66d2035e13563e4f7fac5506b19e28ea42",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -373,8 +375,8 @@
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "#183: human-readable plan policy added to description and notes (no template structural change)",
-    "result": "accepted-without-run",
+    "note": "Added Implementation Steps section to template (D-2)",
+    "result": "pass",
     "surface": [
       "skills/plan/SKILL.md",
       "skills/plan/fixtures.json",
@@ -386,35 +388,37 @@
       "skills/shared/references/execution-context.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "a55910c09d285167fc818ea8d05cedbbec89b6219a53781135f774e227622e0c",
+    "surface_sha256": "f7ab40a1a2d39bdeb9f16164812c60647f0b367971ba8ce421edf3b534ec01c4",
     "verified": "2026-07-31"
   },
   "plan-implement": {
     "file_sha256": {
-      "skills/plan-implement/SKILL.md": "79bb8b6151e80dd0fa68e04d0aa5c6e775b8048e9e06f890840628dc6e76edc2",
-      "skills/plan-implement/fixtures.json": "df3955a24dd89ec1437a303946e5e2b10d39072c62cda6a528e40fa632b96fd2",
+      "skills/plan-implement/SKILL.md": "34bdc8d08ef9d414a1a070439d5c1c530c2e0f9d8a3109fcf7d010b873939baa",
+      "skills/plan-implement/fixtures.json": "cbbfecde4c25225dbe80468c85e73e16a1fb7d99fce4e7370b68c44fdc5abad9",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
+      "skills/shared/references/runtime-progress.md": "ed37fbe9e91ba942a15feaeeec3b8610d57f14486e649190065f47e8179db7ca",
       "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "Opus 5 review fix: severity-and-verdicts.md plan review verdicts → implementation review verdicts (plan-implement references the shared verdicts)",
-    "result": "accepted-without-run",
+    "note": "Progress path moved from .agents/runtime/ to .agents/artifacts/plans/progress/ per artifact-store contract",
+    "result": "pass",
     "surface": [
       "skills/plan-implement/SKILL.md",
       "skills/plan-implement/fixtures.json",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/design-principles.md",
+      "skills/shared/references/runtime-progress.md",
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/testing-anti-patterns.md",
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "d15a3878e21c7f5ef59e33049ba36338b2a8d6d0ac782ee97a5a57b9aa38011a",
+    "surface_sha256": "31498c05cd0006483466783a7a2a0f4b9098a5de15c19ba8d61d41c11508733d",
     "verified": "2026-07-31"
   },
   "plan-reviewer": {

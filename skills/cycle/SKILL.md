@@ -37,8 +37,8 @@ by the outer orchestrator:
 - When invoking implementation, pass the complete satellite context unchanged to
   `plan-implement`, including the capability file path rather than its contents.
 - Across the inner cycle, suppress `status.md`, `session-history.md`, and derived-index writes.
-  Implementation updates only the authorized pinned plan; singleton composition belongs
-  to the outer main-tree orchestrator.
+  Implementation updates the progress file and the plan's top-level Status only;
+  singleton composition belongs to the outer main-tree orchestrator.
 - In inner satellite mode, append the complete resolved context to the implementation prompt.
   No delegate may infer, shorten, or re-resolve that context.
 
@@ -118,8 +118,8 @@ path cleanup-eligible. The outer orchestrator composes singleton artifacts only 
      Phase 2 Step 4 from being blocked by the commit skill's default-branch guard, and
      keeps cycle work on a reviewable branch
    - If already on a non-default branch: continue on the current branch
-2. Read the plan file and grasp the overview (feature name, step count = the rows of the
-   plan's Progress table, current progress)
+2. Read the plan file and grasp the overview (feature name, step count = the number of
+   implementation steps listed in the plan)
 3. Display the cycle start:
    ```
    ══════════════════════════════════════
@@ -173,17 +173,17 @@ cleanup are owned by the contract.
      report**, write the full result — an implementation summary (files changed, tests,
      commits, per-step completion) and test-run evidence — to the result file
      `.agents/runtime/delegation/{run_id}_implement.md` (the report is merely a notification
-     that the file was written). Commit after each completed step and update the status."
+     that the file was written). Commit after each completed step and update the runtime progress file."
    - In inner satellite mode, append `pinned_plan`, `resolved_isolation=worktree`,
      `satellite_run_id`, and `satellite_capability_file` verbatim to this prompt. This is how Cycle
      must pass the complete satellite context unchanged to `plan-implement`; replace "update the
-     status" with "update only the pinned plan and suppress singleton/derived writes."
+     runtime progress file" with "update the runtime progress file and the plan's top-level Status only; suppress singleton/derived writes."
 2. Receive the result (per "Delegation result relay" above)
    - On completion report **or** stop/wait notice, read
      `.agents/runtime/delegation/{run_id}_implement.md` for the implementation summary, test
      evidence, and per-step completion
    - If the result file is missing or incomplete: inspect `git log` commits, changed files,
-     and the plan's Progress directly to judge how far the steps got
+     and the plan's implementation steps directly to judge how far the steps got
    - **If the subagent errored, or neither the result file nor artifact inspection is
      decidable**: retry once automatically. If the retry also fails, display the error,
      record how far the steps got, and abort the cycle
@@ -331,7 +331,7 @@ verification, and publication. Show `Result: deferred to outer orchestrator`,
   immediately; follow pillar 3 (upper watchdog) of the
   [wait discipline](../shared/references/orchestration-patterns.md). First read
   `.agents/runtime/delegation/{run_id}_{role}.md` → if missing/incomplete, inspect the
-  artifacts directly (commit history, changed files, test results, plan Progress) to judge
+  artifacts directly (commit history, changed files, test results, plan steps) to judge
   phase completion → retry (once) only when undecidable. If the result file or artifacts
   confirm completion, proceed to the next phase even without a delivered report.
 - **Error in a Phase 2 step**: record the step in `phase2_failures` and continue with the

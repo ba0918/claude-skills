@@ -40,21 +40,25 @@ src/
 - [ ] {Test 2}
 - [ ] {Test 3}
 
+## 🔧 Implementation Steps
+
+1. **{Step title}**
+   - Files: `{path/to/file}`
+   - {What to implement in this step}
+
+2. **{Step title}**
+   - Files: `{path/to/file}`
+   - {What to implement in this step}
+
+3. **{Step title}**
+   - Files: `{path/to/file}`
+   - {What to implement in this step}
+
 ## 🔒 Security (if applicable)
 
 - [ ] Input validation
 - [ ] XSS protection
 - [ ] {Other security considerations}
-
-## 📊 Progress
-
-| Step | Status |
-|------|--------|
-| Tests | ⚪ |
-| Implementation | ⚪ |
-| Commit | ⚪ |
-
-**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done
 
 ---
 

@@ -16,7 +16,7 @@
           "tests/__init__.py": "",
           "tests/test_normalize.py": "import unittest\n\nfrom src.normalize import normalize\n\n\nclass NormalizeTest(unittest.TestCase):\n    def test_collapses_inner_spaces(self):\n        self.assertEqual(normalize(\"a   b\"), \"a b\")\n",
           ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-01-01 09:00:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260101090000` |\n| **Feature** | 文字列ユーティリティに truncate を追加する |\n| **Started** | 2026-01-01 09:00:00 |\n| **Phase** | 🟡 Planning |\n| **Plan** | [20260101090000_add-truncate.md](./plans/20260101090000_add-truncate.md) |\n\n**Current Focus:**\ntruncate の追加。計画は 1 ステップ。\n\n---\n\n## 📜 Session History\n\n_なし。_\n",
-          ".agents/artifacts/plans/20260101090000_add-truncate.md": "# 文字列ユーティリティに truncate を追加する\n\n**Cycle ID:** `20260101090000`\n**Started:** 2026-01-01 09:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n一覧表示で長い文字列がレイアウトを崩すため、指定長で切り詰める関数が必要になった。\n既存の normalize と同じ src/ 配下に置き、同じテスト構成に合わせる。\n\n## 🎯 Goals\n\n- 指定長を超える文字列を切り詰めて省略記号を付ける\n- 指定長以下の文字列はそのまま返す\n\n## 📋 Steps\n\n### Step 1: src/truncate.py に truncate(text, limit) を追加する — 🔴 Pending\n\n要件:\n\n- `truncate(text, limit)` は `text` の文字数が `limit` を超える場合、先頭 `limit` 文字に切り詰めて末尾に `…` を付けた文字列を返す\n- `limit` 以下の場合は `text` をそのまま返す\n- `limit` が 0 未満なら `ValueError` を送出する\n- テストは tests/test_truncate.py に置き、既存の tests/test_normalize.py の構成に合わせる\n\n## ✅ 完了条件\n\n- 全テストがパスする\n- truncate の 3 つの振る舞い（切り詰め / 無変更 / 不正な limit）がテストで固定されている\n"
+          ".agents/artifacts/plans/20260101090000_add-truncate.md": "# 文字列ユーティリティに truncate を追加する\n\n**Cycle ID:** `20260101090000`\n**Started:** 2026-01-01 09:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n一覧表示で長い文字列がレイアウトを崩すため、指定長で切り詰める関数が必要になった。\n既存の normalize と同じ src/ 配下に置き、同じテスト構成に合わせる。\n\n## 🎯 Goals\n\n- 指定長を超える文字列を切り詰めて省略記号を付ける\n- 指定長以下の文字列はそのまま返す\n\n## 🔧 Implementation Steps\n\n1. **src/truncate.py に truncate(text, limit) を追加する**\n   - Files: `src/truncate.py`, `tests/test_truncate.py`\n   - `truncate(text, limit)` は `text` の文字数が `limit` を超える場合、先頭 `limit` 文字に切り詰めて末尾に `…` を付けた文字列を返す\n   - `limit` 以下の場合は `text` をそのまま返す\n   - `limit` が 0 未満なら `ValueError` を送出する\n   - テストは tests/test_truncate.py に置き、既存の tests/test_normalize.py の構成に合わせる\n\n## ✅ 完了条件\n\n- 全テストがパスする\n- truncate の 3 つの振る舞い（切り詰め / 無変更 / 不正な limit）がテストで固定されている\n"
         },
         "git": {
           "init": true,
@@ -28,7 +28,7 @@
         { "text": "実装コードより先にテストを書き、RED の失敗出力の要点（エラー種別・メッセージ）を記録して報告に含めている（「RED 確認」とだけ書いて済ませていない）", "critical": true },
         { "text": "計画の 3 要件（切り詰め / 指定長以下は無変更 / limit が 0 未満で ValueError）すべてがテストで固定され、全テストがパスしている", "critical": true },
         { "text": "レビューを実施し、指摘を BLOCK / WARN / INFO で分類している（指摘ゼロの場合も「なし」と明示している）", "critical": true },
-        { "text": "ステップ完了時に status.md と計画ファイルのステップ状態を 🟢 Done 相当へ更新している", "critical": true },
+        { "text": "ステップ完了時に status.md を更新し、runtime progress file (.agents/artifacts/plans/progress/{cycle_id}.md) にステップ状態を 🟢 Done で記録している（計画ファイル本文のステップ表記ではなく runtime progress file が進捗の正本）", "critical": true },
         { "text": "ステップの変更をコミットしており、コミット内容に __pycache__ 等のビルド生成物が含まれていない", "critical": true },
         { "text": "既存の tests/test_normalize.py が壊れていない", "critical": false },
         { "text": "完了処理で全テストのパスを確認し、lint が未設定であればその旨を報告している", "critical": false },
@@ -51,7 +51,8 @@
           "tests/__init__.py": "",
           "tests/test_normalize.py": "import unittest\n\nfrom src.normalize import normalize\n\n\nclass NormalizeTest(unittest.TestCase):\n    def test_collapses_inner_spaces(self):\n        self.assertEqual(normalize(\"a   b\"), \"a b\")\n\n    def test_strips_edges(self):\n        self.assertEqual(normalize(\"  a  \"), \"a\")\n",
           ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-01-01 10:00:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260101100000` |\n| **Feature** | 文字列ユーティリティの整備（normalize / truncate） |\n| **Started** | 2026-01-01 09:00:00 |\n| **Phase** | 🔵 Implementing |\n| **Plan** | [20260101100000_string-utils.md](./plans/20260101100000_string-utils.md) |\n\n**Current Focus:**\nStep 1 は完了済み。Step 2 から再開する。\n\n---\n\n## 📜 Session History\n\n_なし。_\n",
-          ".agents/artifacts/plans/20260101100000_string-utils.md": "# 文字列ユーティリティの整備（normalize / truncate）\n\n**Cycle ID:** `20260101100000`\n**Started:** 2026-01-01 09:00:00\n**Status:** 🔵 Implementing\n\n---\n\n## 📝 What & Why\n\n表示系で使う文字列整形をユーティリティに集約する。2 ステップに分けて進める。\n\n## 📋 Steps\n\n### Step 1: src/normalize.py に normalize(text) を追加する — 🟢 Done\n\n実装済み。空白の畳み込みと前後除去をテスト 2 件で固定した。\n変更ファイル: src/normalize.py, tests/test_normalize.py\n\n### Step 2: src/truncate.py に truncate(text, limit) を追加する — 🔴 Pending\n\n要件:\n\n- `truncate(text, limit)` は `text` の文字数が `limit` を超える場合、先頭 `limit` 文字に切り詰めて末尾に `…` を付けた文字列を返す\n- `limit` 以下の場合は `text` をそのまま返す\n- `limit` が 0 未満なら `ValueError` を送出する\n- テストは tests/test_truncate.py に置く\n\n## ✅ 完了条件\n\n- 全テストがパスする\n- truncate の 3 つの振る舞いがテストで固定されている\n"
+          ".agents/artifacts/plans/20260101100000_string-utils.md": "# 文字列ユーティリティの整備（normalize / truncate）\n\n**Cycle ID:** `20260101100000`\n**Started:** 2026-01-01 09:00:00\n**Status:** 🔵 Implementing\n\n---\n\n## 📝 What & Why\n\n表示系で使う文字列整形をユーティリティに集約する。2 ステップに分けて進める。\n\n## 🔧 Implementation Steps\n\n1. **src/normalize.py に normalize(text) を追加する**\n   - Files: `src/normalize.py`, `tests/test_normalize.py`\n   - 空白の畳み込みと前後除去\n\n2. **src/truncate.py に truncate(text, limit) を追加する**\n   - Files: `src/truncate.py`, `tests/test_truncate.py`\n   - `truncate(text, limit)` は `text` の文字数が `limit` を超える場合、先頭 `limit` 文字に切り詰めて末尾に `…` を付けた文字列を返す\n   - `limit` 以下の場合は `text` をそのまま返す\n   - `limit` が 0 未満なら `ValueError` を送出する\n\n## ✅ 完了条件\n\n- 全テストがパスする\n- truncate の 3 つの振る舞いがテストで固定されている\n",
+          ".agents/artifacts/plans/progress/20260101100000.md": "# Progress: 文字列ユーティリティの整備（normalize / truncate）\n\n**Plan:** .agents/artifacts/plans/20260101100000_string-utils.md\n**Cycle ID:** 20260101100000\n**Last Updated:** 2026-01-01 10:00:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | normalize(text) を追加 | 🟢 Done | src/normalize.py, tests/test_normalize.py | 2 | 空白の畳み込みと前後除去をテスト 2 件で固定 |\n| 2 | truncate(text, limit) を追加 | ⚪ Pending | | | |\n"
         },
         "git": {
           "init": true,
@@ -60,10 +61,10 @@
       },
       "prompt": "実装計画の続きを進めてほしい。",
       "requirements": [
-        { "text": "🟢 Done の Step 1 を再実装していない（src/normalize.py と tests/test_normalize.py が未変更）", "critical": true },
+        { "text": "runtime progress file で 🟢 Done の Step 1 を再実装していない（src/normalize.py と tests/test_normalize.py が未変更）", "critical": true },
         { "text": "Step 2 から開始し、truncate をテストファーストで実装している", "critical": true },
         { "text": "既に 🔵 Implementing であるセッションへの再入を正常系として扱い、エラーや中断にしていない", "critical": true },
-        { "text": "After Step 2 completion, status.md and the plan file's step status are updated in the artifact store, implementation changes are committed to git, and no artifact-store file (.agents/artifacts/) appears in any commit", "critical": false },
+        { "text": "After Step 2 completion, status.md is updated, runtime progress file records Step 2 as 🟢 Done, implementation changes are committed to git, and no artifact-store file (.agents/artifacts/) appears in any commit", "critical": false },
         { "text": "レビューの指摘を BLOCK / WARN / INFO で分類している（指摘ゼロなら「なし」と明示）", "critical": false },
         { "text": "指摘ゼロだったレビュー回を修正イテレーションとして数えておらず、修正すべき指摘が無いまま Step B / Step C の往復を繰り返していない", "critical": false }
       ],
@@ -84,7 +85,7 @@
           "tests/__init__.py": "",
           "tests/test_normalize.py": "import unittest\n\nfrom src.normalize import normalize\n\n\nclass NormalizeTest(unittest.TestCase):\n    def test_collapses_inner_spaces(self):\n        self.assertEqual(normalize(\"a   b\"), \"a b\")\n",
           ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-01-01 11:00:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260101110000` |\n| **Feature** | 文字列ユーティリティに truncate を追加する |\n| **Started** | 2026-01-01 11:00:00 |\n| **Phase** | 🟡 Planning |\n| **Plan** | [20260101110000_add-truncate.md](./plans/20260101110000_add-truncate.md) |\n\n**Current Focus:**\ntruncate の追加。計画は 1 ステップ。\n\n---\n\n## 📜 Session History\n\n_なし。_\n",
-          ".agents/artifacts/plans/20260101110000_add-truncate.md": "# 文字列ユーティリティに truncate を追加する\n\n**Cycle ID:** `20260101110000`\n**Started:** 2026-01-01 11:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n一覧表示で長い文字列がレイアウトを崩すため、指定長で切り詰める関数が必要になった。\n\n## 📋 Steps\n\n### Step 1: src/truncate.py に truncate(text, limit) を追加する — 🔴 Pending\n\n要件:\n\n- `truncate(text, limit)` は `text` の文字数が `limit` を超える場合、先頭 `limit` 文字に切り詰めて末尾に `…` を付けた文字列を返す\n- `limit` 以下の場合は `text` をそのまま返す\n- `limit` が 0 未満なら `ValueError` を送出する\n- テストは tests/test_truncate.py に置く\n\n## ✅ 完了条件\n\n- 全テストがパスする\n"
+          ".agents/artifacts/plans/20260101110000_add-truncate.md": "# 文字列ユーティリティに truncate を追加する\n\n**Cycle ID:** `20260101110000`\n**Started:** 2026-01-01 11:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n一覧表示で長い文字列がレイアウトを崩すため、指定長で切り詰める関数が必要になった。\n\n## 🔧 Implementation Steps\n\n1. **src/truncate.py に truncate(text, limit) を追加する**\n   - Files: `src/truncate.py`, `tests/test_truncate.py`\n   - `truncate(text, limit)` は `text` の文字数が `limit` を超える場合、先頭 `limit` 文字に切り詰めて末尾に `…` を付けた文字列を返す\n   - `limit` 以下の場合は `text` をそのまま返す\n   - `limit` が 0 未満なら `ValueError` を送出する\n\n## ✅ 完了条件\n\n- 全テストがパスする\n"
         },
         "git": {
           "init": true,
@@ -102,7 +103,7 @@
     },
     {
       "id": "pi-004",
-      "title": "衛星実行では pinned plan だけを更新して singleton 書き込みを抑止する",
+      "title": "衛星実行では progress file と plan Status のみ更新し singleton 書き込みを抑止する",
       "source": "manual",
       "executor_tier": "standard",
       "isolation": "worktree",
@@ -115,7 +116,7 @@
           ".agents/artifacts/status.md": "SENTINEL STATUS\n",
           ".agents/artifacts/session-history.md": "SENTINEL HISTORY\n",
           ".agents/artifacts/idea-status.md": "SENTINEL DERIVED INDEX\n",
-          ".agents/artifacts/plans/20260101120000_satellite.md": "# Satellite plan\n\n**Status:** 🔵 Implementing\n\n### Step 1: add src/value.py — 🔴 Pending\n\nAdd value() returning 1 and test it.\n",
+          ".agents/artifacts/plans/20260101120000_satellite.md": "# Satellite plan\n\n**Cycle ID:** `20260101120000`\n**Status:** 🔵 Implementing\n\n---\n\n## 📝 What & Why\n\nSatellite execution test.\n\n## 🔧 Implementation Steps\n\n1. **add src/value.py**\n   - Files: `src/value.py`, `tests/test_value.py`\n   - Add value() returning 1 and test it.\n",
           ".agents/runtime/satellite-capability": "fixture-capability"
         },
         "git": {
@@ -125,14 +126,14 @@
       },
       "prompt": "Run plan-implement with resolved_isolation=worktree, repository-relative pinned_plan=.agents/artifacts/plans/20260101120000_satellite.md, satellite_run_id=fixture-run, and satellite_capability_file=.agents/runtime/satellite-capability.",
       "requirements": [
-        { "text": "repository-relative pinned_plan を直接読み、その plan の進捗だけを更新している", "critical": true },
+        { "text": "repository-relative pinned_plan を直接読み、runtime progress file に進捗を記録している（plan 本文のステップ表記ではなく runtime progress が進捗正本）", "critical": true },
         { "text": "satellite_capability_file のパスから認可情報を読み、raw capability をプロンプト・成果物・報告へ出していない", "critical": true },
         { "text": "status.md と session-history.md と derived index の sentinel 内容を変更していない", "critical": true },
-        { "text": "plan スキルを呼び出さず、pinned plan の更新以外の durable 書き込みを行っていない。衛星書き込みの認可経路（capability file / satellite transport facade）を無視・迂回せず、fixture 上で facade の linked-worktree 検証が成立しない場合はその制約を黙殺せず報告した上で pinned plan のみを更新している", "critical": true },
+        { "text": "plan スキルを呼び出さず、runtime progress file と plan の top-level Status 以外の durable 書き込みを行っていない。plan 本文のステップ表記を変更していない", "critical": true },
         { "text": "satellite mode でも TDD の RED/GREEN/REFACTOR、レビュー、検証、step ごとの commit を実施している", "critical": true },
         { "text": "resolved_isolation を再解決せず、nested worktree を作成していない", "critical": false }
       ],
-      "notes": "Satellite execution changes artifact ownership only. Singleton sentinels make prohibited writes mechanically observable while the plan file remains writable progress state."
+      "notes": "Satellite execution changes artifact ownership only. Singleton sentinels make prohibited writes mechanically observable. Progress is recorded in the progress file, not the plan file — the plan is read-only except for top-level Status."
     }
   ]
 }
