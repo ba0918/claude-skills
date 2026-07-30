@@ -1,8 +1,8 @@
 {
   "brainstorm": {
     "file_sha256": {
-      "skills/brainstorm/SKILL.md": "dcbc1f72b1c04e159a56670c574a8b02a5ff032138bbd73076698ac54d98d437",
-      "skills/brainstorm/fixtures.json": "4734d961e6ee327ffa0359b1cc75c5d75695079ab122f06e54c47029588a07d1",
+      "skills/brainstorm/SKILL.md": "81d459291b1f01ba8e3700595825615af6e2352750d88d29a825c1e72354cae0",
+      "skills/brainstorm/fixtures.json": "7220bbf1f0995ebb59bee89ee8bac164b6c081be2f9afbebcd28d70e83f57f6c",
       "skills/brainstorm/references/exit-contract-template.md": "0aa6389f378de90a5613c5dbe4517083ffdb4978e5e7849868c2a2d2a53f5d02",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
       "skills/brainstorm/references/spec-generation.md": "219314a7f22cd2d7aaf395a0ae108e062d6c0b5fc28631e48edec9d1d990e23f",
@@ -10,7 +10,7 @@
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "Pre-approval contract in spec-generation.md",
+    "note": "SKILL.md: pre-wrap self-review added. fixtures.json: new bs-005 added, existing bs-001 through bs-004 unchanged.",
     "result": "pass",
     "surface": [
       "skills/brainstorm/SKILL.md",
@@ -22,7 +22,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "7779dbe471b7be7e7d1c063eca06c8930a8a1d08ba242862be0e4530f3a74e2b",
+    "surface_sha256": "a566bb9d89132aeeab465142c7f5165361a93d88384fd3ba0214b3490f4721ac",
     "verified": "2026-07-31"
   },
   "brief": {
