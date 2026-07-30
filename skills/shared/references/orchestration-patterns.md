@@ -19,7 +19,7 @@ Delegate heavy processing to an Agent and keep only the summary in the main cont
 Main -> Agent (heavy processing) -> Summary -> Main continues
 ```
 
-- **Examples**: cycle (agentized refine / implement phases)
+- **Examples**: cycle (agentized implement phase)
 - **Adoption condition**: When intermediate output from the processing is unnecessary for later main-context decisions
 - **Cost**: One Agent context. This is practically required for long workflows because it extends the lifetime of the main context
 
@@ -121,7 +121,7 @@ Place result files at this deterministic path.
 .agents/runtime/delegation/{run_id}_{role}.md
 ```
 
-- `{run_id}` is an identifier that makes the delegation unique (for example: plan cycle ID or timestamp). `{role}` is the delegate's role (`refine` / `implement` / `review-{viewpoint}` etc.). The orchestrator and delegate must be able to derive the same path, so pass the same convention to both
+- `{run_id}` is an identifier that makes the delegation unique (for example: plan cycle ID or timestamp). `{role}` is the delegate's role (`implement` / `review-{viewpoint}` etc.). The orchestrator and delegate must be able to derive the same path, so pass the same convention to both
 - `.agents/runtime/` is a **machine-specific runtime area** and is outside Git, outside sharing, and outside migration. It is treated like polling's `runtime_root`; the Runtime area section of [artifact-store.md](artifact-store.md) is authoritative. It is a separate tree from the artifact store (`.agents/artifacts/`), and the source of truth for results must not be mixed into artifacts
 
 ### (2) Writer (Delegate) Obligations
@@ -172,7 +172,7 @@ This limit must not depend on a specific sleep API; write it as a natural-langua
 
 ### (5) Applicability
 
-- **Applies to**: Delegations whose results include structured data, long-form text, or quality judgments (refine / implement / review level). Applies when silent non-delivery of reports would be harmful
+- **Applies to**: Delegations whose results include structured data, long-form text, or quality judgments (implement / review level). Applies when silent non-delivery of reports would be harmful
 - **Optional**: This protocol may be omitted for one-off light investigation delegations where results are small and non-delivery has low harm
 
 ### (6) Security
@@ -198,7 +198,7 @@ To prevent this, **explicitly specify the `model` parameter on Agent calls** (do
 | Role | model specification | Examples |
 |------|-----------|------|
 | Session body (brainstorming / plan creation / hard debugging / decomposition decisions) | Unspecified (user chooses through the session model) | brainstorm, parallel-cycle decomposition |
-| Implementation/refine agents (long-running, large-scale) | `opus` | cycle Phase 1/1.5/2, iterate Phase 3 (Large), parallel-cycle cycle execution |
+| Implementation agents (long-running, large-scale) | `opus` | cycle Phase 1 (implement), iterate Phase 3 (Large), parallel-cycle cycle execution |
 | Lightweight implementation (small + verification gate) | `sonnet` | iterate Phase 3 (Small) |
 | Fan-out reviewers / integration agent | `opus` | plan-reviewer 7 viewpoints, codebase-review 4 agents + integration, attack-review 6 agents + integration, iterate Phase 4 |
 | Mechanical work (plan file generation, scanning) | `sonnet` or `haiku` | parallel-cycle Step 0.3 |

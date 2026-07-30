@@ -182,7 +182,7 @@ Connect an issue to plan → cycle for resolution.
 4. Error handling:
    - If plan creation fails: Display the error and exit. The issue remains open.
    - If cycle fails or is interrupted: Display the error and the path to the created plan file. The issue remains open. Inform the user they can retry with `/claude-skills:cycle` using the existing plan — no need to re-run issue-cycle.
-   - Note: Issue auto-close is handled by cycle's Phase 3 via the `**Issue:**` field in the plan. No explicit close call is needed here.
+   - Note: Issue auto-close is handled by cycle's Phase 2 via the `**Issue:**` field in the plan. No explicit close call is needed here.
 
 ---
 
