@@ -46,16 +46,6 @@ src/
 - [ ] XSS protection
 - [ ] {Other security considerations}
 
-## 📊 Progress
-
-| Step | Status |
-|------|--------|
-| Tests | ⚪ |
-| Implementation | ⚪ |
-| Commit | ⚪ |
-
-**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done
-
 ---
 
 **Next:** Write tests → Implement → Commit with `claude-skills:commit` 🚀

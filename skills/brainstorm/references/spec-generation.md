@@ -21,10 +21,10 @@ State the matching rationale in the draft presentation (e.g., "Appending to `aut
 
 ## Line Count Advisory
 
-Before appending, count the lines of the target file. If it exceeds 300 lines, present an advisory:
+Before appending, count the current lines of the target file and estimate the total after appending. If the projected total exceeds 300 lines, present an advisory:
 
 ```
-⚠️ docs/spec/{file}.md is {N} lines. Consider splitting into smaller domain files.
+⚠️ docs/spec/{file}.md will be ~{projected} lines after this append (currently {current} lines). Consider splitting into smaller domain files.
 ```
 
 This is an advisory flag, not a hard constraint or automatic split trigger. The human decides whether to split.
@@ -87,7 +87,7 @@ Wait for the human's approval before writing. The human may:
 - **Change domain assignment**: move content to a different file.
 - **Reject**: skip spec generation for this session.
 
-When interaction is impossible (headless mode), write the draft and state the assumption in the completion message. The human can review and edit the file later.
+When interaction is impossible (headless mode), do NOT write directly to `docs/spec/`. Instead, save the draft to `.agents/artifacts/ideas/{slug}_spec_draft.md` and state the assumption in the completion message. The human reviews the draft and moves it to `docs/spec/` later. This preserves the human gate contract: `docs/spec/` is only modified with explicit approval.
 
 ## Spec File Format
 

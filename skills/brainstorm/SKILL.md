@@ -97,7 +97,7 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
    - **Routing**: where each piece goes next (ledger / plan / docs / clauses)
    - **Status**: `CONVERGED` if no blocking undecided items remain; `BLOCKED` otherwise
 7. **Spec generation** (only when exit contract status is `CONVERGED`):
-   Follow the procedure in [references/spec-generation.md](references/spec-generation.md) to generate a human-readable spec draft in the consumer project's `docs/spec/` directory. The agent autonomously selects the target domain file (match existing or create new), presents the draft with matching rationale to the human, and writes only after approval. Skip this step entirely when the exit contract is `BLOCKED` or absent.
+   Follow the procedure in [references/spec-generation.md](references/spec-generation.md) to generate a human-readable spec draft in the consumer project's `docs/spec/` directory. The agent autonomously selects the target domain file (match existing or create new), presents the draft with matching rationale to the human, and writes only after approval. After writing, record the spec path in the idea memo's exit contract Routing table (destination `Spec`, action `Generated at {path}`) so that `brainstorm-plan` can pass it to `plan-create` without re-scanning. In headless mode (interaction impossible), save the draft to `.agents/artifacts/ideas/{slug}_spec_draft.md` instead of writing to `docs/spec/` — the human reviews and moves it later. Skip this step entirely when the exit contract is `BLOCKED` or absent.
 8. Update `.agents/artifacts/ideas/idea-status.md` (create with this header if absent):
    ```markdown
    # Idea Status

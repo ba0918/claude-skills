@@ -1,17 +1,17 @@
 {
   "brainstorm": {
     "file_sha256": {
-      "skills/brainstorm/SKILL.md": "92135401f57dd68ebc37c2682635e9fdbfad77aa2a60c48a69ef318af56ba694",
-      "skills/brainstorm/fixtures.json": "5c6c040e48d3a0023e50a20a63ebc7ebff7e75c484d242a4d84db46523a32254",
+      "skills/brainstorm/SKILL.md": "dcbc1f72b1c04e159a56670c574a8b02a5ff032138bbd73076698ac54d98d437",
+      "skills/brainstorm/fixtures.json": "c7540031f7d55c3bd016f3b451771f6adb4cb8edef1b400d3678cb1e9a7fcd3d",
       "skills/brainstorm/references/exit-contract-template.md": "ae4423b47c984daba463e4768f48435fc848ce009b466556de80370fcb5de940",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
-      "skills/brainstorm/references/spec-generation.md": "42d8d81b1f84ec4c668e80ef1ec2707eeaaa8527ef71803cc527bbf3ce0ca3f7",
+      "skills/brainstorm/references/spec-generation.md": "23150f03b3e7d4b8c5688320df66efafe785c758869fa9bb494ee682fcd9b42c",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "Added spec-generation step to wrap workflow and spec-generation.md reference (no behavioral change to existing fixtures)",
-    "result": "accepted-without-run",
+    "note": "Added bs-004 for CONVERGED spec generation, fixed headless contract, spec path persistence",
+    "result": "pass",
     "surface": [
       "skills/brainstorm/SKILL.md",
       "skills/brainstorm/fixtures.json",
@@ -22,7 +22,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "a7885bc4dc2d6e1712ebef0438bb6ec164fa7ed1e619cbff8353eae54c147da9",
+    "surface_sha256": "72efba73fa825d80f093bc5470e0993be6b127d71ff13e4e8d64047d867bb41c",
     "verified": "2026-07-31"
   },
   "brief": {
@@ -119,7 +119,7 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "8f81a87e20e7bd7c9da81e5ba6983ef2aaa771ac6594f6ffc14f6a054842ac49",
+      "skills/cycle/SKILL.md": "a9a1a1605563582704dceda7427bfc884b5b8230546255f76d17a33bd2838bfb",
       "skills/cycle/fixtures.json": "10caeab7449db5dde9d04b60df3cdc657e3a1a2ee26ed37f5fd678460fae1ac1",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -128,7 +128,7 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "Opus 5 review fix: stale refine references removed from orchestration-patterns.md",
+    "note": "Updated Progress table references to implementation steps (D-2: Progress table separation)",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -140,7 +140,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "49c28b4e24e29a3946f6368fd0732207b5257e609866ceda8f14ea2046c6205d",
+    "surface_sha256": "bac2315e288491f795852c3fc2e87f034b483433d5c3a34d3cbb22093e11db03",
     "verified": "2026-07-31"
   },
   "decision-journal": {
@@ -365,9 +365,9 @@
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "6c6585892b9308e2632062dd7852185ad730fc778ee1ee36e6dece60909a1a8d",
+      "skills/plan/SKILL.md": "0196a3f3e79d2efd2907506cc451339283eadb842e931a049c034c18ae3be21b",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
-      "skills/plan/references/plan-template.md": "32c7577770c228221aa6a07045acd1f6d647fb99eee90027db453b6bd97712f5",
+      "skills/plan/references/plan-template.md": "7ac2506290636ffaef6178f92413e89b6ab3c3ba1f3c8f372102123e62100e2f",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -375,8 +375,8 @@
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "Added spec auto-detection paragraph to Phase 3 (no behavioral change to existing fixtures)",
-    "result": "accepted-without-run",
+    "note": "Removed Progress table from template, added spec auto-detection",
+    "result": "pass",
     "surface": [
       "skills/plan/SKILL.md",
       "skills/plan/fixtures.json",
@@ -388,7 +388,7 @@
       "skills/shared/references/execution-context.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "faba60c516e72ee2e6a1190ce553f31a3c9a62173e7f402f104b3eee9fde035d",
+    "surface_sha256": "1db12f1249d22325a477653580cc1c051f8a417a5ee026c37bc2c4793d191568",
     "verified": "2026-07-31"
   },
   "plan-implement": {
