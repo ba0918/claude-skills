@@ -56,7 +56,7 @@
           ".gitignore": "# 実行基盤が作るセッション残骸（プロジェクトの成果物ではない）\n__pycache__/\n*.pyc\n.claude/\n.mcp.json\n\n# Agent Artifact Store / runtime（local visibility は Git 無視が契約上の不変条件）\n/.agents/artifacts/\n/.agents/runtime/\n",
           "CLAUDE.md": "# webhook-relay\n\n受信 Webhook を転送する小さなリレーサーバー。\n\n- テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "src/relay.py": "\"\"\"Webhook 転送のコア。\"\"\"\n\n\ndef build_forward_headers(headers: dict) -> dict:\n    \"\"\"hop-by-hop ヘッダを除いた転送用ヘッダを作る。\"\"\"\n    hop_by_hop = {\"connection\", \"keep-alive\", \"transfer-encoding\", \"upgrade\"}\n    return {k: v for k, v in headers.items() if k.lower() not in hop_by_hop}\n",
-          "docs/plans/20260710090000_legacy-feature.md": "# リトライキューの追加\n\n**Cycle ID:** `20260710090000`\n**Started:** 2026-07-10 09:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n転送失敗した Webhook を指数バックオフで再送するリトライキューを追加する。\n\n## 🎯 Goals\n\n- 転送失敗時に最大 3 回まで再送する\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| Step 1: リトライキュー実装（TDD） | ⚪ |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n"
+          "docs/plans/20260710090000_legacy-feature.md": "# リトライキューの追加\n\n**Cycle ID:** `20260710090000`\n**Started:** 2026-07-10 09:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n転送失敗した Webhook を指数バックオフで再送するリトライキューを追加する。\n\n## 🎯 Goals\n\n- 転送失敗時に最大 3 回まで再送する\n\n## 🔧 Implementation Steps\n\n1. **リトライキュー実装（TDD）**\n   - Files: `src/retry.py`, `tests/test_retry.py`\n   - 指数バックオフで最大 3 回再送するキューを実装\n"
         },
         "git": { "init": true, "commit": true }
       },

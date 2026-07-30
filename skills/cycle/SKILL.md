@@ -173,11 +173,11 @@ cleanup are owned by the contract.
      report**, write the full result — an implementation summary (files changed, tests,
      commits, per-step completion) and test-run evidence — to the result file
      `.agents/runtime/delegation/{run_id}_implement.md` (the report is merely a notification
-     that the file was written). Commit after each completed step and update the status."
+     that the file was written). Commit after each completed step and update the runtime progress file."
    - In inner satellite mode, append `pinned_plan`, `resolved_isolation=worktree`,
      `satellite_run_id`, and `satellite_capability_file` verbatim to this prompt. This is how Cycle
      must pass the complete satellite context unchanged to `plan-implement`; replace "update the
-     status" with "update only the pinned plan and suppress singleton/derived writes."
+     status" with "update the runtime progress file and the plan's top-level Status only; suppress singleton/derived writes."
 2. Receive the result (per "Delegation result relay" above)
    - On completion report **or** stop/wait notice, read
      `.agents/runtime/delegation/{run_id}_implement.md` for the implementation summary, test

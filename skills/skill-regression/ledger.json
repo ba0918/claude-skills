@@ -119,8 +119,8 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "a9a1a1605563582704dceda7427bfc884b5b8230546255f76d17a33bd2838bfb",
-      "skills/cycle/fixtures.json": "7a62740711bb05376479e9e2d99cac8f47aeced50de7ac0380a46a49eb2f05cc",
+      "skills/cycle/SKILL.md": "3d3434eb3ebd1e7298db274f5abda7a473b3c6f5c5a99e091cec7c5ff630adaa",
+      "skills/cycle/fixtures.json": "e0a400399c5a74a58dee7d3f1ed4c1f7213be03a24a3b62ea773f76f4015e7d4",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
@@ -128,7 +128,7 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "Fixtures migrated to Implementation Steps format, removed Progress tables",
+    "note": "Fixed satellite prompt template and cy-002 plan format",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -140,7 +140,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "7d161801adce8734a05918352f0f7c4749581c9f0cfe63495c1e8af27dd4c140",
+    "surface_sha256": "41d134e459e1070a1c9e30b345a03ddd25cddf2672b751144d7feb7416720ebc",
     "verified": "2026-07-31"
   },
   "decision-journal": {
