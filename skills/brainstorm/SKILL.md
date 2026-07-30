@@ -32,7 +32,7 @@ Allowed: read-only codebase investigation (file reads, pattern search, file list
 ### Flow
 
 1. Take the theme from $ARGUMENTS (ask the user if absent).
-2. Initialize `codex_available = true` and `stuck_hint_shown = false`. Do not pre-create any state files.
+2. Initialize `codex_available = true`, `stuck_hint_shown = false`, and `review_passed = false`. Do not pre-create any state files.
 3. Enter the sparring loop:
    a. Receive the user's message.
    b. **Stuck detection** (only while `stuck_hint_shown == false`): if the message contains any of these keywords (substring match, case-insensitive) —
@@ -57,7 +57,9 @@ Allowed: read-only codebase investigation (file reads, pattern search, file list
       ```
    e. Investigate the codebase read-only as needed.
    f. Ask the user for the next input.
-   g. When the user says "wrap" / 「まとめて」 / 「終わり」 etc., exit the loop.
+   g. **Wrap gate with self-review**: When the user says "wrap" / 「まとめて」 / 「終わり」 etc.:
+      - If `review_passed == false`: run the pre-wrap self-review (see below), then set `review_passed = true`. If the review finds issues, stay in the loop — the findings become discussion points for the next turn. If the review is clean, exit the loop.
+      - If `review_passed == true` (user says "wrap" again after seeing review results): exit the loop regardless of outstanding items — the user has acknowledged them.
 4. On exit, show the pointer to Wrap:
    ```
    Ending the sparring session.
@@ -73,6 +75,35 @@ Shared contract details: [../shared/references/codex-integration.md](../shared/r
 - Probe with questions (Why? What if? How about?); state concerns frankly; propose alternative approaches; periodically summarize the discussion.
 - Back feasibility claims with read-only codebase investigation.
 - When the discussion starts converging on a specific technology, check the gravitational pull — ask "if you did not use that technology, what would you be trying to solve?" or "can you state the problem without naming the technology?" as questions, not blocks.
+
+### Pre-wrap Self-Review
+
+A lightweight inline review of the accumulated discussion, run once when the user first signals wrap intent. No subagent — the agent reviews the conversation in its own context.
+
+#### Checklist
+
+Scan the discussion for:
+
+1. **Placeholders** — unresolved "TBD", "TODO", "後で決める", "later", or explicitly deferred decisions that would block downstream work (plan creation or implementation).
+2. **Internal contradictions** — agreements or positions taken during the session that conflict with each other, or with codebase evidence found during the session.
+3. **Scope deviation** — significant drift from the original theme without explicit acknowledgment from the user.
+4. **Ambiguity** — vague terms, unmeasurable conditions, or underspecified behaviors in candidate agreements (e.g., "high performance" without a metric, "simple API" without constraints).
+
+#### Output format
+
+Place the review block at the top of the response, before any other content:
+
+```
+🔍 Pre-wrap review:
+- {⚠️ description | ✅ No issues} per category (omit clean categories to keep it short)
+
+{if issues found:}
+{N} items to consider before wrapping. Discuss to resolve, or say "wrap" again to proceed as-is.
+{if all clean:}
+✅ All clear — proceeding to wrap.
+```
+
+When all categories are clean, skip the per-category listing and output only the "All clear" line, then exit the loop immediately.
 
 ---
 
@@ -217,7 +248,7 @@ Reload an existing idea memo and restart the sparring session with it as context
 
    Resuming the sparring session from here!
    ```
-4. Initialize `codex_available = true` and `stuck_hint_shown = false`, then run the same sparring loop as Session Workflow steps 3a–3g (stuck detection, Codex second opinion, and the failure fallback all included), using the previous Open Questions as the primary starting points.
+4. Initialize `codex_available = true`, `stuck_hint_shown = false`, and `review_passed = false`, then run the same sparring loop as Session Workflow steps 3a–3g (stuck detection, Codex second opinion, the failure fallback, and pre-wrap self-review all included), using the previous Open Questions as the primary starting points.
 5. On exit, point to Wrap in update mode:
    ```
    Ending the sparring session.

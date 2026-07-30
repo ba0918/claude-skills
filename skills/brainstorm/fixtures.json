@@ -151,6 +151,43 @@
         }
       ],
       "notes": "CONVERGED exit contract での spec 生成フロー（#185 A1-A5）を固定する。spec パスの idea memo への永続化と人間ゲートの存在を検証する。プロンプトに承認指示を含めることで interactive パスを通す。"
+    },
+    {
+      "id": "bs-005",
+      "title": "Pre-wrap self-review — placeholder and ambiguity detection before exit",
+      "source": "manual:issue-186",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# cachelib\n\nキャッシュライブラリ。\n",
+          "src/cache.py": "\"\"\"Simple cache module.\"\"\"\n_store: dict = {}\n\ndef get(key): return _store.get(key)\ndef put(key, value): _store[key] = value\n"
+        }
+      },
+      "prompt": "これまでの会話で以下の壁打ちセッションを行った:\n\n---\n【テーマ】キャッシュの TTL 機能追加\n【ユーザー】キャッシュに TTL を付けたい\n【Claude】TTL の粒度は? アイテム単位? グローバル?\n【ユーザー】アイテム単位。put(key, value, ttl) で\n【Claude】TTL の単位は? 秒? ミリ秒?\n【ユーザー】秒でいい\n【Claude】期限切れアイテムの削除タイミングは? get 時の遅延削除 vs バックグラウンド掃除\n【ユーザー】パフォーマンスのいい方で。あとで決める\n【Claude】データ構造は? heapq で期限順管理が定番\n【ユーザー】シンプルな実装でいい\n---\n\nこの壁打ちを wrap して。",
+      "requirements": [
+        {
+          "text": "wrap 指示に対して即座に Wrap Workflow に入らず、pre-wrap self-review が実行されている（🔍 に相当する review 出力がある）",
+          "critical": true
+        },
+        {
+          "text": "self-review で「期限切れ削除タイミングが未決定（後で決める）」に相当するプレースホルダーまたは未決定項目が検出されている",
+          "critical": true
+        },
+        {
+          "text": "self-review で「パフォーマンスのいい方」「シンプルな実装」に相当する曖昧な表現が検出されている",
+          "critical": true
+        },
+        {
+          "text": "review 結果の提示後、wrap を即座に実行せず、ユーザーに項目の解決か wrap 続行かの選択が提示されている",
+          "critical": false
+        },
+        {
+          "text": "ファイルの作成・編集が発生していない（セッションワークフローの編集ゼロ制約が維持されている）",
+          "critical": false
+        }
+      ],
+      "notes": "Self-review の pre-wrap gate (#186) を固定する。意図的にプレースホルダー（「あとで決める」）と曖昧表現（「パフォーマンスのいい方」「シンプルな実装」）を含む会話を渡し、検出されることを検証する。"
     }
   ]
 }

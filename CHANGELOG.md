@@ -10,6 +10,14 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Added: brainstorm セッション中の pre-wrap self-review (#186)
+
+- Session Workflow の wrap ゲートに、4 項目のインライン self-review を追加
+  (placeholder scan / internal contradictions / scope deviation / ambiguity check)
+- review で問題が見つかった場合はセッションに留まり、議論で解決してから wrap に進む
+- ユーザーは review 結果を確認した上で wrap を再指示すればスキップ可能
+- Resume Workflow でも同じ self-review が適用される
+
 ### Breaking: brainstorm 起点のワークフロー再設計 (#183)
 
 `plan → plan-refine → plan-review → 承認 → cycle` フローを `brainstorm → ledger → plan → cycle` に
