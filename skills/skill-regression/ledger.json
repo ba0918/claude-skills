@@ -363,7 +363,7 @@
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "484ae5f5cee5e3c9cea8bbc30b75548a6999e8e87c86c666ccf0ab95c4f2cabc",
+      "skills/plan/SKILL.md": "b4b205448aac912b9582e893fc225ef7ad23131b0d510a5ca422fdbbc24a3de4",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
       "skills/plan/references/plan-template.md": "32c7577770c228221aa6a07045acd1f6d647fb99eee90027db453b6bd97712f5",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
@@ -373,7 +373,7 @@
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "#183: Spec reference field added to plan-template (optional field, no behavioral change to existing plans)",
+    "note": "#183: human-readable plan policy added to description and notes (no template structural change)",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan/SKILL.md",
@@ -386,7 +386,7 @@
       "skills/shared/references/execution-context.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "4cbdeb3a5ebda669a6f24ed27a12a57378f9f7a9868a01b6df4461c522b55d97",
+    "surface_sha256": "a55910c09d285167fc818ea8d05cedbbec89b6219a53781135f774e227622e0c",
     "verified": "2026-07-31"
   },
   "plan-implement": {

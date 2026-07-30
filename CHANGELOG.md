@@ -40,9 +40,12 @@ claude-skills プラグインのバージョン履歴。
 #### 予約（follow-up で実装）
 
 - **plan-template に Spec 参照フィールドを予約**: `**Spec:** {path}` を plan ヘッダに追加可能にした。
-  brainstorm → human-readable spec（docs/spec/、ドメイン単位）+ LLM-consumable plan の 2 層分離を
-  follow-up で実装する予定。judge (Fable 5) 裁定: D（confidence: high）— 1 ファイル 2 読者は
-  儀式化の再発形のため、分離が構造的に正しい
+  brainstorm → human-readable spec（docs/spec/、ドメイン単位）+ human-readable plan の 2 層を
+  follow-up (#185) で実装する予定
+- **plan の human-readable 方針を明記**: spec も plan も人間が読める形式で書く。
+  Progress テーブル（実行状態）は plan から分離し cycle がランタイム管理する方向（#185 で実装）。
+  judge (Fable 5) 裁定: D-2（confidence: high）— plan テンプレートの現物は既にほぼ human-readable で、
+  LLM-first 構造は Progress の 3 行のみ。「LLM-first でなければならない」前提が現物と乖離していた
 
 #### 参照更新
 
