@@ -201,14 +201,14 @@
           "src/order.py": "\"\"\"Order module.\"\"\"\n\ndef create_order(items):\n    return {\"items\": items, \"status\": \"pending\"}\n"
         }
       },
-      "prompt": "これまでの会話で以下の壁打ちセッションを行った:\n\n---\n【テーマ】注文のバリデーションルール設計\n【ユーザー】注文の合計金額にバリデーションを入れたい\n【Claude】上限? 下限? 両方?\n【ユーザー】上限は 100 万円。1 注文あたり\n【Claude】下限は?\n【ユーザー】下限なし。0 円注文も許可\n【Claude】0 円注文を許可する理由は?\n【ユーザー】サンプル品の無料配布に使う\n【Claude】在庫管理との整合性は? 0 円でも在庫は引く?\n【ユーザー】在庫は引く。あと、決済画面のUI改善もやりたい。ボタンの色を変えたい\n【Claude】UI の話は別テーマでは?\n【ユーザー】そうだけどまあついでに。で、上限は 50 万円にしたい。100 万は高すぎる\n---\n\nこの壁打ちを wrap して。",
+      "prompt": "これまでの会話で以下の壁打ちセッションを行った:\n\n---\n【テーマ】注文のバリデーションルール設計\n【ユーザー】注文の合計金額に上限 100 万円のバリデーションを入れたい\n【Claude】上限 100 万円、下限は?\n【ユーザー】下限なし。0 円注文も許可\n【Claude】0 円注文を許可する理由は?\n【ユーザー】サンプル品の無料配布に使う\n【Claude】バリデーションエラー時のメッセージは?\n【ユーザー】「上限の 50 万円を超えています」と表示する\n【Claude】先ほど上限は 100 万円とのことでしたが、エラーメッセージでは 50 万円になっています\n【ユーザー】あ、そうか。一旦それは置いといて。注文一覧の検索機能も一緒に作りたいんだけど、フリーテキスト検索がいい\n---\n\nこの壁打ちを wrap して。",
       "requirements": [
         {
-          "text": "self-review で上限金額の矛盾（100 万円と 50 万円の両方が言及されている）が内部矛盾として検出されている",
+          "text": "self-review で上限金額の矛盾（バリデーション上限 100 万円 vs エラーメッセージの 50 万円が未解決のまま放置されている）が内部矛盾として検出されている",
           "critical": true
         },
         {
-          "text": "self-review で決済画面の UI 改善がテーマ「注文のバリデーションルール設計」からのスコープ逸脱として検出されている",
+          "text": "self-review で注文一覧の検索機能がテーマ「注文のバリデーションルール設計」からのスコープ逸脱として検出されている（ユーザーは逸脱を認識も承認もしていない）",
           "critical": true
         },
         {
@@ -220,7 +220,7 @@
           "critical": false
         }
       ],
-      "notes": "Self-review の内部矛盾検出（上限金額の二重定義）とスコープ逸脱検出（UI 改善の脱線）を固定する。bs-005 と合わせて 4 カテゴリ全てのカバレッジを確保する。"
+      "notes": "Self-review の内部矛盾検出とスコープ逸脱検出を固定する。矛盾は指摘後に「一旦それは置いといて」と放置された未解決の二重定義（100万 vs 50万）。スコープ逸脱は explicit acknowledgment なしの脱線（検索機能の話題）。bs-005 と合わせて 4 カテゴリ全てのカバレッジを確保する。"
     },
     {
       "id": "bs-007",
@@ -233,10 +233,10 @@
           "CLAUDE.md": "# notifyapp\n\n通知配信ツール。\n"
         }
       },
-      "prompt": "これまでの会話で以下の壁打ちセッションを行った:\n\n---\n【テーマ】通知のリトライ戦略\n【ユーザー】通知の送信が失敗したときのリトライ戦略を決めたい\n【Claude】リトライ回数と間隔は?\n【ユーザー】3 回まで。間隔は指数バックオフ\n【Claude】初回間隔と最大間隔は?\n【ユーザー】うーん、あとで決める\n【Claude】リトライ対象のエラー種別は? ネットワーク系のみ? アプリケーションエラーも?\n【ユーザー】全部リトライする\n---\n\nこの壁打ちを wrap して。\n\n---\n\n前回の wrap 指示に対して self-review が実行され、以下の指摘があった:\n- ⚠️ Placeholder: リトライ間隔の初回・最大値が未決定\n- ⚠️ Ambiguity: 「全部リトライする」が曖昧（4xx も含むか不明）\n\nこれらは解決せず、強制 wrap する。wrap! で。",
+      "prompt": "これまでの会話で以下の壁打ちセッションを行った:\n\n---\n【テーマ】通知のリトライ戦略\n【ユーザー】通知の送信が失敗したときのリトライ戦略を決めたい\n【Claude】リトライ回数と間隔は?\n【ユーザー】3 回まで。間隔は指数バックオフ\n【Claude】初回間隔と最大間隔は?\n【ユーザー】うーん、あとで決める\n【Claude】リトライ対象のエラー種別は? ネットワーク系のみ? アプリケーションエラーも?\n【ユーザー】全部リトライする\n---\n\nこの壁打ちを wrap して。\n\n---\n\n前回の wrap 指示に対して self-review が実行され、以下の指摘があった:\n- ⚠️ Placeholder: リトライ間隔の初回・最大値が未決定\n- ⚠️ Ambiguity: 「全部リトライする」が曖昧（4xx も含むか不明）\n\nこれらは解決せず、強制 wrap する。wrap! で。\n\nセッション終了後、そのまま brainstorm-wrap を実行してメモに整理して。タイトルは「通知リトライ戦略」で確定。サマリーは会話から適切にまとめて。",
       "requirements": [
         {
-          "text": "force exit（wrap!）が認識され、セッションが終了している（Wrap Workflow への誘導メッセージがある）",
+          "text": "force exit（wrap!）が認識され、セッションが終了している",
           "critical": true
         },
         {
@@ -244,15 +244,19 @@
           "critical": true
         },
         {
-          "text": "未解決項目が blocking undecided items として Wrap Workflow に引き渡される旨が明示されている",
+          "text": "Wrap Workflow が実行され、idea memo の exit contract に Undecided Items として未解決項目（リトライ間隔の未決定・リトライ対象の曖昧性に相当する内容）が blocks_plan: true で記録されている",
           "critical": true
         },
         {
-          "text": "ファイルの作成・編集が発生していない（セッションワークフローの編集ゼロ制約が維持されている）",
+          "text": "exit contract の Exit Status が BLOCKED になっている",
+          "critical": true
+        },
+        {
+          "text": "完了メッセージに 🚧 Exit contract: BLOCKED に相当する表示がある",
           "critical": false
         }
       ],
-      "notes": "Force exit 経路（#186 レビュー指摘 1）を固定する。未解決の review 項目が exit message に列挙され、Wrap Workflow に引き渡されることで exit contract が BLOCKED になる契約を検証する。プロンプトに前回の self-review 結果を含めることで multi-turn の状態遷移をシミュレートする。"
+      "notes": "Force exit → Wrap Workflow → BLOCKED exit contract の end-to-end 経路を固定する。プロンプトに前回の self-review 結果を含めて multi-turn の状態遷移をシミュレートし、wrap まで実行させることで exit contract の最終状態（BLOCKED + Undecided Items with blocks_plan: true）を検証する。"
     }
   ]
 }

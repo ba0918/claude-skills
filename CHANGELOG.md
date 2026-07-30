@@ -15,7 +15,9 @@ claude-skills プラグインのバージョン履歴。
 - Session Workflow の wrap ゲートに、4 項目のインライン self-review を追加
   (placeholder scan / internal contradictions / scope deviation / ambiguity check)
 - review で問題が見つかった場合はセッションに留まり、議論で解決してから wrap に進む
-- ユーザーは review 結果を確認した上で wrap を再指示すればスキップ可能
+- wrap のたびに毎回再レビューを実行し、議論で生じた新たな問題も検出する
+- 未解決のまま終了する場合は `wrap!` / `wrap --force` で force exit し、
+  未解決項目は exit contract の Undecided Items (blocks_plan: true) に反映される
 - Resume Workflow でも同じ self-review が適用される
 
 ### Breaking: brainstorm 起点のワークフロー再設計 (#183)
