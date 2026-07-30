@@ -37,6 +37,13 @@ claude-skills プラグインのバージョン履歴。
 - **brainstorm**: 「壁打ち専用」→「仕様・設計判断のエントリポイント」に拡張。
   出口契約 + routing による下流スキルへの振り分けを追加
 
+#### 予約（follow-up で実装）
+
+- **plan-template に Spec 参照フィールドを予約**: `**Spec:** {path}` を plan ヘッダに追加可能にした。
+  brainstorm → human-readable spec（docs/spec/、ドメイン単位）+ LLM-consumable plan の 2 層分離を
+  follow-up で実装する予定。judge (Fable 5) 裁定: D（confidence: high）— 1 ファイル 2 読者は
+  儀式化の再発形のため、分離が構造的に正しい
+
 #### 参照更新
 
 - `skills/shared/references/orchestration-patterns.md`: plan-refine 参照を除去

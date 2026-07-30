@@ -87,6 +87,9 @@ State every inferred item explicitly in the final response, in a form the user c
 **Optional `Issue` field:**
 When creating a plan from an issue (via `issue-plan` or `issue-cycle`), add `**Issue:** {issue_slug}` to the plan header. This field is used by `cycle` to auto-close the issue upon completion. If the plan is not issue-originated, omit this line.
 
+**Optional `Spec` field:**
+When a domain spec exists in `docs/spec/`, add `**Spec:** {path}` to the plan header. The plan references the spec but does not copy its content. The spec is the human-readable source of truth for what to build; the plan is the LLM-consumable instruction for how to build it. If no spec exists yet, omit this line.
+
 ### Phase 4: Update Status Tracker
 
 Read existing `.agents/artifacts/status.md` if it exists.
