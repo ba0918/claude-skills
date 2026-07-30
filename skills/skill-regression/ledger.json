@@ -1,25 +1,27 @@
 {
   "brainstorm": {
     "file_sha256": {
-      "skills/brainstorm/SKILL.md": "c22308e7f25bbacb7bc1753af0f276be72a6aeaabd8e8cb7de1676a43d68d7da",
+      "skills/brainstorm/SKILL.md": "09f21aead45e4689901cea4a25f5d9b293d58072781e7123a7068b7d443bc506",
       "skills/brainstorm/fixtures.json": "5c6c040e48d3a0023e50a20a63ebc7ebff7e75c484d242a4d84db46523a32254",
-      "skills/brainstorm/references/idea-template.md": "6c5bd8a88f69f97cd4e42fe00bb86bedf25060ee0f2227902d96bea51ef61b21",
+      "skills/brainstorm/references/exit-contract-template.md": "ae4423b47c984daba463e4768f48435fc848ce009b466556de80370fcb5de940",
+      "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
+    "note": "Codex review fix: exit-contract-template unified as fill guide for idea-template embedded form",
     "result": "accepted-without-run",
     "surface": [
       "skills/brainstorm/SKILL.md",
       "skills/brainstorm/fixtures.json",
+      "skills/brainstorm/references/exit-contract-template.md",
       "skills/brainstorm/references/idea-template.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "83ac2eccc6b96743c64791016376c53af610ab1e6a6bc206e4f1131d345ad72d",
-    "verified": "2026-07-29"
+    "surface_sha256": "7de1c0ae02398471baea672f82916567eb34bacbca593264ca3a2c6a82cb5c86",
+    "verified": "2026-07-31"
   },
   "brief": {
     "file_sha256": {
@@ -85,12 +87,12 @@
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
-      "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
+      "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/scripts/frontmatter.py": "3c6d76a04346f1b2251d39b005f526073981a3425ce9fabc7523d99a791fedb8",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "execution-context.md contract link added; no behavioral change, existing headless definitions replaced with shared contract reference",
+    "note": "Opus 5 review fix: severity-and-verdicts.md plan review verdicts → implementation review verdicts (no impact on context-audit)",
     "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/SKILL.md",
@@ -110,21 +112,21 @@
       "skills/shared/scripts/frontmatter.py",
       "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "940d74e3eee491b4250549deb741ce67cd4070113df33817a336785b27e5440e",
-    "verified": "2026-07-29"
+    "surface_sha256": "9eb614c5baf4d8fd5949f313aeac06e7cbb241c491d7785757dfd21b7ad4c620",
+    "verified": "2026-07-31"
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "ec4bd5087a887efc11db5758e7df559257882bc6dff44e5859221ceff8ee6efd",
-      "skills/cycle/fixtures.json": "f48830c628f65d6c98b817f7d36eab1f254eb10059e8ea4d40dabc83baa264c2",
+      "skills/cycle/SKILL.md": "8f81a87e20e7bd7c9da81e5ba6983ef2aaa771ac6594f6ffc14f6a054842ac49",
+      "skills/cycle/fixtures.json": "10caeab7449db5dde9d04b60df3cdc657e3a1a2ee26ed37f5fd678460fae1ac1",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
-      "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
+      "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
+    "note": "Opus 5 review fix: stale refine references removed from orchestration-patterns.md",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -136,8 +138,8 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "d18afa1af1492158b322f2f5dd826203d94e12c744bc045baf56ddd358105bb0",
-    "verified": "2026-07-29"
+    "surface_sha256": "49c28b4e24e29a3946f6368fd0732207b5257e609866ceda8f14ea2046c6205d",
+    "verified": "2026-07-31"
   },
   "decision-journal": {
     "file_sha256": {
@@ -297,7 +299,7 @@
   },
   "issue": {
     "file_sha256": {
-      "skills/issue/SKILL.md": "f3d96444845ce5135121383b0306ccd13b304298fc50e24bca3558315f62a58d",
+      "skills/issue/SKILL.md": "985df147ea671eff56bdfade852d3ec3c074b575e0af70e4808c6546c3ff77bc",
       "skills/issue/fixtures.json": "40065f95ee8d35d14806fcc5a922fb9525d75658cac163cd9fc0c8d1ca894ad7",
       "skills/issue/references/issue-template.md": "6c27174d5b7b8c6fa00b66b69d4a90df0c38af36ebf8c3b90fcef78c57a0715f",
       "skills/issue/references/polling-state-machine.md": "7c65e6079934335d3a891e49c798e2a8761ce443dc63b6f1600be21a96131d70",
@@ -308,7 +310,7 @@
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
+    "note": "Opus 5 review fix: Phase 3 → Phase 2 renumber in issue/SKILL.md",
     "result": "accepted-without-run",
     "surface": [
       "skills/issue/SKILL.md",
@@ -322,8 +324,8 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "bd1c265f9f4fbf5d4df24bfc82930444c15437ae9145457a8096d66fc1248d0e",
-    "verified": "2026-07-29"
+    "surface_sha256": "b816cde61912e5819e6ddae8313ba7b48d50109385a456d98bae1c531805c038",
+    "verified": "2026-07-31"
   },
   "iterate": {
     "file_sha256": {
@@ -333,14 +335,14 @@
       "skills/iterate/references/scope-criteria.md": "fc0005c7a886ec6d3b9593bf6e9d6b607a6f4f6e6f000280844cf750de83ea21",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
-      "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
-      "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
+      "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
+      "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
+    "note": "Opus 5 review fix: stale refine references removed from orchestration-patterns.md",
     "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
@@ -356,14 +358,14 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "83c5c0887a069e3bc350963d6419b45d011cca49809a6234f0bb77655cbfbc1f",
-    "verified": "2026-07-29"
+    "surface_sha256": "7f9b4c0b42497636f4f31ceff3c024af3907d96ae4157d751dd6c9958a387e36",
+    "verified": "2026-07-31"
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "7f78baf3af0ab8bcc52d23b23786c5ae809408df2cd1a4b202dd71b161932e85",
+      "skills/plan/SKILL.md": "b4b205448aac912b9582e893fc225ef7ad23131b0d510a5ca422fdbbc24a3de4",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
-      "skills/plan/references/plan-template.md": "da9d788acac062fa621e25279f068b46dd20fb2bef5883ee1dd30d8e5c43a5f9",
+      "skills/plan/references/plan-template.md": "32c7577770c228221aa6a07045acd1f6d647fb99eee90027db453b6bd97712f5",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -371,7 +373,7 @@
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "caller-supplied mode contract added; standalone mode unchanged",
+    "note": "#183: human-readable plan policy added to description and notes (no template structural change)",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan/SKILL.md",
@@ -384,8 +386,8 @@
       "skills/shared/references/execution-context.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "c66562c7aa8cabb513cf63c43f5dcdbc3210b45d78cb536525433fff8785cfe4",
-    "verified": "2026-07-29"
+    "surface_sha256": "a55910c09d285167fc818ea8d05cedbbec89b6219a53781135f774e227622e0c",
+    "verified": "2026-07-31"
   },
   "plan-implement": {
     "file_sha256": {
@@ -393,13 +395,13 @@
       "skills/plan-implement/fixtures.json": "df3955a24dd89ec1437a303946e5e2b10d39072c62cda6a528e40fa632b96fd2",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
-      "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
+      "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "inline status result conditions added; vocabulary unified to status-update-guide (🔵→🟡, Complete→Completed)",
+    "note": "Opus 5 review fix: severity-and-verdicts.md plan review verdicts → implementation review verdicts (plan-implement references the shared verdicts)",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan-implement/SKILL.md",
@@ -412,23 +414,23 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "567204650c0ec03708b07f4ffde7365117efd749fc04680813c6f43da3373d48",
-    "verified": "2026-07-29"
+    "surface_sha256": "d15a3878e21c7f5ef59e33049ba36338b2a8d6d0ac782ee97a5a57b9aa38011a",
+    "verified": "2026-07-31"
   },
   "plan-reviewer": {
     "file_sha256": {
-      "skills/plan-reviewer/SKILL.md": "5f2656d2ef54fd5ed8627d31d4ab197c23f8b19fbde4edb5807d6596509ff945",
-      "skills/plan-reviewer/fixtures.json": "551e9f86884b8913ac0c80f9daf1f0621d9cd6b5888b86be5f38da4a21278773",
-      "skills/plan-reviewer/references/output-format.md": "3140912a79e485dc23545b99335b1e581863a3d28df2694b8b4ed8e22f1d0230",
-      "skills/plan-reviewer/references/review-dimensions.md": "481e0cbbb7882e9a626a63600840a370ec8b4172c8810e1e3a4defb6979cca01",
+      "skills/plan-reviewer/SKILL.md": "df95dea6b1300ffaae9b8fd37a5ce70a2713f4708fb82517e55e657f8651aad8",
+      "skills/plan-reviewer/fixtures.json": "2cc32f3bd853aa54ec6c192d4fb3f7467e64fa429bc47200363b61865f939b0e",
+      "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
+      "skills/plan-reviewer/references/review-dimensions.md": "326db4f76dda4577fdea158b4967c0aefc9fe9fe7cd2569321e3d078e35c033c",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
-      "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
-      "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd"
+      "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
+      "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88"
     },
-    "note": "文言修正のみ（repository-relative → store-relative 等）。挙動変更なし。#161",
-    "result": "accepted-without-run",
+    "note": "Sonnet 5 sequential executor, both pr-001/pr-002 all critical ○, no external status queries, baseline hashes verified",
+    "result": "pass",
     "surface": [
       "skills/plan-reviewer/SKILL.md",
       "skills/plan-reviewer/fixtures.json",
@@ -440,8 +442,8 @@
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md"
     ],
-    "surface_sha256": "a73978c074119bc89780a06cc7b9bba7c6d31b9896edf8090dc28908d60c0cce",
-    "verified": "2026-07-29"
+    "surface_sha256": "ee2194704392e808687bf4d1a1644544939e5fd68fd3e60280154ae539652c22",
+    "verified": "2026-07-31"
   },
   "problem-solving": {
     "file_sha256": {
@@ -466,11 +468,11 @@
       "skills/refactor/references/similarity-detection.md": "a4ef8d314ff0bbeb89126d469eb1c3564b045dec08c4abfed9801ed258f6af33",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
-      "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
-      "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
+      "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
+      "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "execution-context.md contract link added; no behavioral change, existing headless definitions replaced with shared contract reference",
+    "note": "Opus 5 review fix: stale refine references removed from orchestration-patterns.md",
     "result": "accepted-without-run",
     "surface": [
       "skills/refactor/SKILL.md",
@@ -484,21 +486,21 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "18af519db733ff02fb6c0a4c1d9318109c7a2077b82fb2ddd0c647217a45f045",
-    "verified": "2026-07-29"
+    "surface_sha256": "469c3b2850f237ced4914bb1145e2c8ef2eb3b884e4892d62d2815370c4df73e",
+    "verified": "2026-07-31"
   },
   "sweep-fix": {
     "file_sha256": {
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
-      "skills/shared/references/orchestration-patterns.md": "413827d02b700d19ec530e4a3c4fcdd3eaa45c26054c97fa88a39dcc4c5e021b",
-      "skills/shared/references/severity-and-verdicts.md": "acbc1f04a85fc0f4b6273d9d66ef82550bf1de40c57b841ccdf6dceec05c7dfd",
+      "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
+      "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/sweep-fix/SKILL.md": "03c5f2beedfef324c844c8fa06eaed3d1d672fef9d6a103c00593d7d7b07c465",
       "skills/sweep-fix/fixtures.json": "5406b7dba570b6294cdd9e978fc618eb2fa8c0e504ef014438853e37d0338b88",
       "skills/sweep-fix/references/context-verification.md": "1e835b97a51ea34723c6b20f23a16b0c3e690a32316208dd0a1ec91c50b07104",
       "skills/sweep-fix/references/pattern-extraction.md": "9f4c15f68c82b80c7d97ee28010270f6adbd65266bf7df1ca980f7871364ffa8"
     },
-    "note": "boundary clarification and early-exit guidance added; no behavioral change to fix flow",
+    "note": "Opus 5 review fix: stale refine references removed from orchestration-patterns.md",
     "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/execution-context.md",
@@ -510,8 +512,8 @@
       "skills/sweep-fix/references/context-verification.md",
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
-    "surface_sha256": "d3adbe53dbb76569a152b98d1617b9d68b7b3654f8f08fb9f049da85120d7e43",
-    "verified": "2026-07-29"
+    "surface_sha256": "71759d95fbf55fc2991f1d57edd1e54b0154aa61f762919733563a78059de624",
+    "verified": "2026-07-31"
   },
   "systematic-debugging": {
     "file_sha256": {

@@ -8,6 +8,56 @@ claude-skills プラグインのバージョン履歴。
 `.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## Unreleased
+
+### Breaking: brainstorm 起点のワークフロー再設計 (#183)
+
+`plan → plan-refine → plan-review → 承認 → cycle` フローを `brainstorm → ledger → plan → cycle` に
+置き換える破壊的変更。判断を brainstorm に前倒しし、合意を役割で分離して永続化する。
+
+#### 廃止
+
+- **plan-refine スキルを廃止**: `skills/plan-refine/` ディレクトリごと削除。`commands/plan-refine.md` も削除
+- cycle から Phase 1 (Refine) と Phase 1.5 (BLOCK fallback) を除去。旧 Phase 2 → 新 Phase 1、旧 Phase 3 → 新 Phase 2 にリナンバ
+
+#### 新機能
+
+- **brainstorm 出口契約**: wrap ワークフローにセッションの合意を構造化する出口契約を追加。
+  決定事項・未決事項・受入条件・コードベース証拠・routing を構造化して出力する。
+  `references/exit-contract-template.md` を新設
+- **brainstorm routing**: 出口契約が CONVERGED なら plan 作成可能、BLOCKED なら plan 化を阻止
+- **plan-reviewer 差し戻し規則**: 「AGREED 行または clause の変更を要するか」で判定し、
+  仕様不足は brainstorm へ差し戻し、局所バグは実装修正に留める
+
+#### 役割変更
+
+- **plan-reviewer**: 「plan 事前ゲート」→「実装レビュー」に変更。7 観点を実装レビュー用に再設計
+  （Feasibility → Correctness、Alternatives → Spec Conformance）。ESCALATE verdict を追加
+- **plan**: 「提案文書」→「合意済みの実装手順書」に性質変更。承認フロー関連の記述を除去
+- **brainstorm**: 「壁打ち専用」→「仕様・設計判断のエントリポイント」に拡張。
+  出口契約 + routing による下流スキルへの振り分けを追加
+
+#### 予約（follow-up で実装）
+
+- **plan-template に Spec 参照フィールドを予約**: `**Spec:** {path}` を plan ヘッダに追加可能にした。
+  brainstorm → human-readable spec（docs/spec/、ドメイン単位）+ human-readable plan の 2 層を
+  follow-up (#185) で実装する予定
+- **plan の human-readable 方針を明記**: spec も plan も人間が読める形式で書く。
+  Progress テーブル（実行状態）は plan から分離し cycle がランタイム管理する方向（#185 で実装）。
+  judge (Fable 5) 裁定: D-2（confidence: high）— plan テンプレートの現物は既にほぼ human-readable で、
+  LLM-first 構造は Progress の 3 行のみ。「LLM-first でなければならない」前提が現物と乖離していた
+
+#### 参照更新
+
+- `skills/shared/references/orchestration-patterns.md`: plan-refine 参照を除去
+- `README.md`: Core にbrainstorm を先頭配置、plan-refine 行を削除、フロー説明を更新
+- `commands/brainstorm-plan.md`, `commands/brainstorm-cycle.md`: description 更新
+- `skills/cycle/fixtures.json`: refine 関連の要件チェックを除去・リナンバ
+- `skills/plan-reviewer/fixtures.json`: 新しい観点名に合わせて更新
+- `skills/plan-reviewer/references/review-dimensions.md`: 実装レビュー用に再設計
+- `skills/plan-reviewer/references/output-format.md`: ESCALATE verdict 追加、dimension 名更新
+- `skills/shared/scripts/test_step3_skill_integration.py`: plan-refine 参照テストを更新
+
 ## 1.72.0
 
 共有契約 2 本（output-language / execution-context）の新設と、既存スキルの仕様欠落 3 件の

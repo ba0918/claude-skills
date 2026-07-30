@@ -4,6 +4,7 @@
 **Started:** {YYYY-MM-DD HH:MM:SS}
 **Status:** 🟡 Planning
 **Issue:** _{issue_slug or remove this line if not from an issue}_
+**Spec:** _{path to domain spec in docs/spec/, or remove this line if no spec exists yet}_
 
 ---
 

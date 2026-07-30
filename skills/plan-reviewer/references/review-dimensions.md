@@ -1,4 +1,4 @@
-# Review Dimensions - Plan Reviewer
+# Review Dimensions - Implementation Reviewer
 
 Detailed checklists and scoring criteria for 7 review dimensions.
 Language and framework agnostic. Add project-specific perspectives via `.agents/config/review-rules.md`.
@@ -12,11 +12,11 @@ don't have to guess.
 
 | Score anchor | Inside a range | Meaning |
 |---|---|---|
-| **90–100** | BLOCK, ceiling | At least one critical issue that makes the plan unsafe to implement as-is (exploit, data loss, clearly unrunnable, missing test plan entirely). |
+| **90–100** | BLOCK, ceiling | At least one critical issue (exploit, data loss, logic error causing wrong output, missing critical test). |
 | **80–89** | BLOCK, floor | One critical issue **or** two important issues stacking. Still must-fix. |
 | **65–79** | WARN, ceiling | One important issue **or** multiple minor issues pointing to the same weakness. Recommend fix but not blocking. |
 | **50–64** | WARN, floor | Room for improvement visible (one important issue, or a cluster of minors). |
-| **25–49** | PASS, ceiling | Only minor / cosmetic issues, plan is sound. |
+| **25–49** | PASS, ceiling | Only minor / cosmetic issues, implementation is sound. |
 | **0–24** | PASS, floor | No issues found; this dimension is exemplary. |
 
 Rules:
@@ -31,38 +31,44 @@ Rules:
    a PASS-ceiling score just to look conservative — that obscures which dimensions were
    actually clean.
 
+## Escalation classification
+
+Every finding must be classified before scoring:
+- **Local fix**: The finding can be resolved by changing implementation code without modifying any AGREED ledger row or clause.
+- **Spec escalation**: Resolving the finding requires changing an AGREED ledger row or a clause. These findings are reported but not fixable within the review — they require brainstorm re-agreement.
+
 ## Table of Contents
 
-1. [Feasibility](#1-feasibility)
+1. [Correctness](#1-correctness)
 2. [Security](#2-security)
 3. [Performance & Memory](#3-performance--memory)
 4. [Architecture & Design](#4-architecture--design)
 5. [Completeness](#5-completeness)
-6. [Alternatives](#6-alternatives)
+6. [Spec Conformance](#6-spec-conformance)
 7. [UI/UX](#7-uiux)
 
 ---
 
-## 1. Feasibility
+## 1. Correctness
 
-Whether the plan is technically feasible and can be implemented at a reasonable cost.
+Whether the implementation is logically correct and produces the expected behavior.
 
 ### Checklist
 
-- [ ] Affected files exist and specified line numbers are correct (verify against actual code)
-- [ ] APIs/libraries used actually exist and have the interfaces described in the plan
-- [ ] Implementation environment constraints (runtime limitations, platform compatibility, etc.) are satisfied
-- [ ] Effort estimates are reasonable (no significant over/under-estimation)
-- [ ] Dependencies can be implemented in the correct order
-- [ ] Impact on existing tests has been considered
+- [ ] Logic errors: conditionals, loops, and branches produce the correct results
+- [ ] Edge cases: empty input, boundary values, null/undefined, Unicode are handled
+- [ ] Error handling: exceptions are caught appropriately, error paths are correct
+- [ ] Return values: functions return the documented types and values
+- [ ] State management: mutable state is updated consistently
+- [ ] Tests: test assertions match the expected behavior, not the implementation details
 
 ### Confidence Score Criteria
 
 | Score | Condition |
 |-------|-----------|
-| 80-100 | Use of non-existent APIs, impossible implementation methods, critical environment constraint oversight |
-| 50-79 | Line number discrepancies, significant effort estimate deviation, unclear implementation steps |
-| 0-49 | Minor issues only, feasible |
+| 80-100 | Logic error producing wrong output, unhandled exception on common path, test asserting wrong expected value |
+| 50-79 | Edge case missed, error handling incomplete, assertion on implementation detail |
+| 0-49 | Implementation is correct |
 
 ---
 
@@ -142,56 +148,56 @@ Conformance with project architecture principles and design guidelines.
 
 ## 5. Completeness
 
-Whether all necessary items are included in the plan.
+Whether all required items are implemented.
 
 ### Checklist
 
+- [ ] All plan steps are marked complete with evidence
 - [ ] Error handling: Appropriate fallbacks for all failure paths
-- [ ] Edge cases: Empty input, large input, invalid input, Unicode, multibyte characters
+- [ ] Edge cases: Empty input, large input, invalid input are handled
 - [ ] Backward compatibility: Compatibility with existing config/data/APIs is maintained
-- [ ] **Bidirectional purpose trace**: Does the plan state both the higher purpose ("what is this for?") and the success criteria ("what is true when it's done?")? A plan that only traces upward (abstract justification) or only downward (task list) is incomplete.
-- [ ] Test plan: Tests are planned for each change
-- [ ] Rollback capability: Can be safely reverted if issues arise
+- [ ] Test coverage: Tests exist for each implemented change
 - [ ] Resource cleanup: Release of acquired resources is guaranteed
-- [ ] Documentation updates: Config files, APIs, architecture docs, etc. need updating
+- [ ] Documentation updates: Config files, APIs, architecture docs updated if needed
 
 ### Confidence Score Criteria
 
 | Score | Condition |
 |-------|-----------|
-| 80-100 | No test plan, critical edge case oversight, missing error handling |
-| 50-79 | Some edge case gaps, documentation update gaps |
+| 80-100 | Plan steps not implemented, no tests, critical edge case missed |
+| 50-79 | Some edge case gaps, incomplete test coverage |
 | 0-49 | Sufficiently comprehensive |
 
 ---
 
-## 6. Alternatives
+## 6. Spec Conformance
 
-Whether better alternative approaches exist compared to the proposed implementation.
+Whether the implementation conforms to the agreed specification (ledger AGREED rows, clauses, acceptance criteria from the brainstorm exit contract).
 
 ### Checklist
 
-- [ ] **Technical gravity check**: Can the problem the plan solves be explained without naming the chosen technology? If removing the technology name makes the problem statement empty, the plan may be solving for a tool rather than a user need.
-- [ ] Is there a simpler way to achieve the same goal?
-- [ ] Can standard library alternatives be used (avoid reinventing the wheel)?
-- [ ] Can existing libraries/utilities be leveraged?
-- [ ] Is the design future-extensible?
-- [ ] Is the performance vs. code complexity tradeoff reasonable?
+- [ ] Each acceptance criterion from the plan/exit contract is satisfied by the implementation
+- [ ] No implementation goes beyond the agreed scope (scope creep)
+- [ ] Implementation choices are consistent with AGREED ledger decisions (when a ledger exists)
+- [ ] Verifiable clauses (when they exist) are satisfied by the tests
+- [ ] Deviations from the plan are justified and documented in commit messages
 
 ### Confidence Score Criteria
 
 | Score | Condition |
 |-------|-----------|
-| 80-100 | Planning a complex implementation when standard library can solve it concisely, OR the problem cannot be stated at all without the chosen technology (technical gravity — the plan has no user-facing problem definition) |
-| 50-79 | A better approach exists, but the planned approach would also work. Includes plans where the problem is stated but the technology choice drives the framing |
-| 0-49 | Optimal approach |
+| 80-100 | Acceptance criterion not met, implementation contradicts an AGREED decision, scope creep introducing unspecified behavior |
+| 50-79 | Partial conformance, minor deviation from spec without documentation |
+| 0-49 | Implementation conforms to specification |
+
+**Note**: Findings in this dimension that indicate the spec itself is insufficient (not just the implementation's adherence to it) should be classified as **spec escalation** per the escalation rule.
 
 ---
 
 ## 7. UI/UX
 
 User-facing output quality, interaction flow design, and information architecture.
-This dimension is triggered conditionally — only when the plan involves changes to user-facing output or interaction patterns.
+This dimension is triggered conditionally — only when the implementation involves changes to user-facing output or interaction patterns.
 
 ### Checklist
 

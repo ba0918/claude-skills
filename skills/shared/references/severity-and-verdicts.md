@@ -29,13 +29,14 @@ plan-reviewer maps a risk score (0-100) onto the bands BLOCK (80-100) / WARN (50
 The labels match the severities but the input is a score. It is an approved dialect whose mapping is
 consistent with this table's meaning ("the high-risk band = BLOCK"); it does not introduce a separate severity system.
 
-## Plan review verdicts
+## Implementation review verdicts
 
 | Verdict | Condition | Action |
 |------|------|-----------|
-| **APPROVED** | No BLOCK. Every problem is resolved | Proceed to the next phase (implementation) |
-| **APPROVED WITH CONCERNS** | No BLOCK. WARN-level residual risk remains | Record the residual risk and proceed to the next phase |
-| **REJECTED** | A BLOCK cannot be resolved. A fundamental design change is required | Stop. Report to the user |
+| **PASS** | No BLOCK, no WARN. Implementation is sound | Proceed |
+| **WARN** | No BLOCK. WARN-level issues remain | Review warnings, fix if necessary |
+| **BLOCK** | Critical implementation issues detected | Fix before proceeding |
+| **ESCALATE** | A finding requires changing an AGREED ledger row or clause | Escalate to brainstorm for re-agreement — the review cannot resolve spec gaps autonomously |
 
 ## Code review verdicts
 

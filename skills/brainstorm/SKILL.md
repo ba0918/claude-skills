@@ -1,13 +1,13 @@
 ---
 name: brainstorm
-description: A skill dedicated to idea sparring. It provides the path from diverging to converging to a plan, and edits no files at all during the session so the discussion stays the focus. Use when the user says "brainstorm", "spar on an idea", "bounce an idea around", or wants to think an idea through out loud.
+description: The entry point for specification and design decisions. Spar on ideas in a file-edit-free session, then wrap to produce an exit contract — structured agreements, undecided items, and acceptance criteria — that routes into ledger, docs, clauses, and plan. Use when the user says "brainstorm", "spar on an idea", "bounce an idea around", or wants to think an idea through out loud.
 ---
 
 # Brainstorm
 
 Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
-A skill dedicated to idea sparring (壁打ち): discussion only — the agent never drifts into implementation. Session outcomes are persisted as idea memos for later reference.
+The entry point for specification and design decisions. Discussion only during the session — the agent never drifts into implementation. On wrap, the session outcomes are structured into an exit contract that routes agreements to their proper destinations (ledger, docs, clauses, plan).
 
 ## Workflow Selection
 
@@ -86,10 +86,17 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
 
 1. Organize the sparring content from the current conversation.
 2. Confirm the title and summary with the user. When interaction is impossible, derive them from the conversation and state that assumption in the completion message.
-3. Ensure `.agents/artifacts/ideas/` exists (`mkdir -p`).
-4. Generate the slug: `yyyymmddhhmmss_{kebab-title}` (`date +%Y%m%d%H%M%S`; kebab-title is a short ASCII translation of the title). If `.agents/artifacts/ideas/{slug}.md` already exists, re-run `date` for a fresh timestamp — overwriting an existing memo is reserved for Wrap after Resume.
-5. Create the memo at `.agents/artifacts/ideas/{slug}.md` from [references/idea-template.md](references/idea-template.md).
-6. Update `.agents/artifacts/ideas/idea-status.md` (create with this header if absent):
+3. **Exit contract judgment**: Determine whether the session produced actionable agreements (decisions with rationale, acceptance criteria, codebase evidence). If yes, generate the exit contract sections in the idea memo (Step 5). If the session was purely exploratory with no convergence, skip the exit contract sections — the memo remains a plain idea memo.
+4. Ensure `.agents/artifacts/ideas/` exists (`mkdir -p`).
+5. Generate the slug: `yyyymmddhhmmss_{kebab-title}` (`date +%Y%m%d%H%M%S`; kebab-title is a short ASCII translation of the title). If `.agents/artifacts/ideas/{slug}.md` already exists, re-run `date` for a fresh timestamp — overwriting an existing memo is reserved for Wrap after Resume.
+6. Create the memo at `.agents/artifacts/ideas/{slug}.md` from [references/idea-template.md](references/idea-template.md). When the exit contract judgment (Step 3) is positive, also populate the exit contract sections per [references/exit-contract-template.md](references/exit-contract-template.md):
+   - **Agreements**: each decision with rationale and destination (ledger)
+   - **Undecided Items**: open questions with `blocks_plan` flag
+   - **Acceptance Criteria**: observable behaviors/constraints with verifiability flag
+   - **Codebase Evidence**: file paths and findings that grounded the discussion
+   - **Routing**: where each piece goes next (ledger / plan / docs / clauses)
+   - **Status**: `CONVERGED` if no blocking undecided items remain; `BLOCKED` otherwise
+7. Update `.agents/artifacts/ideas/idea-status.md` (create with this header if absent):
    ```markdown
    # Idea Status
 
@@ -98,12 +105,13 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
    | Idea | Tags | Created | Status | Summary |
    |------|------|---------|--------|---------|
    ```
-7. Append a row. The link text is the memo's `#` heading title (the human-readable title confirmed in Step 2) — idea-status.md is a derived index and rebuild-index regenerates each row from the memo's `#` heading, so a kebab slug here would flip on every rebuild:
+8. Append a row. The link text is the memo's `#` heading title (the human-readable title confirmed in Step 2) — idea-status.md is a derived index and rebuild-index regenerates each row from the memo's `#` heading, so a kebab slug here would flip on every rebuild:
    ```
-   | [{the idea's # heading title}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | 💡 Idea | {summary} |
+   | [{the idea's # heading title}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | {status_icon} | {summary} |
    ```
-8. Update **Last Updated** to now.
-9. Show the completion message, opening with a summary-first block per the [human-readable summary contract](../shared/references/human-readable-summary.md): state the core of the saved idea in 1–2 plain lines and name the open questions left by the session (or "none"). No verbatim replay or exhaustive lists:
+   Status icon: `💡 Idea` for plain memos, `✅ Converged` for CONVERGED exit contracts, `🚧 Blocked` for BLOCKED exit contracts.
+9. Update **Last Updated** to now.
+10. Show the completion message, opening with a summary-first block per the [human-readable summary contract](../shared/references/human-readable-summary.md): state the core of the saved idea in 1–2 plain lines and name the open questions left by the session (or "none"). No verbatim replay or exhaustive lists:
    ```
    📝 In short: {what the saved idea amounts to, in 1-2 plain lines that reach
       someone who has not read the memo}. Undecided: {the remaining points, or "none"}
@@ -111,6 +119,15 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
    ✅ Idea saved!
    📄 File: .agents/artifacts/ideas/{slug}.md
    📋 Index: .agents/artifacts/ideas/idea-status.md
+   {when exit contract is CONVERGED:}
+   📋 Exit contract: CONVERGED — ready for routing
+      Next: `/claude-skills:brainstorm-plan` to create a plan from the agreements
+      Or manually route agreements to ledger / docs / clauses
+   {when exit contract is BLOCKED:}
+   🚧 Exit contract: BLOCKED — undecided items block plan creation
+      Resume with `/claude-skills:brainstorm-resume` to resolve them
+   {when no exit contract:}
+   💡 No actionable agreements yet — resume or start a new session when ready
    ```
 
 ### Security
@@ -137,26 +154,40 @@ If the sparring content contains sensitive information, confirm with the user be
 3. Read the idea file.
    - **Title source**: the link text in the first column of idea-status.md (= the memo's `#` heading title; Wrap saves it and rebuild-index regenerates with the same value).
    - **Summary source**: the memo's `## Summary` section body.
-4. Run the `claude-skills:plan-create` skill with argument `{Title}: {Summary from idea file}` — plan-create uses $ARGUMENTS verbatim as the What & Why seed.
+   - **Exit contract check**: if the idea file contains a `## Exit Contract` section:
+     - If status is `BLOCKED`: reply "This idea has unresolved blocking items. Run `/claude-skills:brainstorm-resume` to resolve them before creating a plan." and stop.
+     - If status is `CONVERGED`: use the agreements and acceptance criteria as the plan seed (richer than title + summary alone).
+   - If no exit contract section: proceed with title + summary as before (backward compatible).
+4. Run the `claude-skills:plan-create` skill:
+   - **With exit contract**: pass `{Title}: {Agreements summary} — Acceptance criteria: {criteria list}` as the argument.
+   - **Without exit contract**: pass `{Title}: {Summary from idea file}` as the argument.
    - plan-create creates `.agents/artifacts/plans/{new_timestamp}_{kebab-title}.md` (`new_timestamp` is `date +%Y%m%d%H%M%S` at plan-create launch). Keep this path for Steps 4.5 and 7.
    - Suppress plan-create's own completion message — Step 7 is this workflow's single completion message.
 4.5. Optional cycle execution:
    - If `--cycle` is present in the original `$ARGUMENTS`: remove the flag, then run `claude-skills:cycle` with the created plan file path as the argument. Skip Step 7 entirely (cycle produces its own completion log).
    - Otherwise continue to Step 5.
-5. Archive — run only after confirming the plan file from Step 4 exists (move the file **before** updating its Status):
+5. Route agreements (only when exit contract is present):
+   - Display the routing table from the exit contract as guidance for the human:
+     ```
+     ## Routing (from exit contract)
+     | Destination | Items | Action |
+     |-------------|-------|--------|
+     {routing table from exit contract}
+     ```
+   - Routing is guidance, not automatic execution. The human decides which destinations to pursue.
+6. Archive — run only after confirming the plan file from Step 4 exists (move the file **before** updating its Status):
    - Ensure `.agents/artifacts/ideas/archives/` exists (`mkdir -p`).
    - Move `.agents/artifacts/ideas/{slug}.md` to `.agents/artifacts/ideas/archives/{slug}.md`.
    - Delete the row from idea-status.md and update `Last Updated` to today.
-6. In the archived file, change `**Status:** 💡 Idea` to `**Status:** 📋 Planned`.
-7. Show the completion message (`{plan path}` is the path kept from Step 4; `{slug}` is the idea memo's filename stem including its timestamp prefix):
+7. In the archived file, change the status to `**Status:** 📋 Planned`.
+8. Show the completion message (`{plan path}` is the path kept from Step 4; `{slug}` is the idea memo's filename stem including its timestamp prefix):
    ```
    ✅ Created a plan from the idea!
    📄 Plan: {plan path}
    📦 Archived: .agents/artifacts/ideas/archives/{slug}.md
 
    ## Next Steps
-   1. Review the plan with `/plan-review`
-   2. Run the cycle with `/claude-skills:cycle`
+   1. Run the cycle with `/claude-skills:cycle`
    ```
 
 ---
@@ -208,16 +239,21 @@ When Wrap runs after Resume, it **updates the existing memo in place** (same slu
 
 | Status | Meaning |
 |--------|---------|
-| 💡 Idea | Sparred, not yet planned |
+| 💡 Idea | Sparred, no actionable agreements yet |
+| ✅ Converged | Exit contract generated, ready for plan creation |
+| 🚧 Blocked | Exit contract has unresolved blocking items |
 | 📋 Planned | Converted to a plan |
 | 🗑️ Dropped | Abandoned |
 
-## Template
+## Templates
 
 - **Idea memo:** [references/idea-template.md](references/idea-template.md)
+- **Exit contract:** [references/exit-contract-template.md](references/exit-contract-template.md)
 
 ## Notes
 
 - idea-status.md is the index — reading it alone gives the full picture.
 - Plan / Drop both archive the memo (move to archives/ + delete the table row).
 - Keep sensitive information out of sparring memos.
+- The exit contract is optional — exploratory sessions that do not converge on agreements produce a plain idea memo.
+- Specification and design changes require brainstorm consensus. Reviews that find spec gaps escalate back to brainstorm, not to the plan or implementation directly.

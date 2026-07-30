@@ -1,15 +1,5 @@
 ---
-description: "plan-reviewer スキルの入口（plan スキルのワークフローではない）。直近の実装計画を7観点（実現可能性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・代替手法・UI/UX条件付き）で徹底レビューする"
+description: "plan-reviewer スキルの入口。実装成果物を 7 観点（正確性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・仕様適合・UI/UX 条件付き）でレビューし、仕様不足は brainstorm へ差し戻す"
 ---
 
-Artifact paths follow the [Agent Artifact Store contract](../skills/shared/references/artifact-store.md).
-
-`claude-skills:plan-reviewer` スキルを使用して、直近の実装計画をレビューする。
-
-## 手順
-
-1. Skillツールで `claude-skills:plan-reviewer` を起動する
-2. ユーザーの引数 `$ARGUMENTS` にファイルパスがあればそれを対象にする
-3. 引数が空の場合は `.agents/artifacts/plans/` 内の最新の計画ファイルを自動選択する
-4. 7観点（実現可能性・セキュリティ・パフォーマンス/メモリ・アーキテクチャ・網羅性・代替手法・UI/UX条件付き）でレビューを実行する
-5. PASS/WARN/BLOCK の判定結果をユーザーに提示する
+スキル `claude-skills:plan-reviewer` を実行する。引数: `$ARGUMENTS`
