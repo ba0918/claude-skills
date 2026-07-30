@@ -2,7 +2,7 @@
   "brainstorm": {
     "file_sha256": {
       "skills/brainstorm/SKILL.md": "dcbc1f72b1c04e159a56670c574a8b02a5ff032138bbd73076698ac54d98d437",
-      "skills/brainstorm/fixtures.json": "c7540031f7d55c3bd016f3b451771f6adb4cb8edef1b400d3678cb1e9a7fcd3d",
+      "skills/brainstorm/fixtures.json": "4734d961e6ee327ffa0359b1cc75c5d75695079ab122f06e54c47029588a07d1",
       "skills/brainstorm/references/exit-contract-template.md": "a7249ee0d2d0facfea7887607dcad2ae9b9541c7682f92fc3b9ff2ea1ed0370e",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
       "skills/brainstorm/references/spec-generation.md": "23150f03b3e7d4b8c5688320df66efafe785c758869fa9bb494ee682fcd9b42c",
@@ -10,8 +10,8 @@
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "Added Spec row to exit-contract-template Routing",
-    "result": "accepted-without-run",
+    "note": "bs-004 fixture updated to interactive path, removed headless contradiction",
+    "result": "pass",
     "surface": [
       "skills/brainstorm/SKILL.md",
       "skills/brainstorm/fixtures.json",
@@ -22,7 +22,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "46fcad2c46398128c94f269606ac7b9c8c1f2802c0beb1ac57f806e74f175a5d",
+    "surface_sha256": "18a60609463a07e212fe356fa13e272a7b459430ee3eab9cdd26a47f29bd3b4e",
     "verified": "2026-07-31"
   },
   "brief": {
@@ -367,7 +367,7 @@
     "file_sha256": {
       "skills/plan/SKILL.md": "f297abf33271df2c04467ba426afe0027251de1b8cb521e5ef2052742b82877c",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
-      "skills/plan/references/plan-template.md": "7ac2506290636ffaef6178f92413e89b6ab3c3ba1f3c8f372102123e62100e2f",
+      "skills/plan/references/plan-template.md": "ded55b2eac510e7c08f04886bb2f0d66d2035e13563e4f7fac5506b19e28ea42",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -375,8 +375,8 @@
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "Removed duplicate Implementation steps line",
-    "result": "accepted-without-run",
+    "note": "Added Implementation Steps section to template (D-2)",
+    "result": "pass",
     "surface": [
       "skills/plan/SKILL.md",
       "skills/plan/fixtures.json",
@@ -388,12 +388,12 @@
       "skills/shared/references/execution-context.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "4d43b30afe8c9fa4bb257d299f3e4074dbbc37fddd54d0aef4b000ce245a63ca",
+    "surface_sha256": "f7ab40a1a2d39bdeb9f16164812c60647f0b367971ba8ce421edf3b534ec01c4",
     "verified": "2026-07-31"
   },
   "plan-implement": {
     "file_sha256": {
-      "skills/plan-implement/SKILL.md": "79bb8b6151e80dd0fa68e04d0aa5c6e775b8048e9e06f890840628dc6e76edc2",
+      "skills/plan-implement/SKILL.md": "0bc4ea93a0c6de34ea89e0967355fbb58f3df84b705d0279fdba1988a31f5bf3",
       "skills/plan-implement/fixtures.json": "df3955a24dd89ec1437a303946e5e2b10d39072c62cda6a528e40fa632b96fd2",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
@@ -403,8 +403,8 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "Opus 5 review fix: severity-and-verdicts.md plan review verdicts → implementation review verdicts (plan-implement references the shared verdicts)",
-    "result": "accepted-without-run",
+    "note": "D-2: progress tracking moved from plan file to runtime progress file",
+    "result": "pass",
     "surface": [
       "skills/plan-implement/SKILL.md",
       "skills/plan-implement/fixtures.json",
@@ -416,7 +416,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "d15a3878e21c7f5ef59e33049ba36338b2a8d6d0ac782ee97a5a57b9aa38011a",
+    "surface_sha256": "8ddac0e930db3e0265b6f44a88dea4d5e68d6222dedc57169642dcfd70d3881b",
     "verified": "2026-07-31"
   },
   "plan-reviewer": {
