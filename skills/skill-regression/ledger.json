@@ -1,7 +1,7 @@
 {
   "brainstorm": {
     "file_sha256": {
-      "skills/brainstorm/SKILL.md": "f5769a07f13145ea275bbd71af1508bcfc3b964ea565c75af1c3be52d8061d0d",
+      "skills/brainstorm/SKILL.md": "27cf52a0f8a60b2c1609b64ea2d105671ddb79fac37720d838e83ddfbaef6ad7",
       "skills/brainstorm/fixtures.json": "5ab5d3f5bd0267e46c8bdbefc417c1e142583752c01ce785d182167c47e9c27c",
       "skills/brainstorm/references/exit-contract-template.md": "0aa6389f378de90a5613c5dbe4517083ffdb4978e5e7849868c2a2d2a53f5d02",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
@@ -10,7 +10,7 @@
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "R2 review fixes: bs-006 rewritten (genuine contradiction+scope deviation), bs-007 extended to verify BLOCKED exit contract end-to-end, CHANGELOG fixed.",
+    "note": "Wrap Workflow Step 3 updated: force exit unresolved items now trigger exit contract generation even without agreements (Opus 5 review finding).",
     "result": "pass",
     "surface": [
       "skills/brainstorm/SKILL.md",
@@ -22,7 +22,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "d4928180880f68b0dcf7d113a57a3b45636febc23f51261373b550e65171975f",
+    "surface_sha256": "530142a3cb21d554d54d2391e4119bd74c1dd5c549e8fbc1c53c6020ee3ebc7d",
     "verified": "2026-07-31"
   },
   "brief": {
