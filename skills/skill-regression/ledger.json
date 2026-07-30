@@ -3,15 +3,15 @@
     "file_sha256": {
       "skills/brainstorm/SKILL.md": "dcbc1f72b1c04e159a56670c574a8b02a5ff032138bbd73076698ac54d98d437",
       "skills/brainstorm/fixtures.json": "4734d961e6ee327ffa0359b1cc75c5d75695079ab122f06e54c47029588a07d1",
-      "skills/brainstorm/references/exit-contract-template.md": "a7249ee0d2d0facfea7887607dcad2ae9b9541c7682f92fc3b9ff2ea1ed0370e",
+      "skills/brainstorm/references/exit-contract-template.md": "0aa6389f378de90a5613c5dbe4517083ffdb4978e5e7849868c2a2d2a53f5d02",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
       "skills/brainstorm/references/spec-generation.md": "23150f03b3e7d4b8c5688320df66efafe785c758869fa9bb494ee682fcd9b42c",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "bs-004 fixture updated to interactive path, removed headless contradiction",
-    "result": "pass",
+    "note": "Fixed redundant link path in exit-contract-template",
+    "result": "accepted-without-run",
     "surface": [
       "skills/brainstorm/SKILL.md",
       "skills/brainstorm/fixtures.json",
@@ -22,7 +22,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "18a60609463a07e212fe356fa13e272a7b459430ee3eab9cdd26a47f29bd3b4e",
+    "surface_sha256": "df155af7a47ffbe357be1f65b32e27853e6ecf778562bfd3007dff5f18e23e5f",
     "verified": "2026-07-31"
   },
   "brief": {
@@ -393,7 +393,7 @@
   },
   "plan-implement": {
     "file_sha256": {
-      "skills/plan-implement/SKILL.md": "0bc4ea93a0c6de34ea89e0967355fbb58f3df84b705d0279fdba1988a31f5bf3",
+      "skills/plan-implement/SKILL.md": "a437703206e13e37bcb65447325fa160e2068a730d606a4cd02b979bf589536d",
       "skills/plan-implement/fixtures.json": "df3955a24dd89ec1437a303946e5e2b10d39072c62cda6a528e40fa632b96fd2",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
@@ -403,7 +403,7 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "D-2: progress tracking moved from plan file to runtime progress file",
+    "note": "Fixed stale plan file reference in Step C, added cycle_id derivation",
     "result": "pass",
     "surface": [
       "skills/plan-implement/SKILL.md",
@@ -416,7 +416,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "8ddac0e930db3e0265b6f44a88dea4d5e68d6222dedc57169642dcfd70d3881b",
+    "surface_sha256": "0d1103bf651abd0acfb12644786b2e94151d8639b9f6503042a3d642f5e2e5bb",
     "verified": "2026-07-31"
   },
   "plan-reviewer": {

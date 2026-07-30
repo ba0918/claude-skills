@@ -67,8 +67,12 @@ an error; do not guess paths, isolation, or capability data.
 1. In direct mode, read `.agents/artifacts/status.md` and identify the session currently at
    🟡 Planning. In satellite mode, read the validated `pinned_plan` directly.
    - Re-entry from a step partway through (a session already at 🟡 In Progress) is also a normal case
-2. Load the corresponding plan file (inside `.agents/artifacts/plans/`)
-3. Grasp the overall picture of the plan, the list of steps, and the current progress (do not re-implement 🟢 Done steps)
+2. Load the corresponding plan file (inside `.agents/artifacts/plans/`).
+   Resolve `{cycle_id}` from the plan's `**Cycle ID:**` header field. If the header is
+   absent, derive it from the plan filename's timestamp portion (the leading `yyyymmddhhmmss`).
+3. Grasp the overall picture of the plan, the list of steps, and the current progress.
+   Check `.agents/runtime/progress/{cycle_id}.md` for previously completed steps
+   (do not re-implement steps marked 🟢 Done in the progress file)
 4. If the argument names a specific step, start from there
 5. **Direct mode:** update the status to 🟡 In Progress (invoke the skill
    `claude-skills:plan`; no update is needed if already 🟡 In Progress).
@@ -137,7 +141,7 @@ Receive the implementation result.
    - **BLOCK**: a fix is mandatory → return to Step A (issue fix instructions)
    - **WARN**: an improvement is desirable → consider the content and decide whether to fix it
      - Fixing it → return to Step A
-     - Accepting it → record the rationale in the step's notes in the plan file (written during Step D) and move on
+     - Accepting it → record the rationale in the step's notes in the runtime progress file (written during Step D) and move on
    - **INFO**: reference information → record it and move on
 2. When BLOCK/WARN remain, launch a fix agent and address them
 3. After the fix, run the Step B review again
