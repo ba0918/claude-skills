@@ -72,23 +72,25 @@ gh skill install ba0918/claude-skills --agent claude-code
 
 ## 基本ワークフロー
 
-plan（計画）→ cycle（自動実装）→ commit（コミット）が基本の流れになる。
+brainstorm（壁打ち）→ plan（計画）→ cycle（自動実装）→ commit（コミット）が基本の流れになる。
 
 ```
-計画を作りたい        → plan-create
-計画を自動実装したい  → cycle
-追加修正したい        → iterate
-コミットしたい        → commit
+アイデアを壁打ちしたい → brainstorm
+計画を作りたい         → plan-create
+計画を自動実装したい   → cycle
+追加修正したい         → iterate
+コミットしたい         → commit
 ```
 
-`cycle` は計画のレビューと実装をエージェントに委譲し、全自動で回す。
+brainstorm で人間と対話しながら仕様・設計を合意し、合意内容を ledger / docs / plan に振り分ける。
+`cycle` は plan の自動実装をエージェントに委譲し、全自動で回す。
 `iterate` は cycle 後の軽微な修正に使う。タスクの大きさを自動判定し、大きければ新しい plan の作成を提案する。
 
 ## スキル一覧
 
 スキル群は「発生順の 3 レイヤ」で整理する。このリポジトリは元来メンテナ個人の作業用として plan → implement → review の基本サイクルから始まり、実務で必要になった順にスキルが増えていった。その履歴を初見の利用者にも見えるようにするため、次の 3 段で提示する。
 
-- **Core（幹）** — plan → cycle → commit を回すのに最小限必要なスキル。初めての利用者はここだけ見れば十分。
+- **Core（幹）** — brainstorm → plan → cycle → commit を回すのに最小限必要なスキル。初めての利用者はここだけ見れば十分。
 - **Extensions（枝）** — 実務で必要になったタイミングで後から追加されたスキル。用途別に整理する。必要になったら参照する。
 - **Personal / Experimental（葉）** — 本リポジトリ自身のスキル開発サイクル・移行専用スキル・実験的スキル。外部利用者は基本的に無視してよい。
 
@@ -98,12 +100,12 @@ plan → cycle → commit の基本ワークフローに必要な最小セット
 
 | スキル | 用途 |
 |--------|------|
-| `plan` | 計画ファイルの作成とステータス管理 |
-| `plan-reviewer` | 7 観点での計画レビュー |
-| `cycle` | レビューから実装までの全自動サイクル |
+| `brainstorm` | 仕様・設計の壁打ちと合意形成（出口で ledger / plan に振り分け） |
+| `plan` | 合意済みの実装手順書の作成とステータス管理 |
+| `plan-reviewer` | 実装成果物のレビュー（差し戻し判定付き） |
+| `cycle` | plan の自動実装サイクル |
 | `iterate` | cycle 後の軽量な追加修正 |
 | `commit` | 変更の論理単位での自動コミット |
-| `brainstorm` | 計画前のアイデア壁打ち（ファイル編集禁止） |
 | `codebase-review` | コードベース全体の並行レビュー（100 点満点） |
 
 ### Extensions（枝）— 用途に応じて追加
@@ -114,8 +116,7 @@ Core を補強・拡張するスキル群。すべてを覚える必要はなく
 
 | スキル | 用途 |
 |--------|------|
-| `plan-refine` | 計画の review → fix ループ改善（cycle の Phase 1 本体） |
-| `plan-implement` | 計画の TDD 自動実装ループ（cycle の Phase 2 本体） |
+| `plan-implement` | 計画の TDD 自動実装ループ（cycle の実装フェーズ本体） |
 | `parallel-cycle` | 複数の plan を worktree で並行実行 |
 
 #### 調査とデバッグ

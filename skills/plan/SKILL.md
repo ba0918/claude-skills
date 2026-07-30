@@ -1,13 +1,13 @@
 ---
 name: plan
-description: Create timestamped implementation plans with automatic .agents/artifacts/status.md management and progress tracking. Use when user requests (1) "make a plan", "create a plan", "design this feature" for creating new plans, or (2) "update status", "planning done", "implementation complete", "cycle done" for updating implementation progress, or (3) "resume", "continue from last time", "pick up where we left off" for loading the current session state. Alternative to Claude Code's standard plan mode with timestamp-based file naming and status tracking.
+description: Create timestamped implementation plans from brainstorm agreements. A plan is the record of agreed implementation steps — not a proposal document. Use when user requests (1) "make a plan", "create a plan", "design this feature" for creating new plans, or (2) "update status", "planning done", "implementation complete", "cycle done" for updating implementation progress, or (3) "resume", "continue from last time", "pick up where we left off" for loading the current session state.
 ---
 
 # Plan
 
 Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
 
-Create implementation plans with timestamp-based filenames and automatic project status tracking.
+Create implementation plans with timestamp-based filenames and automatic project status tracking. A plan is the record of agreed-upon implementation steps — not a proposal or approval document. Design and specification decisions are made in brainstorm; the plan captures how to implement them.
 
 ## Quick Start
 
@@ -129,12 +129,11 @@ Display to user:
 
 ## Next Steps
 
-1. Review the plan
-2. Write tests - "テスト書いて" or "write tests"
-3. Implement - "実装して" or "implement this"
-4. Commit - "コミットして" (commit will handle it)
+1. Run the cycle - `/claude-skills:cycle`
+2. Or implement manually - "実装して" or "implement this"
+3. Commit - "コミットして" (commit will handle it)
 
-Keep it simple. No heavy reviews. Fast tempo! 🚀
+Design decisions are made in brainstorm, not here. Fast tempo! 🚀
 ```
 
 ## Resume Workflow
@@ -274,3 +273,4 @@ Load these templates/guides when creating documents or updating status.
 - Plan documents follow project's architecture principles (layer separation, TDD, etc.)
 - If you discover out-of-scope issues during investigation, record them with `/claude-skills:issue-create` and continue with the plan
 - If the problem's root cause is unclear before planning, suggest running `/claude-skills:investigate` first for a read-only, lightweight investigation
+- A plan is not a proposal — it records agreed implementation steps. Specification and design decisions belong in brainstorm, not in the plan

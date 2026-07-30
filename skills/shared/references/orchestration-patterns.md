@@ -143,7 +143,7 @@ Place result files at this deterministic path.
 
 (3) defines the obligation to read result files when triggered by "(a) completion report" or "(b) wait notification", but measured stalls exist where waiting continues without either trigger (results are ready but unnoticed / the final one viewpoint is completely silent and waits forever).
 (3b) does **not replace** (3); it complements it as a **lower-bound guarantee** when triggers do not arrive.
-The source of truth for principles and procedure is this section. Referencing skills (plan-reviewer / cycle / plan-refine) should only write a reference to "follow Wait Discipline" and role-specific values (timeout minutes, list of optional viewpoints, redelegation limit). Do not duplicate this text.
+The source of truth for principles and procedure is this section. Referencing skills (plan-reviewer / cycle) should only write a reference to "follow Wait Discipline" and role-specific values (timeout minutes, list of optional viewpoints, redelegation limit). Do not duplicate this text.
 
 Wait Discipline has three pillars. If even one pillar is missing, one of the measured stalls described later will recur.
 

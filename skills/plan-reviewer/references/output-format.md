@@ -1,4 +1,4 @@
-# Output Format - Plan Reviewer
+# Output Format - Implementation Reviewer
 
 Output format definition for review results.
 
@@ -54,41 +54,45 @@ Final report integrating results from all dimensions:
 
 ```
 ================================================================================
-PLAN REVIEW COMPLETE
+IMPLEMENTATION REVIEW COMPLETE
 ================================================================================
 
-📋 Target: {plan filename}
+📋 Plan: {plan filename}
 📅 Date: {YYYY-MM-DD HH:MM}
 
 ┌─────────────────────┬────────┬────────┐
 │ Dimension           │ Score  │ Verdict│
 ├─────────────────────┼────────┼────────┤
-│ Feasibility         │   25   │ ✅ PASS │
+│ Correctness         │   25   │ ✅ PASS │
 │ Security            │   75   │ ⚠️ WARN │
 │ Performance/Memory  │   40   │ ✅ PASS │
 │ Architecture/Design │   30   │ ✅ PASS │
 │ Completeness        │   60   │ ⚠️ WARN │
-│ Alternatives        │   85   │ 🛑 BLOCK│
+│ Spec Conformance    │   85   │ 🛑 BLOCK│
 └─────────────────────┴────────┴────────┘
 
-Overall Verdict: 🛑 BLOCK (Max score: 85, driven by Alternatives)
+Overall Verdict: 🛑 BLOCK (Max score: 85, driven by Spec Conformance)
 
 ────────────────────────────────────────
 
 🛑 BLOCK Issues (must fix):
-  [Alternatives] Task 2-1: Using ETag/Last-Modified headers is more efficient than SHA-256 hash comparison
-    → Consider an approach that compares ETags via fetch HEAD request
+  [Spec Conformance] Task 2-1: Implementation does not match agreed acceptance criterion
+    → Adjust implementation to match the agreed spec
 
 ⚠️ WARN Issues (recommended fix):
   [Security] Task 1-1: Possibly insufficient escapeHtml() coverage
     → Recommend enumerating all innerHTML assignment locations
   [Completeness] Task 2-2: Risk of MutationObserver disconnect leak
-    → Specify cleanup on component unmount
+    → Add cleanup on component unmount
+
+🔄 Spec Escalation (requires brainstorm re-agreement):
+  (If any finding requires changing an AGREED ledger row or clause)
+  [Spec Conformance] The acceptance criterion for X is insufficient — needs re-agreement
 
 ✅ Positives:
   - Sound decision to prioritize security fixes
   - Design conforms to layer architecture
-  - Test plan included for each task
+  - Tests cover each implemented change
 
 🤖 Codex Second Opinion:
   [Codex] Task 2-1: Consider using streaming instead of buffered approach
@@ -98,9 +102,10 @@ Overall Verdict: 🛑 BLOCK (Max score: 85, driven by Alternatives)
 ────────────────────────────────────────
 
 📝 Recommended Actions:
-  1. Fix BLOCK items before starting implementation
-  2. Consider WARN items during implementation
-  3. Review Codex second opinion for additional perspectives
+  1. Fix BLOCK items in the implementation
+  2. Escalate spec issues to brainstorm for re-agreement
+  3. Consider WARN items
+  4. Review Codex second opinion for additional perspectives
 ================================================================================
 ```
 
@@ -110,9 +115,9 @@ Overall Verdict: 🛑 BLOCK (Max score: 85, driven by Alternatives)
 
 | Max Score | Verdict | Meaning | Action |
 |-----------|---------|---------|--------|
-| 80-100 | 🛑 BLOCK | Critical issues found | Modify plan before starting implementation |
-| 50-79 | ⚠️ WARN | Room for improvement | Review warnings, modify plan if necessary |
-| 0-49 | ✅ PASS | No issues | OK to start implementation |
+| 80-100 | 🛑 BLOCK | Critical issues found | Fix implementation before proceeding |
+| 50-79 | ⚠️ WARN | Room for improvement | Review warnings, fix if necessary |
+| 0-49 | ✅ PASS | No issues | Implementation is sound |
 
 ### Overall Verdict Rules
 

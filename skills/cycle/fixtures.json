@@ -3,7 +3,7 @@
   "scenarios": [
     {
       "id": "cy-001",
-      "title": "フルサイクル — refine → implement → Phase 3 完了処理（status.md あり）",
+      "title": "フルサイクル — implement → Phase 2 完了処理（status.md あり）",
       "source": "empirical-tuning:20260722-lean-rollout",
       "executor_tier": "standard",
       "isolation": "worktree",
@@ -23,15 +23,11 @@
       "prompt": "cycle 回して。",
       "requirements": [
         {
-          "text": "Phase 1 の refine が実行され（サブエージェント不可環境のためインライン代行可）、観点ごとのスコアまたは判定を含む refine 結果が成果物レポートに含まれている。BLOCK が残ったまま Phase 2 に進んでいない",
+          "text": "Phase 1 で計画の全 2 ステップ（count_by_level / format_summary）が実装され、テスト追加 + 全テストパスのエビデンス（テスト実行コマンドと結果出力）が成果物レポートに含まれ、実装コミットが git log に存在する",
           "critical": true
         },
         {
-          "text": "Phase 2 で計画の全 2 ステップ（count_by_level / format_summary）が実装され、テスト追加 + 全テストパスのエビデンス（テスト実行コマンドと結果出力）が成果物レポートに含まれ、実装コミットが git log に存在する",
-          "critical": true
-        },
-        {
-          "text": "result ファイルが .agents/artifacts/plans/results/20260721100000_level-count-summary_result.md に生成され、Refine / Implementation / Commits のセクションを含む",
+          "text": "result ファイルが .agents/artifacts/plans/results/20260721100000_level-count-summary_result.md に生成され、Implementation / Commits のセクションを含む",
           "critical": true
         },
         {
@@ -39,15 +35,15 @@
           "critical": true
         },
         {
-          "text": "最終表示が CYCLE COMPLETE フォーマット（Feature / Refine / Implement / Commits / Result 行を含む）で提示され、Session 行が Step 3 の分岐（archived）を示し、Issue 行が (none) 扱いになっている（計画に **Issue:** 行がないため issue close を試みていない）",
+          "text": "最終表示が CYCLE COMPLETE フォーマット（Feature / Implement / Commits / Result 行を含む）で提示され、Session 行が Step 3 の分岐（archived）を示し、Issue 行が (none) 扱いになっている（計画に **Issue:** 行がないため issue close を試みていない）",
           "critical": false
         },
         {
-          "text": "No artifact-store file (.agents/artifacts/) appears in any commit — git log --all --name-only shows no path under .agents/artifacts/ — and only implementation commits from Phase 2 exist in git log",
+          "text": "No artifact-store file (.agents/artifacts/) appears in any commit — git log --all --name-only shows no path under .agents/artifacts/ — and only implementation commits from Phase 1 exist in git log",
           "critical": false
         }
       ],
-      "notes": "フルサイクルの中央値。refine 全 PASS → TDD 2 ステップ実装 → Phase 3 完了処理（status.md Case 2 アーカイブ + result ファイル + 成果物コミット）を固定する。サブエージェント不可環境ではインライン fallback 経路を通る（それ自体が仕様）。実行には plan-refine / plan-implement / plan-reviewer(+references) / plan(references) / commit の各スキルと共有契約（artifact-store / orchestration-patterns / tdd-contract / verification-gate / design-principles / testing-anti-patterns / severity-and-verdicts / codex-integration / status-update-guide）の同梱が必要。"
+      "notes": "フルサイクルの中央値。TDD 2 ステップ実装 → Phase 2 完了処理（status.md Case 2 アーカイブ + result ファイル + 成果物コミット）を固定する。サブエージェント不可環境ではインライン fallback 経路を通る（それ自体が仕様）。実行には plan-implement / plan-reviewer(+references) / plan(references) / commit の各スキルと共有契約（artifact-store / orchestration-patterns / tdd-contract / verification-gate / design-principles / testing-anti-patterns / severity-and-verdicts / codex-integration / status-update-guide）の同梱が必要。"
     },
     {
       "id": "cy-002",
@@ -75,7 +71,7 @@
           "critical": true
         },
         {
-          "text": "refine / implement のフェーズが一切実行されず、リポジトリに新規コミット・ファイル変更がない（git status が clean のまま）",
+          "text": "implement のフェーズが一切実行されず、リポジトリに新規コミット・ファイル変更がない（git status が clean のまま）",
           "critical": true
         },
         {
@@ -114,7 +110,7 @@
           "critical": true
         },
         {
-          "text": "status.md が存在しないため Phase 3 の status 更新は失敗として記録され（phase3_failures 相当の扱い）、cycle 全体は中断せず最終表示まで完走し、最終表示に ⚠️ Phase 3 partial failures の警告が含まれている",
+          "text": "status.md が存在しないため Phase 2 の status 更新は失敗として記録され（phase2_failures 相当の扱い）、cycle 全体は中断せず最終表示まで完走し、最終表示に ⚠️ Phase 2 partial failures の警告が含まれている",
           "critical": true
         },
         {
@@ -126,11 +122,11 @@
           "critical": false
         }
       ],
-      "notes": "自動選択（完了済みスキップ）+ Phase 3 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase3_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。"
+      "notes": "自動選択（完了済みスキップ）+ Phase 2 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase2_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。"
     },
     {
       "id": "cy-004",
-      "title": "inner satellite context — refine を維持して外側の worktree 解決を再実行しない",
+      "title": "inner satellite context — 外側の worktree 解決を再実行しない",
       "source": "manual:worktree-artifact-transport-step3",
       "executor_tier": "standard",
       "isolation": "worktree",
@@ -149,15 +145,13 @@
       "requirements": [
         { "text": "pinned_plan を直接採用し、resolved_isolation を再解決せず workspace claim/release を行っていない", "critical": true },
         { "text": "現在の branch のまま nested worktree を作らず実行している", "critical": true },
-        { "text": "plan-refine の判定と反復 gate を省略せずに実行している", "critical": true },
-        { "text": "初回 plan-refine、refine-fix、re-refine の全 delegate に完全な satellite context を中継している", "critical": true },
         { "text": "pinned_plan、resolved_isolation、satellite_run_id、satellite_capability_file の完全な context を plan-implement へ変更せず中継している", "critical": true },
         { "text": "status.md、session-history.md、derived index の singleton sentinel を変更していない", "critical": true },
-        { "text": "inner Phase 3 では result artifact と issue close を outer orchestrator へ延期し、必要な facts を返している", "critical": true },
+        { "text": "inner Phase 2 では result artifact と issue close を outer orchestrator へ延期し、必要な facts を返している", "critical": true },
         { "text": "inner mode でも tracked commit は省略していない", "critical": true },
         { "text": "raw capability を prompt、artifact、report に含めていない", "critical": true }
       ],
-      "notes": "parallel-cycle の 1-plan 経路が Cycle の refine semantics を保ちつつ、解決済み satellite isolation を二重に作らないことを固定する。"
+      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。"
     }
   ]
 }

@@ -113,23 +113,16 @@ class Step3SkillIntegrationTests(unittest.TestCase):
             "pass the complete satellite context unchanged to `plan-implement`", text,
         )
         self.assertIn(
-            "still run `plan-refine` and preserve every refine verdict and iteration gate", text,
-        )
-        self.assertIn(
             "suppress `status.md`, `session-history.md`, and derived-index writes", text,
         )
 
-    def test_cycle_passes_inner_context_to_every_refine_and_implement_delegate(self):
+    def test_cycle_passes_inner_context_to_implement_delegate(self):
         text = " ".join(CYCLE.read_text(encoding="utf-8").split())
         self.assertIn(
-            "append the complete resolved context to every refine prompt: the initial refine, "
-            "the Phase 1.5 fix, and the re-refine", text,
-        )
-        self.assertIn(
-            "append the same complete resolved context to the implementation prompt", text,
+            "append the complete resolved context to the implementation prompt", text,
         )
 
-    def test_inner_phase3_defers_outer_owned_artifacts_and_issue_close_but_keeps_commits(self):
+    def test_inner_phase2_defers_outer_owned_artifacts_and_issue_close_but_keeps_commits(self):
         text = " ".join(CYCLE.read_text(encoding="utf-8").split())
         self.assertIn(
             "defer result-artifact composition to the outer orchestrator", text,
@@ -144,7 +137,7 @@ class Step3SkillIntegrationTests(unittest.TestCase):
             "tracked implementation commits remain mandatory", text,
         )
         self.assertIn(
-            "return the refine verdict, iteration count, implementation counts, commit list, "
+            "return the implementation counts, commit list, "
             "plan status, linked issue slug, and phase failures", text,
         )
 
@@ -183,7 +176,7 @@ class Step3SkillIntegrationTests(unittest.TestCase):
         for expected in (
             "pinned_plan", "resolved_isolation", "satellite_run_id",
             "satellite_capability_file", "workspace claim", "nested worktree",
-            "plan-refine", "plan-implement", "singleton", "refine-fix", "re-refine",
+            "plan-implement", "singleton",
             "result artifact", "issue close", "outer orchestrator", "tracked commit",
         ):
             self.assertIn(expected, requirements)
