@@ -237,22 +237,24 @@ whole cycle for it.
    - If there is nothing to commit, the commit skill handles the skip
    - **On failure**: append `"commit"` to `phase2_failures` and move on
 
-3. **Clean tree gate**: after committing, verify the working tree is clean
-   (`git status --porcelain` returns empty for tracked files). Phase 3/4 review
-   `git diff {cycle_start_sha}..HEAD` which only covers committed changes — an uncommitted
-   implementation would be invisible to the review.
+3. **Clean tree gate**: after committing, verify the working tree has no uncommitted
+   or untracked non-ignored files (`git status --porcelain --untracked-files=all` returns
+   empty). Phase 3/4 review `git diff {cycle_start_sha}..HEAD` which only covers committed
+   changes — uncommitted modifications AND newly created non-ignored files would both be
+   invisible to the review.
    - If clean → continue
-   - If dirty (tracked uncommitted changes remain) → **abort the cycle**:
+   - If dirty (any non-ignored uncommitted or untracked files remain) → **abort the cycle**:
      ```
      ⛔ CYCLE ABORTED: Uncommitted implementation changes detected
      Dirty files:
-       {list from git status}
-     Phase 3/4 review covers only committed changes. Uncommitted work would
-     bypass review entirely. Fix the commit failure and re-run the cycle.
+       {list from git status --porcelain --untracked-files=all}
+     Phase 3/4 review covers only committed changes. Uncommitted or untracked
+     implementation files would bypass review entirely.
+     Fix the commit failure and re-run the cycle.
      ```
      Revert the plan file's **Status:** to `⚠️ Review Failed` before aborting.
-   - Untracked files that are gitignored (e.g. `.agents/`, `__pycache__/`) do not
-     trigger this gate. Only tracked-but-uncommitted changes are blocking.
+   - Gitignored files (e.g. `.agents/`, `__pycache__/`) are excluded by `git status` and
+     do not trigger this gate.
 
 Display:
 ```
@@ -340,9 +342,12 @@ b. Launch a targeted-fix subagent (high-performance model):
    - Append the fix-targeted findings as structured data (severity, task, title, description,
      location, suggestion)
    - Follow the delegation result relay with `{role}` = `fix-{N}`
-c. After the fix subagent completes, re-launch the review (same prompt as Step 1) with
-   `{role}` = `post-review-{N}`
-d. Branch on the new verdict:
+c. After the fix subagent completes, run the same clean tree gate as Phase 2 Step 3
+   (`git status --porcelain --untracked-files=all` must be empty). If dirty, revert plan
+   status to `⚠️ Review Failed` and abort — uncommitted fix changes would be invisible to
+   the re-review.
+d. Re-launch the review (same prompt as Step 1) with `{role}` = `post-review-{N}`
+e. Branch on the new verdict:
    - **PASS / WARN** → proceed to Phase 4
    - **ESCALATE** → revert plan status and abort (same as Step 2a)
    - **BLOCK and iteration < 2** → repeat from (a)
@@ -591,6 +596,9 @@ and `Issue: deferred to outer orchestrator: {slug | none}`.
   review delegates.
 - **Fix subagent error in Phase 3**: retry once. If the retry also fails, abort the cycle
   (revert plan status to `⚠️ Review Failed` before aborting).
+- **Dirty tree after Phase 3 fix**: if the clean tree gate after a fix subagent detects
+  uncommitted or untracked non-ignored files, abort the cycle (same behavior as the Phase 2
+  clean tree gate). Revert plan status before aborting.
 - **ESCALATE in Phase 3**: abort the cycle immediately with brainstorm redirect. This is an
   intentional abort (spec gaps cannot be resolved by implementation fixes), not an error.
   Revert plan status before aborting.
