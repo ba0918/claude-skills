@@ -587,9 +587,9 @@ and `Issue: deferred to outer orchestrator: {slug | none}`.
   phase completion → retry (once) only when undecidable. If the result file or artifacts
   confirm completion, proceed to the next phase even without a delivered report.
 - **Error in a Phase 2 step**: record the step in `phase2_failures` and continue with the
-  rest. **Exception**: the clean tree gate (Step 3) is a hard stop — if uncommitted tracked
-  changes remain after the commit step, the cycle aborts (uncommitted changes would bypass
-  Phase 3/4 review). Revert plan status before aborting.
+  rest. **Exception**: the clean tree gate (Step 3) is a hard stop — if uncommitted or
+  untracked non-ignored files remain after the commit step, the cycle aborts (uncommitted
+  or untracked changes would bypass Phase 3/4 review). Revert plan status before aborting.
 - **Review subagent error in Phase 3**: retry once. If the retry also fails, abort the cycle
   (revert plan status to `⚠️ Review Failed` before aborting). Follow the same delegation
   result relay and wait discipline as Phase 1, using the extended 20-minute timeout for
