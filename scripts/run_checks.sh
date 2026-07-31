@@ -32,6 +32,10 @@ echo "=== OpenCode plugin (static)"
 node scripts/test_opencode_plugin.mjs
 _mark_ran
 
+echo "=== OpenCode plugin (runtime JSON path escaping)"
+OPENCODE_RUNTIME_TEST_JSON_ESCAPE=1 sh scripts/test_opencode_runtime.sh
+_mark_ran
+
 # The static import check above cannot prove that OpenCode itself discovers the
 # plugin and exposes bundled skills. CI installs OpenCode; developer machines
 # without it retain the rest of the canonical checks and report this explicitly.
