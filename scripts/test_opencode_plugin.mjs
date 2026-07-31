@@ -11,9 +11,12 @@ import { fileURLToPath, pathToFileURL } from "url"
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const pluginPath = path.join(root, ".opencode/plugins/claude-skills.js")
 const packageJsonPath = path.join(root, "package.json")
+const runtimeTestPath = path.join(root, "scripts/test_opencode_runtime.sh")
 
 assert.ok(fs.existsSync(pluginPath), "plugin file missing")
 assert.ok(fs.existsSync(packageJsonPath), "package.json missing")
+assert.ok(fs.existsSync(runtimeTestPath), "OpenCode runtime test missing")
+assert.ok(fs.statSync(runtimeTestPath).mode & 0o100, "OpenCode runtime test is not executable")
 
 const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"))
 assert.equal(pkg.name, "claude-skills")
@@ -21,30 +24,21 @@ assert.equal(pkg.main, ".opencode/plugins/claude-skills.js")
 assert.equal(pkg.type, "module")
 
 const mod = await import(pathToFileURL(pluginPath).href)
-assert.equal(typeof mod.ClaudeSkillsPlugin, "function")
-assert.ok(mod._internals)
+// OpenCode treats module exports as plugin candidates. Keep the entrypoint
+// surface to a single function so helper values stay private to the module.
+assert.deepEqual(Object.keys(mod), ["default"])
+assert.equal(typeof mod.default, "function")
 
-const { PACKAGE_ROOT, SKILLS_DIR, ROUTING_PATH, BOOTSTRAP_MARKER, getBootstrapContent, resetBootstrapCache } =
-  mod._internals
+const PACKAGE_ROOT = root
+const SKILLS_DIR = path.join(PACKAGE_ROOT, "skills")
+const ROUTING_PATH = path.join(PACKAGE_ROOT, "rules", "skill-routing.md")
+const BOOTSTRAP_MARKER = "<!-- claude-skills-bootstrap -->"
 
-assert.equal(PACKAGE_ROOT, root)
 assert.ok(fs.existsSync(path.join(SKILLS_DIR, "cycle", "SKILL.md")))
 assert.ok(fs.existsSync(path.join(SKILLS_DIR, "shared", "SKILL.md")))
 assert.ok(fs.existsSync(ROUTING_PATH))
 
-resetBootstrapCache()
-const bootstrap = getBootstrapContent()
-assert.ok(bootstrap)
-assert.ok(bootstrap.includes(BOOTSTRAP_MARKER))
-assert.ok(bootstrap.includes("Skill Routing"))
-assert.ok(bootstrap.includes("investigate"))
-assert.ok(bootstrap.includes("Quality gate contract"))
-assert.ok(bootstrap.includes(path.join(SKILLS_DIR, "shared", "references", "quality-gate-contract.md")))
-
-// cache
-assert.equal(getBootstrapContent(), bootstrap)
-
-const hooks = await mod.ClaudeSkillsPlugin({})
+const hooks = await mod.default({})
 assert.equal(typeof hooks.config, "function")
 assert.equal(typeof hooks["experimental.chat.messages.transform"], "function")
 
@@ -66,6 +60,14 @@ const messages = {
 await hooks["experimental.chat.messages.transform"]({}, messages)
 assert.equal(messages.messages[0].parts.length, 2)
 assert.ok(messages.messages[0].parts[0].text.includes(BOOTSTRAP_MARKER))
+assert.ok(messages.messages[0].parts[0].text.includes("Skill Routing"))
+assert.ok(messages.messages[0].parts[0].text.includes("investigate"))
+assert.ok(messages.messages[0].parts[0].text.includes("Quality gate contract"))
+assert.ok(
+  messages.messages[0].parts[0].text.includes(
+    path.join(SKILLS_DIR, "shared", "references", "quality-gate-contract.md"),
+  ),
+)
 assert.equal(messages.messages[0].parts[1].text, "hello")
 
 // no double inject
