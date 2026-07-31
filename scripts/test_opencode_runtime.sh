@@ -4,13 +4,30 @@
 set -eu
 
 json_escape() {
-  printf '%s' "$1" | sed 's/[\\"]/\\&/g'
+  # `od` lets this stay independent from Node/Python while handling every byte
+  # that JSON requires to be escaped. POSIX paths cannot contain NUL.
+  printf '%s' "$1" | LC_ALL=C od -An -v -tx1 |
+    while IFS= read -r line; do
+      for byte in $line; do
+        case "$byte" in
+          22) printf '\\"' ;;
+          5c) printf '\\\\' ;;
+          08) printf '\\b' ;;
+          09) printf '\\t' ;;
+          0a) printf '\\n' ;;
+          0c) printf '\\f' ;;
+          0d) printf '\\r' ;;
+          0[0-7]|0b|0e|0f|1[0-9a-f]) printf '\\u00%s' "$byte" ;;
+          *) printf '%b' "\\$(printf '%03o' "0x$byte")" ;;
+        esac
+      done
+    done
 }
 
 # Exercise the path-to-JSON boundary without needing an OpenCode installation.
 if [ "${OPENCODE_RUNTIME_TEST_JSON_ESCAPE:-0}" = "1" ]; then
-  input='quote" and \\'
-  expected='quote\" and \\\\'
+  input=$(printf 'quote" slash\\ tab\t newline\n carriage\r backspace\b formfeed\f')
+  expected='quote\" slash\\ tab\t newline\n carriage\r backspace\b formfeed\f'
   test "$(json_escape "$input")" = "$expected"
   echo "ok: OpenCode runtime JSON path escaping passed"
   exit 0
