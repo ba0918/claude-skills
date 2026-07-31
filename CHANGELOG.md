@@ -17,6 +17,8 @@ claude-skills プラグインのバージョン履歴。
   non-function export の混入を防止
 - `sh scripts/test_opencode_runtime.sh` で OpenCode 実ランタイムの `skills.paths` 登録と
   `cycle` skill discovery を検証可能にした
+- OpenCode が利用可能な環境では正本の検証ランナーもこの実ランタイム検査を実行し、CI は
+  OpenCode を導入して pull request ごとの必須ゲートにする
 
 ### Added: OpenCode git plugin 対応
 
