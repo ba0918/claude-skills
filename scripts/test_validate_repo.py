@@ -33,6 +33,7 @@ from validate_repo import (
     check_design_token_sync,
     check_legacy_claude_paths,
     check_plugin_hooks,
+    check_opencode_plugin,
     check_fixtures,
     check_rename_allowlist_staleness,
     check_workspace_policy,
@@ -1012,6 +1013,15 @@ class TestCheckManifests(unittest.TestCase):
             self.assertEqual(len(errors), 1)
             self.assertIn("version", errors[0])
 
+    def test_package_json_version_drift_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root, version="1.0.0")
+            self._write(root, "package.json",
+                        json.dumps({"name": "claude-skills", "version": "9.9.9"}))
+            errors = check_manifests(root)
+            self.assertEqual(len(errors), 1)
+            self.assertIn("version", errors[0])
+
     def test_name_drift_between_manifests_is_flagged(self):
         with tempfile.TemporaryDirectory() as root:
             self._base(root)
@@ -1635,3 +1645,40 @@ class TestCheckRenameAllowlistStaleness(unittest.TestCase):
         errors = check_rename_allowlist_staleness(self.root)
         self.assertEqual(len(errors), 1)
         self.assertIn("executor_model", errors[0])
+
+
+class TestCheckOpencodePlugin(unittest.TestCase):
+    """チェック22: OpenCode git plugin 入口."""
+
+    def _write(self, root, rel, content):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path) or root, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def test_missing_package_json_is_noop(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.assertEqual(check_opencode_plugin(root), [])
+
+    def test_valid_layout_passes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "package.json", json.dumps({
+                "name": "claude-skills",
+                "main": ".opencode/plugins/claude-skills.js",
+            }))
+            self._write(
+                root,
+                ".opencode/plugins/claude-skills.js",
+                "config.skills.paths\nexperimental.chat.messages.transform\n",
+            )
+            self._write(root, "docs/README.opencode.md", "# OpenCode\n")
+            self.assertEqual(check_opencode_plugin(root), [])
+
+    def test_missing_plugin_file_is_flagged(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._write(root, "package.json", json.dumps({
+                "main": ".opencode/plugins/claude-skills.js",
+            }))
+            self._write(root, "docs/README.opencode.md", "x\n")
+            errors = check_opencode_plugin(root)
+            self.assertTrue(any("実体がない" in e or "存在しない" in e for e in errors))

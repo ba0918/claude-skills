@@ -28,6 +28,10 @@ done
 test "$found" -eq 1  # 1 件も見つからないのは発見ロジック側の壊れ
 _mark_ran
 
+echo "=== OpenCode plugin (static)"
+node scripts/test_opencode_plugin.mjs
+_mark_ran
+
 echo "=== Repo consistency checks"
 python3 scripts/validate_repo.py
 _mark_ran
