@@ -23,6 +23,8 @@ claude-skills プラグインのバージョン履歴。
 - ルート `package.json`（`main` → plugin）と `docs/README.opencode.md` / `.opencode/INSTALL.md`
 - 静的検証: `scripts/test_opencode_plugin.mjs`
 - README / AGENTS.md / install.sh に OpenCode 導入手順を追記
+- 版固定例は未発行タグを書かず、Releases に実在する `vX.Y.Z` のみ指定するよう明記
+  （`package.json` version は git タグではない）
 
 ### Added: brainstorm セッション中の pre-wrap self-review (#186)
 

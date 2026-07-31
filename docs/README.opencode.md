@@ -15,13 +15,17 @@
 
 OpenCode を再起動する。plugin manager が git から取得し、スキルを登録する。
 
-タグやブランチで固定する場合:
+特定の版に固定する場合は、[Releases](https://github.com/ba0918/claude-skills/releases) に
+**実在する** `vX.Y.Z` タグだけを指定する（未発行タグは git ref を解決できない）:
 
 ```json
 {
-  "plugin": ["claude-skills@git+https://github.com/ba0918/claude-skills.git#v1.72.0"]
+  "plugin": ["claude-skills@git+https://github.com/ba0918/claude-skills.git#vX.Y.Z"]
 }
 ```
+
+タグがまだ無い、または Releases に載っていないあいだは、上の unpinned 指定（デフォルトブランチ追従）を使う。
+ルート `package.json` の `version` は Claude/Codex manifest と揃える内部番号であり、git タグそのものではない。
 
 Claude Code / Codex とは別経路のインストールになる。併用する場合は各エージェントでそれぞれ入れる。
 
