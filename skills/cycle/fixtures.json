@@ -3,7 +3,7 @@
   "scenarios": [
     {
       "id": "cy-001",
-      "title": "フルサイクル — implement → Phase 2 完了処理（status.md あり）",
+      "title": "フルサイクル — implement → artifacts → review → final gate → completion",
       "source": "empirical-tuning:20260722-lean-rollout",
       "executor_tier": "standard",
       "isolation": "worktree",
@@ -31,11 +31,15 @@
           "critical": true
         },
         {
-          "text": "status.md の Current Session が完了処理されている（session-history.md へアーカイブされ、Current Session がクリアされている）",
+          "text": "Phase 3 で plan-reviewer による実装レビューが実行され、verdict（PASS / WARN / BLOCK）が提示されている（BLOCK の場合は fix loop が実行される）",
           "critical": true
         },
         {
-          "text": "最終表示が CYCLE COMPLETE フォーマット（Feature / Implement / Commits / Result 行を含む）で提示され、Session 行が Step 3 の分岐（archived）を示し、Issue 行が (none) 扱いになっている（計画に **Issue:** 行がないため issue close を試みていない）",
+          "text": "Phase 5 で status.md の Current Session が完了処理されている（session-history.md へアーカイブされ、Current Session がクリアされている）",
+          "critical": true
+        },
+        {
+          "text": "最終表示が CYCLE COMPLETE フォーマット（Feature / Implement / Review / Final Gate / Commits / Result 行を含む）で提示され、Session 行が archived を示し、Issue 行が (none) 扱いになっている",
           "critical": false
         },
         {
@@ -43,7 +47,7 @@
           "critical": false
         }
       ],
-      "notes": "フルサイクルの中央値。TDD 2 ステップ実装 → Phase 2 完了処理（status.md Case 2 アーカイブ + result ファイル + 成果物コミット）を固定する。サブエージェント不可環境ではインライン fallback 経路を通る（それ自体が仕様）。実行には plan-implement / plan-reviewer(+references) / plan(references) / commit の各スキルと共有契約（artifact-store / orchestration-patterns / tdd-contract / verification-gate / design-principles / testing-anti-patterns / severity-and-verdicts / codex-integration / status-update-guide）の同梱が必要。"
+      "notes": "フルサイクルの中央値。TDD 2 ステップ実装 → Phase 2 アーティファクト → Phase 3 レビュー → Phase 4 最終ゲート → Phase 5 完了処理（status.md Case 2 アーカイブ + result ファイル + 成果物コミット）を固定する。サブエージェント不可環境ではインライン fallback 経路を通る（それ自体が仕様）。実行には plan-implement / plan-reviewer(+references) / plan(references) / commit の各スキルと共有契約（artifact-store / orchestration-patterns / tdd-contract / verification-gate / design-principles / testing-anti-patterns / severity-and-verdicts / codex-integration / status-update-guide）の同梱が必要。"
     },
     {
       "id": "cy-002",
@@ -110,7 +114,7 @@
           "critical": true
         },
         {
-          "text": "status.md が存在しないため Phase 2 の status 更新は失敗として記録され（phase2_failures 相当の扱い）、cycle 全体は中断せず最終表示まで完走し、最終表示に ⚠️ Phase 2 partial failures の警告が含まれている",
+          "text": "status.md が存在しないため Phase 5 の status 更新は失敗として記録され（phase5_failures 相当の扱い）、cycle 全体は中断せず最終表示まで完走し、最終表示に Partial failures の警告が含まれている",
           "critical": true
         },
         {
@@ -122,7 +126,7 @@
           "critical": false
         }
       ],
-      "notes": "自動選択（完了済みスキップ）+ Phase 2 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase2_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。"
+      "notes": "自動選択（完了済みスキップ）+ Phase 5 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase5_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。"
     },
     {
       "id": "cy-004",
@@ -147,11 +151,13 @@
         { "text": "現在の branch のまま nested worktree を作らず実行している", "critical": true },
         { "text": "pinned_plan、resolved_isolation、satellite_run_id、satellite_capability_file の完全な context を plan-implement へ変更せず中継している", "critical": true },
         { "text": "status.md、session-history.md、derived index の singleton sentinel を変更していない", "critical": true },
-        { "text": "inner Phase 2 では result artifact と issue close を outer orchestrator へ延期し、必要な facts を返している", "critical": true },
+        { "text": "Phase 3 のレビューが satellite mode でも実行されている（fix commit は satellite worktree に適用される）", "critical": true },
+        { "text": "Phase 4 の最終ゲートが satellite mode でも実行されている（holistic review は satellite worktree の diff に対して実行される）", "critical": true },
+        { "text": "inner Phase 5 では result artifact と issue close を outer orchestrator へ延期し、review verdict と final gate verdict を含む必要な facts を返している", "critical": true },
         { "text": "inner mode でも tracked commit は省略していない", "critical": true },
         { "text": "raw capability を prompt、artifact、report に含めていない", "critical": true }
       ],
-      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。"
+      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic は worktree diff 対象、independent は plan file のみ）。"
     }
   ]
 }

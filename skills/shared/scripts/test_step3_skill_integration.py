@@ -138,7 +138,9 @@ class Step3SkillIntegrationTests(unittest.TestCase):
         )
         self.assertIn(
             "return the implementation counts, commit list, "
-            "plan status, linked issue slug, and phase failures", text,
+            "plan status, review verdict and findings summary, "
+            "final gate verdict, linked issue slug, and "
+            "phase failures", text,
         )
 
     def test_all_terminal_diagnostics_use_shared_formatter_and_exact_reason_codes(self):
