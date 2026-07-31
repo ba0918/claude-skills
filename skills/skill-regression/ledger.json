@@ -119,7 +119,7 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "0f54032eddb44beee56f3d34fdff7e94a809fc1a09f01ed4a1c54347844354bd",
+      "skills/cycle/SKILL.md": "216ef41271373b88af6b2ddce7966294ee6076680b36e28967aa8ce89913e630",
       "skills/cycle/fixtures.json": "b5afe2bfd1376747e715573c7479108b2cb6757ad3ba08911765f8db4635a393",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
@@ -130,7 +130,7 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "第 2 ラウンドレビュー対応: dirty tree gate 追加、UNVERIFIED 表示修正、停止経路 fixtures 2 件追加。regression run は PR マージ後に実施。",
+    "note": "Opus 5 R3 WARN 対応: Phase 4 BLOCK テンプレートに Action 行追加。regression run は PR マージ後に実施。",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -144,7 +144,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "5ed409cbf412c72a4e2a85f122f74a067d71bd1b5f92bfc084bf96d123487ec6",
+    "surface_sha256": "09d9bcbc222966910c8493789811d1e73e80f9042126ce2cb766669aa5580e17",
     "verified": "2026-07-31"
   },
   "decision-journal": {

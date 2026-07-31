@@ -439,6 +439,8 @@ Before displaying the stop message, revert the plan file's **Status:** header to
 {when BLOCK:}
 Findings:
   {list of BLOCK findings from both reviews}
+{when BLOCK:}
+Action: Use /iterate to address findings, then re-run the cycle.
 {when UNVERIFIED:}
 The required holistic implementation review is unavailable. The plan-only
 independent review cannot substitute for implementation-level verification.
