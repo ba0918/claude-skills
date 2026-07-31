@@ -29,6 +29,11 @@ if [ "${OPENCODE_RUNTIME_TEST_JSON_ESCAPE:-0}" = "1" ]; then
   input=$(printf 'quote" slash\\ tab\t newline\n carriage\r backspace\b formfeed\f')
   expected='quote\" slash\\ tab\t newline\n carriage\r backspace\b formfeed\f'
   test "$(json_escape "$input")" = "$expected"
+
+  control_input=$(printf '\001\002\003\004\005\006\007\010\011\012\013\014\015\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037')
+  control_expected='\u0001\u0002\u0003\u0004\u0005\u0006\u0007\b\t\n\u000b\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f'
+  test "$(json_escape "$control_input")" = "$control_expected"
+
   echo "ok: OpenCode runtime JSON path escaping passed"
   exit 0
 fi
