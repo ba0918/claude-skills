@@ -14,12 +14,9 @@ trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 
 OPENCODE_DISABLE_EXTERNAL_SKILLS=1 OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1 \
   opencode debug config > "$tmp/config.json"
-node -e '
-const fs = require("fs")
-const [file, skillsDir] = process.argv.slice(1)
-const config = JSON.parse(fs.readFileSync(file, "utf8"))
-if (!config.skills?.paths?.includes(skillsDir)) process.exit(1)
-' "$tmp/config.json" "$root/skills"
+# Keep this runtime check executable in an OpenCode-only installation. The
+# configured absolute path is JSON-escaped and therefore appears verbatim.
+grep -F "\"$root/skills\"" "$tmp/config.json" >/dev/null
 
 OPENCODE_DISABLE_EXTERNAL_SKILLS=1 OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1 \
   opencode debug skill > "$tmp/skills.json"
