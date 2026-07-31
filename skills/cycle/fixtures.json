@@ -158,6 +158,87 @@
         { "text": "raw capability を prompt、artifact、report に含めていない", "critical": true }
       ],
       "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic は worktree diff 対象、independent は plan file のみ）。"
+    },
+    {
+      "id": "cy-005",
+      "title": "Phase 3 ESCALATE — spec gap 検出で即時中断し plan を再選択可能にする",
+      "source": "manual:issue-187-stop-path",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# escalate-test\n\nESCALATE テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def greet(name: str) -> str:\n    return f\"Hello, {name}!\"\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import greet\n\nclass GreetTest(unittest.TestCase):\n    def test_greet(self):\n        self.assertEqual(greet(\"World\"), \"Hello, World!\")\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260731000000_add-farewell.md": "# farewell 機能追加\n\n**Cycle ID:** `20260731000000`\n**Started:** 2026-07-31 00:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nfarewell 関数を追加する。仕様は合意済み。\n\n## 🔧 Implementation Steps\n\n1. **farewell 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - farewell(name) -> str を実装\n",
+          ".agents/artifacts/ledger/agreements.md": "# Agreement Ledger\n\n| # | Item | Status | Decision |\n|---|------|--------|----------|\n| A1 | farewell の戻り値形式 | AGREED | \"Goodbye, {name}!\" 形式 |\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし plan-reviewer の結果は ESCALATE と仮定して（A1 の合意内容を変更する必要がある指摘が出た想定で）、Phase 3 の ESCALATE 中断パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 で ESCALATE verdict が検出され、⛔ CYCLE ABORTED: Specification gap detected のメッセージが表示されている",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されており、次回 cycle の自動選択で再選択可能な状態になっている",
+          "critical": true
+        },
+        {
+          "text": "Phase 5 が実行されていない（status.md の更新、issue close、result ファイル生成が行われていない）",
+          "critical": true
+        },
+        {
+          "text": "brainstorm への差し戻し案内（/claude-skills:brainstorm）が表示されている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 3 ESCALATE 中断パスの固定。ESCALATE は spec gap 検出による意図的中断で、Phase 5 を実行せず plan status を復元する。実際の plan-reviewer 実行は必須ではなく、ESCALATE verdict の模擬で経路を検証する。"
+    },
+    {
+      "id": "cy-006",
+      "title": "Phase 4 BLOCK — 最終ゲート不合格で cycle 停止し plan を再選択可能にする",
+      "source": "manual:issue-187-stop-path",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# gate-test\n\nPhase 4 BLOCK テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def add(a: int, b: int) -> int:\n    return a + b\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import add\n\nclass AddTest(unittest.TestCase):\n    def test_add(self):\n        self.assertEqual(add(1, 2), 3)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260731010000_add-multiply.md": "# multiply 機能追加\n\n**Cycle ID:** `20260731010000`\n**Started:** 2026-07-31 01:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nmultiply 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **multiply 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - multiply(a, b) -> int を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 4 の holistic review の結果が BLOCK と仮定して（設計の整合性に重大な問題がある想定で）、Phase 4 の BLOCK 停止パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 のレビュー（PASS または WARN）を通過した後に Phase 4 に到達している",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 で ⛔ CYCLE STOPPED: Final gate BLOCK のメッセージが表示されている",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されており、次回 cycle の自動選択で再選択可能な状態になっている",
+          "critical": true
+        },
+        {
+          "text": "Phase 5 が実行されていない（status.md の更新、issue close、result ファイル生成が行われていない）",
+          "critical": true
+        },
+        {
+          "text": "/iterate で対応してから cycle を再実行する旨の案内が表示されている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 4 BLOCK 停止パスの固定。最終ゲートの BLOCK は fix loop なしで停止し、Phase 5 を実行せず plan status を復元する。Phase 3 通過後の停止であることを確認する。"
     }
   ]
 }

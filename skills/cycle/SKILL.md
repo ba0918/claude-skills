@@ -120,7 +120,10 @@ path cleanup-eligible. The outer orchestrator composes singleton artifacts only 
    - If already on a non-default branch: continue on the current branch
 2. Read the plan file and grasp the overview (feature name, step count = the number of
    implementation steps listed in the plan)
-3. Display the cycle start:
+3. **Save `cycle_start_sha`**: record the current `HEAD` commit SHA (`git rev-parse HEAD`).
+   Phase 3 and Phase 4 use this to scope reviews and fixes to only the changes introduced
+   by this cycle, excluding prior unrelated commits on the branch.
+4. Display the cycle start:
    ```
    ══════════════════════════════════════
    CYCLE START
@@ -264,10 +267,12 @@ provided separately in Phase 4.
 
 Launch a review subagent (high-performance model):
 - Prompt: "Execute the skill `claude-skills:plan-reviewer`. Review the implementation of
-  plan file {plan_file_path}. **Before sending your completion report**, write the full
-  review result (overall verdict, dimension scores, all findings with file/location/severity/
-  suggestion, escalation items) to `.agents/runtime/delegation/{run_id}_{role}.md`.
-  The report is merely a notification that the file was written."
+  plan file {plan_file_path}. Scope the review to changes introduced by this cycle only:
+  use `git diff {cycle_start_sha}..HEAD` as the implementation diff. **Before sending your
+  completion report**, write the full review result (overall verdict, dimension scores, all
+  findings with file/location/severity/suggestion, escalation items) to
+  `.agents/runtime/delegation/{run_id}_{role}.md`. The report is merely a notification that
+  the file was written."
 - For the initial review, `{role}` = `post-review`. For re-reviews after a fix iteration,
   `{role}` = `post-review-{N}` where N is the iteration number.
 - Follow the [delegation result relay](#delegation-result-relay-shared-by-phases-1-3-and-4--delegation-mode-only)
@@ -302,15 +307,20 @@ Action: Resolve spec gaps in brainstorm before re-running the cycle.
 
 Repeat up to 2 times:
 
-a. Extract BLOCK findings from the review result (file, location, severity, description,
-   suggestion per the [output format](../plan-reviewer/references/output-format.md))
+a. Extract fix-targeted findings from the review result: include all findings with severity
+   `critical`, plus all findings with severity `important` from dimensions whose verdict is
+   BLOCK (score 80-100). Minor findings and important findings from non-BLOCK dimensions are
+   WARN-level — record them but do not include them in the fix payload.
+   (Per the [output format](../plan-reviewer/references/output-format.md), findings carry
+   `severity: critical / important / minor`; BLOCK is the dimension/overall verdict, not a
+   finding severity.)
 b. Launch a targeted-fix subagent (high-performance model):
    - Prompt: "Fix the following review findings in the implementation. For each finding,
      apply the suggested fix or an equivalent correction. After all fixes, run the full test
      suite and verify all tests pass. Commit the fixes. **Before sending your completion
      report**, write the result (files changed, test output, findings addressed vs not
      addressed) to `.agents/runtime/delegation/{run_id}_fix-{N}.md`."
-   - Append the BLOCK findings as structured data (severity, task, title, description,
+   - Append the fix-targeted findings as structured data (severity, task, title, description,
      location, suggestion)
    - Follow the delegation result relay with `{role}` = `fix-{N}`
 c. After the fix subagent completes, re-launch the review (same prompt as Step 1) with
@@ -354,7 +364,8 @@ satellite worktree's diff; the independent review receives only the plan file co
 Launch two reviews in parallel:
 
 a. **Holistic review** (high-performance model):
-   - Prompt: "Review the complete implementation diff for plan {plan_file_path} holistically.
+   - Prompt: "Review the implementation diff for plan {plan_file_path} holistically, scoped
+     to changes from this cycle only (`git diff {cycle_start_sha}..HEAD`).
      You are the final gate before this becomes a PR. Focus on:
      - Cross-cutting concerns the dimensional review may have missed
      - Design coherence across all changes
@@ -388,9 +399,11 @@ Collect both reviews following the [wait discipline](../shared/references/orches
   ```
 
 Determine the overall verdict:
-- If at least one review arrived: overall verdict = worst of those that arrived
+- If holistic review arrived: overall verdict = worst of all arrived reviews
   (BLOCK > WARN > PASS)
-- If zero reviews arrived (both failed after retry/fallback): overall verdict = UNVERIFIED
+- If holistic review did not arrive (even after redelegation): overall verdict = UNVERIFIED,
+  regardless of independent review result. The independent review sees only the plan file
+  and cannot substitute for implementation-level verification
 
 | Verdict | Action |
 |---------|--------|
@@ -550,9 +563,10 @@ and `Issue: deferred to outer orchestrator: {slug | none}`.
   confirm completion, proceed to the next phase even without a delivered report.
 - **Error in a Phase 2 step**: record the step in `phase2_failures` and continue with the
   rest. Phase 2 errors never fail the whole cycle.
-- **Review subagent error in Phase 3**: retry once. If the retry also fails, abort the cycle.
-  Follow the same delegation result relay and wait discipline as Phase 1, using the extended
-  20-minute timeout for review delegates.
+- **Review subagent error in Phase 3**: retry once. If the retry also fails, abort the cycle
+  (revert plan status to `⚠️ Review Failed` before aborting). Follow the same delegation
+  result relay and wait discipline as Phase 1, using the extended 20-minute timeout for
+  review delegates.
 - **Fix subagent error in Phase 3**: retry once. If the retry also fails, abort the cycle
   (revert plan status to `⚠️ Review Failed` before aborting).
 - **ESCALATE in Phase 3**: abort the cycle immediately with brainstorm redirect. This is an

@@ -119,8 +119,8 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "cc38eef2706c02c347660481bf182db70d88eadfe0d8262b1528e53680f52059",
-      "skills/cycle/fixtures.json": "dff6f4b45fa28a3c53572e97345d7f30274443f595ac5f53407bc69813493d2d",
+      "skills/cycle/SKILL.md": "d8da1a94922e47014d71c78a9775741819093925d14a1e4c66379fd8c7e3d9ec",
+      "skills/cycle/fixtures.json": "2ba1ba9f9b58c33da226e99fa10b129b80b19e2120932649b9aa5c00dc5463ea",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -130,8 +130,8 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "Phase 3-5 追加に伴う fixtures 更新。新規 Phase のため回帰対象なし（新規挙動の定義）。regression run は PR マージ後に実施。",
-    "result": "pass",
+    "note": "Phase 3-5 追加 + PR レビュー指摘 6 件対応（holistic 必須化、fix findings 定義、plan status 復元、cycle_start_sha、停止経路 fixtures 追加）。regression run は PR マージ後に実施。",
+    "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
@@ -144,7 +144,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "181030216768b11516ff291589232950a6a202453f009744b4f8bd53d3cf7828",
+    "surface_sha256": "e03cd8c912bab72bc82789e4cc15c12260618a2d79cc64b657c9af700786e6ec",
     "verified": "2026-07-31"
   },
   "decision-journal": {
