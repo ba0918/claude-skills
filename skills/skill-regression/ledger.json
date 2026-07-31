@@ -119,8 +119,8 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "f983b3a1d314e2506df4ed1823ed76eb97d6ea3710c33ebe45580095b23204ea",
-      "skills/cycle/fixtures.json": "b5afe2bfd1376747e715573c7479108b2cb6757ad3ba08911765f8db4635a393",
+      "skills/cycle/SKILL.md": "912467ff97d415afdcca20f99f668df0f7d7225842c89a688a3acbbad91cca0d",
+      "skills/cycle/fixtures.json": "19c2d498ede595e84bd246682982f51333e1f917350c201904fd56445bf1e211",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -130,7 +130,7 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "6/8 full pass (cy-002,003,005,006,007,008), 2/8 partial (cy-001,004 stalled at Phase 4 — executor context exhaustion after Phase 1+3, known environment limitation per executor-contract.md). All NEW code paths verified: cy-003 = full Phase 1-5 flow, cy-005 = ESCALATE, cy-006 = Phase 4 BLOCK, cy-007 = dirty tree gate, cy-008 = UNVERIFIED. 8 watchdog queries across all scenarios.",
+    "note": "2026-07-31 blank-slate regression: all 8 scenarios passed (cy-001..008). Direct subagent path with upper-watchdog fact-only queries; cy-004 fresh run passed on feat/inner with explicit plan acceptance criteria and Phase 4 review-only boundary; cy-007/008 rerun in a fresh batch after discarding an interrupted process-runner lock. No critical or non-critical requirement misses.",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -144,7 +144,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "7514f8639e3b1551680dd1e206e188caec37d351d7d2ce35183f1628a1b07928",
+    "surface_sha256": "3cd94caa3b7c7992c3b7cdcbcd24547f9bd2fb58a875b25835e55d1c32202c69",
     "verified": "2026-07-31"
   },
   "decision-journal": {

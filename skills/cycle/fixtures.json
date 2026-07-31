@@ -140,10 +140,10 @@
           ".agents/artifacts/status.md": "SENTINEL STATUS\n",
           ".agents/artifacts/session-history.md": "SENTINEL HISTORY\n",
           ".agents/artifacts/idea-status.md": "SENTINEL DERIVED INDEX\n",
-          ".agents/artifacts/plans/20260729000000_inner.md": "# Inner plan\n\n**Cycle ID:** `20260729000000`\n**Status:** 🟡 Planning\n\n---\n\n## 🔧 Implementation Steps\n\n1. **Step 1**\n   - Files: `src/inner.py`, `tests/test_inner.py`\n   - Implement the inner feature\n",
+          ".agents/artifacts/plans/20260729000000_inner.md": "# Inner plan\n\n**Cycle ID:** `20260729000000`\n**Status:** 🟡 Planning\n\n---\n\n## 🎯 Goal\n\nAdd a minimal inner feature with a stable, testable contract.\n\n## ✅ Acceptance criteria\n\n- `src.inner.inner_feature()` exists and returns the exact string `inner feature`.\n- `tests/test_inner.py` covers the return value.\n- The implementation and test are committed while singleton artifact files remain untouched in satellite mode.\n\n## 🔧 Implementation Steps\n\n1. **Step 1**\n   - Files: `src/inner.py`, `tests/test_inner.py`\n   - Implement `inner_feature()` and its unittest according to the acceptance criteria.\n",
           ".agents/runtime/satellite-capability": "fixture-capability"
         },
-        "git": { "init": true, "commit": true }
+        "git": { "init": true, "branch": "feat/inner", "commit": true }
       },
       "prompt": "Run cycle with pinned_plan=.agents/artifacts/plans/20260729000000_inner.md, resolved_isolation=worktree, satellite_run_id=batch-42-A, and satellite_capability_file=.agents/runtime/satellite-capability.",
       "requirements": [

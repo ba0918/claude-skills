@@ -20,6 +20,8 @@ claude-skills プラグインのバージョン履歴。
 - Phase 2 に clean tree gate を追加（commit 失敗時の dirty tree がレビューをバイパスすることを防止）
 - abort/stop 時に plan Status を `⚠️ Review Failed` に戻して再選択可能にする
 - superpowers の 3 段レビュー構成（spec self-review / task review / final review）に対応
+- Phase 4 を review verdict の生成に限定し、publishable 遷移の SHA-bound quality-gate evidence は呼び出し側で検証する責務境界を明記
+- inner satellite regression fixture の feature branch と受入条件を固定し、Phase 3/4/5 の完走経路を再検証
 
 ### Added: brainstorm セッション中の pre-wrap self-review (#186)
 

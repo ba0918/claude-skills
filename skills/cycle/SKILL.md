@@ -378,6 +378,13 @@ review may have missed. Phase 3's sequential mode skips the Codex second opinion
 Phase 4's independent review is the sole Codex perspective in the cycle — the two phases
 are complementary, not redundant.
 
+Phase 4 produces a review verdict; it does not itself transition the change into a protected
+state such as `publishable`. Do not block this review solely because SHA-bound
+`machine_verified` / `semantic_reviewed` evidence for a later publication transition is not
+present, and do not fabricate or reuse such evidence here. The caller that performs the
+protected-state transition owns that quality-gate check and must re-earn evidence for the
+exact target SHA.
+
 **Inner satellite mode:** Phase 4 runs normally. The holistic review operates on the
 satellite worktree's diff; the independent review receives only the plan file contents.
 
