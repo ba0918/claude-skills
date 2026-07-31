@@ -1,7 +1,7 @@
 # claude-skills
 
 AI コーディングエージェント向けのスキル集。
-[Agent Skills](https://agentskills.io/) 標準に準拠しており、Claude Code、Codex、Copilot、Cursor、Gemini CLI 等で利用できる。
+[Agent Skills](https://agentskills.io/) 標準に準拠しており、Claude Code、Codex、OpenCode、Copilot、Cursor、Gemini CLI 等で利用できる。
 
 計画の作成からレビュー、自動実装、コミットまでのワークフローを中心に、セキュリティレビュー、デザインシステム、TDD ガイド、issue 自走ループなど 40 以上のスキルを提供する。
 
@@ -28,6 +28,20 @@ codex plugin add claude-skills@claude-skills
 
 スキル本文はプラットフォーム非依存の自然言語で記述されており、そのまま利用できる。
 
+### OpenCode Plugin（一括インストール・推奨）
+
+`opencode.json` の `plugin` に git 指定を 1 行足す:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["claude-skills@git+https://github.com/ba0918/claude-skills.git"]
+}
+```
+
+OpenCode を再起動すると、plugin が `skills/` を登録し、skill-routing と quality-gate ポインタをセッションへ注入する。
+詳細・更新・トラブルシュートは [docs/README.opencode.md](docs/README.opencode.md)。
+
 ### Claude Code rules（Plugin 利用者は手動コピー不要）
 
 Plugin をインストールすると、SessionStart hook（`hooks/hooks.json`）がセッション開始時
@@ -41,8 +55,8 @@ Plugin 利用者に手動コピーは不要である。
 注入対象は上記 2 本のみ。常駐コンテキストの予算を使うのは、実測で必要性が確認されたものだけに
 限るという意図的な選択で、`rules/` の他の文書（`information-placement.md` 等）は注入しない。
 
-手動コピーは「Plugin を使わず個別インストールする利用者」と
-「Claude Code 以外のエージェント」向けに残している。
+手動コピーは「Plugin を使わず個別インストールする利用者」向けに残している。
+OpenCode は上記 git plugin が同等の注入を行う（[docs/README.opencode.md](docs/README.opencode.md)）。
 
 ```bash
 mkdir -p ~/.claude/rules

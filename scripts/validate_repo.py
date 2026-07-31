@@ -24,7 +24,8 @@
       （対応エントリが存在する / 未配布の先行エントリが残っていない）
   13. frontmatter のクォートなし値が strict YAML と互換（`: ` / 末尾コロン / ` #` 禁止）
   14. ヒューマンリーダブル要約契約の横展開ガード
-  15. 配布 manifest の整合性（3 manifest の name / version、リポジトリ slug、LICENSE 実在）
+  15. 配布 manifest の整合性（3 manifest + package.json の name / version、
+      リポジトリ slug、LICENSE 実在）
   16. 名前が対応しない command が description で起動先スキルを名指ししている
   17. skills/*/fixtures.json が回帰 fixture の契約に適合する
   18. デザイントークンの authoring 層 ⇔ 配布層同期
@@ -32,6 +33,7 @@
   20. リネーム許可表（scripts/rename-allowlist.json）の失効エントリ検出
   21. plugin hooks の整合性（hooks.json のパース / command パスの実在と実行ビット /
       hook スクリプトが参照する rules/skill-routing.md の実在）
+  22. OpenCode git plugin（package.json main / plugin 実在 / 導入ドキュメント）
 
 チェック 10・11 と store 実在性:
   チェック 10（dossier lint）は local store が ignore されている環境では対象ファイルが
@@ -738,6 +740,58 @@ def check_plugin_hooks(root):
     return errors
 
 
+_OPENCODE_PLUGIN_REL = os.path.join(".opencode", "plugins", "claude-skills.js")
+_OPENCODE_DOCS_REL = os.path.join("docs", "README.opencode.md")
+
+
+def check_opencode_plugin(root):
+    """チェック22: OpenCode git plugin の入口整合。
+
+    package.json の main が実在する plugin を指し、導入ドキュメントがあること。
+    package.json が無いリポジトリでは no-op（他プロジェクトへの流用を壊さない）。
+    """
+    pkg_path = os.path.join(root, "package.json")
+    if not os.path.isfile(pkg_path):
+        return []
+    errors = []
+    try:
+        pkg = json.loads(_read(pkg_path))
+    except json.JSONDecodeError as exc:
+        return [f"[opencode] package.json が JSON として読めない: {exc}"]
+
+    main = pkg.get("main")
+    if not main:
+        errors.append("[opencode] package.json に main がない")
+    else:
+        main_path = os.path.join(root, main)
+        if not os.path.isfile(main_path):
+            errors.append(f"[opencode] package.json main の実体がない: {main}")
+        elif os.path.normpath(main) != os.path.normpath(_OPENCODE_PLUGIN_REL):
+            errors.append(
+                f"[opencode] package.json main が {_OPENCODE_PLUGIN_REL} でない: {main}"
+            )
+
+    plugin_path = os.path.join(root, _OPENCODE_PLUGIN_REL)
+    if not os.path.isfile(plugin_path):
+        errors.append(f"[opencode] plugin が存在しない: {_OPENCODE_PLUGIN_REL}")
+    else:
+        body = _read(plugin_path)
+        if "config.skills.paths" not in body and "skills.paths" not in body:
+            errors.append(
+                f"[opencode] {_OPENCODE_PLUGIN_REL} が skills.paths 登録をしていない様子"
+            )
+        if "experimental.chat.messages.transform" not in body:
+            errors.append(
+                f"[opencode] {_OPENCODE_PLUGIN_REL} に "
+                "experimental.chat.messages.transform がない"
+            )
+
+    if not os.path.isfile(os.path.join(root, _OPENCODE_DOCS_REL)):
+        errors.append(f"[opencode] 導入ドキュメントがない: {_OPENCODE_DOCS_REL}")
+
+    return errors
+
+
 _VERSION_HEADING_RE = re.compile(r"^##\s+(\d+(?:\.\d+)*)(?:\s.*)?$", re.M)
 
 
@@ -856,13 +910,14 @@ def check_changelog_sync(root):
     return errors
 
 
-# チェック15: 配布 manifest 群。3 つの manifest が別々に手編集されるため、
-# 一致していなければならない項目が黙ってドリフトする。実際に .claude-plugin/plugin.json の
-# repository が実在しない owner を指したまま配布されていた。
+# チェック15: 配布 manifest 群。手編集 manifest が別々にドリフトするのを防ぐ。
+# 実際に .claude-plugin/plugin.json の repository が実在しない owner を指したまま配布されていた。
+# ルート package.json は OpenCode git plugin の入口で、version を 3 manifest と揃える。
 _MANIFEST_RELS = (
     os.path.join(".claude-plugin", "plugin.json"),
     os.path.join(".claude-plugin", "marketplace.json"),
     os.path.join(".codex-plugin", "plugin.json"),
+    "package.json",
 )
 _REPO_URL_RE = re.compile(r"github\.com[:/]([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?$")
 
@@ -1148,6 +1203,9 @@ def run_checks(root):
 
     # 21. plugin hooks の整合性（hooks.json / command 実在・実行ビット / 正本実在）
     errors += check_plugin_hooks(root)
+
+    # 22. OpenCode git plugin（package.json main / plugin 実在 / docs）
+    errors += check_opencode_plugin(root)
 
     return errors
 

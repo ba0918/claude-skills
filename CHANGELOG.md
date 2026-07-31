@@ -5,10 +5,24 @@ claude-skills プラグインのバージョン履歴。
 変更は PR で `## Unreleased` へ追記する。**PR では version を bump しない** — 並走する PR が
 揃って同じ番号を名乗り、マージ順に依存した manifest 衝突が必ず起きるため。リリース時に
 `## Unreleased` を `## <version>` へ改名し、`.claude-plugin/plugin.json` /
-`.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
+`.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest と
+ルート `package.json`（OpenCode git plugin）を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
 ## Unreleased
+
+### Added: OpenCode git plugin 対応
+
+- superpowers 型の OpenCode plugin を追加。利用側は `opencode.json` に
+  `"plugin": ["claude-skills@git+https://github.com/ba0918/claude-skills.git"]` を 1 行足すだけ
+- `.opencode/plugins/claude-skills.js`: `config` hook でパッケージ内 `skills/` を
+  `skills.paths` に登録（symlink 不要、`shared/` 同梱）
+- 同 plugin の `experimental.chat.messages.transform` で skill-routing 全文と
+  quality-gate 契約ポインタをセッション最初の user メッセージへ注入
+  （Claude Code SessionStart hook 相当）
+- ルート `package.json`（`main` → plugin）と `docs/README.opencode.md` / `.opencode/INSTALL.md`
+- 静的検証: `scripts/test_opencode_plugin.mjs`
+- README / AGENTS.md / install.sh に OpenCode 導入手順を追記
 
 ### Added: brainstorm セッション中の pre-wrap self-review (#186)
 

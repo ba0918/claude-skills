@@ -18,6 +18,7 @@ This file is the shared project instruction source for Claude Code, Codex CLI, a
 - `rules/` — 常駐ルールとして使える補助指示
 - `scripts/` — リポジトリ整合性バリデータなどの開発用スクリプト
 - `.claude-plugin/` / `.codex-plugin/` — 各プラットフォーム向け plugin manifest
+- `.opencode/plugins/` + ルート `package.json` — OpenCode 向け git plugin（`skills.paths` 登録と bootstrap 注入）
 
 ## スキル運用
 
