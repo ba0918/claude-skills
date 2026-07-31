@@ -239,6 +239,82 @@
         }
       ],
       "notes": "Phase 4 BLOCK 停止パスの固定。最終ゲートの BLOCK は fix loop なしで停止し、Phase 5 を実行せず plan status を復元する。Phase 3 通過後の停止であることを確認する。"
+    },
+    {
+      "id": "cy-007",
+      "title": "Phase 2 dirty tree gate — commit 失敗後の未コミット変更で cycle 中断",
+      "source": "manual:issue-187-stop-path",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# dirty-test\n\nDirty tree gate テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def double(x: int) -> int:\n    return x * 2\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import double\n\nclass DoubleTest(unittest.TestCase):\n    def test_double(self):\n        self.assertEqual(double(3), 6)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260731020000_add-triple.md": "# triple 機能追加\n\n**Cycle ID:** `20260731020000`\n**Started:** 2026-07-31 02:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ntriple 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **triple 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - triple(x) -> int を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 2 の commit が失敗したと仮定して（commit skill がエラーを返した想定で）、dirty tree が残った場合の中断パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 2 の clean tree gate で ⛔ CYCLE ABORTED: Uncommitted implementation changes detected のメッセージが表示されている",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 3/4/5 が実行されていない",
+          "critical": true
+        },
+        {
+          "text": "dirty files の一覧が中断メッセージに含まれている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 2 clean tree gate の固定。commit 失敗で dirty tree が残ると Phase 3/4 の git diff cycle_start_sha..HEAD にその変更が含まれずレビューをバイパスするため、Phase 3 に進まず中断する。"
+    },
+    {
+      "id": "cy-008",
+      "title": "Phase 4 UNVERIFIED — holistic 欠落 + independent PASS で cycle 停止",
+      "source": "manual:issue-187-stop-path",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# unverified-test\n\nUNVERIFIED gate テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def square(x: int) -> int:\n    return x * x\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import square\n\nclass SquareTest(unittest.TestCase):\n    def test_square(self):\n        self.assertEqual(square(4), 16)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260731030000_add-cube.md": "# cube 機能追加\n\n**Cycle ID:** `20260731030000`\n**Started:** 2026-07-31 03:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ncube 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **cube 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - cube(x) -> int を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 4 の holistic review が利用不能（タイムアウト + 再委譲も失敗）で、independent review は PASS と仮定して、UNVERIFIED 停止パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 4 で ⛔ CYCLE STOPPED: Final gate UNVERIFIED のメッセージが表示されている",
+          "critical": true
+        },
+        {
+          "text": "holistic review が利用不能であり plan-only の independent review では代替できない旨の理由が表示されている",
+          "critical": true
+        },
+        {
+          "text": "independent review が PASS であるにもかかわらず Phase 5 に進んでいない（holistic 必須の原則が守られている）",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true
+        }
+      ],
+      "notes": "Phase 4 UNVERIFIED 停止パスの固定。holistic review は実装コードを検証する必須レビューで、plan のみを見る independent review では代替できない。independent が PASS でも holistic が欠落すれば UNVERIFIED で停止する。"
     }
   ]
 }

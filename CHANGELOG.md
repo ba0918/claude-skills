@@ -10,6 +10,17 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Added: cycle 後レビュー自動化 + レビューループ + 最終ゲート (#187)
+
+- cycle に Phase 3（post-implementation review）、Phase 4（final gate）、Phase 5（completion）を追加
+- Phase 3: plan-reviewer 自動呼び出し + fix loop（最大 2 反復）。BLOCK findings は targeted-fix で修正、ESCALATE は即時中断して brainstorm へ差し戻し
+- Phase 4: ホリスティックレビュー + 独立レビュー（Codex）の並行実行。BLOCK / UNVERIFIED は fix loop なしで停止
+- Phase 5: review 通過後にのみ status 更新・issue close・result ファイル生成を実行（完了処理のゲーティング）
+- Phase 0 で `cycle_start_sha` を保存し、Phase 3/4 のレビュー範囲を今回の cycle 変更に限定
+- Phase 2 に clean tree gate を追加（commit 失敗時の dirty tree がレビューをバイパスすることを防止）
+- abort/stop 時に plan Status を `⚠️ Review Failed` に戻して再選択可能にする
+- superpowers の 3 段レビュー構成（spec self-review / task review / final review）に対応
+
 ### Added: brainstorm セッション中の pre-wrap self-review (#186)
 
 - Session Workflow の wrap ゲートに、4 項目のインライン self-review を追加

@@ -237,6 +237,23 @@ whole cycle for it.
    - If there is nothing to commit, the commit skill handles the skip
    - **On failure**: append `"commit"` to `phase2_failures` and move on
 
+3. **Clean tree gate**: after committing, verify the working tree is clean
+   (`git status --porcelain` returns empty for tracked files). Phase 3/4 review
+   `git diff {cycle_start_sha}..HEAD` which only covers committed changes — an uncommitted
+   implementation would be invisible to the review.
+   - If clean → continue
+   - If dirty (tracked uncommitted changes remain) → **abort the cycle**:
+     ```
+     ⛔ CYCLE ABORTED: Uncommitted implementation changes detected
+     Dirty files:
+       {list from git status}
+     Phase 3/4 review covers only committed changes. Uncommitted work would
+     bypass review entirely. Fix the commit failure and re-run the cycle.
+     ```
+     Revert the plan file's **Status:** to `⚠️ Review Failed` before aborting.
+   - Untracked files that are gitignored (e.g. `.agents/`, `__pycache__/`) do not
+     trigger this gate. Only tracked-but-uncommitted changes are blocking.
+
 Display:
 ```
 ── Phase 2: Artifacts ── DONE
@@ -423,8 +440,9 @@ Before displaying the stop message, revert the plan file's **Status:** header to
 Findings:
   {list of BLOCK findings from both reviews}
 {when UNVERIFIED:}
-Both reviews failed. No verdict could be determined.
-Action: Use /iterate to address findings, then re-run the cycle.
+The required holistic implementation review is unavailable. The plan-only
+independent review cannot substitute for implementation-level verification.
+Action: Re-run the cycle (the holistic review will be reattempted).
 ```
 
 Display:
@@ -562,7 +580,9 @@ and `Issue: deferred to outer orchestrator: {slug | none}`.
   phase completion → retry (once) only when undecidable. If the result file or artifacts
   confirm completion, proceed to the next phase even without a delivered report.
 - **Error in a Phase 2 step**: record the step in `phase2_failures` and continue with the
-  rest. Phase 2 errors never fail the whole cycle.
+  rest. **Exception**: the clean tree gate (Step 3) is a hard stop — if uncommitted tracked
+  changes remain after the commit step, the cycle aborts (uncommitted changes would bypass
+  Phase 3/4 review). Revert plan status before aborting.
 - **Review subagent error in Phase 3**: retry once. If the retry also fails, abort the cycle
   (revert plan status to `⚠️ Review Failed` before aborting). Follow the same delegation
   result relay and wait discipline as Phase 1, using the extended 20-minute timeout for

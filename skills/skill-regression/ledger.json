@@ -119,8 +119,8 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "d8da1a94922e47014d71c78a9775741819093925d14a1e4c66379fd8c7e3d9ec",
-      "skills/cycle/fixtures.json": "2ba1ba9f9b58c33da226e99fa10b129b80b19e2120932649b9aa5c00dc5463ea",
+      "skills/cycle/SKILL.md": "0f54032eddb44beee56f3d34fdff7e94a809fc1a09f01ed4a1c54347844354bd",
+      "skills/cycle/fixtures.json": "b5afe2bfd1376747e715573c7479108b2cb6757ad3ba08911765f8db4635a393",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -130,7 +130,7 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "Phase 3-5 追加 + PR レビュー指摘 6 件対応（holistic 必須化、fix findings 定義、plan status 復元、cycle_start_sha、停止経路 fixtures 追加）。regression run は PR マージ後に実施。",
+    "note": "第 2 ラウンドレビュー対応: dirty tree gate 追加、UNVERIFIED 表示修正、停止経路 fixtures 2 件追加。regression run は PR マージ後に実施。",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -144,7 +144,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "e03cd8c912bab72bc82789e4cc15c12260618a2d79cc64b657c9af700786e6ec",
+    "surface_sha256": "5ed409cbf412c72a4e2a85f122f74a067d71bd1b5f92bfc084bf96d123487ec6",
     "verified": "2026-07-31"
   },
   "decision-journal": {
