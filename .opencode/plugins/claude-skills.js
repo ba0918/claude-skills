@@ -79,7 +79,7 @@ function getBootstrapContent() {
   return _bootstrapCache
 }
 
-export const ClaudeSkillsPlugin = async () => {
+const ClaudeSkillsPlugin = async () => {
   return {
     config: async (config) => {
       config.skills = config.skills || {}
@@ -110,14 +110,6 @@ export const ClaudeSkillsPlugin = async () => {
   }
 }
 
-// Test / diagnostics helpers (not used by OpenCode runtime).
-export const _internals = {
-  PACKAGE_ROOT,
-  SKILLS_DIR,
-  ROUTING_PATH,
-  BOOTSTRAP_MARKER,
-  getBootstrapContent,
-  resetBootstrapCache: () => {
-    _bootstrapCache = undefined
-  },
-}
+// OpenCode treats every module export as a plugin. Keep this module's public
+// surface to the plugin function so test helpers cannot be loaded as plugins.
+export default ClaudeSkillsPlugin

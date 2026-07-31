@@ -11,6 +11,13 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: OpenCode plugin loading verification
+
+- plugin module の public export を default plugin function だけに限定し、loader の解釈差による
+  non-function export の混入を防止
+- `sh scripts/test_opencode_runtime.sh` で OpenCode 実ランタイムの `skills.paths` 登録と
+  `cycle` skill discovery を検証可能にした
+
 ### Added: OpenCode git plugin 対応
 
 - superpowers 型の OpenCode plugin を追加。利用側は `opencode.json` に
