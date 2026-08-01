@@ -397,12 +397,15 @@ ones to the user.
 
 1. Extract WARN-level findings (minor findings and important findings from non-BLOCK
    dimensions) as the fix payload. Use the same sanitization rules as Step 3b.
-2. Launch a targeted-fix subagent with the same constraints as Step 3b (trusted
+2. **Save `{pre_fix_sha}`** = current HEAD (`git rev-parse HEAD`) before launching the fix
+   agent (same as Step 3b).
+3. Launch a targeted-fix subagent with the same constraints as Step 3b (trusted
    allowed-files, no raw suggestion/description passthrough, post-fix scope verification).
-3. After the fix subagent completes, run the clean tree gate. If dirty, revert to
-   `{pre_fix_sha}` and fall through to the acknowledgement below.
-4. Re-launch the review (same prompt as Step 1) with `{role}` = `post-review-warn`.
-5. Branch on the re-review verdict:
+4. After the fix subagent completes, run the clean tree gate. If dirty, revert to the
+   pre-fix state (`git reset --hard {pre_fix_sha}`) and fall through to the acknowledgement
+   below.
+5. Re-launch the review (same prompt as Step 1) with `{role}` = `post-review-warn`.
+6. Branch on the re-review verdict:
    - **PASS** → auto-fix resolved the findings. Proceed to Phase 4.
    - **WARN** → auto-fix did not resolve all findings. Fall through to acknowledgement.
    - **BLOCK** → auto-fix introduced a regression. Revert to pre-fix state
