@@ -119,21 +119,19 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "a143097ca72997fbb8757242b933fce0b33fe5319ec4b3f53c49c01cde2e2584",
+      "skills/cycle/SKILL.md": "497fec3a8637ca0a6004b0b73ed96b6bbf67a591ad1ab5ee1b7241af95cbe732",
       "skills/cycle/fixtures.json": "89a4273eb3977d7c494b193257526bb94be03bb50989d060d1e86914842e5179",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
-      "skills/shared/references/evidence-format.md": "353dd268c430b7d151993a0ee678120e74ab0d9167646f79fb2847e11a80f83f",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
+      "skills/shared/references/publication-protocol.md": "a6fe823819c521bac83e1391f6f3bbd3d57e0abb628727fe532b4bf370e87f2e",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
-      "skills/shared/scripts/evidence_check.py": "65b2124f4a0239df01de1cf9707363f3782a7c4a2291a2aecc4a3ee24bb2206b"
+      "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "全13シナリオ pass 後の追加変更: WARN auto-fix（1回試行→残れば確認/headless停止）+ independent review に trusted diff + artifact-store.md 文言補足。既存シナリオの分岐（BLOCK/PASS/ESCALATE/UNVERIFIED）には影響なし。",
+    "note": "publication protocol を共有 reference に切り出し。Phase 本文の挙動は不変、Error handling / Key rules は Phase 本文と完全重複だった削除。Fable + Opus 5 レビューで整合性確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -142,15 +140,13 @@
       "skills/plan/references/status-update-guide.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/codex-integration.md",
-      "skills/shared/references/evidence-format.md",
       "skills/shared/references/orchestration-patterns.md",
-      "skills/shared/references/quality-gate-contract.md",
+      "skills/shared/references/publication-protocol.md",
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md",
-      "skills/shared/references/workspace-lock.md",
-      "skills/shared/scripts/evidence_check.py"
+      "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "3e64cb24cca395fb0e03b18dbea1981dff4f56b7d56e21b8b4663d17c0cb33ea",
+    "surface_sha256": "13f24bbc60ea01176cf6243444ebfc9be838227f893fb5b910342f930bfa5511",
     "verified": "2026-08-02"
   },
   "decision-journal": {
@@ -341,23 +337,21 @@
   },
   "iterate": {
     "file_sha256": {
-      "skills/iterate/SKILL.md": "782a860d2916601287f71e48518db65facb16b926a43b892796974e06566ad03",
+      "skills/iterate/SKILL.md": "1e02eef22aa9528d78b2916a3f58384c70d1cf5e74af3c15ceb3e9a9d1fb0a8f",
       "skills/iterate/fixtures.json": "ac7a7647522068d51cea277e16e10f095c8ec7ea98824fe214a13f15e94dce99",
       "skills/iterate/references/light-review.md": "f4b63a197756686af4f9313fd05da3c0e4bd88b24ca70779b3fa7f8f7ea6c322",
       "skills/iterate/references/scope-criteria.md": "fc0005c7a886ec6d3b9593bf6e9d6b607a6f4f6e6f000280844cf750de83ea21",
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
-      "skills/shared/references/evidence-format.md": "353dd268c430b7d151993a0ee678120e74ab0d9167646f79fb2847e11a80f83f",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
+      "skills/shared/references/publication-protocol.md": "a6fe823819c521bac83e1391f6f3bbd3d57e0abb628727fe532b4bf370e87f2e",
       "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
-      "skills/shared/scripts/evidence_check.py": "65b2124f4a0239df01de1cf9707363f3782a7c4a2291a2aecc4a3ee24bb2206b"
+      "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "publication protocol を共有 reference に切り出し。iterate 側の手順削除のみで Phase 本文の挙動は不変。Fable + Opus 5 レビューで整合性確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
@@ -366,17 +360,15 @@
       "skills/iterate/references/scope-criteria.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/codex-integration.md",
-      "skills/shared/references/evidence-format.md",
       "skills/shared/references/orchestration-patterns.md",
-      "skills/shared/references/quality-gate-contract.md",
+      "skills/shared/references/publication-protocol.md",
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/testing-anti-patterns.md",
       "skills/shared/references/verification-gate.md",
-      "skills/shared/references/workspace-lock.md",
-      "skills/shared/scripts/evidence_check.py"
+      "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "6b10d058263b7ddb6ed2896deb3de81c2bb4477e35735f562ea64d0b0e0a03ff",
+    "surface_sha256": "80700d91f69025068ea9b6fa43855cacf9202d53aa0ae018528e2a6780ca937f",
     "verified": "2026-08-02"
   },
   "plan": {
