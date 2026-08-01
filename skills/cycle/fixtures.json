@@ -515,6 +515,48 @@
         }
       ],
       "notes": "Phase 3 fix loop の成功系固定。BLOCK→targeted-fix→re-review PASS で Phase 4 到達。allowed-files が trusted diff から導出されることも検証する。cy-010（失敗系）と対をなす。"
+    },
+    {
+      "id": "cy-014",
+      "title": "Phase 3 WARN auto-fix 成功 — WARN→auto-fix→PASS で Phase 4 到達",
+      "source": "manual:pr-190-warn-autofix",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# warn-autofix-test\n\nWARN auto-fix テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def half(x: int) -> int:\n    return x // 2\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import half\n\nclass HalfTest(unittest.TestCase):\n    def test_half_even(self):\n        self.assertEqual(half(10), 5)\n    def test_half_odd(self):\n        self.assertEqual(half(7), 3)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260802000000_add-quarter.md": "# quarter 機能追加\n\n**Cycle ID:** `20260802000000`\n**Started:** 2026-08-02 00:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nquarter 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **quarter 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - quarter(x) -> int を実装（x // 4）\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが WARN（minor finding あり）で、WARN auto-fix 後の再レビューが PASS になった想定で、WARN auto-fix 成功パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 の初回レビューが WARN verdict を返し、WARN auto-fix（Step 2b）に入っている",
+          "critical": true
+        },
+        {
+          "text": "Step 2b で pre_fix_sha が保存され、targeted-fix subagent が実行され、fix 後の再レビューが PASS を返している",
+          "critical": true
+        },
+        {
+          "text": "WARN auto-fix 成功後にユーザー確認なしで Phase 4（Final Gate）に到達している",
+          "critical": true
+        },
+        {
+          "text": "Phase 5 まで完走しているか、Phase 4 の verdict に応じた正規の停止をしている",
+          "critical": true
+        },
+        {
+          "text": "Phase 3 の表示に WARN auto-fix の結果（findings resolved / re-review verdict）が含まれている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 3 WARN auto-fix の成功系固定。WARN→auto-fix→re-review PASS でユーザー確認をスキップし Phase 4 到達。headless 自走性の維持を検証する。cy-010/cy-013（BLOCK fix loop）とは異なる WARN 専用経路。"
     }
   ]
 }
