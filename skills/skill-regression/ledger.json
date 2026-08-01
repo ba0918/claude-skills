@@ -119,18 +119,21 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "912467ff97d415afdcca20f99f668df0f7d7225842c89a688a3acbbad91cca0d",
-      "skills/cycle/fixtures.json": "19c2d498ede595e84bd246682982f51333e1f917350c201904fd56445bf1e211",
+      "skills/cycle/SKILL.md": "e7dc611e4b9cb2ff27150cd7c0d8d6a062d928d0bffadcebea43d52d5ea684f3",
+      "skills/cycle/fixtures.json": "6168b4f9be5bf8bf1453cec27679103be31f4f9808045119e0ac1883b4758acf",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
+      "skills/shared/references/evidence-format.md": "353dd268c430b7d151993a0ee678120e74ab0d9167646f79fb2847e11a80f83f",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
+      "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
+      "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
+      "skills/shared/scripts/evidence_check.py": "65b2124f4a0239df01de1cf9707363f3782a7c4a2291a2aecc4a3ee24bb2206b"
     },
-    "note": "2026-07-31 blank-slate regression: all 8 scenarios passed (cy-001..008). Direct subagent path with upper-watchdog fact-only queries; cy-004 fresh run passed on feat/inner with explicit plan acceptance criteria and Phase 4 review-only boundary; cy-007/008 rerun in a fresh batch after discarding an interrupted process-runner lock. No critical or non-critical requirement misses.",
+    "note": "2026-08-01 blank-slate regression: all 9 scenarios passed. Process path: 5 completed before model switch, 3 completed with GPT-5.5 after user-requested cost reduction; cy-004 reran with lower-cost terra direct-subagent path because subprocess mode exposed no nested delegate. One upper-watchdog status update for cy-004; artifacts and critical requirements independently corroborated.",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -139,13 +142,16 @@
       "skills/plan/references/status-update-guide.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/codex-integration.md",
+      "skills/shared/references/evidence-format.md",
       "skills/shared/references/orchestration-patterns.md",
+      "skills/shared/references/quality-gate-contract.md",
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md",
-      "skills/shared/references/workspace-lock.md"
+      "skills/shared/references/workspace-lock.md",
+      "skills/shared/scripts/evidence_check.py"
     ],
-    "surface_sha256": "3cd94caa3b7c7992c3b7cdcbcd24547f9bd2fb58a875b25835e55d1c32202c69",
-    "verified": "2026-07-31"
+    "surface_sha256": "529c0ecd3884d2d342f64c2e43ceb110762a6240ca9a1d587e111bba866566d5",
+    "verified": "2026-08-01"
   },
   "decision-journal": {
     "file_sha256": {

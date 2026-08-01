@@ -57,10 +57,28 @@ invocation is the main-tree outer orchestrator and performs this ordered protoco
    `satellite_run_id`, and `satellite_capability_file`. The inner run must not re-resolve
    isolation or create a nested worktree.
 4. Collect on every terminal path: success, failure, cancellation, and verification failure.
-5. Merge and run post-merge verification in the main tree.
-6. Publish only after verification passes. Every failure path preserves staging and the worktree;
-   discard requires explicit human authorization.
-7. Cleanup only when cleanup_allowed is proven and the capability is revoked.
+5. Merge and run post-merge verification in the main tree. First resolve the resulting full
+   40-hex `{post_merge_sha}` from that tree. All later verification and evidence must name this
+   exact SHA; pre-merge or satellite evidence does not transfer across the merge.
+6. Re-earn both states required by the
+   [quality-gate contract](../shared/references/quality-gate-contract.md) for
+   `{post_merge_sha}`:
+   - Run the repository's canonical verification entry point against the merged main tree. Only
+     a complete pass may produce `machine_verified.json`.
+   - Run a fresh history-free semantic review of the merged target, disposition every finding,
+     and require convergence before producing `semantic_reviewed.json`.
+   - Write both records in the default artifact-store evidence directory using the
+     [evidence format](../shared/references/evidence-format.md): exact `{post_merge_sha}`,
+     `quality-gate-contract 1.0.0`, `profile: null`, and non-empty grounds naming the run or
+     review that produced the state. A Phase 4 verdict is review input, not reusable evidence.
+7. Publish only after verification passes: run the canonical checker in the main tree with every binding input explicit:
+   `python3 skills/shared/scripts/evidence_check.py --target-sha {post_merge_sha} --contract skills/shared/references/quality-gate-contract.md --repo-root {main_tree_root}`.
+   Publish only on exit 0. Exit 1 (missing, stale, or invalid evidence) and exit 2 (checker could
+   not run) are terminal publish failures: do not publish, compose singleton artifacts, close the
+   issue, or clean up.
+8. Every failure path preserves staging and the worktree; discard requires explicit human
+   authorization. Cleanup only when cleanup_allowed is proven after publication succeeded and
+   the capability is revoked.
 
 On every new terminal collect, publish, or cleanup-gate failure, preserve the worktree and invoke
 the shared exact six-line formatter with its closed reason code. Its final line is
@@ -450,7 +468,7 @@ Before displaying the stop message, revert the plan file's **Status:** header to
 ⛔ CYCLE STOPPED: Final gate {BLOCK / UNVERIFIED}
 {when BLOCK:}
 Findings:
-  {list of BLOCK findings from both reviews}
+  {all findings from each review whose overall verdict is BLOCK}
 {when BLOCK:}
 Action: Use /iterate to address findings, then re-run the cycle.
 {when UNVERIFIED:}
@@ -542,7 +560,8 @@ Phase 2.
 3. **Verify plan file status**: verify the plan file's own **Status:** header is marked
    completed (implement normally does this; update it here if it is stale) — otherwise the
    next cycle's Phase 0 would reselect this plan. On failure, append `"plan status update"`
-   to `phase5_failures` and move on
+   to `phase5_failures` and move on. This failure makes completion incomplete even if the
+   implementation and reviews passed.
 
 4. **Auto-close the issue**: read the plan file and check for an `**Issue:**` line
    - **Inner satellite mode:** must not auto-close a linked issue. Return its slug to the outer
@@ -555,7 +574,10 @@ Phase 2.
      - **Record the close outcome and include it in the final display**
    - If absent: skip this step
 
-5. **Final display**:
+5. **Final display**: show `CYCLE COMPLETE` only when the plan status verification in Step 3
+   succeeded. If it failed, replace the heading with `CYCLE INCOMPLETE: plan status update
+   failed` and add `Recovery: update the plan Status, then re-run completion`; do not claim the
+   plan or cycle completed.
 ```
 ══════════════════════════════════════
 CYCLE COMPLETE

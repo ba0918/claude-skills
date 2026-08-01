@@ -315,6 +315,42 @@
         }
       ],
       "notes": "Phase 4 UNVERIFIED 停止パスの固定。holistic review は実装コードを検証する必須レビューで、plan のみを見る independent review では代替できない。independent が PASS でも holistic が欠落すれば UNVERIFIED で停止する。"
+    },
+    {
+      "id": "cy-009",
+      "title": "Standalone publish gate — post-merge SHA-bound evidence の fail-closed 検証",
+      "source": "manual:pr-190-quality-gate-review",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          ".agents/workspace.yml": "isolation: worktree\n",
+          ".agents/artifacts/plans/20260801000000_publish.md": "# Standalone publish plan\n\n**Cycle ID:** `20260801000000`\n**Status:** 🟡 Planning\n\n---\n\n## Goal\n\nImplement and publish a small verified change.\n\n## Implementation Steps\n\n1. Update `feature.txt` and verify it.\n",
+          "feature.txt": "before\n"
+        },
+        "git": { "init": true, "branch": "feat/publish-gate", "commit": true }
+      },
+      "prompt": "standalone worktree mode で cycle を実行し、merge 後の publish gate を確認して。checker 入力について (1) machine evidence 欠落、(2) merge 前 SHA の stale semantic evidence、(3) checker 自体の error の各結果を想定し、publish 可否と復旧状態を示して。",
+      "requirements": [
+        {
+          "text": "merge 後の main tree から full 40-hex post_merge_sha を確定し、machine_verified と fresh history-free semantic_reviewed の両 evidence を同じ exact SHA と quality-gate-contract 1.0.0 に束縛して再生成する手順になっている",
+          "critical": true
+        },
+        {
+          "text": "canonical evidence checker を explicit post_merge_sha・contract path・repo root で実行し、exit 0 の場合だけ publish を許可している",
+          "critical": true
+        },
+        {
+          "text": "machine evidence 欠落、stale semantic evidence、checker error の3ケースすべてで publish・singleton composition・issue close・cleanup を抑止している",
+          "critical": true
+        },
+        {
+          "text": "失敗時に staging と worktree を保存し、closed reason code と recovery command を表示している",
+          "critical": false
+        }
+      ],
+      "notes": "standalone outer orchestrator が所有する protected-state transition の回帰。Phase 4 の pre-merge verdict を evidence として再利用せず、merge 後 SHA で両 state を再取得して checker を fail-closed に扱う。3つの負経路は同一 gate の判定表として固定する。"
     }
   ]
 }
