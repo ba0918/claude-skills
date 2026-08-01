@@ -133,8 +133,8 @@
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
       "skills/shared/scripts/evidence_check.py": "65b2124f4a0239df01de1cf9707363f3782a7c4a2291a2aecc4a3ee24bb2206b"
     },
-    "note": "PR #190 R7: cy-001〜008 の合否基準は変更なし。cy-009 の requirements を prospective merge に更新、cy-010〜012 を新規追加。前回 pass (2026-08-01) の実走結果は既存シナリオに対して有効。新規 fixture の実走はマージ後に実施する。",
-    "result": "accepted-without-run",
+    "note": "2026-08-02 regression run: 全13シナリオ (cy-001〜013) を Sonnet 5 executor で並列実走。全 critical requirement ○。cy-001 req5 / cy-009 req5 は non-critical partial（表示フォーマット / closed reason code mapping）。cy-005〜013 は simulation-path（assumed verdict）、cy-001〜004 はフルサイクル実行。",
+    "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
