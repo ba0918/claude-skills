@@ -160,7 +160,9 @@ path cleanup-eligible. The outer orchestrator composes singleton artifacts only 
      Recorded SHA: {sha}
      The SHA recorded in the plan file does not exist in the current repository.
      This may indicate history rewriting (rebase, force push).
-     Action: Remove the Implementation Base SHA line from the plan file and re-run.
+     Action: Recover the SHA from git reflog if possible. If unrecoverable,
+     removing the line forces a new baseline — the original implementation
+     will be outside review scope, requiring re-review of all changes.
      ```
      Revert plan status to `⚠️ Review Failed` before aborting.
      The original implementation must remain in review scope across
@@ -342,7 +344,7 @@ Before launching any review, verify the diff is non-empty:
 `git diff {cycle_start_sha}..HEAD` must produce output. If empty, revert plan status to
 `⚠️ Review Failed` and stop:
 ```
-⛔ CYCLE STOPPED: Final gate UNVERIFIED
+⛔ CYCLE STOPPED: Review UNVERIFIED (empty diff)
 Empty diff: no committed changes between cycle_start_sha ({sha}) and HEAD.
 Nothing was implemented or all changes were lost.
 Action: Re-run the cycle to re-implement, or check git history.
@@ -402,14 +404,16 @@ ones to the user.
 3. Launch a targeted-fix subagent with the same constraints as Step 3b (trusted
    allowed-files, no raw suggestion/description passthrough, post-fix scope verification).
 4. After the fix subagent completes, run the clean tree gate. If dirty, revert to the
-   pre-fix state (`git reset --hard {pre_fix_sha}`) and fall through to the acknowledgement
+   pre-fix state (`git reset --hard {pre_fix_sha}` then `git clean -fd` to remove
+   untracked files created by the fix agent) and fall through to the acknowledgement
    below.
 5. Re-launch the review (same prompt as Step 1) with `{role}` = `post-review-warn`.
 6. Branch on the re-review verdict:
    - **PASS** → auto-fix resolved the findings. Proceed to Phase 4.
    - **WARN** → auto-fix did not resolve all findings. Fall through to acknowledgement.
    - **BLOCK** → auto-fix introduced a regression. Revert to pre-fix state
-     (`git reset --hard {pre_fix_sha}`), discard the re-review, and fall through to
+     (`git reset --hard {pre_fix_sha}` then `git clean -fd`), discard the re-review,
+     and fall through to
      acknowledgement with the **original** WARN findings (not the regressed state).
    - **ESCALATE** → revert to pre-fix state and abort (same as Step 2a).
 
@@ -472,7 +476,8 @@ b. **Save `{pre_fix_sha}`** = current HEAD (`git rev-parse HEAD`) before launchi
    - **Post-fix scope verification** (parent-side, after fix commit): run
      `git diff {pre_fix_sha}..HEAD --name-only` and verify every changed file is in the
      allowed-files list. If out-of-scope files were modified, reset to the pre-fix state
-     (`git reset --hard {pre_fix_sha}`) to revert all fix commits (the fix agent may have
+     (`git reset --hard {pre_fix_sha}` then `git clean -fd`) to revert all fix commits and
+     remove any new untracked files (the fix agent may have
      created multiple commits), record the violation, and count the iteration as failed.
    - Follow the delegation result relay with `{role}` = `fix-{N}`
 c. After the fix subagent completes, run the same clean tree gate as Phase 2 Step 3
@@ -481,7 +486,9 @@ c. After the fix subagent completes, run the same clean tree gate as Phase 2 Ste
    the re-review.
 d. Re-launch the review (same prompt as Step 1) with `{role}` = `post-review-{N}`
 e. Branch on the new verdict:
-   - **PASS / WARN** → proceed to Phase 4
+   - **PASS** → proceed to Phase 4
+   - **WARN** → route to Step 2b (WARN auto-fix). The fix loop resolved the BLOCK but
+     introduced or revealed WARN-level findings that still require the WARN gate.
    - **ESCALATE** → revert plan status and abort (same as Step 2a)
    - **BLOCK and iteration < 2** → repeat from (a)
    - **BLOCK and iteration ≥ 2** → revert plan status and abort:
