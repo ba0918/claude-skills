@@ -119,8 +119,8 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "fd0118bb758da31287e4441b7d6ae0fe3b7e0080860259eb9da3ce727896c9bf",
-      "skills/cycle/fixtures.json": "ab21e7860d7a91c3214a6959d08301603c9314c65c03073147352ca55aee0318",
+      "skills/cycle/SKILL.md": "405e5461556b1234f0ea6fc89dfb1f79c1adeb2a7ab88ab50732c333ec6c4ef2",
+      "skills/cycle/fixtures.json": "023b30b64f9667d0270f19d8e3cd7cf6599bff578d537ac47c9ad588a6065072",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
@@ -150,7 +150,7 @@
       "skills/shared/references/workspace-lock.md",
       "skills/shared/scripts/evidence_check.py"
     ],
-    "surface_sha256": "0fe0aadcdb84960d840fcde4fe7a56ccd95b23509ccc83767ccb0ca602fe4f54",
+    "surface_sha256": "04de2ec317afc0444b32eb6b6d926224836cc85c575b1e3c1f2a29a8651dc027",
     "verified": "2026-08-02"
   },
   "decision-journal": {

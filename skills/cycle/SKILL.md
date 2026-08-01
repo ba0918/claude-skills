@@ -193,7 +193,8 @@ Subagent delegation follows
 - **`{run_id}`**: the Cycle ID at the top of the plan file (or the plan filename's timestamp
   if absent). Requirement: the orchestrator and the delegate must derive the same path.
 - **`{role}`**: varies by phase — `implement` (Phase 1), `post-review` / `post-review-{N}` /
-  `fix-{N}` (Phase 3), `final-holistic` / `final-independent` (Phase 4). Include the
+  `fix-{N}` / `fix-warn` / `post-review-warn` (Phase 3), `final-holistic` /
+  `final-independent` (Phase 4). Include the
   `.agents/runtime/delegation/{run_id}_{role}.md` path in the delegation prompt.
 - **Workspace-lock token**: pass the token from Phase 0 in the delegation prompt, on the same
   path as `{run_id}`. A delegate that receives one neither claims nor releases — that is what
@@ -514,8 +515,9 @@ present, and do not fabricate or reuse such evidence here. The caller that perfo
 protected-state transition owns that quality-gate check and must re-earn evidence for the
 exact target SHA.
 
-**Inner satellite mode:** Phase 4 runs normally. The holistic review operates on the
-satellite worktree's diff; the independent review receives only the plan file contents.
+**Inner satellite mode:** Phase 4 runs normally. Both the holistic review and the
+independent review operate on the satellite worktree's diff (`git diff {cycle_start_sha}..HEAD`).
+The same secret exclusion rules apply.
 
 ### Step 1: Launch parallel reviews
 
@@ -577,9 +579,18 @@ Determine the overall verdict:
 
 **WARN acknowledgement (Phase 4):**
 
-Same procedure as Phase 3 Step 2b. Display findings and request confirmation. In headless
-mode, stop with `⛔ CYCLE STOPPED: Final gate WARN (headless — user acknowledgement required)`
-and revert plan status. The user can re-run interactively or address findings with `/iterate`.
+Phase 4 is a quality gate, not a fix opportunity — **no auto-fix** (unlike Phase 3 Step 2b).
+Display WARN findings and request user acknowledgement directly:
+```
+⚠️ Final Gate: WARN
+Findings:
+  {list of WARN findings}
+Proceed with these warnings? (yes/no)
+```
+- **Interactive mode**: if the user confirms, proceed to Phase 5. If declined, revert plan
+  status to `⚠️ Review Failed` and stop with `/iterate` guidance.
+- **Headless mode**: stop with `⛔ CYCLE STOPPED: Final gate WARN (headless — user acknowledgement required)`
+  and revert plan status. The user can re-run interactively or address findings with `/iterate`.
 
 **BLOCK / UNVERIFIED stop:**
 
@@ -594,8 +605,9 @@ Findings:
 {when BLOCK:}
 Action: Use /iterate to address findings, then re-run the cycle.
 {when UNVERIFIED:}
-The required holistic implementation review is unavailable. The plan-only
-independent review cannot substitute for implementation-level verification.
+The required holistic implementation review is unavailable. The independent
+review runs on an external system and cannot substitute for the holistic
+review's cross-cutting analysis.
 Action: Re-run the cycle (the holistic review will be reattempted).
 ```
 
@@ -755,9 +767,11 @@ and `Issue: deferred to outer orchestrator: {slug | none}`.
   review delegates.
 - **Fix subagent error in Phase 3**: retry once. If the retry also fails, abort the cycle
   (revert plan status to `⚠️ Review Failed` before aborting).
-- **Dirty tree after Phase 3 fix**: if the clean tree gate after a fix subagent detects
-  uncommitted or untracked non-ignored files, abort the cycle (same behavior as the Phase 2
-  clean tree gate). Revert plan status before aborting.
+- **Dirty tree after Phase 3 BLOCK fix (Step 3)**: if the clean tree gate after a BLOCK
+  fix subagent detects uncommitted or untracked non-ignored files, abort the cycle (same
+  behavior as the Phase 2 clean tree gate). Revert plan status before aborting.
+  Note: WARN auto-fix (Step 2b) uses a different dirty-tree handling — revert to
+  `{pre_fix_sha}` and fall through to acknowledgement instead of aborting.
 - **WARN in Phase 3**: attempt auto-fix once (Step 2b). If auto-fix resolves all findings
   (re-review PASS), proceed. If unresolved WARN remains, request user acknowledgement; in
   headless mode, stop. If auto-fix causes BLOCK regression, revert to pre-fix state and

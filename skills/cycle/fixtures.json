@@ -157,7 +157,7 @@
         { "text": "inner mode でも tracked commit は省略していない", "critical": true },
         { "text": "raw capability を prompt、artifact、report に含めていない", "critical": true }
       ],
-      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic は worktree diff 対象、independent は plan file のみ）。"
+      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic / independent とも worktree diff 対象）。"
     },
     {
       "id": "cy-005",
@@ -302,7 +302,7 @@
           "critical": true
         },
         {
-          "text": "holistic review が利用不能であり plan-only の independent review では代替できない旨の理由が表示されている",
+          "text": "holistic review が利用不能であり、外部システムで実行される independent review では holistic の cross-cutting 分析を代替できない旨の理由が表示されている",
           "critical": true
         },
         {
@@ -314,7 +314,7 @@
           "critical": true
         }
       ],
-      "notes": "Phase 4 UNVERIFIED 停止パスの固定。holistic review は実装コードを検証する必須レビューで、plan のみを見る independent review では代替できない。independent が PASS でも holistic が欠落すれば UNVERIFIED で停止する。"
+      "notes": "Phase 4 UNVERIFIED 停止パスの固定。holistic review は高性能モデルで cross-cutting 分析を行う必須レビューで、外部システムで実行される independent review では代替できない。independent が PASS でも holistic が欠落すれば UNVERIFIED で停止する。"
     },
     {
       "id": "cy-009",
