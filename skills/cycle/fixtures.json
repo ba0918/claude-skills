@@ -498,7 +498,7 @@
           "critical": true
         },
         {
-          "text": "1 回目の fix iteration で targeted-fix agent が実行され、fix 後の再レビューが PASS または WARN を返している",
+          "text": "1 回目の fix iteration で targeted-fix agent が実行され、fix 後の再レビューが PASS を返している（WARN は Step 2b ルーティング対象であり本シナリオの成功条件ではない）",
           "critical": true
         },
         {

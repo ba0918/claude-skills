@@ -552,8 +552,10 @@ Before displaying the stop message, revert the plan file's **Status:** header to
 ```
 ⛔ CYCLE STOPPED: Final gate {BLOCK / UNVERIFIED}
 {when BLOCK:}
-Findings:
-  {all findings from each review whose overall verdict is BLOCK}
+Findings (all arrived reviews, labeled by source and per-review verdict —
+WARN-level findings from non-BLOCK sibling reviews are included, not dropped):
+  Holistic ({verdict}): {findings}
+  Independent ({verdict / ⚠️ unavailable}): {findings}
 {when BLOCK:}
 Action: Use /iterate to address findings, then re-run the cycle.
 {when UNVERIFIED:}
@@ -589,7 +591,9 @@ Phase 2.
    - **Inner satellite mode:** defer result-artifact composition to the outer orchestrator. Do
      not create this file in the satellite; retain the facts listed in the final display for
      the completion relay.
-   - **On failure**: append `"result file generation"` to `phase5_failures` and move on
+   - **On failure**: append `"result file generation"` to `phase5_failures` and move on.
+     The final display's `Result:` line must then show `⚠️ generation failed — no result
+     file`, never a path to a file that was not written
 
    Result file content:
    ```markdown
@@ -676,7 +680,7 @@ Implement: {steps_done}/{steps_total} steps
 Review: {PASS / WARN ({N} findings) / fix loop: {N} iterations → {verdict}}
 Final Gate: {PASS / WARN}
 Commits: {N} (all commits across the cycle)
-Result: {result_file_path}
+Result: {result_file_path / ⚠️ generation failed — no result file}
 Session: {archived → session-history.md / already archived / ⚠️ update failed}
 Issue: {closed ✅ / ⚠️ close failed: {slug} — manual close required / (none)}
 {when phase2_failures or phase5_failures is not empty:}
