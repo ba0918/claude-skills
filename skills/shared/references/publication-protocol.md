@@ -95,6 +95,21 @@ wrote, instead of relying on the default derivation from `--repo-root`.
 
 ### Exit 0 — advance main
 
+Execute the advance through the canonical primitive — never hand-roll these git
+commands. cycle, iterate, and the regression tests
+(`test_publication_protocol_git.py`) all run this same implementation, so the prose
+and the verified behavior cannot drift apart:
+
+```
+python3 skills/shared/scripts/publication_advance.py advance \
+  --repo-root {main_tree_root} --branch main \
+  --post-merge-sha {post_merge_sha} --expected-main-sha {expected_main_sha} \
+  --evidence-staging {evidence_dir}
+```
+
+The numbered steps below are the primitive's specification — what it proves, in which
+order — not a command list to reproduce by hand:
+
 1. **Precondition — exclusive access**: the caller must still hold the repository
    workspace lock it acquired at the start of its run (cycle and iterate claim it in
    their Phase 0 and release it only when the run ends). The clean-tree check, the ref
@@ -138,7 +153,10 @@ wrote, instead of relying on the default derivation from `--repo-root`.
    `{post_merge_sha}`); only after that verification exits 0, remove the staging
    directory. Copy-then-verify-then-delete makes promotion idempotent: a crash at any
    point leaves the complete staging set in place, and re-running the promotion from
-   staging converges — a partially promoted singleton is always repairable.
+   staging converges — a partially promoted singleton is always repairable. While the
+   copy is in flight the singleton may transiently hold records naming different
+   SHAs; any reader fails closed — the checker refuses a mixed set — and the staging
+   set remains in place until verification passes.
 6. Remove the temporary merge worktree (`git worktree remove {tmp_merge_root}`) only
    after the advance succeeds.
 
@@ -153,15 +171,26 @@ re-attempt the promotion) rather than being treated as publish failures.
 durable marker of an unfinished publication: it is deleted only as the final act of
 promotion, so no in-process state is needed to detect an interruption. On (re)entry
 into this protocol, if an `evidence-staging/{sha}/` directory exists whose `{sha}`
-equals the current main HEAD, the commit point already passed and the completion steps
-did not finish — resume them from the durable state alone:
-1. `git -C {main_tree_root} reset --hard refs/heads/main` (idempotent). The pre-CAS
-   clean-tree precondition does not apply during this repair — the phantom
-   modifications of a stale checkout are the symptom being repaired, not local edits.
-2. Re-run the promotion (copy → verify with the checker → delete staging).
-A staging directory whose `{sha}` differs from the current main HEAD names a
-prospective merge that never published (or one long superseded) and may be discarded
-under the CAS failure rule.
+equals the current main HEAD, the commit point already passed and the completion
+steps did not finish. First re-acquire the workspace lock — the crashed run's lock is
+gone, and repairing without exclusion recreates the concurrent-writer race. Then run
+the canonical primitive:
+`python3 skills/shared/scripts/publication_advance.py recover --repo-root {main_tree_root} --branch main`.
+
+The primitive repairs only what it can prove is the pure phantom state, because the
+durable marker alone cannot distinguish a stale checkout from a human's post-crash
+edits — and repair must never destroy the latter. It resets and promotes only when
+all of these hold; otherwise it stops without mutating anything and requires manual
+recovery:
+- the staged evidence still passes the Step 3 checker for `{sha}`;
+- index and worktree both still match the merge's first parent (`{sha}^1`, the
+  pre-CAS tree) — or already match `{sha}` (the reset had completed before the crash);
+- no path the merge adds exists as an untracked file in the worktree.
+
+The pre-CAS clean-tree precondition does not apply during this repair — the phantom
+modifications of a stale checkout are the symptom being repaired. A staging directory
+whose `{sha}` differs from the current main HEAD names a prospective merge that never
+published (or one long superseded) and may be discarded under the CAS failure rule.
 
 If CAS fails (main moved during verification):
 1. Discard the stale prospective merge (remove `{tmp_merge_root}` and the stale
@@ -186,11 +215,15 @@ Main remains untouched.
 
 ## Failure path preservation
 
-Every failure path before the commit point preserves staging and the worktree, and
-leaves main — ref, checkout, and published evidence singleton — untouched. Discard
-requires explicit human authorization. After the commit point there are no publish
-failures, only incomplete completion steps, which are repaired forward (re-run until
-they succeed) and never rolled back.
+Every failure path before the commit point preserves the satellite branch, its
+worktree, and its staging, and leaves main — ref, checkout, and published evidence
+singleton — untouched. Discarding satellite work products requires explicit human
+authorization. The protocol's own derived intermediates — `{tmp_merge_root}` and a
+stale `evidence-staging/` directory — are mechanically reproducible from the
+satellite branch and the current main, so the CAS retry rule may discard them
+automatically; that is not a discard of work products. After the commit point there
+are no publish failures, only incomplete completion steps, which are repaired forward
+(re-run until they succeed) and never rolled back.
 
 ## Cleanup gating
 

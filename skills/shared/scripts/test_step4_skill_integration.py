@@ -115,6 +115,13 @@ class Step4SkillIntegrationTests(unittest.TestCase):
         # a main checked out in a foreign worktree stops the publish before the CAS
         foreign = text.index("any worktree other than")
         self.assertLess(foreign, cas)
+        # the destructive transitions run through one shared executable primitive
+        self.assertIn("publication_advance.py advance", text)
+        self.assertIn("publication_advance.py recover", text)
+        self.assertIn("never hand-roll", text)
+        # recovery must prove the phantom state before any destructive repair
+        self.assertIn("repair must never destroy", text)
+        self.assertIn("stops without mutating anything", text)
         # semantic evidence delegates ledger and convergence to the contract
         self.assertIn("§4.3", text)
         self.assertIn("convergence conditions of §5", text)

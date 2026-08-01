@@ -119,19 +119,20 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "72df0af0bda567b804f8572b6c437fdf6c0accf99caca959e1954caae320435f",
+      "skills/cycle/SKILL.md": "ca7205e5b400b572484f355896471734c7353dd1783d75eb34c28e8c0d3c4f9c",
       "skills/cycle/fixtures.json": "e2ef9c4c17e29f74f51e6b034d4f82f03fff9b20bf91adf357f2edb002eda740",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/publication-protocol.md": "e96c620309a7395b17f824be660359a4ceb23cb07edade342fa0ace322a4e888",
+      "skills/shared/references/publication-protocol.md": "3bdf44829a58d8b835d637851a54a6a29cdc4f78f2cc459c011b24a38d8fefd0",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
+      "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
+      "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "R17 対応は publication protocol 側のみ（cycle SKILL 本文は R16 の diff 文言のまま不変）。実委譲 E2E は cy-013/cy-014 の 2 本、cy-015〜018 は inline 分岐検証（既録どおり）",
+    "note": "R18' 対応: diff の delimiter 明示 + secret_detect.py スキャンを Phase 4 独立レビューの制約に追加（文言強化のみ）。実委譲 E2E 範囲は既録どおり cy-013/cy-014",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -144,9 +145,10 @@
       "skills/shared/references/publication-protocol.md",
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md",
-      "skills/shared/references/workspace-lock.md"
+      "skills/shared/references/workspace-lock.md",
+      "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "91a70cc438e2bdc63199d3c79d9ef502bf7162f61d44d1800f02bed5b4a632aa",
+    "surface_sha256": "f859c39f35a36101998e3166620c3d11ccece292411fcf0dc6dc7b621c0bf28c",
     "verified": "2026-08-02"
   },
   "decision-journal": {
@@ -344,14 +346,14 @@
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/publication-protocol.md": "e96c620309a7395b17f824be660359a4ceb23cb07edade342fa0ace322a4e888",
+      "skills/shared/references/publication-protocol.md": "3bdf44829a58d8b835d637851a54a6a29cdc4f78f2cc459c011b24a38d8fefd0",
       "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "R17: promotion を copy→checker検証→staging削除の冪等手順に、restart 検出を staging dir の durable marker に、別 worktree の main checkout を CAS 前 terminal failure に規定。git 機構は test_publication_protocol_git.py が実 checker 込みで実行検証（happy path / CAS 競合+retry / durable marker からの restart 復旧 / promotion 中断からの再収束）。agent 追従の再実走は未実施（次の挙動面変更時に実走）",
+    "note": "R18': 破壊的遷移（advance/recover）を publication_advance.py に正本化し、cycle/iterate/テストが同一実装を実行（doc-surrogate ドリフト解消）。recovery は phantom 状態の証明（staging checker / {sha}^1 一致 / untracked 衝突なし）が成立した場合のみ reset し、証明不能なら無変更で手動復旧要求。dirty/foreign-worktree/user編集/untracked衝突/promotion中断の安全分岐を実 git テスト 9 本で実行検証",
     "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
@@ -368,7 +370,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "1e51322ef2e3764ba96484275d0bb0a21fc4e742c2844576124ffea79deea574",
+    "surface_sha256": "79b2094ca52d9d2fe549638d7be08d770326e1cbebc16393f0b753352fb17886",
     "verified": "2026-08-02"
   },
   "plan": {
