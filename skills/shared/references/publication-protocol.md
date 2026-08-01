@@ -12,6 +12,9 @@ worktree modes. Both follow the same protocol — no skill-specific overrides.
 Derived during the protocol: `{expected_main_sha}` / `{post_merge_sha}` (Step 1),
 `{tmp_merge_root}` (temporary merge worktree, Step 1), `{evidence_dir}` (Step 2).
 
+Throughout this protocol, `main` means the repository's default branch — substitute the
+actual name (e.g. `master`) in every command.
+
 ## Step 1: Prospective merge
 
 Create a prospective merge commit **without** advancing main. The procedure is fixed —
