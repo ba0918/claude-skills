@@ -126,13 +126,13 @@
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/publication-protocol.md": "924853e1669491645d3bdd49f73cb68863dd6234a48d129e762b10bd0f2dc074",
+      "skills/shared/references/publication-protocol.md": "63f76b8301c2a8534dc2cfa4f0cbdc9211c57d2cc8f16e572d3e9cd777785d90",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "R13 対応後の再検証。cy-014 は実委譲で再実走（targeted-fix subagent を実起動、fixture 規定の WARN verdict は初回レビュー結果ファイル内に注記付きスコア調整で成立、relay 結果ファイル遅延/欠落へのフォールバックも実測）。cy-015/017/018 は fixture 本文が verdict を『〜想定で』と規定するため inline 構成が fixture 準拠。cy-016 は oracle を『規定コマンド、環境拒否時は内容同値復元+記録』に精密化（reset --hard は executor/caller 双方 sandbox denied、caller が diff 空で復元を検証）。cy-013 はフル委譲で caller 介入 9 回で完走",
-    "result": "pass",
+    "note": "R14 指摘1対応は publication-protocol.md の no-lock 分岐明文化のみ。cycle の既定経路（Phase 0 で lock 保持）の挙動は不変。cy-013〜018 の実走 pass は R13 ラウンドで取得済み",
+    "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
@@ -146,7 +146,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "8d247184b18735ac67f992b30f27aebf8cc42edffc6c0e1be30eb4746dcf82db",
+    "surface_sha256": "7698ddced16a95d79038f40afa9f01b268ead992c76ead54c4c32c968203d8e1",
     "verified": "2026-08-02"
   },
   "decision-journal": {
@@ -344,14 +344,14 @@
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/publication-protocol.md": "924853e1669491645d3bdd49f73cb68863dd6234a48d129e762b10bd0f2dc074",
+      "skills/shared/references/publication-protocol.md": "63f76b8301c2a8534dc2cfa4f0cbdc9211c57d2cc8f16e572d3e9cd777785d90",
       "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "publication protocol への R13 反映は規範の明文化のみ（lock 保持前提の明記 / semantic evidence の契約 §4.3・§5 参照化 / 既定ブランチ読み替え）。同セッションの it-outer 実走が追加前提を事実として満たしていた（Phase 0 lock 保持・clean tree・converged review）ことを根拠に accept",
+    "note": "R14 指摘1の残欠陥修正（lock 無し + main checkout 済みは CAS 前に terminal failure へ、非 checkout 時のみ ref 単独 CAS を許容）。規範の場合分け明文化のみで、lock を保持する既定経路（it-outer 実走済み）の挙動は不変",
     "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
@@ -368,7 +368,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "081220c0639c86eda4702b7f5f68441490401e24d9228b1cf7b3c8463142c322",
+    "surface_sha256": "2f839c443edfeada8e181f371922ab2f9526ecc8145c24ca8e01fda846a370a0",
     "verified": "2026-08-02"
   },
   "plan": {

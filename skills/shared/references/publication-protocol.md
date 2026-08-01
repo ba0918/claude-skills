@@ -93,9 +93,17 @@ wrote, instead of relying on the default derivation from `--repo-root`.
    their Phase 0 and release it only when the run ends). The clean-tree check, the ref
    update, and the checkout synchronization below all run under that exclusion — that
    is what makes check-then-reset safe against concurrent edits. If no lock is held or
-   the lock infrastructure is unavailable, do not use the destructive reset path in
-   step 4: treat a dirty tree, or any tree change appearing after the check, as a
-   terminal publish failure instead.
+   the lock infrastructure is unavailable, the destructive reset in step 4 is
+   forbidden, and the branch splits on where `main` is checked out:
+   - `main` is checked out in `{main_tree_root}` (or any worktree) → stop **here,
+     before step 3's compare-and-swap**, as a terminal publish failure (treat as
+     exit 1). Advancing the ref would strand that checkout's index and files at
+     `{expected_main_sha}`, and the reset that would synchronize them is exactly what
+     is forbidden without the lock.
+   - `main` is not checked out anywhere → the ref-level compare-and-swap in step 3 is
+     atomic on its own and step 4 is a no-op, so the advance may proceed; still treat
+     a dirty tree or any tree change appearing after the check as a terminal publish
+     failure.
 2. **Precondition — clean tree**: if `{main_tree_root}` has `main` checked out, require
    a clean tree (`git -C {main_tree_root} status --porcelain` prints nothing). A dirty
    main tree is a terminal publish failure (treat as exit 1) — advancing the ref

@@ -89,8 +89,12 @@ class Step4SkillIntegrationTests(unittest.TestCase):
         self.assertLess(lock, clean)
         self.assertLess(clean, cas)
         self.assertLess(cas, reset)
-        # without the lock, the destructive reset path is forbidden
-        self.assertIn("do not use the destructive reset", text)
+        # without the lock, a checked-out main terminates BEFORE the CAS —
+        # never a ref advance that strands the checkout
+        nolock_stop = text.index("before step 3's compare-and-swap")
+        self.assertLess(lock, nolock_stop)
+        self.assertLess(nolock_stop, cas)
+        self.assertIn("the destructive reset in step 4 is forbidden", text)
         # the prospective merge is one fixed worktree procedure, not a menu
         self.assertIn("worktree add --detach {tmp_merge_root} {expected_main_sha}", text)
         self.assertIn("merge --no-ff {satellite_branch}", text)
