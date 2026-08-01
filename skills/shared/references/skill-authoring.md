@@ -83,6 +83,43 @@ description: <what it does>. <when to use it (trigger words)>.
    polling / language detection / orchestration design reference the existing shared
    references. Duplicated descriptions are a breeding ground for drift
 
+## Anti-bloat Clause — Responsibility Placement (binding)
+
+Measured on PR #190 (2026-08-02): cycle's SKILL.md grew 353 → 721 lines across 18
+review rounds. Each round patched a mechanism defect with more prose, each patch opened
+new interpretation branches, and those branches became the next round's findings — a
+self-amplifying loop. It was broken only by moving the state transitions out of prose
+into an executable primitive (`publication_advance.py`) verified by fault-injection
+tests. Precision-through-prose also degrades execution: the longer the instructions,
+the more context goes to procedure-following instead of the task, and low-salience
+instructions drop out (Opus 5 prompting guidance).
+
+Before adding any sentence to a SKILL.md or a runtime-loaded reference, apply this
+test:
+
+> Does this text improve the model's judgment — or does it describe a state transition
+> that code should guarantee?
+
+If the latter, do not write the sentence. Move the behavior to a script plus tests.
+
+| Belongs in natural language (judgment) | Belongs in code (guarantee) |
+|---|---|
+| What may be auto-fixed, and what may not | Command sequences and their ordering |
+| Where human confirmation is required | Atomicity, CAS, locking, crash recovery |
+| What verdicts (BLOCK / WARN / …) mean | File layouts, retries, idempotency |
+| Never-discard-on-failure safety principles | Anything a fault-injection test can pin |
+| Priorities the model should weigh | Input validation and exit-code contracts |
+
+Budgets — treat crossing them as a design smell demanding re-placement, never as a cue
+for "tighter wording":
+
+- A SKILL.md beyond ~400 lines, or a single run loading more than ~1000 lines of
+  instructions in total (SKILL.md plus every reference that run actually reads).
+- A review finding against a mechanism (race, crash window, ordering, cleanup) is
+  resolved in code + tests. Answering it with prose is the loop restarting.
+- Rationale, rejected alternatives, and rare-exception walkthroughs go to commit
+  messages or to `references/` files the runtime path does not load.
+
 ## Rationalization-prevention Tables and Red Flags
 
 State in a table the "excuses" an agent makes when skipping a step, and the rebuttals.
