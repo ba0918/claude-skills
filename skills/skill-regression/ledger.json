@@ -119,8 +119,8 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "e7dc611e4b9cb2ff27150cd7c0d8d6a062d928d0bffadcebea43d52d5ea684f3",
-      "skills/cycle/fixtures.json": "6168b4f9be5bf8bf1453cec27679103be31f4f9808045119e0ac1883b4758acf",
+      "skills/cycle/SKILL.md": "bb4c084516976ad1b8d7f06ee6b7636d6df72284a6e6d21ed475ac921356559a",
+      "skills/cycle/fixtures.json": "7d06c9a2d5bb8bc589d5445899e9f8ea624b3805147127503bbf07d27452817e",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -133,8 +133,8 @@
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
       "skills/shared/scripts/evidence_check.py": "65b2124f4a0239df01de1cf9707363f3782a7c4a2291a2aecc4a3ee24bb2206b"
     },
-    "note": "2026-08-01 blank-slate regression: all 9 scenarios passed. Process path: 5 completed before model switch, 3 completed with GPT-5.5 after user-requested cost reduction; cy-004 reran with lower-cost terra direct-subagent path because subprocess mode exposed no nested delegate. One upper-watchdog status update for cy-004; artifacts and critical requirements independently corroborated.",
-    "result": "pass",
+    "note": "PR #190 R7: cy-001〜008 の合否基準は変更なし。cy-009 の requirements を prospective merge に更新、cy-010〜012 を新規追加。前回 pass (2026-08-01) の実走結果は既存シナリオに対して有効。新規 fixture の実走はマージ後に実施する。",
+    "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
@@ -150,8 +150,8 @@
       "skills/shared/references/workspace-lock.md",
       "skills/shared/scripts/evidence_check.py"
     ],
-    "surface_sha256": "529c0ecd3884d2d342f64c2e43ceb110762a6240ca9a1d587e111bba866566d5",
-    "verified": "2026-08-01"
+    "surface_sha256": "1e9e5a576d9a8579485a8a12d68a0ec6ac6f3469e4f9cd3db01a928d3fc9499d",
+    "verified": "2026-08-02"
   },
   "decision-journal": {
     "file_sha256": {
@@ -341,7 +341,7 @@
   },
   "iterate": {
     "file_sha256": {
-      "skills/iterate/SKILL.md": "e3a786eb6ba62f4da868717e0b900651789c75c876b14175a306ea7e83256837",
+      "skills/iterate/SKILL.md": "00d165bfe8a5e7f382b5b14928da6a924100da455c65d2b4f13bb522b3a13812",
       "skills/iterate/fixtures.json": "ac7a7647522068d51cea277e16e10f095c8ec7ea98824fe214a13f15e94dce99",
       "skills/iterate/references/light-review.md": "f4b63a197756686af4f9313fd05da3c0e4bd88b24ca70779b3fa7f8f7ea6c322",
       "skills/iterate/references/scope-criteria.md": "fc0005c7a886ec6d3b9593bf6e9d6b607a6f4f6e6f000280844cf750de83ea21",
@@ -354,7 +354,7 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "Opus 5 review fix: stale refine references removed from orchestration-patterns.md",
+    "note": "PR #190 R7: standalone protocol の prospective merge 同期。既存フローの合否基準は変更なし",
     "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
@@ -370,8 +370,8 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "7f9b4c0b42497636f4f31ceff3c024af3907d96ae4157d751dd6c9958a387e36",
-    "verified": "2026-07-31"
+    "surface_sha256": "1240acda4c6b885cdc41c884eae8123c52001c80688f0e3f238f74084561a86b",
+    "verified": "2026-08-02"
   },
   "plan": {
     "file_sha256": {
