@@ -217,6 +217,21 @@ class PublicationPrimitiveTests(unittest.TestCase):
         self.assertEqual((self.main / "b.txt").read_text(), "unrelated local file\n")
         self.assertEqual(self.published_sha(), expected)
 
+    def test_recover_with_other_branch_checked_out_promotes_without_reset(self):
+        # git reset --hard moves whichever branch is checked out; recovery must
+        # not run it when main is not the checked-out branch, or it would force
+        # that branch's ref onto main's SHA
+        _, post = self.crash_after_cas()
+        git(self.main, "switch", "-q", "-c", "hotfix")
+        hotfix_before = git(self.main, "rev-parse", "hotfix").stdout.strip()
+        self.assertEqual(self.recover(), 0)
+        self.assertEqual(
+            git(self.main, "rev-parse", "hotfix").stdout.strip(), hotfix_before
+        )
+        self.assertEqual(self.main_sha(), post)      # main ref stays advanced
+        self.assertFalse((self.main / "b.txt").exists())  # no reset ran
+        self.assertEqual(self.published_sha(), post)      # promotion still done
+
     def test_recover_converges_after_promotion_interrupted_mid_copy(self):
         _, post = self.crash_after_cas()
         git(self.main, "reset", "-q", "--hard", "refs/heads/main")

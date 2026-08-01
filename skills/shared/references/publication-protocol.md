@@ -187,6 +187,9 @@ recovery:
   pre-CAS tree) — or already match `{sha}` (the reset had completed before the crash);
 - no path the merge adds exists as an untracked file in the worktree.
 
+The reset runs only when `main` is itself checked out in `{main_tree_root}` —
+`git reset --hard` moves whichever branch is currently checked out, so with any other
+branch checked out there the primitive skips the sync entirely and only promotes.
 The pre-CAS clean-tree precondition does not apply during this repair — the phantom
 modifications of a stale checkout are the symptom being repaired. A staging directory
 whose `{sha}` differs from the current main HEAD names a prospective merge that never
