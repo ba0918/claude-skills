@@ -57,39 +57,10 @@ invocation is the main-tree outer orchestrator and performs this ordered protoco
    `satellite_run_id`, and `satellite_capability_file`. The inner run must not re-resolve
    isolation or create a nested worktree.
 4. Collect on every terminal path: success, failure, cancellation, and verification failure.
-5. Create a prospective merge without updating main. First save
-   `{expected_main_sha}` = current main HEAD (`git rev-parse main`). Merge the satellite
-   branch into a temporary integration ref (e.g. `refs/cycle/integration`) or a detached
-   HEAD: `git merge-base main {satellite_branch}` to confirm fast-forward or real merge,
-   then `git merge --no-ff --no-commit` on a temporary checkout of main → `git commit-tree`
-   or equivalent to produce the prospective merge commit without advancing main's HEAD.
-   Resolve the full 40-hex `{post_merge_sha}` from that commit. All later verification and
-   evidence must name this exact SHA; pre-merge or satellite evidence does not transfer.
-6. Re-earn both states required by the
-   [quality-gate contract](../shared/references/quality-gate-contract.md) for
-   `{post_merge_sha}` **before** advancing main:
-   - Run the repository's canonical verification entry point against the prospective merge
-     tree. Only a complete pass may produce `machine_verified.json`.
-   - Run a fresh history-free semantic review of the merged target, disposition every finding,
-     and require convergence before producing `semantic_reviewed.json`.
-   - Write both records in the default artifact-store evidence directory using the
-     [evidence format](../shared/references/evidence-format.md): exact `{post_merge_sha}`,
-     `quality-gate-contract 1.0.0`, `profile: null`, and non-empty grounds naming the run or
-     review that produced the state. A Phase 4 verdict is review input, not reusable evidence.
-7. Run the canonical checker against the prospective merge with every binding input explicit:
-   `python3 skills/shared/scripts/evidence_check.py --target-sha {post_merge_sha} --contract skills/shared/references/quality-gate-contract.md --repo-root {main_tree_root}`.
-   - **Exit 0**: advance main with compare-and-swap: `git update-ref refs/heads/main
-     {post_merge_sha} {expected_main_sha}`. If the CAS fails (main moved during
-     verification), the prospective merge is stale — discard it, re-create the prospective
-     merge from the new main, re-generate evidence, and re-run the checker. Retry at most
-     once; a second CAS failure is a terminal publish failure (treat as exit 1). Do not force
-     the update. Publish only after main is advanced.
-   - **Exit 1** (missing, stale, or invalid evidence) or **exit 2** (checker could not run):
-     terminal publish failure. Do not advance main, publish, compose singleton artifacts,
-     close the issue, or clean up. Main remains untouched.
-8. Every failure path preserves staging and the worktree; discard requires explicit human
-   authorization. Cleanup only when cleanup_allowed is proven after publication succeeded and
-   the capability is non-live (consumed or revoked).
+5. Follow the [publication protocol](../shared/references/publication-protocol.md):
+   merge, verify, and advance main. Pass `{satellite_branch}` and `{main_tree_root}`.
+   A Phase 4 verdict is review input, not reusable evidence — the protocol re-earns
+   evidence for the exact post-merge SHA.
 
 On every new terminal collect, publish, or cleanup-gate failure, preserve the worktree and invoke
 the shared exact six-line formatter with its closed reason code. Its final line is
@@ -190,41 +161,24 @@ path cleanup-eligible. The outer orchestrator composes singleton artifacts only 
 
 Subagent delegation follows
 [orchestration-patterns.md § delegation result relay](../shared/references/orchestration-patterns.md).
-**Cycle-specific points:**
+Cycle-specific role-specific values:
+
+| Role | Timeout | Required? |
+|------|---------|-----------|
+| `implement` | 10 min | yes |
+| `post-review` / `post-review-{N}` / `post-review-warn` | 20 min | yes |
+| `fix-{N}` / `fix-warn` | 10 min | yes |
+| `final-holistic` | 10 min | yes |
+| `final-independent` | 10 min | no (optional) |
 
 - **`{run_id}`**: the Cycle ID at the top of the plan file (or the plan filename's timestamp
-  if absent). Requirement: the orchestrator and the delegate must derive the same path.
-- **`{role}`**: varies by phase — `implement` (Phase 1), `post-review` / `post-review-{N}` /
-  `fix-{N}` / `fix-warn` / `post-review-warn` (Phase 3), `final-holistic` /
-  `final-independent` (Phase 4). Include the
-  `.agents/runtime/delegation/{run_id}_{role}.md` path in the delegation prompt.
-- **Workspace-lock token**: pass the token from Phase 0 in the delegation prompt, on the same
-  path as `{run_id}`. A delegate that receives one neither claims nor releases — that is what
-  keeps a delegate from deadlocking against the tree its own orchestrator already holds.
-- **Wait discipline**: cycle is the **parent orchestrator** of each delegate, so it holds
-  [§ wait discipline pillar 3 (upper watchdog)](../shared/references/orchestration-patterns.md).
-  List `.agents/runtime/delegation/`, cross-check result-file mtimes against final artifacts
-  to judge "all arrived / stalled" before sending a status inquiry (a nudge). The concrete
-  procedure is the silent-stall row in "Error handling" below (single source, not repeated
-  here). A nudge is a status check, not a re-delegation; it does not multiply the retry
-  budget of the fallbacks below.
-- **Role-specific values** (the shared contract requires each referencing skill to state
-  these): silent-wait timeout **N = 10 minutes** per delegate — the shared default of
-  [§ wait discipline pillar 2](../shared/references/orchestration-patterns.md), adopted
-  as-is by the 2026-07-28 ruling on issue #58; revisit only if accumulated cycle-specific
-  arrival measurements justify a different value. **Exception**: Phase 3 review delegates
-  (`post-review` / `post-review-{N}`) use **N = 20 minutes** because plan-reviewer runs in
-  sequential mode when launched as a subagent (7 dimensions inline), which regularly exceeds
-  10 minutes.
-  Budget expiry does not open a new path: it only marks when the silent-stall row in
-  "Error handling" below may start.
-  Redelegation limit: pillar 2's "once per viewpoint", no cycle-specific extra budget.
-  Optional viewpoints: Phase 4 independent review only — every other delegate cycle launches
-  is mandatory.
-
-Path conventions / writer duties / reader duties (inspect the result file on completion or
-stall notice; fall back to artifact inspection when missing; retry only when undecidable) /
-cleanup are owned by the contract.
+  if absent).
+- **`{role}`**: from the table above. Include
+  `.agents/runtime/delegation/{run_id}_{role}.md` in the delegation prompt.
+- **Workspace-lock token**: pass in the delegation prompt. A delegate neither claims nor
+  releases.
+- Review delegates use 20 min because plan-reviewer runs 7 dimensions inline in sequential
+  mode.
 
 ## Phase 1: Implement (auto-implementation)
 
@@ -392,31 +346,18 @@ Action: Resolve spec gaps in brainstorm before re-running the cycle.
 
 **Step 2b: WARN auto-fix (1 iteration)**
 
-WARN findings are attempted once with the same fix mechanism as Step 3 (trusted diff
-allowed-files, pre_fix_sha, post-fix scope verification), but with a single iteration
-limit. The goal is to resolve minor issues automatically while escalating unresolvable
-ones to the user.
+Run the targeted-fix procedure from Step 3 (a–c) exactly once, with these differences:
+- **Fix payload**: WARN-level findings (minor + important from non-BLOCK dimensions)
+- **Delegation role**: `fix-warn`
+- **Dirty tree handling**: revert (`git reset --hard {pre_fix_sha}` then `git clean -fd`)
+  and fall through to acknowledgement (do not abort)
 
-1. Extract WARN-level findings (minor findings and important findings from non-BLOCK
-   dimensions) as the fix payload. Use the same sanitization rules as Step 3b.
-2. **Save `{pre_fix_sha}`** = current HEAD (`git rev-parse HEAD`) before launching the fix
-   agent (same as Step 3b).
-3. Launch a targeted-fix subagent with the same constraints as Step 3b (trusted
-   allowed-files, no raw suggestion/description passthrough, post-fix scope verification).
-   Follow the delegation result relay with `{role}` = `fix-warn`.
-4. After the fix subagent completes, run the clean tree gate. If dirty, revert to the
-   pre-fix state (`git reset --hard {pre_fix_sha}` then `git clean -fd` to remove
-   untracked files created by the fix agent) and fall through to the acknowledgement
-   below.
-5. Re-launch the review (same prompt as Step 1) with `{role}` = `post-review-warn`.
-6. Branch on the re-review verdict:
-   - **PASS** → auto-fix resolved the findings. Proceed to Phase 4.
-   - **WARN** → auto-fix did not resolve all findings. Fall through to acknowledgement.
-   - **BLOCK** → auto-fix introduced a regression. Revert to pre-fix state
-     (`git reset --hard {pre_fix_sha}` then `git clean -fd`), discard the re-review,
-     and fall through to
-     acknowledgement with the **original** WARN findings (not the regressed state).
-   - **ESCALATE** → revert to pre-fix state and abort (same as Step 2a).
+Re-review with `{role}` = `post-review-warn`, then branch:
+- **PASS** → proceed to Phase 4
+- **WARN** → fall through to acknowledgement
+- **BLOCK** → revert to pre-fix state, discard re-review, fall through to
+  acknowledgement with the **original** WARN findings
+- **ESCALATE** → revert to pre-fix state and abort (same as Step 2a)
 
 **WARN acknowledgement (after auto-fix failure or skip):**
 
@@ -752,75 +693,13 @@ result artifact and decide issue closure after harvest, merge, verification, and
 Show `Result: deferred to outer orchestrator`, `Session: deferred to outer orchestrator`,
 and `Issue: deferred to outer orchestrator: {slug | none}`.
 
-## Error handling
+## Error handling principle
 
-- **Subagent error in Phase 1**: retry once automatically. If the retry also fails,
-  revert plan status to `⚠️ Review Failed` and abort the cycle.
-- **Delegate stops without reporting in Phase 1** (work done + no completion report
-  + only a wait notice — the most common stall): do not treat as an error and re-delegate
-  immediately; follow pillar 3 (upper watchdog) of the
-  [wait discipline](../shared/references/orchestration-patterns.md). First read
-  `.agents/runtime/delegation/{run_id}_{role}.md` → if missing/incomplete, inspect the
-  artifacts directly (commit history, changed files, test results, plan steps) to judge
-  phase completion → retry (once) only when undecidable. If the result file or artifacts
-  confirm completion, proceed to the next phase even without a delivered report.
-- **Error in a Phase 2 step**: record the step in `phase2_failures` and continue with the
-  rest. **Exception**: the clean tree gate (Step 3) is a hard stop — if uncommitted or
-  untracked non-ignored files remain after the commit step, the cycle aborts (uncommitted
-  or untracked changes would bypass Phase 3/4 review). Revert plan status before aborting.
-- **Empty diff at Phase 3 entry**: `git diff {cycle_start_sha}..HEAD` is empty — nothing to
-  review. Revert plan status to `⚠️ Review Failed` and stop with UNVERIFIED.
-- **Unresolvable Implementation Base SHA**: the SHA recorded in the plan file does not exist
-  in the repository. Revert plan status to `⚠️ Review Failed` and abort.
-- **Review subagent error in Phase 3**: retry once. If the retry also fails, abort the cycle
-  (revert plan status to `⚠️ Review Failed` before aborting). Follow the same delegation
-  result relay and wait discipline as Phase 1, using the extended 20-minute timeout for
-  review delegates.
-- **Fix subagent error in Phase 3**: retry once. If the retry also fails, abort the cycle
-  (revert plan status to `⚠️ Review Failed` before aborting).
-- **Dirty tree after Phase 3 BLOCK fix (Step 3)**: if the clean tree gate after a BLOCK
-  fix subagent detects uncommitted or untracked non-ignored files, abort the cycle (same
-  behavior as the Phase 2 clean tree gate). Revert plan status before aborting.
-  Note: WARN auto-fix (Step 2b) uses a different dirty-tree handling — revert to
-  `{pre_fix_sha}` and fall through to acknowledgement instead of aborting.
-- **WARN in Phase 3**: attempt auto-fix once (Step 2b). If auto-fix resolves all findings
-  (re-review PASS), proceed. If unresolved WARN remains, request user acknowledgement; in
-  headless mode, stop. If auto-fix causes BLOCK regression, revert to pre-fix state and
-  request acknowledgement with original WARN findings.
-- **WARN in Phase 4 (headless)**: WARN findings require user acknowledgement. In headless
-  mode, stop. Revert plan status to `⚠️ Review Failed`.
-- **ESCALATE in Phase 3**: abort the cycle immediately with brainstorm redirect. This is an
-  intentional abort (spec gaps cannot be resolved by implementation fixes), not an error.
-  Revert plan status before aborting.
-- **Review subagent error in Phase 4**: holistic review is required — retry once, then record
-  the gap and continue with whatever arrived (this is an exception to the general "abort
-  after failed retry" rule because Phase 4 is a secondary gate after Phase 3 already passed).
-  Independent review is optional — on error, warn and continue.
-- **Error in a Phase 5 step**: record the step in `phase5_failures` and continue with the
-  rest. Phase 5 errors never fail the whole cycle (same tolerance as Phase 2).
-
-## Key rules
-
-- **Delegate each phase to a subagent** (when delegation is available). Keep only summaries
-  in the main context.
-- **Specify a high-performance model when launching subagents.** Even if the session runs on
-  a top-tier model, run delegates on a high-performance model to avoid cost blowups
-  (per the model hierarchy in
-  [orchestration-patterns.md](../shared/references/orchestration-patterns.md)).
-- **No user confirmation prompts** (headless execution). **Exception**: Phase 3 WARN
-  verdicts attempt auto-fix first; if unresolved, user acknowledgement is required
-  (headless stops). Phase 4 WARN always requires user acknowledgement (headless stops).
-- **Retry once on subagent errors.** Abort after a failed retry; do not retry twice.
-  Exception: Phase 4 holistic review degrades gracefully instead of aborting (see Error
-  handling).
-- **Phase 2 and Phase 5 tolerate partial success.** Individual step failures do not roll back
-  the cycle.
-- **Phase 3 aborts on ESCALATE or exhausted fix loop.** ESCALATE = spec gap (brainstorm
-  redirect). Exhausted loop = 2 fix iterations with BLOCK remaining. All abort paths revert
-  the plan status to allow re-selection.
-- **Phase 4 stops on BLOCK or UNVERIFIED without a fix loop.** The final gate is a quality
-  gate, not a fix opportunity. Use /iterate for post-gate fixes, then re-run the cycle.
-- **Phase 5 runs only after Phase 3 and Phase 4 pass (or WARN with user acknowledgement).**
-  Issue close, result file generation, and status completion are gated on review success.
-- When the root cause of a problem is unknown, recommend a read-only pre-investigation with
-  `/claude-skills:investigate` before running the cycle.
+Each Phase defines its own error handling inline. The governing rules:
+- **Retry once** on subagent errors, then abort (exception: Phase 4 holistic degrades
+  gracefully instead of aborting).
+- **Phase 2 and Phase 5 tolerate partial failure** — record in `phase2_failures` /
+  `phase5_failures` and continue.
+- **All abort/stop paths revert plan status** to `⚠️ Review Failed` before stopping.
+- WARN auto-fix (Step 2b) dirty-tree handling differs from BLOCK fix (Step 3c):
+  revert to `{pre_fix_sha}` and fall through to acknowledgement instead of aborting.

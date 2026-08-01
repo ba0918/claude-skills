@@ -25,29 +25,8 @@ facade. In `inplace` mode, preserve the existing workflow unchanged. In `worktre
    task context when no plan exists).
 3. Launch one inner run with the complete resolved context above.
 4. Collect on every terminal path: success, failure, cancellation, and verification failure.
-5. Create a prospective merge without updating main. Save `{expected_main_sha}` =
-   current main HEAD before merging. Resolve the full 40-hex `{post_merge_sha}` from the
-   prospective merge commit.
-6. Re-earn both states required by the
-   [quality-gate contract](../shared/references/quality-gate-contract.md) for
-   `{post_merge_sha}` **before** advancing main:
-   - Run the repository's canonical verification entry point against the prospective merge
-     tree. Only a complete pass may produce `machine_verified.json`.
-   - Run a fresh history-free semantic review of the merged target, disposition every finding,
-     and require convergence before producing `semantic_reviewed.json`.
-   - Write both records using the [evidence format](../shared/references/evidence-format.md):
-     exact `{post_merge_sha}`, `quality-gate-contract 1.0.0`, `profile: null`, and non-empty
-     grounds.
-   Run the canonical checker:
-   `python3 skills/shared/scripts/evidence_check.py --target-sha {post_merge_sha} --contract skills/shared/references/quality-gate-contract.md --repo-root {main_tree_root}`.
-   Exit 0: advance main with CAS (`git update-ref refs/heads/main {post_merge_sha}
-   {expected_main_sha}`). On CAS failure, re-create the prospective merge and re-verify;
-   retry at most once — a second CAS failure is a terminal publish failure.
-   Publish only after main is advanced. Exit 1/2: terminal publish failure — do not advance
-   main, publish, compose singleton artifacts, close the issue, or clean up.
-   Every failure path preserves staging and the worktree;
-   discard requires explicit human authorization.
-7. Cleanup only when cleanup_allowed is proven and the capability is non-live (consumed or revoked).
+5. Follow the [publication protocol](../shared/references/publication-protocol.md):
+   merge, verify, and advance main. Pass the satellite branch and `{main_tree_root}`.
 
 On every new terminal transport failure, preserve the worktree and invoke the shared exact six-line
 formatter with its closed reason code. Its final line is
