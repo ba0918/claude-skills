@@ -5,32 +5,47 @@ claude-skills プラグインのバージョン履歴。
 変更は PR で `## Unreleased` へ追記する。**PR では version を bump しない** — 並走する PR が
 揃って同じ番号を名乗り、マージ順に依存した manifest 衝突が必ず起きるため。リリース時に
 `## Unreleased` を `## <version>` へ改名し、`.claude-plugin/plugin.json` /
-`.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest を揃えて bump する
+`.claude-plugin/marketplace.json` / `.codex-plugin/plugin.json` の 3 manifest と
+ルート `package.json`（OpenCode git plugin）を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
 ## Unreleased
 
+### Changed: OpenCode plugin loading verification
+
+- plugin module の public export を default plugin function だけに限定し、loader の解釈差による
+  non-function export の混入を防止
+- `sh scripts/test_opencode_runtime.sh` で OpenCode 実ランタイムの `skills.paths` 登録と
+  `cycle` skill discovery を検証可能にした
+- OpenCode が利用可能な環境では正本の検証ランナーもこの実ランタイム検査を実行し、CI は
+  OpenCode を導入して pull request ごとの必須ゲートにする
+
+### Added: OpenCode git plugin 対応
+
+- superpowers 型の OpenCode plugin を追加。利用側は `opencode.json` に
+  `"plugin": ["claude-skills@git+https://github.com/ba0918/claude-skills.git"]` を 1 行足すだけ
+- `.opencode/plugins/claude-skills.js`: `config` hook でパッケージ内 `skills/` を
+  `skills.paths` に登録（symlink 不要、`shared/` 同梱）
+- 同 plugin の `experimental.chat.messages.transform` で skill-routing 全文と
+  quality-gate 契約ポインタをセッション最初の user メッセージへ注入
+  （Claude Code SessionStart hook 相当）
+- ルート `package.json`（`main` → plugin）と `docs/README.opencode.md` / `.opencode/INSTALL.md`
+- 静的検証: `scripts/test_opencode_plugin.mjs`
+- README / AGENTS.md / install.sh に OpenCode 導入手順を追記
+- 版固定例は未発行タグを書かず、Releases に実在する `vX.Y.Z` のみ指定するよう明記
+  （`package.json` version は git タグではない）
+
 ### Added: cycle 後レビュー自動化 + レビューループ + 最終ゲート (#187)
 
 - cycle に Phase 3（post-implementation review）、Phase 4（final gate）、Phase 5（completion）を追加
-- Phase 3: plan-reviewer 自動呼び出し + fix loop（最大 2 反復）。BLOCK findings は targeted-fix で修正、ESCALATE は即時中断して brainstorm へ差し戻し
-- Phase 4: ホリスティックレビュー + 独立レビュー（Codex）の並行実行。BLOCK / UNVERIFIED は fix loop なしで停止
-- Phase 5: review 通過後にのみ status 更新・issue close・result ファイル生成を実行（完了処理のゲーティング）
-- Phase 0 で `cycle_start_sha` を保存し、Phase 3/4 のレビュー範囲を今回の cycle 変更に限定
-- Phase 2 に clean tree gate を追加（commit 失敗時の dirty tree がレビューをバイパスすることを防止）
-- abort/stop 時に plan Status を `⚠️ Review Failed` に戻して再選択可能にする
-- superpowers の 3 段レビュー構成（spec self-review / task review / final review）に対応
-- Phase 4 を review verdict の生成に限定し、publishable 遷移の SHA-bound quality-gate evidence は呼び出し側で検証する責務境界を明記
-- standalone worktree の merge 後に exact SHA で machine/semantic evidence を再生成し、canonical checker の exit 0 でのみ publish する fail-closed gate を追加
-- inner satellite regression fixture の feature branch と受入条件を固定し、Phase 3/4/5 の完走経路を再検証
+- Phase 3: plan-reviewer 自動呼び出し + fix loop（最大 2 反復）+ WARN auto-fix（1 回試行→残れば確認 / headless 停止）。ESCALATE は即時中断して brainstorm へ差し戻し
+- Phase 4: ホリスティックレビュー + 独立レビュー（Codex）の並行実行。BLOCK / UNVERIFIED は fix loop なしで停止。WARN は auto-fix なし、ユーザー確認要求（headless 停止）
+- Phase 5: review 通過後にのみ status 更新・issue close・result ファイル生成を実行
 - Implementation Base SHA を plan ファイルに永続化し、再実行時のレビュー範囲縮小を防止
-- standalone worktree の merge→verify 順序を prospective merge 方式に変更し、main 汚染を防止
 - fix agent の allowed-files を trusted cycle diff から導出し、untrusted review path からの権限昇格を防止
-- main 更新を CAS（compare-and-swap）に変更し、検証中の競合を検出
 - issue close を plan status 成功にゲートし、未完了 plan と closed issue の不整合を防止
-- iterate の publication protocol を cycle と同等に明記
-- WARN verdict をユーザー確認要求に変更（headless では停止 = 事実上 PASS-only ゲート）
-- Phase 4 independent review に trusted diff を渡すよう変更（plan-only → plan + diff）
+- publication protocol を共有 reference（publication-protocol.md）に切り出し、cycle/iterate 間の非対称性を解消
+- cycle SKILL.md を 827 行→ 705 行に削減（重複 Error handling / Key rules 削除、Delegation relay 圧縮）
 
 ### Added: brainstorm セッション中の pre-wrap self-review (#186)
 
