@@ -398,7 +398,9 @@ a. Extract fix-targeted findings from the review result: include all findings wi
    (Per the [output format](../plan-reviewer/references/output-format.md), findings carry
    `severity: critical / important / minor`; BLOCK is the dimension/overall verdict, not a
    finding severity.)
-b. Launch a targeted-fix subagent (high-performance model):
+b. **Save `{pre_fix_sha}`** = current HEAD (`git rev-parse HEAD`) before launching the fix
+   agent. This is used for post-fix scope verification and rollback.
+   Launch a targeted-fix subagent (high-performance model):
    - **Prepare the fix payload** (parent-side, before delegation): extract from each
      fix-targeted finding only the fields the fix agent needs: `severity`, `title`,
      `file`/`location`, and a one-line problem statement derived from `description`.
