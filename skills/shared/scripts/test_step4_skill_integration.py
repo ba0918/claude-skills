@@ -104,9 +104,17 @@ class Step4SkillIntegrationTests(unittest.TestCase):
         self.assertIn("Never write prospective evidence into the default evidence directory", text)
         promote = text.index("Promote the evidence")
         self.assertLess(reset, promote)
+        # promotion is copy -> verify -> delete, so a mid-copy crash is repairable
+        self.assertIn("copy — never move —", text)
+        self.assertIn("Copy-then-verify-then-delete", text)
         # the CAS is the commit point; later steps repair forward, never roll back
         self.assertIn("commit point", text)
         self.assertLess(cas, text.index("commit point"))
+        # interrupted completion is detected from durable state, not process memory
+        self.assertIn("durable marker", text)
+        # a main checked out in a foreign worktree stops the publish before the CAS
+        foreign = text.index("any worktree other than")
+        self.assertLess(foreign, cas)
         # semantic evidence delegates ledger and convergence to the contract
         self.assertIn("§4.3", text)
         self.assertIn("convergence conditions of §5", text)

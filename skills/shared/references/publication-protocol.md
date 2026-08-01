@@ -111,10 +111,16 @@ wrote, instead of relying on the default derivation from `--repo-root`.
      atomic on its own and step 4 is a no-op, so the advance may proceed; still treat
      a dirty tree or any tree change appearing after the check as a terminal publish
      failure.
-2. **Precondition — clean tree**: if `{main_tree_root}` has `main` checked out, require
-   a clean tree (`git -C {main_tree_root} status --porcelain` prints nothing). A dirty
-   main tree is a terminal publish failure (treat as exit 1) — advancing the ref
-   underneath local modifications would entangle them with the merge.
+2. **Precondition — locate the main checkout, require it clean**: list every worktree
+   (`git -C {main_tree_root} worktree list --porcelain`) and find where `main` is
+   checked out. If `main` is checked out in any worktree other than
+   `{main_tree_root}`, stop here — before the compare-and-swap — as a terminal publish
+   failure: this protocol defines cleanliness checking and synchronization only for
+   `{main_tree_root}`, and advancing the ref would strand that other checkout. If
+   `{main_tree_root}` has `main` checked out, require a clean tree
+   (`git -C {main_tree_root} status --porcelain` prints nothing). A dirty main tree is
+   a terminal publish failure (treat as exit 1) — advancing the ref underneath local
+   modifications would entangle them with the merge.
 3. **Advance main with compare-and-swap**:
    `git -C {main_tree_root} update-ref refs/heads/main {post_merge_sha} {expected_main_sha}`.
 4. **Synchronize the checkout**: if `main` is checked out in `{main_tree_root}`, run
@@ -124,10 +130,15 @@ wrote, instead of relying on the default derivation from `--repo-root`.
    safe because the tree was proven clean and the workspace lock excludes concurrent
    writers (step 1). If `main` is not checked out in any worktree, the ref update alone
    completes the advance.
-5. **Promote the evidence**: move both records from `{evidence_dir}` into the default
-   evidence directory `{main_tree_root}/.agents/artifacts/reviews/evidence/`, replacing
-   the superseded records of the previous main, then remove the emptied staging
-   directory.
+5. **Promote the evidence**: copy — never move — both records from `{evidence_dir}`
+   into the default evidence directory
+   `{main_tree_root}/.agents/artifacts/reviews/evidence/`, overwriting the superseded
+   records of the previous main. Then verify the promoted set by re-running the Step 3
+   checker against the default directory (`--evidence-dir` pointing at it, same
+   `{post_merge_sha}`); only after that verification exits 0, remove the staging
+   directory. Copy-then-verify-then-delete makes promotion idempotent: a crash at any
+   point leaves the complete staging set in place, and re-running the promotion from
+   staging converges — a partially promoted singleton is always repairable.
 6. Remove the temporary merge worktree (`git worktree remove {tmp_merge_root}`) only
    after the advance succeeds.
 
@@ -137,6 +148,20 @@ describe the old main. Once the compare-and-swap succeeds, the advance is commit
 and is never rolled back: steps 4-6 are completion steps, each idempotent, and on
 failure, interruption, or crash they are re-run until they succeed (re-run the reset,
 re-attempt the promotion) rather than being treated as publish failures.
+
+**Recovery after post-commit interruption.** The staging directory doubles as the
+durable marker of an unfinished publication: it is deleted only as the final act of
+promotion, so no in-process state is needed to detect an interruption. On (re)entry
+into this protocol, if an `evidence-staging/{sha}/` directory exists whose `{sha}`
+equals the current main HEAD, the commit point already passed and the completion steps
+did not finish — resume them from the durable state alone:
+1. `git -C {main_tree_root} reset --hard refs/heads/main` (idempotent). The pre-CAS
+   clean-tree precondition does not apply during this repair — the phantom
+   modifications of a stale checkout are the symptom being repaired, not local edits.
+2. Re-run the promotion (copy → verify with the checker → delete staging).
+A staging directory whose `{sha}` differs from the current main HEAD names a
+prospective merge that never published (or one long superseded) and may be discarded
+under the CAS failure rule.
 
 If CAS fails (main moved during verification):
 1. Discard the stale prospective merge (remove `{tmp_merge_root}` and the stale

@@ -126,12 +126,12 @@
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/publication-protocol.md": "1aae7c82ae23b453b70a21316e42475e65b6edb7d94a6e8f5b1b9738c8fda1b2",
+      "skills/shared/references/publication-protocol.md": "e96c620309a7395b17f824be660359a4ceb23cb07edade342fa0ace322a4e888",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "実委譲 E2E は cy-013（BLOCK fix loop、caller 介入 9 回）と cy-014 再実走（targeted-fix subagent 実起動・relay 欠落フォールバック実測）の 2 本。cy-015〜018 は fixture が verdict を『想定』指定するため inline 構成で分岐ロジックのみ検証（cy-018 の delegation/relay は E2E 未検証。cy-016 の revert は sandbox denied のため内容同値復元を caller が diff 空で検証）。R16 の diff 取扱い注記は文言明確化のみで挙動不変",
+    "note": "R17 対応は publication protocol 側のみ（cycle SKILL 本文は R16 の diff 文言のまま不変）。実委譲 E2E は cy-013/cy-014 の 2 本、cy-015〜018 は inline 分岐検証（既録どおり）",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -146,7 +146,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "781ccbce023e1e2e73fcc003ce56790baae4cdda51e51d8ac4d7a7e4ce8a3023",
+    "surface_sha256": "91a70cc438e2bdc63199d3c79d9ef502bf7162f61d44d1800f02bed5b4a632aa",
     "verified": "2026-08-02"
   },
   "decision-journal": {
@@ -344,14 +344,14 @@
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/publication-protocol.md": "1aae7c82ae23b453b70a21316e42475e65b6edb7d94a6e8f5b1b9738c8fda1b2",
+      "skills/shared/references/publication-protocol.md": "e96c620309a7395b17f824be660359a4ceb23cb07edade342fa0ace322a4e888",
       "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "it-outer 実走 E2E は R13 時点 revision（evidence を default dir 直書き）の publication mechanics を検証済み。R16 の evidence staging 化 + commit point 意味論は挙動面の変更だが、git 機構は新設 test_publication_protocol_git.py が実リポジトリで実行検証（happy path / CAS 競合 / crash 後の冪等修復 / staging 隔離）。agent 追従の再実走は未実施 — 次の挙動面変更時にまとめて実走すること",
+    "note": "R17: promotion を copy→checker検証→staging削除の冪等手順に、restart 検出を staging dir の durable marker に、別 worktree の main checkout を CAS 前 terminal failure に規定。git 機構は test_publication_protocol_git.py が実 checker 込みで実行検証（happy path / CAS 競合+retry / durable marker からの restart 復旧 / promotion 中断からの再収束）。agent 追従の再実走は未実施（次の挙動面変更時に実走）",
     "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
@@ -368,7 +368,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "f5046b0d8cfa6c5e617958f871cd856539b084a3e3559bc0cb357b1d6eada0a4",
+    "surface_sha256": "1e51322ef2e3764ba96484275d0bb0a21fc4e742c2844576124ffea79deea574",
     "verified": "2026-08-02"
   },
   "plan": {
