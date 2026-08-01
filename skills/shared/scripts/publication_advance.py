@@ -7,12 +7,14 @@
 全員が同じコードパスを実行する。
 
 サブコマンド:
+  merge    prospective merge の作成（一時 detached worktree + --no-ff。main は不動）。
+           成功時は expected/post SHA・worktree・staging パスを JSON で stdout に出力
   advance  前提条件の証明 → CAS → checkout 同期 → evidence promotion
   recover  durable marker（evidence-staging/{sha} = main HEAD）から未完了 publication を
            検出し、破壊的修復の安全性を証明できた場合のみ completion steps を再開する
 
 exit codes:
-  0  成功（advance: 前進+promotion 完了 / recover: 修復完了）
+  0  成功（merge: 作成完了 / advance: 前進+promotion 完了 / recover: 修復完了）
   2  実行不能（引数・環境・予期しない状態）
   3  terminal publish failure（前提条件不成立。main は無傷）
   4  CAS conflict（main が動いた。main・公開 evidence・staging は無傷）
@@ -87,6 +89,35 @@ def promote(repo, staging, target_sha, contract):
         return False
     shutil.rmtree(staging)
     return True
+
+
+def cmd_merge(args):
+    repo = os.path.realpath(args.repo_root)
+    branch = args.branch
+    expected = git(repo, "rev-parse", f"refs/heads/{branch}").stdout.strip()
+    tmp = args.tmp_merge_root or f"{repo}-pubmerge-{expected[:12]}"
+    if os.path.exists(tmp):
+        return fail(2, f"temporary merge worktree already exists: {tmp} (discard stale state first)")
+    git(repo, "worktree", "add", "--detach", "-q", tmp, expected)
+    merge = git(
+        tmp, "merge", "--no-ff", "-q",
+        "-m", f"merge {args.satellite_branch}",
+        args.satellite_branch, check=False,
+    )
+    if merge.returncode != 0:
+        git(tmp, "merge", "--abort", check=False)
+        git(repo, "worktree", "remove", "--force", tmp, check=False)
+        return fail(3, "terminal: merge conflict with the satellite branch; main untouched")
+    post = git(tmp, "rev-parse", "HEAD").stdout.strip()
+    staging = os.path.join(repo, STAGING_RELROOT, post)
+    os.makedirs(staging, exist_ok=True)
+    print(json.dumps({
+        "expected_main_sha": expected,
+        "post_merge_sha": post,
+        "tmp_merge_root": tmp,
+        "evidence_staging": staging,
+    }))
+    return 0
 
 
 def cmd_advance(args):
@@ -177,6 +208,11 @@ def main():
     common.add_argument("--contract", default=None,
                         help="quality-gate contract path (default: <repo-root>/skills/shared/references/quality-gate-contract.md)")
 
+    merge = sub.add_parser("merge", parents=[common])
+    merge.add_argument("--satellite-branch", required=True)
+    merge.add_argument("--tmp-merge-root", default=None,
+                       help="temp worktree path (default: <repo-root>-pubmerge-<sha12>)")
+
     advance = sub.add_parser("advance", parents=[common])
     advance.add_argument("--post-merge-sha", required=True)
     advance.add_argument("--expected-main-sha", required=True)
@@ -191,6 +227,8 @@ def main():
             args.repo_root, "skills", "shared", "references", "quality-gate-contract.md"
         )
     try:
+        if args.command == "merge":
+            return cmd_merge(args)
         if args.command == "advance":
             return cmd_advance(args)
         return cmd_recover(args)

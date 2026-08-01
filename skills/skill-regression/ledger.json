@@ -126,13 +126,13 @@
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/publication-protocol.md": "1875cffba54ad8341ad52ae632475682046408e84b801cdb14e8dd52184b47b1",
+      "skills/shared/references/publication-protocol.md": "a7ed8c5240d36c33c5b60d9fd7885d4958d635e38ee7ed156fc7dfb9685f122c",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "R18(b) は publication protocol 本文の明記のみで cycle 側変更なし",
+    "note": "スリム化フェーズ 1: publication protocol を判断特化 77 行に書き換え（mechanics は publication_advance.py merge/advance/recover + fault-injection テスト 11 本へ正本化。ユーザー裁定: 1 スキル総ロード半分以下）。cycle SKILL 本体のスリム化は次段（未着手、721 行のまま）",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -148,7 +148,7 @@
       "skills/shared/references/workspace-lock.md",
       "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "5005da20c0dab7f40b9f18128050962b99d09f915cdce464bd05c241c017690c",
+    "surface_sha256": "47ed1fc03b30d3d74fff934665082552500ecd26485d5b641a355616b487d237",
     "verified": "2026-08-02"
   },
   "decision-journal": {
@@ -346,14 +346,14 @@
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/publication-protocol.md": "1875cffba54ad8341ad52ae632475682046408e84b801cdb14e8dd52184b47b1",
+      "skills/shared/references/publication-protocol.md": "a7ed8c5240d36c33c5b60d9fd7885d4958d635e38ee7ed156fc7dfb9685f122c",
       "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "R18(b): recovery の reset は main が {main_tree_root} に checkout されている場合のみ実行という既存実装のガードを本文に明記し、別ブランチ checkout 時に reset せず promotion のみ行うことをテストで固定（プリミティブ実装は不変）",
+    "note": "スリム化フェーズ 1: publication protocol 77 行化 + merge サブコマンド追加。挙動保証は primitive + 実 git テストが保持。agent 追従の再実走は SKILL スリム化完了後にまとめて実施予定",
     "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
@@ -370,7 +370,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "b0790db2a9ebeec3da1127316c901521cdedb86ca093be4fbacb2c34da7ac80e",
+    "surface_sha256": "0fa817756f445bdfd75b95b739e875161c78f4e2d293fb01814e0220e2ab461c",
     "verified": "2026-08-02"
   },
   "plan": {

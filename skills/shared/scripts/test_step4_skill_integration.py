@@ -63,69 +63,39 @@ class Step4SkillIntegrationTests(unittest.TestCase):
     def test_publication_protocol_shared_reference_exists(self):
         text = self.compact(PUBLICATION)
         self.assertIn("prospective merge", text)
-        self.assertIn("Publish only after main is advanced", text)
-        self.assertIn("Cleanup only when", text)
-        self.assertIn("Publication succeeded", text)
-        self.assertIn("explicit human authorization", text)
         self.assertIn("compare-and-swap", text)
         self.assertIn("quality-gate-contract", text)
-        self.assertIn("evidence_check.py", text)
         self.assertIn("machine_verified", text)
         self.assertIn("semantic_reviewed", text)
-        cas_retry = text.index("second CAS failure")
-        terminal = text.index("Terminal publish failure")
-        self.assertLess(cas_retry, terminal)
+        self.assertIn("Publish only after this", text)
+        self.assertIn("second CAS failure is a terminal publish failure", text)
+        self.assertIn("explicit human authorization", text)
+        self.assertIn("Cleanup only when", text)
+        self.assertIn("publication succeeded", text)
 
     def test_publication_protocol_operational_invariants(self):
         text = self.compact(PUBLICATION)
-        # producer and checker are pinned to one evidence directory
-        self.assertIn("--evidence-dir {evidence_dir}", text)
-        self.assertIn("Producer and checker must name the same `{evidence_dir}`", text)
-        # exclusive access precedes the clean check, the CAS, and the destructive sync
-        lock = text.index("workspace lock")
-        clean = text.index("status --porcelain` prints nothing")
-        cas = text.index("update-ref refs/heads/main {post_merge_sha} {expected_main_sha}")
-        reset = text.index("reset --hard refs/heads/main")
-        self.assertLess(lock, clean)
-        self.assertLess(clean, cas)
-        self.assertLess(cas, reset)
-        # without the lock, a checked-out main terminates BEFORE the CAS —
-        # never a ref advance that strands the checkout
-        nolock_stop = text.index("before step 3's compare-and-swap")
-        self.assertLess(lock, nolock_stop)
-        self.assertLess(nolock_stop, cas)
-        self.assertIn("the destructive reset in step 4 is forbidden", text)
-        # the prospective merge is one fixed worktree procedure, not a menu
-        self.assertIn("worktree add --detach {tmp_merge_root} {expected_main_sha}", text)
-        self.assertIn("merge --no-ff {satellite_branch}", text)
-        self.assertNotIn("or equivalent", text)
-        # prospective evidence stages per-SHA and only promotes after the CAS
-        self.assertIn("evidence-staging/{post_merge_sha}", text)
-        self.assertIn("Never write prospective evidence into the default evidence directory", text)
-        promote = text.index("Promote the evidence")
-        self.assertLess(reset, promote)
-        # promotion is copy -> verify -> delete, so a mid-copy crash is repairable
-        self.assertIn("copy — never move —", text)
-        self.assertIn("Copy-then-verify-then-delete", text)
-        # the CAS is the commit point; later steps repair forward, never roll back
-        self.assertIn("commit point", text)
-        self.assertLess(cas, text.index("commit point"))
-        # interrupted completion is detected from durable state, not process memory
-        self.assertIn("durable marker", text)
-        # a main checked out in a foreign worktree stops the publish before the CAS
-        foreign = text.index("any worktree other than")
-        self.assertLess(foreign, cas)
-        # the destructive transitions run through one shared executable primitive
+        # every destructive transition runs through the one shared primitive,
+        # whose behavior is verified by execution, not by prose
+        self.assertIn("publication_advance.py merge", text)
         self.assertIn("publication_advance.py advance", text)
         self.assertIn("publication_advance.py recover", text)
         self.assertIn("never hand-roll", text)
-        # recovery must prove the phantom state before any destructive repair
-        self.assertIn("repair must never destroy", text)
-        self.assertIn("stops without mutating anything", text)
+        self.assertIn("fault-injection tests", text)
+        # evidence stages per prospective SHA; the singleton stays untouched
+        # until promotion succeeds
+        self.assertIn("evidence-staging/{sha}", text)
+        self.assertIn("Never write into the default evidence directory", text)
+        # the CAS is the commit point; repair is forward-only and proof-gated
+        self.assertIn("commit point", text)
+        self.assertIn("durable marker", text)
+        self.assertIn("must never be destroyed", text)
+        self.assertIn("repaired forward", text)
+        # the caller holds the workspace lock across the sequence
+        self.assertIn("Hold the workspace lock across the whole sequence", text)
         # semantic evidence delegates ledger and convergence to the contract
         self.assertIn("§4.3", text)
-        self.assertIn("convergence conditions of §5", text)
-        self.assertIn("target the exact `{post_merge_sha}` tree", text)
+        self.assertIn("§5 convergence", text)
 
     def test_cycle_warn_autofix_relay_names_its_result_file(self):
         text = self.compact(CYCLE)

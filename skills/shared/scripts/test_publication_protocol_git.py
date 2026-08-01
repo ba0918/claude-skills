@@ -60,14 +60,24 @@ class PublicationPrimitiveTests(unittest.TestCase):
 
     # -- protocol steps / primitive invocation --------------------------------
 
+    def merge_cmd(self, suffix=""):
+        return subprocess.run(
+            [
+                sys.executable, str(PRIMITIVE), "merge",
+                "--repo-root", str(self.main),
+                "--satellite-branch", "satellite",
+                "--tmp-merge-root", str(self.root / f"tmp-merge{suffix}"),
+                "--contract", str(CONTRACT),
+            ],
+            capture_output=True, text=True,
+        )
+
     def prospective_merge(self, suffix=""):
-        """Step 1: detached temp worktree + merge --no-ff; main untouched."""
-        expected = git(self.main, "rev-parse", "main").stdout.strip()
-        tmp = self.root / f"tmp-merge{suffix}"
-        git(self.main, "worktree", "add", "--detach", "-q", str(tmp), expected)
-        git(tmp, "merge", "--no-ff", "-q", "-m", "merge satellite", "satellite")
-        post = git(tmp, "rev-parse", "HEAD").stdout.strip()
-        return expected, post, tmp
+        """Step 1 via the primitive: detached temp worktree + merge --no-ff."""
+        result = self.merge_cmd(suffix)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        out = json.loads(result.stdout)
+        return out["expected_main_sha"], out["post_merge_sha"], Path(out["tmp_merge_root"])
 
     def record(self, state, sha):
         return json.dumps({
@@ -82,7 +92,7 @@ class PublicationPrimitiveTests(unittest.TestCase):
 
     def stage_evidence(self, post):
         staging = self.main / f".agents/artifacts/reviews/evidence-staging/{post}"
-        staging.mkdir(parents=True)
+        staging.mkdir(parents=True, exist_ok=True)
         for state in STATES:
             (staging / f"{state}.json").write_text(self.record(state, post))
         return staging
@@ -121,6 +131,22 @@ class PublicationPrimitiveTests(unittest.TestCase):
 
     def main_sha(self):
         return git(self.main, "rev-parse", "main").stdout.strip()
+
+    # -- merge -----------------------------------------------------------------
+
+    def test_merge_conflict_is_terminal_and_leaves_main_untouched(self):
+        (self.main / "a.txt").write_text("main side\n")
+        git(self.main, "add", ".")
+        git(self.main, "commit", "-qm", "main side")
+        sat = self.root / "sat"
+        (sat / "a.txt").write_text("satellite side\n")
+        git(sat, "add", ".")
+        git(sat, "commit", "-qm", "satellite side")
+        before = self.main_sha()
+        result = self.merge_cmd(suffix="-conflict")
+        self.assertEqual(result.returncode, 3)
+        self.assertEqual(self.main_sha(), before)
+        self.assertFalse((self.root / "tmp-merge-conflict").exists())
 
     # -- advance ---------------------------------------------------------------
 
