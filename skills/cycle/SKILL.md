@@ -403,6 +403,7 @@ ones to the user.
    agent (same as Step 3b).
 3. Launch a targeted-fix subagent with the same constraints as Step 3b (trusted
    allowed-files, no raw suggestion/description passthrough, post-fix scope verification).
+   Follow the delegation result relay with `{role}` = `fix-warn`.
 4. After the fix subagent completes, run the clean tree gate. If dirty, revert to the
    pre-fix state (`git reset --hard {pre_fix_sha}` then `git clean -fd` to remove
    untracked files created by the fix agent) and fall through to the acknowledgement
