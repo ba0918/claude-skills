@@ -17,7 +17,9 @@ to earn, and the safety boundaries.
 ## Sequence
 
 Hold the workspace lock across the whole sequence (cycle and iterate claim it in their
-Phase 0 and release it when the run ends).
+Phase 0 and release it when the run ends) and pass its token to the primitive as
+`--lock-token`: the destructive paths verify the token against the live claim in code
+and refuse to run without a match — prose alone proves nothing.
 
 1. **Prospective merge** — main untouched:
    `python3 skills/shared/scripts/publication_advance.py merge --repo-root {main_tree_root} --branch main --satellite-branch {satellite_branch}`
@@ -38,7 +40,7 @@ Phase 0 and release it when the run ends).
    singleton describes the currently published main until promotion succeeds.
 
 3. **Advance** — checker judgment and every destructive step in one implementation:
-   `python3 skills/shared/scripts/publication_advance.py advance --repo-root {main_tree_root} --branch main --post-merge-sha {post_merge_sha} --expected-main-sha {expected_main_sha} --evidence-staging {evidence_dir}`
+   `python3 skills/shared/scripts/publication_advance.py advance --repo-root {main_tree_root} --branch main --post-merge-sha {post_merge_sha} --expected-main-sha {expected_main_sha} --evidence-staging {evidence_dir} --lock-token {workspace_lock_token}`
    The compare-and-swap inside it is the **commit point** of publication. Exit codes:
    - `0` — main advanced, checkout synchronized, evidence promoted into the singleton.
      Publish only after this. Then remove `{tmp_merge_root}`
@@ -57,7 +59,7 @@ The staging directory is the durable marker of an unfinished publication. On ent
 `evidence-staging/{sha}/` exists with `{sha}` equal to the current main HEAD, the
 commit point already passed and completion did not finish. Re-acquire the workspace
 lock, then run:
-`python3 skills/shared/scripts/publication_advance.py recover --repo-root {main_tree_root} --branch main`
+`python3 skills/shared/scripts/publication_advance.py recover --repo-root {main_tree_root} --branch main --lock-token {workspace_lock_token}`
 
 It repairs only what it can prove is untouched post-crash state, and otherwise stops
 without mutating anything (exit `6` → manual recovery): a human's post-crash edits

@@ -91,8 +91,9 @@ class Step4SkillIntegrationTests(unittest.TestCase):
         self.assertIn("durable marker", text)
         self.assertIn("must never be destroyed", text)
         self.assertIn("repaired forward", text)
-        # the caller holds the workspace lock across the sequence
+        # the lock is enforced in code: the primitive takes and verifies the token
         self.assertIn("Hold the workspace lock across the whole sequence", text)
+        self.assertIn("--lock-token", text)
         # semantic evidence delegates ledger and convergence to the contract
         self.assertIn("§4.3", text)
         self.assertIn("§5 convergence", text)

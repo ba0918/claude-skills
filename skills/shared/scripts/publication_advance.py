@@ -33,6 +33,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CHECKER = os.path.join(HERE, "evidence_check.py")
 STAGING_RELROOT = os.path.join(".agents", "artifacts", "reviews", "evidence-staging")
 DEFAULT_RELDIR = os.path.join(".agents", "artifacts", "reviews", "evidence")
+CLAIM_REL = os.path.join(".agents", "runtime", "workspace.claim")
 
 
 def git(repo, *args, check=True):
@@ -58,6 +59,23 @@ def checker_passes(repo, evidence_dir, target_sha, contract):
         capture_output=True, text=True,
     )
     return result.returncode == 0
+
+
+def lock_held(repo, token):
+    """caller が workspace lock（workspace-lock.md）を保持している証明。
+
+    証明 = 渡された token が live claim（.agents/runtime/workspace.claim）の
+    token と一致すること。散文で lock 保持を要求するだけでは保証にならない
+    ため、破壊的経路はコード側でこの証明を要求する。
+    """
+    if not token:
+        return False
+    try:
+        with open(os.path.join(repo, CLAIM_REL), encoding="utf-8") as handle:
+            record = json.load(handle)
+    except (OSError, ValueError):
+        return False
+    return record.get("token") == token
 
 
 def branch_checkouts(repo, branch):
@@ -131,6 +149,10 @@ def cmd_advance(args):
     if foreign:
         return fail(3, f"terminal: {branch} is checked out outside the main tree: {foreign[0]}")
     checked_out_here = repo in checkouts
+    if checked_out_here and not lock_held(repo, args.lock_token):
+        return fail(3, "terminal: {0} is checked out here and the workspace lock is not proven "
+                       "(--lock-token missing or not matching the claim); the destructive sync "
+                       "requires exclusion".format(branch))
     if checked_out_here and not tree_clean(repo):
         return fail(3, "terminal: main tree is dirty; advancing would entangle local edits")
     if not os.path.isdir(staging):
@@ -184,12 +206,18 @@ def cmd_recover(args):
             if git(repo, "diff", "--cached", "--quiet", expected, check=False).returncode != 0:
                 return fail(6, "manual recovery required: index differs from the pre-CAS tree (possible post-crash staging)")
             # 安全性の証明 3: merge が新規に持ち込むパスが untracked として存在しないこと
+            # -z: NUL 区切り + quotePath 無効。空白や非 ASCII を含むパス名を
+            # 空白 split で分解すると衝突検知が素通りし reset がファイルを壊す
             added = git(
-                repo, "diff", "--name-only", "--diff-filter=A", expected, head
-            ).stdout.split()
-            for path in added:
+                repo, "diff", "--name-only", "--diff-filter=A", "-z", expected, head
+            ).stdout.split("\0")
+            for path in filter(None, added):
                 if os.path.lexists(os.path.join(repo, path)):
                     return fail(6, f"manual recovery required: untracked file collides with the merged tree: {path}")
+            if not lock_held(repo, args.lock_token):
+                return fail(6, "manual recovery required: workspace lock not proven "
+                               "(--lock-token missing or not matching the claim); the destructive "
+                               "reset requires exclusion")
             git(repo, "reset", "-q", "--hard", f"refs/heads/{branch}")
 
     if not promote(repo, staging, head, args.contract):
@@ -205,6 +233,9 @@ def main():
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--repo-root", required=True)
     common.add_argument("--branch", default="main")
+    common.add_argument("--lock-token", default=None,
+                        help="workspace lock token proving the caller holds the claim; "
+                             "required for any destructive path (checkout sync)")
     common.add_argument("--contract", default=None,
                         help="quality-gate contract path (default: <repo-root>/skills/shared/references/quality-gate-contract.md)")
 
