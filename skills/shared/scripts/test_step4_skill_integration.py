@@ -99,6 +99,14 @@ class Step4SkillIntegrationTests(unittest.TestCase):
         self.assertIn("worktree add --detach {tmp_merge_root} {expected_main_sha}", text)
         self.assertIn("merge --no-ff {satellite_branch}", text)
         self.assertNotIn("or equivalent", text)
+        # prospective evidence stages per-SHA and only promotes after the CAS
+        self.assertIn("evidence-staging/{post_merge_sha}", text)
+        self.assertIn("Never write prospective evidence into the default evidence directory", text)
+        promote = text.index("Promote the evidence")
+        self.assertLess(reset, promote)
+        # the CAS is the commit point; later steps repair forward, never roll back
+        self.assertIn("commit point", text)
+        self.assertLess(cas, text.index("commit point"))
         # semantic evidence delegates ledger and convergence to the contract
         self.assertIn("§4.3", text)
         self.assertIn("convergence conditions of §5", text)

@@ -119,19 +119,19 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "73efdbe739d041c4823c28f4e77d81127c9483a2375a53a026d2b024dad328f5",
+      "skills/cycle/SKILL.md": "72df0af0bda567b804f8572b6c437fdf6c0accf99caca959e1954caae320435f",
       "skills/cycle/fixtures.json": "e2ef9c4c17e29f74f51e6b034d4f82f03fff9b20bf91adf357f2edb002eda740",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/publication-protocol.md": "63f76b8301c2a8534dc2cfa4f0cbdc9211c57d2cc8f16e572d3e9cd777785d90",
+      "skills/shared/references/publication-protocol.md": "1aae7c82ae23b453b70a21316e42475e65b6edb7d94a6e8f5b1b9738c8fda1b2",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "R14 指摘1対応は publication-protocol.md の no-lock 分岐明文化のみ。cycle の既定経路（Phase 0 で lock 保持）の挙動は不変。cy-013〜018 の実走 pass は R13 ラウンドで取得済み",
+    "note": "実委譲 E2E は cy-013（BLOCK fix loop、caller 介入 9 回）と cy-014 再実走（targeted-fix subagent 実起動・relay 欠落フォールバック実測）の 2 本。cy-015〜018 は fixture が verdict を『想定』指定するため inline 構成で分岐ロジックのみ検証（cy-018 の delegation/relay は E2E 未検証。cy-016 の revert は sandbox denied のため内容同値復元を caller が diff 空で検証）。R16 の diff 取扱い注記は文言明確化のみで挙動不変",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -146,7 +146,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "7698ddced16a95d79038f40afa9f01b268ead992c76ead54c4c32c968203d8e1",
+    "surface_sha256": "781ccbce023e1e2e73fcc003ce56790baae4cdda51e51d8ac4d7a7e4ce8a3023",
     "verified": "2026-08-02"
   },
   "decision-journal": {
@@ -344,14 +344,14 @@
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/publication-protocol.md": "63f76b8301c2a8534dc2cfa4f0cbdc9211c57d2cc8f16e572d3e9cd777785d90",
+      "skills/shared/references/publication-protocol.md": "1aae7c82ae23b453b70a21316e42475e65b6edb7d94a6e8f5b1b9738c8fda1b2",
       "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "R14 指摘1の残欠陥修正（lock 無し + main checkout 済みは CAS 前に terminal failure へ、非 checkout 時のみ ref 単独 CAS を許容）。規範の場合分け明文化のみで、lock を保持する既定経路（it-outer 実走済み）の挙動は不変",
+    "note": "it-outer 実走 E2E は R13 時点 revision（evidence を default dir 直書き）の publication mechanics を検証済み。R16 の evidence staging 化 + commit point 意味論は挙動面の変更だが、git 機構は新設 test_publication_protocol_git.py が実リポジトリで実行検証（happy path / CAS 競合 / crash 後の冪等修復 / staging 隔離）。agent 追従の再実走は未実施 — 次の挙動面変更時にまとめて実走すること",
     "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
@@ -368,7 +368,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "2f839c443edfeada8e181f371922ab2f9526ecc8145c24ca8e01fda846a370a0",
+    "surface_sha256": "f5046b0d8cfa6c5e617958f871cd856539b084a3e3559bc0cb357b1d6eada0a4",
     "verified": "2026-08-02"
   },
   "plan": {

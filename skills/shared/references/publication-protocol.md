@@ -59,15 +59,22 @@ Re-earn both states required by the
    the contract's, not this protocol's — this protocol adds only the binding: the
    review subject and every ledger entry target the exact `{post_merge_sha}` tree.
 
-Write both records to `{evidence_dir}` = the **main tree's** default artifact-store
-evidence directory (`{main_tree_root}/.agents/artifacts/reviews/evidence/`), using the
-[evidence format](evidence-format.md): exact `{post_merge_sha}`,
+Write both records to `{evidence_dir}` = a run-scoped staging directory keyed by the
+prospective merge commit,
+`{main_tree_root}/.agents/artifacts/reviews/evidence-staging/{post_merge_sha}/`, using
+the [evidence format](evidence-format.md): exact `{post_merge_sha}`,
 `quality-gate-contract 1.0.0`, `profile: null`, and non-empty grounds naming the run or
 review that produced the state.
 
-Do not write into `{tmp_merge_root}`'s own store: the artifact store is per-worktree, so
-evidence written there resolves to a different directory than the one the Step 3 checker
-reads. Producer and checker must name the same `{evidence_dir}` explicitly.
+Never write prospective evidence into the default evidence directory
+(`{main_tree_root}/.agents/artifacts/reviews/evidence/`): that singleton describes the
+**currently published** main, and overwriting it before publication succeeds would
+destroy or mix the old main's valid evidence on any failure (review failure, CAS
+conflict, mid-run stop). Promotion into the singleton is a completion step of Exit 0.
+Do not write into `{tmp_merge_root}`'s own store either: the artifact store is
+per-worktree, so evidence written there resolves to a different directory than the one
+the Step 3 checker reads. Producer and checker must name the same `{evidence_dir}`
+explicitly.
 
 A Phase 4 review verdict is review input, not reusable evidence.
 
@@ -117,11 +124,23 @@ wrote, instead of relying on the default derivation from `--repo-root`.
    safe because the tree was proven clean and the workspace lock excludes concurrent
    writers (step 1). If `main` is not checked out in any worktree, the ref update alone
    completes the advance.
-5. Remove the temporary merge worktree (`git worktree remove {tmp_merge_root}`) only
+5. **Promote the evidence**: move both records from `{evidence_dir}` into the default
+   evidence directory `{main_tree_root}/.agents/artifacts/reviews/evidence/`, replacing
+   the superseded records of the previous main, then remove the emptied staging
+   directory.
+6. Remove the temporary merge worktree (`git worktree remove {tmp_merge_root}`) only
    after the advance succeeds.
 
+Step 3 is the **commit point** of publication. Every failure before it leaves main
+fully untouched — ref, checkout, and the published evidence singleton all still
+describe the old main. Once the compare-and-swap succeeds, the advance is committed
+and is never rolled back: steps 4-6 are completion steps, each idempotent, and on
+failure, interruption, or crash they are re-run until they succeed (re-run the reset,
+re-attempt the promotion) rather than being treated as publish failures.
+
 If CAS fails (main moved during verification):
-1. Discard the stale prospective merge (remove `{tmp_merge_root}`).
+1. Discard the stale prospective merge (remove `{tmp_merge_root}` and the stale
+   `{evidence_dir}` staging directory — both name a commit that will never publish).
 2. Re-create the prospective merge from the new main (repeat Steps 1-2).
 3. Re-run the checker.
 4. Retry at most **once**. A second CAS failure is a terminal publish failure (treat as
@@ -142,8 +161,11 @@ Main remains untouched.
 
 ## Failure path preservation
 
-Every failure path preserves staging and the worktree. Discard requires explicit human
-authorization.
+Every failure path before the commit point preserves staging and the worktree, and
+leaves main — ref, checkout, and published evidence singleton — untouched. Discard
+requires explicit human authorization. After the commit point there are no publish
+failures, only incomplete completion steps, which are repaired forward (re-run until
+they succeed) and never rolled back.
 
 ## Cleanup gating
 
