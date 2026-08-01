@@ -334,15 +334,19 @@
       "prompt": "standalone worktree mode で cycle を実行し、merge 後の publish gate を確認して。checker 入力について (1) machine evidence 欠落、(2) merge 前 SHA の stale semantic evidence、(3) checker 自体の error の各結果を想定し、publish 可否と復旧状態を示して。",
       "requirements": [
         {
-          "text": "merge 後の main tree から full 40-hex post_merge_sha を確定し、machine_verified と fresh history-free semantic_reviewed の両 evidence を同じ exact SHA と quality-gate-contract 1.0.0 に束縛して再生成する手順になっている",
+          "text": "prospective merge commit を main に反映する前に作成し、full 40-hex post_merge_sha を確定している（main は checker 成功まで更新されない）",
           "critical": true
         },
         {
-          "text": "canonical evidence checker を explicit post_merge_sha・contract path・repo root で実行し、exit 0 の場合だけ publish を許可している",
+          "text": "machine_verified と fresh history-free semantic_reviewed の両 evidence を prospective merge の exact SHA と quality-gate-contract 1.0.0 に束縛して生成する手順になっている",
           "critical": true
         },
         {
-          "text": "machine evidence 欠落、stale semantic evidence、checker error の3ケースすべてで publish・singleton composition・issue close・cleanup を抑止している",
+          "text": "canonical evidence checker を explicit post_merge_sha・contract path・repo root で実行し、exit 0 の場合だけ main を advance して publish を許可している",
+          "critical": true
+        },
+        {
+          "text": "machine evidence 欠落、stale semantic evidence、checker error の3ケースすべてで main advance・publish・singleton composition・issue close・cleanup を抑止している",
           "critical": true
         },
         {
@@ -351,6 +355,124 @@
         }
       ],
       "notes": "standalone outer orchestrator が所有する protected-state transition の回帰。Phase 4 の pre-merge verdict を evidence として再利用せず、merge 後 SHA で両 state を再取得して checker を fail-closed に扱う。3つの負経路は同一 gate の判定表として固定する。"
+    },
+    {
+      "id": "cy-010",
+      "title": "Phase 3 fix loop exhaustion — 2回修正後も BLOCK で cycle 停止",
+      "source": "manual:pr-190-review-round7",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# fixloop-test\n\nFix loop exhaustion テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def negate(x: int) -> int:\n    return -x\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import negate\n\nclass NegateTest(unittest.TestCase):\n    def test_negate(self):\n        self.assertEqual(negate(5), -5)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260801010000_add-absolute.md": "# absolute 機能追加\n\n**Cycle ID:** `20260801010000`\n**Started:** 2026-08-01 01:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nabsolute 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **absolute 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - absolute(x) -> int を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の fix loop が 2 回とも BLOCK verdict（critical findings が残る）で終了した想定で、fix loop exhaustion の停止パスを確認して。",
+      "requirements": [
+        {
+          "text": "2 回の fix iteration が実行され、各 iteration 後の re-review がいずれも BLOCK verdict を返している",
+          "critical": true
+        },
+        {
+          "text": "fix loop exhaustion 後に ⛔ CYCLE ABORTED: Review loop exhausted (2 fix iterations) の停止メッセージが表示され、未解消の BLOCK findings が列挙されている",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されており、次回 cycle の自動選択で再選択可能な状態になっている",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 および Phase 5 が実行されていない",
+          "critical": true
+        },
+        {
+          "text": "/iterate で対応してから cycle を再実行する旨の案内が表示されている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 3 fix loop exhaustion の固定。2 回の fix iteration 後も BLOCK findings が残る場合、fix loop を打ち切り plan status を復元して cycle を停止する。Phase 4/5 は実行されない。"
+    },
+    {
+      "id": "cy-011",
+      "title": "Phase 1 retry exhaustion — 2回失敗で plan status 復元して cycle 中断",
+      "source": "manual:pr-190-review-round7",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# retry-test\n\nPhase 1 retry exhaustion テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def identity(x):\n    return x\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import identity\n\nclass IdentityTest(unittest.TestCase):\n    def test_identity(self):\n        self.assertEqual(identity(42), 42)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260801020000_add-transform.md": "# transform 機能追加\n\n**Cycle ID:** `20260801020000`\n**Started:** 2026-08-01 02:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ntransform 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **transform 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - transform(x) -> str を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 1 の implement agent が 2 回とも失敗した（サブエージェントエラー）と仮定して、retry exhaustion の中断パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 1 の初回実行が失敗し、1 回の自動リトライが実行されている",
+          "critical": true
+        },
+        {
+          "text": "リトライも失敗した後、plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 2/3/4/5 が実行されていない",
+          "critical": true
+        },
+        {
+          "text": "エラー内容と実装の進捗状況（how far the steps got）が表示されている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 1 retry exhaustion の固定。plan-implement が plan status を 🟡 In Progress に変更した後にサブエージェントが 2 回失敗した場合、plan status を ⚠️ Review Failed に復元して次回 auto-select を可能にする。"
+    },
+    {
+      "id": "cy-012",
+      "title": "Re-execution after BLOCK — Implementation Base SHA が保持されレビュー範囲が初回実装を含む",
+      "source": "manual:pr-190-review-round7",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# reexec-test\n\nRe-execution テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def inc(x: int) -> int:\n    return x + 1\n\ndef dec(x: int) -> int:\n    return x - 1\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import inc, dec\n\nclass IncTest(unittest.TestCase):\n    def test_inc(self):\n        self.assertEqual(inc(0), 1)\n\nclass DecTest(unittest.TestCase):\n    def test_dec(self):\n        self.assertEqual(dec(1), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260801030000_add-dec.md": "# dec 機能追加\n\n**Cycle ID:** `20260801030000`\n**Started:** 2026-08-01 03:00:00\n**Status:** ⚠️ Review Failed\n\n---\n\n## 📝 What & Why\n\ndec 関数を追加する。Phase 4 で BLOCK され、/iterate で修正済み。\n\n## 🔧 Implementation Steps\n\n1. **dec 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - dec(x) -> int を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle を .agents/artifacts/plans/20260801030000_add-dec.md で再実行して。初回 cycle で Implementation Base SHA が記録された後の再実行を模擬する想定で、Phase 0 Step 3 の Base SHA 保持ロジックと、Phase 3 の空 diff ガードの動作を確認して。plan に既存 Base SHA がある場合は HEAD でなくそれを使うこと、ない場合は記録すること。",
+      "requirements": [
+        {
+          "text": "Phase 0 Step 3 で plan ファイルに Implementation Base SHA が存在しない場合、現在の HEAD を記録している",
+          "critical": true
+        },
+        {
+          "text": "Phase 0 Step 3 で plan ファイルに Implementation Base SHA が既に存在する場合、それを cycle_start_sha として採用し HEAD に上書きしない（再実行保護）",
+          "critical": true
+        },
+        {
+          "text": "Phase 3/4 のレビュープロンプトで git diff {cycle_start_sha}..HEAD が使用されている",
+          "critical": true
+        },
+        {
+          "text": "diff が空の場合に plan status を ⚠️ Review Failed に戻して UNVERIFIED 停止する経路が規定されている",
+          "critical": false
+        }
+      ],
+      "notes": "cycle_start_sha 永続化の回帰。初回実行で Base SHA を plan に記録し、再実行時はそれを再利用することで、元の実装が常にレビュー範囲に含まれることを固定する。fixture 環境では SHA を埋め込まず、Phase 0 Step 3 のロジック自体を検証する。"
     }
   ]
 }

@@ -25,8 +25,11 @@ facade. In `inplace` mode, preserve the existing workflow unchanged. In `worktre
    task context when no plan exists).
 3. Launch one inner run with the complete resolved context above.
 4. Collect on every terminal path: success, failure, cancellation, and verification failure.
-5. Merge and run post-merge verification in the main tree.
-6. Publish only after verification passes. Every failure path preserves staging and the worktree;
+5. Create a prospective merge without updating main. Resolve the full 40-hex
+   `{post_merge_sha}` from the prospective merge commit.
+6. Run verification and the canonical evidence checker against the prospective merge SHA.
+   Advance main only on checker exit 0. Publish only after main is advanced.
+   Every failure path preserves staging and the worktree;
    discard requires explicit human authorization.
 7. Cleanup only when cleanup_allowed is proven and the capability is non-live (consumed or revoked).
 
