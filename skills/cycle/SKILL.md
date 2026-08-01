@@ -370,7 +370,7 @@ WARN+ESCALATE both route to ESCALATE):
 | Verdict | Action |
 |---------|--------|
 | PASS | Proceed to Phase 4 |
-| WARN | Record findings, proceed to Phase 4 |
+| WARN | Record findings, request user acknowledgement (Step 2b) |
 | BLOCK (no escalation items) | Enter the fix loop (Step 3) |
 | ESCALATE (any escalation items present) | Abort the cycle immediately (Step 2a) |
 
@@ -386,6 +386,29 @@ Escalation items:
 Action: Resolve spec gaps in brainstorm before re-running the cycle.
   → /claude-skills:brainstorm
 ```
+
+**Step 2b: WARN acknowledgement**
+
+WARN findings require user acknowledgement before proceeding. Display the findings and
+request confirmation:
+
+```
+⚠️ Phase 3 Review: WARN
+Findings:
+  {list of WARN findings with severity and description}
+Proceed with these warnings? (yes/no)
+```
+
+- **Interactive mode**: if the user confirms, proceed to Phase 4. If the user declines,
+  revert plan status to `⚠️ Review Failed` and stop the cycle with `/iterate` guidance.
+- **Headless mode** (no user confirmation available): treat WARN as a stop condition.
+  Revert plan status to `⚠️ Review Failed` and stop:
+  ```
+  ⛔ CYCLE STOPPED: Review WARN (headless — user acknowledgement required)
+  WARN findings:
+    {list of WARN findings}
+  Action: Review the findings, then re-run the cycle interactively or use /iterate.
+  ```
 
 ### Step 3: Fix loop (max 2 iterations)
 
@@ -496,12 +519,16 @@ b. **Independent review** (external review system):
    - Prompt: "Review the following implementation against its plan comprehensively. Point out
      problems, oversights, and spec conformance issues.
      Plan file contents: {plan file contents}.
+     Implementation diff: {trusted diff from `git diff {cycle_start_sha}..HEAD`}.
      Output: verdict (PASS/WARN/BLOCK) and findings list (each with severity: critical /
      important / minor, title, description, and suggestion).
      Write the result to `.agents/runtime/delegation/{run_id}_final-independent.md` before
      sending your completion report."
    - Follow [codex-integration.md](../shared/references/codex-integration.md)
-   - **Security constraint**: pass only the plan file contents. Never pass source code
+   - **Security constraint**: the diff is parent-computed trusted data (not raw source files).
+     Apply [codex-integration.md](../shared/references/codex-integration.md) secret exclusion
+     rules (`.env`, `*.key`, credentials) before passing the diff. Never pass full source
+     files — only the cycle-scoped diff
 
 ### Step 2: Aggregate and branch
 
@@ -517,15 +544,22 @@ Determine the overall verdict:
 - If holistic review arrived: overall verdict = worst of all arrived reviews
   (BLOCK > WARN > PASS)
 - If holistic review did not arrive (even after redelegation): overall verdict = UNVERIFIED,
-  regardless of independent review result. The independent review sees only the plan file
-  and cannot substitute for implementation-level verification
+  regardless of independent review result. The holistic review runs on a high-performance
+  model with full context; the independent review, while it receives the diff, runs on an
+  external system and cannot substitute for the holistic review's cross-cutting analysis
 
 | Verdict | Action |
 |---------|--------|
 | PASS | Proceed to Phase 5 |
-| WARN | Record findings, proceed to Phase 5 |
+| WARN | Record findings, request user acknowledgement — see below |
 | BLOCK | Stop the cycle (no fix loop) — see below |
 | UNVERIFIED | Stop the cycle — see below |
+
+**WARN acknowledgement (Phase 4):**
+
+Same procedure as Phase 3 Step 2b. Display findings and request confirmation. In headless
+mode, stop with `⛔ CYCLE STOPPED: Final gate WARN (headless — user acknowledgement required)`
+and revert plan status. The user can re-run interactively or address findings with `/iterate`.
 
 **BLOCK / UNVERIFIED stop:**
 
@@ -704,6 +738,9 @@ and `Issue: deferred to outer orchestrator: {slug | none}`.
 - **Dirty tree after Phase 3 fix**: if the clean tree gate after a fix subagent detects
   uncommitted or untracked non-ignored files, abort the cycle (same behavior as the Phase 2
   clean tree gate). Revert plan status before aborting.
+- **WARN in Phase 3 or Phase 4 (headless)**: WARN findings require user acknowledgement.
+  In headless mode (no user confirmation available), treat as a stop condition. Revert plan
+  status to `⚠️ Review Failed` and stop.
 - **ESCALATE in Phase 3**: abort the cycle immediately with brainstorm redirect. This is an
   intentional abort (spec gaps cannot be resolved by implementation fixes), not an error.
   Revert plan status before aborting.
@@ -722,7 +759,8 @@ and `Issue: deferred to outer orchestrator: {slug | none}`.
   a top-tier model, run delegates on a high-performance model to avoid cost blowups
   (per the model hierarchy in
   [orchestration-patterns.md](../shared/references/orchestration-patterns.md)).
-- **No user confirmation prompts** (headless execution).
+- **No user confirmation prompts** (headless execution). **Exception**: WARN verdicts
+  require user acknowledgement. In headless mode, WARN is a stop condition.
 - **Retry once on subagent errors.** Abort after a failed retry; do not retry twice.
   Exception: Phase 4 holistic review degrades gracefully instead of aborting (see Error
   handling).
@@ -733,7 +771,7 @@ and `Issue: deferred to outer orchestrator: {slug | none}`.
   the plan status to allow re-selection.
 - **Phase 4 stops on BLOCK or UNVERIFIED without a fix loop.** The final gate is a quality
   gate, not a fix opportunity. Use /iterate for post-gate fixes, then re-run the cycle.
-- **Phase 5 runs only after Phase 3 and Phase 4 pass or warn.** Issue close, result file
-  generation, and status completion are gated on review success.
+- **Phase 5 runs only after Phase 3 and Phase 4 pass (or WARN with user acknowledgement).**
+  Issue close, result file generation, and status completion are gated on review success.
 - When the root cause of a problem is unknown, recommend a read-only pre-investigation with
   `/claude-skills:investigate` before running the cycle.

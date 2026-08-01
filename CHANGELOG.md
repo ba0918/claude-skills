@@ -29,6 +29,8 @@ claude-skills プラグインのバージョン履歴。
 - main 更新を CAS（compare-and-swap）に変更し、検証中の競合を検出
 - issue close を plan status 成功にゲートし、未完了 plan と closed issue の不整合を防止
 - iterate の publication protocol を cycle と同等に明記
+- WARN verdict をユーザー確認要求に変更（headless では停止 = 事実上 PASS-only ゲート）
+- Phase 4 independent review に trusted diff を渡すよう変更（plan-only → plan + diff）
 
 ### Added: brainstorm セッション中の pre-wrap self-review (#186)
 
