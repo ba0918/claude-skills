@@ -557,6 +557,166 @@
         }
       ],
       "notes": "Phase 3 WARN auto-fix の成功系固定。WARN→auto-fix→re-review PASS でユーザー確認をスキップし Phase 4 到達。headless 自走性の維持を検証する。cy-010/cy-013（BLOCK fix loop）とは異なる WARN 専用経路。"
+    },
+    {
+      "id": "cy-015",
+      "title": "Phase 3 WARN auto-fix 失敗 — WARN 残存で headless 停止",
+      "source": "manual:pr-190-warn-coverage",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# warn-remain-test\n\nWARN 残存テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def modulo(a: int, b: int) -> int:\n    return a % b\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import modulo\n\nclass ModuloTest(unittest.TestCase):\n    def test_modulo(self):\n        self.assertEqual(modulo(10, 3), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260802010000_add-divmod.md": "# divmod 機能追加\n\n**Cycle ID:** `20260802010000`\n**Started:** 2026-08-02 01:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ndivmod_pair 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **divmod_pair 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - divmod_pair(a, b) -> tuple[int, int] を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが WARN で、WARN auto-fix 後の再レビューもまだ WARN（finding が残っている）想定で、headless 停止パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 の初回レビューが WARN で、WARN auto-fix（Step 2b）に入っている",
+          "critical": true
+        },
+        {
+          "text": "auto-fix 後の再レビューが WARN を返し、headless モードのため ⛔ CYCLE STOPPED: Review WARN (auto-fix insufficient, headless) の停止メッセージが表示されている",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 および Phase 5 が実行されていない",
+          "critical": true
+        }
+      ],
+      "notes": "WARN auto-fix の失敗系固定。auto-fix で WARN が解消されず headless 停止する経路。cy-014（成功系）と対をなす。"
+    },
+    {
+      "id": "cy-016",
+      "title": "Phase 3 WARN auto-fix BLOCK 回帰 — revert して headless 停止",
+      "source": "manual:pr-190-warn-coverage",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# warn-block-regress-test\n\nWARN BLOCK 回帰テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def power(base: int, exp: int) -> int:\n    return base ** exp\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import power\n\nclass PowerTest(unittest.TestCase):\n    def test_power(self):\n        self.assertEqual(power(2, 3), 8)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260802020000_add-root.md": "# root 機能追加\n\n**Cycle ID:** `20260802020000`\n**Started:** 2026-08-02 02:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nroot 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **root 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - root(x, n) -> float を実装（x の n 乗根）\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが WARN で、WARN auto-fix 後の再レビューが BLOCK（auto-fix が regression を導入）になった想定で、BLOCK 回帰→revert→headless 停止のパスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 の初回レビューが WARN で、WARN auto-fix（Step 2b）に入っている",
+          "critical": true
+        },
+        {
+          "text": "auto-fix 後の再レビューが BLOCK を返し、git reset --hard {pre_fix_sha} と git clean -fd で pre-fix 状態に revert されている",
+          "critical": true
+        },
+        {
+          "text": "revert 後、元の WARN findings（BLOCK 化した再レビューの findings ではない）で headless 停止している",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 および Phase 5 が実行されていない",
+          "critical": true
+        }
+      ],
+      "notes": "WARN auto-fix の BLOCK 回帰固定。auto-fix が regression を導入し BLOCK 化した場合、pre-fix 状態に revert して元の WARN findings で停止する（regressed state ではない）。revert に git clean -fd が含まれることも検証する。"
+    },
+    {
+      "id": "cy-017",
+      "title": "Phase 4 WARN — headless 停止",
+      "source": "manual:pr-190-warn-coverage",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# phase4-warn-test\n\nPhase 4 WARN テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def sign(x: int) -> int:\n    if x > 0: return 1\n    if x < 0: return -1\n    return 0\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import sign\n\nclass SignTest(unittest.TestCase):\n    def test_positive(self):\n        self.assertEqual(sign(5), 1)\n    def test_negative(self):\n        self.assertEqual(sign(-3), -1)\n    def test_zero(self):\n        self.assertEqual(sign(0), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260802030000_add-abs-sign.md": "# abs_sign 機能追加\n\n**Cycle ID:** `20260802030000`\n**Started:** 2026-08-02 03:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nabs_sign 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **abs_sign 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - abs_sign(x) -> tuple[int, int] を実装（絶対値とsignのタプル）\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 は PASS で通過し、Phase 4 の holistic review が WARN を返した想定で、Phase 4 WARN の headless 停止パスを確認して。Phase 4 では auto-fix なし（quality gate 原則）であることも確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 が PASS で通過した後に Phase 4 に到達している",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 の holistic review が WARN で、⛔ CYCLE STOPPED: Final gate WARN (headless — user acknowledgement required) の停止メッセージが表示されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 で auto-fix が実行されていない（quality gate 原則：fix opportunity ではない）",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 5 が実行されていない",
+          "critical": true
+        }
+      ],
+      "notes": "Phase 4 WARN headless 停止の固定。Phase 4 は quality gate であり auto-fix なし。WARN は headless で停止し、ユーザー確認が必要。Phase 3 の WARN（auto-fix あり）との非対称性を検証する。"
+    },
+    {
+      "id": "cy-018",
+      "title": "Phase 3 BLOCK fix → WARN — Step 2b ルーティング",
+      "source": "manual:pr-190-warn-coverage",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# block-to-warn-test\n\nBLOCK→fix→WARN ルーティングテスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def factorial(n: int) -> int:\n    if n <= 1: return 1\n    return n * factorial(n - 1)\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import factorial\n\nclass FactorialTest(unittest.TestCase):\n    def test_base(self):\n        self.assertEqual(factorial(0), 1)\n    def test_five(self):\n        self.assertEqual(factorial(5), 120)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260802040000_add-combo.md": "# combo 機能追加\n\n**Cycle ID:** `20260802040000`\n**Started:** 2026-08-02 04:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ncombination 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **combination 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - combination(n, r) -> int を実装（nCr）\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが BLOCK で、fix loop 1 回目の fix 後の再レビューが WARN になった想定で、WARN が Step 2b（WARN auto-fix）にルーティングされることを確認して。PASS / WARN を同一扱いせず、WARN は WARN ゲートを通ることを検証して。",
+      "requirements": [
+        {
+          "text": "Phase 3 の初回レビューが BLOCK で fix loop に入り、1 回目の fix 後の再レビューが WARN を返している",
+          "critical": true
+        },
+        {
+          "text": "WARN が PASS と同一扱いされず、Step 2b（WARN auto-fix）にルーティングされている",
+          "critical": true
+        },
+        {
+          "text": "Step 2b の auto-fix が実行され、再レビュー結果に応じた処理（PASS → Phase 4 / WARN → headless 停止）が行われている",
+          "critical": true
+        },
+        {
+          "text": "BLOCK fix loop の PASS / WARN 分離が確認できる（WARN が直接 Phase 4 に進んでいない）",
+          "critical": true
+        }
+      ],
+      "notes": "BLOCK→fix→WARN の Step 2b ルーティング固定。fix loop が BLOCK を解消したが WARN が残った場合、PASS と同一扱いせず WARN ゲート（auto-fix + acknowledgement）を通ることを検証する。cy-013（BLOCK→fix→PASS）との対比。"
     }
   ]
 }
