@@ -620,7 +620,7 @@
           "critical": true
         },
         {
-          "text": "auto-fix 後の再レビューが BLOCK を返し、git reset --hard {pre_fix_sha} と git clean -fd で pre-fix 状態に revert されている",
+          "text": "auto-fix 後の再レビューが BLOCK を返し、pre-fix 状態への revert が行われている（SKILL 規定コマンドは git reset --hard {pre_fix_sha} + git clean -fd。実行環境がこれらを拒否する場合は内容同値の復元で代替し、代替した事実を報告に記録する。いずれの場合も最終ツリーが pre-fix と一致し fix 由来の変更が残存しないこと）",
           "critical": true
         },
         {

@@ -48,9 +48,16 @@ Re-earn both states required by the
 1. **`machine_verified`**: run the repository's canonical verification entry point inside
    `{tmp_merge_root}` (the prospective merge tree). Only a complete pass may produce
    `machine_verified.json`.
-2. **`semantic_reviewed`**: run a fresh history-free semantic review of the merged target,
-   disposition every finding, and require convergence before producing
-   `semantic_reviewed.json`.
+2. **`semantic_reviewed`**: run a fresh history-free semantic review of the merged
+   target that executes the [quality-gate contract](quality-gate-contract.md)'s review
+   machinery — fire the §4 obligations for the kinds of change in the merge, record
+   each in an evidence ledger entry per §4.3 (target / verification predicate /
+   coverage state / grounds / findings), disposition every finding according to its
+   verification value, and reach the convergence conditions of §5. Only a converged
+   review may produce `semantic_reviewed.json`; its grounds must name the review run
+   and where the review's ledger is stored. The review procedure and ledger schema are
+   the contract's, not this protocol's — this protocol adds only the binding: the
+   review subject and every ledger entry target the exact `{post_merge_sha}` tree.
 
 Write both records to `{evidence_dir}` = the **main tree's** default artifact-store
 evidence directory (`{main_tree_root}/.agents/artifacts/reviews/evidence/`), using the
@@ -81,19 +88,28 @@ wrote, instead of relying on the default derivation from `--repo-root`.
 
 ### Exit 0 — advance main
 
-1. **Precondition**: if `{main_tree_root}` has `main` checked out, require a clean tree
-   (`git -C {main_tree_root} status --porcelain` prints nothing). A dirty main tree is a
-   terminal publish failure (treat as exit 1) — advancing the ref underneath local
-   modifications would entangle them with the merge.
-2. **Advance main with compare-and-swap**:
+1. **Precondition — exclusive access**: the caller must still hold the repository
+   workspace lock it acquired at the start of its run (cycle and iterate claim it in
+   their Phase 0 and release it only when the run ends). The clean-tree check, the ref
+   update, and the checkout synchronization below all run under that exclusion — that
+   is what makes check-then-reset safe against concurrent edits. If no lock is held or
+   the lock infrastructure is unavailable, do not use the destructive reset path in
+   step 4: treat a dirty tree, or any tree change appearing after the check, as a
+   terminal publish failure instead.
+2. **Precondition — clean tree**: if `{main_tree_root}` has `main` checked out, require
+   a clean tree (`git -C {main_tree_root} status --porcelain` prints nothing). A dirty
+   main tree is a terminal publish failure (treat as exit 1) — advancing the ref
+   underneath local modifications would entangle them with the merge.
+3. **Advance main with compare-and-swap**:
    `git -C {main_tree_root} update-ref refs/heads/main {post_merge_sha} {expected_main_sha}`.
-3. **Synchronize the checkout**: if `main` is checked out in `{main_tree_root}`, run
+4. **Synchronize the checkout**: if `main` is checked out in `{main_tree_root}`, run
    `git -C {main_tree_root} reset --hard refs/heads/main`. `update-ref` moves only the
    ref — without this reset, the index and working files still reflect
    `{expected_main_sha}` and the main tree reports phantom modifications. The reset is
-   safe because the precondition proved the tree clean. If `main` is not checked out in
-   any worktree, the ref update alone completes the advance.
-4. Remove the temporary merge worktree (`git worktree remove {tmp_merge_root}`) only
+   safe because the tree was proven clean and the workspace lock excludes concurrent
+   writers (step 1). If `main` is not checked out in any worktree, the ref update alone
+   completes the advance.
+5. Remove the temporary merge worktree (`git worktree remove {tmp_merge_root}`) only
    after the advance succeeds.
 
 If CAS fails (main moved during verification):

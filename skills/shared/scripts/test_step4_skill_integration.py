@@ -76,6 +76,35 @@ class Step4SkillIntegrationTests(unittest.TestCase):
         terminal = text.index("Terminal publish failure")
         self.assertLess(cas_retry, terminal)
 
+    def test_publication_protocol_operational_invariants(self):
+        text = self.compact(PUBLICATION)
+        # producer and checker are pinned to one evidence directory
+        self.assertIn("--evidence-dir {evidence_dir}", text)
+        self.assertIn("Producer and checker must name the same `{evidence_dir}`", text)
+        # exclusive access precedes the clean check, the CAS, and the destructive sync
+        lock = text.index("workspace lock")
+        clean = text.index("status --porcelain` prints nothing")
+        cas = text.index("update-ref refs/heads/main {post_merge_sha} {expected_main_sha}")
+        reset = text.index("reset --hard refs/heads/main")
+        self.assertLess(lock, clean)
+        self.assertLess(clean, cas)
+        self.assertLess(cas, reset)
+        # without the lock, the destructive reset path is forbidden
+        self.assertIn("do not use the destructive reset", text)
+        # the prospective merge is one fixed worktree procedure, not a menu
+        self.assertIn("worktree add --detach {tmp_merge_root} {expected_main_sha}", text)
+        self.assertIn("merge --no-ff {satellite_branch}", text)
+        self.assertNotIn("or equivalent", text)
+        # semantic evidence delegates ledger and convergence to the contract
+        self.assertIn("§4.3", text)
+        self.assertIn("convergence conditions of §5", text)
+        self.assertIn("target the exact `{post_merge_sha}` tree", text)
+
+    def test_cycle_warn_autofix_relay_names_its_result_file(self):
+        text = self.compact(CYCLE)
+        self.assertIn("{run_id}_fix-warn.md", text)
+        self.assertIn("`{role}` = `fix-warn`", text)
+
     def test_github_issue_uses_shared_transport_before_cleanup(self):
         text = self.compact(GITHUB)
         self.assertIn("shared satellite transport facade", text)

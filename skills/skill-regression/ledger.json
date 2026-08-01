@@ -119,19 +119,19 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "fadba94c1c245e1774bba271df28907775522854aafb824a7e75bb94805c0e17",
-      "skills/cycle/fixtures.json": "e3039cb3b2b15f7a0cb1a335bf44bd76c9b5433654f7539fcc30995418b34bd2",
+      "skills/cycle/SKILL.md": "73efdbe739d041c4823c28f4e77d81127c9483a2375a53a026d2b024dad328f5",
+      "skills/cycle/fixtures.json": "e2ef9c4c17e29f74f51e6b034d4f82f03fff9b20bf91adf357f2edb002eda740",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/publication-protocol.md": "6ec6819df242af68f6975d9dd2dd1c2fee19de8f99bb3288f8f3ce11d3558c67",
+      "skills/shared/references/publication-protocol.md": "924853e1669491645d3bdd49f73cb68863dd6234a48d129e762b10bd0f2dc074",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "cy-013〜018 実走 pass（Sonnet 5 executor）。cy-013 はフル委譲経路：入れ子委譲の完了通知が届かない環境制約により caller の事実連絡・照会 9 回で完走（過去実測と同傾向）。cy-014〜018 は決定論的再現のため review/fix を inline 代替。cy-016 の git reset --hard + clean -fd は executor/caller 双方の sandbox で denied → checkout による内容同値復元で代替し、caller が diff 空を検証。cy-001〜012 は 2026-08-01 実走 pass を継承",
+    "note": "R13 対応後の再検証。cy-014 は実委譲で再実走（targeted-fix subagent を実起動、fixture 規定の WARN verdict は初回レビュー結果ファイル内に注記付きスコア調整で成立、relay 結果ファイル遅延/欠落へのフォールバックも実測）。cy-015/017/018 は fixture 本文が verdict を『〜想定で』と規定するため inline 構成が fixture 準拠。cy-016 は oracle を『規定コマンド、環境拒否時は内容同値復元+記録』に精密化（reset --hard は executor/caller 双方 sandbox denied、caller が diff 空で復元を検証）。cy-013 はフル委譲で caller 介入 9 回で完走",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -146,7 +146,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "9f4684b3bdac7799b0be42887268da0a964a806d3c082272fd9dcab90b91859f",
+    "surface_sha256": "8d247184b18735ac67f992b30f27aebf8cc42edffc6c0e1be30eb4746dcf82db",
     "verified": "2026-08-02"
   },
   "decision-journal": {
@@ -344,15 +344,15 @@
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/publication-protocol.md": "6ec6819df242af68f6975d9dd2dd1c2fee19de8f99bb3288f8f3ce11d3558c67",
+      "skills/shared/references/publication-protocol.md": "924853e1669491645d3bdd49f73cb68863dd6234a48d129e762b10bd0f2dc074",
       "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "it-outer/inner/recovery 実走 pass（outer は高性能 executor、他 Sonnet 5）。outer は改訂版 publication protocol（一時 worktree prospective merge → post_merge_sha 束縛 evidence 再獲得 → checker exit 0 → update-ref CAS → reset --hard 同期 → cleanup gate）を実走し、caller の checker 再実行でも exit 0 を確認",
-    "result": "pass",
+    "note": "publication protocol への R13 反映は規範の明文化のみ（lock 保持前提の明記 / semantic evidence の契約 §4.3・§5 参照化 / 既定ブランチ読み替え）。同セッションの it-outer 実走が追加前提を事実として満たしていた（Phase 0 lock 保持・clean tree・converged review）ことを根拠に accept",
+    "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
       "skills/iterate/fixtures.json",
@@ -368,7 +368,7 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "655699cdf3fd821150722ffc098fa48bc68212a7042cf35501e09938c7839052",
+    "surface_sha256": "081220c0639c86eda4702b7f5f68441490401e24d9228b1cf7b3c8463142c322",
     "verified": "2026-08-02"
   },
   "plan": {

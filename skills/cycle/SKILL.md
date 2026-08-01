@@ -348,7 +348,10 @@ Action: Resolve spec gaps in brainstorm before re-running the cycle.
 
 Run the targeted-fix procedure from Step 3 (a–c) exactly once, with these differences:
 - **Fix payload**: WARN-level findings (minor + important from non-BLOCK dimensions)
-- **Delegation role**: `fix-warn`
+- **Delegation role and result file**: `fix-warn` — in the Step 3(b) delegate prompt,
+  replace the result-file path `.agents/runtime/delegation/{run_id}_fix-{N}.md` with
+  `.agents/runtime/delegation/{run_id}_fix-warn.md`, and follow the delegation result
+  relay with `{role}` = `fix-warn` (Step 3's `fix-{N}` role does not apply to this pass)
 - **Dirty tree handling**: revert (`git reset --hard {pre_fix_sha}` then `git clean -fd`)
   and fall through to acknowledgement (do not abort)
 
