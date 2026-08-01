@@ -370,7 +370,7 @@ WARN+ESCALATE both route to ESCALATE):
 | Verdict | Action |
 |---------|--------|
 | PASS | Proceed to Phase 4 |
-| WARN | Record findings, request user acknowledgement (Step 2b) |
+| WARN | Record findings, attempt auto-fix (Step 2b) |
 | BLOCK (no escalation items) | Enter the fix loop (Step 3) |
 | ESCALATE (any escalation items present) | Abort the cycle immediately (Step 2a) |
 
@@ -387,27 +387,47 @@ Action: Resolve spec gaps in brainstorm before re-running the cycle.
   → /claude-skills:brainstorm
 ```
 
-**Step 2b: WARN acknowledgement**
+**Step 2b: WARN auto-fix (1 iteration)**
 
-WARN findings require user acknowledgement before proceeding. Display the findings and
-request confirmation:
+WARN findings are attempted once with the same fix mechanism as Step 3 (trusted diff
+allowed-files, pre_fix_sha, post-fix scope verification), but with a single iteration
+limit. The goal is to resolve minor issues automatically while escalating unresolvable
+ones to the user.
 
+1. Extract WARN-level findings (minor findings and important findings from non-BLOCK
+   dimensions) as the fix payload. Use the same sanitization rules as Step 3b.
+2. Launch a targeted-fix subagent with the same constraints as Step 3b (trusted
+   allowed-files, no raw suggestion/description passthrough, post-fix scope verification).
+3. After the fix subagent completes, run the clean tree gate. If dirty, revert to
+   `{pre_fix_sha}` and fall through to the acknowledgement below.
+4. Re-launch the review (same prompt as Step 1) with `{role}` = `post-review-warn`.
+5. Branch on the re-review verdict:
+   - **PASS** → auto-fix resolved the findings. Proceed to Phase 4.
+   - **WARN** → auto-fix did not resolve all findings. Fall through to acknowledgement.
+   - **BLOCK** → auto-fix introduced a regression. Revert to pre-fix state
+     (`git reset --hard {pre_fix_sha}`), discard the re-review, and fall through to
+     acknowledgement with the **original** WARN findings (not the regressed state).
+   - **ESCALATE** → revert to pre-fix state and abort (same as Step 2a).
+
+**WARN acknowledgement (after auto-fix failure or skip):**
+
+If auto-fix did not resolve the findings, request user acknowledgement:
 ```
-⚠️ Phase 3 Review: WARN
-Findings:
-  {list of WARN findings with severity and description}
+⚠️ Phase 3 Review: WARN (auto-fix attempted, {resolved}/{total} findings resolved)
+Remaining findings:
+  {list of unresolved WARN findings}
 Proceed with these warnings? (yes/no)
 ```
 
 - **Interactive mode**: if the user confirms, proceed to Phase 4. If the user declines,
-  revert plan status to `⚠️ Review Failed` and stop the cycle with `/iterate` guidance.
-- **Headless mode** (no user confirmation available): treat WARN as a stop condition.
-  Revert plan status to `⚠️ Review Failed` and stop:
+  revert plan status to `⚠️ Review Failed` and stop with `/iterate` guidance.
+- **Headless mode** (no user confirmation available): treat unresolved WARN as a stop
+  condition. Revert plan status to `⚠️ Review Failed` and stop:
   ```
-  ⛔ CYCLE STOPPED: Review WARN (headless — user acknowledgement required)
-  WARN findings:
+  ⛔ CYCLE STOPPED: Review WARN (auto-fix insufficient, headless)
+  Unresolved WARN findings:
     {list of WARN findings}
-  Action: Review the findings, then re-run the cycle interactively or use /iterate.
+  Action: Review the findings, then re-run interactively or use /iterate.
   ```
 
 ### Step 3: Fix loop (max 2 iterations)
@@ -738,9 +758,12 @@ and `Issue: deferred to outer orchestrator: {slug | none}`.
 - **Dirty tree after Phase 3 fix**: if the clean tree gate after a fix subagent detects
   uncommitted or untracked non-ignored files, abort the cycle (same behavior as the Phase 2
   clean tree gate). Revert plan status before aborting.
-- **WARN in Phase 3 or Phase 4 (headless)**: WARN findings require user acknowledgement.
-  In headless mode (no user confirmation available), treat as a stop condition. Revert plan
-  status to `⚠️ Review Failed` and stop.
+- **WARN in Phase 3**: attempt auto-fix once (Step 2b). If auto-fix resolves all findings
+  (re-review PASS), proceed. If unresolved WARN remains, request user acknowledgement; in
+  headless mode, stop. If auto-fix causes BLOCK regression, revert to pre-fix state and
+  request acknowledgement with original WARN findings.
+- **WARN in Phase 4 (headless)**: WARN findings require user acknowledgement. In headless
+  mode, stop. Revert plan status to `⚠️ Review Failed`.
 - **ESCALATE in Phase 3**: abort the cycle immediately with brainstorm redirect. This is an
   intentional abort (spec gaps cannot be resolved by implementation fixes), not an error.
   Revert plan status before aborting.
@@ -759,8 +782,9 @@ and `Issue: deferred to outer orchestrator: {slug | none}`.
   a top-tier model, run delegates on a high-performance model to avoid cost blowups
   (per the model hierarchy in
   [orchestration-patterns.md](../shared/references/orchestration-patterns.md)).
-- **No user confirmation prompts** (headless execution). **Exception**: WARN verdicts
-  require user acknowledgement. In headless mode, WARN is a stop condition.
+- **No user confirmation prompts** (headless execution). **Exception**: Phase 3 WARN
+  verdicts attempt auto-fix first; if unresolved, user acknowledgement is required
+  (headless stops). Phase 4 WARN always requires user acknowledgement (headless stops).
 - **Retry once on subagent errors.** Abort after a failed retry; do not retry twice.
   Exception: Phase 4 holistic review degrades gracefully instead of aborting (see Error
   handling).

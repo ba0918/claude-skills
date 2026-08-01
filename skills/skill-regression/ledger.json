@@ -119,7 +119,7 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "651d4767d404d26b203ba600b0c9f63a2f6890e3211313c532bd881074acc0f4",
+      "skills/cycle/SKILL.md": "fd0118bb758da31287e4441b7d6ae0fe3b7e0080860259eb9da3ce727896c9bf",
       "skills/cycle/fixtures.json": "ab21e7860d7a91c3214a6959d08301603c9314c65c03073147352ca55aee0318",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
@@ -133,7 +133,7 @@
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
       "skills/shared/scripts/evidence_check.py": "65b2124f4a0239df01de1cf9707363f3782a7c4a2291a2aecc4a3ee24bb2206b"
     },
-    "note": "2026-08-02 regression run: 全13シナリオ pass 後、WARN verdict をユーザー確認要求に変更 + independent review に trusted diff を渡すよう変更 + artifact-store.md に prospective merge 文言補足。WARN/diff 変更は verdict table と prompt の修正のみで既存シナリオの合否基準に影響しない（cy-005〜013 は assumed verdict）。",
+    "note": "全13シナリオ pass 後の追加変更: WARN auto-fix（1回試行→残れば確認/headless停止）+ independent review に trusted diff + artifact-store.md 文言補足。既存シナリオの分岐（BLOCK/PASS/ESCALATE/UNVERIFIED）には影響なし。",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -150,7 +150,7 @@
       "skills/shared/references/workspace-lock.md",
       "skills/shared/scripts/evidence_check.py"
     ],
-    "surface_sha256": "5a314bb746551e1bf8dfe1bbb2f12593436175c3833be73b0120230d9b1c1642",
+    "surface_sha256": "0fe0aadcdb84960d840fcde4fe7a56ccd95b23509ccc83767ccb0ca602fe4f54",
     "verified": "2026-08-02"
   },
   "decision-journal": {
