@@ -9,17 +9,29 @@ worktree modes. Both follow the same protocol — no skill-specific overrides.
 - `{satellite_branch}`: the branch to merge
 - `{main_tree_root}`: path to the main worktree
 
+Derived during the protocol: `{expected_main_sha}` / `{post_merge_sha}` (Step 1),
+`{tmp_merge_root}` (temporary merge worktree, Step 1), `{evidence_dir}` (Step 2).
+
 ## Step 1: Prospective merge
 
-Create a prospective merge commit **without** advancing main.
+Create a prospective merge commit **without** advancing main. The procedure is fixed —
+do not substitute alternative commands:
 
-1. Save `{expected_main_sha}` = current main HEAD (`git rev-parse main`).
-2. Merge the satellite branch into a temporary integration ref
-   (e.g. `refs/cycle/integration`) or a detached HEAD:
-   `git merge-base main {satellite_branch}` to confirm fast-forward or real merge,
-   then `git merge --no-ff --no-commit` on a temporary checkout of main →
-   `git commit-tree` or equivalent to produce the merge commit without advancing main.
-3. Resolve the full 40-hex `{post_merge_sha}` from that commit.
+1. Save `{expected_main_sha}` = current main HEAD:
+   `git -C {main_tree_root} rev-parse main`.
+2. Create a temporary detached worktree at that SHA, at a fresh path `{tmp_merge_root}`
+   outside `{main_tree_root}`:
+   `git -C {main_tree_root} worktree add --detach {tmp_merge_root} {expected_main_sha}`.
+3. Create the merge commit in the temporary worktree:
+   `git -C {tmp_merge_root} merge --no-ff {satellite_branch}`.
+   `--no-ff` guarantees a merge commit even when main could fast-forward, so the commit
+   shape does not depend on history. A merge conflict is a terminal publish failure:
+   abort the merge, leave main and the satellite worktree untouched, and stop.
+4. Resolve the full 40-hex `{post_merge_sha}`:
+   `git -C {tmp_merge_root} rev-parse HEAD`.
+
+The temporary worktree now holds the prospective merge tree; Step 2 runs verification
+inside it. main and the main worktree remain untouched throughout Steps 1-2.
 
 Pre-merge or satellite evidence does not transfer — all later verification and evidence
 must name the exact `{post_merge_sha}`.
@@ -30,16 +42,22 @@ Re-earn both states required by the
 [quality-gate contract](quality-gate-contract.md) for `{post_merge_sha}`
 **before** advancing main:
 
-1. **`machine_verified`**: run the repository's canonical verification entry point against
-   the prospective merge tree. Only a complete pass may produce `machine_verified.json`.
+1. **`machine_verified`**: run the repository's canonical verification entry point inside
+   `{tmp_merge_root}` (the prospective merge tree). Only a complete pass may produce
+   `machine_verified.json`.
 2. **`semantic_reviewed`**: run a fresh history-free semantic review of the merged target,
    disposition every finding, and require convergence before producing
    `semantic_reviewed.json`.
 
-Write both records in the default artifact-store evidence directory using the
+Write both records to `{evidence_dir}` = the **main tree's** default artifact-store
+evidence directory (`{main_tree_root}/.agents/artifacts/reviews/evidence/`), using the
 [evidence format](evidence-format.md): exact `{post_merge_sha}`,
 `quality-gate-contract 1.0.0`, `profile: null`, and non-empty grounds naming the run or
 review that produced the state.
+
+Do not write into `{tmp_merge_root}`'s own store: the artifact store is per-worktree, so
+evidence written there resolves to a different directory than the one the Step 3 checker
+reads. Producer and checker must name the same `{evidence_dir}` explicitly.
 
 A Phase 4 review verdict is review input, not reusable evidence.
 
@@ -51,16 +69,32 @@ Run the canonical checker with every binding input explicit:
 python3 skills/shared/scripts/evidence_check.py \
   --target-sha {post_merge_sha} \
   --contract skills/shared/references/quality-gate-contract.md \
-  --repo-root {main_tree_root}
+  --repo-root {main_tree_root} \
+  --evidence-dir {evidence_dir}
 ```
+
+`--evidence-dir` is not optional here: it pins the checker to the exact directory Step 2
+wrote, instead of relying on the default derivation from `--repo-root`.
 
 ### Exit 0 — advance main
 
-Advance main with compare-and-swap:
-`git update-ref refs/heads/main {post_merge_sha} {expected_main_sha}`.
+1. **Precondition**: if `{main_tree_root}` has `main` checked out, require a clean tree
+   (`git -C {main_tree_root} status --porcelain` prints nothing). A dirty main tree is a
+   terminal publish failure (treat as exit 1) — advancing the ref underneath local
+   modifications would entangle them with the merge.
+2. **Advance main with compare-and-swap**:
+   `git -C {main_tree_root} update-ref refs/heads/main {post_merge_sha} {expected_main_sha}`.
+3. **Synchronize the checkout**: if `main` is checked out in `{main_tree_root}`, run
+   `git -C {main_tree_root} reset --hard refs/heads/main`. `update-ref` moves only the
+   ref — without this reset, the index and working files still reflect
+   `{expected_main_sha}` and the main tree reports phantom modifications. The reset is
+   safe because the precondition proved the tree clean. If `main` is not checked out in
+   any worktree, the ref update alone completes the advance.
+4. Remove the temporary merge worktree (`git worktree remove {tmp_merge_root}`) only
+   after the advance succeeds.
 
 If CAS fails (main moved during verification):
-1. Discard the stale prospective merge.
+1. Discard the stale prospective merge (remove `{tmp_merge_root}`).
 2. Re-create the prospective merge from the new main (repeat Steps 1-2).
 3. Re-run the checker.
 4. Retry at most **once**. A second CAS failure is a terminal publish failure (treat as
