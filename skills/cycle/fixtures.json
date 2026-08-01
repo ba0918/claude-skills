@@ -473,6 +473,48 @@
         }
       ],
       "notes": "cycle_start_sha 永続化の回帰。初回実行で Base SHA を plan に記録し、再実行時はそれを再利用することで、元の実装が常にレビュー範囲に含まれることを固定する。fixture 環境では SHA を埋め込まず、Phase 0 Step 3 のロジック自体を検証する。"
+    },
+    {
+      "id": "cy-013",
+      "title": "Phase 3 fix loop 成功 — BLOCK→fix→PASS で Phase 4 到達",
+      "source": "manual:pr-190-fable-residual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# fixloop-success-test\n\nFix loop 成功テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def clamp(x: int, lo: int, hi: int) -> int:\n    return max(lo, min(hi, x))\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import clamp\n\nclass ClampTest(unittest.TestCase):\n    def test_clamp_within(self):\n        self.assertEqual(clamp(5, 0, 10), 5)\n    def test_clamp_low(self):\n        self.assertEqual(clamp(-1, 0, 10), 0)\n    def test_clamp_high(self):\n        self.assertEqual(clamp(11, 0, 10), 10)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260801040000_add-normalize.md": "# normalize 機能追加\n\n**Cycle ID:** `20260801040000`\n**Started:** 2026-08-01 04:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nnormalize 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **normalize 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - normalize(x, lo, hi) -> float を実装（0.0〜1.0 に正規化）\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが BLOCK で、1 回目の fix 後の再レビューが PASS になった想定で、fix loop 成功パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 の初回レビューが BLOCK verdict を返し、fix loop に入っている",
+          "critical": true
+        },
+        {
+          "text": "1 回目の fix iteration で targeted-fix agent が実行され、fix 後の再レビューが PASS または WARN を返している",
+          "critical": true
+        },
+        {
+          "text": "fix loop 成功後に Phase 4（Final Gate）に到達している",
+          "critical": true
+        },
+        {
+          "text": "fix agent の allowed-files が trusted cycle diff（git diff cycle_start_sha..HEAD --name-only）から導出されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 3 の表示に fix iteration の結果（findings addressed / re-review verdict）が含まれている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 3 fix loop の成功系固定。BLOCK→targeted-fix→re-review PASS で Phase 4 到達。allowed-files が trusted diff から導出されることも検証する。cy-010（失敗系）と対をなす。"
     }
   ]
 }

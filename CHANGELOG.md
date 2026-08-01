@@ -23,6 +23,12 @@ claude-skills プラグインのバージョン履歴。
 - Phase 4 を review verdict の生成に限定し、publishable 遷移の SHA-bound quality-gate evidence は呼び出し側で検証する責務境界を明記
 - standalone worktree の merge 後に exact SHA で machine/semantic evidence を再生成し、canonical checker の exit 0 でのみ publish する fail-closed gate を追加
 - inner satellite regression fixture の feature branch と受入条件を固定し、Phase 3/4/5 の完走経路を再検証
+- Implementation Base SHA を plan ファイルに永続化し、再実行時のレビュー範囲縮小を防止
+- standalone worktree の merge→verify 順序を prospective merge 方式に変更し、main 汚染を防止
+- fix agent の allowed-files を trusted cycle diff から導出し、untrusted review path からの権限昇格を防止
+- main 更新を CAS（compare-and-swap）に変更し、検証中の競合を検出
+- issue close を plan status 成功にゲートし、未完了 plan と closed issue の不整合を防止
+- iterate の publication protocol を cycle と同等に明記
 
 ### Added: brainstorm セッション中の pre-wrap self-review (#186)
 

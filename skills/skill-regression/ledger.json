@@ -119,8 +119,8 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "e3ece0c29400651fe9c5af7f1a06335b5fee5c2349c0002c3aeabf0626e672b4",
-      "skills/cycle/fixtures.json": "7d06c9a2d5bb8bc589d5445899e9f8ea624b3805147127503bbf07d27452817e",
+      "skills/cycle/SKILL.md": "21d6e4308b3e5ed0a7b2aab3dbeeba3fb9de3cad5bd66802c2f194aaa592ebcd",
+      "skills/cycle/fixtures.json": "ab21e7860d7a91c3214a6959d08301603c9314c65c03073147352ca55aee0318",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "3a3498f0d4c9ec8f09dea65dcf5d7bd83ffd9bae0dbafdb6ddba50431799d49d",
@@ -150,7 +150,7 @@
       "skills/shared/references/workspace-lock.md",
       "skills/shared/scripts/evidence_check.py"
     ],
-    "surface_sha256": "ab1cfd1e1c9e7cac1fde3b3fc87e5d937fba1108f6f531ca3fd9daadfb1cde61",
+    "surface_sha256": "ac4336af2883c0b81d4dd0f059bd97245130d1f6bcba19b90ecb724aba881e7e",
     "verified": "2026-08-02"
   },
   "decision-journal": {
@@ -341,7 +341,7 @@
   },
   "iterate": {
     "file_sha256": {
-      "skills/iterate/SKILL.md": "9596fe2935905df0b3ff55ea7fae0edd31642c36f99a7a2c176e7ae01e5877dd",
+      "skills/iterate/SKILL.md": "782a860d2916601287f71e48518db65facb16b926a43b892796974e06566ad03",
       "skills/iterate/fixtures.json": "ac7a7647522068d51cea277e16e10f095c8ec7ea98824fe214a13f15e94dce99",
       "skills/iterate/references/light-review.md": "f4b63a197756686af4f9313fd05da3c0e4bd88b24ca70779b3fa7f8f7ea6c322",
       "skills/iterate/references/scope-criteria.md": "fc0005c7a886ec6d3b9593bf6e9d6b607a6f4f6e6f000280844cf750de83ea21",
@@ -357,7 +357,7 @@
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
       "skills/shared/scripts/evidence_check.py": "65b2124f4a0239df01de1cf9707363f3782a7c4a2291a2aecc4a3ee24bb2206b"
     },
-    "note": "PR #190 R8: publication protocol を cycle と同等に明記（evidence 2状態+CAS更新+checker）",
+    "note": "PR #190 R9: CAS retry上限追加。publication protocolはcycleと同等",
     "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
@@ -376,7 +376,7 @@
       "skills/shared/references/workspace-lock.md",
       "skills/shared/scripts/evidence_check.py"
     ],
-    "surface_sha256": "653c12b4be52c9db6c1561dd051434077cdb0aeaaaf22be656dc627445fb0fa2",
+    "surface_sha256": "b9815b806b3d7d677ccfb0ab0c86f1493747cf0dc63230d837ea35002390ef83",
     "verified": "2026-08-02"
   },
   "plan": {

@@ -41,7 +41,8 @@ facade. In `inplace` mode, preserve the existing workflow unchanged. In `worktre
    Run the canonical checker:
    `python3 skills/shared/scripts/evidence_check.py --target-sha {post_merge_sha} --contract skills/shared/references/quality-gate-contract.md --repo-root {main_tree_root}`.
    Exit 0: advance main with CAS (`git update-ref refs/heads/main {post_merge_sha}
-   {expected_main_sha}`). On CAS failure, re-create the prospective merge and re-verify.
+   {expected_main_sha}`). On CAS failure, re-create the prospective merge and re-verify;
+   retry at most once — a second CAS failure is a terminal publish failure.
    Publish only after main is advanced. Exit 1/2: terminal publish failure — do not advance
    main, publish, compose singleton artifacts, close the issue, or clean up.
    Every failure path preserves staging and the worktree;

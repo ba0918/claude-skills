@@ -81,14 +81,15 @@ invocation is the main-tree outer orchestrator and performs this ordered protoco
    - **Exit 0**: advance main with compare-and-swap: `git update-ref refs/heads/main
      {post_merge_sha} {expected_main_sha}`. If the CAS fails (main moved during
      verification), the prospective merge is stale — discard it, re-create the prospective
-     merge from the new main, re-generate evidence, and re-run the checker. Do not force
+     merge from the new main, re-generate evidence, and re-run the checker. Retry at most
+     once; a second CAS failure is a terminal publish failure (treat as exit 1). Do not force
      the update. Publish only after main is advanced.
    - **Exit 1** (missing, stale, or invalid evidence) or **exit 2** (checker could not run):
      terminal publish failure. Do not advance main, publish, compose singleton artifacts,
      close the issue, or clean up. Main remains untouched.
 8. Every failure path preserves staging and the worktree; discard requires explicit human
    authorization. Cleanup only when cleanup_allowed is proven after publication succeeded and
-   the capability is revoked.
+   the capability is non-live (consumed or revoked).
 
 On every new terminal collect, publish, or cleanup-gate failure, preserve the worktree and invoke
 the shared exact six-line formatter with its closed reason code. Its final line is
@@ -421,8 +422,9 @@ b. Launch a targeted-fix subagent (high-performance model):
      problem statement). Include the trusted allowed-files list.
    - **Post-fix scope verification** (parent-side, after fix commit): run
      `git diff {pre_fix_sha}..HEAD --name-only` and verify every changed file is in the
-     allowed-files list. If out-of-scope files were modified, revert the fix commit
-     (`git revert --no-edit HEAD`), record the violation, and count the iteration as failed.
+     allowed-files list. If out-of-scope files were modified, reset to the pre-fix state
+     (`git reset --hard {pre_fix_sha}`) to revert all fix commits (the fix agent may have
+     created multiple commits), record the violation, and count the iteration as failed.
    - Follow the delegation result relay with `{role}` = `fix-{N}`
 c. After the fix subagent completes, run the same clean tree gate as Phase 2 Step 3
    (`git status --porcelain --untracked-files=all` must be empty). If dirty, revert plan
