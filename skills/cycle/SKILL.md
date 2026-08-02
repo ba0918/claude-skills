@@ -217,11 +217,10 @@ Commits: {N}
 
 ## Phase 3: Post-implementation review
 
-Automated review via plan-reviewer with a fix loop for BLOCK findings. The main
-context orchestrates; review and fix agents are delegated (high-performance model).
-Launched as a subagent, plan-reviewer runs in sequential mode (7 dimensions inline,
-Codex second opinion skipped) — expected; Phase 4's independent review provides the
-Codex perspective.
+Automated review with a fix loop for BLOCK findings. The main context orchestrates;
+review and fix agents are delegated (high-performance model). Launched as a subagent,
+plan-reviewer runs in sequential mode (7 dimensions inline, Codex second opinion
+skipped) — expected; Phase 4's independent review provides the Codex perspective.
 
 ### Step 0: Empty diff guard
 
@@ -233,6 +232,54 @@ Empty diff: no committed changes between cycle_start_sha ({sha}) and HEAD.
 Nothing was implemented or all changes were lost.
 Action: Re-run the cycle to re-implement, or check git history.
 ```
+
+### Step 0.5: Reviewer routing
+
+Classify the files in `git diff --name-only {cycle_start_sha}..HEAD`. **Skill
+artifacts** are `skills/*/SKILL.md`, `skills/*/references/**`, `skills/*/fixtures.json`,
+`skills/*/scripts/**`, `skills/shared/references/**`, and `commands/*.md`; everything
+else is general.
+
+| The diff holds | Reviewer |
+|----------------|----------|
+| No skill artifacts | plan-reviewer (Steps 1–3 unchanged) |
+| Only skill artifacts | skill-reviewer (Step 1s, then Step 2s) |
+| Both | Both, each scoped to its own file set. The same problem is never counted twice — attribute it to the reviewer owning that file |
+
+A recall-optimized plan review applied to natural-language artifacts produced a
+22-round finding→prose→finding loop (PR #190); routing by file kind is what keeps that
+review off skill bodies.
+
+### Step 1s: skill-reviewer review (skill-artifact files)
+
+Launch a review subagent (high-performance model):
+- Prompt: "Execute the skill `claude-skills:skill-reviewer`. Review these
+  skill-artifact files changed by this cycle: {skill_artifact_file_list}. Use
+  `git diff {cycle_start_sha}..HEAD -- {skill_artifact_file_list}` as the diff. Emit
+  the two-channel document of its output contract and confirm it passes
+  `skills/skill-reviewer/scripts/validate_review_output.py`. **Before sending your
+  completion report**, write that validated document plus your findings to
+  `.agents/runtime/delegation/{run_id}_{role}.md`. The report is merely a notification
+  that the file was written."
+- `{role}` = `post-review-skill` initially; `post-review-skill-{N}` for re-reviews.
+  Follow the delegation result relay.
+
+### Step 2s: skill-reviewer verdict branch
+
+This branch applies to the skill-reviewer result only; the plan-reviewer branches in
+Steps 2 and 3 are unchanged. skill-reviewer is a diagnostic instrument, so its channels
+carry different consumer rights.
+
+| Channel and verdict | Action |
+|---------------------|--------|
+| `diagnostics` (WARN / OPPORTUNITY / INFO) | Record in the Phase 5 result only. Never triggers a fix, a re-review, or a stop — including headless |
+| `control_candidates` WARN | Record and continue. Auto-fix only the findings carrying `fix_action: AUTO_FIX`, at most one iteration via Step 2b's mechanics with `{role}` = `fix-skill-warn`. An unresolved WARN here is **not** a headless stop condition |
+| `control_candidates` BLOCK | Enter the Step 3 fix loop with the fix payload restricted to those findings, re-reviewing with `{role}` = `post-review-skill-{N}` |
+| No `control_candidates` BLOCK | Proceed (to Phase 4, or to the plan-reviewer branch when the diff is mixed) |
+
+If the delegate reports that its output failed the validator, treat the review as not
+delivered: redelegate once, then continue with the findings that did arrive, recording
+the gap. A malformed diagnostic never escalates into a stop.
 
 ### Step 1: Initial review
 
@@ -347,7 +394,11 @@ e. Branch on the new verdict:
 Display:
 ```
 ── Phase 3: Review ──
+Reviewer: {plan-reviewer / skill-reviewer / both}
+{plan-reviewer ran:}
 Review: {verdict} (max score: {N}, driven by {dimension})
+{skill-reviewer ran:}
+Skill review: control_candidates {N} BLOCK / {N} WARN, diagnostics {N} (recorded only)
 {when fix loop ran, show each iteration:}
   Fix iteration {N}: {findings_addressed}/{total} findings addressed
   Re-review: {verdict} (max score: {N})
