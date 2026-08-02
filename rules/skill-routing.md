@@ -21,7 +21,7 @@ and if it matches, consider invoking the corresponding skill (deciding not to in
 | "turn this into a document", "document these findings" | doc-write |
 | "let's make a plan and proceed", "draw up the implementation steps" | plan |
 | "fix this bug" (asked to fix it with the root cause not yet identified) | systematic-debugging |
-| "check whether the same problem exists elsewhere and fix it too", "roll the fix out horizontally" | sweep-fix |
+| "check whether the same problem exists elsewhere and fix it too", "sweep the fix outward" | sweep-fix |
 | "clean up / refactor without changing behavior" | refactor |
 
 - For cases not in the table, judge as usual
