@@ -35,6 +35,18 @@ claude-skills プラグインのバージョン履歴。
 - 版固定例は未発行タグを書かず、Releases に実在する `vX.Y.Z` のみ指定するよう明記
   （`package.json` version は git タグではない）
 
+### Added: cycle 後レビュー自動化 + レビューループ + 最終ゲート (#187)
+
+- cycle に Phase 3（post-implementation review）、Phase 4（final gate）、Phase 5（completion）を追加
+- Phase 3: plan-reviewer 自動呼び出し + fix loop（最大 2 反復）+ WARN auto-fix（1 回試行→残れば確認 / headless 停止）。ESCALATE は即時中断して brainstorm へ差し戻し
+- Phase 4: ホリスティックレビュー + 独立レビュー（Codex）の並行実行。BLOCK / UNVERIFIED は fix loop なしで停止。WARN は auto-fix なし、ユーザー確認要求（headless 停止）
+- Phase 5: review 通過後にのみ status 更新・issue close・result ファイル生成を実行
+- Implementation Base SHA を plan ファイルに永続化し、再実行時のレビュー範囲縮小を防止
+- fix agent の allowed-files を trusted cycle diff から導出し、untrusted review path からの権限昇格を防止
+- issue close を plan status 成功にゲートし、未完了 plan と closed issue の不整合を防止
+- publication protocol を共有 reference（publication-protocol.md）に切り出し、cycle/iterate 間の非対称性を解消
+- cycle SKILL.md を 827 行→ 705 行に削減（重複 Error handling / Key rules 削除、Delegation relay 圧縮）
+
 ### Added: brainstorm セッション中の pre-wrap self-review (#186)
 
 - Session Workflow の wrap ゲートに、4 項目のインライン self-review を追加

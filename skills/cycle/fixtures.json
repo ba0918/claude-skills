@@ -3,7 +3,7 @@
   "scenarios": [
     {
       "id": "cy-001",
-      "title": "フルサイクル — implement → Phase 2 完了処理（status.md あり）",
+      "title": "フルサイクル — implement → artifacts → review → final gate → completion",
       "source": "empirical-tuning:20260722-lean-rollout",
       "executor_tier": "standard",
       "isolation": "worktree",
@@ -31,11 +31,15 @@
           "critical": true
         },
         {
-          "text": "status.md の Current Session が完了処理されている（session-history.md へアーカイブされ、Current Session がクリアされている）",
+          "text": "Phase 3 で plan-reviewer による実装レビューが実行され、verdict（PASS / WARN / BLOCK）が提示されている（BLOCK の場合は fix loop が実行される）",
           "critical": true
         },
         {
-          "text": "最終表示が CYCLE COMPLETE フォーマット（Feature / Implement / Commits / Result 行を含む）で提示され、Session 行が Step 3 の分岐（archived）を示し、Issue 行が (none) 扱いになっている（計画に **Issue:** 行がないため issue close を試みていない）",
+          "text": "Phase 5 で status.md の Current Session が完了処理されている（session-history.md へアーカイブされ、Current Session がクリアされている）",
+          "critical": true
+        },
+        {
+          "text": "最終表示が CYCLE COMPLETE フォーマット（Feature / Implement / Review / Final Gate / Commits / Result 行を含む）で提示され、Session 行が archived を示し、Issue 行が (none) 扱いになっている",
           "critical": false
         },
         {
@@ -43,7 +47,7 @@
           "critical": false
         }
       ],
-      "notes": "フルサイクルの中央値。TDD 2 ステップ実装 → Phase 2 完了処理（status.md Case 2 アーカイブ + result ファイル + 成果物コミット）を固定する。サブエージェント不可環境ではインライン fallback 経路を通る（それ自体が仕様）。実行には plan-implement / plan-reviewer(+references) / plan(references) / commit の各スキルと共有契約（artifact-store / orchestration-patterns / tdd-contract / verification-gate / design-principles / testing-anti-patterns / severity-and-verdicts / codex-integration / status-update-guide）の同梱が必要。"
+      "notes": "フルサイクルの中央値。TDD 2 ステップ実装 → Phase 2 アーティファクト → Phase 3 レビュー → Phase 4 最終ゲート → Phase 5 完了処理（status.md Case 2 アーカイブ + result ファイル + 成果物コミット）を固定する。サブエージェント不可環境ではインライン fallback 経路を通る（それ自体が仕様）。実行には plan-implement / plan-reviewer(+references) / plan(references) / commit の各スキルと共有契約（artifact-store / orchestration-patterns / tdd-contract / verification-gate / design-principles / testing-anti-patterns / severity-and-verdicts / codex-integration / status-update-guide）の同梱が必要。"
     },
     {
       "id": "cy-002",
@@ -99,7 +103,7 @@
         },
         "git": { "init": true, "commit": true }
       },
-      "prompt": "cycle 回して。",
+      "prompt": "cycle 回して。ただし Phase 3 と Phase 4 のレビュー verdict はいずれも PASS と仮定して（実レビューの findings に関わらず PASS 扱いで先へ進め）、Phase 5 の完了処理経路を確認して。",
       "requirements": [
         {
           "text": "計画の自動選択で、ファイル名タイムスタンプが最新の完了済み計画（20260722080000_parse-duration.md）をスキップし、未完了の 20260720150000_format-duration.md を選択している（完了済み計画を再実装せず、「実装対象の計画がない」の no-op 中断もしていない）",
@@ -110,7 +114,7 @@
           "critical": true
         },
         {
-          "text": "status.md が存在しないため Phase 2 の status 更新は失敗として記録され（phase2_failures 相当の扱い）、cycle 全体は中断せず最終表示まで完走し、最終表示に ⚠️ Phase 2 partial failures の警告が含まれている",
+          "text": "status.md が存在しないため Phase 5 の status 更新は失敗として記録され（phase5_failures 相当の扱い）、cycle 全体は中断せず最終表示まで完走し、最終表示に Partial failures の警告が含まれている",
           "critical": true
         },
         {
@@ -122,7 +126,7 @@
           "critical": false
         }
       ],
-      "notes": "自動選択（完了済みスキップ）+ Phase 2 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase2_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。"
+      "notes": "自動選択（完了済みスキップ）+ Phase 5 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase5_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。2026-08-02: 実レビュー verdict の非決定性で 2 実走連続 Phase 3/4 WARN 正規停止となり本シナリオ固有の Phase 5 分岐に到達しなかったため、cy-005 以降と同じ verdict 仮定方式にプロンプトを変更（要件 = oracle は不変更）。live レビューのフルサイクルは cy-001 が引き続きカバーする。"
     },
     {
       "id": "cy-004",
@@ -136,10 +140,10 @@
           ".agents/artifacts/status.md": "SENTINEL STATUS\n",
           ".agents/artifacts/session-history.md": "SENTINEL HISTORY\n",
           ".agents/artifacts/idea-status.md": "SENTINEL DERIVED INDEX\n",
-          ".agents/artifacts/plans/20260729000000_inner.md": "# Inner plan\n\n**Cycle ID:** `20260729000000`\n**Status:** 🟡 Planning\n\n---\n\n## 🔧 Implementation Steps\n\n1. **Step 1**\n   - Files: `src/inner.py`, `tests/test_inner.py`\n   - Implement the inner feature\n",
+          ".agents/artifacts/plans/20260729000000_inner.md": "# Inner plan\n\n**Cycle ID:** `20260729000000`\n**Status:** 🟡 Planning\n\n---\n\n## 🎯 Goal\n\nAdd a minimal inner feature with a stable, testable contract.\n\n## ✅ Acceptance criteria\n\n- `src.inner.inner_feature()` exists and returns the exact string `inner feature`.\n- `tests/test_inner.py` covers the return value.\n- The implementation and test are committed while singleton artifact files remain untouched in satellite mode.\n\n## 🔧 Implementation Steps\n\n1. **Step 1**\n   - Files: `src/inner.py`, `tests/test_inner.py`\n   - Implement `inner_feature()` and its unittest according to the acceptance criteria.\n",
           ".agents/runtime/satellite-capability": "fixture-capability"
         },
-        "git": { "init": true, "commit": true }
+        "git": { "init": true, "branch": "feat/inner", "commit": true }
       },
       "prompt": "Run cycle with pinned_plan=.agents/artifacts/plans/20260729000000_inner.md, resolved_isolation=worktree, satellite_run_id=batch-42-A, and satellite_capability_file=.agents/runtime/satellite-capability.",
       "requirements": [
@@ -147,11 +151,572 @@
         { "text": "現在の branch のまま nested worktree を作らず実行している", "critical": true },
         { "text": "pinned_plan、resolved_isolation、satellite_run_id、satellite_capability_file の完全な context を plan-implement へ変更せず中継している", "critical": true },
         { "text": "status.md、session-history.md、derived index の singleton sentinel を変更していない", "critical": true },
-        { "text": "inner Phase 2 では result artifact と issue close を outer orchestrator へ延期し、必要な facts を返している", "critical": true },
+        { "text": "Phase 3 のレビューが satellite mode でも実行されている（fix commit は satellite worktree に適用される）", "critical": true },
+        { "text": "Phase 4 の最終ゲートが satellite mode でも実行されている（holistic review は satellite worktree の diff に対して実行される）", "critical": true },
+        { "text": "inner Phase 5 では result artifact と issue close を outer orchestrator へ延期し、review verdict と final gate verdict を含む必要な facts を返している", "critical": true },
         { "text": "inner mode でも tracked commit は省略していない", "critical": true },
         { "text": "raw capability を prompt、artifact、report に含めていない", "critical": true }
       ],
-      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。"
+      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic / independent とも worktree diff 対象）。"
+    },
+    {
+      "id": "cy-005",
+      "title": "Phase 3 ESCALATE — spec gap 検出で即時中断し plan を再選択可能にする",
+      "source": "manual:issue-187-stop-path",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# escalate-test\n\nESCALATE テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def greet(name: str) -> str:\n    return f\"Hello, {name}!\"\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import greet\n\nclass GreetTest(unittest.TestCase):\n    def test_greet(self):\n        self.assertEqual(greet(\"World\"), \"Hello, World!\")\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260731000000_add-farewell.md": "# farewell 機能追加\n\n**Cycle ID:** `20260731000000`\n**Started:** 2026-07-31 00:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nfarewell 関数を追加する。仕様は合意済み。\n\n## 🔧 Implementation Steps\n\n1. **farewell 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - farewell(name) -> str を実装\n",
+          ".agents/artifacts/ledger/agreements.md": "# Agreement Ledger\n\n| # | Item | Status | Decision |\n|---|------|--------|----------|\n| A1 | farewell の戻り値形式 | AGREED | \"Goodbye, {name}!\" 形式 |\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし plan-reviewer の結果は ESCALATE と仮定して（A1 の合意内容を変更する必要がある指摘が出た想定で）、Phase 3 の ESCALATE 中断パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 で ESCALATE verdict が検出され、⛔ CYCLE ABORTED: Specification gap detected のメッセージが表示されている",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されており、次回 cycle の自動選択で再選択可能な状態になっている",
+          "critical": true
+        },
+        {
+          "text": "Phase 5 が実行されていない（status.md の更新、issue close、result ファイル生成が行われていない）",
+          "critical": true
+        },
+        {
+          "text": "brainstorm への差し戻し案内（/claude-skills:brainstorm）が表示されている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 3 ESCALATE 中断パスの固定。ESCALATE は spec gap 検出による意図的中断で、Phase 5 を実行せず plan status を復元する。実際の plan-reviewer 実行は必須ではなく、ESCALATE verdict の模擬で経路を検証する。"
+    },
+    {
+      "id": "cy-006",
+      "title": "Phase 4 BLOCK — 最終ゲート不合格で cycle 停止し plan を再選択可能にする",
+      "source": "manual:issue-187-stop-path",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# gate-test\n\nPhase 4 BLOCK テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def add(a: int, b: int) -> int:\n    return a + b\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import add\n\nclass AddTest(unittest.TestCase):\n    def test_add(self):\n        self.assertEqual(add(1, 2), 3)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260731010000_add-multiply.md": "# multiply 機能追加\n\n**Cycle ID:** `20260731010000`\n**Started:** 2026-07-31 01:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nmultiply 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **multiply 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - multiply(a, b) -> int を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 4 の holistic review の結果が BLOCK と仮定して（設計の整合性に重大な問題がある想定で）、Phase 4 の BLOCK 停止パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 のレビュー（PASS または WARN）を通過した後に Phase 4 に到達している",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 で ⛔ CYCLE STOPPED: Final gate BLOCK のメッセージが表示されている",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されており、次回 cycle の自動選択で再選択可能な状態になっている",
+          "critical": true
+        },
+        {
+          "text": "Phase 5 が実行されていない（status.md の更新、issue close、result ファイル生成が行われていない）",
+          "critical": true
+        },
+        {
+          "text": "/iterate で対応してから cycle を再実行する旨の案内が表示されている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 4 BLOCK 停止パスの固定。最終ゲートの BLOCK は fix loop なしで停止し、Phase 5 を実行せず plan status を復元する。Phase 3 通過後の停止であることを確認する。"
+    },
+    {
+      "id": "cy-007",
+      "title": "Phase 2 dirty tree gate — commit 失敗後の未コミット変更で cycle 中断",
+      "source": "manual:issue-187-stop-path",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# dirty-test\n\nDirty tree gate テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def double(x: int) -> int:\n    return x * 2\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import double\n\nclass DoubleTest(unittest.TestCase):\n    def test_double(self):\n        self.assertEqual(double(3), 6)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260731020000_add-triple.md": "# triple 機能追加\n\n**Cycle ID:** `20260731020000`\n**Started:** 2026-07-31 02:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ntriple 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **triple 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - triple(x) -> int を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 2 の commit が失敗したと仮定して（commit skill がエラーを返した想定で）、dirty tree が残った場合の中断パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 2 の clean tree gate で ⛔ CYCLE ABORTED: Uncommitted implementation changes detected のメッセージが表示されている",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 3/4/5 が実行されていない",
+          "critical": true
+        },
+        {
+          "text": "dirty files の一覧が中断メッセージに含まれている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 2 clean tree gate の固定。commit 失敗で dirty tree が残ると Phase 3/4 の git diff cycle_start_sha..HEAD にその変更が含まれずレビューをバイパスするため、Phase 3 に進まず中断する。"
+    },
+    {
+      "id": "cy-008",
+      "title": "Phase 4 UNVERIFIED — holistic 欠落 + independent PASS で cycle 停止",
+      "source": "manual:issue-187-stop-path",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# unverified-test\n\nUNVERIFIED gate テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def square(x: int) -> int:\n    return x * x\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import square\n\nclass SquareTest(unittest.TestCase):\n    def test_square(self):\n        self.assertEqual(square(4), 16)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260731030000_add-cube.md": "# cube 機能追加\n\n**Cycle ID:** `20260731030000`\n**Started:** 2026-07-31 03:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ncube 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **cube 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - cube(x) -> int を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 4 の holistic review が利用不能（タイムアウト + 再委譲も失敗）で、independent review は PASS と仮定して、UNVERIFIED 停止パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 4 で ⛔ CYCLE STOPPED: Final gate UNVERIFIED のメッセージが表示されている",
+          "critical": true
+        },
+        {
+          "text": "holistic review が利用不能であり、外部システムで実行される independent review では holistic の cross-cutting 分析を代替できない旨の理由が表示されている",
+          "critical": true
+        },
+        {
+          "text": "independent review が PASS であるにもかかわらず Phase 5 に進んでいない（holistic 必須の原則が守られている）",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true
+        }
+      ],
+      "notes": "Phase 4 UNVERIFIED 停止パスの固定。holistic review は高性能モデルで cross-cutting 分析を行う必須レビューで、外部システムで実行される independent review では代替できない。independent が PASS でも holistic が欠落すれば UNVERIFIED で停止する。"
+    },
+    {
+      "id": "cy-009",
+      "title": "Standalone publish gate — post-merge SHA-bound evidence の fail-closed 検証",
+      "source": "manual:pr-190-quality-gate-review",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          ".agents/workspace.yml": "isolation: worktree\n",
+          ".agents/artifacts/plans/20260801000000_publish.md": "# Standalone publish plan\n\n**Cycle ID:** `20260801000000`\n**Status:** 🟡 Planning\n\n---\n\n## Goal\n\nImplement and publish a small verified change.\n\n## Implementation Steps\n\n1. Update `feature.txt` and verify it.\n",
+          "feature.txt": "before\n"
+        },
+        "git": { "init": true, "branch": "feat/publish-gate", "commit": true }
+      },
+      "prompt": "standalone worktree mode で cycle を実行し、merge 後の publish gate を確認して。checker 入力について (1) machine evidence 欠落、(2) merge 前 SHA の stale semantic evidence、(3) checker 自体の error の各結果を想定し、publish 可否と復旧状態を示して。",
+      "requirements": [
+        {
+          "text": "prospective merge commit を main に反映する前に作成し、full 40-hex post_merge_sha を確定している（main は checker 成功まで更新されない）",
+          "critical": true
+        },
+        {
+          "text": "machine_verified と fresh history-free semantic_reviewed の両 evidence を prospective merge の exact SHA と quality-gate-contract 1.0.0 に束縛して生成する手順になっている",
+          "critical": true
+        },
+        {
+          "text": "canonical evidence checker を explicit post_merge_sha・contract path・repo root で実行し、exit 0 の場合だけ main を advance して publish を許可している",
+          "critical": true
+        },
+        {
+          "text": "machine evidence 欠落、stale semantic evidence、checker error の3ケースすべてで main advance・publish・singleton composition・issue close・cleanup を抑止している",
+          "critical": true
+        },
+        {
+          "text": "失敗時に staging と worktree を保存し、closed reason code と recovery command を表示している",
+          "critical": false
+        }
+      ],
+      "notes": "standalone outer orchestrator が所有する protected-state transition の回帰。Phase 4 の pre-merge verdict を evidence として再利用せず、merge 後 SHA で両 state を再取得して checker を fail-closed に扱う。3つの負経路は同一 gate の判定表として固定する。"
+    },
+    {
+      "id": "cy-010",
+      "title": "Phase 3 fix loop exhaustion — 2回修正後も BLOCK で cycle 停止",
+      "source": "manual:pr-190-review-round7",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# fixloop-test\n\nFix loop exhaustion テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def negate(x: int) -> int:\n    return -x\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import negate\n\nclass NegateTest(unittest.TestCase):\n    def test_negate(self):\n        self.assertEqual(negate(5), -5)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260801010000_add-absolute.md": "# absolute 機能追加\n\n**Cycle ID:** `20260801010000`\n**Started:** 2026-08-01 01:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nabsolute 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **absolute 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - absolute(x) -> int を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の fix loop が 2 回とも BLOCK verdict（critical findings が残る）で終了した想定で、fix loop exhaustion の停止パスを確認して。",
+      "requirements": [
+        {
+          "text": "2 回の fix iteration が実行され、各 iteration 後の re-review がいずれも BLOCK verdict を返している",
+          "critical": true
+        },
+        {
+          "text": "fix loop exhaustion 後に ⛔ CYCLE ABORTED: Review loop exhausted (2 fix iterations) の停止メッセージが表示され、未解消の BLOCK findings が列挙されている",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されており、次回 cycle の自動選択で再選択可能な状態になっている",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 および Phase 5 が実行されていない",
+          "critical": true
+        },
+        {
+          "text": "/iterate で対応してから cycle を再実行する旨の案内が表示されている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 3 fix loop exhaustion の固定。2 回の fix iteration 後も BLOCK findings が残る場合、fix loop を打ち切り plan status を復元して cycle を停止する。Phase 4/5 は実行されない。"
+    },
+    {
+      "id": "cy-011",
+      "title": "Phase 1 retry exhaustion — 2回失敗で plan status 復元して cycle 中断",
+      "source": "manual:pr-190-review-round7",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# retry-test\n\nPhase 1 retry exhaustion テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def identity(x):\n    return x\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import identity\n\nclass IdentityTest(unittest.TestCase):\n    def test_identity(self):\n        self.assertEqual(identity(42), 42)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260801020000_add-transform.md": "# transform 機能追加\n\n**Cycle ID:** `20260801020000`\n**Started:** 2026-08-01 02:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ntransform 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **transform 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - transform(x) -> str を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 1 の implement agent が 2 回とも失敗した（サブエージェントエラー）と仮定して、retry exhaustion の中断パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 1 の初回実行が失敗し、1 回の自動リトライが実行されている",
+          "critical": true
+        },
+        {
+          "text": "リトライも失敗した後、plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 2/3/4/5 が実行されていない",
+          "critical": true
+        },
+        {
+          "text": "エラー内容と実装の進捗状況（how far the steps got）が表示されている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 1 retry exhaustion の固定。plan-implement が plan status を 🟡 In Progress に変更した後にサブエージェントが 2 回失敗した場合、plan status を ⚠️ Review Failed に復元して次回 auto-select を可能にする。"
+    },
+    {
+      "id": "cy-012",
+      "title": "Re-execution after BLOCK — Implementation Base SHA が保持されレビュー範囲が初回実装を含む",
+      "source": "manual:pr-190-review-round7",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# reexec-test\n\nRe-execution テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def inc(x: int) -> int:\n    return x + 1\n\ndef dec(x: int) -> int:\n    return x - 1\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import inc, dec\n\nclass IncTest(unittest.TestCase):\n    def test_inc(self):\n        self.assertEqual(inc(0), 1)\n\nclass DecTest(unittest.TestCase):\n    def test_dec(self):\n        self.assertEqual(dec(1), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260801030000_add-dec.md": "# dec 機能追加\n\n**Cycle ID:** `20260801030000`\n**Started:** 2026-08-01 03:00:00\n**Status:** ⚠️ Review Failed\n\n---\n\n## 📝 What & Why\n\ndec 関数を追加する。Phase 4 で BLOCK され、/iterate で修正済み。\n\n## 🔧 Implementation Steps\n\n1. **dec 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - dec(x) -> int を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle を .agents/artifacts/plans/20260801030000_add-dec.md で再実行して。初回 cycle で Implementation Base SHA が記録された後の再実行を模擬する想定で、Phase 0 Step 3 の Base SHA 保持ロジックと、Phase 3 の空 diff ガードの動作を確認して。plan に既存 Base SHA がある場合は HEAD でなくそれを使うこと、ない場合は記録すること。",
+      "requirements": [
+        {
+          "text": "Phase 0 Step 3 で plan ファイルに Implementation Base SHA が存在しない場合、現在の HEAD を記録している",
+          "critical": true
+        },
+        {
+          "text": "Phase 0 Step 3 で plan ファイルに Implementation Base SHA が既に存在する場合、それを cycle_start_sha として採用し HEAD に上書きしない（再実行保護）",
+          "critical": true
+        },
+        {
+          "text": "Phase 3/4 のレビュープロンプトで git diff {cycle_start_sha}..HEAD が使用されている",
+          "critical": true
+        },
+        {
+          "text": "diff が空の場合に plan status を ⚠️ Review Failed に戻して UNVERIFIED 停止する経路が規定されている",
+          "critical": false
+        }
+      ],
+      "notes": "cycle_start_sha 永続化の回帰。初回実行で Base SHA を plan に記録し、再実行時はそれを再利用することで、元の実装が常にレビュー範囲に含まれることを固定する。fixture 環境では SHA を埋め込まず、Phase 0 Step 3 のロジック自体を検証する。"
+    },
+    {
+      "id": "cy-013",
+      "title": "Phase 3 fix loop 成功 — BLOCK→fix→PASS で Phase 4 到達",
+      "source": "manual:pr-190-fable-residual",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# fixloop-success-test\n\nFix loop 成功テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def clamp(x: int, lo: int, hi: int) -> int:\n    return max(lo, min(hi, x))\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import clamp\n\nclass ClampTest(unittest.TestCase):\n    def test_clamp_within(self):\n        self.assertEqual(clamp(5, 0, 10), 5)\n    def test_clamp_low(self):\n        self.assertEqual(clamp(-1, 0, 10), 0)\n    def test_clamp_high(self):\n        self.assertEqual(clamp(11, 0, 10), 10)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260801040000_add-normalize.md": "# normalize 機能追加\n\n**Cycle ID:** `20260801040000`\n**Started:** 2026-08-01 04:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nnormalize 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **normalize 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - normalize(x, lo, hi) -> float を実装（0.0〜1.0 に正規化）\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが BLOCK で、1 回目の fix 後の再レビューが PASS になった想定で、fix loop 成功パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 の初回レビューが BLOCK verdict を返し、fix loop に入っている",
+          "critical": true
+        },
+        {
+          "text": "1 回目の fix iteration で targeted-fix agent が実行され、fix 後の再レビューが PASS を返している（WARN は Step 2b ルーティング対象であり本シナリオの成功条件ではない）",
+          "critical": true
+        },
+        {
+          "text": "fix loop 成功後に Phase 4（Final Gate）に到達している",
+          "critical": true
+        },
+        {
+          "text": "fix agent の allowed-files が trusted cycle diff（git diff cycle_start_sha..HEAD --name-only）から導出されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 3 の表示に fix iteration の結果（findings addressed / re-review verdict）が含まれている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 3 fix loop の成功系固定。BLOCK→targeted-fix→re-review PASS で Phase 4 到達。allowed-files が trusted diff から導出されることも検証する。cy-010（失敗系）と対をなす。"
+    },
+    {
+      "id": "cy-014",
+      "title": "Phase 3 WARN auto-fix 成功 — WARN→auto-fix→PASS で Phase 4 到達",
+      "source": "manual:pr-190-warn-autofix",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# warn-autofix-test\n\nWARN auto-fix テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def half(x: int) -> int:\n    return x // 2\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import half\n\nclass HalfTest(unittest.TestCase):\n    def test_half_even(self):\n        self.assertEqual(half(10), 5)\n    def test_half_odd(self):\n        self.assertEqual(half(7), 3)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260802000000_add-quarter.md": "# quarter 機能追加\n\n**Cycle ID:** `20260802000000`\n**Started:** 2026-08-02 00:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nquarter 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **quarter 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - quarter(x) -> int を実装（x // 4）\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが WARN（minor finding あり）で、WARN auto-fix 後の再レビューが PASS になった想定で、WARN auto-fix 成功パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 の初回レビューが WARN verdict を返し、WARN auto-fix（Step 2b）に入っている",
+          "critical": true
+        },
+        {
+          "text": "Step 2b で pre_fix_sha が保存され、targeted-fix subagent が実行され、fix 後の再レビューが PASS を返している",
+          "critical": true
+        },
+        {
+          "text": "WARN auto-fix 成功後にユーザー確認なしで Phase 4（Final Gate）に到達している",
+          "critical": true
+        },
+        {
+          "text": "Phase 5 まで完走しているか、Phase 4 の verdict に応じた正規の停止をしている",
+          "critical": true
+        },
+        {
+          "text": "Phase 3 の表示に WARN auto-fix の結果（findings resolved / re-review verdict）が含まれている",
+          "critical": false
+        }
+      ],
+      "notes": "Phase 3 WARN auto-fix の成功系固定。WARN→auto-fix→re-review PASS でユーザー確認をスキップし Phase 4 到達。headless 自走性の維持を検証する。cy-010/cy-013（BLOCK fix loop）とは異なる WARN 専用経路。"
+    },
+    {
+      "id": "cy-015",
+      "title": "Phase 3 WARN auto-fix 失敗 — WARN 残存で headless 停止",
+      "source": "manual:pr-190-warn-coverage",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# warn-remain-test\n\nWARN 残存テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def modulo(a: int, b: int) -> int:\n    return a % b\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import modulo\n\nclass ModuloTest(unittest.TestCase):\n    def test_modulo(self):\n        self.assertEqual(modulo(10, 3), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260802010000_add-divmod.md": "# divmod 機能追加\n\n**Cycle ID:** `20260802010000`\n**Started:** 2026-08-02 01:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ndivmod_pair 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **divmod_pair 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - divmod_pair(a, b) -> tuple[int, int] を実装\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが WARN で、WARN auto-fix 後の再レビューもまだ WARN（finding が残っている）想定で、headless 停止パスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 の初回レビューが WARN で、WARN auto-fix（Step 2b）に入っている",
+          "critical": true
+        },
+        {
+          "text": "auto-fix 後の再レビューが WARN を返し、headless モードのため ⛔ CYCLE STOPPED: Review WARN (auto-fix insufficient, headless) の停止メッセージが表示されている",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 および Phase 5 が実行されていない",
+          "critical": true
+        }
+      ],
+      "notes": "WARN auto-fix の失敗系固定。auto-fix で WARN が解消されず headless 停止する経路。cy-014（成功系）と対をなす。"
+    },
+    {
+      "id": "cy-016",
+      "title": "Phase 3 WARN auto-fix BLOCK 回帰 — revert して headless 停止",
+      "source": "manual:pr-190-warn-coverage",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# warn-block-regress-test\n\nWARN BLOCK 回帰テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def power(base: int, exp: int) -> int:\n    return base ** exp\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import power\n\nclass PowerTest(unittest.TestCase):\n    def test_power(self):\n        self.assertEqual(power(2, 3), 8)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260802020000_add-root.md": "# root 機能追加\n\n**Cycle ID:** `20260802020000`\n**Started:** 2026-08-02 02:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nroot 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **root 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - root(x, n) -> float を実装（x の n 乗根）\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが WARN で、WARN auto-fix 後の再レビューが BLOCK（auto-fix が regression を導入）になった想定で、BLOCK 回帰→revert→headless 停止のパスを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 の初回レビューが WARN で、WARN auto-fix（Step 2b）に入っている",
+          "critical": true
+        },
+        {
+          "text": "auto-fix 後の再レビューが BLOCK を返し、pre-fix 状態への revert が行われている（SKILL 規定コマンドは git reset --hard {pre_fix_sha} + git clean -fd。実行環境がこれらを拒否する場合は内容同値の復元で代替し、代替した事実を報告に記録する。いずれの場合も最終ツリーが pre-fix と一致し fix 由来の変更が残存しないこと）",
+          "critical": true
+        },
+        {
+          "text": "revert 後、元の WARN findings（BLOCK 化した再レビューの findings ではない）で headless 停止している",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 および Phase 5 が実行されていない",
+          "critical": true
+        }
+      ],
+      "notes": "WARN auto-fix の BLOCK 回帰固定。auto-fix が regression を導入し BLOCK 化した場合、pre-fix 状態に revert して元の WARN findings で停止する（regressed state ではない）。revert に git clean -fd が含まれることも検証する。"
+    },
+    {
+      "id": "cy-017",
+      "title": "Phase 4 WARN — headless 停止",
+      "source": "manual:pr-190-warn-coverage",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# phase4-warn-test\n\nPhase 4 WARN テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def sign(x: int) -> int:\n    if x > 0: return 1\n    if x < 0: return -1\n    return 0\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import sign\n\nclass SignTest(unittest.TestCase):\n    def test_positive(self):\n        self.assertEqual(sign(5), 1)\n    def test_negative(self):\n        self.assertEqual(sign(-3), -1)\n    def test_zero(self):\n        self.assertEqual(sign(0), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260802030000_add-abs-sign.md": "# abs_sign 機能追加\n\n**Cycle ID:** `20260802030000`\n**Started:** 2026-08-02 03:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nabs_sign 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **abs_sign 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - abs_sign(x) -> tuple[int, int] を実装（絶対値とsignのタプル）\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 は PASS で通過し、Phase 4 の holistic review が WARN を返した想定で、Phase 4 WARN の headless 停止パスを確認して。Phase 4 では auto-fix なし（quality gate 原則）であることも確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 が PASS で通過した後に Phase 4 に到達している",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 の holistic review が WARN で、⛔ CYCLE STOPPED: Final gate WARN (headless — user acknowledgement required) の停止メッセージが表示されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 で auto-fix が実行されていない（quality gate 原則：fix opportunity ではない）",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true
+        },
+        {
+          "text": "Phase 5 が実行されていない",
+          "critical": true
+        }
+      ],
+      "notes": "Phase 4 WARN headless 停止の固定。Phase 4 は quality gate であり auto-fix なし。WARN は headless で停止し、ユーザー確認が必要。Phase 3 の WARN（auto-fix あり）との非対称性を検証する。"
+    },
+    {
+      "id": "cy-018",
+      "title": "Phase 3 BLOCK fix → WARN — Step 2b ルーティング",
+      "source": "manual:pr-190-warn-coverage",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# block-to-warn-test\n\nBLOCK→fix→WARN ルーティングテスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "app.py": "def factorial(n: int) -> int:\n    if n <= 1: return 1\n    return n * factorial(n - 1)\n",
+          "tests/__init__.py": "",
+          "tests/test_app.py": "import unittest\nfrom app import factorial\n\nclass FactorialTest(unittest.TestCase):\n    def test_base(self):\n        self.assertEqual(factorial(0), 1)\n    def test_five(self):\n        self.assertEqual(factorial(5), 120)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260802040000_add-combo.md": "# combo 機能追加\n\n**Cycle ID:** `20260802040000`\n**Started:** 2026-08-02 04:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ncombination 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **combination 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - combination(n, r) -> int を実装（nCr）\n"
+        },
+        "git": { "init": true, "commit": true }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが BLOCK で、fix loop 1 回目の fix 後の再レビューが WARN になった想定で、WARN が Step 2b（WARN auto-fix）にルーティングされることを確認して。PASS / WARN を同一扱いせず、WARN は WARN ゲートを通ることを検証して。",
+      "requirements": [
+        {
+          "text": "Phase 3 の初回レビューが BLOCK で fix loop に入り、1 回目の fix 後の再レビューが WARN を返している",
+          "critical": true
+        },
+        {
+          "text": "WARN が PASS と同一扱いされず、Step 2b（WARN auto-fix）にルーティングされている",
+          "critical": true
+        },
+        {
+          "text": "Step 2b の auto-fix が実行され、再レビュー結果に応じた処理（PASS → Phase 4 / WARN → headless 停止）が行われている",
+          "critical": true
+        },
+        {
+          "text": "BLOCK fix loop の PASS / WARN 分離が確認できる（WARN が直接 Phase 4 に進んでいない）",
+          "critical": true
+        }
+      ],
+      "notes": "BLOCK→fix→WARN の Step 2b ルーティング固定。fix loop が BLOCK を解消したが WARN が残った場合、PASS と同一扱いせず WARN ゲート（auto-fix + acknowledgement）を通ることを検証する。cy-013（BLOCK→fix→PASS）との対比。"
     }
   ]
 }

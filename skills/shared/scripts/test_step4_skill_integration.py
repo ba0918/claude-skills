@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[3]
 ARTIFACTS = ROOT / "skills/artifacts/SKILL.md"
 CYCLE = ROOT / "skills/cycle/SKILL.md"
 ITERATE = ROOT / "skills/iterate/SKILL.md"
+PUBLICATION = ROOT / "skills/shared/references/publication-protocol.md"
 ITERATE_FIXTURES = ROOT / "skills/iterate/fixtures.json"
 GITHUB = ROOT / "skills/github-issue/SKILL.md"
 GITHUB_FIXTURES = ROOT / "skills/github-issue/fixtures.json"
@@ -40,27 +41,67 @@ class Step4SkillIntegrationTests(unittest.TestCase):
         ingress = text.index("Initialize satellite ingress")
         inner = text.index("Launch one inner run")
         collect = text.index("Collect on every terminal path")
-        merge = text.index("Merge and run post-merge verification")
-        publish = text.index("Publish only after verification passes")
-        cleanup = text.index("Cleanup only when cleanup_allowed")
+        pub_ref = text.index("publication protocol")
         self.assertLess(resolve, create)
         self.assertLess(create, ingress)
         self.assertLess(ingress, inner)
         self.assertLess(inner, collect)
-        self.assertLess(collect, merge)
-        self.assertLess(merge, publish)
-        self.assertLess(publish, cleanup)
+        self.assertLess(collect, pub_ref)
+        self.assertIn("publication-protocol.md", text)
         self.assertIn("resolved_isolation=worktree", text)
         self.assertIn("must not re-resolve isolation or create a nested worktree", text)
         self.assertIn("/claude-skills:artifacts recover --run-id {satellite_run_id}", text)
         self.assertIn("In `inplace` mode, preserve the existing workflow unchanged", text)
         self.assertNotIn("otherwise deliberately discard", text)
-        self.assertIn("explicit human authorization", text)
         self.assertIn("shared exact six-line formatter", text)
+        self.assertIn("merge, verify, and advance main", text)
 
     def test_cycle_and_iterate_share_the_outer_protocol(self):
         self.assert_outer_protocol(CYCLE)
         self.assert_outer_protocol(ITERATE)
+
+    def test_publication_protocol_shared_reference_exists(self):
+        text = self.compact(PUBLICATION)
+        self.assertIn("prospective merge", text)
+        self.assertIn("compare-and-swap", text)
+        self.assertIn("quality-gate-contract", text)
+        self.assertIn("machine_verified", text)
+        self.assertIn("semantic_reviewed", text)
+        self.assertIn("Publish only after this", text)
+        self.assertIn("second CAS failure is a terminal publish failure", text)
+        self.assertIn("explicit human authorization", text)
+        self.assertIn("Cleanup only when", text)
+        self.assertIn("publication succeeded", text)
+
+    def test_publication_protocol_operational_invariants(self):
+        text = self.compact(PUBLICATION)
+        # every destructive transition runs through the one shared primitive,
+        # whose behavior is verified by execution, not by prose
+        self.assertIn("publication_advance.py merge", text)
+        self.assertIn("publication_advance.py advance", text)
+        self.assertIn("publication_advance.py recover", text)
+        self.assertIn("never hand-roll", text)
+        self.assertIn("fault-injection tests", text)
+        # evidence stages per prospective SHA; the singleton stays untouched
+        # until promotion succeeds
+        self.assertIn("evidence-staging/{sha}", text)
+        self.assertIn("Never write into the default evidence directory", text)
+        # the CAS is the commit point; repair is forward-only and proof-gated
+        self.assertIn("commit point", text)
+        self.assertIn("durable marker", text)
+        self.assertIn("must never be destroyed", text)
+        self.assertIn("repaired forward", text)
+        # the lock is enforced in code: the primitive takes and verifies the token
+        self.assertIn("Hold the workspace lock across the whole sequence", text)
+        self.assertIn("--lock-token", text)
+        # semantic evidence delegates ledger and convergence to the contract
+        self.assertIn("§4.3", text)
+        self.assertIn("§5 convergence", text)
+
+    def test_cycle_warn_autofix_relay_names_its_result_file(self):
+        text = self.compact(CYCLE)
+        self.assertIn("{run_id}_fix-warn.md", text)
+        self.assertIn("`{role}` = `fix-warn`", text)
 
     def test_github_issue_uses_shared_transport_before_cleanup(self):
         text = self.compact(GITHUB)

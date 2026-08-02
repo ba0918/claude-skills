@@ -25,10 +25,10 @@ facade. In `inplace` mode, preserve the existing workflow unchanged. In `worktre
    task context when no plan exists).
 3. Launch one inner run with the complete resolved context above.
 4. Collect on every terminal path: success, failure, cancellation, and verification failure.
-5. Merge and run post-merge verification in the main tree.
-6. Publish only after verification passes. Every failure path preserves staging and the worktree;
-   discard requires explicit human authorization.
-7. Cleanup only when cleanup_allowed is proven and the capability is non-live (consumed or revoked).
+5. Follow the [publication protocol](../shared/references/publication-protocol.md):
+   merge, verify, and advance main. Pass the satellite branch and `{main_tree_root}`.
+   Its git transitions run only through
+   `skills/shared/scripts/publication_advance.py` — never hand-roll them.
 
 On every new terminal transport failure, preserve the worktree and invoke the shared exact six-line
 formatter with its closed reason code. Its final line is

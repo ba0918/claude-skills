@@ -12,6 +12,8 @@ MERGE = ROOT / "skills/parallel-cycle/references/merge-strategy.md"
 PLAN_IMPLEMENT = ROOT / "skills/plan-implement/SKILL.md"
 FIXTURES = ROOT / "skills/plan-implement/fixtures.json"
 CYCLE = ROOT / "skills/cycle/SKILL.md"
+CYCLE_INNER = ROOT / "skills/cycle/references/inner-satellite.md"
+CYCLE_COMPLETION = ROOT / "skills/cycle/references/completion.md"
 CYCLE_FIXTURES = ROOT / "skills/cycle/fixtures.json"
 
 
@@ -101,44 +103,55 @@ class Step3SkillIntegrationTests(unittest.TestCase):
         self.assertIn("TDD, review, verification, and per-step commits remain mandatory", text)
 
     def test_cycle_accepts_resolved_satellite_context_without_outer_orchestration(self):
-        text = " ".join(CYCLE.read_text(encoding="utf-8").split())
+        # The inner-satellite deltas are canonical in references/inner-satellite.md;
+        # the SKILL keeps the parameter contract and a mandatory read of that file.
+        skill = " ".join(CYCLE.read_text(encoding="utf-8").split())
+        inner = " ".join(CYCLE_INNER.read_text(encoding="utf-8").split())
         self.assertIn(
             "store-relative `pinned_plan`, `resolved_isolation=worktree`, "
-            "`satellite_run_id`, and `satellite_capability_file`", text,
+            "`satellite_run_id`, and `satellite_capability_file`", skill,
         )
-        self.assertIn("skip workspace claim and release", text)
-        self.assertIn("do not auto-select or re-resolve the plan", text)
-        self.assertIn("do not create or switch branches or create a nested worktree", text)
+        self.assertIn("references/inner-satellite.md", skill)
+        self.assertIn("skip workspace claim and release", inner)
+        self.assertIn("do not auto-select or re-resolve the plan", inner)
+        self.assertIn("do not create or switch branches or create a nested worktree", inner)
         self.assertIn(
-            "pass the complete satellite context unchanged to `plan-implement`", text,
+            "pass the complete satellite context unchanged to `plan-implement`", inner,
         )
         self.assertIn(
-            "suppress `status.md`, `session-history.md`, and derived-index writes", text,
+            "suppress `status.md`, `session-history.md`, and derived-index writes", inner,
         )
 
     def test_cycle_passes_inner_context_to_implement_delegate(self):
-        text = " ".join(CYCLE.read_text(encoding="utf-8").split())
+        text = " ".join(CYCLE_INNER.read_text(encoding="utf-8").split())
         self.assertIn(
             "append the complete resolved context to the implementation prompt", text,
         )
 
     def test_inner_phase2_defers_outer_owned_artifacts_and_issue_close_but_keeps_commits(self):
-        text = " ".join(CYCLE.read_text(encoding="utf-8").split())
+        # Deferral and relay facts are canonical in references/completion.md;
+        # commit mandatoriness in references/inner-satellite.md.
+        skill = " ".join(CYCLE.read_text(encoding="utf-8").split())
+        inner = " ".join(CYCLE_INNER.read_text(encoding="utf-8").split())
+        completion = " ".join(CYCLE_COMPLETION.read_text(encoding="utf-8").split())
+        self.assertIn("references/completion.md", skill)
         self.assertIn(
-            "defer result-artifact composition to the outer orchestrator", text,
+            "defer result-artifact composition to the outer orchestrator", completion,
         )
         self.assertIn(
-            "skip singleton status and session-history composition", text,
+            "skip singleton status and session-history composition", completion,
         )
         self.assertIn(
-            "must not auto-close a linked issue", text,
+            "must not auto-close a linked issue", completion,
         )
         self.assertIn(
-            "tracked implementation commits remain mandatory", text,
+            "tracked implementation commits remain mandatory", inner,
         )
         self.assertIn(
             "return the implementation counts, commit list, "
-            "plan status, linked issue slug, and phase failures", text,
+            "plan status, review verdict and findings summary, "
+            "final gate verdict, linked issue slug, and "
+            "phase failures", completion,
         )
 
     def test_all_terminal_diagnostics_use_shared_formatter_and_exact_reason_codes(self):

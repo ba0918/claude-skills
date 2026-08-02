@@ -252,6 +252,10 @@ staging manifest digest, and `lifecycle_version` with authoritative provenance a
 any mismatch enters `recovery_required` and preserves the satellite.
 
 **Publish** is allowed only after the branch merge and post-merge verification succeed.
+When the merge is performed as a prospective merge commit (created without advancing main)
+and main is advanced via compare-and-swap (`git update-ref` with expected old SHA),
+verification of the prospective merge SHA satisfies the post-merge verification requirement
+— the CAS guarantees that main HEAD equals the verified SHA after advance.
 Under the lifecycle lock, it performs compare-and-swap on the expected prior state and
 revalidates every destination hash against the value observed during collection. If any
 destination changed, it publishes nothing atomically, enters `recovery_required`, and
