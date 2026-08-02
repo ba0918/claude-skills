@@ -120,7 +120,7 @@
   "cycle": {
     "file_sha256": {
       "skills/cycle/SKILL.md": "4a5fcd9bbb0bf571451e10f64b9f307280ed3e223b7312307fceab51386eb307",
-      "skills/cycle/fixtures.json": "bdcd6c20c94d0bd2381697f54a9e2205f13f00557c32712576ece01d3ac1b78d",
+      "skills/cycle/fixtures.json": "0080b8d08a950d6318c9490fefbef182854904d1abde67f75d7e839136939702",
       "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
@@ -140,8 +140,8 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "issue #200 裁定: Step 0.5 の分類リストから skills/*/scripts/** を除外（general 化）+ Step 0.5/Phase 4 に根拠散文を追記。既存 fixture（cy-*）は scripts/** を含む diff も Phase 4 振り分けも判定面に持たないため実走再評価は不要と判断。停止力の変化はレビュアー配置の変更で、fixture が固定する分岐表の意味は不変",
-    "result": "accepted-without-run",
+    "note": "issue #202: cy-019 登録に伴う全 19 シナリオ実走。process-queue 経路（別プロセス agent CLI、省コスト tier backend、外部 status 照会 0 回）。cy-001/cy-014 は organic レビュアー出力の揺らぎで初回 fail 後、同一 fixture の再実走で pass。cy-018 は executor の過剰厳格 self-report を成果物から caller 再判定で pass（judge 裁定: 要件文は organic verdict を要求しない）。cy-013 は『想定』文言の解釈割れが 2 実走連続で再現したため prompt を verdict 注入指定に明確化して（requirements 不変更、judge 裁定で弱体化非該当）単独再実走 pass。バッチ: .agents/runtime/process-delegation/cy019-batch-20260803 および cy013-rerun-20260803",
+    "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
@@ -164,7 +164,7 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "0a6c3f318f551d5d9f4077d942cd1b7daab4303ab952c127abe6423041bd28af",
+    "surface_sha256": "1c24ac4c80b1d5083856df8362f01e711d850dbfed6cc86454f5146e9367370b",
     "verified": "2026-08-03"
   },
   "decision-journal": {
