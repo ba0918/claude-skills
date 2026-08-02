@@ -1,0 +1,129 @@
+{
+  "skill": "skill-reviewer",
+  "scenarios": [
+    {
+      "id": "sr-001",
+      "title": "短いが正しいスキルに BLOCK を出さない",
+      "source": "manual:issue-196",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n",
+          "skills/greet/SKILL.md": "---\nname: greet\ndescription: Compose one greeting line for a named recipient. Use when the user says \"greet\" or \"make a greeting\".\n---\n\n# greet\n\nCompose a single greeting line. Nothing else.\n\n## Steps\n\n1. Read the recipient name from the arguments.\n2. No name is available -> say so and stop. Do not invent one.\n3. Compose one line: a salutation, the recipient name, and the occasion when given.\n4. Show the line and stop.\n\n## Output\n\nOne line of plain text. No surrounding commentary, no alternatives list.\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "skills/greet/SKILL.md を追加した。スキルの成果物として問題ないか見てほしい。",
+      "requirements": [
+        {
+          "text": "control_candidates チャネルに BLOCK を 1 件も出していない",
+          "critical": true
+        },
+        {
+          "text": "本文が短いこと・記述量が少ないこと自体を欠陥として扱っていない（簡潔さを理由とする指摘を出す場合は diagnostics 側に置いている）",
+          "critical": true
+        },
+        {
+          "text": "出力に assurance_role / quality_gate_evidence / dynamic_sensors_executed の 3 フィールドが含まれ、dynamic_sensors_executed が空である",
+          "critical": true
+        },
+        {
+          "text": "skills/greet/SKILL.md を編集していない（診断のみで成果物に手を入れない）",
+          "critical": true
+        },
+        {
+          "text": "実行品質または発火精度が coverage 上で unsupported として申告されている",
+          "critical": false
+        }
+      ],
+      "notes": "誤 BLOCK 率の oracle その 1。この SKILL.md は目的・入力・停止条件・出力が揃っており、既存の機械的証拠で反証できる欠陥を持たない。BLOCK が出たらそれは資格規則の破れで、22 ラウンド地獄の再発方向（散文の完全性を無限に要求する）への回帰を意味する。検証器の実行はリポジトリ本体のスクリプトに依存し worktree 内では到達不能なため、要件は出力の形だけで判定できるようにしてある。"
+    },
+    {
+      "id": "sr-002",
+      "title": "長いが必要十分なスキルに行数を理由の BLOCK を出さない",
+      "source": "manual:issue-196",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n",
+          "skills/release-train/SKILL.md": "---\nname: release-train\ndescription: Promote the unreleased changelog section to a numbered release across every distribution manifest. Use when the user says \"cut a release\", \"release train\", or \"bump the version\".\n---\n\n# release-train\n\nTurn the accumulated unreleased entries into one numbered release. Every step below\nexists because skipping it has produced a broken distribution at least once.\n\n## Preconditions\n\n1. The working tree is clean. A dirty tree means the release would ship files nobody\n   reviewed -> stop and report the dirty paths.\n2. The canonical check runner passes. A release built on a red tree is not a release.\n3. The unreleased section is non-empty. An empty section means there is nothing to\n   promote -> stop and say so.\n\n## Step 1: Decide the number\n\n| The unreleased entries contain | Increment |\n|--------------------------------|-----------|\n| A changed contract, output shape, or behavior | minor |\n| Only fixes that leave behavior unchanged | patch |\n| An incompatible change to an existing entry point | major |\n\nWhen entries of several kinds are present, take the largest increment. Do not average\nthem, and do not split one release into several numbers to avoid a minor bump.\n\n## Step 2: Rename the section\n\nRename the unreleased heading to the chosen number and open a fresh empty unreleased\nheading above it. The fresh heading is what makes the next change's landing place\nunambiguous; without it the next author appends into a published section, and the\npublished entry silently grows after distribution.\n\n## Step 3: Update every manifest together\n\nAll distribution manifests carry the same number. Update them in one commit. A partial\nupdate is worse than no update: consumers resolving through the lagging manifest get a\nversion that claims a feature set it does not have.\n\nVerify by reading each manifest back and comparing the values to each other, not to\nwhat you intended to write.\n\n## Step 4: Tag and verify\n\n1. Create the tag on the commit that carries the manifest updates -- not on an earlier\n   commit, or the tag points at a tree whose manifests disagree with the tag name.\n2. Re-run the canonical check runner against the tagged tree.\n3. Confirm the published entry lists every change that was in the unreleased section.\n   An entry lost here is a change that ships with no record.\n\n## Stop conditions\n\n- Any precondition fails -> stop before editing anything.\n- A manifest cannot be updated -> revert the manifests already updated and stop. A\n  half-updated set is the one state with no safe forward path.\n- The verification in step 4 disagrees with the intended number -> stop and report both\n  values. Do not \"fix\" the tag by moving it.\n\n## Preventing rationalization\n\n| Excuse | Reality |\n|--------|---------|\n| \"Only one manifest matters in practice\" | The lagging one is what a consumer resolves through |\n| \"The tree is dirty with unrelated files\" | Unrelated files ship too. Clean or stash them |\n| \"I will bump the number and write the entries after\" | The entries are the only record of what the number means |\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "skills/release-train/SKILL.md をレビューしてほしい。長いのが気になっている。",
+      "requirements": [
+        {
+          "text": "control_candidates チャネルに BLOCK を 1 件も出していない",
+          "critical": true
+        },
+        {
+          "text": "分量・行数・重複に関する指摘を出す場合、OPPORTUNITY または INFO として diagnostics チャネルに置いている",
+          "critical": true
+        },
+        {
+          "text": "各節が異なる分岐・停止条件を担っており単純な重複ではないことを踏まえた判断を示している",
+          "critical": false
+        },
+        {
+          "text": "OPPORTUNITY を出す場合、何が改善されるかと何を失うリスクがあるかの両方を添えている",
+          "critical": false
+        },
+        {
+          "text": "skills/release-train/SKILL.md を編集していない",
+          "critical": true
+        }
+      ],
+      "notes": "誤 BLOCK 率の oracle その 2。Anti-bloat 予算は再配置を促す設計臭であって BLOCK の閾値ではない。行数の多さだけで BLOCK を出す挙動は、レビュアーが『短くしろ』という圧力を常時掛ける状態であり、削ると compliance が落ちる規約・パス制約まで削らせる方向へ働く。"
+    },
+    {
+      "id": "sr-003",
+      "title": "本文と参照契約の正面矛盾は資格つき BLOCK として出す",
+      "source": "manual:issue-196",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n",
+          "skills/sweeper/SKILL.md": "---\nname: sweeper\ndescription: Find stale generated files across the repository and handle them per the sweeper policy. Use when the user says \"sweep the stale files\" or \"clean up generated files\".\n---\n\n# sweeper\n\nApply [references/policy.md](references/policy.md) to every generated file in the\nrepository.\n\n## Steps\n\n1. List the generated files under the build output directories.\n2. For each file, decide whether anything still references it.\n3. Delete every unreferenced file immediately, and delete any file whose references\n   could not be determined. Report the deletions afterwards.\n4. Show the count of deleted files.\n",
+          "skills/sweeper/references/policy.md": "# sweeper policy\n\nThe rules the sweeper body must follow.\n\n- A detected file is reported, never deleted. Deletion is not reversible from within\n  the sweep, so the sweep has no way to undo a wrong match.\n- A match whose context could not be verified is reported separately and left alone.\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "skills/sweeper/SKILL.md をレビューしてほしい。",
+      "requirements": [
+        {
+          "text": "本文の削除手順が参照している policy.md の「削除せず報告する」規則と正面から矛盾することを検出している",
+          "critical": true
+        },
+        {
+          "text": "その指摘を control_candidates チャネルの BLOCK として出している",
+          "critical": true
+        },
+        {
+          "text": "その BLOCK に qualification_reason があり、矛盾している本文側と契約側の箇所を名指ししている",
+          "critical": true
+        },
+        {
+          "text": "diagnostics チャネルに BLOCK を置いていない",
+          "critical": true
+        },
+        {
+          "text": "文脈が確認できない一致まで削除する手順が、契約の「確認できない一致は報告して手を付けない」規則にも反することに触れている",
+          "critical": false
+        }
+      ],
+      "notes": "正例。誤 BLOCK ゼロを測る oracle 2 件だけだと「一切 BLOCK を出さない」退化が満点を取れてしまうため、BLOCK 資格を満たす例を対にして置く。この矛盾は本文と同梱契約の 2 ファイルだけで反証が完結するので、リポジトリ本体の検証器や fixture 実走に依存せず判定できる。"
+    }
+  ]
+}
