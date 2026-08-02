@@ -166,7 +166,7 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 
 ##### レビュー対象による分担（plan-reviewer / skill-reviewer）
 
-アプリケーションコードと一般の実装計画は `plan-reviewer`、スキル成果物（`SKILL.md` / `references/` / `fixtures.json` / 付属 scripts）は `skill-reviewer` が見る。plan-reviewer は recall 最適化ゲートで、自然言語成果物に適用すると「散文の完全性」を無限に要求する構造になるため分けてある。skill-reviewer は**診断器でありマージゲートではない**。出力は control 候補チャネルと diagnostics チャネルに分かれ、後者は cycle の状態遷移に一切影響しない。cycle Phase 3 は変更ファイル種別で両者を自動的に振り分ける。
+アプリケーションコードと一般の実装計画は `plan-reviewer`、スキル成果物（`skills/*/SKILL.md` / `skills/*/references/**` / `skills/*/fixtures.json` / `skills/*/scripts/**` / `skills/shared/references/**` / `commands/*.md`）は `skill-reviewer` が見る。plan-reviewer は recall 最適化ゲートで、自然言語成果物に適用すると「散文の完全性」を無限に要求する構造になるため分けてある。skill-reviewer は**診断器でありマージゲートではない**。出力は control 候補チャネルと diagnostics チャネルに分かれ、後者は cycle の状態遷移に一切影響しない。cycle Phase 3 は変更ファイル種別で両者を自動的に振り分ける。
 
 #### Issue 管理と自走ループ
 

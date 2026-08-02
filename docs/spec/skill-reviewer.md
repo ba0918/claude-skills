@@ -2,14 +2,14 @@
 
 ## 位置づけ
 
-スキル成果物（SKILL.md / references / fixtures / 付属スクリプト）専用のレビュースキル。マージ可否を決めるゲートではなく**診断器**である。機械ゲートは既存の run_checks + regression ledger が担い、skill-reviewer は新しい強制を一切追加しない。
+スキル成果物（`skills/*/SKILL.md` / `skills/*/references/**` / `skills/*/fixtures.json` / `skills/*/scripts/**` / `skills/shared/references/**` / `commands/*.md`）専用のレビュースキル。マージ可否を決めるゲートではなく**診断器**である。機械ゲートは既存の run_checks + regression ledger が担い、skill-reviewer は新しい強制を一切追加しない。
 
 ## 出力の 2 チャネル分離
 
-出力は 2 チャネルに分かれ、cycle が制御判断に使えるのは control 候補チャネルのみ。この分離は申し合わせではなく、スキーマ検証可能な不変条件として consumer 側の分岐でも強制する。
+出力は 2 チャネルに分かれ、cycle が制御判断に使えるのは `control_candidates` チャネルのみ。この分離は申し合わせではなく、スキーマ検証可能な不変条件として consumer 側の分岐でも強制する。
 
-- **control 候補チャネル**: BLOCK は「既に存在する機械的証拠を指せる指摘」（落ちるテスト・validate_repo 違反・本文だけで反証が完結する契約矛盾）のみ。各指摘に qualification_reason が必須で、欠くものはスキーマ検証で拒否される。WARN は記録して続行し、自動修正されるのは fix_action: AUTO_FIX が明示された指摘だけ。停止・修正の最終判断の所有者は cycle であり、レビュアーの verdict は停止命令ではない。
-- **diagnostics チャネル**（WARN / OPPORTUNITY / INFO）: cycle の状態遷移に一切影響しない。自動修正・再レビュー・headless 停止のいずれにも使われず、表示と記録のみ。
+- **`control_candidates` チャネル**: BLOCK は「既に存在する機械的証拠を指せる指摘」（落ちるテスト・validate_repo 違反・本文だけで反証が完結する契約矛盾）のみ。各指摘に qualification_reason が必須で、欠くものはスキーマ検証で拒否される。WARN は記録して続行し、自動修正されるのは fix_action: AUTO_FIX が明示された指摘だけ。停止・修正の最終判断の所有者は cycle であり、レビュアーの verdict は停止命令ではない。
+- **`diagnostics` チャネル**（WARN / OPPORTUNITY / INFO）: cycle の状態遷移に一切影響しない。自動修正・再レビュー・headless 停止のいずれにも使われず、表示と記録のみ。
 
 ## verdict 語彙
 
