@@ -217,11 +217,10 @@ Commits: {N}
 
 ## Phase 3: Post-implementation review
 
-Automated review via plan-reviewer with a fix loop for BLOCK findings. The main
-context orchestrates; review and fix agents are delegated (high-performance model).
-Launched as a subagent, plan-reviewer runs in sequential mode (7 dimensions inline,
-Codex second opinion skipped) — expected; Phase 4's independent review provides the
-Codex perspective.
+Automated review with a fix loop for BLOCK findings. The main context orchestrates;
+review and fix agents are delegated (high-performance model). Launched as a subagent,
+plan-reviewer runs in sequential mode (7 dimensions inline, Codex second opinion
+skipped) — expected; Phase 4's independent review provides the Codex perspective.
 
 ### Step 0: Empty diff guard
 
@@ -234,12 +233,33 @@ Nothing was implemented or all changes were lost.
 Action: Re-run the cycle to re-implement, or check git history.
 ```
 
+### Step 0.5: Reviewer routing
+
+Classify the files in `git diff --name-only {cycle_start_sha}..HEAD`. **Skill
+artifacts** are `skills/*/SKILL.md`, `skills/*/references/**`, `skills/*/fixtures.json`,
+`skills/*/scripts/**`, `skills/shared/references/**`, and `commands/*.md`; everything
+else is general.
+
+| The diff holds | Reviewer |
+|----------------|----------|
+| No skill artifacts | plan-reviewer only — Steps 1–3 below, unchanged |
+| Only skill artifacts | skill-reviewer only — read [references/skill-review-routing.md](references/skill-review-routing.md) and follow it instead of Steps 1–3 |
+| Both | Both, each scoped to its own file set. Read the same reference for the skill-artifact half |
+
+A recall-optimized plan review applied to natural-language artifacts produced a
+22-round finding→prose→finding loop (PR #190); routing by file kind is what keeps that
+review off skill bodies. The skill-reviewer path carries a different consumer policy,
+so it lives in that reference and is loaded only when the diff reaches it.
+
 ### Step 1: Initial review
 
 Launch a review subagent (high-performance model):
 - Prompt: "Execute the skill `claude-skills:plan-reviewer`. Review the implementation
   of plan file {plan_file_path}. Scope the review to changes introduced by this cycle
-  only: use `git diff {cycle_start_sha}..HEAD` as the implementation diff. **Before
+  only: use `git diff {cycle_start_sha}..HEAD` as the implementation diff. On a mixed
+  diff (Step 0.5 routed the skill artifacts to skill-reviewer), use
+  `git diff {cycle_start_sha}..HEAD -- {general_file_list}` instead and raise no
+  findings on the skill-artifact files — they belong to the other pass. **Before
   sending your completion report**, write the full review result (overall verdict,
   dimension scores, all findings with file/location/severity/suggestion, escalation
   items) to `.agents/runtime/delegation/{run_id}_{role}.md`. The report is merely a
@@ -347,7 +367,11 @@ e. Branch on the new verdict:
 Display:
 ```
 ── Phase 3: Review ──
+Reviewer: {plan-reviewer / skill-reviewer / both}
+{plan-reviewer ran:}
 Review: {verdict} (max score: {N}, driven by {dimension})
+{skill-reviewer ran:}
+Skill review: control_candidates {N} BLOCK / {N} WARN, diagnostics {N} (recorded only)
 {when fix loop ran, show each iteration:}
   Fix iteration {N}: {findings_addressed}/{total} findings addressed
   Re-review: {verdict} (max score: {N})

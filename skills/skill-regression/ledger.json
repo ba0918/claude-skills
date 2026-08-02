@@ -89,12 +89,12 @@
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
-      "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
+      "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/scripts/frontmatter.py": "3c6d76a04346f1b2251d39b005f526073981a3425ce9fabc7523d99a791fedb8",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "severity-and-verdicts への OPPORTUNITY 1 行追加と skill-reviewer 方言節の追加のみが surface 差分。方言は BLOCK の入場条件を skill-reviewer 側でのみ狭める規則で、既存 4 値の意味と本スキルが読む分岐を変えないため実走せず accept",
     "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/SKILL.md",
@@ -114,30 +114,33 @@
       "skills/shared/scripts/frontmatter.py",
       "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "ae0279adf1435809ca947e006c852699be1d1451391cf55b67ad281a4574984f",
-    "verified": "2026-08-02"
+    "surface_sha256": "12e378377837e147b83e6148f62967eeada6c129f28bdcfeaae22508c0a1b53b",
+    "verified": "2026-08-03"
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "75894e81e8849976be09c62211fa5ae0ccd6368a1710e4a75b4b95b0f8be30e4",
+      "skills/cycle/SKILL.md": "179341f687cecc422726b01a6f5510775ac90c21584ac03729fe609883bb5323",
       "skills/cycle/fixtures.json": "bdcd6c20c94d0bd2381697f54a9e2205f13f00557c32712576ece01d3ac1b78d",
       "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
       "skills/cycle/references/inner-satellite.md": "249e971fd95c7111435e004fbf4c251d58114f41060d8716a481f3c2628d913c",
+      "skills/cycle/references/skill-review-routing.md": "ecb9580f083b9f98f1e3018c7d3acd80442336f77aa97423ea5090e1af98bb99",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
+      "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
       "skills/shared/references/publication-protocol.md": "5aaaf09134900951ddfa3edd3523676ecbd98e8f6c5755f6b20520ee04b376b3",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
       "skills/shared/scripts/publication_advance.py": "c17d4938f5db991e8cf3cbae6aacc93e48555351a38570485fc0f3a01205c8ed",
-      "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
+      "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
+      "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "R22: primitive 単独の hardening（advance の staging を正規 evidence-staging/{post_sha} 完全一致 + symlink 拒否に制限）。SKILL/protocol 文書・判断層は不変更で、新分岐は障害注入テスト 19 本（新規: 任意パス victim 保全 / traversal / symlink 植込み）で実行検証。skill fixture はこの拒否分岐に到達しない（cy-009 等の正規呼び出しは merge 出力パスで完全一致）ため accepted-without-run。",
+    "note": "2026-08-03 Codex 差分レビュー対応: 混在 diff での plan-reviewer スコープ限定（{general_file_list}）と、skill-reviewer 経路の Step 3 fix ループ機構（payload 直接化 / 再レビューは Step 1s / cap 共有）を明文化。既存 plan-reviewer 単独経路の分岐は無変更。cy-001..cy-018 は引き続き新経路を踏まない",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -146,20 +149,23 @@
       "skills/cycle/references/final-gate-delegation.md",
       "skills/cycle/references/fix-delegation.md",
       "skills/cycle/references/inner-satellite.md",
+      "skills/cycle/references/skill-review-routing.md",
       "skills/plan-reviewer/references/output-format.md",
       "skills/plan/references/status-update-guide.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/codex-integration.md",
+      "skills/shared/references/fix-action-taxonomy.md",
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/publication-protocol.md",
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md",
       "skills/shared/scripts/publication_advance.py",
-      "skills/shared/scripts/secret_detect.py"
+      "skills/shared/scripts/secret_detect.py",
+      "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "00dabfd51f17fe2fb2a30212aa5a78cb82325b18f84ca4a94b5611d3f1a1ee33",
-    "verified": "2026-08-02"
+    "surface_sha256": "345e7ca217f67709195a0423e68f2501384e866614693900b89366cf0cf944d0",
+    "verified": "2026-08-03"
   },
   "decision-journal": {
     "file_sha256": {
@@ -357,14 +363,14 @@
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
       "skills/shared/references/publication-protocol.md": "5aaaf09134900951ddfa3edd3523676ecbd98e8f6c5755f6b20520ee04b376b3",
-      "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
+      "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
       "skills/shared/scripts/publication_advance.py": "c17d4938f5db991e8cf3cbae6aacc93e48555351a38570485fc0f3a01205c8ed"
     },
-    "note": "R22: 同上（primitive 単独 hardening、it-outer-worktree の正規呼び出し経路は不変）。",
+    "note": "severity-and-verdicts への OPPORTUNITY 1 行追加と skill-reviewer 方言節の追加のみが surface 差分。方言は BLOCK の入場条件を skill-reviewer 側でのみ狭める規則で、既存 4 値の意味と本スキルが読む分岐を変えないため実走せず accept",
     "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
@@ -382,8 +388,8 @@
       "skills/shared/references/workspace-lock.md",
       "skills/shared/scripts/publication_advance.py"
     ],
-    "surface_sha256": "0ff2ae6447cbb954afa2e6a555be2cbd6d42828e0bb8ab901bc70598b6f2e0f5",
-    "verified": "2026-08-02"
+    "surface_sha256": "7cf50a66f26be484eec6020ae6a4779ff58835f95447355e7c825f775cd9f817",
+    "verified": "2026-08-03"
   },
   "plan": {
     "file_sha256": {
@@ -420,13 +426,13 @@
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
       "skills/shared/references/runtime-progress.md": "ed37fbe9e91ba942a15feaeeec3b8610d57f14486e649190065f47e8179db7ca",
-      "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
+      "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "severity-and-verdicts への OPPORTUNITY 1 行追加と skill-reviewer 方言節の追加のみが surface 差分。方言は BLOCK の入場条件を skill-reviewer 側でのみ狭める規則で、既存 4 値の意味と本スキルが読む分岐を変えないため実走せず accept",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan-implement/SKILL.md",
@@ -440,8 +446,8 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "6f6cfaddaaada2cc141ac6064b4009e92725907f182fbc7ddadc8ae074dc62d2",
-    "verified": "2026-08-02"
+    "surface_sha256": "5819dd3e7a19876db8739524f69ab57c13d0f78efd10702472b5d9b8b213559e",
+    "verified": "2026-08-03"
   },
   "plan-reviewer": {
     "file_sha256": {
@@ -453,9 +459,9 @@
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88"
+      "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "severity-and-verdicts への OPPORTUNITY 1 行追加と skill-reviewer 方言節の追加のみが surface 差分。方言は BLOCK の入場条件を skill-reviewer 側でのみ狭める規則で、既存 4 値の意味と本スキルが読む分岐を変えないため実走せず accept",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan-reviewer/SKILL.md",
@@ -468,8 +474,8 @@
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md"
     ],
-    "surface_sha256": "1709cdfd1826333b69ae0e6ec7e8fde9a25857d1116ae8abac07d6d18aa68690",
-    "verified": "2026-08-02"
+    "surface_sha256": "97ca1e047f2b7f242a4f4c67e67f72b0c2cb4c589b56afe1d57071525b163c68",
+    "verified": "2026-08-03"
   },
   "problem-solving": {
     "file_sha256": {
@@ -495,10 +501,10 @@
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
+      "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "severity-and-verdicts への OPPORTUNITY 1 行追加と skill-reviewer 方言節の追加のみが surface 差分。方言は BLOCK の入場条件を skill-reviewer 側でのみ狭める規則で、既存 4 値の意味と本スキルが読む分岐を変えないため実走せず accept",
     "result": "accepted-without-run",
     "surface": [
       "skills/refactor/SKILL.md",
@@ -512,21 +518,53 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "3b6960888e2f2dd3f1fb129590bfe5cbdda17f691f5a7ebfe1874c2402ec24ac",
-    "verified": "2026-08-02"
+    "surface_sha256": "a80ed55f21abcdb417e24ded803eebe223a22526be29d47cc50514b5323f7812",
+    "verified": "2026-08-03"
+  },
+  "skill-reviewer": {
+    "file_sha256": {
+      "skills/shared/references/coverage-ledger.md": "10c3ea12cf96f31749eacce497f43d5db9b6d26b495a55e6552c10089fff8376",
+      "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
+      "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
+      "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
+      "skills/shared/references/skill-authoring.md": "28f84db01e2be5f720770f3890cd741e862521cb56f9e8121c07cbdfeeaaf858",
+      "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb",
+      "skills/skill-reviewer/SKILL.md": "be9f394cfc2ccd96de4b91d1d63e776cf9ba0a209aaf36d42b4fee02cc159762",
+      "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
+      "skills/skill-reviewer/references/evidence-and-coverage.md": "038a929b9af70186414aa747477e5feb647b23312545fa224670de53dc54a2a6",
+      "skills/skill-reviewer/references/output-contract.md": "3ea36ee8af491f026fc40501ab26f6bcc809ec2c1b2ee15529c439472d19f294",
+      "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
+    },
+    "note": "2026-08-03 Codex 差分レビュー対応: evidence-and-coverage の unsupported 配置規則を output-contract の impact×evidence 表へ一本化（証拠欠如そのものは finding にしないという A6 裁定の明確化）。検証器に run_evidence の bool 型検査と surface_sha256 の str 型検査を追加（1==True すり抜けの閉塞、テスト 41 本 OK）。判定規則の意味は無変更",
+    "result": "accepted-without-run",
+    "surface": [
+      "skills/shared/references/coverage-ledger.md",
+      "skills/shared/references/fix-action-taxonomy.md",
+      "skills/shared/references/quality-gate-contract.md",
+      "skills/shared/references/severity-and-verdicts.md",
+      "skills/shared/references/skill-authoring.md",
+      "skills/skill-regression/scripts/ledger.py",
+      "skills/skill-reviewer/SKILL.md",
+      "skills/skill-reviewer/fixtures.json",
+      "skills/skill-reviewer/references/evidence-and-coverage.md",
+      "skills/skill-reviewer/references/output-contract.md",
+      "skills/skill-reviewer/scripts/validate_review_output.py"
+    ],
+    "surface_sha256": "7036d7ec5340af4e11e361ac1d6d99ffcb26c4ca71ba7c9e7e741f18a91b4aa2",
+    "verified": "2026-08-03"
   },
   "sweep-fix": {
     "file_sha256": {
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
-      "skills/shared/references/severity-and-verdicts.md": "4925c070e8ed405c3272e998be3e5b893d1d100923c4142b351eab7a24d39f88",
+      "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/sweep-fix/SKILL.md": "03c5f2beedfef324c844c8fa06eaed3d1d672fef9d6a103c00593d7d7b07c465",
       "skills/sweep-fix/fixtures.json": "5406b7dba570b6294cdd9e978fc618eb2fa8c0e504ef014438853e37d0338b88",
       "skills/sweep-fix/references/context-verification.md": "1e835b97a51ea34723c6b20f23a16b0c3e690a32316208dd0a1ec91c50b07104",
       "skills/sweep-fix/references/pattern-extraction.md": "9f4c15f68c82b80c7d97ee28010270f6adbd65266bf7df1ca980f7871364ffa8"
     },
-    "note": "Opus 5 review fix: stale refine references removed from orchestration-patterns.md",
+    "note": "severity-and-verdicts への OPPORTUNITY 1 行追加と skill-reviewer 方言節の追加のみが surface 差分。方言は BLOCK の入場条件を skill-reviewer 側でのみ狭める規則で、既存 4 値の意味と本スキルが読む分岐を変えないため実走せず accept",
     "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/execution-context.md",
@@ -538,8 +576,8 @@
       "skills/sweep-fix/references/context-verification.md",
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
-    "surface_sha256": "71759d95fbf55fc2991f1d57edd1e54b0154aa61f762919733563a78059de624",
-    "verified": "2026-07-31"
+    "surface_sha256": "3d03ca13cdc0b2d1138b76eba9f00f0bd709f9e640ebc409a91f0f8a2bf6bf83",
+    "verified": "2026-08-03"
   },
   "systematic-debugging": {
     "file_sha256": {

@@ -148,6 +148,7 @@ Core を補強・拡張するスキル群。すべてを覚える必要はなく
 | `attack-review` | 攻撃者視点のセキュリティレビュー |
 | `review-testing` | テスト品質の三層 focused レビュー（総合点なし） |
 | `review-deps` | 依存ヘルスの focused レビュー（scanner 統合 + 相関分析） |
+| `skill-reviewer` | スキル成果物（SKILL.md / references / fixtures / scripts）の診断（ゲートではない） |
 | `generate-review-rules` | プロジェクト固有のレビュールール自動生成 |
 
 ##### Composite と Focused の使い分け
@@ -162,6 +163,10 @@ Core を補強・拡張するスキル群。すべてを覚える必要はなく
 | Focused | `review-deps` | manifest / lockfile / 依存 diff | 既知脆弱性（scanner 正本）+ サプライチェーン相関 | findings + coverage ledger | 低〜中（必要時のみ） |
 
 Focused レビューは [coverage ledger](skills/shared/references/coverage-ledger.md) を必ず出力し、「問題なし（reviewed）」と「見ていない（skipped / unsupported / inconclusive）」を構造的に区別する。Composite が構造的に除外する領域（テストコード・lockfile）を Focused が第一級入力として埋める関係にある。
+
+##### レビュー対象による分担（plan-reviewer / skill-reviewer）
+
+アプリケーションコードと一般の実装計画は `plan-reviewer`、スキル成果物（`skills/*/SKILL.md` / `skills/*/references/**` / `skills/*/fixtures.json` / `skills/*/scripts/**` / `skills/shared/references/**` / `commands/*.md`）は `skill-reviewer` が見る。plan-reviewer は recall 最適化ゲートで、自然言語成果物に適用すると「散文の完全性」を無限に要求する構造になるため分けてある。skill-reviewer は**診断器でありマージゲートではない**。出力は control 候補チャネルと diagnostics チャネルに分かれ、後者は cycle の状態遷移に一切影響しない。cycle Phase 3 は変更ファイル種別で両者を自動的に振り分ける。
 
 #### Issue 管理と自走ループ
 

@@ -11,6 +11,20 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Added: skill-reviewer — スキル成果物専用の診断器
+
+- `skills/skill-reviewer/` を新設。SKILL.md / references / fixtures / 付属 scripts を
+  5 観点（目的達成性・コンテキスト経済・責務配置・指示品質・スクリプトとテスト）で診断する。
+  マージゲートではなく診断器で、新しい強制を追加しない
+- 出力を control 候補チャネルと diagnostics チャネルに分離。BLOCK は「既に存在する機械的証拠を
+  指せる指摘」に限り qualification_reason を必須にする。`scripts/validate_review_output.py` が
+  スキーマ検証で強制する
+- cycle Phase 3 に変更ファイル種別によるレビュアー振り分けを追加。スキル成果物のみの diff は
+  skill-reviewer へ回り、diagnostics は自動修正・再レビュー・headless 停止のいずれにも入らない。
+  既存 plan-reviewer 経路の分岐は不変
+- 共有契約 `severity-and-verdicts` に OPPORTUNITY 段と skill-reviewer 方言節を追加（既存 4 値の
+  意味は不変）
+
 ### Changed: OpenCode plugin loading verification
 
 - plugin module の public export を default plugin function だけに限定し、loader の解釈差による

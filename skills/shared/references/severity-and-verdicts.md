@@ -14,6 +14,7 @@ A finding's evaluation coverage (what was examined and how far) is likewise a se
 |--------|------|-------------|-----|
 | **BLOCK** | Cannot proceed. Continuing as-is causes a serious problem | Security vulnerability, risk of data loss, fundamental design defect | Unmitigated SQL injection, authentication bypass, inverted layer dependency |
 | **WARN** | Needs consideration. Not fatal if unaddressed, but should be improved | Performance concern, reduced maintainability, unhandled edge case | An O(n^2) algorithm (when n is small), a DRY violation, insufficient error messages |
+| **OPPORTUNITY** | An improvement opportunity. Acting on it is optional, and it states both what improves and what is risked by acting | Nothing is currently wrong, but a distinct gain is identifiable together with its cost | Capturing an existing behavior as a regression fixture, consolidating a duplicated explanation into a contract reference |
 | **INFO** | For reference. Acting on it is optional | Style suggestion, future improvement idea, introduction of an alternative approach | Naming suggestions, library recommendations, future refactoring candidates |
 | **PASS** | No problem | No problem was detected for the aspect in question | - |
 
@@ -28,6 +29,16 @@ A finding's evaluation coverage (what was examined and how far) is likewise a se
 plan-reviewer maps a risk score (0-100) onto the bands BLOCK (80-100) / WARN (50-79) / PASS (0-49).
 The labels match the severities but the input is a score. It is an approved dialect whose mapping is
 consistent with this table's meaning ("the high-risk band = BLOCK"); it does not introduce a separate severity system.
+
+### Evidence-qualified BLOCK (the skill-reviewer dialect)
+
+skill-reviewer is a diagnostic instrument for skill artifacts, not a merge gate. It narrows — never widens —
+this table's BLOCK: only a finding that can point at **machine evidence that already exists** (a failing test,
+a `validate_repo` violation, a contract contradiction refutable from the body text alone) qualifies, and each
+such finding carries a `qualification_reason` naming that evidence. Everything else stays at WARN or below, and
+OPPORTUNITY is reserved for its diagnostics channel with no automatic promotion to WARN. The dialect is an
+admission rule for BLOCK, so the meaning of the four severities above is unchanged. The canonical detail lives in
+[skill-reviewer's output contract](../../skill-reviewer/references/output-contract.md).
 
 ## Implementation review verdicts
 
