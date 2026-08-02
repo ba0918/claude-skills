@@ -527,20 +527,22 @@
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
       "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
+      "skills/shared/references/skill-authoring.md": "28f84db01e2be5f720770f3890cd741e862521cb56f9e8121c07cbdfeeaaf858",
       "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb",
-      "skills/skill-reviewer/SKILL.md": "08675dedd0b2a4e09848d76275f1bcc32083d3e1f11eddbdddf2b00be350eee4",
+      "skills/skill-reviewer/SKILL.md": "fa4ca1dacc9c40a0d71df0db56569ddc76ae992785bb3072a220768d3ec8c103",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "2c23efe4bec9e348e9f5d3a58a6f12b243826afafced4b3b62bc6218927bf62a",
       "skills/skill-reviewer/references/output-contract.md": "7cb0a38320bf7ff4609f41b925c9fb97a341ccd2e782ce586aef1ec49a82d67d",
       "skills/skill-reviewer/scripts/validate_review_output.py": "4ce3b5fed815cb23cf5b12588ec8993bc3cec16e5b912860e4a407613c9183fa"
     },
-    "note": "初回実走。3 シナリオを blank-slate executor（standard tier）で並行実行し全 critical ○。誤 BLOCK oracle 2 件は control_candidates の BLOCK ゼロ（sr-002 は責務配置の WARN 1 件のみ、分量の指摘は diagnostics 側）、正例 sr-003 は本文と policy.md の矛盾を qualification_reason つき BLOCK で検出。3 件とも出力が validate_review_output.py に適合し、setup.files の sha256 は全て未変更。外部からの状況照会 0 回。隔離環境にリポジトリ本体の validate_repo が無いため、executor はその領域を coverage 上 skipped/unsupported と申告した（想定どおり）",
-    "result": "pass",
+    "note": "初回実走。3 シナリオを blank-slate executor（standard tier）で並行実行し全 critical ○。誤 BLOCK oracle 2 件は control_candidates の BLOCK ゼロ（sr-002 は責務配置の WARN 1 件のみ、分量の指摘は diagnostics 側）、正例 sr-003 は本文と policy.md の矛盾を qualification_reason つき BLOCK で検出。3 件とも出力が validate_review_output.py に適合し、setup.files の sha256 は全て未変更。外部からの状況照会 0 回。隔離環境にリポジトリ本体の validate_repo が無いため、executor はその領域を coverage 上 skipped/unsupported と申告した（想定どおり）。2026-08-03 追記: 上記実走の後、Step 3 の分量予算の出典として skill-authoring.md への md リンクを 1 本追加した（散文のみの編集で、判定規則・出力契約・スクリプトは不変）。実走時の SKILL.md ハッシュとは差が出るため pass を再主張せず accepted-without-run とする。このリンクにより skills/shared/references/skill-authoring.md が挙動面に入り、以後は予算値の変更が再検証を要求する。",
+    "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/coverage-ledger.md",
       "skills/shared/references/fix-action-taxonomy.md",
       "skills/shared/references/quality-gate-contract.md",
       "skills/shared/references/severity-and-verdicts.md",
+      "skills/shared/references/skill-authoring.md",
       "skills/skill-regression/scripts/ledger.py",
       "skills/skill-reviewer/SKILL.md",
       "skills/skill-reviewer/fixtures.json",
@@ -548,7 +550,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "c820c008f7bf02b2638f43f53f8b3de6b73512b15216ab0ecfd67bbd217bf0d3",
+    "surface_sha256": "576a0fcf3139649493a84f6b50c25aa680f5bbbbad11b142dbbb54caba0686eb",
     "verified": "2026-08-03"
   },
   "sweep-fix": {
