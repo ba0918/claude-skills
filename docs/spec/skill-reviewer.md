@@ -2,7 +2,12 @@
 
 ## 位置づけ
 
-スキル成果物（`skills/*/SKILL.md` / `skills/*/references/**` / `skills/*/fixtures.json` / `skills/*/scripts/**` / `skills/shared/references/**` / `commands/*.md`）専用のレビュースキル。マージ可否を決めるゲートではなく**診断器**である。機械ゲートは既存の run_checks + regression ledger が担い、skill-reviewer は新しい強制を一切追加しない。
+スキル成果物（`skills/*/SKILL.md` / `skills/*/references/**` / `skills/*/fixtures.json` / `skills/*/scripts/**` / `skills/shared/references/**` / `commands/*.md`）専用のレビュースキル。ただし `skills/*/scripts/**` の cycle 内管轄は後述の「管轄の境界」に従う。マージ可否を決めるゲートではなく**診断器**である。機械ゲートは既存の run_checks + regression ledger が担い、skill-reviewer は新しい強制を一切追加しない。
+
+## 管轄の境界（issue #200 裁定）
+
+- **`skills/*/scripts/**` の cycle 内管轄は plan-reviewer**。scripts は本スキルの診断対象（スクリプト強度・責務配置の観点。直接起動時に有効）だが、cycle Phase 3 Step 0.5 の振り分けでは general 側に分類される。scripts はコードであり #190 病理（自然言語成果物への recall 最適化レビュー）の対象外で、本スキルの BLOCK 資格（既に存在する機械的証拠のみ）の下では新規のコード不具合（境界条件・注入・順序）が control WARN 止まりになる。コードの Correctness / Security の停止力は plan-reviewer に置く。
+- **レビュアー振り分けは Phase 3 のみの話である**。Phase 4（final gate）は変更ファイル種別を見ず、全ファイルを holistic + 外部レビューで見る。holistic レビューは #190 を起こした recall 最適化の次元別レビューではなく、fix loop を持たないため finding→散文→finding の往復も構造的に始まらない。
 
 ## 出力の 2 チャネル分離
 
