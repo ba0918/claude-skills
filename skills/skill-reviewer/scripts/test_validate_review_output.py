@@ -177,6 +177,17 @@ class EvidenceClassificationTest(unittest.TestCase):
         self.assertTrue(classified["run_evidence"])
         self.assertFalse(classified["current"])
 
+    def test_non_boolean_run_evidence_is_rejected(self):
+        d = doc()
+        d["evidence"][0]["state"] = "current_pass"
+        d["evidence"][0]["run_evidence"] = 1
+        self.assertIn("真偽値", " ".join(vro.validate(d)))
+
+    def test_non_string_surface_sha256_is_rejected(self):
+        d = doc()
+        d["evidence"][0]["surface_sha256"] = 12345
+        self.assertIn("surface_sha256", " ".join(vro.validate(d)))
+
     def test_declaring_run_evidence_for_accepted_without_run_is_rejected(self):
         d = doc()
         d["evidence"][0]["run_evidence"] = True

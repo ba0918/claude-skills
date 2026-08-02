@@ -70,8 +70,10 @@ Rules that follow from the table:
 
 - Never claim PASS for an area whose value is `unsupported` or `inconclusive`. An area not looked at is not an area
   without problems ([coverage-ledger.md](../../shared/references/coverage-ledger.md), The Iron Law).
-- A finding about an `unsupported` area is at most a WARN in `diagnostics`, because the evidence that would qualify
-  it as a control candidate does not exist.
+- The absence of evidence in an `unsupported` area is never itself a finding — it is reported as coverage, with a
+  run recommendation where one is warranted. A problem actually observed in such an area (by reading, not by
+  running) is placed by the impact × evidence table in [output-contract.md](output-contract.md), which is the
+  single placement authority.
 - When you recommend paying for a run, attach the blast radius (which skills' surfaces are affected) and a rough
   cost (how many scenarios, at which executor tier). A recommendation without those two is not actionable, and it
   is a recommendation either way — never a gate.

@@ -256,7 +256,10 @@ so it lives in that reference and is loaded only when the diff reaches it.
 Launch a review subagent (high-performance model):
 - Prompt: "Execute the skill `claude-skills:plan-reviewer`. Review the implementation
   of plan file {plan_file_path}. Scope the review to changes introduced by this cycle
-  only: use `git diff {cycle_start_sha}..HEAD` as the implementation diff. **Before
+  only: use `git diff {cycle_start_sha}..HEAD` as the implementation diff. On a mixed
+  diff (Step 0.5 routed the skill artifacts to skill-reviewer), use
+  `git diff {cycle_start_sha}..HEAD -- {general_file_list}` instead and raise no
+  findings on the skill-artifact files — they belong to the other pass. **Before
   sending your completion report**, write the full review result (overall verdict,
   dimension scores, all findings with file/location/severity/suggestion, escalation
   items) to `.agents/runtime/delegation/{run_id}_{role}.md`. The report is merely a

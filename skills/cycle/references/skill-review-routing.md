@@ -29,6 +29,12 @@ branch governs the skill-reviewer result only — the plan-reviewer branches in 
 | `control_candidates` BLOCK | Enter the Step 3 fix loop with the payload restricted to those findings, re-reviewing with `{role}` = `post-review-skill-{N}` |
 | No `control_candidates` BLOCK | Proceed — to Phase 4, or to the plan-reviewer branch when the diff is mixed |
 
+Step 3 mechanics on this path: skip Step 3(a)'s severity/dimension extraction — a `control_candidates` entry
+carries no `severity` field and no dimension verdicts (the output schema rejects both), so the fix payload is
+every `control_candidates` BLOCK finding as-is, sanitized per fix-delegation. Steps 3(b)–(c) apply unchanged.
+Step 3(d)'s re-review re-runs **Step 1s above** — not the main body's Step 1, which would swap the reviewer back
+to plan-reviewer — with `{role}` = `post-review-skill-{N}`. The 2-iteration cap is shared.
+
 Why the WARN policy differs from the plan-reviewer path: severity and whether a fix may be automated are
 orthogonal axes ([fix-action-taxonomy.md](../../shared/references/fix-action-taxonomy.md)), and no contract says
 "WARN implies AUTO_FIX". The main body's blanket WARN auto-fix is a cycle policy, so setting a different consumer

@@ -62,7 +62,7 @@ hardest kind of divergence to notice, so a typo fails as a violation.
 |-------|----------|-------|
 | `assurance_role` / `quality_gate_evidence` / `dynamic_sensors_executed` | ✓ | The non-evidence declaration. Fixed values — see below |
 | `coverage[]` | ✓ | Non-empty. `target` / `value` / `reason`, every entry with a reason |
-| `evidence[]` | ✓ | May be empty. `skill` / `state` (+ optional `reason`, `run_evidence`, `surface_sha256`) |
+| `evidence[]` | ✓ | May be empty. `skill` / `state` (+ optional `reason`, boolean `run_evidence`, string `surface_sha256` — other types are rejected) |
 | `control_candidates[]` / `diagnostics[]` | ✓ | May be empty, but both keys are always present |
 | Finding `id` / `target` / `summary` | ✓ | `id` is unique across both channels |
 | Finding `fix_action` | control channel only | Required on every `control_candidates` entry |

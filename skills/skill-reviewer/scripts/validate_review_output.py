@@ -222,11 +222,16 @@ def _check_evidence(document, errors):
             errors.append(f"[{where}] {exc}")
             continue
         declared = entry.get("run_evidence")
-        if declared is not None and declared != classified["run_evidence"]:
+        if declared is not None and not isinstance(declared, bool):
+            errors.append(f"[{where}] run_evidence は真偽値で書く（検出: {declared!r}）")
+        elif declared is not None and declared != classified["run_evidence"]:
             errors.append(
                 f"[{where}] run_evidence の申告が state と矛盾する: "
                 f"state={classified['state']} は run_evidence={classified['run_evidence']}"
             )
+        sha = entry.get("surface_sha256")
+        if sha is not None and not isinstance(sha, str):
+            errors.append(f"[{where}] surface_sha256 は文字列で書く（検出型: {type(sha).__name__}）")
 
 
 def validate(document, source=None):
