@@ -6,7 +6,7 @@
 
 ## 出力の 2 チャネル分離
 
-出力は 2 チャネルに分かれ、cycle が制御判断に使えるのは `control_candidates` チャネルのみ。この分離は申し合わせではなく、スキーマ検証可能な不変条件として consumer 側の分岐でも強制する。
+出力は 2 チャネルに分かれ、cycle が制御判断に使えるのは `control_candidates` チャネルのみ。この分離は申し合わせではなく、レビュアー出力の側でスキーマ検証として強制される。consumer 側は本契約が定める分岐表に従って解釈する（消費側分岐の機械強制は導入していない — 実走 fixture の登録とあわせて別課題）。
 
 - **`control_candidates` チャネル**: BLOCK は「既に存在する機械的証拠を指せる指摘」（落ちるテスト・validate_repo 違反・本文だけで反証が完結する契約矛盾）のみ。この BLOCK には qualification_reason が必須で、欠くものはスキーマ検証で拒否される（WARN への強制はない — 必須化は BLOCK のみ）。WARN は記録して続行し、自動修正されるのは fix_action: AUTO_FIX が明示された指摘だけ。停止・修正の最終判断の所有者は cycle であり、レビュアーの verdict は停止命令ではない。
 - **`diagnostics` チャネル**（WARN / OPPORTUNITY / INFO）: cycle の状態遷移に一切影響しない。自動修正・再レビュー・headless 停止のいずれにも使われず、表示と記録のみ。

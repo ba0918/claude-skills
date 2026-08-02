@@ -277,6 +277,17 @@ class CliTest(unittest.TestCase):
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, 2)
 
+    def test_non_utf8_input_exits_two(self):
+        with tempfile.NamedTemporaryFile("wb", suffix=".json", delete=False) as fh:
+            fh.write(b'\xff\xfe{"a":1}')
+            path = fh.name
+        try:
+            result = subprocess.run([sys.executable, self.script, path],
+                                    capture_output=True, text=True)
+        finally:
+            os.unlink(path)
+        self.assertEqual(result.returncode, 2)
+
     def test_reads_stdin_with_dash(self):
         result = subprocess.run([sys.executable, self.script, "-"],
                                 input=json.dumps(VALID),

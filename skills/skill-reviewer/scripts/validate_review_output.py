@@ -252,7 +252,7 @@ def main(argv):
     path = argv[0]
     try:
         raw = sys.stdin.read() if path == "-" else open(path, encoding="utf-8").read()
-    except OSError as exc:
+    except (OSError, UnicodeDecodeError) as exc:
         print(f"読み取れない: {exc}", file=sys.stderr)
         return 2
     try:

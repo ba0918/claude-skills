@@ -138,9 +138,9 @@
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
       "skills/shared/scripts/publication_advance.py": "c17d4938f5db991e8cf3cbae6aacc93e48555351a38570485fc0f3a01205c8ed",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
-      "skills/skill-reviewer/scripts/validate_review_output.py": "4ce3b5fed815cb23cf5b12588ec8993bc3cec16e5b912860e4a407613c9183fa"
+      "skills/skill-reviewer/scripts/validate_review_output.py": "326545e7239e1c00057513463a7523af3e9049544ff81ca5ae0686a679b9bd05"
     },
-    "note": "Phase 3 に Step 0.5（変更ファイル種別によるレビュアー振り分け）と skill-reviewer 経路（references/skill-review-routing.md）を追加。既存 plan-reviewer 経路（Step 1-3）の分岐は無改変。cy-001..cy-018 は setup に skills/ 配下のファイルを持たないため全て『スキル成果物を含まない』分類となり、既存経路へ落ちて測る経路が変わらないことが構造から言える。実走せず accept とする根拠はこの構造そのもので、既存シナリオはどれも新経路に入らないため新経路の追加が既存の合否を動かしえない。新経路（C1）の fixture は cycle 全シナリオの再実走とセットでなければ登録できずコストが大きいため、本サイクルでは未登録として先送りする。",
+    "note": "2026-08-03 Phase4 対応: surface 上の validate_review_output.py が非 UTF-8 入力の exit code 修正（1→2、契約準拠化）を受けたのみ。consumer 分岐の意味は無変更。既存 cy-001..cy-018 は setup に skills/ 配下ファイルを持たず新経路に入らないため既存合否を動かしえない。新経路 fixture の登録は全シナリオ再実走とセットのため引き続き先送り",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -164,7 +164,7 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "e30e59851a69f511ccc8b0584263725ed473079a045638b15b89fb6028b6ad2c",
+    "surface_sha256": "c86d870fc410e4be8742ff0e0e6c555eb792768a9c0ef595000db0ebf5518a54",
     "verified": "2026-08-03"
   },
   "decision-journal": {
@@ -529,13 +529,13 @@
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "28f84db01e2be5f720770f3890cd741e862521cb56f9e8121c07cbdfeeaaf858",
       "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb",
-      "skills/skill-reviewer/SKILL.md": "fa4ca1dacc9c40a0d71df0db56569ddc76ae992785bb3072a220768d3ec8c103",
+      "skills/skill-reviewer/SKILL.md": "be9f394cfc2ccd96de4b91d1d63e776cf9ba0a209aaf36d42b4fee02cc159762",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "2c23efe4bec9e348e9f5d3a58a6f12b243826afafced4b3b62bc6218927bf62a",
       "skills/skill-reviewer/references/output-contract.md": "7cb0a38320bf7ff4609f41b925c9fb97a341ccd2e782ce586aef1ec49a82d67d",
-      "skills/skill-reviewer/scripts/validate_review_output.py": "4ce3b5fed815cb23cf5b12588ec8993bc3cec16e5b912860e4a407613c9183fa"
+      "skills/skill-reviewer/scripts/validate_review_output.py": "326545e7239e1c00057513463a7523af3e9049544ff81ca5ae0686a679b9bd05"
     },
-    "note": "初回実走。3 シナリオを blank-slate executor（standard tier）で並行実行し全 critical ○。誤 BLOCK oracle 2 件は control_candidates の BLOCK ゼロ（sr-002 は責務配置の WARN 1 件のみ、分量の指摘は diagnostics 側）、正例 sr-003 は本文と policy.md の矛盾を qualification_reason つき BLOCK で検出。3 件とも出力が validate_review_output.py に適合し、setup.files の sha256 は全て未変更。外部からの状況照会 0 回。隔離環境にリポジトリ本体の validate_repo が無いため、executor はその領域を coverage 上 skipped/unsupported と申告した（想定どおり）。2026-08-03 追記: 上記実走の後、Step 3 の分量予算の出典として skill-authoring.md への md リンクを 1 本追加した（散文のみの編集で、判定規則・出力契約・スクリプトは不変）。実走時の SKILL.md ハッシュとは差が出るため pass を再主張せず accepted-without-run とする。このリンクにより skills/shared/references/skill-authoring.md が挙動面に入り、以後は予算値の変更が再検証を要求する。",
+    "note": "2026-08-03 Phase4 対応: SKILL.md Step4 の WARN 短縮形を output-contract の impact×evidence 表への参照に置換（表を単一正本化、規則自体は不変）。validate_review_output.py は非 UTF-8 入力で契約どおり exit 2 を返すよう except を広げ、テスト 1 本追加（計 39 本 OK）。判定規則・出力契約の意味は無変更のため実走なしで受理",
     "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/coverage-ledger.md",
@@ -550,7 +550,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "576a0fcf3139649493a84f6b50c25aa680f5bbbbad11b142dbbb54caba0686eb",
+    "surface_sha256": "fa595fe070bcd754a0ca30b89b1736937e4ca06c6e162f4a2f2d00a8c4d40a1f",
     "verified": "2026-08-03"
   },
   "sweep-fix": {

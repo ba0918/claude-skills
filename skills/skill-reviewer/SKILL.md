@@ -118,8 +118,8 @@ Full rules in [references/output-contract.md](references/output-contract.md). Th
   contradiction refutable from the body text alone — and `qualification_reason` names it. If you cannot write down
   what the evidence is, the finding is not qualified; demote it. You are never obliged to build a fixture to
   justify a finding.
-- **WARN** in the control channel for a real problem whose evidence does not yet exist. Recorded; execution
-  continues.
+- **WARN** placement follows the impact × evidence table in the output contract — the table is the single
+  authority for which channel a finding without qualifying evidence lands in.
 - **OPPORTUNITY** and **INFO** go to the diagnostics channel. OPPORTUNITY states what improves and what is spent or
   risked by acting.
 - Size, duplication, and simplification are OPPORTUNITY by default, not BLOCK.
