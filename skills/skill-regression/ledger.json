@@ -119,8 +119,12 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "ca7205e5b400b572484f355896471734c7353dd1783d75eb34c28e8c0d3c4f9c",
-      "skills/cycle/fixtures.json": "e2ef9c4c17e29f74f51e6b034d4f82f03fff9b20bf91adf357f2edb002eda740",
+      "skills/cycle/SKILL.md": "5028f5bc9ddd8ae3eb4d0cca9ced4f909a7219950d5ff6fa793401552b46cf7e",
+      "skills/cycle/fixtures.json": "bdcd6c20c94d0bd2381697f54a9e2205f13f00557c32712576ece01d3ac1b78d",
+      "skills/cycle/references/completion.md": "498f613d0570d729e91d74f2f80cec881a9890c6ed7c08c77b7a615defd0da54",
+      "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
+      "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
+      "skills/cycle/references/inner-satellite.md": "249e971fd95c7111435e004fbf4c251d58114f41060d8716a481f3c2628d913c",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
@@ -132,11 +136,15 @@
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "R19 対応: publication primitive に lock 検証（claim token 一致を要求）と -z パース（空白・非ASCIIパス）を実装。cycle 本文は不変",
-    "result": "accepted-without-run",
+    "note": "process 経路（regression_queue + process_runner、Sonnet 5 executor claude -p）で全 18 本 pass。SKILL 721→466 行 + references/ 4 本分離後の再実走。実委譲 E2E は cy-013（Phase1/3/4 計 6 委譲、codex independent 含む）と cy-014（fix-warn 経路 + codex WARN で headless 停止）。他 16 本は inline fallback 経路。cy-003 は実 verdict 非決定で 2 回正規停止したため verdict 仮定方式へ premise 変更後に pass（oracle 不変更）。cy-013 初回 fail は backend の allowedTools 欠落（harness 故障）で、Bash 許可後に全要件 pass。",
+    "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
+      "skills/cycle/references/completion.md",
+      "skills/cycle/references/final-gate-delegation.md",
+      "skills/cycle/references/fix-delegation.md",
+      "skills/cycle/references/inner-satellite.md",
       "skills/plan-reviewer/references/output-format.md",
       "skills/plan/references/status-update-guide.md",
       "skills/shared/references/artifact-store.md",
@@ -148,7 +156,7 @@
       "skills/shared/references/workspace-lock.md",
       "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "aebf1b9e5f9dd554e05a16826e903d1b96e04ccf073948dea8a54b02c82a15f9",
+    "surface_sha256": "8cf2be10946033b5aefdd49e1e188ea795ba392fe511f8bc503b2b75a6348343",
     "verified": "2026-08-02"
   },
   "decision-journal": {

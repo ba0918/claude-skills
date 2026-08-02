@@ -103,7 +103,7 @@
         },
         "git": { "init": true, "commit": true }
       },
-      "prompt": "cycle 回して。",
+      "prompt": "cycle 回して。ただし Phase 3 と Phase 4 のレビュー verdict はいずれも PASS と仮定して（実レビューの findings に関わらず PASS 扱いで先へ進め）、Phase 5 の完了処理経路を確認して。",
       "requirements": [
         {
           "text": "計画の自動選択で、ファイル名タイムスタンプが最新の完了済み計画（20260722080000_parse-duration.md）をスキップし、未完了の 20260720150000_format-duration.md を選択している（完了済み計画を再実装せず、「実装対象の計画がない」の no-op 中断もしていない）",
@@ -126,7 +126,7 @@
           "critical": false
         }
       ],
-      "notes": "自動選択（完了済みスキップ）+ Phase 5 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase5_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。"
+      "notes": "自動選択（完了済みスキップ）+ Phase 5 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase5_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。2026-08-02: 実レビュー verdict の非決定性で 2 実走連続 Phase 3/4 WARN 正規停止となり本シナリオ固有の Phase 5 分岐に到達しなかったため、cy-005 以降と同じ verdict 仮定方式にプロンプトを変更（要件 = oracle は不変更）。live レビューのフルサイクルは cy-001 が引き続きカバーする。"
     },
     {
       "id": "cy-004",
