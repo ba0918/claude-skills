@@ -47,19 +47,40 @@ root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 
-OPENCODE_DISABLE_EXTERNAL_SKILLS=1 OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1 \
-  opencode debug config > "$tmp/config.json"
+# HOME is isolated on purpose: a developer machine may carry the distributed
+# claude-skills plugin in per-user OpenCode state under $HOME (outside the XDG
+# variables and OPENCODE_CONFIG, both verified ineffective for issue #197).
+# That global plugin registers its cached package copy of skills/, and name
+# dedup then resolves "cycle" to the cache instead of this checkout — failing
+# the very assertion this check exists to prove. An empty HOME leaves only the
+# repo-local .opencode/ plugin.
+mkdir -p "$tmp/home"
+run_opencode() {
+  HOME="$tmp/home" OPENCODE_DISABLE_EXTERNAL_SKILLS=1 OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1 \
+    opencode "$@"
+}
+
+fail_with_diagnostics() {
+  echo "ng: $1" >&2
+  echo "--- actual entries (grep '$2' in $3) ---" >&2
+  grep -n -- "$2" "$3" >&2 || echo "(no match)" >&2
+  exit 1
+}
+
+run_opencode debug config > "$tmp/config.json"
 # Keep this runtime check executable in an OpenCode-only installation. Escape
 # paths at every JSON boundary without requiring a separate JSON runtime.
 skills_path="$root/skills"
 escaped_skills_path=$(json_escape "$skills_path")
-grep -F "\"$escaped_skills_path\"" "$tmp/config.json" >/dev/null
+grep -F "\"$escaped_skills_path\"" "$tmp/config.json" >/dev/null \
+  || fail_with_diagnostics "repo skills path is not registered in config" "skills" "$tmp/config.json"
 
-OPENCODE_DISABLE_EXTERNAL_SKILLS=1 OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1 \
-  opencode debug skill > "$tmp/skills.json"
-grep -F '"name": "cycle"' "$tmp/skills.json" >/dev/null
+run_opencode debug skill > "$tmp/skills.json"
+grep -F '"name": "cycle"' "$tmp/skills.json" >/dev/null \
+  || fail_with_diagnostics "cycle skill was not discovered" '"name": "cycle"' "$tmp/skills.json"
 location_path="$skills_path/cycle/SKILL.md"
 escaped_location_path=$(json_escape "$location_path")
-grep -F "\"location\": \"$escaped_location_path\"" "$tmp/skills.json" >/dev/null
+grep -F "\"location\": \"$escaped_location_path\"" "$tmp/skills.json" >/dev/null \
+  || fail_with_diagnostics "cycle skill resolved outside this checkout" "cycle/SKILL.md" "$tmp/skills.json"
 
 echo "ok: OpenCode runtime plugin checks passed"
