@@ -119,7 +119,7 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "179341f687cecc422726b01a6f5510775ac90c21584ac03729fe609883bb5323",
+      "skills/cycle/SKILL.md": "4a5fcd9bbb0bf571451e10f64b9f307280ed3e223b7312307fceab51386eb307",
       "skills/cycle/fixtures.json": "bdcd6c20c94d0bd2381697f54a9e2205f13f00557c32712576ece01d3ac1b78d",
       "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
@@ -140,7 +140,7 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "2026-08-03 Codex 差分レビュー対応: 混在 diff での plan-reviewer スコープ限定（{general_file_list}）と、skill-reviewer 経路の Step 3 fix ループ機構（payload 直接化 / 再レビューは Step 1s / cap 共有）を明文化。既存 plan-reviewer 単独経路の分岐は無変更。cy-001..cy-018 は引き続き新経路を踏まない",
+    "note": "issue #200 裁定: Step 0.5 の分類リストから skills/*/scripts/** を除外（general 化）+ Step 0.5/Phase 4 に根拠散文を追記。既存 fixture（cy-*）は scripts/** を含む diff も Phase 4 振り分けも判定面に持たないため実走再評価は不要と判断。停止力の変化はレビュアー配置の変更で、fixture が固定する分岐表の意味は不変",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -164,7 +164,7 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "345e7ca217f67709195a0423e68f2501384e866614693900b89366cf0cf944d0",
+    "surface_sha256": "0a6c3f318f551d5d9f4077d942cd1b7daab4303ab952c127abe6423041bd28af",
     "verified": "2026-08-03"
   },
   "decision-journal": {

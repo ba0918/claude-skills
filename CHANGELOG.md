@@ -11,6 +11,17 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: cycle Step 0.5 — `skills/*/scripts/**` の管轄変更と Phase 4 非振り分けの明文化（#200）
+
+- `skills/*/scripts/**` をスキル成果物分類から外し general（plan-reviewer 管轄）へ変更。
+  scripts はコードであり #190 病理（自然言語成果物への recall 最適化レビュー）の対象外。
+  skill-reviewer の BLOCK 資格制限（既に存在する機械的証拠のみ）の下では新規のコード不具合が
+  control WARN 止まりになり Phase 3 の停止力が下がるため、Correctness / Security の停止力は
+  plan-reviewer に置く。skill-reviewer 直接起動時の診断対象としては in scope のまま
+- レビュアー振り分けが Phase 3 のみであることを cycle 本文と docs/spec/skill-reviewer.md に
+  明記。Phase 4（final gate）は変更ファイル種別を見ず全ファイルを見る — holistic は次元別
+  recall 最適化レビューではなく、fix loop を持たないため #190 型の往復が構造的に起きない
+
 ### Added: skill-reviewer — スキル成果物専用の診断器
 
 - `skills/skill-reviewer/` を新設。SKILL.md / references / fixtures / 付属 scripts を
