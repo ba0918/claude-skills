@@ -22,17 +22,21 @@ Content:
 ```markdown
 # Cycle Result: {feature_name}
 
+Artifact paths follow the Agent Artifact Store contract.
+
 **Plan:** {plan_file_path}
 **Executed:** {datetime}
 
 ## Implementation
 - Steps completed: {N}/{total}
-- Files changed: {N} / Tests added: {N}
+- Files changed: {N}
+- Tests added: {N}
 - Commits: {N} (all commits across the cycle, including fix iterations)
 
 ## Review
 - Post-implementation review: {verdict} (max score: {N})
-- Fix iterations: {N} / Final gate: {verdict}
+- Fix iterations: {N}
+- Final gate: {verdict}
 
 ## Commits
 {the full commit list from git log --oneline}

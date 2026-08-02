@@ -55,6 +55,8 @@ ordered protocol:
    failure.
 5. Follow the [publication protocol](../shared/references/publication-protocol.md):
    merge, verify, and advance main. Pass `{satellite_branch}` and `{main_tree_root}`.
+   Its git transitions run only through
+   `skills/shared/scripts/publication_advance.py` — never hand-roll them.
    A Phase 4 verdict is review input, not reusable evidence — the protocol re-earns
    evidence for the exact post-merge SHA.
 

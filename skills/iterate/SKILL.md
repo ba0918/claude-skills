@@ -27,6 +27,8 @@ facade. In `inplace` mode, preserve the existing workflow unchanged. In `worktre
 4. Collect on every terminal path: success, failure, cancellation, and verification failure.
 5. Follow the [publication protocol](../shared/references/publication-protocol.md):
    merge, verify, and advance main. Pass the satellite branch and `{main_tree_root}`.
+   Its git transitions run only through
+   `skills/shared/scripts/publication_advance.py` — never hand-roll them.
 
 On every new terminal transport failure, preserve the worktree and invoke the shared exact six-line
 formatter with its closed reason code. Its final line is

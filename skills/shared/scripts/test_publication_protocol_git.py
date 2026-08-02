@@ -251,7 +251,7 @@ class PublicationPrimitiveTests(unittest.TestCase):
     def test_recover_refuses_real_edits_after_crash(self):
         expected, post = self.crash_after_cas()
         (self.main / "a.txt").write_text("post-crash human edit\n")
-        self.assertEqual(self.recover(), 6)
+        self.assertEqual(self.recover(self.hold_lock()), 6)
         # nothing destroyed: the edit survives, evidence still describes old main
         self.assertEqual((self.main / "a.txt").read_text(), "post-crash human edit\n")
         self.assertEqual(self.published_sha(), expected)
@@ -259,18 +259,20 @@ class PublicationPrimitiveTests(unittest.TestCase):
     def test_recover_refuses_untracked_collision_with_merged_tree(self):
         expected, post = self.crash_after_cas()
         (self.main / "b.txt").write_text("unrelated local file\n")  # merge adds b.txt
-        self.assertEqual(self.recover(), 6)
+        self.assertEqual(self.recover(self.hold_lock()), 6)
         self.assertEqual((self.main / "b.txt").read_text(), "unrelated local file\n")
         self.assertEqual(self.published_sha(), expected)
 
     def test_recover_with_other_branch_checked_out_promotes_without_reset(self):
         # git reset --hard moves whichever branch is checked out; recovery must
         # not run it when main is not the checked-out branch, or it would force
-        # that branch's ref onto main's SHA
+        # that branch's ref onto main's SHA. The lock is still required: promotion
+        # alone rewrites the published singleton
         _, post = self.crash_after_cas()
         git(self.main, "switch", "-q", "-c", "hotfix")
         hotfix_before = git(self.main, "rev-parse", "hotfix").stdout.strip()
-        self.assertEqual(self.recover(), 0)
+        self.assertEqual(self.recover(), 6)  # promotion without lock proof refused
+        self.assertEqual(self.recover(self.hold_lock()), 0)
         self.assertEqual(
             git(self.main, "rev-parse", "hotfix").stdout.strip(), hotfix_before
         )
@@ -316,7 +318,51 @@ class PublicationPrimitiveTests(unittest.TestCase):
             json.loads((self.default_dir / "semantic_reviewed.json").read_text())["target_sha"],
             post,
         )
-        self.assertEqual(self.recover(), 0)  # rerun converges from intact staging
+        self.assertEqual(self.recover(self.hold_lock()), 0)  # rerun converges from intact staging
+        self.assertEqual(self.published_sha(), post)
+        self.assertFalse(staging.exists())
+
+    # -- provenance / lock universality / post-commit-point failure -----------
+
+    def test_advance_refuses_post_sha_not_derived_from_expected_main(self):
+        # a stale or miswired caller must not move main to an unrelated commit
+        # even when it carries checker-valid evidence
+        expected, post, _ = self.prospective_merge()
+        token = self.hold_lock()
+        self.stage_evidence(expected)
+        # expected itself: no first parent relationship to itself → refused
+        self.assertEqual(self.advance(expected, expected, token), 3)
+        # satellite head: first parent matches but it is not a merge commit
+        sat_sha = git(self.main, "rev-parse", "satellite").stdout.strip()
+        self.stage_evidence(sat_sha)
+        self.assertEqual(self.advance(sat_sha, expected, token), 3)
+        self.assertEqual(self.main_sha(), expected)  # ref never moved
+
+    def test_advance_requires_lock_even_when_branch_not_checked_out(self):
+        # ref advance + singleton promotion mutate shared state; the lock is
+        # required even with no destructive checkout sync to run
+        expected, post, _ = self.prospective_merge()
+        self.stage_evidence(post)
+        git(self.main, "checkout", "-q", "-b", "work")  # main no longer checked out
+        self.assertEqual(self.advance(post, expected), 3)
+        self.assertEqual(self.main_sha(), expected)
+        self.assertEqual(self.advance(post, expected, self.hold_lock()), 0)
+        self.assertEqual(self.main_sha(), post)
+
+    def test_advance_promotion_failure_after_commit_point_exits_7_and_recovers(self):
+        # inject a completion failure past the CAS: the singleton path is
+        # occupied by a plain file, so promotion cannot create the directory
+        expected, post, _ = self.prospective_merge()
+        staging = self.stage_evidence(post)
+        self.default_dir.parent.mkdir(parents=True, exist_ok=True)
+        self.default_dir.write_text("not a directory\n")
+        token = self.hold_lock()
+        self.assertEqual(self.advance(post, expected, token), 7)
+        self.assertEqual(self.main_sha(), post)  # commit point passed, no rollback
+        self.assertTrue(staging.exists())        # durable marker preserved
+        # repair the environment, then recover converges forward
+        self.default_dir.unlink()
+        self.assertEqual(self.recover(token), 0)
         self.assertEqual(self.published_sha(), post)
         self.assertFalse(staging.exists())
 

@@ -15,11 +15,13 @@
 
 exit codes:
   0  成功（merge: 作成完了 / advance: 前進+promotion 完了 / recover: 修復完了）
-  2  実行不能（引数・環境・予期しない状態）
+  2  実行不能（commit point 前の引数・環境エラー。main は無傷）
   3  terminal publish failure（前提条件不成立。main は無傷）
   4  CAS conflict（main が動いた。main・公開 evidence・staging は無傷）
   5  recover: 未完了 publication なし（durable marker 不在）
   6  recover: 破壊的修復の安全性を証明できない — 何も変更せず手動復旧を要求
+  7  commit point 通過後の completion 失敗（main は前進済み。staging = durable marker を
+     保存。publish failure ではない — recover で前方修復する。rollback はしない）
 """
 
 import argparse
@@ -144,15 +146,23 @@ def cmd_advance(args):
     post, expected = args.post_merge_sha, args.expected_main_sha
     staging = args.evidence_staging or os.path.join(repo, STAGING_RELROOT, post)
 
+    if not lock_held(repo, args.lock_token):
+        return fail(3, "terminal: workspace lock not proven (--lock-token missing or not "
+                       "matching the claim); ref advance and evidence promotion mutate "
+                       "shared state and require exclusion")
+    parent = git(repo, "rev-parse", f"{post}^1", check=False)
+    if parent.returncode != 0 or parent.stdout.strip() != expected:
+        return fail(3, f"terminal: post-merge SHA is not derived from the expected {branch} "
+                       "SHA (first parent mismatch); a stale or miswired caller must not "
+                       "move the ref")
+    if git(repo, "rev-parse", f"{post}^2", check=False).returncode != 0:
+        return fail(3, "terminal: post-merge SHA is not a merge commit; only prospective "
+                       "merges produced by the merge subcommand may advance the ref")
     checkouts = branch_checkouts(repo, branch)
     foreign = [p for p in checkouts if p != repo]
     if foreign:
         return fail(3, f"terminal: {branch} is checked out outside the main tree: {foreign[0]}")
     checked_out_here = repo in checkouts
-    if checked_out_here and not lock_held(repo, args.lock_token):
-        return fail(3, "terminal: {0} is checked out here and the workspace lock is not proven "
-                       "(--lock-token missing or not matching the claim); the destructive sync "
-                       "requires exclusion".format(branch))
     if checked_out_here and not tree_clean(repo):
         return fail(3, "terminal: main tree is dirty; advancing would entangle local edits")
     if not os.path.isdir(staging):
@@ -164,10 +174,18 @@ def cmd_advance(args):
     if cas.returncode != 0:
         return fail(4, f"cas-conflict: {branch} moved away from {expected[:12]}")
 
-    if checked_out_here:
-        git(repo, "reset", "-q", "--hard", f"refs/heads/{branch}")
-    if not promote(repo, staging, post, args.contract):
-        return fail(2, "promotion verification failed; staging preserved for repair")
+    # commit point 通過。以降の失敗は publish failure ではなく未完了 completion であり、
+    # rollback せず exit 7（durable marker 保存）で recover に委ねる
+    try:
+        if checked_out_here:
+            git(repo, "reset", "-q", "--hard", f"refs/heads/{branch}")
+        promoted = promote(repo, staging, post, args.contract)
+    except (subprocess.CalledProcessError, OSError) as exc:
+        return fail(7, "completion interrupted after the commit point "
+                       f"(staging preserved; run recover): {exc}")
+    if not promoted:
+        return fail(7, "promotion verification failed after the commit point; "
+                       "staging preserved — repair, then run recover")
     print(f"advanced {branch} to {post[:12]} and promoted evidence")
     return 0
 
@@ -189,39 +207,48 @@ def cmd_recover(args):
     if foreign:
         return fail(6, f"manual recovery required: {branch} is checked out outside the main tree: {foreign[0]}")
 
-    if repo in checkouts:
-        synced = (
-            git(repo, "diff", "--quiet", head, check=False).returncode == 0
-            and git(repo, "diff", "--cached", "--quiet", head, check=False).returncode == 0
-        )
-        if not synced:
-            # 安全性の証明 2: index と worktree が pre-CAS tree（{head}^1）そのままで
-            # あること。それ以外の差分は crash 後の本物の編集かもしれず、破壊できない
-            parent = git(repo, "rev-parse", f"{head}^1", check=False)
-            if parent.returncode != 0:
-                return fail(6, "manual recovery required: HEAD has no first parent to compare against")
-            expected = parent.stdout.strip()
-            if git(repo, "diff", "--quiet", expected, check=False).returncode != 0:
-                return fail(6, "manual recovery required: worktree differs from the pre-CAS tree (possible post-crash edits)")
-            if git(repo, "diff", "--cached", "--quiet", expected, check=False).returncode != 0:
-                return fail(6, "manual recovery required: index differs from the pre-CAS tree (possible post-crash staging)")
-            # 安全性の証明 3: merge が新規に持ち込むパスが untracked として存在しないこと
-            # -z: NUL 区切り + quotePath 無効。空白や非 ASCII を含むパス名を
-            # 空白 split で分解すると衝突検知が素通りし reset がファイルを壊す
-            added = git(
-                repo, "diff", "--name-only", "--diff-filter=A", "-z", expected, head
-            ).stdout.split("\0")
-            for path in filter(None, added):
-                if os.path.lexists(os.path.join(repo, path)):
-                    return fail(6, f"manual recovery required: untracked file collides with the merged tree: {path}")
-            if not lock_held(repo, args.lock_token):
-                return fail(6, "manual recovery required: workspace lock not proven "
-                               "(--lock-token missing or not matching the claim); the destructive "
-                               "reset requires exclusion")
-            git(repo, "reset", "-q", "--hard", f"refs/heads/{branch}")
+    # 修復は checkout と公開 singleton の両方を変異させうるため、reset の有無に
+    # かかわらず lock 証明を要求する（promotion だけでも共有状態の書換え）
+    if not lock_held(repo, args.lock_token):
+        return fail(6, "manual recovery required: workspace lock not proven "
+                       "(--lock-token missing or not matching the claim); repair mutates "
+                       "the checkout and the published evidence and requires exclusion")
 
-    if not promote(repo, staging, head, args.contract):
-        return fail(2, "promotion verification failed; staging preserved for repair")
+    try:
+        if repo in checkouts:
+            synced = (
+                git(repo, "diff", "--quiet", head, check=False).returncode == 0
+                and git(repo, "diff", "--cached", "--quiet", head, check=False).returncode == 0
+            )
+            if not synced:
+                # 安全性の証明 2: index と worktree が pre-CAS tree（{head}^1）そのままで
+                # あること。それ以外の差分は crash 後の本物の編集かもしれず、破壊できない
+                parent = git(repo, "rev-parse", f"{head}^1", check=False)
+                if parent.returncode != 0:
+                    return fail(6, "manual recovery required: HEAD has no first parent to compare against")
+                expected = parent.stdout.strip()
+                if git(repo, "diff", "--quiet", expected, check=False).returncode != 0:
+                    return fail(6, "manual recovery required: worktree differs from the pre-CAS tree (possible post-crash edits)")
+                if git(repo, "diff", "--cached", "--quiet", expected, check=False).returncode != 0:
+                    return fail(6, "manual recovery required: index differs from the pre-CAS tree (possible post-crash staging)")
+                # 安全性の証明 3: merge が新規に持ち込むパスが untracked として存在しないこと
+                # -z: NUL 区切り + quotePath 無効。空白や非 ASCII を含むパス名を
+                # 空白 split で分解すると衝突検知が素通りし reset がファイルを壊す
+                added = git(
+                    repo, "diff", "--name-only", "--diff-filter=A", "-z", expected, head
+                ).stdout.split("\0")
+                for path in filter(None, added):
+                    if os.path.lexists(os.path.join(repo, path)):
+                        return fail(6, f"manual recovery required: untracked file collides with the merged tree: {path}")
+                git(repo, "reset", "-q", "--hard", f"refs/heads/{branch}")
+
+        promoted = promote(repo, staging, head, args.contract)
+    except (subprocess.CalledProcessError, OSError) as exc:
+        return fail(7, "completion interrupted during repair "
+                       f"(staging preserved; rerun recover): {exc}")
+    if not promoted:
+        return fail(7, "promotion verification failed; staging preserved — "
+                       "repair, then rerun recover")
     print(f"recovered publication of {head[:12]} (checkout synced, evidence promoted)")
     return 0
 

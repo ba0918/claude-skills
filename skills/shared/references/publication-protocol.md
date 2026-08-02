@@ -23,9 +23,9 @@ and refuse to run without a match — prose alone proves nothing.
 
 1. **Prospective merge** — main untouched:
    `python3 skills/shared/scripts/publication_advance.py merge --repo-root {main_tree_root} --branch main --satellite-branch {satellite_branch}`
-   The JSON output gives `{expected_main_sha}`, `{post_merge_sha}`, `{tmp_merge_root}`
-   (a temporary worktree holding the merged tree), and `{evidence_dir}` (a run-scoped
-   staging directory). A merge conflict is a terminal publish failure.
+   The JSON output gives `expected_main_sha`, `post_merge_sha`, `tmp_merge_root`
+   (a temporary worktree holding the merged tree), and `evidence_staging` (a
+   run-scoped staging directory). A merge conflict is a terminal publish failure.
 
 2. **Re-earn evidence** for the exact `{post_merge_sha}` — satellite or pre-merge
    evidence never transfers, and a review verdict from the calling skill is review
@@ -35,23 +35,29 @@ and refuse to run without a match — prose alone proves nothing.
    - `semantic_reviewed`: run a fresh history-free semantic review executing the
      [quality-gate contract](quality-gate-contract.md)'s §4 obligations, §4.3 evidence
      ledger, and §5 convergence conditions.
-   Write both records into `{evidence_dir}` per the [evidence format](evidence-format.md),
+   Write both records into `{evidence_staging}` per the [evidence format](evidence-format.md),
    bound to `{post_merge_sha}`. Never write into the default evidence directory — that
    singleton describes the currently published main until promotion succeeds.
 
 3. **Advance** — checker judgment and every destructive step in one implementation:
-   `python3 skills/shared/scripts/publication_advance.py advance --repo-root {main_tree_root} --branch main --post-merge-sha {post_merge_sha} --expected-main-sha {expected_main_sha} --evidence-staging {evidence_dir} --lock-token {workspace_lock_token}`
+   `python3 skills/shared/scripts/publication_advance.py advance --repo-root {main_tree_root} --branch main --post-merge-sha {post_merge_sha} --expected-main-sha {expected_main_sha} --evidence-staging {evidence_staging} --lock-token {workspace_lock_token}`
    The compare-and-swap inside it is the **commit point** of publication. Exit codes:
    - `0` — main advanced, checkout synchronized, evidence promoted into the singleton.
      Publish only after this. Then remove `{tmp_merge_root}`
      (`git worktree remove`).
-   - `3` — terminal publish failure: a precondition or the staged evidence could not
-     be proven; main untouched.
+   - `3` — terminal publish failure: a precondition (lock proof, post-merge SHA
+     provenance, clean tree) or the staged evidence could not be proven; main
+     untouched.
    - `4` — CAS conflict: main moved during verification. Discard `{tmp_merge_root}`
      and the stale staging — the protocol's own reproducible intermediates, not
      satellite work products — and retry the sequence from step 1 exactly once. A
      second CAS failure is a terminal publish failure.
-   - `2` — broken run; staging is preserved for repair.
+   - `2` — broken invocation before the commit point (arguments or environment);
+     main untouched, staging preserved.
+   - `7` — failure **after** the commit point: main is already advanced but
+     completion (checkout sync or evidence promotion) did not finish. Not a publish
+     failure — never roll back; staging remains as the durable marker. Repair the
+     cause, then run `recover`.
 
 ## Recovery
 
@@ -71,9 +77,11 @@ main HEAD never published and may be discarded.
 - Terminal publish failure (primitive exit `3`/`2`, or a second CAS conflict): do not
   advance main, do not publish, do not compose singleton artifacts, do not close the
   issue, do not clean up.
-- Every failure before the commit point preserves the satellite branch, its worktree,
-  and staging; discarding satellite work products requires explicit human
-  authorization. After the commit point there are no publish failures — only
-  completion steps, repaired forward by `recover`, never rolled back.
+- Every failure before the commit point preserves the satellite branch and its
+  worktree; discarding satellite work products requires explicit human authorization.
+  Staging is a reproducible protocol intermediate: the CAS-conflict retry discards it,
+  every other failure keeps it for diagnosis. After the commit point (exit `7`) there
+  are no publish failures — only completion steps, repaired forward by `recover`,
+  never rolled back.
 - Cleanup only when: publication succeeded, `cleanup_allowed` is proven, and the
   capability is non-live (consumed or revoked).
