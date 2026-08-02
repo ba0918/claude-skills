@@ -110,7 +110,7 @@ class PublicationPrimitiveTests(unittest.TestCase):
         claim.write_text(json.dumps({"token": token, "pid": 1, "skill": "test"}))
         return token
 
-    def advance(self, post, expected, token=None):
+    def advance(self, post, expected, token=None, staging=None):
         cmd = [
             sys.executable, str(PRIMITIVE), "advance",
             "--repo-root", str(self.main),
@@ -120,6 +120,8 @@ class PublicationPrimitiveTests(unittest.TestCase):
         ]
         if token:
             cmd += ["--lock-token", token]
+        if staging:
+            cmd += ["--evidence-staging", str(staging)]
         return subprocess.run(cmd, capture_output=True, text=True).returncode
 
     def recover(self, token=None):
@@ -348,6 +350,44 @@ class PublicationPrimitiveTests(unittest.TestCase):
         self.assertEqual(self.main_sha(), expected)
         self.assertEqual(self.advance(post, expected, self.hold_lock()), 0)
         self.assertEqual(self.main_sha(), post)
+
+    def test_advance_refuses_non_canonical_staging_paths(self):
+        # promotion deletes the staging directory on success; an arbitrary
+        # --evidence-staging would let a miswired caller or compromised delegate
+        # (holding the lock token) delete an unrelated directory after advancing
+        expected, post, _ = self.prospective_merge()
+        self.stage_evidence(post)
+        token = self.hold_lock()
+        # victim directory even holds checker-valid records for the exact SHA
+        victim = self.root / "victim"
+        victim.mkdir()
+        for state in STATES:
+            (victim / f"{state}.json").write_text(self.record(state, post))
+        (victim / "unrelated.txt").write_text("do not delete\n")
+        self.assertEqual(self.advance(post, expected, token, staging=victim), 3)
+        self.assertTrue((victim / "unrelated.txt").exists())  # nothing deleted
+        self.assertEqual(self.main_sha(), expected)           # main untouched
+        # traversal spelling of an outside path is refused the same way
+        dotted = self.main / ".agents/artifacts/reviews/evidence-staging" / ".." / ".." / ".." / ".." / "victim"
+        self.assertEqual(self.advance(post, expected, token, staging=dotted), 3)
+        self.assertTrue((victim / "unrelated.txt").exists())
+
+    def test_advance_refuses_symlinked_canonical_staging(self):
+        # a symlink planted at the canonical staging path must not redirect the
+        # post-promotion delete onto its target
+        expected, post, _ = self.prospective_merge()
+        token = self.hold_lock()
+        elsewhere = self.root / "elsewhere"
+        elsewhere.mkdir()
+        for state in STATES:
+            (elsewhere / f"{state}.json").write_text(self.record(state, post))
+        canonical = self.main / f".agents/artifacts/reviews/evidence-staging/{post}"
+        shutil.rmtree(canonical, ignore_errors=True)  # merge pre-created the real dir
+        canonical.parent.mkdir(parents=True, exist_ok=True)
+        canonical.symlink_to(elsewhere)
+        self.assertEqual(self.advance(post, expected, token), 3)
+        self.assertTrue((elsewhere / "machine_verified.json").exists())  # target intact
+        self.assertEqual(self.main_sha(), expected)
 
     def test_advance_promotion_failure_after_commit_point_exits_7_and_recovers(self):
         # inject a completion failure past the CAS: the singleton path is

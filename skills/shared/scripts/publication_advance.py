@@ -165,6 +165,15 @@ def cmd_advance(args):
     checked_out_here = repo in checkouts
     if checked_out_here and not tree_clean(repo):
         return fail(3, "terminal: main tree is dirty; advancing would entangle local edits")
+    # promotion 成功時に staging を rmtree するため、呼び出し側の任意パスをそのまま
+    # 受けると誤配線・侵害された delegate が無関係ディレクトリを削除できてしまう。
+    # --evidence-staging は正規の evidence-staging/{post_sha} との完全一致証明としてのみ受ける
+    canonical = os.path.join(repo, STAGING_RELROOT, post)
+    if os.path.islink(staging) or os.path.realpath(staging) != os.path.realpath(canonical):
+        return fail(3, "terminal: evidence staging must be the canonical "
+                       f"evidence-staging/{{post_merge_sha}} directory ({canonical}); "
+                       "arbitrary staging paths are refused because promotion deletes "
+                       "the staging directory")
     if not os.path.isdir(staging):
         return fail(3, f"terminal: evidence staging missing: {staging}")
     if not checker_passes(repo, staging, post, args.contract):

@@ -134,10 +134,10 @@
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
-      "skills/shared/scripts/publication_advance.py": "4eaae916ca67e2c6dc19820628603dd1ff0324a09e4efddef17134a32333dbf4",
+      "skills/shared/scripts/publication_advance.py": "c17d4938f5db991e8cf3cbae6aacc93e48555351a38570485fc0f3a01205c8ed",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "R21 微修正（recover の exit 7 を Recovery 節に明記 + --lock-token help 文言の実装追随）。散文明確化のみで機械可読トークン・コマンド・挙動の変更なし。直前の実走 pass（同セッション、cy-001/cy-009 + 全 18 本）を根拠に accepted-without-run。",
+    "note": "R22: primitive 単独の hardening（advance の staging を正規 evidence-staging/{post_sha} 完全一致 + symlink 拒否に制限）。SKILL/protocol 文書・判断層は不変更で、新分岐は障害注入テスト 19 本（新規: 任意パス victim 保全 / traversal / symlink 植込み）で実行検証。skill fixture はこの拒否分岐に到達しない（cy-009 等の正規呼び出しは merge 出力パスで完全一致）ため accepted-without-run。",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -158,7 +158,7 @@
       "skills/shared/scripts/publication_advance.py",
       "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "8f805133f1b485a31d46c16ffd6517b48c05b9024463d8c8e6fb488dce4cdc90",
+    "surface_sha256": "00dabfd51f17fe2fb2a30212aa5a78cb82325b18f84ca4a94b5611d3f1a1ee33",
     "verified": "2026-08-02"
   },
   "decision-journal": {
@@ -362,9 +362,9 @@
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
-      "skills/shared/scripts/publication_advance.py": "4eaae916ca67e2c6dc19820628603dd1ff0324a09e4efddef17134a32333dbf4"
+      "skills/shared/scripts/publication_advance.py": "c17d4938f5db991e8cf3cbae6aacc93e48555351a38570485fc0f3a01205c8ed"
     },
-    "note": "R21 微修正（protocol 散文明確化 + CLI help 文言）。挙動変更なし。直前の実走 pass（同セッション、全 3 本）を根拠に accepted-without-run。",
+    "note": "R22: 同上（primitive 単独 hardening、it-outer-worktree の正規呼び出し経路は不変）。",
     "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
@@ -382,7 +382,7 @@
       "skills/shared/references/workspace-lock.md",
       "skills/shared/scripts/publication_advance.py"
     ],
-    "surface_sha256": "2926a344569570f2c24c7ecd79d6b8318bcc099c70c80c4013a3beec385dc645",
+    "surface_sha256": "0ff2ae6447cbb954afa2e6a555be2cbd6d42828e0bb8ab901bc70598b6f2e0f5",
     "verified": "2026-08-02"
   },
   "plan": {
