@@ -1,37 +1,36 @@
-# Skill Routing — スキル起動の想起ルール
+# Skill Routing — Recall Rules for Skill Invocation
 
-スキル発火漏れの主因は「description の弁別性」ではなく「想起 (salience)」にある。
-trigger-eval の実測（2026-07-03 run）では、sonnet 選択器に description 一覧を渡すと 138 ケース全問正解だった一方、
-実セッションでは間接表現の調査依頼（「なんで失敗するのか原因だけ知りたい」）で investigate が不発し、モデルは直接回答した。
-30 日間の実セッションでも、自然言語指示からの自発発火は 68 プロンプト中 11 件に留まった。
+The main cause of missed skill firing is not the discriminability of descriptions but recall (salience).
+In the trigger-eval measurement (2026-07-03 run), a sonnet selector given the description list answered all 138 cases correctly, yet in a real session an indirect investigation request ("I just want to know why it fails") did not fire investigate and the model answered directly.
+Across 30 days of real sessions, spontaneous firing from natural-language instructions occurred in only 11 of 68 prompts.
 
-つまり「会話として自然に返せてしまう指示」ほど、スキル照合そのものが走らない。
-このルールは、その想起の抜けを常駐コンテキスト側で補う routing 表である。
+In other words, the more naturally an instruction can be answered as plain conversation, the more likely skill matching itself never runs.
+This rule is a routing table that compensates for that recall gap from the always-resident context side.
 
-## ルール
+## Rules
 
-ユーザの指示に**そのまま会話・作業で応える前に**、以下のパターンに一致しないか 1 度だけ確認し、
-一致したら該当スキルの起動を検討する（起動しない判断をしてもよいが、照合はスキップしない）:
+**Before responding to the user's instruction directly with conversation or work**, check once whether it matches one of the patterns below,
+and if it matches, consider invoking the corresponding skill (deciding not to invoke is acceptable, but do not skip the check):
 
-| ユーザの言い方（間接表現の例） | 起動を検討するスキル |
+| How the user phrases it (examples of indirect expressions) | Skill to consider |
 |---|---|
-| 「なぜ〜なのか知りたい」「原因だけ調べて」「直さなくていいから調査して」「影響範囲を見たい」 | investigate |
-| 「〜ってどう思う？」「こんな機能あると便利かも」「アイデアがあるんだけど」（雑談ではなく設計・機能の相談） | brainstorm |
-| 「行き詰まった」「いいアプローチが思いつかない」「発想を変えたい」 | problem-solving |
-| 「コミットしといて」「commit + push」「変更を保存して」 | commit |
-| 「まとめてドキュメントにして」「この調査結果を文書化して」 | doc-write |
-| 「計画立てて進めよう」「実装の段取りを作って」 | plan |
-| 「このバグ直して」（原因未特定のまま修正まで頼まれた） | systematic-debugging |
-| 「似た問題が他にもないか見て直して」「横展開して」 | sweep-fix |
-| 「動作を変えずに整理・リファクタして」 | refactor |
+| "I want to know why X happens", "just find the cause", "investigate it, no fix needed", "I want to see the impact scope" | investigate |
+| "What do you think about X?", "this feature might be handy", "I have an idea" (a design/feature consultation, not chit-chat) | brainstorm |
+| "I'm stuck", "I can't come up with a good approach", "I want a change of perspective" | problem-solving |
+| "commit this", "commit + push", "save the changes" | commit |
+| "turn this into a document", "document these findings" | doc-write |
+| "let's make a plan and proceed", "draw up the implementation steps" | plan |
+| "fix this bug" (asked to fix it with the root cause not yet identified) | systematic-debugging |
+| "check whether the same problem exists elsewhere and fix it too", "roll the fix out horizontally" | sweep-fix |
+| "clean up / refactor without changing behavior" | refactor |
 
-- 表にないケースは通常どおり判断する
-- ユーザがスキル名やスラッシュコマンドを明示した場合は必ずそれに従う
-- 該当スキルが環境にない場合は照合をスキップして通常応答する
+- For cases not in the table, judge as usual
+- If the user explicitly names a skill or slash command, always follow it
+- If the corresponding skill is not available in the environment, skip the check and respond normally
 
-## 運用ノート
+## Operational Notes
 
-- `rules/` は Plugin フォーマットでは自動配置されない。利用するには `~/.claude/rules/` にコピーするか、
-  要約テーブルをプロジェクトまたはユーザーの `AGENTS.md` に貼る
-- 表の行は「実測で発火漏れした間接表現」を根拠に追加する（憶測で肥大化させない。表自体もコンテキスト予算を消費する）
-- 発火精度の回帰確認は trigger-eval スキルで行う
+- `rules/` is not auto-deployed by the Plugin format. To use it, copy it to `~/.claude/rules/`,
+  or paste the summary table into the project's or the user's `AGENTS.md`
+- Add table rows only on the basis of indirect expressions that actually failed to fire in measurement (do not bloat the table speculatively; the table itself consumes context budget)
+- Run regression checks of firing accuracy with the trigger-eval skill
