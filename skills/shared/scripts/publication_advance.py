@@ -262,7 +262,8 @@ def main():
     common.add_argument("--branch", default="main")
     common.add_argument("--lock-token", default=None,
                         help="workspace lock token proving the caller holds the claim; "
-                             "required for any destructive path (checkout sync)")
+                             "required for every mutating path (ref advance, checkout "
+                             "sync, evidence promotion)")
     common.add_argument("--contract", default=None,
                         help="quality-gate contract path (default: <repo-root>/skills/shared/references/quality-gate-contract.md)")
 
