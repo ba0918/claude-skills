@@ -242,44 +242,14 @@ else is general.
 
 | The diff holds | Reviewer |
 |----------------|----------|
-| No skill artifacts | plan-reviewer (Steps 1–3 unchanged) |
-| Only skill artifacts | skill-reviewer (Step 1s, then Step 2s) |
-| Both | Both, each scoped to its own file set. The same problem is never counted twice — attribute it to the reviewer owning that file |
+| No skill artifacts | plan-reviewer only — Steps 1–3 below, unchanged |
+| Only skill artifacts | skill-reviewer only — read [references/skill-review-routing.md](references/skill-review-routing.md) and follow it instead of Steps 1–3 |
+| Both | Both, each scoped to its own file set. Read the same reference for the skill-artifact half |
 
 A recall-optimized plan review applied to natural-language artifacts produced a
 22-round finding→prose→finding loop (PR #190); routing by file kind is what keeps that
-review off skill bodies.
-
-### Step 1s: skill-reviewer review (skill-artifact files)
-
-Launch a review subagent (high-performance model):
-- Prompt: "Execute the skill `claude-skills:skill-reviewer`. Review these
-  skill-artifact files changed by this cycle: {skill_artifact_file_list}. Use
-  `git diff {cycle_start_sha}..HEAD -- {skill_artifact_file_list}` as the diff. Emit
-  the two-channel document of its output contract and confirm it passes
-  `skills/skill-reviewer/scripts/validate_review_output.py`. **Before sending your
-  completion report**, write that validated document plus your findings to
-  `.agents/runtime/delegation/{run_id}_{role}.md`. The report is merely a notification
-  that the file was written."
-- `{role}` = `post-review-skill` initially; `post-review-skill-{N}` for re-reviews.
-  Follow the delegation result relay.
-
-### Step 2s: skill-reviewer verdict branch
-
-This branch applies to the skill-reviewer result only; the plan-reviewer branches in
-Steps 2 and 3 are unchanged. skill-reviewer is a diagnostic instrument, so its channels
-carry different consumer rights.
-
-| Channel and verdict | Action |
-|---------------------|--------|
-| `diagnostics` (WARN / OPPORTUNITY / INFO) | Record in the Phase 5 result only. Never triggers a fix, a re-review, or a stop — including headless |
-| `control_candidates` WARN | Record and continue. Auto-fix only the findings carrying `fix_action: AUTO_FIX`, at most one iteration via Step 2b's mechanics with `{role}` = `fix-skill-warn`. An unresolved WARN here is **not** a headless stop condition |
-| `control_candidates` BLOCK | Enter the Step 3 fix loop with the fix payload restricted to those findings, re-reviewing with `{role}` = `post-review-skill-{N}` |
-| No `control_candidates` BLOCK | Proceed (to Phase 4, or to the plan-reviewer branch when the diff is mixed) |
-
-If the delegate reports that its output failed the validator, treat the review as not
-delivered: redelegate once, then continue with the findings that did arrive, recording
-the gap. A malformed diagnostic never escalates into a stop.
+review off skill bodies. The skill-reviewer path carries a different consumer policy,
+so it lives in that reference and is loaded only when the diff reaches it.
 
 ### Step 1: Initial review
 
