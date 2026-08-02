@@ -11,6 +11,17 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: skill-reviewer 出力契約の精度課題 2 件の裁定反映（#203）
+
+- output-contract.md フィールド表の `fix_action` / `qualification_reason` 行を、検証器
+  `validate_review_output.py` の実挙動と 1:1 対応する文言へ書き換え（judge 裁定 B 案）。
+  「control channel only」が配置禁止とも必須条件とも読める 2 読みを解消。列分割案は
+  「diagnostics では任意だが AUTO_FIX のみ値で拒否」という第 3 の意味論を表現できず却下
+- validator 不適合レビューの consumer 方針を skill-review-routing.md に裁定として記録
+  （judge 裁定 C 案）: 再委譲も不適合なら findings は制御用途（fix loop / auto-fix / stop）
+  には全破棄し、Phase 5 記録へ生データ添付のみ。部分利用（現行）は検証器が塞いだ経路の
+  迂回路になり、全破棄（Codex 案)は制御経路遮断後に安全性を追加しない情報損失のため両却下
+
 ### Added: cycle cy-019 — diagnostics 不干渉（C1）の実走 fixture 登録（#202）
 
 - コミット `472c750` に残っていた cy-019 の設計を復元し `skills/cycle/fixtures.json` へ登録。

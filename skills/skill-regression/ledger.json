@@ -125,7 +125,7 @@
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
       "skills/cycle/references/inner-satellite.md": "249e971fd95c7111435e004fbf4c251d58114f41060d8716a481f3c2628d913c",
-      "skills/cycle/references/skill-review-routing.md": "ecb9580f083b9f98f1e3018c7d3acd80442336f77aa97423ea5090e1af98bb99",
+      "skills/cycle/references/skill-review-routing.md": "6b97ee516b11d60186d2d6c6fa1a664f16936fc4d90fcd104f358e909a73358b",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
@@ -140,8 +140,8 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "issue #202: cy-019 登録に伴う全 19 シナリオ実走。process-queue 経路（別プロセス agent CLI、省コスト tier backend、外部 status 照会 0 回）。cy-001/cy-014 は organic レビュアー出力の揺らぎで初回 fail 後、同一 fixture の再実走で pass。cy-018 は executor の過剰厳格 self-report を成果物から caller 再判定で pass（judge 裁定: 要件文は organic verdict を要求しない）。cy-013 は『想定』文言の解釈割れが 2 実走連続で再現したため prompt を verdict 注入指定に明確化して（requirements 不変更、judge 裁定で弱体化非該当）単独再実走 pass。バッチ: .agents/runtime/process-delegation/cy019-batch-20260803 および cy013-rerun-20260803",
-    "result": "pass",
+    "note": "issue #203 judge 裁定 C: skill-review-routing.md 末尾の validator 不適合フォールバックを部分利用から制御用途全破棄+記録添付へ変更。当該経路は fixture 未カバー（cy-001〜019 のいずれも validator 不適合レビューを演じない）ため全 19 実走に検出力がなく accept。フォールバック経路の fixture 捕獲は follow-up 候補",
+    "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
@@ -164,7 +164,7 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "1c24ac4c80b1d5083856df8362f01e711d850dbfed6cc86454f5146e9367370b",
+    "surface_sha256": "d5850d60b4c52c6a7b983ad11f3a9ad8734765d92dda16b6f0d9ff0534e28a7d",
     "verified": "2026-08-03"
   },
   "decision-journal": {
@@ -532,10 +532,10 @@
       "skills/skill-reviewer/SKILL.md": "be9f394cfc2ccd96de4b91d1d63e776cf9ba0a209aaf36d42b4fee02cc159762",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "038a929b9af70186414aa747477e5feb647b23312545fa224670de53dc54a2a6",
-      "skills/skill-reviewer/references/output-contract.md": "3ea36ee8af491f026fc40501ab26f6bcc809ec2c1b2ee15529c439472d19f294",
+      "skills/skill-reviewer/references/output-contract.md": "f5e6e2ad5b0173899bcaa5b6f2d060dc3c95bdfaee484d7f7e146f17f11fe46a",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "2026-08-03 Codex 差分レビュー対応: evidence-and-coverage の unsupported 配置規則を output-contract の impact×evidence 表へ一本化（証拠欠如そのものは finding にしないという A6 裁定の明確化）。検証器に run_evidence の bool 型検査と surface_sha256 の str 型検査を追加（1==True すり抜けの閉塞、テスト 41 本 OK）。判定規則の意味は無変更",
+    "note": "issue #203 judge 裁定 B: output-contract.md フィールド表の fix_action / qualification_reason 行を検証器実挙動と 1:1 対応の文言へ書き換え。validate_review_output.py は無変更で、旧文言の 2 読みのどちらで書かれた出力も合否は不変（表の記述精度のみの修正）",
     "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/coverage-ledger.md",
@@ -550,7 +550,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "7036d7ec5340af4e11e361ac1d6d99ffcb26c4ca71ba7c9e7e741f18a91b4aa2",
+    "surface_sha256": "7502942f4dfc25acb16e47c77c593066157c20829a84a1609660291150f6a356",
     "verified": "2026-08-03"
   },
   "sweep-fix": {

@@ -41,6 +41,10 @@ orthogonal axes ([fix-action-taxonomy.md](../../shared/references/fix-action-tax
 policy per path contradicts nothing. Routing diagnostic output into that blanket policy is precisely how a
 diagnostic instrument turns back into a gate.
 
-If the delegate reports that its output failed the validator, treat the review as not delivered: redelegate once,
-then continue with whatever findings arrived and record the gap. A malformed diagnostic never escalates into a
-stop.
+If the delegate reports that its output failed the validator, treat the review as not delivered and redelegate
+once. If the redelegation also fails, discard the findings for control purposes — a non-conforming document
+carries none of the validator's channel guarantees, so nothing in it may drive the Step 2s branches (no fix loop,
+no auto-fix, no stop) — and attach the raw findings to the Phase 5 record alongside the gap, as record only.
+A malformed diagnostic never escalates into a stop.
+Ruling (#203): control-use discard with record-only attachment — partial use reopens the paths the validator
+exists to block, while full discard adds no safety once the control path is closed.
