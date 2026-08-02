@@ -140,7 +140,7 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "4ce3b5fed815cb23cf5b12588ec8993bc3cec16e5b912860e4a407613c9183fa"
     },
-    "note": "Phase 3 に Step 0.5（変更ファイル種別によるレビュアー振り分け）と skill-reviewer 経路（references/skill-review-routing.md）を追加。既存 plan-reviewer 経路（Step 1-3）の分岐は無改変。cy-001..cy-018 は setup に skills/ 配下のファイルを持たないため全て『スキル成果物を含まない』分類となり、既存経路へ落ちて測る経路が変わらないことが構造から言える。新経路の fixture（C1）は cycle 全シナリオ実走とセットで登録する方針として未登録 — .agents/artifacts/issues/20260803030000_cycle-skill-review-routing-fixture.md",
+    "note": "Phase 3 に Step 0.5（変更ファイル種別によるレビュアー振り分け）と skill-reviewer 経路（references/skill-review-routing.md）を追加。既存 plan-reviewer 経路（Step 1-3）の分岐は無改変。cy-001..cy-018 は setup に skills/ 配下のファイルを持たないため全て『スキル成果物を含まない』分類となり、既存経路へ落ちて測る経路が変わらないことが構造から言える。実走せず accept とする根拠はこの構造そのもので、既存シナリオはどれも新経路に入らないため新経路の追加が既存の合否を動かしえない。新経路（C1）の fixture は cycle 全シナリオの再実走とセットでなければ登録できずコストが大きいため、本サイクルでは未登録として先送りする。",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
