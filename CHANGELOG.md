@@ -11,6 +11,17 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Added: cycle cy-019 — diagnostics 不干渉（C1）の実走 fixture 登録（#202）
+
+- コミット `472c750` に残っていた cy-019 の設計を復元し `skills/cycle/fixtures.json` へ登録。
+  diagnostics のみ（WARN/OPPORTUNITY）の skill-reviewer 出力に対し、cycle が自動修正・
+  再レビュー・headless 停止のいずれも行わず記録のみで続行することを critical 要件で固定
+- 登録とセットで cycle 全 19 シナリオを実走し、regression ledger を pass 更新
+  （合否基準の変更は実走で検証する原則に従う）
+- cy-013 の prompt を verdict 注入指定に明確化。「〜だった想定で」の文言が
+  実レビュアー起動と読まれ、organic な再レビュー出力の揺らぎで想定事象が 2 実走連続
+  実現しなかったため。requirements と検証対象の分岐は不変更
+
 ### Changed: cycle Step 0.5 — `skills/*/scripts/**` の管轄変更と Phase 4 非振り分けの明文化（#200）
 
 - `skills/*/scripts/**` をスキル成果物分類から外し general（plan-reviewer 管轄）へ変更。

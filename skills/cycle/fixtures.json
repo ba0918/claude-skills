@@ -491,7 +491,7 @@
         },
         "git": { "init": true, "commit": true }
       },
-      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが BLOCK で、1 回目の fix 後の再レビューが PASS になった想定で、fix loop 成功パスを確認して。",
+      "prompt": "cycle 回して。ただし Phase 3 のレビュー verdict は実レビュアーの起動結果に依存させず、想定値を注入して分岐を検証する: 初回レビューが BLOCK、1 回目の fix 後の再レビューが PASS になった想定で、fix loop 成功パス（BLOCK→targeted-fix→PASS→Phase 4 到達）を確認して。",
       "requirements": [
         {
           "text": "Phase 3 の初回レビューが BLOCK verdict を返し、fix loop に入っている",
@@ -514,7 +514,7 @@
           "critical": false
         }
       ],
-      "notes": "Phase 3 fix loop の成功系固定。BLOCK→targeted-fix→re-review PASS で Phase 4 到達。allowed-files が trusted diff から導出されることも検証する。cy-010（失敗系）と対をなす。"
+      "notes": "Phase 3 fix loop の成功系固定。BLOCK→targeted-fix→re-review PASS で Phase 4 到達。allowed-files が trusted diff から導出されることも検証する。cy-010（失敗系）と対をなす。レビュー verdict は注入で固定する（organic なレビュアー出力の揺らぎは検証対象外。2026-08-03 の実走で 2 回連続、実レビュアーの fix 後再レビューが WARN を返し想定が実現しなかったため、注入指定を prompt に明文化した。requirements は不変更）。"
     },
     {
       "id": "cy-014",
@@ -717,6 +717,51 @@
         }
       ],
       "notes": "BLOCK→fix→WARN の Step 2b ルーティング固定。fix loop が BLOCK を解消したが WARN が残った場合、PASS と同一扱いせず WARN ゲート（auto-fix + acknowledgement）を通ることを検証する。cy-013（BLOCK→fix→PASS）との対比。"
+    },
+    {
+      "id": "cy-019",
+      "title": "Phase 3 skill-reviewer — diagnostics のみで状態遷移せず続行",
+      "source": "manual:issue-196",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# skill-artifact-test\n\nスキル成果物のみを変更するリポジトリ。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "skills/greeter/SKILL.md": "---\nname: greeter\ndescription: Compose a greeting line for a named recipient. Use when the user says \"greet\", \"make a greeting\".\n---\n\n# greeter\n\n## Steps\n\n1. Read the recipient name from the arguments.\n2. Compose one greeting line and show it.\n",
+          "tests/__init__.py": "",
+          "tests/test_placeholder.py": "import unittest\n\n\nclass PlaceholderTest(unittest.TestCase):\n    def test_placeholder(self):\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260803000000_greeter-stop-condition.md": "# greeter に停止条件を追加\n\n**Cycle ID:** `20260803000000`\n**Started:** 2026-08-03 00:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ngreeter スキルに、宛先名が取れない場合の停止条件が書かれていない。\n\n## 🔧 Implementation Steps\n\n1. **停止条件の節を追加**\n   - Files: `skills/greeter/SKILL.md`\n   - 宛先名が取得できないときは挨拶文を作らず、その旨を伝えて停止する節を Steps の後に 1 つ追加する\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 のレビュー結果は diagnostics チャネルに WARN と OPPORTUNITY が 1 件ずつあるだけで control_candidates は空だった想定で、診断チャネルが cycle の状態遷移に影響しないことを確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 で変更ファイルがスキル成果物のみと分類され、plan-reviewer ではなく skill-reviewer が起動されている",
+          "critical": true
+        },
+        {
+          "text": "diagnostics の findings に対して自動修正（fix 委譲）も再レビューも実行していない",
+          "critical": true
+        },
+        {
+          "text": "headless であっても diagnostics を理由に停止せず、Phase 4 へ進んでいる",
+          "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed へ戻されていない",
+          "critical": true
+        },
+        {
+          "text": "diagnostics の内容が表示または完了報告に記録として残っている",
+          "critical": false
+        }
+      ],
+      "notes": "受入基準 C1（brainstorm exit contract A1/A4）の固定。診断チャネルが cycle の 3 つの状態遷移（自動修正・再レビュー・headless 停止）のいずれにも入らないことを測る。plan-reviewer 経路の WARN は Step 2b で auto-fix され未解決なら headless 停止するため、同じ WARN という語で経路が分岐することがこのシナリオの争点になる。スキル成果物のみを変更する plan にしてあるのは、Step 0.5 のルーティングが混在分岐へ落ちないようにするため。"
     }
   ]
 }
