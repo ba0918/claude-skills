@@ -240,6 +240,18 @@ class TestReadInForceProfile(EvidenceCheckHarness):
         with self.assertRaises(evidence_check.CheckBroken):
             evidence_check.read_in_force_profile(path)
 
+    def test_profile_path_that_is_a_directory_breaks_check(self):
+        path = os.path.join(self.root, "profile-as-dir.md")
+        os.makedirs(path)
+        with self.assertRaises(evidence_check.CheckBroken):
+            evidence_check.read_in_force_profile(path)
+
+    def test_dangling_symlink_profile_path_breaks_check(self):
+        path = os.path.join(self.root, "dangling-profile.md")
+        os.symlink(os.path.join(self.root, "does-not-exist.md"), path)
+        with self.assertRaises(evidence_check.CheckBroken):
+            evidence_check.read_in_force_profile(path)
+
 
 class TestBrokenCheckIsDistinguishedFromNegativeJudgment(EvidenceCheckHarness):
     def test_unreadable_contract_file_breaks_the_check(self):

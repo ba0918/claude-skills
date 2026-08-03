@@ -49,11 +49,17 @@ def read_published_version(contract_path):
 
 
 def read_in_force_profile(profile_path):
-    if not os.path.isfile(profile_path):
-        return None
+    # isfile の事前判定は使わない: isfile は内部の OSError を握り潰して False を
+    # 返すため、ディレクトリ・dangling symlink・traverse 不能な親もすべて
+    # 「未発効」へ silent fallback してしまい fail-closed が破れる。純粋な不在
+    # （FileNotFoundError かつ symlink でない）だけを未発効 None とする。
     try:
         with open(profile_path, encoding="utf-8") as handle:
             text = handle.read()
+    except FileNotFoundError:
+        if os.path.islink(profile_path):
+            raise CheckBroken(f"profile path is a dangling symlink: {profile_path}")
+        return None
     except OSError as exc:
         raise CheckBroken(f"profile file unreadable: {profile_path} ({exc})")
     declarations = _IN_FORCE_DECL.findall(text)
