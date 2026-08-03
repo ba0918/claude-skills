@@ -345,6 +345,17 @@ claude-skills プラグインのバージョン履歴。
 - `skills/plan-reviewer/references/output-format.md`: ESCALATE verdict 追加、dimension 名更新
 - `skills/shared/scripts/test_step3_skill_integration.py`: plan-refine 参照テストを更新
 
+### Added: 手動 release workflow で version / タグ / Release / 証跡を一括する（#192）
+
+- リリース判断を人間が持つ `workflow_dispatch` 専用 workflow とし、version bump・CHANGELOG
+  確定・タグ・GitHub Release を単一 SHA 上で一括する
+- sync の冪等設計と commit / tag の atomic push により、再実行を安全にし、失敗時に半端な
+  公開状態が残らないようにする
+- SHA-bound evidence（`machine_verified` + `semantic_reviewed`）を生成し、
+  `evidence_check.py` で publishable を機械判定してからタグを打つ
+- `run_checks.sh` の `STRICT_GATES` が「環境欠損 skip」と「空集合 no-op」を区別するようにした。
+  従来は翻訳変更を含まない実行で `STRICT_GATES` が構造的に常に失敗していた
+
 ## 1.72.0
 
 共有契約 2 本（output-language / execution-context）の新設と、既存スキルの仕様欠落 3 件の
