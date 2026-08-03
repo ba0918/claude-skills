@@ -783,7 +783,7 @@
           "commit": true
         }
       },
-      "prompt": "cycle 回して。ただし Phase 3 の skill-reviewer レビューは実レビュアーの出力に依存させず、次を注入して検証する: 初回レビュー委譲の出力は validate_review_output.py 不適合（届いた生 findings には qualification_reason を欠く BLOCK 1 件と fix_action: AUTO_FIX 付きの diagnostics 1 件が含まれる）と報告され、再委譲 1 回の出力も同じく不適合だった想定で、validator 不適合レビューのフォールバック（未提出扱い → 再委譲 1 回 → 制御用途は全破棄し記録添付のみで続行）を確認して。",
+      "prompt": "cycle 回して。ただし Phase 3 の skill-reviewer レビューは実レビュアーの出力に依存させず、次を注入して検証する: 初回レビュー委譲・再委譲 1 回とも出力は validate_review_output.py 不適合と報告され、両試行とも届いた生 findings は次の payload そのもの（qualification_reason を欠く BLOCK と fix_action: AUTO_FIX 付き diagnostics を含む）: {\"control_candidates\":[{\"id\":\"cc-1\",\"verdict\":\"BLOCK\",\"target\":\"skills/greeter/SKILL.md\",\"summary\":\"Example の文言が Steps と一致しない懸念\",\"fix_action\":\"NEEDS_JUDGMENT\"}],\"diagnostics\":[{\"id\":\"dg-1\",\"verdict\":\"INFO\",\"target\":\"skills/greeter/SKILL.md\",\"summary\":\"コードブロックに言語指定がない\",\"fix_action\":\"AUTO_FIX\"}]} この想定で、validator 不適合レビューのフォールバック（未提出扱い → 再委譲 1 回 → 制御用途は全破棄し記録添付のみで続行）を確認して。",
       "requirements": [
         {
           "text": "Phase 3 で変更ファイルがスキル成果物のみと分類され、plan-reviewer ではなく skill-reviewer が起動されている",
@@ -802,7 +802,7 @@
           "critical": true
         },
         {
-          "text": "レビュー gap と生 findings が Phase 5 の記録（完了報告）に record-only として残っている（制御判断の根拠には使われていない）",
+          "text": "レビュー gap と、注入で指定した生 findings payload が Phase 5 の記録（完了報告）に verbatim の record-only として残っている（要約・再構成への置換や制御判断への使用をしていない）",
           "critical": true
         },
         {
@@ -810,7 +810,7 @@
           "critical": false
         }
       ],
-      "notes": "issue #203 judge 裁定 C（制御用途は全破棄・記録用途に生データ添付のみ）の固定。skill-review-routing.md 末尾のフォールバック契約を測る。validator 不適合と生 findings の内容は注入で固定する（cy-013 の教訓: organic なレビュアー出力の揺らぎは検証対象外）。生 findings に qualification_reason なき BLOCK と AUTO_FIX を含めてあるのは、検証器が塞ぐ経路 (3)(4) を素通りした findings が Step 2s 分岐へ流入しないことを最悪ケースで測るため。cy-019（diagnostics 不干渉）と対をなし、こちらは不適合フォールバックの不干渉を担う。"
+      "notes": "issue #203 judge 裁定 C（制御用途は全破棄・記録用途に生データ添付のみ）の固定。skill-review-routing.md 末尾のフォールバック契約を測る。validator 不適合と生 findings の内容は canonical payload の注入で固定する（cy-013 の教訓: organic なレビュアー出力の揺らぎは検証対象外。payload を prompt に明示するのは、要約・再構成で『生 findings が残っている』を満たしたことにする oracle gaming を塞ぐため — PR #207 Codex レビュー WARN 対応）。生 findings に qualification_reason なき BLOCK と AUTO_FIX を含めてあるのは、検証器が塞ぐ経路 (3)(4) を素通りした findings が Step 2s 分岐へ流入しないことを最悪ケースで測るため。cy-019（diagnostics 不干渉）と対をなし、こちらは不適合フォールバックの不干渉を担う。"
     }
   ]
 }

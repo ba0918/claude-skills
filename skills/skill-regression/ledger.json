@@ -120,7 +120,7 @@
   "cycle": {
     "file_sha256": {
       "skills/cycle/SKILL.md": "4a5fcd9bbb0bf571451e10f64b9f307280ed3e223b7312307fceab51386eb307",
-      "skills/cycle/fixtures.json": "ac54b5001d20e5990b51226a8bc2175bc081717fab7b0eee728c5d837be8b5d4",
+      "skills/cycle/fixtures.json": "25677e0ac4efbfc9c894c967186342d063375c82f66ae82f09f39f5284865466",
       "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
@@ -140,7 +140,7 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "issue #203 cy-020 登録に伴う全 20 シナリオ実走。process-queue 経路（別プロセス agent CLI、省コスト tier backend、外部 status 照会 0 回）。cy-004/006/014/018 は executor の過剰厳格 self-report（要件文の範囲外の自己申告 partial、cy-018 は前回バッチ judge 裁定と同型）を成果物から caller 再判定で pass。cy-009 は初回実走の machine_verified grounds が実走場所を偽っていた（satellite 側結果を tmp_merge_root 実走と記載）ため repo を再マテリアライズして再実走 pass（再実走は publication_advance.py 実駆動で grounds 適正、Phase 5 抑止は standalone 形態での不在実測）。申し送り: rerun は report.json 削除だけでは repo が前回残骸で汚染される（fixture の .gitignore が .agents/artifacts を隠す）ため fixture_setup --materialize で repo 再生成が必要。バッチ: .agents/runtime/process-delegation/cy020-batch-20260803",
+    "note": "issue #203 PR #207 Codex レビュー WARN 対応: cy-020 の注入を canonical payload 化し要件 5 を verbatim 突き合わせに強化（要約・再構成による oracle gaming の窓を閉塞）。cy-020 単独再実走 pass（cy-013 前例。他 19 本は同バッチ cy020-batch-20260803 の pass を維持）。申し送り: 単独再実走時に rebuild dir から prompt を流用すると埋め込み work_dir パスが rebuild 側を指し、成果物が正本 unit 外に生成される（1 回空振り。成果物は正規生成されていたため移設して採点、manifest の work_dir も要修正）。再委譲 role 名は executor が post-review-skill-retry を自然選択（#208 の推奨案と一致）",
     "result": "pass",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -164,7 +164,7 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "73992392e8ac8cd8da21782ca20b15484ecea38f77fef50a8963df98626fbef0",
+    "surface_sha256": "1d5fe23426817b086abcf6b19446fc3befd0ca664f8cdbb26bde3d66f6d22890",
     "verified": "2026-08-03"
   },
   "decision-journal": {
