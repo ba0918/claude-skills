@@ -171,7 +171,7 @@ target set is re-examined. Run both checks in [SKILL.md](../SKILL.md) Cycle Step
    and a plan may not widen it on its own. Any path outside it → permanent failed
 2. **Blast radius**: `gate_0_decision(plan_paths, config)` → on `REJECT`, permanent failed
 
-Do not start implementing on either. Both record `error_kind = "abort"` (see §error_kind Enum); the
+Do not start implementing on either. Both record `error_kind = "abort"` (see [§error_kind Enum](error-kinds.md#error_kind-enum)); the
 distinguishing detail goes in the halt reason (`gate0b_scope_violation` / `gate0b_{reason}`), so no new
 `error_kind` value is introduced.
 

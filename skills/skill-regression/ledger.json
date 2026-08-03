@@ -255,9 +255,9 @@
       "skills/github-issue/references/gh-commands.md": "c6e291c0afb5ddc195be1a9ff14ea7e47f4379ec46c2bdfb0e8e65e80fbaf6aa",
       "skills/github-issue/references/label-mapping.md": "8a67daa0503fdfa5a19220a9c125e15277374b33e417c150d30dac4443c6395a",
       "skills/github-issue/references/label-spec.md": "851c00af6041bfad8beecabb646c98f122728533d153c59e5c0ac7916f6c3c4a",
-      "skills/github-issue/references/polling-adapter.md": "5d955b554511381cf0834a1305bfbd40babc5983f6f197f72bba096ce6aca105",
+      "skills/github-issue/references/polling-adapter.md": "c70e8e86a989a57e3f0950584fc5287439882b03d11610428a9dad4e3dbb44da",
       "skills/github-issue/references/secret-scanner.md": "623fa30ed568e71f32db9dcbe8098d81825582e15000104560c2db059dd073df",
-      "skills/github-issue/references/self-drive-gates.md": "12914792f63eb5e448fb2cc67e1a0e38ffa4e67c616b2efc82bc1769d86eb5ae",
+      "skills/github-issue/references/self-drive-gates.md": "492525bed2735d29dc283130d78e059a46cdf0d272e7f9a60cfad3b34ab5537f",
       "skills/github-issue/references/state-root.md": "f35b30fbfb3fd1494057a18cc1224573d7fc6465c7392007757924ce5bb19a22",
       "skills/github-issue/references/worktree-cycle.md": "9cf9a3e63c3b29aca31cc470c7d5b7999ca91f6613a82e80966dcfc24ca9384e",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
@@ -269,7 +269,7 @@
       "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
       "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb"
     },
-    "note": "#201 作業4-3: polling-adapter.md を連続 6 パーティションへ verbatim 分割（byte 一致検証済み・見出し不変更）。fixtures gi-001/002/005/006 が依存する節（state_root 解決 / Label Mapping SSOT / 自走可否ゲートと根拠）は全て分割後も各ワークフローのリンクから到達可能なことを確認済み。新 6 ファイルは surface に自動編入",
+    "note": "#201 作業4-3 追補: Codex レビュー WARN 反映で裸 § 参照 9 箇所を移動先ファイルへの md リンクに変換（規範文の変更なし）。INFO 指摘の fixtures.json:74 の旧正本表記（polling-adapter.md §Label Mapping → 現 label-mapping.md）は fixture 実走を伴う #214 で修正する",
     "result": "accepted-without-run",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -296,7 +296,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "ce5529e667f2b016a3cc42ac4e137505e191dab5d8c5cdf9300af9fc65c27d5d",
+    "surface_sha256": "434d4342d89b67a1dc142684552a5bb9e50262217ce2319636844682bc2bc1e0",
     "verified": "2026-08-03"
   },
   "handoff": {

@@ -46,15 +46,15 @@ The `list_ready(limit)` requirement of shared contract §3 mandates **early term
 
 Fetch with one `list_issues` operation: label `claude-auto`, state open, fields number/title/labels/author/authorAssociation/body/stateReason, limit `{limit}`.
 
-`body` and `stateReason` ride along in the **same single call** — they add no API round trip. `body` feeds the Gate 0a / Gate 1 filters below; `stateReason` is carried through to the plan builder for Gate 2 (§Self-Drive Gates).
+`body` and `stateReason` ride along in the **same single call** — they add no API round trip. `body` feeds the Gate 0a / Gate 1 filters below; `stateReason` is carried through to the plan builder for Gate 2 ([§Self-Drive Gates](self-drive-gates.md#self-drive-gates)).
 
 1. The client-side filter, applied in this order (cheap and local first, the external oracle last):
    - Carries `claude-running` → exclude
    - Carries `claude-review` → exclude (a running substate)
-   - `state_of_failure(labels) is not None` → exclude (see §Label Mapping)
+   - `state_of_failure(labels) is not None` → exclude (see [§Label Mapping](label-mapping.md#label-mapping))
    - `authorAssociation` is not contained in `require_author_association` → exclude
-   - **Gate 1**: `parse_self_drive_verdict(body) != ALLOWED` → exclude (§Self-Drive Gates)
-   - **Gate 0a**: `parse_change_targets(body)` is `MISSING`, or `gate_0_decision(...)` is `REJECT` → exclude (§Self-Drive Gates)
+   - **Gate 1**: `parse_self_drive_verdict(body) != ALLOWED` → exclude ([§Self-Drive Gates](self-drive-gates.md#self-drive-gates))
+   - **Gate 0a**: `parse_change_targets(body)` is `MISSING`, or `gate_0_decision(...)` is `REJECT` → exclude ([§Self-Drive Gates](self-drive-gates.md#self-drive-gates))
 2. Every exclusion above is a **quiet skip**: no label is written, no failure is recorded, and `failed_streak` is not incremented. A Gate 0 / Gate 1 exclusion says the issue body does not meet the self-driving contract — that is a defect in how the issue is written, not a failure of this run
 3. **Do not re-fetch even when the post-filter count is below `limit`** (re-fetch on the next tick. This prevents a fetch storm from repeated fetching. Propagation of stale state stays bounded by `tick_interval_loop_mode = 30s`)
 4. The return value is a `list[Slug]` in the form `slug = f"issue-{number}"`
@@ -63,7 +63,7 @@ Fetch with one `list_issues` operation: label `claude-auto`, state open, fields 
 
 The 3 layers of defense are hidden as **an internal implementation detail of the adapter**. SKILL.md only calls `claim(slug)`.
 
-For details see §`claim() 3 Layers of Defense`. On failure it returns `ClaimFailed{reason}` and quietly aborts (no retry).
+For details see [§`claim() 3 Layers of Defense`](adapter-internals.md#claim-3-layers-of-defense). On failure it returns `ClaimFailed{reason}` and quietly aborts (no retry).
 
 **Input validation**: the part of the slug after `issue-` must match the regular expression `^[1-9][0-9]*$` **as a raw string**. Anything else (non-numeric, negative, zero-padded, `0`) is `fail_closed("invalid issue_number")`. Applying the pattern after `int()` would not do: the conversion normalizes `007` to `7`, so a zero-padded slug would pass a check placed downstream of it. `invalid issue_number` is the single failure identifier for this gate — the same string appears in [SKILL.md](../SKILL.md)'s pre-check so that one search finds every occurrence.
 
@@ -144,11 +144,11 @@ mark_failed(slug, kind) -> Result:
 
 ### kill_file_path()
 
-Returns the absolute path pair `(<state_root>/.STOP.hard, <state_root>/.STOP)` (**the return order is the check order**, hard takes priority. Conforms to shared contract §3). For resolving `state_root`, see §`state_root Resolution`.
+Returns the absolute path pair `(<state_root>/.STOP.hard, <state_root>/.STOP)` (**the return order is the check order**, hard takes priority. Conforms to shared contract §3). For resolving `state_root`, see [§`state_root Resolution`](state-root.md#state_root-resolution).
 
 ### load_session() / save_session(session)
 
-The tick session of shared contract §6.5. Read and write `<state_root>/session.json` with the `write_atomic` procedure (§Platform Assumptions). A parse failure follows the same quarantine-rename convention as the FS Retry State (`.corrupt.{ts}`) and is treated as `None`.
+The tick session of shared contract §6.5. Read and write `<state_root>/session.json` with the `write_atomic` procedure ([§Platform Assumptions](state-root.md#platform-assumptions)). A parse failure follows the same quarantine-rename convention as the FS Retry State (`.corrupt.{ts}`) and is treated as `None`.
 
 ### archive_month_boundary()
 
@@ -156,7 +156,7 @@ The tick session of shared contract §6.5. Read and write `<state_root>/session.
 
 ### rollback_orphans(now)
 
-Executed in 5 stages. Each stage is decomposed into a `_check_*()` private submethod. For details see §`rollback_orphans Sub-Steps`.
+Executed in 5 stages. Each stage is decomposed into a `_check_*()` private submethod. For details see [§`rollback_orphans Sub-Steps`](adapter-internals.md#rollback_orphans-sub-steps).
 
 ### sanitize_slug(raw)
 
