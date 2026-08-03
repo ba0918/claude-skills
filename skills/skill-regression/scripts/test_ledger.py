@@ -357,6 +357,16 @@ class TestAcceptResultClassification(unittest.TestCase):
             self.assertEqual(
                 ledger.load(root)["a"]["result"], "accepted-without-run")
 
+    def test_accept_with_no_surface_change_is_accepted_without_run(self):
+        # 何も追加していない承認が accepted-addition を名乗るのは意味論的に嘘
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc = ledger.main(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(
+                ledger.load(root)["a"]["result"], "accepted-without-run")
+
     def test_update_without_accept_stays_pass(self):
         with tempfile.TemporaryDirectory() as root:
             self._repo(root)

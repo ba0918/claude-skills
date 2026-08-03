@@ -109,6 +109,9 @@ def accept_result(recorded, current):
     比較基準の無いエントリを弾く判断は stale_severity に持たせてあり、ここでは
     再実装しない（--check の表示と記録値が別々の規則で動くと食い違うため）。
     """
+    # 差分ゼロ（severity is None）も "accepted-without-run" 側へ落ちる。何も追加して
+    # いない承認が accepted-addition を名乗るのは意味論的に嘘であり、stale ですらない
+    # エントリへの --accept は運用上ほぼ通らない経路なので、重い側で据え置く
     severity, _ = stale_severity(recorded, current)
     if severity == SEVERITY_ADDITION:
         return "accepted-addition"
