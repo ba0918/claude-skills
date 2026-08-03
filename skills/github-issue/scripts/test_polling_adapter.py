@@ -36,6 +36,10 @@ class ParsingTests(unittest.TestCase):
         body = "```python\n## 自走可否\n判定: 自走不可\n~~~\n判定: 自走可\n```"
         self.assertEqual(adapter.parse_self_drive_verdict(body), adapter.MISSING)
 
+    def test_verdict_ignores_backtick_fence_with_backtick_in_info_string(self):
+        body = "```bad`info\n## 自走可否\n判定: 自走可\n"
+        self.assertEqual(adapter.parse_self_drive_verdict(body), "ALLOWED")
+
     def test_verdict_does_not_close_long_fence_with_short_fence(self):
         body = "````\n## 自走可否\n判定: 自走不可\n```\n判定: 自走可\n````"
         self.assertEqual(adapter.parse_self_drive_verdict(body), adapter.MISSING)

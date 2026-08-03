@@ -51,8 +51,11 @@ def _unfenced_lines(text):
     result = []
     for line in (text or "").splitlines():
         if fence_char is None:
-            match = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
-            if match:
+            match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
+            # CommonMark: backtick fence の info string に ` は置けない。
+            # 許すと ```bad`info の行を開始 fence と誤認し、後続本文を
+            # fence 内扱いにして verdict を過剰に MISSING へ倒す。
+            if match and not (match.group(1)[0] == "`" and "`" in match.group(2)):
                 fence_char = match.group(1)[0]
                 fence_length = len(match.group(1))
                 continue

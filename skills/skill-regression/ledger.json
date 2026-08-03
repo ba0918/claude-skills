@@ -268,7 +268,7 @@
       "skills/github-issue/references/self-drive-gates.md": "28fb1caeab0fb59496fbbc3f92bd7057b9f43644925ac16df369fd6f3f465481",
       "skills/github-issue/references/state-root.md": "3a4ec9199c0a5d0f8c2c3d9e30170d966d06befbe495a8cf12c64853fb714c8c",
       "skills/github-issue/references/worktree-cycle.md": "9cf9a3e63c3b29aca31cc470c7d5b7999ca91f6613a82e80966dcfc24ca9384e",
-      "skills/github-issue/scripts/polling_adapter.py": "1e923ced38c58c7c7d9b8d922470547f10664131c4d60d8169eb2be6768ff947",
+      "skills/github-issue/scripts/polling_adapter.py": "a5c20adfd78f9391af922c7ba239e42a2010c277ddafc062eb5ed06ed81785f3",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
@@ -278,7 +278,7 @@
       "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
       "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb"
     },
-    "note": "#214 追補2: Codex 敵対レビュー（BLOCK2+WARN13）の反映のみ — fenced parser の CommonMark 準拠化（Gate 1 迂回封鎖、fail-closed 方向の強化）/ 空 XDG_STATE_HOME の fallback 修正 / symlink 防御 / release-lock owner 照合 / テスト 20→33 本 / md 3 件の記述整合。直前実走 4 シナリオの経路（state-root は XDG 設定済み・verdict は平文 body）はいずれの修正にも非依存で、旧 20 テスト全維持 + 迂回ケースは実測で MISSING 確認済み",
+    "note": "#214 追補3: 確認レビューの残 WARN 1 件反映 — backtick fence の info string に backtick を含む行を開始 fence と誤認し fail-closed 側（過剰 MISSING）に倒れるケースを CommonMark 準拠で修正、回帰テスト追加（計 34 本 pass）。迂回方向の欠陥ではなく、fixture 経路にも非依存",
     "result": "accepted-without-run",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -306,7 +306,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "7643d07e20f2f2a86b2b330d8adb3024559e0be1b0a8f9ba4956fdb662c41e79",
+    "surface_sha256": "b5c55791e1c8f7e78874fa75bb0fbe86dde11004197c9dfd6c1e64814105f216",
     "verified": "2026-08-03"
   },
   "handoff": {
