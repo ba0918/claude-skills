@@ -273,13 +273,36 @@
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
-      "skills/shared/references/measurement-identity.md": "4891703c2d8c88017bc823e2f1a53bb85528fea39708ec104d83b8e2b054e411",
+      "skills/shared/references/measurement-identity.md": "9ab3ee1deb9b9cb46f181cd3ee691272f4a2b6f7d2852c13ad6c16188752bd50",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
-      "skills/skill-regression/scripts/ledger.py": "6355c43b1495e78d605609e282cdd39ed33df970eb82b8a13cb77da44fdb2645"
+      "skills/skill-regression/scripts/ledger.py": "1a8139caa666d495f6628655e3f16f6ef19835b1d93b1f3c1f396743bc6df347"
     },
-    "note": "#182 最終 surface (07b04e3) で 8/8 pass（実測 executor は低単価 tier）。F1 挙動変更（accepted-addition の pass-baseline 条件）を含む ledger.py 最終形で再実走。環境節（作業ディレクトリ=対象リポジトリ）を全 executor プロンプトに明示して前提ズレを構造的に防止",
+    "note": "blank-slate Sonnet 実走 8/8、照会 0 回。gi-001 は inline substitution（polling_adapter.py 直接実行 + 手組み tick）、説明系 6 本は read-only 読解経路",
     "result": "pass",
+    "structural_sha256": {
+      "skills/github-issue/SKILL.md": "2b29a142e97d56a7c567389ff371185fe1c4c06345d1014165d5762082abd39c",
+      "skills/github-issue/references/adapter-internals.md": "55ff6de5267c0665b025c9895b47202553f61ad2cc50e658eb2263b868498590",
+      "skills/github-issue/references/cleanup-spec.md": "2603e97a1e03064444d939b2efd98edee65666ef982b45c1c53b8ce1a619825e",
+      "skills/github-issue/references/codex-review-loop.md": "4c7c228c812e9554584fa6f0223e80bd1fde2b00688ef3a3d7caf4896c444386",
+      "skills/github-issue/references/config-defaults.md": "827297a2d019b569b3d434df40b77b6679a5f76d9a895816a0e8e9180b6bcbd5",
+      "skills/github-issue/references/error-kinds.md": "15d035e657858c31b876c2323ed22848a1e5724226155918678b448726b4057c",
+      "skills/github-issue/references/gh-commands.md": "53a6d138d05254309fcfe38aab47df6a9da20a585da719e1f29c252bd49f514e",
+      "skills/github-issue/references/label-mapping.md": "40109725b42c0ae2e11c51f06fe1a2939cc7647feb654399f74b57c9930a9bde",
+      "skills/github-issue/references/label-spec.md": "ca945baea3512ea05abb13ab910a8dccebdfe552942418e43afef8616dfbb9e6",
+      "skills/github-issue/references/polling-adapter.md": "8cae04eb468798879d2895c3bb9326818896e459f88d2d386d13debc3ae2f798",
+      "skills/github-issue/references/secret-scanner.md": "cd125494d8df2a24d949da24e486ddc90b5362fc0a2eec7f459ad0527054d6ec",
+      "skills/github-issue/references/self-drive-gates.md": "240ade177ab542916e4049ff46f0311444a77d74d3a908cfaa1edd73f1661663",
+      "skills/github-issue/references/state-root.md": "f54ea50fcb232a6651b2f7330d32f0f28e1c708758e9425537e3ec0670004339",
+      "skills/github-issue/references/worktree-cycle.md": "27971cfe2eddb169b03c3af544e8fc4bec327bfb48119f0ebb595f61986bf9d1",
+      "skills/shared/references/artifact-paths.md": "1705d074211a7ee5c8a0292c368bed405fd2c9ae29cbb1e8ddc86b882e9179b4",
+      "skills/shared/references/artifact-store.md": "11712a1e4fbac4c4c997752b1481c2cb96044a11fe167b029950a2b91077a2db",
+      "skills/shared/references/checkpoint-pattern.md": "81ff32fb67ca657cad4d8ee017538b0df53a572635d8be38f29eeb0e805ec699",
+      "skills/shared/references/codex-integration.md": "027dbcb60c38ecfad4d632d98e79a46481e2571dec084713d4cee45203c5b74b",
+      "skills/shared/references/measurement-identity.md": "ae8cc8b862dfbe0df94d20f3bea00138813562806ff78b61a51313917f887158",
+      "skills/shared/references/polling-pattern.md": "c79bc164458ded69bb54fd7af4419ca36b962d063c4ab684e4f5c9d79f5c680a",
+      "skills/shared/references/workspace-isolation.md": "b607c07c18e961cb6dd24a3e1abbc30b8b38cf9f86234940b966875a772666eb"
+    },
     "surface": [
       "skills/github-issue/SKILL.md",
       "skills/github-issue/fixtures.json",
@@ -306,7 +329,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "dfd3afd83811a7f78b1da87f85e7579d49c8633507878b0e9e8c659156d7192f",
+    "surface_sha256": "6771e9d66d4988beacbab1b87639feaa84665530eb084704457d34a6f77ef7a6",
     "verified": "2026-08-03"
   },
   "handoff": {
@@ -357,11 +380,22 @@
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec",
-      "skills/shared/references/measurement-identity.md": "4891703c2d8c88017bc823e2f1a53bb85528fea39708ec104d83b8e2b054e411",
+      "skills/shared/references/measurement-identity.md": "9ab3ee1deb9b9cb46f181cd3ee691272f4a2b6f7d2852c13ad6c16188752bd50",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "#182: measurement-identity.md §4 の outcome 集合へ accepted-addition を追記した散文変更のみ。機械パーストークン・コード・コマンド不変",
-    "result": "accepted-without-run",
+    "note": "blank-slate Sonnet 実走 4/4、照会 0 回。全シナリオ inline substitution（契約擬似コードの逐語 FS 実行）、is-003 は EPERM→alive 分岐を実測",
+    "result": "pass",
+    "structural_sha256": {
+      "skills/issue/SKILL.md": "c6694621b18711bfd6efa4e04427ba3598a78ce9ae658b724da1963ce05a2a71",
+      "skills/issue/references/issue-template.md": "287a28629cfda95ddfe540b4d05e472aed34c8f4c824db738c99c7079ab24eed",
+      "skills/issue/references/polling-state-machine.md": "a4dc6e5f2957ab268f2d46a0c7f5d5bd1b170657cf70e7407da6a87b34dca33b",
+      "skills/issue/references/polling-state.md": "7f0eb3535ab9a9b65c9f37f9cddec97bb3bc6bcb71e41be6b7fdcc3a3fc3a289",
+      "skills/shared/references/artifact-paths.md": "1705d074211a7ee5c8a0292c368bed405fd2c9ae29cbb1e8ddc86b882e9179b4",
+      "skills/shared/references/checkpoint-pattern.md": "81ff32fb67ca657cad4d8ee017538b0df53a572635d8be38f29eeb0e805ec699",
+      "skills/shared/references/human-readable-summary.md": "8e338aed298e461efe40f4beec4138ae7afd2e6b54661dbe072c235b5da917c6",
+      "skills/shared/references/measurement-identity.md": "ae8cc8b862dfbe0df94d20f3bea00138813562806ff78b61a51313917f887158",
+      "skills/shared/references/polling-pattern.md": "c79bc164458ded69bb54fd7af4419ca36b962d063c4ab684e4f5c9d79f5c680a"
+    },
     "surface": [
       "skills/issue/SKILL.md",
       "skills/issue/fixtures.json",
@@ -374,7 +408,7 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "e86c755f745e9c8e7ae1e6124faade26ed4c36f1da66429d2afc642fc23ad9a4",
+    "surface_sha256": "9c7c80dad4a5ec625231b78aaae33002dc281df8a3fe737aabfd1f2a27036923",
     "verified": "2026-08-03"
   },
   "iterate": {
@@ -552,15 +586,25 @@
       "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
-      "skills/skill-regression/scripts/ledger.py": "6355c43b1495e78d605609e282cdd39ed33df970eb82b8a13cb77da44fdb2645",
+      "skills/skill-regression/scripts/ledger.py": "1a8139caa666d495f6628655e3f16f6ef19835b1d93b1f3c1f396743bc6df347",
       "skills/skill-reviewer/SKILL.md": "1dae27c5e1048d50e76925ce8d7b1760019bf5ee984a881cdba68630d5da5e31",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
-      "skills/skill-reviewer/references/evidence-and-coverage.md": "8b22969de41d90187b9d02987ac8bd4691a2f42fa4d17d1e7607a4327ece05bc",
+      "skills/skill-reviewer/references/evidence-and-coverage.md": "db06e7e49c22d1eb0b4725304b4858152c4f0577fa1df0234d0a189f33c72bda",
       "skills/skill-reviewer/references/output-contract.md": "f5e6e2ad5b0173899bcaa5b6f2d060dc3c95bdfaee484d7f7e146f17f11fe46a",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "#182 最終 surface (07b04e3) で 3/3 pass（実測 executor は低単価 tier）。誤 BLOCK ゼロ oracle 2 本 + 正例 BLOCK 1 本の両方向を最終形で確認、出力は全件 validate_review_output.py 適合",
+    "note": "blank-slate Sonnet 実走 3/3、照会 0 回。3 本とも validate_review_output.py exit 0 の実出力で判定",
     "result": "pass",
+    "structural_sha256": {
+      "skills/shared/references/coverage-ledger.md": "aa5d0f84fb230cd2ed3dafa16c7289cd024b9d970b0a465efee5f74a2b55ec7b",
+      "skills/shared/references/fix-action-taxonomy.md": "ffbc1eb633b8a960078ad401912c86e14501d9d9207c157502072b52bcc7334a",
+      "skills/shared/references/quality-gate-contract.md": "744263e306df762aa5759ebe54bc6a8ade30837469b3cba0d3c6becc4c6aabe1",
+      "skills/shared/references/severity-and-verdicts.md": "b3184aecaf9f9d662ccfe31bacd931b4ed7bd8f49774b86be48a5b9b14f7370a",
+      "skills/shared/references/skill-authoring.md": "7d7320ca91e482f68d1cc30e281ab21eb5be5170f14a36be112093fc955a07cd",
+      "skills/skill-reviewer/SKILL.md": "32e356ff476b75c961a9144d89ac0e267f107a6898e0bfcb969cc1b1dd872310",
+      "skills/skill-reviewer/references/evidence-and-coverage.md": "cfab646264ea6df6bc67fcbf2f06ecee7d81087e09e7ac2eb119585ce33a72e9",
+      "skills/skill-reviewer/references/output-contract.md": "e8ce1ccb879016bd8ac203351eb9acd4bc78d2a1aa0e766d4dcb5e5b798b6624"
+    },
     "surface": [
       "skills/shared/references/coverage-ledger.md",
       "skills/shared/references/fix-action-taxonomy.md",
@@ -574,7 +618,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "0bb4c75e83e8fb02ca6219caaa486e2d06a6d9b07c647008402f444d143337f8",
+    "surface_sha256": "38b3c44ba583405b4c6dc1ee02a6ff0aae374a47f0d726f55ffa8bf7c345990b",
     "verified": "2026-08-03"
   },
   "sweep-fix": {
