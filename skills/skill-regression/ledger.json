@@ -40,8 +40,8 @@
       "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
-    "result": "accepted-without-run",
+    "note": "#169 run: 6/6 pass（実測 executor は低単価 tier）。bf-001/bf-006 は初回 run が候補走査をスキル本体リポジトリへ向けた前提ズレで無効化し、隔離リポジトリ明示の環境節を追加して再走 pass。報告未着の状況照会 計2回。secret-scan 停止時に --allow-secrets を自己判断で付けない防御挙動も観測（要件外の正常確認）",
+    "result": "pass",
     "surface": [
       "skills/brief/SKILL.md",
       "skills/brief/assets/brief.css",
@@ -94,8 +94,8 @@
       "skills/shared/scripts/frontmatter.py": "3c6d76a04346f1b2251d39b005f526073981a3425ce9fabc7523d99a791fedb8",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
-    "result": "accepted-without-run",
+    "note": "#169 run: 3/3 pass（実測 executor は低単価 tier）。全シナリオ headless 非対話フォールバック(c)経路で完走、対象ファイル無改変を sha256 baseline 比較で機械確認。状況照会 0 回",
+    "result": "pass",
     "surface": [
       "skills/context-audit/SKILL.md",
       "skills/context-audit/fixtures.json",
@@ -278,8 +278,8 @@
       "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
       "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb"
     },
-    "note": "#214 追補3: 確認レビューの残 WARN 1 件反映 — backtick fence の info string に backtick を含む行を開始 fence と誤認し fail-closed 側（過剰 MISSING）に倒れるケースを CommonMark 準拠で修正、回帰テスト追加（計 34 本 pass）。迂回方向の欠陥ではなく、fixture 経路にも非依存",
-    "result": "accepted-without-run",
+    "note": "#169 run: 8/8 pass（実測 executor は低単価 tier）。gi-001/gi-003 は fixture 前提『gh 未認証』が実環境では認証済みという齟齬あり（要件は認証状態に非依存で判定影響なし）。報告未着の状況照会 4 回（gi-003/gi-004/gi-006/gi-008、いずれも再送で回収）",
+    "result": "pass",
     "surface": [
       "skills/github-issue/SKILL.md",
       "skills/github-issue/fixtures.json",
