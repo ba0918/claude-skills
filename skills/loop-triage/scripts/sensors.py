@@ -26,6 +26,10 @@ _PATH_TOKEN_RE = re.compile(r"[\w./-]+\.(?:md|py|json|yml|yaml|sh)")
 # ledger.py --check の行: "[stale] skill: detail" / "[unverified] skill: detail"
 _LEDGER_LINE_RE = re.compile(r"^\[(stale|unverified)\]\s+([^:]+):\s*(.*)$")
 
+# stale detail 先頭の severity ラベル: "[contract-change] a.md, b.md" の "[...] "。
+# ラベルが付く前の出力（プレフィックスなし）にも一致しないだけで済むよう任意扱い
+_LEDGER_SEVERITY_RE = re.compile(r"^\[[\w-]+\]\s*")
+
 
 def parse_validate_output(text):
     """validate_repo.py の stdout/stderr 結合テキストから違反行を Finding のリストに変換する。
@@ -69,7 +73,11 @@ def parse_ledger_check(text):
         skill = match.group(2).strip()
         detail = match.group(3)
         if rule == "stale":
-            affected_paths = [p.strip() for p in detail.split(",") if p.strip()]
+            # severity ラベルを落としてから分割する。付いたまま分割すると先頭の
+            # ファイル名にだけラベルが接着し、そのパスが loop-defining の glob に
+            # 一致しなくなって自己修飾ゲートが黙って素通しになる
+            paths = _LEDGER_SEVERITY_RE.sub("", detail)
+            affected_paths = [p.strip() for p in paths.split(",") if p.strip()]
         else:
             affected_paths = []
         findings.append({

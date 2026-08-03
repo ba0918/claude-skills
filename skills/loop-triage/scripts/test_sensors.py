@@ -88,6 +88,32 @@ class ParseLedgerCheckTest(unittest.TestCase):
         self.assertEqual(second["where"], {"path": "skills/iterate/fixtures.json"})
         self.assertEqual(second["affected_paths"], ["skills/iterate/SKILL.md"])
 
+    def test_severity_prefix_is_not_glued_onto_the_first_path(self):
+        """stale 行の severity ラベルは affected_paths に混入しない。
+
+        混入すると先頭ファイルだけが loop-defining の glob に一致しなくなり、
+        自己修飾ゲートが黙って素通しになる（検出できない失敗の仕方をする）。
+        """
+        text = (
+            "[stale] plan: [contract-change] skills/plan/SKILL.md, "
+            "skills/plan/references/foo.md\n"
+            "[stale] iterate: [contract-addition] skills/iterate/references/bar.md\n"
+        )
+        findings = parse_ledger_check(text)
+        self.assertEqual(len(findings), 2)
+        self.assertEqual(
+            findings[0]["affected_paths"],
+            ["skills/plan/SKILL.md", "skills/plan/references/foo.md"],
+        )
+        self.assertEqual(
+            findings[1]["affected_paths"], ["skills/iterate/references/bar.md"])
+
+    def test_what_keeps_the_verbatim_line_including_severity(self):
+        # 人が読む欄なので severity は落とさない（落とすのは機械が食う経路だけ）
+        line = "[stale] plan: [contract-change] skills/plan/SKILL.md"
+        findings = parse_ledger_check(line + "\n")
+        self.assertEqual(findings[0]["what"], line)
+
     def test_unverified_skill_has_no_enumerated_files(self):
         text = (
             "[unverified] doc-write: fixtures.json はあるが検証記録がない"
