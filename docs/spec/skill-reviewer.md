@@ -22,7 +22,7 @@
 
 ## 実走と証拠
 
-skill-reviewer 自身は LLM 実走センサー（skill-regression 実走・trigger-eval 動的評価・empirical-prompt-tuning）を回さない。自走するのは決定的で安い検証（静的チェック・scripts のユニットテスト）のみ。実走証拠は regression ledger 等の既存記録を読み、current_pass / accepted_without_run / stale / uncovered / invalid の 5 状態で分類する。accepted_without_run を「実走証拠あり」として表示してはならない。
+skill-reviewer 自身は LLM 実走センサー（skill-regression 実走・trigger-eval 動的評価・empirical-prompt-tuning）を回さない。自走するのは決定的で安い検証（静的チェック・scripts のユニットテスト）のみ。実走証拠は regression ledger 等の既存記録を読み、current_pass / accepted_without_run / stale / uncovered / invalid の 5 状態で分類する。accepted_without_run を「実走証拠あり」として表示してはならない。台帳の result が `accepted-addition`（実走なしだが hash 比較で追加のみと機械確認済み）のエントリも accepted_without_run へ写像する。機械確認は承認の安全度の話であって実走したことにはならないため、6 状態目を作らない。
 
 実走証拠の欠如・陳腐化は「推奨」止まりで、gate には決して入れない。証拠なしは finding ではなく coverage 状態（unsupported / uncovered）として申告し、該当領域の PASS を主張しない。推奨には影響面の広さと概算コストを添え、実測をいつ払うかは人間が決める。
 
