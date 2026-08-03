@@ -27,8 +27,9 @@ _PATH_TOKEN_RE = re.compile(r"[\w./-]+\.(?:md|py|json|yml|yaml|sh)")
 _LEDGER_LINE_RE = re.compile(r"^\[(stale|unverified)\]\s+([^:]+):\s*(.*)$")
 
 # stale detail 先頭の severity ラベル: "[contract-change] a.md, b.md" の "[...] "。
-# ラベルが付く前の出力（プレフィックスなし）にも一致しないだけで済むよう任意扱い
-_LEDGER_SEVERITY_RE = re.compile(r"^\[[\w-]+\]\s*")
+# 語彙を列挙で縛る。未知のラベルが増えたときに黙って剥がして通すより、round-trip
+# テストが実在しないパスとして落ちるほうが、追随漏れに気付ける
+_LEDGER_SEVERITY_RE = re.compile(r"^\[(contract-change|contract-addition)\]\s*")
 
 
 def parse_validate_output(text):
@@ -74,8 +75,9 @@ def parse_ledger_check(text):
         detail = match.group(3)
         if rule == "stale":
             # severity ラベルを落としてから分割する。付いたまま分割すると先頭の
-            # ファイル名にだけラベルが接着し、そのパスが loop-defining の glob に
-            # 一致しなくなって自己修飾ゲートが黙って素通しになる
+            # ファイル名にだけラベルが接着し、loop-defining の glob に一致しなくなる。
+            # このセンサの finding が AUTO_FIX へ昇格して gate_decision に到達した際、
+            # 自己修飾ゲートが降格判定できなくなるため、パスは常に素の形で持つ
             paths = _LEDGER_SEVERITY_RE.sub("", detail)
             affected_paths = [p.strip() for p in paths.split(",") if p.strip()]
         else:
