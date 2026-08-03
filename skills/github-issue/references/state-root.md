@@ -2,93 +2,26 @@
 
 ### Acquisition and fallback
 
-```python
-def state_root(name_with_owner: str) -> Path:
-  # 1. XDG fallback chain
-  xdg_base = env("XDG_STATE_HOME") or expanduser("~/.local/state")
+The executable source of truth is
+`python3 skills/github-issue/scripts/polling_adapter.py state-root --name-with-owner OWNER/REPO [--remote-url URL]`
+— run it instead of re-deriving the procedure. The contract it guarantees:
 
-  # 2. Repo slug (the path segment conversion)
-  repo_slug = sanitize_repo_slug(name_with_owner)  # see cleanup-spec.md
-
-  # 3. Clone ID: identify with 16 SHA-1 hex characters after normalizing the git remote URL
-  git_remote_url = fetch_git_remote_url()
-  normalized = normalize_git_url(git_remote_url)
-  clone_id = sha1(normalized).hex[:16]  # a 64-bit space
-
-  target = path.join(xdg_base, "claude-skills", "github-issue", f"{repo_slug}-{clone_id}")
-
-  # 4. Creation (idempotent)
-  mkdir(target, mode=0o700, parents=True, exist_ok=True)
-
-  # 5. Collision detection: create .clone_url exclusively with O_CREAT|O_EXCL
-  stored_url_file = target / ".clone_url"
-  if stored_url_file.exists():
-    if read(stored_url_file) != normalized:
-      fail_closed(f"state_root clone_id collision: {target}")
-  else:
-    # O_CREAT|O_EXCL exclusive creation (avoiding the TOCTOU race when several processes start for the first time at once)
-    try:
-      fd = open(stored_url_file, O_WRONLY|O_CREAT|O_EXCL, mode=0o600)
-      write(fd, normalized)
-      fsync(fd)
-      close(fd)
-      fsync(parent_dir_fd)
-    except FileExistsError:
-      # another process created it first → re-read and verify equality
-      if read(stored_url_file) != normalized:
-        fail_closed(f"state_root clone_id collision after race: {target}")
-
-  # 6. Ownership verification (guarding against a shared HOME)
-  if stat(target).uid != getuid():
-    fail_closed(f"state_root ownership mismatch: {target}")
-
-  # 7. FS-kind verification (fail-closed on an unsupported FS)
-  fs_type = statfs(target).f_type
-  if fs_type in UNSUPPORTED_FS:  # NFS, CIFS, tmpfs, DrvFs
-    fail_closed(f"unsupported filesystem: {fs_type}")
-
-  return target
-
-def fetch_git_remote_url() -> str:
-  # Primary: git remote get-url origin
-  try:
-    return shell("git remote get-url origin").strip()
-  except GitNotFound:
-    pass
-  # Fallback: the selected transport's repository metadata
-  try:
-    return github.repository_info().url
-  except GitHubTransportError:
-    fail_closed("cannot resolve git remote URL")
-
-def normalize_git_url(url: str) -> str:
-  # The normalization rules:
-  # 0. Strict allow-list validation of the URL character set
-  # 1. lowercase
-  # 2. strip a trailing slash / .git
-  # 3. git@host:owner/repo.git → https://host/owner/repo
-  # 4. ssh://git@host/owner/repo → https://host/owner/repo
-
-  # STEP 0: strict allow-list validation of the URL character set
-  # Allowed: only [a-zA-Z0-9._\-/:@] (enough for path segments / the scheme separator)
-  # Forbidden: consecutive `..`, `\`, spaces, tabs, newline, shell metachars ($, `, ', ", ;, &, |, <, >)
-  if not re.match(r'^[a-zA-Z0-9._\-/:@]+$', url):
-    fail_closed(f"invalid git remote url character set: {url!r}")
-  if ".." in url:
-    fail_closed(f"git remote url contains path traversal: {url!r}")
-
-  lower = url.lower()
-  # git@github.com:foo/bar.git → https://github.com/foo/bar
-  if match := re.match(r'^git@([^:]+):(.+?)(?:\.git)?$', lower):
-    return f"https://{match.group(1)}/{match.group(2)}"
-  # ssh://git@github.com/foo/bar.git → https://github.com/foo/bar
-  if lower.startswith("ssh://"):
-    lower = re.sub(r'^ssh://(?:git@)?', 'https://', lower)
-  # https://...[.git][/] → canonical
-  lower = re.sub(r'\.git$', '', lower)
-  lower = lower.rstrip("/")
-  return lower
-```
+1. **XDG fallback chain**: `XDG_STATE_HOME`, else `~/.local/state`; the resolved path is
+   `{xdg}/claude-skills/github-issue/{repo_slug}-{clone_id}` where `repo_slug` is the
+   `nameWithOwner → path segment` conversion (responsibility split: see
+   [`cleanup-spec.md`](cleanup-spec.md)) and `clone_id` is the first 16 SHA-1 hex characters
+   of the normalized git remote URL (a 64-bit space)
+2. **URL normalization** (fail-closed): strict allow-list on the character set
+   (`[a-zA-Z0-9._\-/:@]` only) and rejection of `..`; then lowercase, strip trailing `/`
+   and `.git`, and rewrite `git@host:o/r` / `ssh://git@host/o/r` to `https://host/o/r`
+3. **Creation and safety checks**: idempotent `mkdir` (mode 0700), `.clone_url` collision
+   detection via O_CREAT|O_EXCL exclusive creation (TOCTOU-safe against concurrent first
+   starts), ownership verification (`stat.uid == getuid()`), and FS-kind verification
+   (fail-closed on the unsupported list — see §Platform Assumptions)
+4. **Remote URL sourcing**: the script tries `git remote get-url origin` itself; when git
+   cannot resolve it, the script exits 2 and the orchestrator re-invokes with
+   `--remote-url` taken from the selected transport's repository metadata, or fails closed
+   when neither source resolves
 
 ### Behavior on a creation failure (fail-closed)
 
@@ -138,23 +71,23 @@ This adapter **has no ephemeral fallback**. In an environment where `state_root`
 
 This adapter presumes **the local filesystems of Linux / macOS**. The APIs it uses are a combination of the basic POSIX.1-2008 functions (`open`/`fsync`/`rename`) and OS-dependent APIs (`flock(2)` = a BSD extension, `statfs(2)`/`fstatfs(2)` for determining the FS kind), so it is operated as **"presuming a Linux/macOS local FS" rather than as purely POSIX-conformant**. Operation on Windows native or a non-Linux kernel is unsupported.
 
-Every state file update is performed **atomically** by the following procedure:
-
-```
-write_atomic(path, content):
-  tmp = path + ".tmp." + pid + ".{random}"
-  open(tmp, O_WRONLY|O_CREAT|O_EXCL, mode=0o600)
-  write(tmp, content)
-  fsync(tmp_fd)                  # persisting the data
-  close(tmp)
-  rename(tmp, path)              # an atomic rename within the same directory
-  fsync(parent_dir_fd)           # persisting the directory entry
-```
+Every state **file update** is performed **atomically** with the `write_atomic` procedure
+(tmp file with O_EXCL and mode 0600 → data fsync → same-directory atomic rename → parent
+directory fsync). The executable source of truth is `polling_adapter.py` — the file-writing
+subcommands (`increment-retry`, `session-save`, `recovery-marker add`) apply it; never
+hand-roll the sequence in shell. Lock operations are the exception by design: `claim-lock`
+writes under its flock guard and releases/stale-deletions are plain unlinks (a lockfile's
+consistency comes from the flock + pid lease, not from rename atomicity).
 
 - **Supported FS**: ext4, btrfs, xfs, apfs (local filesystems only)
 - **Unsupported / fail-closed**: NFS, CIFS, tmpfs (rename atomicity and fsync semantics are non-standard), and a WSL mount over Windows DrvFs (permission modes are not reflected). Determined with `statfs(2)`; on detection, **a warning log + polling abort (fail-closed)**. To prevent silent data corruption, a warning alone is not enough
 - **Ownership verification**: when state_root is opened, `stat(path).uid != getuid()` is fail-closed (so that under a shared HOME you never mistakenly write into a state_root created by another user)
-- **Stale lockfile**: `<state_root>/claim/{N}.lock` records the pid and is held with flock(2). It is released automatically when the process exits. When the pid is dead, `rollback_orphans()` deletes it on the condition that at least 5 minutes have passed
+- **Stale lockfile**: `<state_root>/claim/{N}.lock` records the owner pid as the lease;
+  flock(2) guards only the read-modify-write inside each CLI invocation (the old
+  held-until-process-exit model presumed a long-lived adapter process — see
+  [adapter-internals.md](adapter-internals.md) for the Why-not). A live recorded pid means
+  LockBusy regardless of age; when the pid is dead, `rollback_orphans()` deletes the file on
+  the condition that at least 5 minutes have passed
 
 ### `.polling-initialized` Lifecycle
 

@@ -41,27 +41,12 @@ other mode wearing the costume of a degree.
 ### `parse_self_drive_verdict(body)`
 
 A pure function. Input is the issue body; output is one of `ALLOWED` / `FORBIDDEN` / `MISSING` / `AMBIGUOUS`.
-
-```
-parse_self_drive_verdict(body) -> Verdict:
-  # Lines inside fenced code blocks are never scanned: issue bodies quote transcripts
-  # and command output, and a quoted verdict line is not a verdict.
-  section = section_of(body, heading="## 自走可否")   # up to the next `# ` or `## ` heading
-  if section is None:
-    return MISSING                                   # the section itself is absent
-
-  lines = [L for L in section if matches(L, r'^判定:')]
-  if len(lines) == 0:
-    return MISSING                                   # the section exists, the verdict line does not
-  if len(lines) > 1 and not all_equal(values_of(lines)):
-    return AMBIGUOUS                                 # contradictory verdict lines — fail-closed
-
-  value = capture(lines[0], r'^判定:\s*(\S+)\s*$')
-  if value is None:      return AMBIGUOUS            # `判定:` with no single-token value
-  if value == "自走可":   return ALLOWED
-  if value == "自走不可": return FORBIDDEN
-  return AMBIGUOUS                                   # every other value, `部分的に自走可` included
-```
+The executable source of truth is `polling_adapter.py verdict --body-file F` — never re-derive
+the parsing in prose or shell. Its contract: lines inside fenced code blocks are never scanned
+(a quoted verdict line is not a verdict); the `## 自走可否` section runs up to the next `#` /
+`##` heading; no section or no `判定:` line → `MISSING`; contradictory or non-single-token
+values → `AMBIGUOUS`; only `自走可` → `ALLOWED`, only `自走不可` → `FORBIDDEN`, every other
+value → `AMBIGUOUS`.
 
 **The value must be matched whole, never as a substring.** `部分的に自走可` ends in the characters
 `自走可`, so a substring test would read the one forbidden value as permission — the exact inversion of
@@ -95,21 +80,12 @@ An issue that is only partly self-drivable gets the self-drivable part split int
 ### `parse_change_targets(body)`
 
 A pure function. Input is the issue body; output is an ordered, de-duplicated `list[Path]`, or `MISSING`.
-
-```
-parse_change_targets(body) -> list[Path] | MISSING:
-  section = section_of(body, heading="## 変更対象")   # fenced blocks ignored, as above
-  if section is None: return MISSING
-
-  paths = []
-  for each list item `- X` / `* X` in section:
-    X = strip_inline_backticks(X).strip()
-    if not matches(X, r'^[A-Za-z0-9._\-/]+$'): continue   # prose, line refs (`file.md:170`), commentary
-    if ".." in X or X.startswith("/"):         return MISSING   # traversal / absolute — reject the whole declaration
-    paths.append(X)
-
-  return dedupe(paths) if paths else MISSING
-```
+The executable source of truth is `polling_adapter.py change-targets --body-file F`. Its
+contract: fenced blocks ignored as above; only `- X` / `* X` list items whose whole text
+(after stripping wrapping backticks) matches `^[A-Za-z0-9._\-/]+$` count; an item failing the
+character set drops that item only; an item containing `..` or starting with `/` rejects the
+whole declaration as `MISSING`; the result is order-preserving and de-duplicated, and an
+empty result is `MISSING`.
 
 - **Only a list item that is exactly a path counts.** Real bodies carry a second list under the same
   heading annotating each file, in the form `- a/b.md:170 — what to fix here`, and those must not be read
@@ -129,35 +105,22 @@ parse_change_targets(body) -> list[Path] | MISSING:
 
 ### `impact_units(paths, config)`
 
-```
-impact_units(paths, config) -> Ok(list[str]) | Ok(NO_ORACLE) | Err:
-  if config.impact_command is unset:
-    return Ok(NO_ORACLE)                 # Gate 0's impact check is a no-op — see config-defaults.md
-  cmd = config.impact_command.replace("{files}", shell_quote_join(paths))
-  rc, out = shell(cmd)
-  if rc != 0:
-    return Err("impact_oracle_failed")   # fail-closed: NEVER read a non-zero exit as 0 impacted units
-  return Ok([L.strip() for L in out.splitlines() if L.strip()])
-```
+Executed inside `polling_adapter.py gate0` (and available standalone). Contract: unset
+`config.impact_command` → `NO_ORACLE` (Gate 0's impact check is a no-op — see
+config-defaults.md); `{files}` expands to the shell-quoted paths; a non-zero exit is
+`Err("impact_oracle_failed")` — fail-closed, NEVER read a non-zero exit as 0 impacted units;
+otherwise the non-empty output lines are the impacted units.
 
 Every path handed to the oracle has already passed `parse_change_targets`'s character-set validation, so
 the expansion cannot inject shell metacharacters.
 
 ### `gate_0_decision(paths, config)`
 
-```
-gate_0_decision(paths, config) -> ALLOW | REJECT{reason}:
-  # ① the forbidden-path check needs no oracle, so it holds in every repository
-  if any(matches_glob(p, g) for p in paths for g in config.forbidden_path_globs):
-    return REJECT("forbidden_path")
-
-  # ② the blast-radius check
-  match impact_units(paths, config):
-    Ok(NO_ORACLE)  -> return ALLOW               # no oracle configured — no-op
-    Err(reason)    -> return REJECT(reason)      # fail-closed
-    Ok(units)      -> return REJECT("impact_too_wide") if len(units) > config.max_impacted_units
-                             else ALLOW
-```
+The executable source of truth is `polling_adapter.py gate0 --paths-json F --config-json F`.
+Contract, in order: ① the forbidden-path glob check (needs no oracle, so it holds in every
+repository) → `REJECT("forbidden_path")`; ② the blast-radius check via `impact_units` —
+`NO_ORACLE` → `ALLOW`, oracle error → `REJECT` (fail-closed), more units than
+`config.max_impacted_units` → `REJECT("impact_too_wide")`, else `ALLOW`.
 
 The three rejection reasons are distinguishable in the log, but all three behave identically at the gate
 they run in — quiet skip in Gate 0a, permanent failed in Gate 0b.

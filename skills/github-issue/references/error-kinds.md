@@ -14,18 +14,20 @@
 
 ### Atomic Write
 
-Updated with the `write_atomic` procedure:
-
-1. Write to `{issue_number}.json.tmp.{pid}.{random}`
-2. Persist the data with `fsync(tmp_fd)`
-3. Replace atomically with `rename(tmp, target)`
-4. Persist the directory entry with `fsync(parent_dir_fd)`
+Updated with the `write_atomic` procedure (tmp → data fsync → atomic rename → parent-dir
+fsync). The executable source of truth is `polling_adapter.py increment-retry N --state-root
+DIR --run-id UUID` — never hand-roll the sequence; see [state-root.md
+§Platform Assumptions](state-root.md#platform-assumptions) for the procedure's contract.
 
 ### `run_id` (UUID v4) generation/validation
 
 - Generation: issued once with `uuid4()` at the start of each tick, and the same value is reused throughout the loop
 - Form: UUID v4 (`xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`)
-- Validation on read: when it does not match the regular expression `^[0-9a-f-]{36}$`, a warning is logged and that field is ignored (treated as `null`)
+- Validation on read: strictly validated against the UUID v4 regular expression of
+  [polling-adapter.md §retry_count](polling-adapter.md#retry_countslug); on a mismatch, a
+  warning is logged and that field is ignored (treated as `null`). The loose form
+  `^[0-9a-f-]{36}$` previously written here contradicted the strict rule and is retired —
+  `polling_adapter.py retry-count` implements the strict one
 - Even on a mismatch, reading the other fields (`retry_count`, `last_failed_at`) continues
 
 ### The quarantine rename on detecting corrupt JSON

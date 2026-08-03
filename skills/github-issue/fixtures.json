@@ -71,7 +71,7 @@
           "critical": false
         }
       ],
-      "notes": "polling-adapter.md §Label Mapping（canonical SSOT）の判定ロジックが prose から正しく再構成できることを固定する。読み取り専用のため isolation: none。"
+      "notes": "label-mapping.md §Label Mapping（canonical SSOT）の判定ロジックが prose から正しく再構成できることを固定する。読み取り専用のため isolation: none。"
     },
     {
       "id": "gi-003",
