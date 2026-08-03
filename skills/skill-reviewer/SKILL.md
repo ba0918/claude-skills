@@ -78,9 +78,9 @@ Measure, do not estimate: for one execution path, count the lines of the SKILL.m
 actually reads. Look for the same explanation inlined in several places where one contract reference would do, and
 for instructions that change no behavior.
 
-The budgets of [the authoring guide](../shared/references/skill-authoring.md) (a SKILL.md beyond ~400 lines; one
-path loading beyond ~1000 lines) are design smells that call for re-placing responsibility — not thresholds to
-BLOCK on, and not a cue to reword more tightly. Shorter is not automatically better: cutting a convention, a path
+The budget of [the authoring guide](../shared/references/skill-authoring.md) (one execution path loading beyond
+~500 lines in total) is a design smell that calls for re-placing responsibility — not a threshold to
+BLOCK on, and not a cue to reword more tightly. Fewer lines are better at every size. Shorter is not automatically better: cutting a convention, a path
 constraint, or a safe-side default degrades compliance.
 
 ### 3. Responsibility placement

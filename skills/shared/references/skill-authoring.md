@@ -113,12 +113,43 @@ If the latter, do not write the sentence. Move the behavior to a script plus tes
 Budgets — treat crossing them as a design smell demanding re-placement, never as a cue
 for "tighter wording":
 
-- A SKILL.md beyond ~400 lines, or a single run loading more than ~1000 lines of
-  instructions in total (SKILL.md plus every reference that run actually reads).
+- A single run loading more than ~500 lines of instructions in total (SKILL.md plus every
+  reference that run actually reads, measured per execution path). This is a diagnostic
+  threshold, not a gate: crossing it makes the skill a re-placement candidate to declare,
+  never a BLOCK. There is no separate per-file budget — a lean SKILL.md in front of heavy
+  mandatory references is the same load. Below the threshold, fewer lines are still
+  better: every low-value line dilutes the salience of the lines that must win at
+  execution time.
 - A review finding against a mechanism (race, crash window, ordering, cleanup) is
   resolved in code + tests. Answering it with prose is the loop restarting.
 - Rationale, rejected alternatives, and rare-exception walkthroughs go to commit
   messages or to `references/` files the runtime path does not load.
+
+### Load-reduction patterns (2026-08-03 corpus inventory, issue #201)
+
+Apply these before rewording anything; they are ordered by measured leverage. Do not cut
+disambiguation, defaults, or the one worked example to hit the budget — see "When Prompt
+Compression Works" below for what must stay.
+
+1. **Contract split — consumer view vs orchestrator view.** When one shared contract
+   serves two audiences, extract what consumers need into a small sub-contract and keep
+   the full machinery for its real users. First instance:
+   [artifact-paths.md](artifact-paths.md) (~70 lines) replaces the full store contract
+   (~450 lines) for every skill that only reads and writes artifact paths.
+2. **Quote, don't load.** When a skill needs one sentence from a contract, quote that
+   sentence inline and keep the link as provenance only, stating that the file is not
+   read at runtime. Loading a 100-400 line contract to justify one sentence was the most
+   common waste in the inventory.
+3. **Conditional load at phase boundaries.** Attach every heavy reference to the branch
+   that needs it so early-exit and common paths stay light. Worked examples: sweep-fix
+   (early exit pays 395 of a 926-line worst path), ledger (a 42-line router whose
+   497-line contract loads only at the moment of writing).
+4. **Split section-addressed monoliths.** A file cited for one of its sections (one
+   agent's criteria, one definition) but loaded whole should be split along its
+   consumption seams; an anchor link does not reduce the load.
+5. **Guard against under-loading.** The inverse failure exists: a rule the skill's
+   guarantees depend on needs an explicit read instruction on the path that uses it, not
+   a listing under "References". Explicitness may add lines; that is the correct trade.
 
 ## Rationalization-prevention Tables and Red Flags
 
