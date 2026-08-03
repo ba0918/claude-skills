@@ -14,8 +14,10 @@ check() が返す issue の種別:
   stale       挙動面が前回検証時から変化した（再評価が必要）
   orphan      台帳に記録があるが fixtures.json が消えた（--remove で掃除）
 
-stale には severity が付く。既存ファイルの内容変更・削除があれば contract-change、
-面へのファイル追加だけなら contract-addition（迷ったら contract-change 側）。
+stale には severity が付く。自スキル配下からの面へのファイル追加だけなら
+contract-addition、既存 md の変更がすべて散文のみ（構造フィンガープリント一致）
+なら prose-change、機械で安全と確認できない変更はすべて contract-change
+（迷ったら contract-change 側）。
 
 CLI:
   python3 ledger.py --check [root]             # CI 用。issue があれば exit 1
@@ -23,7 +25,8 @@ CLI:
       fixture 保有率を covered / exempt / uncovered で計上（--strict で uncovered を exit 1）
   python3 ledger.py --update SKILL [--accept] [--note TEXT] [root]
       fixtures 合格後に台帳を更新（--accept は「実行せず再評価不要と判断」を明示記録。
-      severity が contract-addition なら accepted-addition として自動で区別記録する。
+      severity が contract-addition / prose-change で前回が実走 pass なら
+      accepted-addition / accepted-prose として自動で区別記録する。
       --note は run の性質（照会回数・実行者が通った経路など）の申し送り）
   python3 ledger.py --remove SKILL [root]
   python3 ledger.py --impact FILE... [root]    # 変更ファイル → 影響スキル
@@ -37,6 +40,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dep_graph  # noqa: E402
+import md_structure  # noqa: E402
 
 LEDGER_REL = os.path.join("skills", "skill-regression", "ledger.json")
 _MISSING = "MISSING"
@@ -71,29 +75,58 @@ def skill_surface(root, skill):
 
 SEVERITY_CHANGE = "contract-change"
 SEVERITY_ADDITION = "contract-addition"
+SEVERITY_PROSE = "prose-change"
 
 RESULT_PASS = "pass"
 RESULT_ACCEPTED_ADDITION = "accepted-addition"
+RESULT_ACCEPTED_PROSE = "accepted-prose"
 RESULT_ACCEPTED_WITHOUT_RUN = "accepted-without-run"
 
 
-def stale_severity(recorded, current):
+def structural_hashes(root, files):
+    """md ファイルの構造フィンガープリント {root 相対パス: sha256 hex}。
+
+    散文のみ変更（prose-change）判定の比較基準。非 md には散文の概念が無いので
+    対象外（記録が無い = 判定不能 = 重い側、が stale_severity 側の規則）。
+    読めないファイル（不在・非 UTF-8）も同じ理由で黙って外す。
+    """
+    out = {}
+    for rel in files:
+        if not rel.endswith(".md"):
+            continue
+        path = os.path.join(root, rel)
+        if not os.path.isfile(path):
+            continue
+        try:
+            with open(path, encoding="utf-8") as f:
+                text = f.read()
+        except UnicodeDecodeError:
+            continue
+        out[rel] = md_structure.structural_fingerprint(text)
+    return out
+
+
+def stale_severity(recorded, current, recorded_struct=None, current_struct=None,
+                   own_prefix=None):
     """stale の重さを (severity, 差分ファイル一覧) で返す。差分なしなら (None, [])。
 
     recorded / current はどちらも {root 相対パス: sha256（不在は MISSING）}。
-    面にファイルが増えただけ（既存ファイルの hash は全一致）なら contract-addition、
-    既存ファイルの内容変更・削除が 1 つでもあれば contract-change。
-    迷ったら重い側という fail-safe を 2 箇所で効かせる。追加ファイルの hash が
-    MISSING（実体のない参照先＝壊れたリンク）の場合と、recorded が空（file_sha256 を
-    持たない旧エントリ＝比較基準が無い）の場合は、形式上「追加のみ」に見えても
-    contract-change として扱う。
+    recorded_struct / current_struct は md の構造フィンガープリント
+    （structural_hashes の出力）、own_prefix は自スキルのパス接頭辞
+    （例 "skills/a/"）。3 つとも省略可で、省略はその判定材料が無いことを意味し、
+    常に重い側へ倒れる。
+
+    分類は 3 値。面にファイルが増えただけなら contract-addition、既存 md の変更が
+    すべて散文のみ（構造フィンガープリント一致）なら prose-change、それ以外は
+    contract-change。迷ったら重い側という fail-safe を全経路で効かせる:
+    追加ファイルの hash が MISSING（実体のない参照先＝壊れたリンク）、recorded が
+    空（file_sha256 を持たない旧エントリ＝比較基準が無い）、own_prefix 指定時の
+    自スキル外からの追加（素パス参照の実体が後から作られて面へ入る未検証新規内容 —
+    #182 で Why not 見送り、#222 で導入）、構造記録の無いファイルの変更、は
+    いずれも contract-change として扱う。
 
     判定材料を hash 差分だけに閉じているのは、git 履歴やコミット範囲に依存せず
     「前回検証した内容そのもの」との比較で決まる決定性を優先したため。
-
-    Why not（第 3 の fail-safe を置かない）: 素パス参照の実体が後から作られて面に入る
-    ケースは未検証の新規内容だが contract-addition になる。自スキル外かどうかの判定には
-    skill 引数が要り純関数性を崩すため見送り、既知のリスクとして記録する（#222 で追跡）。
     """
     added = sorted(set(current) - set(recorded))
     removed = sorted(set(recorded) - set(current))
@@ -105,29 +138,49 @@ def stale_severity(recorded, current):
     if not changed:
         return None, []
     dangling = [rel for rel in added if current[rel] == _MISSING]
-    if not recorded or removed or modified or dangling:
+    foreign = [] if own_prefix is None else [
+        rel for rel in added if not rel.startswith(own_prefix)
+    ]
+    if not recorded or removed or dangling or foreign:
+        return SEVERITY_CHANGE, changed
+    if modified:
+        recorded_struct = recorded_struct or {}
+        current_struct = current_struct or {}
+        prose_only = all(
+            rel in recorded_struct and rel in current_struct
+            and recorded_struct[rel] == current_struct[rel]
+            for rel in modified
+        )
+        if prose_only:
+            return SEVERITY_PROSE, changed
         return SEVERITY_CHANGE, changed
     return SEVERITY_ADDITION, changed
 
 
-def accept_result(recorded, current, prev_result):
+def accept_result(recorded, current, prev_result, recorded_struct=None,
+                  current_struct=None, own_prefix=None):
     """--accept で記録する result を、severity と前回 result の両方から決める。
 
-    addition-only と機械的に確認でき、**かつ前回が実走 pass** の承認だけを
-    "accepted-addition" にする。前回が accepted-* の台帳に addition-only の承認を
-    積めてしまうと、一度も実走しないまま accepted-without-run の計上から恒久的に
-    逃げ続けられ、Red flag が用をなさなくなる。addition-only は「直前に実走で
-    確かめた内容から増えただけ」を意味するので、土台が実走でなければ成立しない。
+    addition-only または prose-only と機械的に確認でき、**かつ前回が実走 pass** の
+    承認だけを "accepted-addition" / "accepted-prose" にする。前回が accepted-* の
+    台帳に軽量承認を積めてしまうと、一度も実走しないまま accepted-without-run の
+    計上から恒久的に逃げ続けられ、Red flag が用をなさなくなる。どちらの分類も
+    「直前に実走で確かめた内容からの安全な差分」を意味するので、土台が実走で
+    なければ成立しない。
 
     比較基準の無いエントリを弾く判断は stale_severity に持たせてあり、ここでは
     再実装しない（--check の表示と記録値が別々の規則で動くと食い違うため）。
     """
     # 差分ゼロ（severity is None）も "accepted-without-run" 側へ落ちる。何も追加して
-    # いない承認が accepted-addition を名乗るのは意味論的に嘘であり、stale ですらない
+    # いない承認が軽量分類を名乗るのは意味論的に嘘であり、stale ですらない
     # エントリへの --accept は運用上ほぼ通らない経路なので、重い側で据え置く
-    severity, _ = stale_severity(recorded, current)
-    if severity == SEVERITY_ADDITION and prev_result == RESULT_PASS:
-        return RESULT_ACCEPTED_ADDITION
+    severity, _ = stale_severity(
+        recorded, current, recorded_struct, current_struct, own_prefix)
+    if prev_result == RESULT_PASS:
+        if severity == SEVERITY_ADDITION:
+            return RESULT_ACCEPTED_ADDITION
+        if severity == SEVERITY_PROSE:
+            return RESULT_ACCEPTED_PROSE
     return RESULT_ACCEPTED_WITHOUT_RUN
 
 
@@ -135,8 +188,13 @@ def make_entry(root, surface, result, verified_date, note=None):
     """台帳エントリを作る。
 
     result は "pass"（実走して全シナリオ合格）| "accepted-addition"（実走せず承認。
-    面への追加のみであることを hash 比較で機械確認済み）| "accepted-without-run"
-    （実走せず承認。既存ファイルの内容変更を含む、または比較基準が無い）。
+    面への追加のみであることを hash 比較で機械確認済み）| "accepted-prose"
+    （実走せず承認。既存 md の散文のみの変更であることを構造フィンガープリントで
+    機械確認済み）| "accepted-without-run"（実走せず承認。上記いずれにも機械分類
+    できない変更を含む、または比較基準が無い）。
+
+    structural_sha256 は次回照合時の散文のみ判定の比較基準（md のみ）。これを
+    持たない旧エントリの変更は常に contract-change へ倒れる。
 
     note は素の pass だけでは次に回す者へ伝わらない run の性質を残すための欄
     （executor-contract が要求する照会回数、実行者が選んだ経路など）。
@@ -145,6 +203,7 @@ def make_entry(root, surface, result, verified_date, note=None):
     entry = {
         "surface": surface,
         "file_sha256": file_hashes(root, surface),
+        "structural_sha256": structural_hashes(root, surface),
         "surface_sha256": fingerprint(root, surface),
         "result": result,
         "verified": verified_date,
@@ -227,7 +286,12 @@ def check(root, entries):
         current_surface = skill_surface(root, skill)
         current = file_hashes(root, current_surface)
         recorded = entry.get("file_sha256", {})
-        severity, changed = stale_severity(recorded, current)
+        severity, changed = stale_severity(
+            recorded, current,
+            entry.get("structural_sha256", {}),
+            structural_hashes(root, current_surface),
+            own_prefix=f"skills/{skill}/",
+        )
         if severity is None:
             continue
         issues.append(("stale", skill, f"[{severity}] " + ", ".join(changed)))
@@ -276,6 +340,7 @@ def main(argv):
         counts = {
             RESULT_PASS: 0,
             RESULT_ACCEPTED_ADDITION: 0,
+            RESULT_ACCEPTED_PROSE: 0,
             RESULT_ACCEPTED_WITHOUT_RUN: 0,
         }
         for entry in entries.values():
@@ -353,7 +418,10 @@ def main(argv):
                     )
                     return 1
                 result = accept_result(
-                    prev, file_hashes(root, surface), prev_entry.get("result"))
+                    prev, file_hashes(root, surface), prev_entry.get("result"),
+                    prev_entry.get("structural_sha256", {}),
+                    structural_hashes(root, surface),
+                    own_prefix=f"skills/{skill}/")
             entries[skill] = make_entry(
                 root, surface, result,
                 datetime.date.today().isoformat(), note=note,
