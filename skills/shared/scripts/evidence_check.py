@@ -59,7 +59,13 @@ def _require_pure_absence(profile_path):
     不在（return）とし、解決不能な既存要素はすべて CheckBroken に倒す。
     全要素が存在するのに open が失敗していた場合は判定中の状態変化として
     fail-closed にする。
+
+    `..` セグメントを含むパスは走査前に CheckBroken へ倒す。abspath の字句正規化は
+    symlink 解決より先に `..` を消すため、symlink ディレクトリの直後に `..` が来ると
+    open() の解決先と走査対象が食い違い、裁定そのものが成立しないから。
     """
+    if ".." in profile_path.split(os.sep):
+        raise CheckBroken(f"profile path contains a '..' segment: {profile_path}")
     path = os.path.abspath(profile_path)
     parts = path.split(os.sep)
     current = os.sep

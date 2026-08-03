@@ -270,6 +270,17 @@ class TestReadInForceProfile(EvidenceCheckHarness):
             os.path.join(self.root, "good-link", "absent-profile.md")
         ))
 
+    def test_dotdot_segment_after_symlink_dir_breaks_check(self):
+        os.makedirs(os.path.join(self.root, "deep"))
+        os.symlink(
+            os.path.join(self.root, "other"),
+            os.path.join(self.root, "deep", "aliasdir"),
+        )
+        with self.assertRaises(evidence_check.CheckBroken):
+            evidence_check.read_in_force_profile(
+                os.path.join(self.root, "deep", "aliasdir", "..", "profile.md")
+            )
+
     def test_open_failure_on_existing_path_breaks_check_as_state_change(self):
         path = self.write_profile()
         with self.assertRaises(evidence_check.CheckBroken):
