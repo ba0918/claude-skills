@@ -72,6 +72,10 @@ def skill_surface(root, skill):
 SEVERITY_CHANGE = "contract-change"
 SEVERITY_ADDITION = "contract-addition"
 
+RESULT_PASS = "pass"
+RESULT_ACCEPTED_ADDITION = "accepted-addition"
+RESULT_ACCEPTED_WITHOUT_RUN = "accepted-without-run"
+
 
 def stale_severity(recorded, current):
     """stale の重さを (severity, 差分ファイル一覧) で返す。差分なしなら (None, [])。
@@ -114,8 +118,8 @@ def accept_result(recorded, current):
     # エントリへの --accept は運用上ほぼ通らない経路なので、重い側で据え置く
     severity, _ = stale_severity(recorded, current)
     if severity == SEVERITY_ADDITION:
-        return "accepted-addition"
-    return "accepted-without-run"
+        return RESULT_ACCEPTED_ADDITION
+    return RESULT_ACCEPTED_WITHOUT_RUN
 
 
 def make_entry(root, surface, result, verified_date, note=None):
@@ -260,7 +264,11 @@ def main(argv):
         # accepted-addition を別建てで数える。畳んで表示すると「機械が安全側と
         # 確認した承認」が「人間が重い変更を承知で通した承認」に紛れ、
         # Red flag の accepted-without-run 偏重チェックが鈍る
-        counts = {"pass": 0, "accepted-addition": 0, "accepted-without-run": 0}
+        counts = {
+            RESULT_PASS: 0,
+            RESULT_ACCEPTED_ADDITION: 0,
+            RESULT_ACCEPTED_WITHOUT_RUN: 0,
+        }
         for entry in entries.values():
             result = entry.get("result")
             if result in counts:
@@ -322,7 +330,7 @@ def main(argv):
                 print(f"✗ skills/{skill}/fixtures.json が存在しない")
                 return 1
             surface = skill_surface(root, skill)
-            result = "pass"
+            result = RESULT_PASS
             if accept:
                 fixtures_rel = f"skills/{skill}/fixtures.json"
                 prev = entries.get(skill, {}).get("file_sha256", {})
