@@ -29,7 +29,8 @@ _LEDGER_LINE_RE = re.compile(r"^\[(stale|unverified)\]\s+([^:]+):\s*(.*)$")
 # stale detail 先頭の severity ラベル: "[contract-change] a.md, b.md" の "[...] "。
 # 語彙を列挙で縛る。未知のラベルが増えたときに黙って剥がして通すより、round-trip
 # テストが実在しないパスとして落ちるほうが、追随漏れに気付ける
-_LEDGER_SEVERITY_RE = re.compile(r"^\[(contract-change|contract-addition)\]\s*")
+_LEDGER_SEVERITY_RE = re.compile(
+    r"^\[(contract-change|contract-addition|prose-change)\]\s*")
 
 
 def parse_validate_output(text):

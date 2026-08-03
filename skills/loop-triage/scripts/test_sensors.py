@@ -163,12 +163,14 @@ class LedgerCheckRoundTripTest(unittest.TestCase):
             for kind, skill, detail in ledger.check(root, entries)
         ) + "\n"
 
-    def test_affected_paths_are_real_paths_for_both_severities(self):
+    def test_affected_paths_are_real_paths_for_all_severities(self):
         for label, mutate in (
             ("contract-change", lambda root: self._write(
-                root, "skills/a/SKILL.md", "body CHANGED")),
+                root, "skills/a/SKILL.md", "run `changed-command` now")),
             ("contract-addition", lambda root: self._write(
                 root, "skills/a/extra.md", "new reference")),
+            ("prose-change", lambda root: self._write(
+                root, "skills/a/SKILL.md", "body reworded, no tokens touched")),
         ):
             with self.subTest(severity=label), tempfile.TemporaryDirectory() as root:
                 self._write(root, "skills/a/SKILL.md", "body")
