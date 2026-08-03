@@ -182,6 +182,10 @@ class ReleaseToolTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         result = json.loads(proc.stdout)
         self.assertEqual(len(result["files"]), 2)
+        self.assertIsNone(result["profile"])
+        for path in result["files"]:
+            with open(path, encoding="utf-8") as handle:
+                self.assertIsNone(json.load(handle)["profile"])
         checker = subprocess.run(
             [
                 sys.executable,
@@ -195,6 +199,54 @@ class ReleaseToolTest(unittest.TestCase):
             text=True,
         )
         self.assertEqual(checker.returncode, 0, checker.stdout + checker.stderr)
+        self.assertIn("publishable: yes", checker.stdout)
+
+    def test_evidence_uses_in_force_profile_and_real_checker_accepts_it(self):
+        """発効 profile を writer と verifier が同じ束縛として機械解決する。"""
+        self._write(
+            os.path.join(
+                "skills", "shared", "references", "skill-repository-profile.md"
+            ),
+            "# Profile\n\n"
+            "`in-force: skill-repository-profile 1.0.0 since 2026-08-03`\n\n"
+            "Identity: `skill-repository-profile 1.0.0`\n\n"
+            "Conforms to `quality-gate-contract 1.0.0`.\n",
+        )
+        target_sha = "b" * 40
+        evidence_dir = os.path.join(self.root, "profile-evidence")
+        proc = self._run(
+            "evidence",
+            "--version", "1.73.0",
+            "--target-sha", target_sha,
+            "--actor", "release-operator",
+            "--run-url", "https://example.test/runs/456",
+            "--semantic-attested", "true",
+            "--evidence-dir", evidence_dir,
+        )
+
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        expected_profile = {
+            "name": "skill-repository-profile", "version": "1.0.0"
+        }
+        result = json.loads(proc.stdout)
+        self.assertEqual(result["profile"], expected_profile)
+        for path in result["files"]:
+            with open(path, encoding="utf-8") as handle:
+                self.assertEqual(json.load(handle)["profile"], expected_profile)
+
+        checker = subprocess.run(
+            [
+                sys.executable,
+                EVIDENCE_CHECK,
+                "--repo-root", self.root,
+                "--evidence-dir", evidence_dir,
+                "--target-sha", target_sha,
+            ],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(checker.returncode, 0, checker.stdout + checker.stderr)
+        self.assertIn("in force since", checker.stdout)
         self.assertIn("publishable: yes", checker.stdout)
 
     def test_evidence_rejects_false_attestation_without_writing(self):

@@ -15,7 +15,12 @@ _SHARED_SCRIPTS_DIR = os.path.join(
 )
 if _SHARED_SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, _SHARED_SCRIPTS_DIR)
-from evidence_check import CheckBroken, read_published_version  # noqa: E402
+from evidence_check import (  # noqa: E402
+    CheckBroken,
+    PROFILE_RELPATH,
+    read_in_force_profile,
+    read_published_version,
+)
 
 
 CONTRACT_NAME = "quality-gate-contract"
@@ -148,14 +153,15 @@ def extract_notes(changelog, version):
     return changelog[match.start():end].strip() + "\n"
 
 
-def build_evidence_records(target_sha, actor, run_url, contract_version, produced_at):
+def build_evidence_records(target_sha, actor, run_url, contract_version, produced_at,
+                           profile):
     """evidence-format v1 の machine / semantic record を組み立てる。"""
     common = {
         "schema_version": 1,
         "target_sha": target_sha,
         "contract": CONTRACT_NAME,
         "contract_version": contract_version,
-        "profile": None,
+        "profile": profile,
         "produced_at": produced_at,
     }
     return {
@@ -238,6 +244,10 @@ def write_evidence(repo_root, evidence_dir, version, target_sha, actor, run_url,
 
     contract_path = os.path.join(repo_root, CONTRACT_RELPATH)
     contract_version = read_published_version(contract_path)
+    in_force = read_in_force_profile(os.path.join(repo_root, PROFILE_RELPATH))
+    profile = None if in_force is None else {
+        "name": in_force["name"], "version": in_force["version"]
+    }
     produced_at = (
         datetime.now(timezone.utc)
         .replace(microsecond=0)
@@ -245,7 +255,7 @@ def write_evidence(repo_root, evidence_dir, version, target_sha, actor, run_url,
         .replace("+00:00", "Z")
     )
     records = build_evidence_records(
-        target_sha, actor, run_url, contract_version, produced_at
+        target_sha, actor, run_url, contract_version, produced_at, profile
     )
     output_dir = evidence_dir or os.path.join(repo_root, DEFAULT_EVIDENCE_RELPATH)
     try:
@@ -258,7 +268,7 @@ def write_evidence(repo_root, evidence_dir, version, target_sha, actor, run_url,
         path = os.path.join(output_dir, f"{state}.json")
         _write_json(path, record)
         paths.append(path)
-    return {"files": paths}
+    return {"files": paths, "profile": profile}
 
 
 def run(argv=None):
