@@ -11,6 +11,20 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: design-guide をワークフロー別 4 ファイル + ルータへ分割（#201 作業 4 第 7 弾・最終）
+
+- Session / Update / Mockup の 3 ワークフロー同居で Mockup 経路の 230 行超が死荷重だった
+  547 行を、ルータ（46 行）+ session-workflow（110）/ discovery-phases（129）/
+  update-workflow（44）/ mockup-workflow（231）へ verbatim 分割（byte 一致検証済み）。
+  Phase 1-5 を discovery-phases として独立させ、Update Step 4 の「Session の対応 Phase を
+  実行」依存を 1 段参照のまま解決
+- ルータに 2 つの常駐契約を配置: (a) discovery 中のファイル作成・編集禁止のハード制約
+  （compliance 回帰の床）、(b) 完了報告契約（human-readable-summary 準拠 + 📝 In short:
+  ラベル — validator チェック 14 の要求）
+- 到達順序が変わるため fixtures dg-001（討論スキップ圧の compliance probe）/
+  dg-003（update の fail-fast）をブランクスレート executor で実走再検証:
+  両シナリオ critical 全○（sha256 baseline 比較で無編集を裏取り）、台帳を実走 pass で更新
+
 ### Changed: design-scaffold をステージ別 3 ファイル + ルータへ分割（#201 作業 4 第 6 弾）
 
 - Step 1〜12 一直線・完了レポート 3 箇所で「どこで終わってよいか不明瞭」だった 600 行を、
