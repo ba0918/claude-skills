@@ -190,6 +190,18 @@ class TestAdversarialFalseNegatives(unittest.TestCase):
         after = "<?agent deny?>\n"
         self.assertNotEqual(_fp(before), _fp(after))
 
+    def test_emphasized_normative_instruction_change(self):
+        # 規範文書の強調（**MUST ...**）は指示そのもの
+        before = "**MUST run validation.**\n"
+        after = "**MUST skip validation.**\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_strikethrough_removal_reactivates_instruction(self):
+        # 打ち消しの解除は「取り下げた指示」の再活性化
+        before = "~~Run destructive cleanup.~~\n"
+        after = "Run destructive cleanup.\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
 
 class TestFenceInteriorIsOpaque(unittest.TestCase):
     """フェンス内はコードとして丸ごと扱い、他の規則を適用しない。"""
