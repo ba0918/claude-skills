@@ -1,22 +1,55 @@
 #!/usr/bin/env python3
 """md の構造フィンガープリント算出（純関数）。
 
-散文のみ変更（prose-only）の機械判定に使う。md テキストから機械パーストークン
-（frontmatter・コードフェンス・インデントコード・インラインコード・リンク先・
-表行・見出し行）を出現順に抽出し、その列の sha256 をフィンガープリントとする。
-2 版のフィンガープリントが一致すれば、変わったのは散文だけだと言える。
+散文のみ変更（prose-only）の機械判定に使う。md テキストから機械パーストークンを
+出現順に抽出し、その列の sha256 をフィンガープリントとする。2 版のフィンガー
+プリントが一致すれば、変わったのは散文だけだと言える。
 
 誤判定の向きは非対称で、抽出しすぎ（散文をトークン扱い）は重い側
-（contract-change）へ倒れるだけだが、抽出漏れは挙動変更を散文と誤認させる。
-規則は広め（表はセル散文ごと丸ごと・見出し丸ごと・行頭 4 スペースはコード扱い）
-に取り、迷ったらトークンに含める。
+（contract-change）へ倒れるだけだが、抽出漏れは挙動変更を散文と誤認させ
+軽量承認レールに乗せてしまう。そこで構文の deny-list（トークン構文を列挙し
+残りを散文とみなす）ではなく **allow-list** を採る: 散文と認めるのはプレーンな
+地の文の行だけで、構造構文の兆候（行頭マーカー・インデント・バッククォート・
+角括弧・パイプ・HTML タグ風・setext 下線）を 1 つでも含む行は行全体を
+トークン化する。未知の・変種の md 構文はデフォルトで構造側に落ちるため、
+個別構文の抽出漏れが起きない（PR #224 の敵対レビューで deny-list 実装に
+リスト項目・setext 見出し・先頭パイプなし表・タブインデント・HTML・
+多重バッククォート・4 連フェンスの偽陰性が実証されたことによる設計反転）。
 """
 import hashlib
 import re
 
-_INLINE_CODE_RE = re.compile(r"`([^`]+)`")
-_LINK_TARGET_RE = re.compile(r"\]\(([^)]+)\)")
-_REF_DEF_RE = re.compile(r"^\s{0,3}\[[^\]]+\]:\s*(\S+)")
+# 行内にあれば地の文と認めない兆候: インラインコード、リンク・参照（角括弧全般。
+# shortcut reference はプレーン角括弧と区別できないため両方拾う）、表セル区切り、
+# HTML タグ・コメント風（< の直後が英字 / '/' / '!' のときだけ。比較演算の
+# 「a < b」は空白が挟まるため拾わない）
+_INLINE_STRUCTURE_RE = re.compile(r"`|\[|\||<[A-Za-z!/]")
+
+# 行頭のリストマーカー（ordered / unordered）。リスト項目は指示そのものが
+# 書かれる場所なので散文と認めない
+_LIST_RE = re.compile(r"^ {0,3}(?:[-*+]|\d{1,9}[.)])(?:\s|$)")
+
+# setext 見出しの下線 / thematic break。= か - だけの行
+_SETEXT_RE = re.compile(r"^ {0,3}(=+|-+)\s*$")
+
+# コードフェンスの開始。CommonMark に合わせ 3 連以上の ` または ~
+_FENCE_OPEN_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
+
+
+def _is_prose(line):
+    """プレーンな地の文の行か。True の行だけがフィンガープリントに影響しない。"""
+    if line.startswith("\t") or line.startswith("    "):
+        return False  # インデントコード相当
+    stripped = line.strip()
+    if not stripped:
+        return True  # 空行は段落区切りで、構造情報を持たない
+    if stripped[0] in "#>|":
+        return False  # ATX 見出し / blockquote / 表
+    if _LIST_RE.match(line) or _SETEXT_RE.match(line):
+        return False
+    if _INLINE_STRUCTURE_RE.search(line):
+        return False
+    return True
 
 
 def structural_tokens(text):
@@ -32,39 +65,41 @@ def structural_tokens(text):
                 i = j + 1
                 break
 
-    fence_close = None
+    fence_char = None
+    fence_len = 0
     fence_buf = []
+    prev_prose = None  # 直前の非空散文行（setext 見出しのテキスト候補）
     for ln in lines[i:]:
-        stripped = ln.strip()
-        if fence_close is not None:
+        if fence_char is not None:
             fence_buf.append(ln)
-            if stripped.startswith(fence_close):
+            stripped = ln.strip()
+            # closer は opener と同じ文字種で opener 以上の run 長のみ
+            # （内側の短い ``` を closer と誤認すると以降の内容が指紋から漏れる）
+            if stripped and set(stripped) == {fence_char} \
+                    and len(stripped) >= fence_len:
                 tokens.append(("fence", "\n".join(fence_buf)))
                 fence_buf = []
-                fence_close = None
+                fence_char = None
             continue
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            fence_close = stripped[:3]
-            fence_buf = [ln]
-            continue
-        if ln.startswith("    "):
-            tokens.append(("indented-code", ln))
-            continue
-        if stripped.startswith("|"):
-            tokens.append(("table", stripped))
-            continue
-        if stripped.startswith("#"):
-            tokens.append(("heading", stripped))
-            continue
-        m = _REF_DEF_RE.match(ln)
+        m = _FENCE_OPEN_RE.match(ln)
         if m:
-            tokens.append(("ref-def", m.group(1)))
+            fence_char = m.group(1)[0]
+            fence_len = len(m.group(1))
+            fence_buf = [ln]
+            prev_prose = None
             continue
-        for m in _LINK_TARGET_RE.finditer(ln):
-            tokens.append(("link", m.group(1)))
-        for m in _INLINE_CODE_RE.finditer(ln):
-            tokens.append(("code", m.group(1)))
-    if fence_close is not None:
+        # setext 下線は直前の散文行を見出しテキストとして道連れにする
+        # （下線だけをトークン化すると見出し名の変更を散文と誤認する）
+        if _SETEXT_RE.match(ln) and prev_prose is not None:
+            tokens.append(("heading", prev_prose + "\n" + ln.strip()))
+            prev_prose = None
+            continue
+        if _is_prose(ln):
+            prev_prose = ln if ln.strip() else None
+            continue
+        tokens.append(("line", ln))
+        prev_prose = None
+    if fence_char is not None:
         # 閉じられていないフェンスは残り全文をコード扱い（重い側）
         tokens.append(("fence", "\n".join(fence_buf)))
     return tokens

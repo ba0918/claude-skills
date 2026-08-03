@@ -35,8 +35,9 @@ runs the regression evaluation only against the skills whose behavior surface ch
   It is recorded explicitly in the ledger as an acceptance, leaving a trace of the judgment (distinguishable from ignoring it).
   Which value gets recorded is decided by the machine, not by the operator: `accepted-addition` when it can confirm the
   behavior surface only gained files on top of a real run's `pass`, `accepted-prose` when it can confirm every changed
-  file is an existing md whose machine-parsed tokens (frontmatter, code fences, inline code, link targets, tables,
-  headings) are untouched — again only on top of a real run's `pass` — and `accepted-without-run` whenever it cannot
+  file is an existing md where only plain paragraph prose changed (any line carrying structural syntax — headings,
+  lists, tables, fences, indented code, HTML, inline code, links — counts as machine-parsed and is compared verbatim) —
+  again only on top of a real run's `pass` — and `accepted-without-run` whenever it cannot
   confirm either. A self-declared "it was a light change" would leave an unbacked claim in the ledger, so the flag does
   not let you choose
 

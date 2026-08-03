@@ -27,9 +27,10 @@ class TestProseOnlyChangesKeepFingerprint(unittest.TestCase):
         after = "# Title\n\nA new explanatory sentence.\n\n```sh\nrun me\n```\n"
         self.assertEqual(_fp(before), _fp(after))
 
-    def test_link_text_rewording_keeps_target(self):
-        before = "See [the old label](refs/contract.md) for details.\n"
-        after = "Read [a new label](refs/contract.md) instead.\n"
+    def test_prose_around_structural_lines(self):
+        # 構造行（フェンス・見出し）はそのままに、地の文の段落だけが変わる
+        before = "# T\n\nOld explanation here.\n\n```sh\nrun\n```\n"
+        after = "# T\n\nA better explanation.\n\n```sh\nrun\n```\n"
         self.assertEqual(_fp(before), _fp(after))
 
 
@@ -92,6 +93,78 @@ class TestStructuralChangesBreakFingerprint(unittest.TestCase):
         # 同じトークン集合でも並びが変われば別物（順序保持）
         before = "```sh\none\n```\n\n```sh\ntwo\n```\n"
         after = "```sh\ntwo\n```\n\n```sh\none\n```\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+
+class TestAdversarialFalseNegatives(unittest.TestCase):
+    """PR #224 敵対レビューで deny-list 実装に実証された偽陰性 5 種の固定。
+
+    いずれも「挙動を変える編集なのにフィンガープリントが変わらない」collision
+    だったもの。allow-list 反転後は必ず不一致になる。
+    """
+
+    def test_list_item_instruction_change(self):
+        before = "1. Delete cache.\n"
+        after = "1. Delete database.\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_unordered_list_item_change(self):
+        before = "- run the linter\n"
+        after = "- skip the linter\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_setext_heading_change(self):
+        before = "Step One\n--------\n"
+        after = "Step Two\n--------\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_table_without_leading_pipe(self):
+        before = "run | safe\n"
+        after = "run | destructive\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_tab_indented_code_change(self):
+        before = "\tcommand old\n"
+        after = "\tcommand new\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_html_tag_content_change(self):
+        before = "<agent-rule>allow</agent-rule>\n"
+        after = "<agent-rule>deny</agent-rule>\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_reference_link_label_change(self):
+        # 両定義が残ったまま use 側のラベルを差し替える = 解決先の変更
+        before = "see [policy][old]\n\n[old]: refs/a.md\n[new]: refs/b.md\n"
+        after = "see [policy][new]\n\n[old]: refs/a.md\n[new]: refs/b.md\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_link_destination_with_parentheses(self):
+        before = "see [x](dir/(stable)old.md)\n"
+        after = "see [x](dir/(stable)new.md)\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_multi_backtick_inline_code_change(self):
+        before = "use ``foo ` old`` now\n"
+        after = "use ``foo ` new`` now\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_inner_shorter_fence_is_not_a_closer(self):
+        # 4 連フェンス内の ``` を closer と誤認すると以降の変更が指紋から漏れる
+        before = "````md\n```\ninner old\n```\n````\n"
+        after = "````md\n```\ninner new\n```\n````\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_blockquote_change(self):
+        before = "> do the safe thing\n"
+        after = "> do the risky thing\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_link_text_change_is_structural_by_fail_safe(self):
+        # リンクテキストの言い換えは deny-list 時代は散文扱いだった。shortcut
+        # reference（テキスト自体が解決先）と区別できないため、行ごと重い側へ倒す
+        before = "See [the old label](refs/contract.md) for details.\n"
+        after = "Read [a new label](refs/contract.md) instead.\n"
         self.assertNotEqual(_fp(before), _fp(after))
 
 
