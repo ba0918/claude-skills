@@ -119,8 +119,8 @@
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "3cd4e0ed9629f2719cc79e6c63b26ebdc870b2d6ebff19719df47115144668b6",
-      "skills/cycle/fixtures.json": "25677e0ac4efbfc9c894c967186342d063375c82f66ae82f09f39f5284865466",
+      "skills/cycle/SKILL.md": "0151a61230f340ecef018f7916cd8ced0c3c8c59925a05dd6a21c143d2bc4fb5",
+      "skills/cycle/fixtures.json": "2c570b47d5e04320ce16fe1172d15d80cc5a6d4c2a5f0953d98b6da6b95a1e1b",
       "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
@@ -131,18 +131,40 @@
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
+      "skills/shared/references/evidence-format.md": "96da494ddf512e5de33fbcc2a87eb0b5e97058c765a5b7e956151246e4c4d751",
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
       "skills/shared/references/publication-protocol.md": "5aaaf09134900951ddfa3edd3523676ecbd98e8f6c5755f6b20520ee04b376b3",
       "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
+      "skills/shared/scripts/evidence_check.py": "17135f510679d2c7d01073f7ba65b2ba5ff0bb2626e9bcfc292976b238db8289",
       "skills/shared/scripts/publication_advance.py": "c17d4938f5db991e8cf3cbae6aacc93e48555351a38570485fc0f3a01205c8ed",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "#201: line-8 参照の consumer contract 化のみ（深い節引用 L98/L196 は全文契約のまま）。fixtures は挙動検証でリンク先非依存。次回実走時は fixture 同梱契約に artifact-paths.md を追加すること",
-    "result": "accepted-without-run",
+    "note": "process-queue(Sonnet,並列4) 16本 + subagent経路再実行 4本(cy-012/015/018/019)。process経路fail 4本は経路制約とレビューverdict非決定性が原因で再実行はいずれもpass。cy-015はcy-013判例に倣い注入指定をpromptへ明文化(requirements不変更)。watchdog照会5回・委譲完了の事実中継8回",
+    "result": "pass",
+    "structural_sha256": {
+      "skills/cycle/SKILL.md": "51b6efbf7b77ee1d4dc032a567dbab21f54e1f14063031409b1dcd5cdcca5c38",
+      "skills/cycle/references/completion.md": "1b2e05b6506e5b46edc76d4cb90f5c92ae938317eeb7cd477c2aec240536072c",
+      "skills/cycle/references/final-gate-delegation.md": "27d25341c480d9a3d6ad69a5c247b995082067c8eda58d93e3cc60036e34514b",
+      "skills/cycle/references/fix-delegation.md": "bbbb683d7d408568579cdd71e9d00136f32f6143222fdcd905a9869edbc5968f",
+      "skills/cycle/references/inner-satellite.md": "76c64e328fc081df5cf1b85e97e33ff030d2a39a71ff4a30ab6bca973f6e15f6",
+      "skills/cycle/references/skill-review-routing.md": "932a73f6f0ae1f98eeb0f099ed6259c4502a7911696d4d4327f5ef9a8a70631a",
+      "skills/plan-reviewer/references/output-format.md": "01ea67bdf460860ba93459c084bb26dcd9e817217fb4b8bac07ae852e7ae22a7",
+      "skills/plan/references/status-update-guide.md": "7cce88c03df6d16c609b08ce4b055d21dd27aff1b677a6a8ebcfa9d5213ba83f",
+      "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
+      "skills/shared/references/artifact-store.md": "4ab7297bbce0294646093f50c818c13d31e9212e3ad9bbeffc74318686d03b06",
+      "skills/shared/references/codex-integration.md": "cbe917646842d21292baafd40ddc07e351bd2c12e226d370dbc95175e6e0c274",
+      "skills/shared/references/evidence-format.md": "4caa3fb0bb6e4c2fb5516c0d882a7b5e26845b3bb0695bbd5c05c21b7ee070de",
+      "skills/shared/references/fix-action-taxonomy.md": "cf45d893a25a3f85e85c264cea989c1ce1f58800da54792de93a5bed8974f807",
+      "skills/shared/references/orchestration-patterns.md": "15a11826bea07cf8005c8c27cb01d7cf59d4275ab1a34e9dbaabf3f1b648c488",
+      "skills/shared/references/publication-protocol.md": "e042692698eff9de64abd51a9fa5396a0b6a076160f5bc6510c474a55df2f412",
+      "skills/shared/references/tdd-contract.md": "fbcf6923f760432caef736a58c9b83679de91b3b5a25b42c6fbc62f91ccb9065",
+      "skills/shared/references/verification-gate.md": "78c103caf83aa10d6716762c96cb3e15803b000b0374db333862eb78a88eed55",
+      "skills/shared/references/workspace-lock.md": "93a8ff761e07d1c63c59c60de8ed3ecec3a64e05e0a3c21a5e42a5941ad4634b"
+    },
     "surface": [
       "skills/cycle/SKILL.md",
       "skills/cycle/fixtures.json",
@@ -156,18 +178,20 @@
       "skills/shared/references/artifact-paths.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/codex-integration.md",
+      "skills/shared/references/evidence-format.md",
       "skills/shared/references/fix-action-taxonomy.md",
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/publication-protocol.md",
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md",
+      "skills/shared/scripts/evidence_check.py",
       "skills/shared/scripts/publication_advance.py",
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "1f1d9523bf3a1b7b37f28f7f57bfee5b92d110899db5a75e690503bdaa92f55d",
-    "verified": "2026-08-03"
+    "surface_sha256": "85b720c716654401a669c1d2c955b6d007a1f67a5943b59dbbc230f99c174368",
+    "verified": "2026-08-04"
   },
   "decision-journal": {
     "file_sha256": {
@@ -413,12 +437,13 @@
   },
   "iterate": {
     "file_sha256": {
-      "skills/iterate/SKILL.md": "24d750b3147a97e2c8bf5d722c54fb00e00ed4d3d1bfaac7c331f0b1d366e6ab",
+      "skills/iterate/SKILL.md": "dcd2c9389c5edbc3c6693fd56341f9caa9a73b03137396f20933763024e00a8f",
       "skills/iterate/fixtures.json": "ac7a7647522068d51cea277e16e10f095c8ec7ea98824fe214a13f15e94dce99",
       "skills/iterate/references/light-review.md": "f4b63a197756686af4f9313fd05da3c0e4bd88b24ca70779b3fa7f8f7ea6c322",
       "skills/iterate/references/scope-criteria.md": "fc0005c7a886ec6d3b9593bf6e9d6b607a6f4f6e6f000280844cf750de83ea21",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
+      "skills/shared/references/evidence-format.md": "96da494ddf512e5de33fbcc2a87eb0b5e97058c765a5b7e956151246e4c4d751",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
       "skills/shared/references/publication-protocol.md": "5aaaf09134900951ddfa3edd3523676ecbd98e8f6c5755f6b20520ee04b376b3",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
@@ -426,10 +451,26 @@
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
+      "skills/shared/scripts/evidence_check.py": "17135f510679d2c7d01073f7ba65b2ba5ff0bb2626e9bcfc292976b238db8289",
       "skills/shared/scripts/publication_advance.py": "c17d4938f5db991e8cf3cbae6aacc93e48555351a38570485fc0f3a01205c8ed"
     },
-    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
-    "result": "accepted-without-run",
+    "note": "process-queue(Sonnet) 3/3 pass。it-outer-worktreeはevidence_check.py実走(publishable確認後advance)を含む",
+    "result": "pass",
+    "structural_sha256": {
+      "skills/iterate/SKILL.md": "ecd76ff7616c3d797b3ff2cf409202375ceb19e01090075d17a2079a71512d27",
+      "skills/iterate/references/light-review.md": "531c483a72d87e8b010305899eacc78e7c4dff9a95ceaaccc3f7c42322959d82",
+      "skills/iterate/references/scope-criteria.md": "09c26cce4730e3e3633de6bac45580dd6f68bca6e8d7dfea722785190bdd09eb",
+      "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
+      "skills/shared/references/codex-integration.md": "cbe917646842d21292baafd40ddc07e351bd2c12e226d370dbc95175e6e0c274",
+      "skills/shared/references/evidence-format.md": "4caa3fb0bb6e4c2fb5516c0d882a7b5e26845b3bb0695bbd5c05c21b7ee070de",
+      "skills/shared/references/orchestration-patterns.md": "15a11826bea07cf8005c8c27cb01d7cf59d4275ab1a34e9dbaabf3f1b648c488",
+      "skills/shared/references/publication-protocol.md": "e042692698eff9de64abd51a9fa5396a0b6a076160f5bc6510c474a55df2f412",
+      "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
+      "skills/shared/references/tdd-contract.md": "fbcf6923f760432caef736a58c9b83679de91b3b5a25b42c6fbc62f91ccb9065",
+      "skills/shared/references/testing-anti-patterns.md": "e31cc2487959245c1c98e60cfbdc303990af03d306eedd1b10da6b264d3de829",
+      "skills/shared/references/verification-gate.md": "78c103caf83aa10d6716762c96cb3e15803b000b0374db333862eb78a88eed55",
+      "skills/shared/references/workspace-lock.md": "93a8ff761e07d1c63c59c60de8ed3ecec3a64e05e0a3c21a5e42a5941ad4634b"
+    },
     "surface": [
       "skills/iterate/SKILL.md",
       "skills/iterate/fixtures.json",
@@ -437,6 +478,7 @@
       "skills/iterate/references/scope-criteria.md",
       "skills/shared/references/artifact-paths.md",
       "skills/shared/references/codex-integration.md",
+      "skills/shared/references/evidence-format.md",
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/publication-protocol.md",
       "skills/shared/references/severity-and-verdicts.md",
@@ -444,10 +486,11 @@
       "skills/shared/references/testing-anti-patterns.md",
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md",
+      "skills/shared/scripts/evidence_check.py",
       "skills/shared/scripts/publication_advance.py"
     ],
-    "surface_sha256": "ebee26b03392d1c6955889526e5c268658b9c6ca5b4bb8f09bc985d59e0645fe",
-    "verified": "2026-08-03"
+    "surface_sha256": "7f3eb35ddb8925f40cc26dd79cb0e8b5a73e71727732044925c9c8cab73a625b",
+    "verified": "2026-08-04"
   },
   "plan": {
     "file_sha256": {
@@ -586,24 +629,26 @@
       "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
+      "skills/shared/references/skill-repository-profile.md": "fafc81d7ce71468606f3fd3c281b8f3a926dc3f0f48fcd221516720bf6c2fefe",
       "skills/skill-regression/scripts/ledger.py": "1a8139caa666d495f6628655e3f16f6ef19835b1d93b1f3c1f396743bc6df347",
       "skills/skill-reviewer/SKILL.md": "1dae27c5e1048d50e76925ce8d7b1760019bf5ee984a881cdba68630d5da5e31",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "db06e7e49c22d1eb0b4725304b4858152c4f0577fa1df0234d0a189f33c72bda",
-      "skills/skill-reviewer/references/output-contract.md": "f5e6e2ad5b0173899bcaa5b6f2d060dc3c95bdfaee484d7f7e146f17f11fe46a",
+      "skills/skill-reviewer/references/output-contract.md": "7cd2fc72d01be97efab8fa5b0302de986e0ffec38fd4dadbfc2282f9e1982b81",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "blank-slate Sonnet 実走 3/3、照会 0 回。3 本とも validate_review_output.py exit 0 の実出力で判定",
+    "note": "process-queue(Sonnet) 3/3 pass。sr-001は権限グラント試走を兼ねる。3本ともvalidate_review_output.py exit 0の実出力で判定",
     "result": "pass",
     "structural_sha256": {
-      "skills/shared/references/coverage-ledger.md": "aa5d0f84fb230cd2ed3dafa16c7289cd024b9d970b0a465efee5f74a2b55ec7b",
-      "skills/shared/references/fix-action-taxonomy.md": "ffbc1eb633b8a960078ad401912c86e14501d9d9207c157502072b52bcc7334a",
-      "skills/shared/references/quality-gate-contract.md": "744263e306df762aa5759ebe54bc6a8ade30837469b3cba0d3c6becc4c6aabe1",
-      "skills/shared/references/severity-and-verdicts.md": "b3184aecaf9f9d662ccfe31bacd931b4ed7bd8f49774b86be48a5b9b14f7370a",
-      "skills/shared/references/skill-authoring.md": "7d7320ca91e482f68d1cc30e281ab21eb5be5170f14a36be112093fc955a07cd",
-      "skills/skill-reviewer/SKILL.md": "32e356ff476b75c961a9144d89ac0e267f107a6898e0bfcb969cc1b1dd872310",
-      "skills/skill-reviewer/references/evidence-and-coverage.md": "cfab646264ea6df6bc67fcbf2f06ecee7d81087e09e7ac2eb119585ce33a72e9",
-      "skills/skill-reviewer/references/output-contract.md": "e8ce1ccb879016bd8ac203351eb9acd4bc78d2a1aa0e766d4dcb5e5b798b6624"
+      "skills/shared/references/coverage-ledger.md": "f8d5f2a4c845758b1cd6436a931a74ac05af93f30391791b5ea15535e68d0579",
+      "skills/shared/references/fix-action-taxonomy.md": "cf45d893a25a3f85e85c264cea989c1ce1f58800da54792de93a5bed8974f807",
+      "skills/shared/references/quality-gate-contract.md": "e76eed7335874bca058f208d15dbdda334bfe7d25f3c3246ce36f29ef54eae58",
+      "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
+      "skills/shared/references/skill-authoring.md": "01e3fba72d34b8cffee48dda5e6ae0c4f5255326a9bc577129e88eeb7e5da08e",
+      "skills/shared/references/skill-repository-profile.md": "2cb1fb93cb2af137f6e63400d7da8014a06b378e4daf224defe3f706809ac558",
+      "skills/skill-reviewer/SKILL.md": "804205da3a10cd86d613599abc8dddaeb45eba271536ffebfbc691d8073c7a51",
+      "skills/skill-reviewer/references/evidence-and-coverage.md": "140524c30eafb57aeb4340c2e6ffdbebc0bdd95f972b1303c70b3232f9a7caae",
+      "skills/skill-reviewer/references/output-contract.md": "d642bfb128a8670450890607001eb91ca0dcde6faee720b04f947912ffcc800a"
     },
     "surface": [
       "skills/shared/references/coverage-ledger.md",
@@ -611,6 +656,7 @@
       "skills/shared/references/quality-gate-contract.md",
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/skill-authoring.md",
+      "skills/shared/references/skill-repository-profile.md",
       "skills/skill-regression/scripts/ledger.py",
       "skills/skill-reviewer/SKILL.md",
       "skills/skill-reviewer/fixtures.json",
@@ -618,8 +664,8 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "38b3c44ba583405b4c6dc1ee02a6ff0aae374a47f0d726f55ffa8bf7c345990b",
-    "verified": "2026-08-03"
+    "surface_sha256": "55ea24b6e3f056560e9677d0876021c93c2718e9d10a9c81f248f72326c836b2",
+    "verified": "2026-08-04"
   },
   "sweep-fix": {
     "file_sha256": {
