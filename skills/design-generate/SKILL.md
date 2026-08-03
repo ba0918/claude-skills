@@ -49,6 +49,10 @@ options:
 
 ### Step 3: Build the constraints
 
+Read [references/generation-constraints.md](references/generation-constraints.md) first — its
+constraint hierarchy, permitted degrees of freedom, and prohibitions govern Steps 3-5; the
+summaries below do not replace it.
+
 Build the following constraints from the page definition:
 
 #### Component constraints

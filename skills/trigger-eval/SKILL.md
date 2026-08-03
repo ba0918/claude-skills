@@ -7,7 +7,7 @@ description: A meta skill that mechanically measures a skill set's description f
 
 A meta-skill that measures and improves, as a property of description quality, the "spontaneous skill triggering from natural-language instructions" that degrades as the number of skills grows. By passing the judging agent **nothing but the list of descriptions** (reproducing the model's field of view at real triggering time), it measures recall / precision / stability / confusion matrix mechanically and runs the revise→re-evaluate loop to convergence.
 
-**Positioning**: where [`empirical-prompt-tuning`](../empirical-prompt-tuning/SKILL.md) measures "the quality of executing the body", trigger-eval measures "the selection layer (description → triggering)". It stands in a static/dynamic complementary relation to `validate_repo.py` check 10 (the static presence check for trigger words).
+**Positioning**: where [`empirical-prompt-tuning`](../empirical-prompt-tuning/SKILL.md) (positioning note only — do not load that file at runtime) measures "the quality of executing the body", trigger-eval measures "the selection layer (description → triggering)". It stands in a static/dynamic complementary relation to `validate_repo.py` check 10 (the static presence check for trigger words).
 
 ## Minimal execution recipes
 

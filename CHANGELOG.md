@@ -11,6 +11,20 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Fixed: under-loading 4 件の是正 — 保証が実行時に読まれない経路を塞ぐ（#201 作業 4 第 4 弾）
+
+- 棚卸しで検出した「削る側」と逆の欠陥 4 件。行数は増えるがそれが正しいトレード
+  （authoring guide Load-reduction pattern 5）:
+  - parallel-cycle: plan-file モードが Phase 0 スキップにより workspace-lock を
+    取得せず worktree 作成へ進む非対称を、Phase 1 入口の Step 1.0（plan-file モード限定の
+    ロック取得）で解消
+  - design-generate: スキルが保証すると謳う制約階層（generation-constraints.md）が
+    linked-only でホットパスが読まずに走れた。Step 3 に明示の読込指示を追加
+  - empirical-prompt-tuning: iterations.jsonl を書かせるのに iteration-schema.md への
+    読込指示が §Related にしかなかった。追記ステップに読込指示を追加
+  - trigger-eval: 姉妹スキルの SKILL.md（335 行）への positioning リンクが
+    「開きに行くと +335 行」の罠だったため、実行時に読まない旨を明記
+
 ### Changed: polling-adapter.md（765 行）を関心事別 6 ファイルへ分割（#201 作業 4 第 3 弾）
 
 - github-issue の list/polling/cycle が「SKILL.md は claim(slug) しか呼ばない」という
