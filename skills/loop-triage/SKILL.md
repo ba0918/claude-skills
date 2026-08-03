@@ -83,9 +83,15 @@ With `--dry-run`, present a per-route summary here and stop.
 
 For each enqueue target, generate an issue:
 
-1. slug: `{yyyymmddhhmmss}_{suggested_title kebab-cased in English}` (timestamp via `date +%Y%m%d%H%M%S`;
-   non-ASCII is translated to English by meaning, never romanized character-by-character — provenance:
-   [the Slug definition of issue](../issue/SKILL.md#slug-definition), stated in full here; not read at runtime)
+1. slug: `{yyyymmddhhmmss}_{kebab-title}` from suggested_title (timestamp via `date +%Y%m%d%H%M%S`).
+   Strip path separators and special characters (`/`, `..`, `\`), then kebab-case (spaces → hyphens,
+   lowercase, keep only `[a-z0-9-]`). For a non-ASCII title produce a meaning-based English kebab-title
+   (transliteration or translation, whichever yields a readable identifier — never romanize
+   character-by-character), then apply the ASCII rules above; if the result is empty use
+   `untitled-{short_hash}` (first 8 hex of `echo -n "$title" | sha1sum`). The conversion applies to the
+   slug only — the template's title field keeps the original wording. (Provenance:
+   [the Slug definition of issue](../issue/SKILL.md#slug-definition) and its Create Workflow step 5,
+   quoted in full here; not re-read at runtime for this rule.)
 2. Create `.agents/artifacts/issues/ready/{slug}.md` conforming to [issue-template](../issue/references/issue-template.md), with
    the frontmatter as follows:
    ```yaml
