@@ -86,52 +86,11 @@ jobs:
       - name: Require publishable evidence
         run: python3 skills/shared/scripts/evidence_check.py --target-sha "$(git rev-parse HEAD)"
 
-      - name: Prepare immutable release tag
-        id: tag
+      - name: Build release notes
         env:
           VERSION: ${{ inputs.version }}
         run: |
-          target_sha="$(git rev-parse HEAD)"
-          remote_tag="$(git ls-remote origin "refs/tags/v$VERSION")"
-          if [ -z "$remote_tag" ]; then
-            git tag -a "v$VERSION" -m "v$VERSION"
-            echo "created=true" >> "$GITHUB_OUTPUT"
-          else
-            remote_sha="$(git ls-remote origin "refs/tags/v$VERSION^{}" | cut -f1)"
-            if [ -z "$remote_sha" ]; then
-              echo "remote tag v$VERSION is not an annotated tag" >&2
-              exit 1
-            fi
-            if [ "$remote_sha" != "$target_sha" ]; then
-              echo "remote tag v$VERSION points to $remote_sha, expected $target_sha" >&2
-              exit 1
-            fi
-            echo "created=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Atomically publish main and tag
-        env:
-          VERSION: ${{ inputs.version }}
-          TAG_CREATED: ${{ steps.tag.outputs.created }}
-        run: |
-          refspecs=("HEAD:main")
-          if [ "$TAG_CREATED" = "true" ]; then
-            refspecs+=("refs/tags/v$VERSION")
-          fi
-          git push --atomic origin "${refspecs[@]}"
-
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ inputs.version }}
-        run: |
-          if gh release view "v$VERSION" >/dev/null 2>&1; then
-            echo "GitHub Release v$VERSION already exists"
-            exit 0
-          fi
-
-          notes_file="$(mktemp)"
-          trap 'rm -f "$notes_file"' EXIT
+          notes_file="$RUNNER_TEMP/release-notes.md"
           python3 scripts/release_tool.py notes --version "$VERSION" > "$notes_file"
           printf '%s\n' \
             '' \
@@ -141,9 +100,15 @@ jobs:
             "- OpenCode: \`\"plugin\": [\"claude-skills@git+https://github.com/ba0918/claude-skills.git#v$VERSION\"]\`" \
             >> "$notes_file"
 
-          gh release create "v$VERSION" \
-            --verify-tag \
-            --title "v$VERSION" \
-            --notes-file "$notes_file" \
+      # 公開フェーズは scripts/release_publish.sh に集約する（失敗経路は
+      # scripts/test_release_publish.py で検証）。draft Release を asset 込みで
+      # 完成させてから atomic push し、最後に publish する。公開系の失敗窓は
+      # publish の API 1 呼び出しに縮まり、そこで落ちても再実行で回復する。
+      - name: Publish tag and release (draft-first)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          sh scripts/release_publish.sh "$VERSION" "$RUNNER_TEMP/release-notes.md" \
             ".agents/artifacts/reviews/evidence/machine_verified.json#machine_verified.json" \
             ".agents/artifacts/reviews/evidence/semantic_reviewed.json#semantic_reviewed.json"
