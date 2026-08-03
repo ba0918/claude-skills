@@ -338,7 +338,7 @@
           "critical": true
         },
         {
-          "text": "machine_verified と fresh history-free semantic_reviewed の両 evidence を prospective merge の exact SHA と quality-gate-contract 1.0.0 に束縛して生成する手順になっている",
+          "text": "machine_verified と fresh history-free semantic_reviewed の両 evidence を prospective merge の exact SHA と quality-gate-contract 1.0.0、および in force の skill-repository-profile 1.0.0 に束縛して生成する手順になっている",
           "critical": true
         },
         {

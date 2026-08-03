@@ -80,7 +80,9 @@ dynamic_sensors_executed: []
 ```
 
 [quality-gate-contract.md](../../shared/references/quality-gate-contract.md) states that a review without a ledger
-is not evidence. These three fields close, in the shape of the document itself, the path by which a diagnostic
+is not evidence. The repository's conformance profile is
+[skill-repository-profile.md](../../shared/references/skill-repository-profile.md); its evidence obligations bind
+publication transitions, never this diagnostic report. These three fields close, in the shape of the document itself, the path by which a diagnostic
 report gets mistaken for quality-gate evidence. A non-empty `dynamic_sensors_executed` is rejected, which is what
 makes "this skill does not run LLM sensors" a checkable property rather than a promise.
 
