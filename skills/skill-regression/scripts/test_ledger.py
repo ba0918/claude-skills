@@ -43,6 +43,68 @@ class TestFingerprint(unittest.TestCase):
             self.assertNotEqual(fp_empty, ledger.fingerprint(root, ["a.md"]))
 
 
+class TestStaleSeverity(unittest.TestCase):
+    """stale の重さを {path: hash} 2 つの比較だけで機械分類する純関数。
+
+    「参照リンクが 1 本増えただけ」と「契約の挙動定義が書き換わった」を同じ stale と
+    して扱うと、軽量承認と人間判断の承認が台帳上で区別できなくなる。
+    """
+
+    def test_addition_only_is_contract_addition(self):
+        recorded = {"a.md": "h1"}
+        current = {"a.md": "h1", "b.md": "h2"}
+        severity, changed = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_ADDITION)
+        self.assertEqual(changed, ["b.md"])
+
+    def test_modified_file_is_contract_change(self):
+        recorded = {"a.md": "h1"}
+        current = {"a.md": "h1-CHANGED"}
+        severity, changed = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+        self.assertEqual(changed, ["a.md"])
+
+    def test_removed_file_is_contract_change(self):
+        recorded = {"a.md": "h1", "b.md": "h2"}
+        current = {"a.md": "h1"}
+        severity, changed = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+        self.assertEqual(changed, ["b.md"])
+
+    def test_file_turned_missing_is_contract_change(self):
+        # 面には残っているが実体が消えた（MISSING 番兵）ケースも削除として扱う
+        recorded = {"a.md": "h1"}
+        current = {"a.md": ledger._MISSING}
+        severity, _ = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+
+    def test_mixed_addition_and_change_is_contract_change(self):
+        # fail-safe: 変更が 1 つでも混ざったら addition 側に倒さない
+        recorded = {"a.md": "h1"}
+        current = {"a.md": "h1-CHANGED", "b.md": "h2"}
+        severity, changed = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+        self.assertEqual(changed, ["a.md", "b.md"])
+
+    def test_added_but_nonexistent_file_is_contract_change(self):
+        # 実体のない参照先が面に入った = 壊れたリンク。安全側の contract-change へ
+        recorded = {"a.md": "h1"}
+        current = {"a.md": "h1", "b.md": ledger._MISSING}
+        severity, _ = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+
+    def test_no_difference_has_no_severity(self):
+        severity, changed = ledger.stale_severity({"a.md": "h1"}, {"a.md": "h1"})
+        self.assertIsNone(severity)
+        self.assertEqual(changed, [])
+
+    def test_empty_recorded_is_contract_addition(self):
+        # 台帳側に file_sha256 が無い旧エントリでも比較は成立させる（追加のみ扱い）
+        severity, changed = ledger.stale_severity({}, {"a.md": "h1"})
+        self.assertEqual(severity, ledger.SEVERITY_ADDITION)
+        self.assertEqual(changed, ["a.md"])
+
+
 class TestCheck(unittest.TestCase):
     """check() は (kind, skill, detail) のタプル一覧を返す。空 = 合格。"""
 

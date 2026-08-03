@@ -65,6 +65,37 @@ def skill_surface(root, skill):
     return dep_graph.behavior_surface(root, skill)
 
 
+SEVERITY_CHANGE = "contract-change"
+SEVERITY_ADDITION = "contract-addition"
+
+
+def stale_severity(recorded, current):
+    """stale の重さを (severity, 差分ファイル一覧) で返す。差分なしなら (None, [])。
+
+    recorded / current はどちらも {root 相対パス: sha256（不在は MISSING）}。
+    面にファイルが増えただけ（既存ファイルの hash は全一致）なら contract-addition、
+    既存ファイルの内容変更・削除が 1 つでもあれば contract-change。
+
+    判定材料を hash 差分だけに閉じているのは、git 履歴やコミット範囲に依存せず
+    「前回検証した内容そのもの」との比較で決まる決定性を優先したため。
+    """
+    added = sorted(set(current) - set(recorded))
+    removed = sorted(set(recorded) - set(current))
+    modified = sorted(
+        rel for rel in set(recorded) & set(current)
+        if recorded[rel] != current[rel]
+    )
+    changed = sorted(added + removed + modified)
+    if not changed:
+        return None, []
+    # 実体のない参照先（MISSING）が面に入った追加は壊れたリンクであって契約の追加ではない。
+    # 迷ったら重い側という fail-safe に倒す
+    dangling = [rel for rel in added if current[rel] == _MISSING]
+    if removed or modified or dangling:
+        return SEVERITY_CHANGE, changed
+    return SEVERITY_ADDITION, changed
+
+
 def make_entry(root, surface, result, verified_date, note=None):
     """台帳エントリを作る。result は "pass" | "accepted-without-run"。
 
