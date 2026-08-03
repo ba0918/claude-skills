@@ -3,9 +3,18 @@
 契約: skills/shared/references/loop-engineering.md §2 Finding Schema
 """
 
+import os
+import sys
+import tempfile
 import unittest
 
 from sensors import map_context_audit, parse_ledger_check, parse_validate_output
+
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "skill-regression", "scripts",
+))
+import ledger  # noqa: E402
 
 
 class ParseValidateOutputTest(unittest.TestCase):
@@ -88,6 +97,33 @@ class ParseLedgerCheckTest(unittest.TestCase):
         self.assertEqual(second["where"], {"path": "skills/iterate/fixtures.json"})
         self.assertEqual(second["affected_paths"], ["skills/iterate/SKILL.md"])
 
+    def test_severity_prefix_is_not_glued_onto_the_first_path(self):
+        """stale 行の severity ラベルは affected_paths に混入しない。
+
+        混入すると先頭ファイルだけが loop-defining の glob に一致しなくなる。
+        このセンサの finding が AUTO_FIX へ昇格して gate_decision に到達した際、
+        自己修飾ゲートが降格判定できず黙って素通しになる（検出できない失敗の仕方）。
+        """
+        text = (
+            "[stale] plan: [contract-change] skills/plan/SKILL.md, "
+            "skills/plan/references/foo.md\n"
+            "[stale] iterate: [contract-addition] skills/iterate/references/bar.md\n"
+        )
+        findings = parse_ledger_check(text)
+        self.assertEqual(len(findings), 2)
+        self.assertEqual(
+            findings[0]["affected_paths"],
+            ["skills/plan/SKILL.md", "skills/plan/references/foo.md"],
+        )
+        self.assertEqual(
+            findings[1]["affected_paths"], ["skills/iterate/references/bar.md"])
+
+    def test_what_keeps_the_verbatim_line_including_severity(self):
+        # 人が読む欄なので severity は落とさない（落とすのは機械が食う経路だけ）
+        line = "[stale] plan: [contract-change] skills/plan/SKILL.md"
+        findings = parse_ledger_check(line + "\n")
+        self.assertEqual(findings[0]["what"], line)
+
     def test_unverified_skill_has_no_enumerated_files(self):
         text = (
             "[unverified] doc-write: fixtures.json はあるが検証記録がない"
@@ -104,6 +140,56 @@ class ParseLedgerCheckTest(unittest.TestCase):
     def test_all_verified_output_returns_empty_list(self):
         text = "✓ regression ledger: 全スキル検証済み\n"
         self.assertEqual(parse_ledger_check(text), [])
+
+
+class LedgerCheckRoundTripTest(unittest.TestCase):
+    """ledger.check() の実出力を parse_ledger_check が正しく食えることを実物で確かめる。
+
+    2 つのスクリプトは出力フォーマットだけで繋がっており、型でも import でも縛られて
+    いない。片方が detail の形を変えても、双方のユニットテストは自分の側の文字列を
+    自分で書いているため両方緑のまま通る。実際 severity ラベル追加はこの隙間から入り、
+    パス破損に気付けなかった。ここだけは生成側の出力をそのまま消費側へ渡す。
+    """
+
+    def _write(self, root, rel, content=""):
+        path = os.path.join(root, rel)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+    def _stale_lines(self, root, entries):
+        return "\n".join(
+            f"[{kind}] {skill}: {detail}"
+            for kind, skill, detail in ledger.check(root, entries)
+        ) + "\n"
+
+    def test_affected_paths_are_real_paths_for_both_severities(self):
+        for label, mutate in (
+            ("contract-change", lambda root: self._write(
+                root, "skills/a/SKILL.md", "body CHANGED")),
+            ("contract-addition", lambda root: self._write(
+                root, "skills/a/extra.md", "new reference")),
+        ):
+            with self.subTest(severity=label), tempfile.TemporaryDirectory() as root:
+                self._write(root, "skills/a/SKILL.md", "body")
+                self._write(root, "skills/a/fixtures.json",
+                            '{"skill": "a", "scenarios": []}')
+                entries = {"a": ledger.make_entry(
+                    root, ledger.skill_surface(root, "a"), "pass", "2026-08-03")}
+                mutate(root)
+
+                text = self._stale_lines(root, entries)
+                self.assertIn(f"[{label}]", text)  # 生成側が想定の severity を出している
+
+                findings = parse_ledger_check(text)
+                self.assertEqual(len(findings), 1)
+                paths = findings[0]["affected_paths"]
+                self.assertTrue(paths)
+                for p in paths:
+                    self.assertTrue(
+                        os.path.isfile(os.path.join(root, p)),
+                        f"実在しないパスが affected_paths に入った: {p!r}",
+                    )
 
 
 class MapContextAuditTest(unittest.TestCase):

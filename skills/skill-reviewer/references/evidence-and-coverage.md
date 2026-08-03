@@ -26,10 +26,16 @@ Classification is a comparison, not a measurement.
 | State | What it means | How it is decided |
 |-------|---------------|-------------------|
 | `current_pass` | A real run passed, and it still applies to the current surface | `result` is a pass **and** the recomputed surface hash equals the recorded `surface_sha256` |
-| `accepted_without_run` | Re-evaluation was explicitly judged unnecessary; nothing was run | `result` is `accepted-without-run` |
+| `accepted_without_run` | Re-evaluation was explicitly judged unnecessary; nothing was run | `result` is `accepted-without-run` **or** `accepted-addition` |
 | `stale` | A real run passed, but the surface has changed since | `result` is a pass and the recomputed surface hash differs |
 | `uncovered` | There is no fixture, so there is nothing to be stale about | The skill has no `fixtures.json`, or the ledger has no entry |
 | `invalid` | A record exists but cannot be used | The entry is malformed, or its `surface` names files that no longer exist |
+
+The ledger distinguishes two acceptance values, but this table stays at five states on purpose: both map to
+`accepted_without_run` with `run_evidence = False`. `accepted-addition` means a machine confirmed the surface only
+gained files — which is a statement about how safe the acceptance was, not a claim that anything ran. Splitting it
+into a sixth state would put a machine-confirmed acceptance next to real run evidence in the output, which is the
+one confusion this section exists to prevent.
 
 Obtain the current classification from the ledger tooling rather than by hand:
 

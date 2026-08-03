@@ -43,6 +43,77 @@ class TestFingerprint(unittest.TestCase):
             self.assertNotEqual(fp_empty, ledger.fingerprint(root, ["a.md"]))
 
 
+class TestStaleSeverity(unittest.TestCase):
+    """stale の重さを {path: hash} 2 つの比較だけで機械分類する純関数。
+
+    「参照リンクが 1 本増えただけ」と「契約の挙動定義が書き換わった」を同じ stale と
+    して扱うと、軽量承認と人間判断の承認が台帳上で区別できなくなる。
+    """
+
+    def test_addition_only_is_contract_addition(self):
+        recorded = {"a.md": "h1"}
+        current = {"a.md": "h1", "b.md": "h2"}
+        severity, changed = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_ADDITION)
+        self.assertEqual(changed, ["b.md"])
+
+    def test_modified_file_is_contract_change(self):
+        recorded = {"a.md": "h1"}
+        current = {"a.md": "h1-CHANGED"}
+        severity, changed = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+        self.assertEqual(changed, ["a.md"])
+
+    def test_removed_file_is_contract_change(self):
+        recorded = {"a.md": "h1", "b.md": "h2"}
+        current = {"a.md": "h1"}
+        severity, changed = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+        self.assertEqual(changed, ["b.md"])
+
+    def test_file_turned_missing_is_contract_change(self):
+        # 面には残っているが実体が消えた（MISSING 番兵）ケースも削除として扱う
+        recorded = {"a.md": "h1"}
+        current = {"a.md": ledger._MISSING}
+        severity, _ = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+
+    def test_file_recovered_from_missing_is_contract_change(self):
+        # 消えていたファイルが復活した = 面の内容が前回検証時と別物になった
+        recorded = {"a.md": ledger._MISSING}
+        current = {"a.md": "h1"}
+        severity, changed = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+        self.assertEqual(changed, ["a.md"])
+
+    def test_mixed_addition_and_change_is_contract_change(self):
+        # fail-safe: 変更が 1 つでも混ざったら addition 側に倒さない
+        recorded = {"a.md": "h1"}
+        current = {"a.md": "h1-CHANGED", "b.md": "h2"}
+        severity, changed = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+        self.assertEqual(changed, ["a.md", "b.md"])
+
+    def test_added_but_nonexistent_file_is_contract_change(self):
+        # 実体のない参照先が面に入った = 壊れたリンク。安全側の contract-change へ
+        recorded = {"a.md": "h1"}
+        current = {"a.md": "h1", "b.md": ledger._MISSING}
+        severity, _ = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+
+    def test_no_difference_has_no_severity(self):
+        severity, changed = ledger.stale_severity({"a.md": "h1"}, {"a.md": "h1"})
+        self.assertIsNone(severity)
+        self.assertEqual(changed, [])
+
+    def test_missing_baseline_is_contract_change(self):
+        # file_sha256 を持たない旧エントリ。差分は形式上「追加のみ」に見えるが、
+        # 比較基準が無い以上「追加だけ」と断じる根拠も無い
+        severity, changed = ledger.stale_severity({}, {"a.md": "h1"})
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+        self.assertEqual(changed, ["a.md"])
+
+
 class TestCheck(unittest.TestCase):
     """check() は (kind, skill, detail) のタプル一覧を返す。空 = 合格。"""
 
@@ -74,6 +145,37 @@ class TestCheck(unittest.TestCase):
             issues = ledger.check(root, entries)
             self.assertEqual([i[0] for i in issues], ["stale"])
             self.assertIn("skills/a/SKILL.md", issues[0][2])  # 変更ファイルを提示
+
+    def test_stale_detail_labels_content_change_as_contract_change(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-07-07")}
+            _write(root, "skills/a/SKILL.md", "body CHANGED")
+            issues = ledger.check(root, entries)
+            self.assertEqual([i[0] for i in issues], ["stale"])  # kind は不変
+            self.assertTrue(issues[0][2].startswith("[contract-change]"))
+
+    def test_stale_detail_labels_surface_growth_as_contract_addition(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-07-07")}
+            _write(root, "skills/a/extra.md", "new reference")
+            issues = ledger.check(root, entries)
+            self.assertEqual([i[0] for i in issues], ["stale"])
+            self.assertTrue(issues[0][2].startswith("[contract-addition]"))
+            self.assertIn("skills/a/extra.md", issues[0][2])
+
+    def test_legacy_entry_without_hashes_is_labeled_contract_change(self):
+        """--check の表示と --accept の記録値が同じ規則で動く（食い違わせない）。"""
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            entries = {"a": {"surface": [], "result": "pass",
+                             "verified": "2026-07-07"}}
+            issues = ledger.check(root, entries)
+            self.assertEqual([i[0] for i in issues], ["stale"])
+            self.assertTrue(issues[0][2].startswith("[contract-change]"))
 
     def test_orphan_when_fixtures_removed(self):
         with tempfile.TemporaryDirectory() as root:
@@ -107,6 +209,33 @@ class TestCheck(unittest.TestCase):
             output = buf.getvalue()
             self.assertIn("pass 1", output)
             self.assertIn("accepted-without-run 0", output)
+
+    def test_check_output_counts_accepted_addition_separately(self):
+        """機械確認済みの承認が accepted-without-run に混ざって数えられない。"""
+        import io
+        import contextlib
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            _write(root, "skills/skill-regression/SKILL.md", "self")
+            _write(root, "skills/c/SKILL.md", "body")
+            _write(root, "skills/c/fixtures.json", '{"skill": "c"}')
+            entries = {
+                "a": ledger.make_entry(
+                    root, ledger.skill_surface(root, "a"),
+                    "accepted-addition", "2026-08-03"),
+                "c": ledger.make_entry(
+                    root, ledger.skill_surface(root, "c"),
+                    "accepted-without-run", "2026-08-03"),
+            }
+            ledger.save(root, entries)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = ledger.main(["--check", root])
+            self.assertEqual(rc, 0)
+            output = buf.getvalue()
+            self.assertIn("accepted-addition 1", output)
+            self.assertIn("accepted-without-run 1", output)
+            self.assertIn("pass 0", output)
 
 
 class TestAcceptGuard(unittest.TestCase):
@@ -180,6 +309,91 @@ class TestAcceptGuard(unittest.TestCase):
             self.assertEqual(rc, 0)
             reloaded = ledger.load(root)
             self.assertEqual(reloaded["a"]["result"], "accepted-without-run")
+
+
+class TestAcceptResultClassification(unittest.TestCase):
+    """--accept の記録値は操作者が選ぶのではなく severity から自動で決まる。
+
+    自己申告だと「軽い変更だった」という主張が台帳に残るだけで裏が取れない。
+    hash 比較で addition-only と確認できた承認だけを別の値で記録する。
+    """
+
+    def _repo(self, root):
+        _write(root, "skills/skill-regression/SKILL.md", "self")
+        _write(root, "skills/a/SKILL.md", "body")
+        _write(root, "skills/a/fixtures.json", '{"skill": "a", "scenarios": []}')
+
+    def _verified(self, root):
+        surface = ledger.skill_surface(root, "a")
+        ledger.save(root, {
+            "a": ledger.make_entry(root, surface, "pass", "2026-07-01"),
+        })
+
+    def test_addition_only_accept_is_recorded_as_accepted_addition(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/a/extra.md", "new reference")
+            rc = ledger.main(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["result"], "accepted-addition")
+
+    def test_content_change_accept_stays_accepted_without_run(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/a/SKILL.md", "body CHANGED")
+            rc = ledger.main(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(
+                ledger.load(root)["a"]["result"], "accepted-without-run")
+
+    def test_first_accept_without_prior_entry_is_accepted_without_run(self):
+        # 比較基準がない以上 addition と断じる根拠もない
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            rc = ledger.main(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(
+                ledger.load(root)["a"]["result"], "accepted-without-run")
+
+    def test_addition_on_an_unrun_baseline_stays_accepted_without_run(self):
+        """accepted-addition を名乗れるのは実走 pass の上に積んだ追加だけ。
+
+        実走していない台帳の上に addition-only の accept を重ねると、実走証拠が
+        1 度も無いまま Red flag の accepted-without-run 計上から恒久的に逃げられる。
+        """
+        for baseline in ("accepted-without-run", "accepted-addition"):
+            with self.subTest(baseline=baseline), tempfile.TemporaryDirectory() as root:
+                self._repo(root)
+                ledger.save(root, {
+                    "a": ledger.make_entry(
+                        root, ledger.skill_surface(root, "a"), baseline, "2026-07-01"),
+                })
+                _write(root, "skills/a/extra.md", "new reference")
+                rc = ledger.main(["--update", "a", "--accept", root])
+                self.assertEqual(rc, 0)
+                self.assertEqual(
+                    ledger.load(root)["a"]["result"], "accepted-without-run")
+
+    def test_accept_with_no_surface_change_is_accepted_without_run(self):
+        # 何も追加していない承認が accepted-addition を名乗るのは意味論的に嘘
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc = ledger.main(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(
+                ledger.load(root)["a"]["result"], "accepted-without-run")
+
+    def test_update_without_accept_stays_pass(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/a/extra.md", "new reference")
+            rc = ledger.main(["--update", "a", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["result"], "pass")
 
 
 class TestEntryRoundtrip(unittest.TestCase):

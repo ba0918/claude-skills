@@ -32,7 +32,10 @@ runs the regression evaluation only against the skills whose behavior surface ch
 - Updating the ledger (`--update`) happens **only after obtaining evidence that every scenario passed**.
   Conforming to [verification-gate.md](../shared/references/verification-gate.md) — never advance the ledger on an evidence-free "it should have passed"
 - When judging without running that "this change does not affect behavior", use `--update <skill> --accept`.
-  It is recorded explicitly in the ledger as `accepted-without-run`, leaving a trace of the judgment (distinguishable from ignoring it)
+  It is recorded explicitly in the ledger as an acceptance, leaving a trace of the judgment (distinguishable from ignoring it).
+  Which value gets recorded is decided by the machine, not by the operator: `accepted-addition` when it can confirm the
+  behavior surface only gained files on top of a real run's `pass`, and `accepted-without-run` whenever it cannot.
+  A self-declared "it was a light change" would leave an unbacked claim in the ledger, so the flag does not let you choose
 
 ## Workflow selection
 
@@ -58,7 +61,7 @@ runs the regression evaluation only against the skills whose behavior surface ch
 4. **Record in the ledger**: `python3 {skill_dir}/scripts/ledger.py --update <skill> {repo_root}`
 5. **Append a measurement event**: because the ledger holds only the latest entry, append the history of verification events
    following [measurement-identity.md §4](../shared/references/measurement-identity.md#4-mapping-table-for-the-existing-systems):
-   `python3 skills/shared/scripts/measurement_identity.py emit --system skill-regression --event verification --skill <skill> --repo-root {repo_root} --outcome '{"result":"pass","scenarios":N}'` (with `--accept`, use `"result":"accepted-without-run"`)
+   `python3 skills/shared/scripts/measurement_identity.py emit --system skill-regression --event verification --skill <skill> --repo-root {repo_root} --outcome '{"result":"pass","scenarios":N}'` (with `--accept`, use whichever value the ledger actually recorded — `"result":"accepted-addition"` or `"result":"accepted-without-run"`)
 
 ## run — regression evaluation
 
@@ -71,8 +74,8 @@ runs the regression evaluation only against the skills whose behavior surface ch
    - **Rule of thumb for run vs `--accept`**: a purely prose change (punctuation, phrasing) that touches no
      machine-parsed token, code, command, or frontmatter key is `--accept` territory. Everything else is run.
      When in doubt, run (fail-safe)
-   - Even when the ledger is already verified (including `accepted-without-run`), you may run if the user asks for a
-     regression evaluation. Overwriting accepted-without-run with a real run's `pass` improves the ledger's quality
+   - Even when the ledger is already verified (including either accepted value), you may run if the user asks for a
+     regression evaluation. Overwriting an acceptance with a real run's `pass` improves the ledger's quality
 2. **Execute**: read the target skill's `fixtures.json` and, per scenario, launch a blank-slate executor subagent
    under the contract of [references/executor-contract.md](references/executor-contract.md).
    - **Materialize the isolated area from the declaration**: `python3 {skill_dir}/scripts/fixture_setup.py --materialize
@@ -101,7 +104,10 @@ runs the regression evaluation only against the skills whose behavior surface ch
 
 - `python3 {skill_dir}/scripts/ledger.py --status {repo_root}` displays verified / stale / unverified / orphan
   for every tracked skill
-- `--check` is the same judgment as CI (exit 1 if there is any issue). Clean up orphans with `--remove <skill>`
+- `--check` is the same judgment as CI (exit 1 if there is any issue). Clean up orphans with `--remove <skill>`.
+  Each `[stale]` line carries a severity: `[contract-addition]` when the machine could confirm the surface only gained
+  files, and `[contract-change]` in every other case. Read it as triage, not as permission —
+  `contract-addition` still has to be resolved, only with `--accept` as a defensible option
 - `--coverage` displays **the denominator of what is tracked at all** as covered / exempt / uncovered.
   Because `--check` is an opt-in gate that looks only at skills holding a fixture, "skills with no fixture written"
   do not enter the count even when everything passes. The two answer different questions:
@@ -136,7 +142,9 @@ The philosophy of this gate is not to stop drift but to **make only ignoring it 
 
 ## Red flags
 
-- The ledger's `result` is nothing but `accepted-without-run` (a sign that run has become a formality)
+- The ledger's `result` is nothing but `accepted-without-run` (a sign that run has become a formality).
+  `accepted-addition` does not count toward this signal. What remains under `accepted-without-run` is a superset of
+  the acceptances a human waved through — the cases the machine could not confirm either way land there too
 - The same skill's fixture is rewritten repeatedly in a short span as "obsolete"
 - The run report does not state which critical items failed
 - CI's `[stale]` is being piled onto main instead of resolved within the PR

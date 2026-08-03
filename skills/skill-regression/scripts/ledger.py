@@ -14,12 +14,16 @@ check() が返す issue の種別:
   stale       挙動面が前回検証時から変化した（再評価が必要）
   orphan      台帳に記録があるが fixtures.json が消えた（--remove で掃除）
 
+stale には severity が付く。既存ファイルの内容変更・削除があれば contract-change、
+面へのファイル追加だけなら contract-addition（迷ったら contract-change 側）。
+
 CLI:
   python3 ledger.py --check [root]             # CI 用。issue があれば exit 1
   python3 ledger.py --coverage [--strict] [root]
       fixture 保有率を covered / exempt / uncovered で計上（--strict で uncovered を exit 1）
   python3 ledger.py --update SKILL [--accept] [--note TEXT] [root]
-      fixtures 合格後に台帳を更新（--accept は「実行せず再評価不要と判断」を明示記録、
+      fixtures 合格後に台帳を更新（--accept は「実行せず再評価不要と判断」を明示記録。
+      severity が contract-addition なら accepted-addition として自動で区別記録する。
       --note は run の性質（照会回数・実行者が通った経路など）の申し送り）
   python3 ledger.py --remove SKILL [root]
   python3 ledger.py --impact FILE... [root]    # 変更ファイル → 影響スキル
@@ -65,8 +69,74 @@ def skill_surface(root, skill):
     return dep_graph.behavior_surface(root, skill)
 
 
+SEVERITY_CHANGE = "contract-change"
+SEVERITY_ADDITION = "contract-addition"
+
+RESULT_PASS = "pass"
+RESULT_ACCEPTED_ADDITION = "accepted-addition"
+RESULT_ACCEPTED_WITHOUT_RUN = "accepted-without-run"
+
+
+def stale_severity(recorded, current):
+    """stale の重さを (severity, 差分ファイル一覧) で返す。差分なしなら (None, [])。
+
+    recorded / current はどちらも {root 相対パス: sha256（不在は MISSING）}。
+    面にファイルが増えただけ（既存ファイルの hash は全一致）なら contract-addition、
+    既存ファイルの内容変更・削除が 1 つでもあれば contract-change。
+    迷ったら重い側という fail-safe を 2 箇所で効かせる。追加ファイルの hash が
+    MISSING（実体のない参照先＝壊れたリンク）の場合と、recorded が空（file_sha256 を
+    持たない旧エントリ＝比較基準が無い）の場合は、形式上「追加のみ」に見えても
+    contract-change として扱う。
+
+    判定材料を hash 差分だけに閉じているのは、git 履歴やコミット範囲に依存せず
+    「前回検証した内容そのもの」との比較で決まる決定性を優先したため。
+
+    Why not（第 3 の fail-safe を置かない）: 素パス参照の実体が後から作られて面に入る
+    ケースは未検証の新規内容だが contract-addition になる。自スキル外かどうかの判定には
+    skill 引数が要り純関数性を崩すため見送り、既知のリスクとして記録する（#222 で追跡）。
+    """
+    added = sorted(set(current) - set(recorded))
+    removed = sorted(set(recorded) - set(current))
+    modified = sorted(
+        rel for rel in set(recorded) & set(current)
+        if recorded[rel] != current[rel]
+    )
+    changed = sorted(added + removed + modified)
+    if not changed:
+        return None, []
+    dangling = [rel for rel in added if current[rel] == _MISSING]
+    if not recorded or removed or modified or dangling:
+        return SEVERITY_CHANGE, changed
+    return SEVERITY_ADDITION, changed
+
+
+def accept_result(recorded, current, prev_result):
+    """--accept で記録する result を、severity と前回 result の両方から決める。
+
+    addition-only と機械的に確認でき、**かつ前回が実走 pass** の承認だけを
+    "accepted-addition" にする。前回が accepted-* の台帳に addition-only の承認を
+    積めてしまうと、一度も実走しないまま accepted-without-run の計上から恒久的に
+    逃げ続けられ、Red flag が用をなさなくなる。addition-only は「直前に実走で
+    確かめた内容から増えただけ」を意味するので、土台が実走でなければ成立しない。
+
+    比較基準の無いエントリを弾く判断は stale_severity に持たせてあり、ここでは
+    再実装しない（--check の表示と記録値が別々の規則で動くと食い違うため）。
+    """
+    # 差分ゼロ（severity is None）も "accepted-without-run" 側へ落ちる。何も追加して
+    # いない承認が accepted-addition を名乗るのは意味論的に嘘であり、stale ですらない
+    # エントリへの --accept は運用上ほぼ通らない経路なので、重い側で据え置く
+    severity, _ = stale_severity(recorded, current)
+    if severity == SEVERITY_ADDITION and prev_result == RESULT_PASS:
+        return RESULT_ACCEPTED_ADDITION
+    return RESULT_ACCEPTED_WITHOUT_RUN
+
+
 def make_entry(root, surface, result, verified_date, note=None):
-    """台帳エントリを作る。result は "pass" | "accepted-without-run"。
+    """台帳エントリを作る。
+
+    result は "pass"（実走して全シナリオ合格）| "accepted-addition"（実走せず承認。
+    面への追加のみであることを hash 比較で機械確認済み）| "accepted-without-run"
+    （実走せず承認。既存ファイルの内容変更を含む、または比較基準が無い）。
 
     note は素の pass だけでは次に回す者へ伝わらない run の性質を残すための欄
     （executor-contract が要求する照会回数、実行者が選んだ経路など）。
@@ -157,13 +227,10 @@ def check(root, entries):
         current_surface = skill_surface(root, skill)
         current = file_hashes(root, current_surface)
         recorded = entry.get("file_sha256", {})
-        if current == recorded:
+        severity, changed = stale_severity(recorded, current)
+        if severity is None:
             continue
-        changed = sorted(
-            set(k for k in current if current[k] != recorded.get(k))
-            | (set(recorded) - set(current))
-        )
-        issues.append(("stale", skill, ", ".join(changed)))
+        issues.append(("stale", skill, f"[{severity}] " + ", ".join(changed)))
     return issues
 
 
@@ -203,12 +270,19 @@ def main(argv):
         # 「全スキル検証済み」と書くと未検証領域が検証済みに見える（実際に誤読を招いた）。
         cov = coverage(root)
         entries = load(root)
-        n_pass = sum(1 for e in entries.values() if e.get("result") == "pass")
-        n_accept = sum(
-            1 for e in entries.values()
-            if e.get("result") == "accepted-without-run"
-        )
-        breakdown = f"pass {n_pass} / accepted-without-run {n_accept}"
+        # accepted-addition を別建てで数える。畳んで表示すると「機械が安全側と
+        # 確認した承認」が「人間が重い変更を承知で通した承認」に紛れ、
+        # Red flag の accepted-without-run 偏重チェックが鈍る
+        counts = {
+            RESULT_PASS: 0,
+            RESULT_ACCEPTED_ADDITION: 0,
+            RESULT_ACCEPTED_WITHOUT_RUN: 0,
+        }
+        for entry in entries.values():
+            result = entry.get("result")
+            if result in counts:
+                counts[result] += 1
+        breakdown = " / ".join(f"{name} {n}" for name, n in counts.items())
         print(
             f"✓ regression ledger: fixture 保有 {len(cov['covered'])} スキルすべて検証済み"
             f"（{breakdown}"
@@ -264,9 +338,12 @@ def main(argv):
             if skill not in _fixtures_skills(root):
                 print(f"✗ skills/{skill}/fixtures.json が存在しない")
                 return 1
+            surface = skill_surface(root, skill)
+            result = RESULT_PASS
             if accept:
                 fixtures_rel = f"skills/{skill}/fixtures.json"
-                prev = entries.get(skill, {}).get("file_sha256", {})
+                prev_entry = entries.get(skill, {})
+                prev = prev_entry.get("file_sha256", {})
                 prev_hash = prev.get(fixtures_rel)
                 curr_hash = _file_sha256(root, fixtures_rel)
                 if prev_hash is not None and prev_hash != curr_hash:
@@ -275,9 +352,10 @@ def main(argv):
                         f"合否基準の変更は実走で検証すること（--accept を外して run → --update）"
                     )
                     return 1
-            result = "accepted-without-run" if accept else "pass"
+                result = accept_result(
+                    prev, file_hashes(root, surface), prev_entry.get("result"))
             entries[skill] = make_entry(
-                root, skill_surface(root, skill), result,
+                root, surface, result,
                 datetime.date.today().isoformat(), note=note,
             )
         save(root, entries)

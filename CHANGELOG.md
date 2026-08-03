@@ -11,6 +11,36 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: skill-regression の stale 検出に severity を導入（#182）
+
+- ledger の stale は重さを区別せず、低リスク変更のたびの `--accept` が常態化して、
+  台帳上で機械的に安全と分かる承認と人間判断の承認を区別できなかった（#169 実走時点で
+  accepted-without-run 17 件が滞留）。`stale_severity()` を追加し、前回検証時の
+  `file_sha256` と現在の surface 再計算値の比較だけで `contract-change` /
+  `contract-addition` を機械判定する**分類を導入した**（git 履歴に依存しない決定性を優先）
+- `--check` の stale 行に `[{severity}]` を表示。kind 文字列 `stale` と exit code は不変で、
+  CI・SKILL.md の `[stale]` 参照は壊さない
+- `--update <skill> --accept` の記録値を自動分岐。addition-only と hash 比較で確認できた
+  承認だけ新 result 値 `accepted-addition` になる（操作者が選べるフラグにはしない —
+  自己申告では裏の取れない主張が台帳に残るため）。前回エントリが無い場合と
+  contract-change は従来どおり `accepted-without-run`
+- `--check` 合格時の breakdown を `pass / accepted-addition / accepted-without-run` の
+  3 値化。導入した分類が台帳上で数えられるようにする
+- **本変更時点で accepted-addition は 0 件**。挙動面の定義上、参照リンクの追加は
+  リンクを足した既存 .md 自体の modified を伴うため contract-addition にならない。
+  addition-only が成立するのは、既存ファイルを一切変えずに面へファイルが新規参入する
+  場合に限られる
+- 滞留の主因である「既存ファイルの散文のみ変更」は hash 比較では安全側と分類できず、
+  本変更では減らない。滞留そのものの解消は別 issue で追跡する
+- kind 文字列と exit code は不変だが **detail の中身は変わった**ため、loop-triage の
+  `parse_ledger_check` が severity ラベルを剥がしてから分割するよう追随。剥がさないと
+  先頭パスにラベルが接着し、loop-defining の glob に一致しなくなる。現行ルーティングでは
+  ledger 系 finding は inbox 行きで gate_decision に到達しないが、AUTO_FIX へ昇格した
+  時点で自己改変ゲートが降格判定できなくなるため、パスは常に素の形で持つ
+- 本変更で既存 stale finding の `finding_id` はすべて変わる（`what` に severity ラベルが
+  含まれるため）。suppression / queue 重複排除の baseline は存在しないため現時点の実害はない
+- 既存 ledger.json の読み込み・既存 result 値の意味・fixtures.json 変更ガード（#165）は不変
+
 ### Added: polling_adapter.py — github-issue の純関数と FS 操作を機械化（#214）
 
 - LLM が references の擬似コードから毎 tick 使い捨て Python を書き起こしていた実態
