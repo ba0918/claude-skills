@@ -357,6 +357,25 @@ class TestAcceptResultClassification(unittest.TestCase):
             self.assertEqual(
                 ledger.load(root)["a"]["result"], "accepted-without-run")
 
+    def test_addition_on_an_unrun_baseline_stays_accepted_without_run(self):
+        """accepted-addition を名乗れるのは実走 pass の上に積んだ追加だけ。
+
+        実走していない台帳の上に addition-only の accept を重ねると、実走証拠が
+        1 度も無いまま Red flag の accepted-without-run 計上から恒久的に逃げられる。
+        """
+        for baseline in ("accepted-without-run", "accepted-addition"):
+            with self.subTest(baseline=baseline), tempfile.TemporaryDirectory() as root:
+                self._repo(root)
+                ledger.save(root, {
+                    "a": ledger.make_entry(
+                        root, ledger.skill_surface(root, "a"), baseline, "2026-07-01"),
+                })
+                _write(root, "skills/a/extra.md", "new reference")
+                rc = ledger.main(["--update", "a", "--accept", root])
+                self.assertEqual(rc, 0)
+                self.assertEqual(
+                    ledger.load(root)["a"]["result"], "accepted-without-run")
+
     def test_accept_with_no_surface_change_is_accepted_without_run(self):
         # 何も追加していない承認が accepted-addition を名乗るのは意味論的に嘘
         with tempfile.TemporaryDirectory() as root:

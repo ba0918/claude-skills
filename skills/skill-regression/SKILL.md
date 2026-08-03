@@ -34,7 +34,7 @@ runs the regression evaluation only against the skills whose behavior surface ch
 - When judging without running that "this change does not affect behavior", use `--update <skill> --accept`.
   It is recorded explicitly in the ledger as an acceptance, leaving a trace of the judgment (distinguishable from ignoring it).
   Which value gets recorded is decided by the machine, not by the operator: `accepted-addition` when it can confirm the
-  behavior surface only gained files, and `accepted-without-run` whenever it cannot.
+  behavior surface only gained files on top of a real run's `pass`, and `accepted-without-run` whenever it cannot.
   A self-declared "it was a light change" would leave an unbacked claim in the ledger, so the flag does not let you choose
 
 ## Workflow selection

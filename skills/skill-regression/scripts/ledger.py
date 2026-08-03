@@ -93,7 +93,7 @@ def stale_severity(recorded, current):
 
     Why not（第 3 の fail-safe を置かない）: 素パス参照の実体が後から作られて面に入る
     ケースは未検証の新規内容だが contract-addition になる。自スキル外かどうかの判定には
-    skill 引数が要り純関数性を崩すため見送り、既知のリスクとして記録する（follow-up issue）。
+    skill 引数が要り純関数性を崩すため見送り、既知のリスクとして記録する（#222 で追跡）。
     """
     added = sorted(set(current) - set(recorded))
     removed = sorted(set(recorded) - set(current))
@@ -110,10 +110,15 @@ def stale_severity(recorded, current):
     return SEVERITY_ADDITION, changed
 
 
-def accept_result(recorded, current):
-    """--accept で記録する result を severity から決める。
+def accept_result(recorded, current, prev_result):
+    """--accept で記録する result を、severity と前回 result の両方から決める。
 
-    addition-only と機械的に確認できた承認だけを "accepted-addition" にする。
+    addition-only と機械的に確認でき、**かつ前回が実走 pass** の承認だけを
+    "accepted-addition" にする。前回が accepted-* の台帳に addition-only の承認を
+    積めてしまうと、一度も実走しないまま accepted-without-run の計上から恒久的に
+    逃げ続けられ、Red flag が用をなさなくなる。addition-only は「直前に実走で
+    確かめた内容から増えただけ」を意味するので、土台が実走でなければ成立しない。
+
     比較基準の無いエントリを弾く判断は stale_severity に持たせてあり、ここでは
     再実装しない（--check の表示と記録値が別々の規則で動くと食い違うため）。
     """
@@ -121,7 +126,7 @@ def accept_result(recorded, current):
     # いない承認が accepted-addition を名乗るのは意味論的に嘘であり、stale ですらない
     # エントリへの --accept は運用上ほぼ通らない経路なので、重い側で据え置く
     severity, _ = stale_severity(recorded, current)
-    if severity == SEVERITY_ADDITION:
+    if severity == SEVERITY_ADDITION and prev_result == RESULT_PASS:
         return RESULT_ACCEPTED_ADDITION
     return RESULT_ACCEPTED_WITHOUT_RUN
 
@@ -337,7 +342,8 @@ def main(argv):
             result = RESULT_PASS
             if accept:
                 fixtures_rel = f"skills/{skill}/fixtures.json"
-                prev = entries.get(skill, {}).get("file_sha256", {})
+                prev_entry = entries.get(skill, {})
+                prev = prev_entry.get("file_sha256", {})
                 prev_hash = prev.get(fixtures_rel)
                 curr_hash = _file_sha256(root, fixtures_rel)
                 if prev_hash is not None and prev_hash != curr_hash:
@@ -346,7 +352,8 @@ def main(argv):
                         f"合否基準の変更は実走で検証すること（--accept を外して run → --update）"
                     )
                     return 1
-                result = accept_result(prev, file_hashes(root, surface))
+                result = accept_result(
+                    prev, file_hashes(root, surface), prev_entry.get("result"))
             entries[skill] = make_entry(
                 root, surface, result,
                 datetime.date.today().isoformat(), note=note,
