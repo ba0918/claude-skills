@@ -252,6 +252,29 @@ class TestReadInForceProfile(EvidenceCheckHarness):
         with self.assertRaises(evidence_check.CheckBroken):
             evidence_check.read_in_force_profile(path)
 
+    def test_dangling_symlink_ancestor_breaks_check(self):
+        os.symlink(
+            os.path.join(self.root, "missing-dir"),
+            os.path.join(self.root, "broken-link"),
+        )
+        with self.assertRaises(evidence_check.CheckBroken):
+            evidence_check.read_in_force_profile(
+                os.path.join(self.root, "broken-link", "profile.md")
+            )
+
+    def test_absence_through_resolvable_symlink_ancestor_is_not_in_force(self):
+        real_dir = os.path.join(self.root, "real-dir")
+        os.makedirs(real_dir)
+        os.symlink(real_dir, os.path.join(self.root, "good-link"))
+        self.assertIsNone(evidence_check.read_in_force_profile(
+            os.path.join(self.root, "good-link", "absent-profile.md")
+        ))
+
+    def test_open_failure_on_existing_path_breaks_check_as_state_change(self):
+        path = self.write_profile()
+        with self.assertRaises(evidence_check.CheckBroken):
+            evidence_check._require_pure_absence(path)
+
 
 class TestBrokenCheckIsDistinguishedFromNegativeJudgment(EvidenceCheckHarness):
     def test_unreadable_contract_file_breaks_the_check(self):

@@ -13,6 +13,7 @@ import argparse
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 
@@ -48,17 +49,48 @@ def read_published_version(contract_path):
     return found[0]
 
 
+def _require_pure_absence(profile_path):
+    """open が FileNotFoundError を返した後、それが「純粋な不在」かを裁定する。
+
+    isfile / islink / lexists のような stat 系ショートカット API は内部の
+    OSError を False に握り潰すため、dangling symlink（最終要素・祖先とも）や
+    traverse 不能な要素を「不在」と誤読して未発効へ silent fallback させる。
+    パス要素を根から lstat で 1 個ずつ歩き、途中から本当に存在しない場合だけを
+    不在（return）とし、解決不能な既存要素はすべて CheckBroken に倒す。
+    全要素が存在するのに open が失敗していた場合は判定中の状態変化として
+    fail-closed にする。
+    """
+    path = os.path.abspath(profile_path)
+    parts = path.split(os.sep)
+    current = os.sep
+    for part in parts:
+        if not part:
+            continue
+        current = os.path.join(current, part)
+        try:
+            entry = os.lstat(current)
+        except FileNotFoundError:
+            return  # ここから先が本当に無い = 純粋な不在
+        except OSError as exc:
+            raise CheckBroken(f"profile path element unreadable: {current} ({exc})")
+        if stat.S_ISLNK(entry.st_mode):
+            try:
+                os.stat(current)
+            except OSError as exc:
+                raise CheckBroken(
+                    f"profile path contains an unresolvable symlink: {current} ({exc})"
+                )
+    raise CheckBroken(
+        f"profile path state changed during the check: {profile_path}"
+    )
+
+
 def read_in_force_profile(profile_path):
-    # isfile の事前判定は使わない: isfile は内部の OSError を握り潰して False を
-    # 返すため、ディレクトリ・dangling symlink・traverse 不能な親もすべて
-    # 「未発効」へ silent fallback してしまい fail-closed が破れる。純粋な不在
-    # （FileNotFoundError かつ symlink でない）だけを未発効 None とする。
     try:
         with open(profile_path, encoding="utf-8") as handle:
             text = handle.read()
     except FileNotFoundError:
-        if os.path.islink(profile_path):
-            raise CheckBroken(f"profile path is a dangling symlink: {profile_path}")
+        _require_pure_absence(profile_path)
         return None
     except OSError as exc:
         raise CheckBroken(f"profile file unreadable: {profile_path} ({exc})")
