@@ -34,6 +34,26 @@ fully to the not-in-force behavior: evidence must use `profile: null` and binds 
 the generic contract. Profile version `1.0.0` remains unchanged because this declaration
 records effectiveness rather than a semantic change to the profile's obligations.
 
+### Enforcement points in this repository (non-normative)
+
+Contract §7 states conditions, never firing points; naming the enforcement adapters is the
+adopting repository's job. This repository's adjudication (issue #229, 2026-08-04):
+
+- The **release workflow** is the enforcement adapter for publish-type transitions to the
+  outside (release / distribution): it generates both evidence records against the exact
+  target version and runs the profile-aware verifier before publishing, failing closed.
+- The **local publication protocol** (prospective merge + compare-and-swap, verified by the
+  same profile-aware verifier before main advances) is the enforcement adapter for local
+  main advancement.
+- A **hosted pull-request merge is not a protected-state transition** here. It is guarded
+  by the issue-driving workflow's merge gate (required checks, independent review verdict,
+  secret scan, forbidden-file check) plus human approval. The reasons are structural, not a
+  weakening: evidence lives in a local artifact store the hosted side cannot observe, and a
+  squash merge's resulting version identifier does not exist before the merge, so
+  prospectively binding evidence to it is impossible on that path. Work merged this way
+  reaches a protected state only later, through one of the two adapters above, which
+  re-earn evidence at that point.
+
 ## Domain Characteristics
 
 In a natural-language skill repository, the mechanically verifiable surface is structural:
