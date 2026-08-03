@@ -265,6 +265,62 @@ class TestAcceptGuard(unittest.TestCase):
             self.assertEqual(reloaded["a"]["result"], "accepted-without-run")
 
 
+class TestAcceptResultClassification(unittest.TestCase):
+    """--accept の記録値は操作者が選ぶのではなく severity から自動で決まる。
+
+    自己申告だと「軽い変更だった」という主張が台帳に残るだけで裏が取れない。
+    hash 比較で addition-only と確認できた承認だけを別の値で記録する。
+    """
+
+    def _repo(self, root):
+        _write(root, "skills/skill-regression/SKILL.md", "self")
+        _write(root, "skills/a/SKILL.md", "body")
+        _write(root, "skills/a/fixtures.json", '{"skill": "a", "scenarios": []}')
+
+    def _verified(self, root):
+        surface = ledger.skill_surface(root, "a")
+        ledger.save(root, {
+            "a": ledger.make_entry(root, surface, "pass", "2026-07-01"),
+        })
+
+    def test_addition_only_accept_is_recorded_as_accepted_addition(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/a/extra.md", "new reference")
+            rc = ledger.main(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["result"], "accepted-addition")
+
+    def test_content_change_accept_stays_accepted_without_run(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/a/SKILL.md", "body CHANGED")
+            rc = ledger.main(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(
+                ledger.load(root)["a"]["result"], "accepted-without-run")
+
+    def test_first_accept_without_prior_entry_is_accepted_without_run(self):
+        # 比較基準がない以上 addition と断じる根拠もない
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            rc = ledger.main(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(
+                ledger.load(root)["a"]["result"], "accepted-without-run")
+
+    def test_update_without_accept_stays_pass(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/a/extra.md", "new reference")
+            rc = ledger.main(["--update", "a", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["result"], "pass")
+
+
 class TestEntryRoundtrip(unittest.TestCase):
     def test_entry_records_result_and_date(self):
         with tempfile.TemporaryDirectory() as root:

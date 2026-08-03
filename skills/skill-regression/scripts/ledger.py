@@ -96,8 +96,27 @@ def stale_severity(recorded, current):
     return SEVERITY_ADDITION, changed
 
 
+def accept_result(recorded, current):
+    """--accept で記録する result を severity から決める。
+
+    addition-only と機械的に確認できた承認だけを "accepted-addition" にする。
+    比較基準（前回の file_sha256）が無いエントリは、軽いと断じる根拠も無いので
+    現行どおり "accepted-without-run"。
+    """
+    if not recorded:
+        return "accepted-without-run"
+    severity, _ = stale_severity(recorded, current)
+    if severity == SEVERITY_ADDITION:
+        return "accepted-addition"
+    return "accepted-without-run"
+
+
 def make_entry(root, surface, result, verified_date, note=None):
-    """台帳エントリを作る。result は "pass" | "accepted-without-run"。
+    """台帳エントリを作る。
+
+    result は "pass"（実走して全シナリオ合格）| "accepted-addition"（実走せず承認。
+    面への追加のみであることを hash 比較で機械確認済み）| "accepted-without-run"
+    （実走せず承認。既存ファイルの内容変更を含む、または比較基準が無い）。
 
     note は素の pass だけでは次に回す者へ伝わらない run の性質を残すための欄
     （executor-contract が要求する照会回数、実行者が選んだ経路など）。
@@ -292,6 +311,8 @@ def main(argv):
             if skill not in _fixtures_skills(root):
                 print(f"✗ skills/{skill}/fixtures.json が存在しない")
                 return 1
+            surface = skill_surface(root, skill)
+            result = "pass"
             if accept:
                 fixtures_rel = f"skills/{skill}/fixtures.json"
                 prev = entries.get(skill, {}).get("file_sha256", {})
@@ -303,9 +324,9 @@ def main(argv):
                         f"合否基準の変更は実走で検証すること（--accept を外して run → --update）"
                     )
                     return 1
-            result = "accepted-without-run" if accept else "pass"
+                result = accept_result(prev, file_hashes(root, surface))
             entries[skill] = make_entry(
-                root, skill_surface(root, skill), result,
+                root, surface, result,
                 datetime.date.today().isoformat(), note=note,
             )
         save(root, entries)
