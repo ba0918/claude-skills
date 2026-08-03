@@ -11,6 +11,15 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: mockup-diff の Phase 0 SETUP を条件付きロードへ分離（#201 作業 4 第 5 弾）
+
+- config.json 生成済みの 2 回目以降でも SETUP のフレームワーク表 + config スキーマ
+  167 行が死荷重だった構造を、references/setup-workflow.md への verbatim 分離 +
+  SKILL.md 冒頭のルーティング 6 行で解消（2 回目以降の本文ロード 367 → 208 行）
+- references 2 段チェーンを作らないため、ルータが setup-workflow.md と
+  script-requirements.md の両方を名指しする（polling-adapter 分割と同型）。
+  design-system-contract が参照する「Phase 0: SETUP」の名称は維持
+
 ### Fixed: under-loading 4 件の是正 — 保証が実行時に読まれない経路を塞ぐ（#201 作業 4 第 4 弾）
 
 - 棚卸しで検出した「削る側」と逆の欠陥 4 件。行数は増えるがそれが正しいトレード
