@@ -28,6 +28,10 @@ claude-skills プラグインのバージョン履歴。
 - `--check` 合格時の breakdown を `pass / accepted-addition / accepted-without-run` の
   3 値化。Red flag「accepted-without-run ばかり」が、機械確認済みの承認に薄められず
   人間判断の承認だけを指すようになる
+- kind 文字列と exit code は不変だが **detail の中身は変わった**ため、loop-triage の
+  `parse_ledger_check` が severity ラベルを剥がしてから分割するよう追随。剥がさないと
+  先頭パスにラベルが接着し、loop-defining の glob に一致しなくなって自己改変ゲートが
+  黙って素通しになる（stale 行がファイル 1 件しか挙げない場合はゲート判定ごと不発）
 - 既存 ledger.json の読み込み・既存 result 値の意味・fixtures.json 変更ガード（#165）は不変
 
 ### Added: polling_adapter.py — github-issue の純関数と FS 操作を機械化（#214）

@@ -33,8 +33,8 @@ runs the regression evaluation only against the skills whose behavior surface ch
   Conforming to [verification-gate.md](../shared/references/verification-gate.md) — never advance the ledger on an evidence-free "it should have passed"
 - When judging without running that "this change does not affect behavior", use `--update <skill> --accept`.
   It is recorded explicitly in the ledger as an acceptance, leaving a trace of the judgment (distinguishable from ignoring it).
-  Which value gets recorded is decided by the machine, not by the operator: when the behavior surface only gained files
-  (every file common to both snapshots hashes identically) it is `accepted-addition`, and otherwise `accepted-without-run`.
+  Which value gets recorded is decided by the machine, not by the operator: `accepted-addition` when it can confirm the
+  behavior surface only gained files, and `accepted-without-run` whenever it cannot.
   A self-declared "it was a light change" would leave an unbacked claim in the ledger, so the flag does not let you choose
 
 ## Workflow selection
@@ -105,8 +105,8 @@ runs the regression evaluation only against the skills whose behavior surface ch
 - `python3 {skill_dir}/scripts/ledger.py --status {repo_root}` displays verified / stale / unverified / orphan
   for every tracked skill
 - `--check` is the same judgment as CI (exit 1 if there is any issue). Clean up orphans with `--remove <skill>`.
-  Each `[stale]` line carries a severity: `[contract-change]` (an existing file's content changed, or a file left the
-  surface) or `[contract-addition]` (files only entered the surface). Read it as triage, not as permission —
+  Each `[stale]` line carries a severity: `[contract-addition]` when the machine could confirm the surface only gained
+  files, and `[contract-change]` in every other case. Read it as triage, not as permission —
   `contract-addition` still has to be resolved, only with `--accept` as a defensible option
 - `--coverage` displays **the denominator of what is tracked at all** as covered / exempt / uncovered.
   Because `--check` is an opt-in gate that looks only at skills holding a fixture, "skills with no fixture written"
@@ -143,8 +143,8 @@ The philosophy of this gate is not to stop drift but to **make only ignoring it 
 ## Red flags
 
 - The ledger's `result` is nothing but `accepted-without-run` (a sign that run has become a formality).
-  `accepted-addition` does not count toward this signal — the machine already confirmed those acceptances were
-  additions only, so what remains under `accepted-without-run` is exactly the acceptances a human waved through
+  `accepted-addition` does not count toward this signal. What remains under `accepted-without-run` is a superset of
+  the acceptances a human waved through — the cases the machine could not confirm either way land there too
 - The same skill's fixture is rewritten repeatedly in a short span as "obsolete"
 - The run report does not state which critical items failed
 - CI's `[stale]` is being piled onto main instead of resolved within the PR
