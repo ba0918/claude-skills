@@ -13,12 +13,11 @@ claude-skills プラグインのバージョン履歴。
 
 ### Changed: skill-regression の stale 検出に severity を導入（#182）
 
-- ledger の stale が「参照リンクが 1 本増えただけ」も「契約の挙動定義が書き換わった」も
-  同じ 1 件だったため、低リスク変更のたびの `--accept` が常態化し、台帳上で機械的に
-  安全と分かる承認と人間判断の承認を区別できなかった（#169 実走時点で
+- ledger の stale は重さを区別せず、低リスク変更のたびの `--accept` が常態化して、
+  台帳上で機械的に安全と分かる承認と人間判断の承認を区別できなかった（#169 実走時点で
   accepted-without-run 17 件が滞留）。`stale_severity()` を追加し、前回検証時の
   `file_sha256` と現在の surface 再計算値の比較だけで `contract-change` /
-  `contract-addition` を機械判定する（git 履歴に依存しない決定性を優先）
+  `contract-addition` を機械判定する**分類を導入した**（git 履歴に依存しない決定性を優先）
 - `--check` の stale 行に `[{severity}]` を表示。kind 文字列 `stale` と exit code は不変で、
   CI・SKILL.md の `[stale]` 参照は壊さない
 - `--update <skill> --accept` の記録値を自動分岐。addition-only と hash 比較で確認できた
@@ -26,8 +25,13 @@ claude-skills プラグインのバージョン履歴。
   自己申告では裏の取れない主張が台帳に残るため）。前回エントリが無い場合と
   contract-change は従来どおり `accepted-without-run`
 - `--check` 合格時の breakdown を `pass / accepted-addition / accepted-without-run` の
-  3 値化。Red flag「accepted-without-run ばかり」が、機械確認済みの承認に薄められず
-  人間判断の承認だけを指すようになる
+  3 値化。導入した分類が台帳上で数えられるようにする
+- **本変更時点で accepted-addition は 0 件**。挙動面の定義上、参照リンクの追加は
+  リンクを足した既存 .md 自体の modified を伴うため contract-addition にならない。
+  addition-only が成立するのは、既存ファイルを一切変えずに面へファイルが新規参入する
+  場合に限られる
+- 滞留の主因である「既存ファイルの散文のみ変更」は hash 比較では安全側と分類できず、
+  本変更では減らない。滞留そのものの解消は別 issue で追跡する
 - kind 文字列と exit code は不変だが **detail の中身は変わった**ため、loop-triage の
   `parse_ledger_check` が severity ラベルを剥がしてから分割するよう追随。剥がさないと
   先頭パスにラベルが接着し、loop-defining の glob に一致しなくなって自己改変ゲートが

@@ -90,6 +90,10 @@ def stale_severity(recorded, current):
 
     判定材料を hash 差分だけに閉じているのは、git 履歴やコミット範囲に依存せず
     「前回検証した内容そのもの」との比較で決まる決定性を優先したため。
+
+    Why not（第 3 の fail-safe を置かない）: 素パス参照の実体が後から作られて面に入る
+    ケースは未検証の新規内容だが contract-addition になる。自スキル外かどうかの判定には
+    skill 引数が要り純関数性を崩すため見送り、既知のリスクとして記録する（follow-up issue）。
     """
     added = sorted(set(current) - set(recorded))
     removed = sorted(set(recorded) - set(current))

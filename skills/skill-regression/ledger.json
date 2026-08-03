@@ -276,9 +276,9 @@
       "skills/shared/references/measurement-identity.md": "4891703c2d8c88017bc823e2f1a53bb85528fea39708ec104d83b8e2b054e411",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
-      "skills/skill-regression/scripts/ledger.py": "464ba2d510fd77fa77f8045fe2eaf75a367b972688b1212869bd9b47176ec03c"
+      "skills/skill-regression/scripts/ledger.py": "4db94c455ea36f02d03d9554afd2a633de2c8490a08634d8409f3887b46f9d76"
     },
-    "note": "#182 fix-warn 後の再 accept: 直前 run (8/8 pass, 964367f の 5 コミット前) との surface 差分は measurement-identity.md の outcome 集合追記（散文）と ledger.py のコメント追加+RESULT_* 定数抽出（挙動不変、テスト固定）のみ。実行挙動に影響する変更なしと人間判断",
+    "note": "#182 F-8 Why not コメント追記のみ（コード実行経路不変）",
     "result": "accepted-without-run",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -306,7 +306,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "47c807174c00b28d6eb109ebb1d1cfd73540de175f9f878211da75dc33f564aa",
+    "surface_sha256": "88ee74579f9246350e5eefdf9d9a7b959b119b4e80d069981df15c1249113cc2",
     "verified": "2026-08-03"
   },
   "handoff": {
