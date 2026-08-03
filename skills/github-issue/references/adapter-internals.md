@@ -2,48 +2,25 @@
 
 Execute the following 3 layers **in this order**. If even one fails, quietly abort with `ClaimFailed{reason}` (no retry).
 
-```
-claim(slug) -> ClaimResult:
-  # Input validation: match the raw string, never the parsed integer.
-  # int() then re-stringifying silently normalizes "007" to "7", so a
-  # zero-padded slug would pass a check applied after the conversion.
-  raw = slug.removeprefix("issue-")
-  if not re.match(r'^[1-9][0-9]*$', raw):
-    fail_closed(f"invalid issue_number: {raw!r}")
-  N = int(raw)
+Input validation comes first: `polling_adapter.py validate-slug SLUG` — the part after
+`issue-` must match `^[1-9][0-9]*$` **as a raw string** (validating after `int()` would
+silently normalize `007` to `7`); anything else is fail-closed.
 
-  # ① Local lockfile (flock(2) non-blocking)
-  lock_path = state_root / "claim" / f"{N}.lock"
-  try:
-    lock_fd = open(lock_path, O_WRONLY|O_CREAT, mode=0o600)
-    flock(lock_fd, LOCK_EX | LOCK_NB)
-    write(lock_fd, str(pid))
-    fsync(lock_fd)
-  except BlockingIOError:
-    return ClaimFailed("LockBusy")  # quiet abort
+- **① Local lockfile**: `polling_adapter.py claim-lock N --state-root DIR --owner-pid PID`.
+  On `LockBusy`, quiet abort (no retry). The script uses flock(2) as the read-modify-write
+  guard and records the owner pid as the lease — the original "hold the flock until process
+  exit" presumed a long-lived adapter process that does not exist in CLI-driven execution,
+  so cross-tick exclusivity rests on the recorded pid's liveness instead (the script
+  carries this Why-not in its comments)
+- **② Transport update**: add the current actor + `claude-running` through the selected
+  transport. On failure, `release-lock` and `ClaimFailed`
+- **③ Re-verify** (detecting a post-claim race): `get_issue` for assignees/labels; when the
+  current actor or `claude-running` is missing, roll the partial claim back (remove label,
+  remove actor, `release-lock`) and return `ClaimFailed("post-claim verify failed")`
 
-  # ② add the current actor + claude-running through the selected transport
-  try:
-    github.add_issue_actor(N)
-    github.edit_issue_labels(N, add=["claude-running"], remove=[])
-  except GitHubTransportError as e:
-    close(lock_fd)
-    return ClaimFailed(f"github update failed: {e}")
-
-  # ③ re-verify (detecting a post-claim race)
-  result = github.get_issue(N, fields=["assignees", "labels"])
-  if current_actor not in result.assignees or "claude-running" not in result.labels:
-    # Partial claim rollback
-    github.edit_issue_labels(N, add=[], remove=["claude-running"])
-    github.remove_issue_actor(N)
-    close(lock_fd)
-    return ClaimFailed("post-claim verify failed")
-
-  return ClaimOk(lock_fd)  # lock_fd is held until the process exits
-```
-
-- **The lockfile is released automatically when the process exits** (the kernel releases the flock on `close` or `exit`)
-- A **stale lockfile** is deleted by `rollback_orphans()` on the condition of 5 minutes elapsed + a dead pid
+- A **stale lockfile** (mtime at least 5 minutes old + dead pid) is deleted by
+  `polling_adapter.py stale-locks --state-root DIR` (rollback step ②); a live pid always
+  means LockBusy regardless of age
 
 The SKILL.md side does not know the internal structure of the 3 layers and only needs to call `claim(slug)` (Layer Separation).
 
@@ -70,9 +47,9 @@ Delete orphaned worktrees following the 24h + merged conditions of the existing 
 
 ### ② `_check_stale_locks(now)`
 
-Scan `<state_root>/claim/*.lock`:
-- Delete when the mtime is at least 5 minutes old and the pid is dead
-- Determine deadness by `kill(pid, 0)` on the pid written inside the lockfile returning ESRCH
+Run `polling_adapter.py stale-locks --state-root DIR` (the executable source of truth). It
+scans `<state_root>/claim/*.lock`, deletes entries whose mtime is at least 5 minutes old and
+whose recorded pid is dead (`kill(pid, 0)` → ESRCH), and reports what it deleted.
 
 ### ③ `_check_long_running(now)`
 
@@ -90,7 +67,10 @@ Scan `<state_root>/claim/*.lock`:
 
 ### ④ `_check_recovery_markers(now)`
 
-Scan `<state_root>/recovery/*` and re-evaluate the issues whose `mark_failed` failed.
+Enumerate with `polling_adapter.py recovery-marker list --state-root DIR` (each entry
+carries its mtime and a 7-day-TTL-exceeded flag) and re-evaluate the issues whose
+`mark_failed` failed. The issue-state judgments below need the selected transport, so they
+stay with the orchestrator; deletion goes through `recovery-marker delete N`.
 
 For each marker, the state of the corresponding issue:
 - **closed** (`mark_done` already completed) → delete the marker (no cleanup needed)

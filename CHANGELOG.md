@@ -11,6 +11,22 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Added: polling_adapter.py — github-issue の純関数と FS 操作を機械化（#214）
+
+- LLM が references の擬似コードから毎 tick 使い捨て Python を書き起こしていた実態
+  （crash-safe 順序・atomic write の保証が散文依存）を、polling_adapter.py（18 サブ
+  コマンド）+ test_polling_adapter.py（20 テスト）で機械化。GitHub 操作は従来どおり
+  LLM + transport 層（gh-commands.md）の管轄で、スクリプトは判定と FS 状態のみを持つ
+- 設計裁定 2 件を実装に固定: (a) flock は CLI 実行モデルでは保持できないため
+  read-modify-write ガード + owner pid の生存判定に適応（Why not をコード注記）、
+  (b) run_id 検証の正規表現矛盾（厳格 UUID v4 vs 緩い 36 字）は厳格側に統一
+- md 5 ファイルの擬似コードを「契約 + スクリプト正本へのポインタ」に縮小
+  （見出し不変更・fixture が要求する根拠節は維持）
+- fixtures gi-001/002/005/006 をブランクスレート executor で実走再検証、4/4 critical
+  全○。gi-001 では executor が state-root / kill-files サブコマンドを自発的に使用し、
+  clone_id を独立再計算で照合 — 「擬似コードの再実装」が「スクリプト呼び出し」へ
+  置き換わったことを実走で確認
+
 ### Changed: design-guide をワークフロー別 4 ファイル + ルータへ分割（#201 作業 4 第 7 弾・最終）
 
 - Session / Update / Mockup の 3 ワークフロー同居で Mockup 経路の 230 行超が死荷重だった

@@ -24,6 +24,15 @@ If multi-host support becomes necessary, perform "a redesign that moves the sour
 
 All 13 methods of the shared contract [§3 Interface Table](../../shared/references/polling-pattern.md#3-interface-table-the-state-adapter-contract) are implemented. The table below is the detailed implementation mapping of the Label adapter.
 
+> **Executable source of truth**: the pure functions and local-FS state operations live in
+> `skills/github-issue/scripts/polling_adapter.py` (subcommands: `state-root` /
+> `filter-ready` / `verdict` / `change-targets` / `gate0` / `state-of-failure` /
+> `validate-slug` / `classify` / `mark-failed-labels` / `retry-count` / `increment-retry` /
+> `kill-files` / `session-load` / `session-save` / `claim-lock` / `release-lock` /
+> `recovery-marker` / `stale-locks`). Run the script — never re-derive these behaviors in
+> prose or ad-hoc shell. GitHub operations stay with the selected transport
+> ([gh-commands.md](gh-commands.md)).
+
 | Interface (§3) | The Label adapter implementation |
 |---|---|
 | `list_ready(limit)` | §`list_ready(limit)` |
@@ -88,37 +97,24 @@ A partial failure (for example, close succeeded and the label cleanup failed) is
 
 **An atomic dual-write of the new and old labels in one `edit_issue_labels` operation, plus verification, plus a recovery marker.**
 
-```
-mark_failed(slug, kind) -> Result:
-  labels_add = ["claude-failed-transient", "claude-failed"] if kind == TRANSIENT
-               else ["claude-failed-permanent", "claude-failed"]
+The label pair comes from `polling_adapter.py mark-failed-labels --kind transient|permanent`
+(transient → `["claude-failed-transient", "claude-failed"]`, permanent →
+`["claude-failed-permanent", "claude-failed"]`). The orchestrator then runs, up to 3
+attempts with backoff 0s/1s/2s: `edit_issue_labels(add=labels_add)` → `get_issue` and verify
+**both** labels are present → on success update the FS retry state in the same tick and
+return Ok.
 
-  for attempt in [1, 2, 3]:  # up to 3 times, backoff intervals 0s/1s/2s
-    try:
-      edit_issue_labels(${N}, add=labels_add, remove=[])
-      labels_now = get_issue(${N}, fields=["labels"]).labels
-      if all(L in labels_now for L in labels_add):
-        record_fs_state(slug, kind)  # completes in the same tick as the FS retry state update
-        return Ok
-    except GhApiError as e:
-      if attempt == 3: break
-      sleep(attempt - 1)  # 0s, 1s, 2s
+When every attempt fails, return the claim to ready with a compensating action under the
+**crash-safe ordering invariant**:
 
-  # every attempt failed — return the claim to ready with a compensating action
-  # Crash-safe ordering invariant:
-  #   CA-1: persist the recovery marker to the FS with write_atomic (before release)
-  #   CA-2: release(slug) removes claude-running / the assignee
-  # With this order, even a crash between CA-1 and CA-2 is always reclaimed via the marker.
-  # In the reverse order (release → marker), a failed marker write after release leaves
-  # 0 labels and no marker, making it untraceable.
-  warn_log(f"[mark_failed] verification failed after 3 attempts: {slug}")
-  try:
-    record_recovery_marker(slug)   # CA-1: persist the FS marker with write_atomic
-  except FsError:
-    fail_closed("cannot write recovery marker — polling abort")
-  release(slug)                    # CA-2: remove the label/assignee on GitHub (best-effort)
-  return Err("dual_write_failed")  # picked up by rollback_orphans() step ④ on the next tick
-```
+- **CA-1**: persist the recovery marker first — `polling_adapter.py recovery-marker add N`
+  (write_atomic inside). If the marker write itself fails, fail-closed and abort polling
+- **CA-2**: `release(slug)` removes claude-running / the assignee (best-effort)
+
+With this order, even a crash between CA-1 and CA-2 is always reclaimed via the marker. In
+the reverse order (release → marker), a failed marker write after release leaves 0 labels
+and no marker, making it untraceable. The result is `Err("dual_write_failed")`, picked up by
+`rollback_orphans()` step ④ on the next tick.
 
 **The permitted intermediate states**:
 - On the adding side: 0 labels (everything failed, with a recovery marker) or 2 labels (normal). A 1-label state is detected by the verification and retried
@@ -126,7 +122,9 @@ mark_failed(slug, kind) -> Result:
 
 ### retry_count(slug)
 
-**Reads the FS state**: read `<state_root>/retry/{issue_number}.json` and return `{retry_count, last_failed_at, run_id}`.
+**Reads the FS state** — the executable source of truth is
+`polling_adapter.py retry-count N --state-root DIR`: read
+`<state_root>/retry/{issue_number}.json` and return `{retry_count, last_failed_at, run_id}`.
 
 - No file → `0` (treated as the first time)
 - JSON parse failure → a warning log, quarantine the file by renaming it to `<issue_number>.json.corrupt.{ts}`, and `0` (recreated)
@@ -137,18 +135,20 @@ mark_failed(slug, kind) -> Result:
 
 ### increment_retry(slug)
 
-**Updates the FS state**: follow the `write_atomic` procedure of `.tmp` → fsync → rename → parent fsync. On the single-process premise, the atomicity of the read-modify-write is protected by flock.
+**Updates the FS state** — the executable source of truth is
+`polling_adapter.py increment-retry N --state-root DIR --run-id UUID` (write_atomic and the
+flock read-modify-write guard live inside the script).
 
 - Posting a comment is **abolished** (eliminating both the race condition and the trust-boundary bypass)
 - Returns the new count value
 
 ### kill_file_path()
 
-Returns the absolute path pair `(<state_root>/.STOP.hard, <state_root>/.STOP)` (**the return order is the check order**, hard takes priority. Conforms to shared contract §3). For resolving `state_root`, see [§`state_root Resolution`](state-root.md#state_root-resolution).
+Returns the absolute path pair `(<state_root>/.STOP.hard, <state_root>/.STOP)` (**the return order is the check order**, hard takes priority. Conforms to shared contract §3). The executable source of truth is `polling_adapter.py kill-files --state-root DIR` (paths + existence, hard first). For resolving `state_root`, see [§`state_root Resolution`](state-root.md#state_root-resolution).
 
 ### load_session() / save_session(session)
 
-The tick session of shared contract §6.5. Read and write `<state_root>/session.json` with the `write_atomic` procedure ([§Platform Assumptions](state-root.md#platform-assumptions)). A parse failure follows the same quarantine-rename convention as the FS Retry State (`.corrupt.{ts}`) and is treated as `None`.
+The tick session of shared contract §6.5. The executable source of truth is `polling_adapter.py session-load / session-save` — it reads and writes `<state_root>/session.json` with the `write_atomic` procedure ([§Platform Assumptions](state-root.md#platform-assumptions)). A parse failure follows the same quarantine-rename convention as the FS Retry State (`.corrupt.{ts}`) and is treated as `None`.
 
 ### archive_month_boundary()
 
