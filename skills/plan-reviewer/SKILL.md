@@ -191,8 +191,8 @@ When any finding is classified as **spec escalation**, add a separate ESCALATE v
 | ESCALATE | Specification or design gap detected — escalate to brainstorm for re-agreement |
 
 > BLOCK / WARN / PASS here are the score-band dialect of the shared severity scale —
-> see [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md)
-> §Score-band usage (the plan-reviewer dialect). Do not introduce a separate severity system.
+> provenance: [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md)
+> §Score-band usage, quoted in full here; not read at runtime. Do not introduce a separate severity system.
 
 ### Step 5: Output Review Report
 

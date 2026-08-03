@@ -50,7 +50,7 @@ Analyze the code in the specified scope and build a problem list.
 
 1. **Decide the execution form**:
    - Scope of **10 files or fewer**: analyze directly in the main context
-   - Scope of **11 files or more**: delegate to a single subagent (state a high-capability model explicitly. Review and discovery work has no verification gate, so do not put it on a cheap model — see the model tiers in [orchestration-patterns.md](../shared/references/orchestration-patterns.md))
+   - Scope of **11 files or more**: delegate to a single subagent (state a high-capability model explicitly. Review and discovery work has no verification gate, so do not put it on a cheap model — model-tier provenance: [orchestration-patterns.md](../shared/references/orchestration-patterns.md), quoted here; not read at runtime)
 2. **Severity classification**: tag each problem with a severity (BLOCK / WARN / INFO) from [severity-and-verdicts.md](../shared/references/severity-and-verdicts.md)
    - On a borderline case (it reads as either BLOCK or WARN, etc.), **round up** and record the basis for the call in one line. Severity does not change the fix flow (it only affects what triggers the continue-confirmation in Phase 4), so do not spend time on borderline calls
 3. **Information every problem must carry**:
@@ -79,7 +79,7 @@ Convert each Phase 1 problem (the ones marked generalizable) into a searchable s
 2. **Design the search wide**: keep the pattern deliberately loose so nothing slips through. Narrowing is Phase 3's responsibility
 3. **Decide the execution form**:
    - **One** problem: search in the main context (or a single Agent). Do not over-orchestrate
-   - **Multiple** problems: launch one sweep subagent per problem in parallel ([orchestration-patterns.md](../shared/references/orchestration-patterns.md) pattern 2)
+   - **Multiple** problems: launch one sweep subagent per problem in parallel — one delegate per independent work item (provenance: [orchestration-patterns.md](../shared/references/orchestration-patterns.md) pattern 2, stated here; not read at runtime)
      - **Required**: issue the multiple subagent calls **within a single message** (sequential turns serialize them)
      - **Required**: state a high-capability model explicitly for each subagent (prevents inheriting an expensive session model)
      - Each agent writes its results to `.agents/tmp/sweep-fix/{problem_id}_candidates.json` and returns only a summary (candidate count, file paths) to the main context

@@ -11,6 +11,15 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: 「1 文出典の全文ロード」7 箇所へ quote-not-load を適用（#201 作業 4 第 1 弾）
+
+- 棚卸し実測で特定した「規則 1 文のために巨大契約・スキル全文をロードする」引用箇所を、
+  規則のインライン引用 + provenance リンク（実行時に読まない旨を明記）へ置換:
+  plan-reviewer→severity-and-verdicts(112 行) / issue・github-issue→checkpoint-pattern(194 行) /
+  sweep-fix・trigger-eval→orchestration-patterns(235 行) / loop-triage→issue SKILL.md(318 行) /
+  skill-interface-audit→fix-action-taxonomy(70 行)。7 スキルの該当経路から計 ~1300 行の
+  ロードを削減。authoring guide の Load-reduction patterns 2（Quote, don't load）の適用第一号
+
 ### Changed: スキル総ロード予算を 1 実行経路 ~500 行へ改定し、artifact-store の消費側契約を分離（#201）
 
 - Anti-bloat Clause の二重閾値（SKILL.md ~400 行 / 総ロード ~1000 行)を「1 実行経路の
