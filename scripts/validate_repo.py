@@ -316,7 +316,16 @@ def check_contract_conformance(root, vocab=None, exempt=None):
                     os.path.join(os.path.dirname(path), link))
                 linked.add(os.path.relpath(target, root).replace(os.sep, "/"))
         for contract_rel, tokens, min_distinct in vocab:
-            accepted = (contract_rel,) if isinstance(contract_rel, str) else tuple(contract_rel)
+            if isinstance(contract_rel, str):
+                accepted = (contract_rel,)
+            elif isinstance(contract_rel, (tuple, list)):
+                accepted = tuple(contract_rel)
+            else:
+                accepted = ()
+            if not accepted or not all(isinstance(c, str) and c for c in accepted):
+                raise ValueError(
+                    f"CONTRACT_VOCAB の契約パスが不正（非空の文字列 or 文字列タプルのみ）: "
+                    f"{contract_rel!r}")
             used = sorted(t for t in tokens if any(t in x for x in texts))
             if len(used) < min_distinct or any(c in linked for c in accepted):
                 continue

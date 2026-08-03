@@ -611,6 +611,15 @@ class TestCheckContractConformance(unittest.TestCase):
             self.assertIn("fake-contract.md", errors[0])
             self.assertIn("fake-consumer.md", errors[0])
 
+    def test_malformed_contract_path_fails_fast(self):
+        for bad in ((), 42, ("skills/shared/references/fake-contract.md", 42), ("",)):
+            with tempfile.TemporaryDirectory() as root:
+                self._base(root)
+                self._write(root, "skills/a/SKILL.md", "ALPHA_ONE と ALPHA_TWO。")
+                with self.assertRaises(ValueError):
+                    check_contract_conformance(
+                        root, vocab=[(bad, ("ALPHA_ONE", "ALPHA_TWO"), 2)], exempt={})
+
 
 class TestCoverageLedgerContractVocab(unittest.TestCase):
     """coverage ledger 契約（4値・min_distinct=3）の登録と執行を検証する。
