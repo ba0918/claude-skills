@@ -21,9 +21,9 @@ import re
 
 # 行内にあれば地の文と認めない兆候: インラインコード、リンク・参照（角括弧全般。
 # shortcut reference はプレーン角括弧と区別できないため両方拾う）、表セル区切り、
-# HTML タグ・コメント風（< の直後が英字 / '/' / '!' のときだけ。比較演算の
-# 「a < b」は空白が挟まるため拾わない）
-_INLINE_STRUCTURE_RE = re.compile(r"`|\[|\||<[A-Za-z!/]")
+# HTML タグ・コメント・処理命令風（< の直後が英字 / '/' / '!' / '?' のときだけ。
+# 比較演算の「a < b」は空白が挟まるため拾わない）
+_INLINE_STRUCTURE_RE = re.compile(r"`|\[|\||<[A-Za-z!/?]")
 
 # 行頭のリストマーカー（ordered / unordered）。リスト項目は指示そのものが
 # 書かれる場所なので散文と認めない
@@ -35,11 +35,29 @@ _SETEXT_RE = re.compile(r"^ {0,3}(=+|-+)\s*$")
 # コードフェンスの開始。CommonMark に合わせ 3 連以上の ` または ~
 _FENCE_OPEN_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 
+# コードフェンスの終了候補。closer のインデントは 3 スペース以下のみ
+# （4 以上はフェンス内のコード行。strip 後に判定すると閉じ扱いになり、
+# 以降の内容が指紋から漏れる）
+_FENCE_CLOSE_RE = re.compile(r"^ {0,3}(`+|~+)\s*$")
+
+
+def _indent_columns(line):
+    """行頭インデントのカラム数（タブは 4 カラムのタブストップで展開）。"""
+    col = 0
+    for ch in line:
+        if ch == " ":
+            col += 1
+        elif ch == "\t":
+            col = (col // 4 + 1) * 4
+        else:
+            break
+    return col
+
 
 def _is_prose(line):
     """プレーンな地の文の行か。True の行だけがフィンガープリントに影響しない。"""
-    if line.startswith("\t") or line.startswith("    "):
-        return False  # インデントコード相当
+    if _indent_columns(line) >= 4:
+        return False  # インデントコード相当（スペース・タブ混合も展開して判定）
     stripped = line.strip()
     if not stripped:
         return True  # 空行は段落区切りで、構造情報を持たない
@@ -68,15 +86,16 @@ def structural_tokens(text):
     fence_char = None
     fence_len = 0
     fence_buf = []
-    prev_prose = None  # 直前の非空散文行（setext 見出しのテキスト候補）
+    prose_para = []  # 直前から連続する散文段落（setext 見出しのテキスト候補）
     for ln in lines[i:]:
         if fence_char is not None:
             fence_buf.append(ln)
-            stripped = ln.strip()
-            # closer は opener と同じ文字種で opener 以上の run 長のみ
-            # （内側の短い ``` を closer と誤認すると以降の内容が指紋から漏れる）
-            if stripped and set(stripped) == {fence_char} \
-                    and len(stripped) >= fence_len:
+            # closer は opener と同じ文字種・opener 以上の run 長・インデント
+            # 3 以下のみ（内側の短い ``` や深いインデントの ``` を closer と
+            # 誤認すると以降の内容が指紋から漏れる）
+            m = _FENCE_CLOSE_RE.match(ln)
+            if m and m.group(1)[0] == fence_char \
+                    and len(m.group(1)) >= fence_len:
                 tokens.append(("fence", "\n".join(fence_buf)))
                 fence_buf = []
                 fence_char = None
@@ -86,19 +105,23 @@ def structural_tokens(text):
             fence_char = m.group(1)[0]
             fence_len = len(m.group(1))
             fence_buf = [ln]
-            prev_prose = None
+            prose_para = []
             continue
-        # setext 下線は直前の散文行を見出しテキストとして道連れにする
-        # （下線だけをトークン化すると見出し名の変更を散文と誤認する）
-        if _SETEXT_RE.match(ln) and prev_prose is not None:
-            tokens.append(("heading", prev_prose + "\n" + ln.strip()))
-            prev_prose = None
+        # setext 下線は直前の散文段落を丸ごと見出しテキストとして道連れにする
+        # （CommonMark の setext 見出しは複数行を許すため、直前 1 行だけを
+        # ペア化すると先頭行の変更を散文と誤認する）
+        if _SETEXT_RE.match(ln) and prose_para:
+            tokens.append(("heading", "\n".join(prose_para) + "\n" + ln.strip()))
+            prose_para = []
             continue
         if _is_prose(ln):
-            prev_prose = ln if ln.strip() else None
+            if ln.strip():
+                prose_para.append(ln)
+            else:
+                prose_para = []  # 空行で段落が切れる（下線は直結段落にのみ付く）
             continue
         tokens.append(("line", ln))
-        prev_prose = None
+        prose_para = []
     if fence_char is not None:
         # 閉じられていないフェンスは残り全文をコード扱い（重い側）
         tokens.append(("fence", "\n".join(fence_buf)))

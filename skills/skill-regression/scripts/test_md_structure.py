@@ -167,6 +167,29 @@ class TestAdversarialFalseNegatives(unittest.TestCase):
         after = "Read [a new label](refs/contract.md) instead.\n"
         self.assertNotEqual(_fp(before), _fp(after))
 
+    def test_deeply_indented_fence_marker_is_not_a_closer(self):
+        # closer のインデントは 3 以下（4 以上はフェンス内のコード行）
+        before = "```\n    ```\ntail old\n```\n"
+        after = "```\n    ```\ntail new\n```\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_multiline_setext_heading_first_line_change(self):
+        # setext 見出しは複数行を許す。先頭行の変更も見出しの変更
+        before = "First old\nSecond\n------\n"
+        after = "First new\nSecond\n------\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_mixed_space_tab_indented_code_change(self):
+        # スペース + タブの混合インデントもタブストップ展開で 4 カラムに達する
+        before = " \tcommand old\n"
+        after = " \tcommand new\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
+    def test_processing_instruction_html_change(self):
+        before = "<?agent allow?>\n"
+        after = "<?agent deny?>\n"
+        self.assertNotEqual(_fp(before), _fp(after))
+
 
 class TestFenceInteriorIsOpaque(unittest.TestCase):
     """フェンス内はコードとして丸ごと扱い、他の規則を適用しない。"""
