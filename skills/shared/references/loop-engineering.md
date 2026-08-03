@@ -193,7 +193,7 @@ file".
 
 | Sensor kind | Examples | Notes |
 |---|---|---|
-| Mechanical sensors (deterministic, no LLM) | violations from validate_repo.py, `stale` from `ledger.py --check`, collision pairs from `static_collisions.py` | A conversion adapter (`sensors/*.py`) normalizes the output into Finding JSON |
+| Mechanical sensors (deterministic, no LLM) | violations from validate_repo.py, `stale` from `ledger.py --check` | A conversion adapter (`sensors/*.py`) normalizes the output into Finding JSON |
 | LLM sensors | context-audit / doc-check / doc-audit / skill-improve | Map each skill's findings JSON onto the Finding Schema. Use each skill's declared fix_action as-is |
 
 - A sensor only **detects**; it does not fix (the same invariant as Triage)
