@@ -79,6 +79,8 @@ def stale_severity(recorded, current):
     recorded / current はどちらも {root 相対パス: sha256（不在は MISSING）}。
     面にファイルが増えただけ（既存ファイルの hash は全一致）なら contract-addition、
     既存ファイルの内容変更・削除が 1 つでもあれば contract-change。
+    ただし追加ファイルの hash が MISSING（実体のない参照先＝壊れたリンク）の場合は
+    contract-addition ではなく contract-change として扱う（迷ったら重い側の fail-safe）。
 
     判定材料を hash 差分だけに閉じているのは、git 履歴やコミット範囲に依存せず
     「前回検証した内容そのもの」との比較で決まる決定性を優先したため。

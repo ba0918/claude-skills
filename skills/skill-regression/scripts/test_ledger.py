@@ -78,6 +78,14 @@ class TestStaleSeverity(unittest.TestCase):
         severity, _ = ledger.stale_severity(recorded, current)
         self.assertEqual(severity, ledger.SEVERITY_CHANGE)
 
+    def test_file_recovered_from_missing_is_contract_change(self):
+        # 消えていたファイルが復活した = 面の内容が前回検証時と別物になった
+        recorded = {"a.md": ledger._MISSING}
+        current = {"a.md": "h1"}
+        severity, changed = ledger.stale_severity(recorded, current)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+        self.assertEqual(changed, ["a.md"])
+
     def test_mixed_addition_and_change_is_contract_change(self):
         # fail-safe: 変更が 1 つでも混ざったら addition 側に倒さない
         recorded = {"a.md": "h1"}
