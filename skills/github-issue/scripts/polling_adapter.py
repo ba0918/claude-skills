@@ -46,13 +46,25 @@ def warn(message):
 
 
 def _unfenced_lines(text):
-    fenced = False
+    fence_char = None
+    fence_length = 0
     result = []
     for line in (text or "").splitlines():
-        if re.match(r"^\s*(```|~~~)", line):
-            fenced = not fenced
+        if fence_char is None:
+            match = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
+            if match:
+                fence_char = match.group(1)[0]
+                fence_length = len(match.group(1))
+                continue
+        else:
+            closing = re.fullmatch(
+                rf" {{0,3}}{re.escape(fence_char)}{{{fence_length},}}[ \t]*", line
+            )
+            if closing:
+                fence_char = None
+                fence_length = 0
             continue
-        if not fenced:
+        if fence_char is None:
             result.append(line)
     return result
 
@@ -360,10 +372,21 @@ def claim_lock(number, state_root, owner_pid, now=None):
     return {"status": "claimed", "number": number, "owner_pid": owner_pid, "path": str(path)}
 
 
-def release_lock(number, state_root):
+def release_lock(number, state_root, owner_pid):
+    owner_pid = int(owner_pid)
+    if owner_pid <= 0:
+        raise FailClosed("invalid owner pid")
     path = Path(state_root) / "claim" / f"{_issue_number(number)}.lock"
     existed = path.exists()
     if existed:
+        try:
+            recorded_pid = int(path.read_text(encoding="utf-8").strip())
+        except (OSError, ValueError):
+            warn(f"refusing to release lock with invalid owner: {path}")
+            return {"released": False, "path": str(path)}
+        if recorded_pid != owner_pid and _pid_alive(recorded_pid):
+            warn(f"refusing to release live lock owned by pid {recorded_pid}: {path}")
+            return {"released": False, "path": str(path)}
         path.unlink()
     return {"released": existed, "path": str(path)}
 
@@ -468,13 +491,16 @@ def resolve_state_root(name_with_owner, remote_url=None, fs_type_getter=filesyst
     normalized = normalize_git_url(remote_url)
     repo_slug = sanitize_repo_slug(name_with_owner)
     clone_id = hashlib.sha1(normalized.encode("utf-8")).hexdigest()[:16]
-    base = Path(os.environ.get("XDG_STATE_HOME", "~/.local/state")).expanduser()
+    base = Path(os.environ.get("XDG_STATE_HOME") or "~/.local/state").expanduser()
     target = base / "claude-skills" / "github-issue" / f"{repo_slug}-{clone_id}"
     target.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if target.is_symlink():
+        raise FailClosed(f"state_root is symlink: {target}")
     os.chmod(target, 0o700)
     clone_file = target / ".clone_url"
+    nofollow = getattr(os, "O_NOFOLLOW", 0)
     try:
-        fd = os.open(clone_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        fd = os.open(clone_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL | nofollow, 0o600)
         try:
             os.write(fd, normalized.encode("utf-8"))
             os.fsync(fd)
@@ -486,7 +512,15 @@ def resolve_state_root(name_with_owner, remote_url=None, fs_type_getter=filesyst
         finally:
             os.close(parent_fd)
     except FileExistsError:
-        if clone_file.read_text(encoding="utf-8") != normalized:
+        try:
+            fd = os.open(clone_file, os.O_RDONLY | nofollow)
+            try:
+                stored_url = os.read(fd, 4096).decode("utf-8")
+            finally:
+                os.close(fd)
+        except (OSError, UnicodeError) as exc:
+            raise FailClosed(f"unsafe state_root clone marker: {clone_file}") from exc
+        if stored_url != normalized:
             raise FailClosed(f"state_root clone_id collision: {target}")
     if target.stat().st_uid != os.getuid():
         raise FailClosed(f"state_root ownership mismatch: {target}")
@@ -559,7 +593,7 @@ def _parser():
     p = command("session-load"); p.add_argument("--state-root", required=True)
     p = command("session-save"); p.add_argument("--state-root", required=True); p.add_argument("--json", required=True)
     p = command("claim-lock"); p.add_argument("number"); p.add_argument("--state-root", required=True); p.add_argument("--owner-pid", required=True, type=int)
-    p = command("release-lock"); p.add_argument("number"); p.add_argument("--state-root", required=True)
+    p = command("release-lock"); p.add_argument("number"); p.add_argument("--state-root", required=True); p.add_argument("--owner-pid", required=True, type=int)
     p = command("recovery-marker"); p.add_argument("action", choices=("add", "list", "delete")); p.add_argument("number", nargs="?"); p.add_argument("--state-root", required=True)
     p = command("stale-locks"); p.add_argument("--state-root", required=True)
     return parser
@@ -583,7 +617,7 @@ def main(argv=None):
     elif c == "session-load": result = {"session": session_load(args.state_root)}
     elif c == "session-save": result = {"session": session_save(args.state_root, _load_json(args.json))}
     elif c == "claim-lock": result = claim_lock(args.number, args.state_root, args.owner_pid)
-    elif c == "release-lock": result = release_lock(args.number, args.state_root)
+    elif c == "release-lock": result = release_lock(args.number, args.state_root, args.owner_pid)
     elif c == "recovery-marker": result = {"markers": recovery_marker(args.action, args.state_root, args.number)}
     elif c == "stale-locks": result = {"removed": stale_locks(args.state_root)}
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))

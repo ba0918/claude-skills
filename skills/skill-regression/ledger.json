@@ -255,7 +255,7 @@
     "file_sha256": {
       "skills/github-issue/SKILL.md": "d3e05f0517839213d2013aa43bd2c5a0793fbd716c5d7e40121da12df8417aeb",
       "skills/github-issue/fixtures.json": "3997abfe50abd8de1470506c5137700dd1ad7b86e2c87790b24830cde793760b",
-      "skills/github-issue/references/adapter-internals.md": "1f34846b097d375638c8453c23a507aac85ddfb4e96987db114adea66a04901f",
+      "skills/github-issue/references/adapter-internals.md": "71a40216b3dc65afd4fe9eadbd322dcec9f7505e51e66805db841db6bfd3bb5a",
       "skills/github-issue/references/cleanup-spec.md": "a8a10b8352a5a22c190e92ab7408714461cfa48f93f84e4664331e2b4879df36",
       "skills/github-issue/references/codex-review-loop.md": "a43d3f71fbc65f10ae129ac2e33b66629fd50aada1c78b174d491308ed3c4ba9",
       "skills/github-issue/references/config-defaults.md": "f610df99b3044706297ca6faeacf98655bbeae28ab0bea320605cef40f3725e8",
@@ -263,12 +263,12 @@
       "skills/github-issue/references/gh-commands.md": "c6e291c0afb5ddc195be1a9ff14ea7e47f4379ec46c2bdfb0e8e65e80fbaf6aa",
       "skills/github-issue/references/label-mapping.md": "8a67daa0503fdfa5a19220a9c125e15277374b33e417c150d30dac4443c6395a",
       "skills/github-issue/references/label-spec.md": "851c00af6041bfad8beecabb646c98f122728533d153c59e5c0ac7916f6c3c4a",
-      "skills/github-issue/references/polling-adapter.md": "e2b154a27a716cd1622d4b8fcff736c8f3b0e98418ef7533af8a35f08ec0e584",
+      "skills/github-issue/references/polling-adapter.md": "3c7e5d5c1cbed6e24e7f01f92aa1a77c0c3b1481ca082d31b84dbd7ccf269080",
       "skills/github-issue/references/secret-scanner.md": "623fa30ed568e71f32db9dcbe8098d81825582e15000104560c2db059dd073df",
       "skills/github-issue/references/self-drive-gates.md": "28fb1caeab0fb59496fbbc3f92bd7057b9f43644925ac16df369fd6f3f465481",
-      "skills/github-issue/references/state-root.md": "7b04ddb99bed507a17afcb3b4304a96bcd27e6af187f563e33fbae5493cd61a0",
+      "skills/github-issue/references/state-root.md": "3a4ec9199c0a5d0f8c2c3d9e30170d966d06befbe495a8cf12c64853fb714c8c",
       "skills/github-issue/references/worktree-cycle.md": "9cf9a3e63c3b29aca31cc470c7d5b7999ca91f6613a82e80966dcfc24ca9384e",
-      "skills/github-issue/scripts/polling_adapter.py": "b18109f3be726d59ef92484a86902af270043b0fa5677edab8cccbb4706982fa",
+      "skills/github-issue/scripts/polling_adapter.py": "1e923ced38c58c7c7d9b8d922470547f10664131c4d60d8169eb2be6768ff947",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
@@ -278,7 +278,7 @@
       "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
       "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb"
     },
-    "note": "#214 追補: 直前の実走 pass（4 シナリオ）後の微修正 2 件のみ — filter-ready 出力キー skipped→excluded（契約語彙 coverage-ledger との衝突回避、テスト同期済み・20 本 pass）と self-drive-gates.md の 1 語文言復元。fixtures はどちらにも非依存（gi-001 は state-root/kill-files のみ使用、filter-ready は fixture 未使用）",
+    "note": "#214 追補2: Codex 敵対レビュー（BLOCK2+WARN13）の反映のみ — fenced parser の CommonMark 準拠化（Gate 1 迂回封鎖、fail-closed 方向の強化）/ 空 XDG_STATE_HOME の fallback 修正 / symlink 防御 / release-lock owner 照合 / テスト 20→33 本 / md 3 件の記述整合。直前実走 4 シナリオの経路（state-root は XDG 設定済み・verdict は平文 body）はいずれの修正にも非依存で、旧 20 テスト全維持 + 迂回ケースは実測で MISSING 確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -306,7 +306,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "249260efa28fba3423c26c0415ad5c1d86d9828d6f164bccda674cdb42e040ff",
+    "surface_sha256": "7643d07e20f2f2a86b2b330d8adb3024559e0be1b0a8f9ba4956fdb662c41e79",
     "verified": "2026-08-03"
   },
   "handoff": {

@@ -71,16 +71,23 @@ This adapter **has no ephemeral fallback**. In an environment where `state_root`
 
 This adapter presumes **the local filesystems of Linux / macOS**. The APIs it uses are a combination of the basic POSIX.1-2008 functions (`open`/`fsync`/`rename`) and OS-dependent APIs (`flock(2)` = a BSD extension, `statfs(2)`/`fstatfs(2)` for determining the FS kind), so it is operated as **"presuming a Linux/macOS local FS" rather than as purely POSIX-conformant**. Operation on Windows native or a non-Linux kernel is unsupported.
 
-Every state file update is performed **atomically** with the `write_atomic` procedure
+Every state **file update** is performed **atomically** with the `write_atomic` procedure
 (tmp file with O_EXCL and mode 0600 → data fsync → same-directory atomic rename → parent
-directory fsync). The executable source of truth is `polling_adapter.py` — every state
-mutation subcommand (`increment-retry`, `session-save`, `recovery-marker add`, ...) applies
-it; never hand-roll the sequence in shell.
+directory fsync). The executable source of truth is `polling_adapter.py` — the file-writing
+subcommands (`increment-retry`, `session-save`, `recovery-marker add`) apply it; never
+hand-roll the sequence in shell. Lock operations are the exception by design: `claim-lock`
+writes under its flock guard and releases/stale-deletions are plain unlinks (a lockfile's
+consistency comes from the flock + pid lease, not from rename atomicity).
 
 - **Supported FS**: ext4, btrfs, xfs, apfs (local filesystems only)
 - **Unsupported / fail-closed**: NFS, CIFS, tmpfs (rename atomicity and fsync semantics are non-standard), and a WSL mount over Windows DrvFs (permission modes are not reflected). Determined with `statfs(2)`; on detection, **a warning log + polling abort (fail-closed)**. To prevent silent data corruption, a warning alone is not enough
 - **Ownership verification**: when state_root is opened, `stat(path).uid != getuid()` is fail-closed (so that under a shared HOME you never mistakenly write into a state_root created by another user)
-- **Stale lockfile**: `<state_root>/claim/{N}.lock` records the pid and is held with flock(2). It is released automatically when the process exits. When the pid is dead, `rollback_orphans()` deletes it on the condition that at least 5 minutes have passed
+- **Stale lockfile**: `<state_root>/claim/{N}.lock` records the owner pid as the lease;
+  flock(2) guards only the read-modify-write inside each CLI invocation (the old
+  held-until-process-exit model presumed a long-lived adapter process — see
+  [adapter-internals.md](adapter-internals.md) for the Why-not). A live recorded pid means
+  LockBusy regardless of age; when the pid is dead, `rollback_orphans()` deletes the file on
+  the condition that at least 5 minutes have passed
 
 ### `.polling-initialized` Lifecycle
 

@@ -107,7 +107,7 @@ return Ok.
 When every attempt fails, return the claim to ready with a compensating action under the
 **crash-safe ordering invariant**:
 
-- **CA-1**: persist the recovery marker first — `polling_adapter.py recovery-marker add N`
+- **CA-1**: persist the recovery marker first — `polling_adapter.py recovery-marker add N --state-root DIR`
   (write_atomic inside). If the marker write itself fails, fail-closed and abort polling
 - **CA-2**: `release(slug)` removes claude-running / the assignee (best-effort)
 
@@ -148,7 +148,7 @@ Returns the absolute path pair `(<state_root>/.STOP.hard, <state_root>/.STOP)` (
 
 ### load_session() / save_session(session)
 
-The tick session of shared contract §6.5. The executable source of truth is `polling_adapter.py session-load / session-save` — it reads and writes `<state_root>/session.json` with the `write_atomic` procedure ([§Platform Assumptions](state-root.md#platform-assumptions)). A parse failure follows the same quarantine-rename convention as the FS Retry State (`.corrupt.{ts}`) and is treated as `None`.
+The tick session of shared contract §6.5. The executable source of truth is `polling_adapter.py session-load --state-root DIR` / `session-save --state-root DIR --json FILE` — it reads and writes `<state_root>/session.json` with the `write_atomic` procedure ([§Platform Assumptions](state-root.md#platform-assumptions)). A parse failure follows the same quarantine-rename convention as the FS Retry State (`.corrupt.{ts}`) and is treated as `None`.
 
 ### archive_month_boundary()
 

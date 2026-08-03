@@ -16,7 +16,8 @@ silently normalize `007` to `7`); anything else is fail-closed.
   transport. On failure, `release-lock` and `ClaimFailed`
 - **③ Re-verify** (detecting a post-claim race): `get_issue` for assignees/labels; when the
   current actor or `claude-running` is missing, roll the partial claim back (remove label,
-  remove actor, `release-lock`) and return `ClaimFailed("post-claim verify failed")`
+  remove actor, then `release-lock N --state-root DIR --owner-pid PID` — it unlinks only when
+  the recorded pid matches the owner or is dead) and return `ClaimFailed("post-claim verify failed")`
 
 - A **stale lockfile** (mtime at least 5 minutes old + dead pid) is deleted by
   `polling_adapter.py stale-locks --state-root DIR` (rollback step ②); a live pid always
