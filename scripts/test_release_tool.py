@@ -105,10 +105,15 @@ class ReleaseToolTest(unittest.TestCase):
         with open(os.path.join(self.root, "CHANGELOG.md"), encoding="utf-8") as handle:
             changelog = handle.read()
         self.assertIn("## 1.73.0", changelog)
+        self.assertIn("## 1.73.0\n\n### Added: fixture", changelog)
         self.assertNotIn("## Unreleased", changelog)
         for relpath in MANIFEST_PATHS:
             with open(os.path.join(self.root, relpath), encoding="utf-8") as handle:
-                document = json.load(handle)
+                raw = handle.read()
+            document = json.loads(raw)
+            self.assertEqual(
+                raw, json.dumps(document, ensure_ascii=False, indent=2) + "\n"
+            )
             if relpath.endswith("marketplace.json"):
                 self.assertEqual(
                     [plugin["version"] for plugin in document["plugins"]],

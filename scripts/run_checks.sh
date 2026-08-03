@@ -83,8 +83,8 @@ if raw:
 else:
     print(-1)
 " 2>/dev/null) || tp_checked=-1
-# 判定: skip テキスト → checked=0 (ran) → checked>0 (ran) → それ以外 (unavailable)
-# -1 やパース失敗を ran に倒すと fail-closed が破れるので、非負の整数だけを ran とする
+# 判定: skip テキスト → checked=0 (completed no-op) → checked>0 (ran) → それ以外 (unavailable)
+# -1 やパース失敗を ran に倒すと fail-closed が破れるので、0 または正の整数だけを ran とする
 case "$tp_text" in
   *"skip"*) _mark_skipped "translation-parity (skip: baseline unresolved or stale)" ;;
   *)

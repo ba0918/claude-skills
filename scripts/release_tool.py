@@ -34,7 +34,7 @@ MANIFEST_RELPATHS = (
 
 _VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 _FULL_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
-_UNRELEASED_HEADING_RE = re.compile(r"^## Unreleased\s*$", re.MULTILINE)
+_UNRELEASED_HEADING_RE = re.compile(r"^## Unreleased[ \t]*$", re.MULTILINE)
 
 
 class ReleaseError(Exception):
@@ -98,7 +98,9 @@ def plan_sync(changelog, documents, version):
 
     current = distinct[0]
     current_tuple = parse_version(current)
-    version_heading = re.compile(rf"^## {re.escape(version)}\s*$", re.MULTILINE)
+    version_heading = re.compile(
+        rf"^## {re.escape(version)}[ \t]*$", re.MULTILINE
+    )
     has_version_heading = version_heading.search(changelog) is not None
     has_unreleased = _UNRELEASED_HEADING_RE.search(changelog) is not None
 
@@ -137,7 +139,7 @@ def plan_sync(changelog, documents, version):
 def extract_notes(changelog, version):
     """指定 version の CHANGELOG 節を次の level-2 見出し手前まで抜き出す。"""
     parse_version(version)
-    heading = re.compile(rf"^## {re.escape(version)}\s*$", re.MULTILINE)
+    heading = re.compile(rf"^## {re.escape(version)}[ \t]*$", re.MULTILINE)
     match = heading.search(changelog)
     if match is None:
         raise ReleaseError(f"CHANGELOG.md has no ## {version} heading")
