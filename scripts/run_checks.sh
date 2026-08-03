@@ -83,13 +83,15 @@ if raw:
 else:
     print(-1)
 " 2>/dev/null) || tp_checked=-1
-# 判定: skip テキスト → checked=0 (no-op) → checked>0 (ran) → それ以外 (unavailable)
-# -1 やパース失敗を ran に倒すと fail-closed が破れるので、正の整数だけを ran とする
+# 判定: skip テキスト → checked=0 (ran) → checked>0 (ran) → それ以外 (unavailable)
+# -1 やパース失敗を ran に倒すと fail-closed が破れるので、非負の整数だけを ran とする
 case "$tp_text" in
   *"skip"*) _mark_skipped "translation-parity (skip: baseline unresolved or stale)" ;;
   *)
     if [ "$tp_checked" = "0" ]; then
-      _mark_skipped "translation-parity (no-op: checked 0 files)"
+      # baseline 解決済みの空集合は全対象を検査した結果ゼロ件の検査完了。
+      # baseline 未解決や環境欠損による skip とは区別し、STRICT_GATES でも ran とする。
+      _mark_ran
     elif echo "$tp_checked" | grep -qE '^[1-9][0-9]*$'; then
       _mark_ran
     else
