@@ -114,6 +114,97 @@ class TestStaleSeverity(unittest.TestCase):
         self.assertEqual(changed, ["a.md"])
 
 
+class TestStaleSeverityProse(unittest.TestCase):
+    """散文のみ変更（prose-change）の機械分類。
+
+    file hash は不一致でも構造フィンガープリントが一致すれば、変わったのは
+    散文だけ。判定材料が欠けるケースはすべて contract-change（重い側）へ倒す。
+    """
+
+    def test_prose_only_modification_is_prose_change(self):
+        severity, changed = ledger.stale_severity(
+            {"a.md": "h1"}, {"a.md": "h2"},
+            recorded_struct={"a.md": "s1"}, current_struct={"a.md": "s1"})
+        self.assertEqual(severity, ledger.SEVERITY_PROSE)
+        self.assertEqual(changed, ["a.md"])
+
+    def test_structural_mismatch_is_contract_change(self):
+        severity, _ = ledger.stale_severity(
+            {"a.md": "h1"}, {"a.md": "h2"},
+            recorded_struct={"a.md": "s1"}, current_struct={"a.md": "s2"})
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+
+    def test_legacy_entry_without_struct_record_is_contract_change(self):
+        # structural_sha256 を持たない旧エントリ。散文のみと断じる基準が無い
+        severity, _ = ledger.stale_severity(
+            {"a.md": "h1"}, {"a.md": "h2"},
+            recorded_struct={}, current_struct={"a.md": "s1"})
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+
+    def test_non_md_modification_is_contract_change(self):
+        # 非 md には散文の概念が無い。構造記録の対象外 = 常に重い側
+        severity, _ = ledger.stale_severity(
+            {"a.py": "h1"}, {"a.py": "h2"},
+            recorded_struct={}, current_struct={})
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+
+    def test_prose_with_removed_file_is_contract_change(self):
+        severity, _ = ledger.stale_severity(
+            {"a.md": "h1", "b.md": "h2"}, {"a.md": "h1b"},
+            recorded_struct={"a.md": "s1", "b.md": "s2"},
+            current_struct={"a.md": "s1"})
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+
+    def test_prose_with_own_addition_stays_prose_change(self):
+        severity, changed = ledger.stale_severity(
+            {"skills/a/SKILL.md": "h1"},
+            {"skills/a/SKILL.md": "h2", "skills/a/new.md": "h3"},
+            recorded_struct={"skills/a/SKILL.md": "s1"},
+            current_struct={"skills/a/SKILL.md": "s1", "skills/a/new.md": "s3"},
+            own_prefix="skills/a/")
+        self.assertEqual(severity, ledger.SEVERITY_PROSE)
+        self.assertEqual(changed, ["skills/a/SKILL.md", "skills/a/new.md"])
+
+    def test_prose_with_foreign_addition_is_contract_change(self):
+        severity, _ = ledger.stale_severity(
+            {"skills/a/SKILL.md": "h1"},
+            {"skills/a/SKILL.md": "h2", "skills/shared/c.md": "h3"},
+            recorded_struct={"skills/a/SKILL.md": "s1"},
+            current_struct={"skills/a/SKILL.md": "s1", "skills/shared/c.md": "s3"},
+            own_prefix="skills/a/")
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+
+
+class TestStaleSeverityForeignAddition(unittest.TestCase):
+    """第 3 fail-safe: 自スキル外のファイルが面へ追加されたら addition と呼ばない。
+
+    素パス参照の実体が後から作られて面へ入るケースは未検証の新規内容であり、
+    「直前に実走で確かめた内容から増えただけ」という addition の意味論を満たさない
+    （#182 で Why not 見送り → #222 で導入）。
+    """
+
+    def test_foreign_addition_is_contract_change(self):
+        severity, _ = ledger.stale_severity(
+            {"skills/a/SKILL.md": "h1"},
+            {"skills/a/SKILL.md": "h1", "skills/shared/c.md": "h2"},
+            own_prefix="skills/a/")
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
+
+    def test_own_addition_is_still_contract_addition(self):
+        severity, _ = ledger.stale_severity(
+            {"skills/a/SKILL.md": "h1"},
+            {"skills/a/SKILL.md": "h1", "skills/a/new.md": "h2"},
+            own_prefix="skills/a/")
+        self.assertEqual(severity, ledger.SEVERITY_ADDITION)
+
+    def test_without_own_prefix_addition_is_unrestricted(self):
+        # 後方互換: own_prefix 省略時は従来どおり出所を検査しない
+        severity, _ = ledger.stale_severity(
+            {"skills/a/SKILL.md": "h1"},
+            {"skills/a/SKILL.md": "h1", "skills/shared/c.md": "h2"})
+        self.assertEqual(severity, ledger.SEVERITY_ADDITION)
+
+
 class TestCheck(unittest.TestCase):
     """check() は (kind, skill, detail) のタプル一覧を返す。空 = 合格。"""
 
@@ -151,9 +242,44 @@ class TestCheck(unittest.TestCase):
             self._repo(root)
             surface = ledger.skill_surface(root, "a")
             entries = {"a": ledger.make_entry(root, surface, "pass", "2026-07-07")}
-            _write(root, "skills/a/SKILL.md", "body CHANGED")
+            _write(root, "skills/a/SKILL.md", "run `changed-command` now")
             issues = ledger.check(root, entries)
             self.assertEqual([i[0] for i in issues], ["stale"])  # kind は不変
+            self.assertTrue(issues[0][2].startswith("[contract-change]"))
+
+    def test_stale_detail_labels_prose_only_change_as_prose_change(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-07-07")}
+            _write(root, "skills/a/SKILL.md", "body reworded, no tokens touched")
+            issues = ledger.check(root, entries)
+            self.assertEqual([i[0] for i in issues], ["stale"])  # kind は不変
+            self.assertTrue(issues[0][2].startswith("[prose-change]"))
+
+    def test_legacy_entry_without_struct_record_never_labels_prose(self):
+        # structural_sha256 の無い旧エントリは散文変更でも contract-change 表示
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entry = ledger.make_entry(root, surface, "pass", "2026-07-07")
+            del entry["structural_sha256"]
+            _write(root, "skills/a/SKILL.md", "body reworded, no tokens touched")
+            issues = ledger.check(root, {"a": entry})
+            self.assertTrue(issues[0][2].startswith("[contract-change]"))
+
+    def test_check_treats_foreign_surface_growth_as_contract_change(self):
+        # check() が own_prefix を配線していることの統合確認。recorded に無い
+        # 自スキル外ファイルが面へ現れたら addition ではなく重い側で報告する
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            _write(root, "skills/shared/refs/c.md", "shared contract")
+            _write(root, "skills/a/SKILL.md", "see [c](../shared/refs/c.md)")
+            surface = ledger.skill_surface(root, "a")
+            entry = ledger.make_entry(root, surface, "pass", "2026-07-07")
+            entry["file_sha256"].pop("skills/shared/refs/c.md", None)
+            issues = ledger.check(root, {"a": entry})
+            self.assertEqual([i[0] for i in issues], ["stale"])
             self.assertTrue(issues[0][2].startswith("[contract-change]"))
 
     def test_stale_detail_labels_surface_growth_as_contract_addition(self):
@@ -237,6 +363,25 @@ class TestCheck(unittest.TestCase):
             self.assertIn("accepted-without-run 1", output)
             self.assertIn("pass 0", output)
 
+    def test_check_output_counts_accepted_prose_separately(self):
+        """散文承認も内訳に別建てで出す（accepted-without-run に畳まない）。"""
+        import io
+        import contextlib
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            _write(root, "skills/skill-regression/SKILL.md", "self")
+            entries = {
+                "a": ledger.make_entry(
+                    root, ledger.skill_surface(root, "a"),
+                    "accepted-prose", "2026-08-03"),
+            }
+            ledger.save(root, entries)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = ledger.main(["--check", root])
+            self.assertEqual(rc, 0)
+            self.assertIn("accepted-prose 1", buf.getvalue())
+
 
 class TestAcceptGuard(unittest.TestCase):
     """--accept は fixtures.json が変わっていたら拒否する。"""
@@ -301,10 +446,10 @@ class TestAcceptGuard(unittest.TestCase):
             surface = ledger.skill_surface(root, "a")
             entries = {"a": ledger.make_entry(root, surface, "pass", "2026-07-01")}
             ledger.save(root, entries)
-            _write(root, "skills/a/SKILL.md", "body CHANGED")
+            _write(root, "skills/a/SKILL.md", "run `changed-command` now")
             rc = ledger.main([
                 "--update", "a", "--accept",
-                "--note", "prose-only change", root,
+                "--note", "reviewed by hand", root,
             ])
             self.assertEqual(rc, 0)
             reloaded = ledger.load(root)
@@ -342,11 +487,43 @@ class TestAcceptResultClassification(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             self._repo(root)
             self._verified(root)
-            _write(root, "skills/a/SKILL.md", "body CHANGED")
+            _write(root, "skills/a/SKILL.md", "run `changed-command` now")
             rc = ledger.main(["--update", "a", "--accept", root])
             self.assertEqual(rc, 0)
             self.assertEqual(
                 ledger.load(root)["a"]["result"], "accepted-without-run")
+
+    def test_prose_only_accept_on_pass_baseline_is_accepted_prose(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/a/SKILL.md", "body reworded, no tokens touched")
+            rc = ledger.main(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["result"], "accepted-prose")
+
+    def test_prose_only_accept_on_unrun_baseline_stays_accepted_without_run(self):
+        """accepted-prose も実走 pass の上でだけ成立する（accepted-addition と同条件）。
+
+        実走していない台帳の上に散文承認を積めると、一度も実走しないまま
+        「機械確認済み」の見た目で Red flag の計上から逃げ続けられる。
+        """
+        for baseline in ("accepted-without-run", "accepted-addition",
+                         "accepted-prose"):
+            with self.subTest(baseline=baseline), \
+                    tempfile.TemporaryDirectory() as root:
+                self._repo(root)
+                ledger.save(root, {
+                    "a": ledger.make_entry(
+                        root, ledger.skill_surface(root, "a"),
+                        baseline, "2026-07-01"),
+                })
+                _write(root, "skills/a/SKILL.md",
+                       "body reworded, no tokens touched")
+                rc = ledger.main(["--update", "a", "--accept", root])
+                self.assertEqual(rc, 0)
+                self.assertEqual(
+                    ledger.load(root)["a"]["result"], "accepted-without-run")
 
     def test_first_accept_without_prior_entry_is_accepted_without_run(self):
         # 比較基準がない以上 addition と断じる根拠もない
@@ -425,6 +602,18 @@ class TestEntryRoundtrip(unittest.TestCase):
             entry = ledger.make_entry(
                 root, ledger.skill_surface(root, "a"), "pass", "2026-07-25")
             self.assertNotIn("note", entry)
+
+    def test_entry_records_structural_hashes_for_md_only(self):
+        # 散文のみ判定の比較基準。md だけが対象（非 md に散文の概念は無い）
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/a/SKILL.md", "body")
+            _write(root, "skills/a/fixtures.json", "{}")
+            _write(root, "skills/a/helper.py", "x = 1")
+            surface = ledger.skill_surface(root, "a")
+            entry = ledger.make_entry(root, surface, "pass", "2026-08-03")
+            self.assertIn("skills/a/SKILL.md", entry["structural_sha256"])
+            self.assertNotIn("skills/a/fixtures.json", entry["structural_sha256"])
+            self.assertNotIn("skills/a/helper.py", entry["structural_sha256"])
 
     def test_save_and_load(self):
         with tempfile.TemporaryDirectory() as root:

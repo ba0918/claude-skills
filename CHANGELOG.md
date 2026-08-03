@@ -11,6 +11,44 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: skill-regression の stale 検出に prose-change を追加し軽量承認を md 散文変更へ拡張（#222）
+
+- #182 の分類は hash 比較のみのため、既存 md の散文だけを言い換えた変更も
+  `contract-change` に落ち、軽量承認レールに乗らなかった。台帳エントリへ md ごとの
+  **構造フィンガープリント**（`md_structure.py` 新設）を `structural_sha256` として
+  保存し、file hash 不一致でも構造 hash 一致なら新 severity `prose-change` と
+  機械分類する。git 履歴に依存しない決定性（#182 の設計）は維持
+- 構造判定は **allow-list 方式**: 散文と認めるのはプレーンな地の文の行だけで、
+  構造構文の兆候（見出し・リスト・表・引用・フェンス・インデントコード・HTML・
+  インラインコード・角括弧・強調/打ち消しデリミタ・setext 下線）を含む行は
+  行全体をトークン化する。
+  当初の deny-list 実装（トークン構文を列挙し残りを散文扱い）は PR #224 の
+  敵対レビューでリスト項目・setext 見出し・先頭パイプなし表・タブインデント・
+  HTML・多重バッククォート・4 連フェンスの 7 種の偽陰性（挙動変更が散文と
+  誤分類され軽量承認に乗る collision）が実証されたため反転した。未知構文は
+  デフォルトで構造側に落ちる
+- `--accept` は `prose-change` かつ**前回が実走 pass** のとき新 result 値 `accepted-prose`
+  を記録（accepted-addition と同じ pass-baseline 条件。実走ゼロの台帳に軽量記録を積んで
+  Red flag の計上から逃げる穴を開けない）。breakdown は 4 値表示になる
+- #182 で Why not 見送りだった**第 3 fail-safe** を導入: 自スキル配下以外のファイルが面へ
+  追加された場合は `contract-addition` ではなく `contract-change` に倒す（素パス参照の
+  実体が後から作られて面へ入る未検証新規内容の取りこぼし対策。own-prefix を引数で渡し
+  純関数性は維持）
+- **効果の限界（実測 2026-08-03）**: 既存の accepted-without-run 滞留 16 件には直接
+  効かない。8/3 の 13 件一斉 accept の主因はリンク先差し替え（#210）で、これは構造変更
+  であり本分類の対象外。直近 60 コミットの skills/ 配下 md 修正 113 件中 prose-only は
+  allow-list 判定で **4 件（約 3.5%）**（反転前の deny-list 判定では 20 件・18% だったが、
+  その差 16 件は偽陰性リスクを含む緩さの産物）。効くのは**今後の** stale のうち
+  純粋な地の文の言い換えだけを軽量側へ分類する予防面で、意図的に狭い。また
+  `structural_sha256` を持たない既存エントリは常に重い側へ倒れるため、prose 判定が
+  効き始めるのは各スキルが次に `--update` された以降
+- loop-triage `parse_ledger_check` の severity 語彙列挙へ `prose-change` を追加
+  （round-trip 契約テストが検出した追随。#223 で仕込んだ検出網が設計どおり機能）。
+  `prose-change` へ分類が変わる stale は `what` が変わるため `finding_id` も変わる —
+  suppression / queue 重複排除の baseline は存在しないため現時点の実害はない
+- measurement-identity §4 の outcome 列挙・skill-reviewer の証拠分類
+  （`accepted-prose` も `accepted_without_run` へ写像、5 状態維持）を同期
+
 ### Changed: skill-regression の stale 検出に severity を導入（#182）
 
 - ledger の stale は重さを区別せず、低リスク変更のたびの `--accept` が常態化して、
