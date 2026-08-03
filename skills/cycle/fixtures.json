@@ -575,7 +575,7 @@
         },
         "git": { "init": true, "commit": true }
       },
-      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが WARN で、WARN auto-fix 後の再レビューもまだ WARN（finding が残っている）想定で、headless 停止パスを確認して。",
+      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが WARN で、WARN auto-fix 後の再レビューもまだ WARN（finding が残っている）想定で、headless 停止パスを確認して。再レビューの WARN verdict は注入で固定してよい（organic なレビュアー出力の揺らぎは検証対象外）。",
       "requirements": [
         {
           "text": "Phase 3 の初回レビューが WARN で、WARN auto-fix（Step 2b）に入っている",
@@ -594,7 +594,7 @@
           "critical": true
         }
       ],
-      "notes": "WARN auto-fix の失敗系固定。auto-fix で WARN が解消されず headless 停止する経路。cy-014（成功系）と対をなす。"
+      "notes": "WARN auto-fix の失敗系固定。auto-fix で WARN が解消されず headless 停止する経路。cy-014（成功系）と対をなす。再レビュー verdict は注入で固定する（cy-013 と同じ裁定: 2026-08-04 の実走で process / subagent 両経路とも auto-fix 後の実レビューが PASS に収束し想定が実現しなかったため、注入指定を prompt に明文化した。requirements は不変更）。"
     },
     {
       "id": "cy-016",
