@@ -6,10 +6,12 @@
 """
 
 import json
+import io
 import os
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 
 import evidence_check
 
@@ -21,6 +23,13 @@ CONTRACT_TEXT = (
     "## Contract Identity\n\n"
     "This contract carries an explicit, machine-readable version: "
     "**`quality-gate-contract 1.0.0`**.\n"
+)
+
+PROFILE_TEXT = (
+    "# Profile\n\n"
+    "`in-force: skill-repository-profile 1.0.0 since 2026-08-03`\n\n"
+    "Identity: `skill-repository-profile 1.0.0`\n\n"
+    "Conforms to `quality-gate-contract 1.0.0`.\n"
 )
 
 
@@ -58,8 +67,17 @@ class EvidenceCheckHarness(unittest.TestCase):
                 "--evidence-dir", kwargs.pop("evidence_dir", self.evidence_dir),
                 "--target-sha", kwargs.pop("target_sha", SHA_A),
                 "--contract", kwargs.pop("contract", self.contract_path)]
+        profile = kwargs.pop("profile", None)
+        if profile is not None:
+            argv.extend(["--profile", profile])
         assert not kwargs, kwargs
         return evidence_check.run(argv)
+
+    def write_profile(self, text=PROFILE_TEXT):
+        path = os.path.join(self.root, "profile.md")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(text)
+        return path
 
 
 class TestPublishableJudgment(EvidenceCheckHarness):
@@ -115,11 +133,147 @@ class TestInvalidEvidenceIsJudgedNotSkipped(EvidenceCheckHarness):
         write_record(self.evidence_dir, "semantic_reviewed")
         self.assertEqual(self.run_check(), 1)
 
-    def test_non_null_profile_is_unresolvable_in_v1_and_blocks_publishable(self):
+    def test_non_null_profile_blocks_publishable_when_no_profile_is_in_force(self):
         write_record(self.evidence_dir, "machine_verified",
                      profile={"name": "skill-repository", "version": "1.0.0"})
         write_record(self.evidence_dir, "semantic_reviewed")
         self.assertEqual(self.run_check(), 1)
+
+    def test_missing_profile_field_blocks_publishable_when_none_is_in_force(self):
+        path = write_record(self.evidence_dir, "machine_verified")
+        with open(path, encoding="utf-8") as handle:
+            record = json.load(handle)
+        del record["profile"]
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(record, handle)
+        write_record(self.evidence_dir, "semantic_reviewed")
+        self.assertEqual(self.run_check(), 1)
+
+
+class TestInForceProfileJudgment(EvidenceCheckHarness):
+    def setUp(self):
+        super().setUp()
+        self.profile_path = self.write_profile()
+
+    def write_both(self, profile):
+        write_record(self.evidence_dir, "machine_verified", profile=profile)
+        write_record(self.evidence_dir, "semantic_reviewed", profile=profile)
+
+    def test_exact_profile_binding_is_publishable_and_visible(self):
+        self.write_both({"name": "skill-repository-profile", "version": "1.0.0"})
+        output = io.StringIO()
+        with redirect_stdout(output):
+            result = self.run_check(profile=self.profile_path)
+        self.assertEqual(result, 0)
+        self.assertIn("in force since", output.getvalue())
+
+    def test_null_profile_blocks_publishable_with_binding_reason(self):
+        self.write_both(None)
+        output = io.StringIO()
+        with redirect_stdout(output):
+            result = self.run_check(profile=self.profile_path)
+        self.assertEqual(result, 1)
+        self.assertIn("binding required", output.getvalue())
+
+    def test_wrong_profile_version_blocks_publishable(self):
+        self.write_both({"name": "skill-repository-profile", "version": "0.9.0"})
+        self.assertEqual(self.run_check(profile=self.profile_path), 1)
+
+    def test_extra_profile_key_blocks_publishable(self):
+        self.write_both({
+            "name": "skill-repository-profile", "version": "1.0.0", "extra": True
+        })
+        self.assertEqual(self.run_check(profile=self.profile_path), 1)
+
+    def test_profile_conforming_to_other_contract_breaks_check(self):
+        path = self.write_profile(PROFILE_TEXT.replace(
+            "quality-gate-contract 1.0.0", "quality-gate-contract 2.0.0"
+        ))
+        self.write_both({"name": "skill-repository-profile", "version": "1.0.0"})
+        with self.assertRaises(evidence_check.CheckBroken):
+            self.run_check(profile=path)
+
+    def test_profile_without_in_force_declaration_retains_null_behavior(self):
+        path = self.write_profile(
+            "Identity: `skill-repository-profile 1.0.0`\n"
+            "Conforms to `quality-gate-contract 1.0.0`.\n"
+        )
+        self.write_both(None)
+        self.assertEqual(self.run_check(profile=path), 0)
+
+
+class TestReadInForceProfile(EvidenceCheckHarness):
+    def test_absent_profile_returns_none(self):
+        self.assertIsNone(evidence_check.read_in_force_profile(
+            os.path.join(self.root, "absent-profile.md")
+        ))
+
+    def test_profile_without_declaration_returns_none(self):
+        self.assertIsNone(evidence_check.read_in_force_profile(
+            self.write_profile("`skill-repository-profile 1.0.0`\n")
+        ))
+
+    def test_valid_profile_returns_all_binding_values(self):
+        self.assertEqual(
+            evidence_check.read_in_force_profile(self.write_profile()),
+            {
+                "name": "skill-repository-profile",
+                "version": "1.0.0",
+                "since": "2026-08-03",
+                "contract_version": "1.0.0",
+            },
+        )
+
+    def test_conflicting_in_force_declarations_break_check(self):
+        path = self.write_profile(
+            PROFILE_TEXT
+            + "`in-force: skill-repository-profile 1.0.1 since 2026-08-04`\n"
+        )
+        with self.assertRaises(evidence_check.CheckBroken):
+            evidence_check.read_in_force_profile(path)
+
+    def test_identity_version_mismatch_breaks_check(self):
+        path = self.write_profile(PROFILE_TEXT.replace(
+            "skill-repository-profile 1.0.0`\n\nConforms",
+            "skill-repository-profile 1.0.1`\n\nConforms",
+        ))
+        with self.assertRaises(evidence_check.CheckBroken):
+            evidence_check.read_in_force_profile(path)
+
+    def test_profile_path_that_is_a_directory_breaks_check(self):
+        path = os.path.join(self.root, "profile-as-dir.md")
+        os.makedirs(path)
+        with self.assertRaises(evidence_check.CheckBroken):
+            evidence_check.read_in_force_profile(path)
+
+    def test_dangling_symlink_profile_path_breaks_check(self):
+        path = os.path.join(self.root, "dangling-profile.md")
+        os.symlink(os.path.join(self.root, "does-not-exist.md"), path)
+        with self.assertRaises(evidence_check.CheckBroken):
+            evidence_check.read_in_force_profile(path)
+
+    def test_dangling_symlink_ancestor_breaks_check(self):
+        os.symlink(
+            os.path.join(self.root, "missing-dir"),
+            os.path.join(self.root, "broken-link"),
+        )
+        with self.assertRaises(evidence_check.CheckBroken):
+            evidence_check.read_in_force_profile(
+                os.path.join(self.root, "broken-link", "profile.md")
+            )
+
+    def test_absence_through_resolvable_symlink_ancestor_is_not_in_force(self):
+        real_dir = os.path.join(self.root, "real-dir")
+        os.makedirs(real_dir)
+        os.symlink(real_dir, os.path.join(self.root, "good-link"))
+        self.assertIsNone(evidence_check.read_in_force_profile(
+            os.path.join(self.root, "good-link", "absent-profile.md")
+        ))
+
+    def test_open_failure_on_existing_path_breaks_check_as_state_change(self):
+        path = self.write_profile()
+        with self.assertRaises(evidence_check.CheckBroken):
+            evidence_check._require_pure_absence(path)
 
 
 class TestBrokenCheckIsDistinguishedFromNegativeJudgment(EvidenceCheckHarness):
