@@ -11,6 +11,20 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: スキル総ロード予算を 1 実行経路 ~500 行へ改定し、artifact-store の消費側契約を分離（#201）
+
+- Anti-bloat Clause の二重閾値（SKILL.md ~400 行 / 総ロード ~1000 行)を「1 実行経路の
+  総ロード ~500 行」へ一本化。診断閾値でありゲートにしない（超過は再配置候補の申告）、
+  閾値以下でも少ないほどよい、を明文化。skill-reviewer / AGENTS.md の同数値も同期
+- 全 39 スキルの実測棚卸し（issue #201 コメントに記録）に基づく Load-reduction patterns
+  5 種（契約分割 / quote-don't-load / フェーズ境界の条件付きロード / セクション参照
+  monolith の分割 / under-loading ガード）を authoring guide に追記
+- 分割第一号として artifact-paths.md（消費側契約、~70 行）を新設し、パスの読み書きしか
+  しない 23 スキル + 6 コマンドの参照を artifact-store.md（449 行）から張り替え。
+  実測でこの定型参照は約 24 スキル合計 ~8000 行の重複ロードだった。全文契約は satellite
+  運搬・migration・recovery の管轄（plan-implement / artifacts / migrate-cycles-to-plans /
+  cycle の worktree 分岐）のみ維持
+
 ### Changed: cycle skill-review-routing — validator 不適合の再委譲 role を `post-review-skill-retry` に確定（#208）
 
 - skill-review-routing.md の「redelegate once」に `{role}` = `post-review-skill-retry` を明記。

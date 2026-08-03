@@ -1,16 +1,16 @@
 {
   "brainstorm": {
     "file_sha256": {
-      "skills/brainstorm/SKILL.md": "27cf52a0f8a60b2c1609b64ea2d105671ddb79fac37720d838e83ddfbaef6ad7",
+      "skills/brainstorm/SKILL.md": "650cf8a38ff69b148cb1204f93f6c30f844be00db4249981593ff9b7f3e79f2a",
       "skills/brainstorm/fixtures.json": "5ab5d3f5bd0267e46c8bdbefc417c1e142583752c01ce785d182167c47e9c27c",
       "skills/brainstorm/references/exit-contract-template.md": "0aa6389f378de90a5613c5dbe4517083ffdb4978e5e7849868c2a2d2a53f5d02",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
       "skills/brainstorm/references/spec-generation.md": "219314a7f22cd2d7aaf395a0ae108e062d6c0b5fc28631e48edec9d1d990e23f",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/brainstorm/SKILL.md",
@@ -18,16 +18,16 @@
       "skills/brainstorm/references/exit-contract-template.md",
       "skills/brainstorm/references/idea-template.md",
       "skills/brainstorm/references/spec-generation.md",
-      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "4ab975a37c74a283b89dfe4c1df66121f448dde62b882a4ae67b98e74b8bce5a",
-    "verified": "2026-08-02"
+    "surface_sha256": "7f4e276aea42dfe8ca4f0b45e352bf0fae3ea45f5a887d695e157677aa9c0745",
+    "verified": "2026-08-03"
   },
   "brief": {
     "file_sha256": {
-      "skills/brief/SKILL.md": "48731ead848de3f6e7b8f7968bd59463645642139ece4d4ff7f547b088843990",
+      "skills/brief/SKILL.md": "fbfd18f835a50688a7ff1412d79d34f56a31ab9e38df3376cb3043e99d66f3e1",
       "skills/brief/assets/brief.css": "9ef1a533765cd3463be8fcdf0ab59a694983f43143ffce2d33c31647209aa8cd",
       "skills/brief/assets/brief.js": "3448e3dc90bbfe4451e9f2cff5981cdc42ce3b021411ccc3a16c3a52e86bbfc3",
       "skills/brief/assets/tokens.brief.json": "c3b5edd00e3451f313f7dbdb676baa8f2f763652bc7ef179627002dab242e9db",
@@ -36,11 +36,11 @@
       "skills/brief/references/brief-model.md": "611aa43751ad6fe4957bb09931e418c22a6c92078dc8abf61c4fc8560feeafb4",
       "skills/brief/scripts/brief_collect.py": "6d0e638d5d36e3f62008c27967695e76f42f9cbe2afd659391e7118b4866d986",
       "skills/brief/scripts/brief_render.py": "b4fc93158220b7b1fce0ca7cf0e0cbcdaf644a93ebee1e7f4f39ca9c9dd5eba0",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/brief/SKILL.md",
@@ -52,12 +52,12 @@
       "skills/brief/references/brief-model.md",
       "skills/brief/scripts/brief_collect.py",
       "skills/brief/scripts/brief_render.py",
-      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/output-language.md",
       "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "425284684413d1391af6945d2493beee94a351a07b8073d4bb60429d4c3981c1",
-    "verified": "2026-08-02"
+    "surface_sha256": "fc356f5ad230ee3d6e95eb9b2ee88b526ffc3b6932042bd5676d62670f38c6ad",
+    "verified": "2026-08-03"
   },
   "commit": {
     "file_sha256": {
@@ -77,7 +77,7 @@
   },
   "context-audit": {
     "file_sha256": {
-      "skills/context-audit/SKILL.md": "8a7ce3362f2d0af8f400e5a48477770d49d4564fc3ee68dab774e6e11ec6518b",
+      "skills/context-audit/SKILL.md": "6cdbd716be90c12728b09ef17afd089827edea848077407ac183348ebb2df38a",
       "skills/context-audit/fixtures.json": "2b733669b888e0578a108953fd3d41dfd7d1133b645ce478dbbdb9a358e0ac11",
       "skills/context-audit/references/baseline-format.md": "dcc394afc4d0eb9a3b0d1a9de69e50e2f49c76819f883e6c46c483522d24cd51",
       "skills/context-audit/references/memory-audit.md": "725e2cfc6c00e686959c9856d4badbbc6cb8c5ce183e40cb8487dbd37147016b",
@@ -86,7 +86,7 @@
       "skills/context-audit/scripts/apply_fixes.py": "d37bc3064138bf2c8325157edfd2aeb38a14ad70a637835f0616658f77b02231",
       "skills/context-audit/scripts/collect_targets.py": "0d1df45689e6367ecfc9e50c058a061dc8da702f9288005fac407449ee1a57ce",
       "skills/context-audit/scripts/static_checks.py": "87d54d880ddfe445e4872378b0024893a848efc6592cef19255afde7179b9216",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
@@ -94,7 +94,7 @@
       "skills/shared/scripts/frontmatter.py": "3c6d76a04346f1b2251d39b005f526073981a3425ce9fabc7523d99a791fedb8",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "severity-and-verdicts への OPPORTUNITY 1 行追加と skill-reviewer 方言節の追加のみが surface 差分。方言は BLOCK の入場条件を skill-reviewer 側でのみ狭める規則で、既存 4 値の意味と本スキルが読む分岐を変えないため実走せず accept",
+    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/context-audit/SKILL.md",
@@ -106,7 +106,7 @@
       "skills/context-audit/scripts/apply_fixes.py",
       "skills/context-audit/scripts/collect_targets.py",
       "skills/context-audit/scripts/static_checks.py",
-      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/execution-context.md",
       "skills/shared/references/fix-action-taxonomy.md",
       "skills/shared/references/severity-and-verdicts.md",
@@ -114,12 +114,12 @@
       "skills/shared/scripts/frontmatter.py",
       "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "12e378377837e147b83e6148f62967eeada6c129f28bdcfeaae22508c0a1b53b",
+    "surface_sha256": "74e670fb473679f857130f435af80297824db539f53bffaa47fb764e8a4d02ee",
     "verified": "2026-08-03"
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "4a5fcd9bbb0bf571451e10f64b9f307280ed3e223b7312307fceab51386eb307",
+      "skills/cycle/SKILL.md": "3cd4e0ed9629f2719cc79e6c63b26ebdc870b2d6ebff19719df47115144668b6",
       "skills/cycle/fixtures.json": "25677e0ac4efbfc9c894c967186342d063375c82f66ae82f09f39f5284865466",
       "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
@@ -128,7 +128,8 @@
       "skills/cycle/references/skill-review-routing.md": "bacb33a67d1dd7ab325c142f2828f34b1c9f59caadcad36d0a03101d57acf21b",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
+      "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
@@ -140,7 +141,7 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "issue #208: validator 不適合再委譲の role 名を post-review-skill-retry に確定する 1 行の文言追加。cy-020 requirements は role 名非依存のため fixture 変更・実走不要",
+    "note": "#201: line-8 参照の consumer contract 化のみ（深い節引用 L98/L196 は全文契約のまま）。fixtures は挙動検証でリンク先非依存。次回実走時は fixture 同梱契約に artifact-paths.md を追加すること",
     "result": "accepted-without-run",
     "surface": [
       "skills/cycle/SKILL.md",
@@ -152,6 +153,7 @@
       "skills/cycle/references/skill-review-routing.md",
       "skills/plan-reviewer/references/output-format.md",
       "skills/plan/references/status-update-guide.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/fix-action-taxonomy.md",
@@ -164,32 +166,32 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "c1296c4e40d51b635c4b91df3550804ac2891f96fdd42f313632238a801441e7",
+    "surface_sha256": "1f1d9523bf3a1b7b37f28f7f57bfee5b92d110899db5a75e690503bdaa92f55d",
     "verified": "2026-08-03"
   },
   "decision-journal": {
     "file_sha256": {
-      "skills/decision-journal/SKILL.md": "c798f2888f1d79d067dd26e0e08d6683da45e0c02e3ae763c29279198b23dc78",
+      "skills/decision-journal/SKILL.md": "2e4c0cab8fdce0ff050175d1b674391937572cb8b5533c99c71afb113d8a8d0a",
       "skills/decision-journal/fixtures.json": "0de02b85afcd969710a4717b8ec810834236d11457de16806ae2322bc0a0c613",
       "skills/decision-journal/references/decision-record-template.md": "43630f34fc89c487d055d64b2cae9a3d757da3dc443920e3438451ebeca68ac1",
       "skills/decision-journal/references/interview-guide.md": "6bd1bc4e989833d75637316c2380f4edd4a385a328f9f7a8186348bc330028b6",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/decision-protocol.md": "9385ac847f75b4b23daaba710f72faee1f5319e88ef57ab45058c3d1a5db9629",
       "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/decision-journal/SKILL.md",
       "skills/decision-journal/fixtures.json",
       "skills/decision-journal/references/decision-record-template.md",
       "skills/decision-journal/references/interview-guide.md",
-      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/decision-protocol.md",
       "skills/shared/references/output-language.md"
     ],
-    "surface_sha256": "b39e06444c2b3573cf4ceb0f5c176c60a45186d9f424d22a59d3989b9ae85300",
-    "verified": "2026-08-02"
+    "surface_sha256": "4e14d071dabaca6b972068ff2b772a2a7115142b8baa3df1adfed1a4b9acdc2f",
+    "verified": "2026-08-03"
   },
   "design-guide": {
     "file_sha256": {
@@ -215,17 +217,17 @@
   },
   "doc-write": {
     "file_sha256": {
-      "skills/doc-write/SKILL.md": "7098daac2334a373d1483b56f875a8adafa10dd0cc4b894297937174aca2af88",
+      "skills/doc-write/SKILL.md": "4a0bd53578e69d21547c0ec56e9a8b0ede5274cdcd32f6082e4ef2f0fbd7ce71",
       "skills/doc-write/fixtures.json": "25923dc521df83866b6ecab0f94dfe23a9853f12180fad532182d268d8d18def",
       "skills/doc-write/references/adr-template.md": "67384d585ee51ab5093757397be8470cc1c65357b21c9096e61ccc73fe8ee28f",
       "skills/doc-write/references/discussion-summary-template.md": "130ccf87b8c2bee7840d2bb2611e46454df5addc25e254b8af287bdd12f2faa6",
       "skills/doc-write/references/mermaid-guidelines.md": "175dbb2f8dfbb7aa88c0d98b7a89f000971b3c7098b4101c306e4763feabfe2e",
       "skills/doc-write/references/tech-note-template.md": "8f287b7120f738f72ac65a0d17af8683828f14b00afca0eb81009147a9887975",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec",
       "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/doc-write/SKILL.md",
@@ -234,16 +236,16 @@
       "skills/doc-write/references/discussion-summary-template.md",
       "skills/doc-write/references/mermaid-guidelines.md",
       "skills/doc-write/references/tech-note-template.md",
-      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/human-readable-summary.md",
       "skills/shared/references/output-language.md"
     ],
-    "surface_sha256": "a359ec0a7cb8d2d33f56b4d4fb9c3079337a689f4b427a9a0802f28f34ca529b",
-    "verified": "2026-08-02"
+    "surface_sha256": "4f9f794c390de6cab7ad4ff359e4a917c8bf5de0ab9c229325470145fe5c50e4",
+    "verified": "2026-08-03"
   },
   "github-issue": {
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "70aaf69c738d999dcdb15e3e57689ae70d4731da515675c871a6f2dbba9e21f5",
+      "skills/github-issue/SKILL.md": "6b3b8f13f5c36183c0058db996b2b3f07f3eb594a0bc0de9540a3ba64c6b89ae",
       "skills/github-issue/fixtures.json": "ba5c2b7c8cdf313cd16caa43a7f90e09130834a81a960275b9db92d64fa1d279",
       "skills/github-issue/references/cleanup-spec.md": "5133b196d6df014e23f9a581064084719e761bb15c8630f978a7f24fc47f82ff",
       "skills/github-issue/references/codex-review-loop.md": "715d028c6561e3ec4b08f28605075c80d3bfe56728b10f32c6750a273ed5f6cd",
@@ -253,7 +255,8 @@
       "skills/github-issue/references/polling-adapter.md": "014cc07036f2f5f3069287b6f63b5b6c28f69cec17844e687666fbbefcb02c19",
       "skills/github-issue/references/secret-scanner.md": "623fa30ed568e71f32db9dcbe8098d81825582e15000104560c2db059dd073df",
       "skills/github-issue/references/worktree-cycle.md": "9cf9a3e63c3b29aca31cc470c7d5b7999ca91f6613a82e80966dcfc24ca9384e",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
+      "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
@@ -261,7 +264,7 @@
       "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
       "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "#201: line-8 参照の consumer contract 化のみ。worktree-artifact-transport fixture は worktree-cycle.md 経由で全文契約に到達可能なまま",
     "result": "accepted-without-run",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -274,6 +277,7 @@
       "skills/github-issue/references/polling-adapter.md",
       "skills/github-issue/references/secret-scanner.md",
       "skills/github-issue/references/worktree-cycle.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/codex-integration.md",
@@ -282,32 +286,32 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "324ab7b6bff51163241b92c43609a24f849304f9a3d593a65179de7df6868350",
-    "verified": "2026-08-02"
+    "surface_sha256": "c454684ec9f0aa5eef7708cdee4b05c8cc1b6356d867ab8d87b2d9ae28b41977",
+    "verified": "2026-08-03"
   },
   "handoff": {
     "file_sha256": {
-      "skills/handoff/SKILL.md": "d71249ea2150a82b6b5768144e278b8d479ed2e87bc9ccd1c634ed363696f197",
+      "skills/handoff/SKILL.md": "9328e326313cfdeddef9fce07224aa268e62d88e2c411d9c3731e762947e3c67",
       "skills/handoff/fixtures.json": "2b5028db210b7dc154d45862acaf9b579fe870ca30275c745bf751627190485f",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec",
       "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/handoff/SKILL.md",
       "skills/handoff/fixtures.json",
-      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/human-readable-summary.md",
       "skills/shared/references/output-language.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "bd3cdc254953dc82a032f0656af12cccb79c826b2f2ecfe928dd8deef73d6380",
-    "verified": "2026-08-02"
+    "surface_sha256": "3a503d02b2715a86bf899048bbaea0fdb0407a629cba2eaa5feb93cb0c8235e0",
+    "verified": "2026-08-03"
   },
   "investigate": {
     "file_sha256": {
@@ -325,18 +329,18 @@
   },
   "issue": {
     "file_sha256": {
-      "skills/issue/SKILL.md": "985df147ea671eff56bdfade852d3ec3c074b575e0af70e4808c6546c3ff77bc",
+      "skills/issue/SKILL.md": "700b55a7cf50b78b3b41b850e0239eb329a83c574b4bed0bda6eefb798f21350",
       "skills/issue/fixtures.json": "40065f95ee8d35d14806fcc5a922fb9525d75658cac163cd9fc0c8d1ca894ad7",
       "skills/issue/references/issue-template.md": "6c27174d5b7b8c6fa00b66b69d4a90df0c38af36ebf8c3b90fcef78c57a0715f",
       "skills/issue/references/polling-state-machine.md": "7c65e6079934335d3a891e49c798e2a8761ce443dc63b6f1600be21a96131d70",
       "skills/issue/references/polling-state.md": "98c1614b8a7c03bf5dddc90c238582f394bca03eeb204620c763e312e1c6bbfd",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec",
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/issue/SKILL.md",
@@ -344,22 +348,22 @@
       "skills/issue/references/issue-template.md",
       "skills/issue/references/polling-state-machine.md",
       "skills/issue/references/polling-state.md",
-      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/human-readable-summary.md",
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "2a1dac3fce4ee3b57f4bffe8d117f41d7adb98bc7822fcdf8d0920dabe58363d",
-    "verified": "2026-08-02"
+    "surface_sha256": "3f844137a5538e7038039b03ec0aab5a0d8d87f582ad3210c7a69528d99f7fa1",
+    "verified": "2026-08-03"
   },
   "iterate": {
     "file_sha256": {
-      "skills/iterate/SKILL.md": "c74259f3eb5e0796c0a1acb36fe811a1a4609b1ca6901f2896bc79f7df958a9c",
+      "skills/iterate/SKILL.md": "24d750b3147a97e2c8bf5d722c54fb00e00ed4d3d1bfaac7c331f0b1d366e6ab",
       "skills/iterate/fixtures.json": "ac7a7647522068d51cea277e16e10f095c8ec7ea98824fe214a13f15e94dce99",
       "skills/iterate/references/light-review.md": "f4b63a197756686af4f9313fd05da3c0e4bd88b24ca70779b3fa7f8f7ea6c322",
       "skills/iterate/references/scope-criteria.md": "fc0005c7a886ec6d3b9593bf6e9d6b607a6f4f6e6f000280844cf750de83ea21",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
       "skills/shared/references/publication-protocol.md": "5aaaf09134900951ddfa3edd3523676ecbd98e8f6c5755f6b20520ee04b376b3",
@@ -370,14 +374,14 @@
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
       "skills/shared/scripts/publication_advance.py": "c17d4938f5db991e8cf3cbae6aacc93e48555351a38570485fc0f3a01205c8ed"
     },
-    "note": "severity-and-verdicts への OPPORTUNITY 1 行追加と skill-reviewer 方言節の追加のみが surface 差分。方言は BLOCK の入場条件を skill-reviewer 側でのみ狭める規則で、既存 4 値の意味と本スキルが読む分岐を変えないため実走せず accept",
+    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/iterate/SKILL.md",
       "skills/iterate/fixtures.json",
       "skills/iterate/references/light-review.md",
       "skills/iterate/references/scope-criteria.md",
-      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/publication-protocol.md",
@@ -388,22 +392,22 @@
       "skills/shared/references/workspace-lock.md",
       "skills/shared/scripts/publication_advance.py"
     ],
-    "surface_sha256": "7cf50a66f26be484eec6020ae6a4779ff58835f95447355e7c825f775cd9f817",
+    "surface_sha256": "ebee26b03392d1c6955889526e5c268658b9c6ca5b4bb8f09bc985d59e0645fe",
     "verified": "2026-08-03"
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "f297abf33271df2c04467ba426afe0027251de1b8cb521e5ef2052742b82877c",
+      "skills/plan/SKILL.md": "d5836e8c76352d5fba894dac0457487d48ad3d101c4eb90af33cd7efe8c306f0",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
       "skills/plan/references/plan-template.md": "ded55b2eac510e7c08f04886bb2f0d66d2035e13563e4f7fac5506b19e28ea42",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "artifact-store.md に prospective merge = post-merge verification の文言補足。既存挙動に影響なし",
+    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan/SKILL.md",
@@ -411,19 +415,19 @@
       "skills/plan/references/plan-template.md",
       "skills/plan/references/status-template.md",
       "skills/plan/references/status-update-guide.md",
-      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/execution-context.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "ca04919ab2e6fe7a246429650b452f8eccdd9af8eb45262487215de0b6a485dd",
-    "verified": "2026-08-02"
+    "surface_sha256": "5cf3d8eb016ee21a8863c2fab3409418d957312304d0cc58f90aabb4d54dd287",
+    "verified": "2026-08-03"
   },
   "plan-implement": {
     "file_sha256": {
       "skills/plan-implement/SKILL.md": "34bdc8d08ef9d414a1a070439d5c1c530c2e0f9d8a3109fcf7d010b873939baa",
       "skills/plan-implement/fixtures.json": "cbbfecde4c25225dbe80468c85e73e16a1fb7d99fce4e7370b68c44fdc5abad9",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
       "skills/shared/references/runtime-progress.md": "ed37fbe9e91ba942a15feaeeec3b8610d57f14486e649190065f47e8179db7ca",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
@@ -432,7 +436,7 @@
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "severity-and-verdicts への OPPORTUNITY 1 行追加と skill-reviewer 方言節の追加のみが surface 差分。方言は BLOCK の入場条件を skill-reviewer 側でのみ狭める規則で、既存 4 値の意味と本スキルが読む分岐を変えないため実走せず accept",
+    "note": "#201: artifact-store.md 冒頭への consumer contract 案内 4 行追記のみ（satellite 機構の規範文は不変更）",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan-implement/SKILL.md",
@@ -446,35 +450,35 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "5819dd3e7a19876db8739524f69ab57c13d0f78efd10702472b5d9b8b213559e",
+    "surface_sha256": "34a7c11f3f421b99aac6dd21ba5e460648a6725f44c8849ea35bbfbdd9615dc1",
     "verified": "2026-08-03"
   },
   "plan-reviewer": {
     "file_sha256": {
-      "skills/plan-reviewer/SKILL.md": "df95dea6b1300ffaae9b8fd37a5ce70a2713f4708fb82517e55e657f8651aad8",
+      "skills/plan-reviewer/SKILL.md": "dc5f18a756d10b5f3efd7e78229a480560d54ad819fae0073d2436d7bdb5c277",
       "skills/plan-reviewer/fixtures.json": "2cc32f3bd853aa54ec6c192d4fb3f7467e64fa429bc47200363b61865f939b0e",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan-reviewer/references/review-dimensions.md": "326db4f76dda4577fdea158b4967c0aefc9fe9fe7cd2569321e3d078e35c033c",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
       "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c"
     },
-    "note": "severity-and-verdicts への OPPORTUNITY 1 行追加と skill-reviewer 方言節の追加のみが surface 差分。方言は BLOCK の入場条件を skill-reviewer 側でのみ狭める規則で、既存 4 値の意味と本スキルが読む分岐を変えないため実走せず accept",
+    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan-reviewer/SKILL.md",
       "skills/plan-reviewer/fixtures.json",
       "skills/plan-reviewer/references/output-format.md",
       "skills/plan-reviewer/references/review-dimensions.md",
-      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/design-principles.md",
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md"
     ],
-    "surface_sha256": "97ca1e047f2b7f242a4f4c67e67f72b0c2cb4c589b56afe1d57071525b163c68",
+    "surface_sha256": "8c7bc5f9845d18403ee4106c2ef5217f22d31a68f61eeb58fb3be19757174ec5",
     "verified": "2026-08-03"
   },
   "problem-solving": {
@@ -493,18 +497,18 @@
   },
   "refactor": {
     "file_sha256": {
-      "skills/refactor/SKILL.md": "8f143d1a4c3ae2e18639b1b0708e5dbd28f3e13f0bf3ca49f14461514a4d9b8d",
+      "skills/refactor/SKILL.md": "7cdda2a58cd20dbf572d47c60616da0c1c8c4edd7f9bf87b7ef9885759b0f3f7",
       "skills/refactor/fixtures.json": "92339ba7db3548c4137b28dc2739a1673d3d158fb9af454993db68dd07ff8cee",
       "skills/refactor/references/behavior-preservation-checks.md": "35833e2e68e1b2a550ab12af4985e90a416642193d0d6881c9704ee5c8929284",
       "skills/refactor/references/refactoring-catalog.md": "90cb3d767e3f0c432c80334dc0f0bf56a59b04777e78d909bd4e60fbc2bf5569",
       "skills/refactor/references/similarity-detection.md": "a4ef8d314ff0bbeb89126d469eb1c3564b045dec08c4abfed9801ed258f6af33",
-      "skills/shared/references/artifact-store.md": "b17b60a1057c0000824962ff1d893bf74ee85d4257872f76db67bb7411c04902",
+      "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
     },
-    "note": "severity-and-verdicts への OPPORTUNITY 1 行追加と skill-reviewer 方言節の追加のみが surface 差分。方言は BLOCK の入場条件を skill-reviewer 側でのみ狭める規則で、既存 4 値の意味と本スキルが読む分岐を変えないため実走せず accept",
+    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/refactor/SKILL.md",
@@ -512,13 +516,13 @@
       "skills/refactor/references/behavior-preservation-checks.md",
       "skills/refactor/references/refactoring-catalog.md",
       "skills/refactor/references/similarity-detection.md",
-      "skills/shared/references/artifact-store.md",
+      "skills/shared/references/artifact-paths.md",
       "skills/shared/references/execution-context.md",
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "a80ed55f21abcdb417e24ded803eebe223a22526be29d47cc50514b5323f7812",
+    "surface_sha256": "70957711abea4a447a89d82f7a49e080842d86707c5efa51529370d12c0d749d",
     "verified": "2026-08-03"
   },
   "skill-reviewer": {
@@ -527,15 +531,15 @@
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
       "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
-      "skills/shared/references/skill-authoring.md": "28f84db01e2be5f720770f3890cd741e862521cb56f9e8121c07cbdfeeaaf858",
+      "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
       "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb",
-      "skills/skill-reviewer/SKILL.md": "be9f394cfc2ccd96de4b91d1d63e776cf9ba0a209aaf36d42b4fee02cc159762",
+      "skills/skill-reviewer/SKILL.md": "1dae27c5e1048d50e76925ce8d7b1760019bf5ee984a881cdba68630d5da5e31",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "038a929b9af70186414aa747477e5feb647b23312545fa224670de53dc54a2a6",
       "skills/skill-reviewer/references/output-contract.md": "f5e6e2ad5b0173899bcaa5b6f2d060dc3c95bdfaee484d7f7e146f17f11fe46a",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "issue #203 judge 裁定 B: output-contract.md フィールド表の fix_action / qualification_reason 行を検証器実挙動と 1:1 対応の文言へ書き換え。validate_review_output.py は無変更で、旧文言の 2 読みのどちらで書かれた出力も合否は不変（表の記述精度のみの修正）",
+    "note": "#201: 総ロード予算を ~400/~1000 二重閾値から 1 経路 ~500 単一閾値へ改定 + Load-reduction patterns 5 種追記（追補: パターン4 の文言をアンカー警告回避で調整、意味変更なし）。fixtures sr-001..003 はチャネル規律を検証し数値非依存を確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/coverage-ledger.md",
@@ -550,7 +554,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "7502942f4dfc25acb16e47c77c593066157c20829a84a1609660291150f6a356",
+    "surface_sha256": "d3dc50cd2b35bfe07591d99371d71f0751c3275289ce2583c08e8f141ebb5ca7",
     "verified": "2026-08-03"
   },
   "sweep-fix": {
