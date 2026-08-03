@@ -18,11 +18,15 @@ import sys
 
 CONTRACT_NAME = "quality-gate-contract"
 CONTRACT_RELPATH = os.path.join("skills", "shared", "references", "quality-gate-contract.md")
+PROFILE_NAME = "skill-repository-profile"
+PROFILE_RELPATH = os.path.join("skills", "shared", "references", "skill-repository-profile.md")
 DEFAULT_EVIDENCE_RELPATH = os.path.join(".agents", "artifacts", "reviews", "evidence")
 STATES = ("machine_verified", "semantic_reviewed")
 
 # §Contract Identity の宣言行から公開版を読む。散文の変化に強いよう、識別子+版の連なりだけを見る
 _VERSION_DECL = re.compile(r"`quality-gate-contract\s+(\d+\.\d+\.\d+)`")
+_IN_FORCE_DECL = re.compile(r"`in-force:\s*skill-repository-profile\s+(\d+\.\d+\.\d+)\s+since\s+(\d{4}-\d{2}-\d{2})`")
+_PROFILE_VERSION_DECL = re.compile(r"`skill-repository-profile\s+(\d+\.\d+\.\d+)`")
 _FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
@@ -32,7 +36,8 @@ class CheckBroken(Exception):
 
 def read_published_version(contract_path):
     try:
-        text = open(contract_path, encoding="utf-8").read()
+        with open(contract_path, encoding="utf-8") as handle:
+            text = handle.read()
     except OSError as exc:
         raise CheckBroken(f"contract file unreadable: {contract_path} ({exc})")
     found = _VERSION_DECL.findall(text)
@@ -41,6 +46,46 @@ def read_published_version(contract_path):
     if len(set(found)) > 1:
         raise CheckBroken(f"contract file declares conflicting versions {sorted(set(found))}: {contract_path}")
     return found[0]
+
+
+def read_in_force_profile(profile_path):
+    if not os.path.isfile(profile_path):
+        return None
+    try:
+        with open(profile_path, encoding="utf-8") as handle:
+            text = handle.read()
+    except OSError as exc:
+        raise CheckBroken(f"profile file unreadable: {profile_path} ({exc})")
+    declarations = _IN_FORCE_DECL.findall(text)
+    if not declarations:
+        return None
+    if len(set(declarations)) > 1:
+        raise CheckBroken(
+            f"profile file declares conflicting in-force versions/dates "
+            f"{sorted(set(declarations))}: {profile_path}"
+        )
+    version, since = declarations[0]
+    identities = _PROFILE_VERSION_DECL.findall(text)
+    if len(set(identities)) != 1:
+        raise CheckBroken(
+            f"profile identity declaration is not unique: {profile_path}"
+        )
+    if identities[0] != version:
+        raise CheckBroken(
+            f"in-force profile version {version} does not match profile identity "
+            f"{identities[0]}: {profile_path}"
+        )
+    contract_versions = _VERSION_DECL.findall(text)
+    if len(set(contract_versions)) != 1:
+        raise CheckBroken(
+            f"profile conforming contract declaration is not unique: {profile_path}"
+        )
+    return {
+        "name": PROFILE_NAME,
+        "version": version,
+        "since": since,
+        "contract_version": contract_versions[0],
+    }
 
 
 def resolve_head_sha(repo_root):
@@ -57,7 +102,7 @@ def resolve_head_sha(repo_root):
     return sha
 
 
-def judge_state(evidence_dir, state, target_sha, published_version):
+def judge_state(evidence_dir, state, target_sha, published_version, in_force_profile):
     """1 状態の証跡を判定する。返り値: (valid: bool, reason: str)。
 
     欠落・失効・無効はすべて否定判定として理由文字列で区別する（契約 §2:
@@ -67,7 +112,8 @@ def judge_state(evidence_dir, state, target_sha, published_version):
     if not os.path.isfile(path):
         return False, "absent (no evidence record)"
     try:
-        record = json.load(open(path, encoding="utf-8"))
+        with open(path, encoding="utf-8") as handle:
+            record = json.load(handle)
     except (OSError, ValueError) as exc:
         return False, f"invalid (unreadable record: {exc})"
     if not isinstance(record, dict):
@@ -89,10 +135,30 @@ def judge_state(evidence_dir, state, target_sha, published_version):
             f"invalid (contract_version {record.get('contract_version')!r} does not resolve "
             f"to the published version {published_version})"
         )
-    # v1 にはプロファイルが存在しないため、非 null の profile は解決不能な束縛 = 無効証跡。
-    # プロファイル出荷後は名前×版の厳密比較へ拡張する（evidence-format.md §schema）
-    if record.get("profile") is not None:
-        return False, f"invalid (profile {record.get('profile')!r} cannot resolve — no profile is published in v1)"
+    recorded_profile = record.get("profile")
+    if in_force_profile is None:
+        if "profile" not in record:
+            return False, "invalid (profile field is missing; null is required)"
+        if recorded_profile is not None:
+            return False, (
+                f"invalid (profile {recorded_profile!r} cannot resolve — "
+                "no profile is in force)"
+            )
+    else:
+        expected_profile = {
+            "name": in_force_profile["name"],
+            "version": in_force_profile["version"],
+        }
+        if recorded_profile is None:
+            return False, (
+                "invalid (profile binding required — skill-repository-profile "
+                f"{in_force_profile['version']} is in force)"
+            )
+        if recorded_profile != expected_profile:
+            return False, (
+                f"invalid (profile {recorded_profile!r} does not exactly match "
+                f"in-force profile {expected_profile!r})"
+            )
     if recorded_sha != target_sha:
         return False, f"expired (bound to {recorded_sha[:12]}, target is {target_sha[:12]})"
     return True, "valid"
@@ -107,12 +173,21 @@ def run(argv=None):
                         help="full 40-hex target SHA (default: git rev-parse HEAD)")
     parser.add_argument("--contract", default=None,
                         help=f"contract file path (default: <repo-root>/{CONTRACT_RELPATH})")
+    parser.add_argument("--profile", default=None,
+                        help=f"profile file path (default: <repo-root>/{PROFILE_RELPATH})")
     args = parser.parse_args(argv)
 
     contract_path = args.contract or os.path.join(args.repo_root, CONTRACT_RELPATH)
+    profile_path = args.profile or os.path.join(args.repo_root, PROFILE_RELPATH)
     evidence_dir = args.evidence_dir or os.path.join(args.repo_root, DEFAULT_EVIDENCE_RELPATH)
 
     published_version = read_published_version(contract_path)
+    in_force = read_in_force_profile(profile_path)
+    if in_force is not None and in_force["contract_version"] != published_version:
+        raise CheckBroken(
+            f"in-force profile conforms to contract {in_force['contract_version']}, "
+            f"but published contract is {published_version}"
+        )
     if args.target_sha is not None:
         if not _FULL_SHA.match(args.target_sha):
             raise CheckBroken(f"--target-sha must be a full 40-hex id, got: {args.target_sha!r}")
@@ -125,6 +200,13 @@ def run(argv=None):
 
     print(f"target: {target_sha}")
     print(f"contract: {CONTRACT_NAME} {published_version}")
+    if in_force is None:
+        print("profile: none in force")
+    else:
+        print(
+            f"profile: {PROFILE_NAME} {in_force['version']} "
+            f"(in force since {in_force['since']})"
+        )
     if not os.path.isdir(evidence_dir):
         print(f"evidence dir: {evidence_dir} (missing)")
     else:
@@ -132,7 +214,12 @@ def run(argv=None):
 
     all_valid = True
     for state in STATES:
-        valid, reason = judge_state(evidence_dir, state, target_sha, published_version)
+        profile_binding = None if in_force is None else {
+            "name": in_force["name"], "version": in_force["version"]
+        }
+        valid, reason = judge_state(
+            evidence_dir, state, target_sha, published_version, profile_binding
+        )
         mark = "✓" if valid else "✗"
         print(f"{mark} {state}: {reason}")
         all_valid = all_valid and valid
