@@ -276,10 +276,10 @@
       "skills/shared/references/measurement-identity.md": "4891703c2d8c88017bc823e2f1a53bb85528fea39708ec104d83b8e2b054e411",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
-      "skills/skill-regression/scripts/ledger.py": "4db94c455ea36f02d03d9554afd2a633de2c8490a08634d8409f3887b46f9d76"
+      "skills/skill-regression/scripts/ledger.py": "6355c43b1495e78d605609e282cdd39ed33df970eb82b8a13cb77da44fdb2645"
     },
-    "note": "#182 F-8 Why not コメント追記のみ（コード実行経路不変）",
-    "result": "accepted-without-run",
+    "note": "#182 最終 surface (07b04e3) で 8/8 pass（実測 executor は低単価 tier）。F1 挙動変更（accepted-addition の pass-baseline 条件）を含む ledger.py 最終形で再実走。環境節（作業ディレクトリ=対象リポジトリ）を全 executor プロンプトに明示して前提ズレを構造的に防止",
+    "result": "pass",
     "surface": [
       "skills/github-issue/SKILL.md",
       "skills/github-issue/fixtures.json",
@@ -306,7 +306,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "88ee74579f9246350e5eefdf9d9a7b959b119b4e80d069981df15c1249113cc2",
+    "surface_sha256": "dfd3afd83811a7f78b1da87f85e7579d49c8633507878b0e9e8c659156d7192f",
     "verified": "2026-08-03"
   },
   "handoff": {
@@ -552,14 +552,14 @@
       "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
-      "skills/skill-regression/scripts/ledger.py": "4db94c455ea36f02d03d9554afd2a633de2c8490a08634d8409f3887b46f9d76",
+      "skills/skill-regression/scripts/ledger.py": "6355c43b1495e78d605609e282cdd39ed33df970eb82b8a13cb77da44fdb2645",
       "skills/skill-reviewer/SKILL.md": "1dae27c5e1048d50e76925ce8d7b1760019bf5ee984a881cdba68630d5da5e31",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "8b22969de41d90187b9d02987ac8bd4691a2f42fa4d17d1e7607a4327ece05bc",
       "skills/skill-reviewer/references/output-contract.md": "f5e6e2ad5b0173899bcaa5b6f2d060dc3c95bdfaee484d7f7e146f17f11fe46a",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "#182 最終 surface (810b6b1) で 3/3 pass（実測 executor は低単価 tier）。accepted-addition リテラルを決定表へ足した変更（機械パーストークン）を run で検証 — 再レビュー cc-1 指摘に従い acceptance を run pass で上書き。sr-002 は初回 executor が対象パスをスキル本体リポジトリ側で解決する前提ズレで無効化し、環境節明示で再走 pass（bf-001/006 と同型の観測 3 例目）",
+    "note": "#182 最終 surface (07b04e3) で 3/3 pass（実測 executor は低単価 tier）。誤 BLOCK ゼロ oracle 2 本 + 正例 BLOCK 1 本の両方向を最終形で確認、出力は全件 validate_review_output.py 適合",
     "result": "pass",
     "surface": [
       "skills/shared/references/coverage-ledger.md",
@@ -574,7 +574,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "f7bbd5f000b24b524d2faf4e440009d4042da5c906fd5338c9896fa68bc82f11",
+    "surface_sha256": "0bb4c75e83e8fb02ca6219caaa486e2d06a6d9b07c647008402f444d143337f8",
     "verified": "2026-08-03"
   },
   "sweep-fix": {
