@@ -137,6 +137,27 @@ class TestCheck(unittest.TestCase):
             self.assertEqual([i[0] for i in issues], ["stale"])
             self.assertIn("skills/a/SKILL.md", issues[0][2])  # 変更ファイルを提示
 
+    def test_stale_detail_labels_content_change_as_contract_change(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-07-07")}
+            _write(root, "skills/a/SKILL.md", "body CHANGED")
+            issues = ledger.check(root, entries)
+            self.assertEqual([i[0] for i in issues], ["stale"])  # kind は不変
+            self.assertTrue(issues[0][2].startswith("[contract-change]"))
+
+    def test_stale_detail_labels_surface_growth_as_contract_addition(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-07-07")}
+            _write(root, "skills/a/extra.md", "new reference")
+            issues = ledger.check(root, entries)
+            self.assertEqual([i[0] for i in issues], ["stale"])
+            self.assertTrue(issues[0][2].startswith("[contract-addition]"))
+            self.assertIn("skills/a/extra.md", issues[0][2])
+
     def test_orphan_when_fixtures_removed(self):
         with tempfile.TemporaryDirectory() as root:
             self._repo(root)

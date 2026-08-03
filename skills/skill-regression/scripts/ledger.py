@@ -188,13 +188,10 @@ def check(root, entries):
         current_surface = skill_surface(root, skill)
         current = file_hashes(root, current_surface)
         recorded = entry.get("file_sha256", {})
-        if current == recorded:
+        severity, changed = stale_severity(recorded, current)
+        if severity is None:
             continue
-        changed = sorted(
-            set(k for k in current if current[k] != recorded.get(k))
-            | (set(recorded) - set(current))
-        )
-        issues.append(("stale", skill, ", ".join(changed)))
+        issues.append(("stale", skill, f"[{severity}] " + ", ".join(changed)))
     return issues
 
 
