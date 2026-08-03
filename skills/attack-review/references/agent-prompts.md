@@ -19,7 +19,7 @@ These are replaced with actual values **just before** assembling the Agent tool'
 | `{category}` | `injection` |
 | `{AGENT_PREFIX}` | `INJ` |
 | `{work_dir}` | `.agents/tmp/attack-review-20260421-1840` |
-| `{attack_criteria_section}` | Text block extracted from attack-criteria.md — see "Section extraction rules" below for scope definition |
+| `{attack_criteria_section}` | The entire content of the agent's criteria file (`criteria-agent-{N}-*.md`) — see "Section extraction rules" below |
 | `{lang_profile_sections}` | Text block extracted from lang-profiles.md — see "Section extraction rules" below for scope definition |
 
 ### (B) Runtime Literals — the agent **fills in numbering at execution time**
@@ -36,10 +36,13 @@ Do NOT substitute these at build time; pass them to the agent **as-is**. The age
 
 ### Extraction scope for `{attack_criteria_section}`
 
-Copy verbatim from `attack-criteria.md`, starting at the **`## Agent N: <name> — ...` heading line** through to **just before the next `---` separator** (heading included).
+Copy the **entire content** of the agent's criteria file, verbatim (the per-agent file
+table in each prompt template below names the file; the file list also lives in the
+[attack-criteria.md](attack-criteria.md) index). No section slicing is needed — one file
+is one agent's full scope, including Agent 1's trailing Language-Agnostic Patterns.
 
-- Include: all Check Items subsections (`### N-1. ...`), and the Language-Agnostic Patterns subsection (only at the end of Agent 1)
-- Exclude: the `## Risk Matrix` section at the top of the file (it is already provided separately in the template's `## Risk Assessment` section — do not duplicate)
+Do not add the `## Risk Matrix` from the [attack-criteria.md](attack-criteria.md) index —
+it is already provided in the template's `## Risk Assessment` section (do not duplicate).
 
 ### Extraction scope for `{lang_profile_sections}`
 
@@ -221,7 +224,7 @@ Do not include any other text in your response. All details go in the JSON file.
 | `{N}` | 1 |
 | `{category}` | injection |
 | `{AGENT_PREFIX}` | INJ |
-| `{attack_criteria_section}` | § Agent 1 from [attack-criteria.md](attack-criteria.md) |
+| `{attack_criteria_section}` | all of [criteria-agent-1-injection.md](criteria-agent-1-injection.md) |
 | `{lang_profile_sections}` | Server-role language sections from [lang-profiles.md](lang-profiles.md) |
 
 ### Agent 2: AuthN/AuthZ Breaker
@@ -234,7 +237,7 @@ Do not include any other text in your response. All details go in the JSON file.
 | `{N}` | 2 |
 | `{category}` | authn-authz |
 | `{AGENT_PREFIX}` | AUTH |
-| `{attack_criteria_section}` | § Agent 2 from [attack-criteria.md](attack-criteria.md) |
+| `{attack_criteria_section}` | all of [criteria-agent-2-authn-authz.md](criteria-agent-2-authn-authz.md) |
 | `{lang_profile_sections}` | All detected language sections from [lang-profiles.md](lang-profiles.md) |
 
 ### Agent 3: Client Attack Specialist
@@ -247,7 +250,7 @@ Do not include any other text in your response. All details go in the JSON file.
 | `{N}` | 3 |
 | `{category}` | client-attack |
 | `{AGENT_PREFIX}` | CLI |
-| `{attack_criteria_section}` | § Agent 3 from [attack-criteria.md](attack-criteria.md) |
+| `{attack_criteria_section}` | all of [criteria-agent-3-client-attack.md](criteria-agent-3-client-attack.md) |
 | `{lang_profile_sections}` | Client-role language sections from [lang-profiles.md](lang-profiles.md) |
 
 ### Agent 4: Data & Secrets Exfiltrator
@@ -260,7 +263,7 @@ Do not include any other text in your response. All details go in the JSON file.
 | `{N}` | 4 |
 | `{category}` | data-secrets |
 | `{AGENT_PREFIX}` | DATA |
-| `{attack_criteria_section}` | § Agent 4 from [attack-criteria.md](attack-criteria.md) |
+| `{attack_criteria_section}` | all of [criteria-agent-4-data-secrets.md](criteria-agent-4-data-secrets.md) |
 | `{lang_profile_sections}` | All detected language sections from [lang-profiles.md](lang-profiles.md) |
 
 ### Agent 5: Infra & Supply Chain Exploiter
@@ -273,7 +276,7 @@ Do not include any other text in your response. All details go in the JSON file.
 | `{N}` | 5 |
 | `{category}` | infra-supply-chain |
 | `{AGENT_PREFIX}` | INFRA |
-| `{attack_criteria_section}` | § Agent 5 from [attack-criteria.md](attack-criteria.md) |
+| `{attack_criteria_section}` | all of [criteria-agent-5-infra-supply-chain.md](criteria-agent-5-infra-supply-chain.md) |
 | `{lang_profile_sections}` | All detected language sections from [lang-profiles.md](lang-profiles.md) |
 
 ### Agent 6: Business Logic Abuser
@@ -286,7 +289,7 @@ Do not include any other text in your response. All details go in the JSON file.
 | `{N}` | 6 |
 | `{category}` | business-logic |
 | `{AGENT_PREFIX}` | BIZ |
-| `{attack_criteria_section}` | § Agent 6 from [attack-criteria.md](attack-criteria.md) |
+| `{attack_criteria_section}` | all of [criteria-agent-6-business-logic.md](criteria-agent-6-business-logic.md) |
 | `{lang_profile_sections}` | All detected language sections from [lang-profiles.md](lang-profiles.md) |
 
 ## Agent 7: Codex Second Opinion

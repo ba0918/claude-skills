@@ -144,7 +144,7 @@ All vectors from Modern PHP apply, PLUS:
 ## Usage Notes
 
 - Each bullet point should be treated as a "look for this pattern in the code" instruction for the receiving agent
-- Agents should cross-reference these language-specific patterns with the generic `attack-criteria.md` checklist
+- Agents should cross-reference these language-specific patterns with the generic per-agent criteria checklist injected into their prompt (`criteria-agent-{N}-*.md`; index: `attack-criteria.md`)
 - For multi-language projects, agents receive all relevant language sections (e.g., both Go and TypeScript Server for a full-stack API, TypeScript Client + HTML/CSS for frontend)
 - Legacy PHP (5.x) includes all modern PHP vectors plus legacy-specific ones -- agents receiving the Legacy section do NOT also need the Modern section separately
 - When a project uses a framework (Django, Flask, Laravel, Symfony, etc.), the framework-specific sub-bullets become high priority since these represent the most commonly exploited misconfiguration patterns

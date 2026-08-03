@@ -197,27 +197,27 @@ Prompt templates, attack criteria, and language profiles:
 Subagents to launch:
 
 1. injection-hunter        — Injection Attack → {work_dir}/agent-1-injection.json
-                             criteria: § Agent 1 from attack-criteria.md
+                             criteria: references/criteria-agent-1-injection.md (whole file)
                              lang_profile: Server-role sections from lang-profiles.md
 
 2. authn-authz-breaker     — AuthN/AuthZ Attack → {work_dir}/agent-2-authn-authz.json
-                             criteria: § Agent 2 from attack-criteria.md
+                             criteria: references/criteria-agent-2-authn-authz.md (whole file)
                              lang_profile: All detected language sections
 
 3. client-attack-specialist — Client-Side Attack → {work_dir}/agent-3-client-attack.json
-                             criteria: § Agent 3 from attack-criteria.md
+                             criteria: references/criteria-agent-3-client-attack.md (whole file)
                              lang_profile: Client-role sections from lang-profiles.md
 
 4. data-secrets-exfiltrator — Data & Secrets → {work_dir}/agent-4-data-secrets.json
-                             criteria: § Agent 4 from attack-criteria.md
+                             criteria: references/criteria-agent-4-data-secrets.md (whole file)
                              lang_profile: All detected language sections
 
 5. infra-supply-chain-exploiter — Infra & Supply Chain → {work_dir}/agent-5-infra-supply-chain.json
-                             criteria: § Agent 5 from attack-criteria.md
+                             criteria: references/criteria-agent-5-infra-supply-chain.md (whole file)
                              lang_profile: All detected language sections
 
 6. business-logic-abuser   — Business Logic → {work_dir}/agent-6-business-logic.json
-                             criteria: § Agent 6 from attack-criteria.md
+                             criteria: references/criteria-agent-6-business-logic.md (whole file)
                              lang_profile: All detected language sections
 
 7. codex-review            — Codex Second Opinion → {work_dir}/agent-7-codex.json
