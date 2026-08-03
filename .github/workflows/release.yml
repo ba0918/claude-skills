@@ -1,0 +1,149 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "リリース version (X.Y.Z、v なし)"
+        required: true
+      semantic_reviewed:
+        description: "リリース内容のセマンティックレビュー済みを attestation する"
+        type: boolean
+        required: true
+        default: false
+
+concurrency:
+  group: release
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Install OpenCode for strict runtime checks
+        run: npm install --global opencode-ai
+
+      - name: Validate release inputs
+        env:
+          VERSION: ${{ inputs.version }}
+          SEMANTIC_REVIEWED: ${{ inputs.semantic_reviewed }}
+        run: |
+          if [ "$SEMANTIC_REVIEWED" != "true" ]; then
+            echo "semantic_reviewed attestation must be true" >&2
+            exit 1
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "version must match X.Y.Z: $VERSION" >&2
+            exit 1
+          fi
+
+      - name: Configure release commit identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Synchronize release version
+        id: sync
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          sync_result="$(python3 scripts/release_tool.py sync --version "$VERSION")"
+          echo "$sync_result"
+          changed="$(python3 -c 'import json,sys; print(str(json.load(sys.stdin)["changed"]).lower())' <<< "$sync_result")"
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          if [ "$changed" = "true" ]; then
+            git add -A
+            git commit \
+              -m "release: v$VERSION" \
+              -m "リリーストレイン方式: Unreleased を $VERSION へ確定し 4 manifest を同期"
+          fi
+
+      - name: Run strict quality gates
+        env:
+          STRICT_GATES: "1"
+        run: sh scripts/run_checks.sh
+
+      - name: Generate SHA-bound quality-gate evidence
+        env:
+          VERSION: ${{ inputs.version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 scripts/release_tool.py evidence \
+            --version "$VERSION" \
+            --target-sha "$(git rev-parse HEAD)" \
+            --actor "$GITHUB_ACTOR" \
+            --run-url "$RUN_URL" \
+            --semantic-attested true
+
+      - name: Require publishable evidence
+        run: python3 skills/shared/scripts/evidence_check.py --target-sha "$(git rev-parse HEAD)"
+
+      - name: Prepare immutable release tag
+        id: tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          target_sha="$(git rev-parse HEAD)"
+          remote_tag="$(git ls-remote origin "refs/tags/v$VERSION")"
+          if [ -z "$remote_tag" ]; then
+            git tag -a "v$VERSION" -m "v$VERSION"
+            echo "created=true" >> "$GITHUB_OUTPUT"
+          else
+            remote_sha="$(git ls-remote origin "refs/tags/v$VERSION^{}" | cut -f1)"
+            if [ -z "$remote_sha" ]; then
+              echo "remote tag v$VERSION is not an annotated tag" >&2
+              exit 1
+            fi
+            if [ "$remote_sha" != "$target_sha" ]; then
+              echo "remote tag v$VERSION points to $remote_sha, expected $target_sha" >&2
+              exit 1
+            fi
+            echo "created=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Atomically publish main and tag
+        env:
+          VERSION: ${{ inputs.version }}
+          TAG_CREATED: ${{ steps.tag.outputs.created }}
+        run: |
+          refspecs=("HEAD:main")
+          if [ "$TAG_CREATED" = "true" ]; then
+            refspecs+=("refs/tags/v$VERSION")
+          fi
+          git push --atomic origin "${refspecs[@]}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "GitHub Release v$VERSION already exists"
+            exit 0
+          fi
+
+          notes_file="$(mktemp)"
+          trap 'rm -f "$notes_file"' EXIT
+          python3 scripts/release_tool.py notes --version "$VERSION" > "$notes_file"
+          printf '%s\n' \
+            '' \
+            '### Install' \
+            '- Claude Code: `claude plugin marketplace add ba0918/claude-skills && claude plugin install claude-skills@claude-skills`' \
+            '- Codex CLI: `codex plugin marketplace add ba0918/claude-skills && codex plugin add claude-skills@claude-skills`' \
+            "- OpenCode: \`\"plugin\": [\"claude-skills@git+https://github.com/ba0918/claude-skills.git#v$VERSION\"]\`" \
+            >> "$notes_file"
+
+          gh release create "v$VERSION" \
+            --verify-tag \
+            --title "v$VERSION" \
+            --notes-file "$notes_file" \
+            ".agents/artifacts/reviews/evidence/machine_verified.json#machine_verified.json" \
+            ".agents/artifacts/reviews/evidence/semantic_reviewed.json#semantic_reviewed.json"
