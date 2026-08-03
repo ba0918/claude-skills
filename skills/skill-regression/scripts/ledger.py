@@ -14,12 +14,16 @@ check() が返す issue の種別:
   stale       挙動面が前回検証時から変化した（再評価が必要）
   orphan      台帳に記録があるが fixtures.json が消えた（--remove で掃除）
 
+stale には severity が付く。既存ファイルの内容変更・削除があれば contract-change、
+面へのファイル追加だけなら contract-addition（迷ったら contract-change 側）。
+
 CLI:
   python3 ledger.py --check [root]             # CI 用。issue があれば exit 1
   python3 ledger.py --coverage [--strict] [root]
       fixture 保有率を covered / exempt / uncovered で計上（--strict で uncovered を exit 1）
   python3 ledger.py --update SKILL [--accept] [--note TEXT] [root]
-      fixtures 合格後に台帳を更新（--accept は「実行せず再評価不要と判断」を明示記録、
+      fixtures 合格後に台帳を更新（--accept は「実行せず再評価不要と判断」を明示記録。
+      severity が contract-addition なら accepted-addition として自動で区別記録する。
       --note は run の性質（照会回数・実行者が通った経路など）の申し送り）
   python3 ledger.py --remove SKILL [root]
   python3 ledger.py --impact FILE... [root]    # 変更ファイル → 影響スキル
@@ -250,12 +254,15 @@ def main(argv):
         # 「全スキル検証済み」と書くと未検証領域が検証済みに見える（実際に誤読を招いた）。
         cov = coverage(root)
         entries = load(root)
-        n_pass = sum(1 for e in entries.values() if e.get("result") == "pass")
-        n_accept = sum(
-            1 for e in entries.values()
-            if e.get("result") == "accepted-without-run"
-        )
-        breakdown = f"pass {n_pass} / accepted-without-run {n_accept}"
+        # accepted-addition を別建てで数える。畳んで表示すると「機械が安全側と
+        # 確認した承認」が「人間が重い変更を承知で通した承認」に紛れ、
+        # Red flag の accepted-without-run 偏重チェックが鈍る
+        counts = {"pass": 0, "accepted-addition": 0, "accepted-without-run": 0}
+        for entry in entries.values():
+            result = entry.get("result")
+            if result in counts:
+                counts[result] += 1
+        breakdown = " / ".join(f"{name} {n}" for name, n in counts.items())
         print(
             f"✓ regression ledger: fixture 保有 {len(cov['covered'])} スキルすべて検証済み"
             f"（{breakdown}"

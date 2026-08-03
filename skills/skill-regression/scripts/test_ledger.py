@@ -191,6 +191,33 @@ class TestCheck(unittest.TestCase):
             self.assertIn("pass 1", output)
             self.assertIn("accepted-without-run 0", output)
 
+    def test_check_output_counts_accepted_addition_separately(self):
+        """機械確認済みの承認が accepted-without-run に混ざって数えられない。"""
+        import io
+        import contextlib
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            _write(root, "skills/skill-regression/SKILL.md", "self")
+            _write(root, "skills/c/SKILL.md", "body")
+            _write(root, "skills/c/fixtures.json", '{"skill": "c"}')
+            entries = {
+                "a": ledger.make_entry(
+                    root, ledger.skill_surface(root, "a"),
+                    "accepted-addition", "2026-08-03"),
+                "c": ledger.make_entry(
+                    root, ledger.skill_surface(root, "c"),
+                    "accepted-without-run", "2026-08-03"),
+            }
+            ledger.save(root, entries)
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                rc = ledger.main(["--check", root])
+            self.assertEqual(rc, 0)
+            output = buf.getvalue()
+            self.assertIn("accepted-addition 1", output)
+            self.assertIn("accepted-without-run 1", output)
+            self.assertIn("pass 0", output)
+
 
 class TestAcceptGuard(unittest.TestCase):
     """--accept は fixtures.json が変わっていたら拒否する。"""
