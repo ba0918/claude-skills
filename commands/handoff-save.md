@@ -3,6 +3,6 @@ description: 現在のセッションコンテキストを構造化テキスト�
 allowed-tools: Bash, Glob, Grep, Read, Write
 ---
 
-Artifact paths follow the [Agent Artifact Store contract](../skills/shared/references/artifact-store.md).
+Artifact paths follow the [Artifact Store consumer contract](../skills/shared/references/artifact-paths.md).
 
 $ARGUMENTS を考慮した上で、スキル `claude-skills:handoff` スキルを `save` モードで実行してください。

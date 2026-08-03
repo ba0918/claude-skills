@@ -5,7 +5,7 @@ description: Decompose a natural language instruction into multiple plans, check
 
 # Parallel Cycle
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Orchestrator skill that decomposes a compound instruction into multiple independent plans, executes them in parallel using worktrees, and merges the results.
 

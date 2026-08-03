@@ -5,7 +5,7 @@ description: Issue management for tracking out-of-scope problems discovered duri
 
 # Issue Management
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Provides a flow to record out-of-scope problems discovered during plan execution as local files in `.agents/artifacts/issues/`, and later connect them to plan → cycle.
 

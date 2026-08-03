@@ -5,7 +5,7 @@ description: A harness that turns a skill's tuned behavior into fixtures (a scen
 
 # Skill Regression
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 A skill is a program written in prose, and every edit to a SKILL.md, a reference, or a shared contract is a "behavior change".
 Yet the acceptance criteria established during empirical tuning vanish with the session, and when the next edit

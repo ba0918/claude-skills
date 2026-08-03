@@ -5,7 +5,7 @@ description: Run automated TDD implementation against an implementation plan, th
 
 # Cycle
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Run the auto-implement cycle for an implementation plan autonomously. Implementation,
 review, and fix work is delegated to subagents; the main context keeps only verdicts

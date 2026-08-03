@@ -584,6 +584,42 @@ class TestCheckContractConformance(unittest.TestCase):
             self.assertEqual(
                 check_contract_conformance(root, vocab=self.VOCAB, exempt={}), [])
 
+    ALT_VOCAB = [
+        (("skills/shared/references/fake-contract.md",
+          "skills/shared/references/fake-consumer.md"),
+         ("ALPHA_ONE", "ALPHA_TWO", "ALPHA_THREE"), 2),
+    ]
+
+    def test_link_to_alternative_contract_satisfies(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, "skills/shared/references/fake-consumer.md",
+                        "消費側ビュー。")
+            self._write(root, "skills/a/SKILL.md",
+                        "ALPHA_ONE / ALPHA_TWO を使う。"
+                        "[消費側契約](../shared/references/fake-consumer.md) 参照。")
+            self.assertEqual(
+                check_contract_conformance(root, vocab=self.ALT_VOCAB, exempt={}), [])
+
+    def test_no_link_to_any_alternative_names_all(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._base(root)
+            self._write(root, "skills/a/SKILL.md",
+                        "ALPHA_ONE / ALPHA_TWO を使う。リンクなし。")
+            errors = check_contract_conformance(root, vocab=self.ALT_VOCAB, exempt={})
+            self.assertEqual(len(errors), 1)
+            self.assertIn("fake-contract.md", errors[0])
+            self.assertIn("fake-consumer.md", errors[0])
+
+    def test_malformed_contract_path_fails_fast(self):
+        for bad in ((), 42, ("skills/shared/references/fake-contract.md", 42), ("",)):
+            with tempfile.TemporaryDirectory() as root:
+                self._base(root)
+                self._write(root, "skills/a/SKILL.md", "ALPHA_ONE と ALPHA_TWO。")
+                with self.assertRaises(ValueError):
+                    check_contract_conformance(
+                        root, vocab=[(bad, ("ALPHA_ONE", "ALPHA_TWO"), 2)], exempt={})
+
 
 class TestCoverageLedgerContractVocab(unittest.TestCase):
     """coverage ledger 契約（4値・min_distinct=3）の登録と執行を検証する。

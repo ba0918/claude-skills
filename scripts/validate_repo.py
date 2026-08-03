@@ -138,7 +138,10 @@ CONTRACT_VOCAB = [
      ("codex:codex-rescue",), 1),
     ("skills/shared/references/goal-decomposition-pattern.md",
      ("ci_gate", "resident_sensor", "dissolve"), 2),
-    ("skills/shared/references/artifact-store.md",
+    # 消費側は artifact-paths.md（consumer contract）へのリンクでも適合。
+    # 第 1 要素はタプル可: いずれか 1 つへのリンクで適合とする。
+    (("skills/shared/references/artifact-store.md",
+      "skills/shared/references/artifact-paths.md"),
      (".agents/artifacts",), 1),
     # workspace lock。語彙は意図的に固有名にしてある。polling-pattern が既に使う
     # `ClaimFailed` や汎用語の `claim` / `lock` を採ると、coverage-ledger の
@@ -313,12 +316,22 @@ def check_contract_conformance(root, vocab=None, exempt=None):
                     os.path.join(os.path.dirname(path), link))
                 linked.add(os.path.relpath(target, root).replace(os.sep, "/"))
         for contract_rel, tokens, min_distinct in vocab:
+            if isinstance(contract_rel, str):
+                accepted = (contract_rel,)
+            elif isinstance(contract_rel, (tuple, list)):
+                accepted = tuple(contract_rel)
+            else:
+                accepted = ()
+            if not accepted or not all(isinstance(c, str) and c for c in accepted):
+                raise ValueError(
+                    f"CONTRACT_VOCAB の契約パスが不正（非空の文字列 or 文字列タプルのみ）: "
+                    f"{contract_rel!r}")
             used = sorted(t for t in tokens if any(t in x for x in texts))
-            if len(used) < min_distinct or contract_rel in linked:
+            if len(used) < min_distinct or any(c in linked for c in accepted):
                 continue
             errors.append(
                 f"[contract] {unit} が契約語彙 {'/'.join(used)} を使用しているが "
-                f"{contract_rel} への md リンクがない（参照を張るか、意図的な別体系なら "
+                f"{' か '.join(accepted)} への md リンクがない（参照を張るか、意図的な別体系なら "
                 f"validate_repo.py の CONTRACT_VOCAB_EXEMPT に理由付きで登録）"
             )
     return errors

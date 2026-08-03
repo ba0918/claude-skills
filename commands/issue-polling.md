@@ -2,7 +2,7 @@
 description: "ready キューを消化し続ける self-driving polling ループを起動する（ラルフループ型、bypass-permissions 前提）"
 ---
 
-Artifact paths follow the [Agent Artifact Store contract](../skills/shared/references/artifact-store.md).
+Artifact paths follow the [Artifact Store consumer contract](../skills/shared/references/artifact-paths.md).
 
 スキル `claude-skills:issue` を実行する。引数: `polling $ARGUMENTS`
 

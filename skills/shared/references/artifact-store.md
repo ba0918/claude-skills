@@ -4,6 +4,11 @@ Agent-generated working artifacts are project state, not reader-facing documenta
 skills that create or consume plans, issues, ideas, handoff, loop, review, or decision state MUST resolve
 their paths through this contract instead of embedding a `docs/` path.
 
+Skills that only read and write artifact paths load the
+[consumer contract](artifact-paths.md) instead of this file. This full contract is for
+orchestrating satellite worktree runs (ingress / capability / harvest / publish), store
+migration, and recovery; it is authoritative on any conflict with the consumer view.
+
 ## Canonical namespace
 
 The repository policy lives at `.agents/artifacts.yml`. The default logical store is:

@@ -5,7 +5,7 @@ description: Drive Claude autonomously from a GitHub issue, fully automating pol
 
 # github-issue Skill
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 A self-driving workflow that takes a GitHub issue as its trust boundary. Execution is controlled concurrently-safely by a label-based state machine, and it runs headless through `/loop`.
 

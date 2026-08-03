@@ -5,7 +5,7 @@ description: Elevate exchanges with an LLM, investigation results, and web resea
 
 # Doc-Write
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Turn LLM exchanges, investigation results, and web research into readable documents.
 The skill adjusts granularity to the intended audience, selects a template automatically,

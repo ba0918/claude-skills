@@ -11,7 +11,7 @@ Review the codebase from an **attacker's perspective** with 6 specialized penetr
 
 **Headless execution**: Do not prompt the user for confirmation. All agents run autonomously. If an agent fails, continue with the remaining agents (graceful degradation).
 
-**Report placement**: Attack reports contain vulnerability details, reproduction steps, and PoC examples — committing them would publish an exploitation guide for the project. The final report goes to `.agents/artifacts/reviews/` per the [Agent Artifact Store contract](../shared/references/artifact-store.md) (Git-ignored local store), never under `docs/`.
+**Report placement**: Attack reports contain vulnerability details, reproduction steps, and PoC examples — committing them would publish an exploitation guide for the project. The final report goes to `.agents/artifacts/reviews/` per the [Artifact Store consumer contract](../shared/references/artifact-paths.md) (Git-ignored local store), never under `docs/`.
 
 **Key difference from codebase-review**: This skill thinks like an attacker ("how do I break in?"), not a defender ("is this secure?"). Output is attack scenarios with reproduction steps, not quality scores.
 
@@ -305,7 +305,7 @@ Note: The following agent results are missing: {list}. Generate the report using
 ### Step 5: Display Summary & Archive Report
 
 1. Read `{work_dir}/summary.txt` and display its contents to the user
-2. Copy the full report to the reviews archive (if the store is uninitialized, guarantee the ignore rule first — lazy initialization per the [artifact-store contract](../shared/references/artifact-store.md)):
+2. Copy the full report to the reviews archive (if the store is uninitialized, guarantee the ignore rule first — lazy initialization per the [artifact-store consumer contract](../shared/references/artifact-paths.md)):
    ```bash
    grep -qxF '/.agents/artifacts/' .gitignore 2>/dev/null || printf '\n# Agent Artifact Store\n/.agents/artifacts/\n' >> .gitignore
    mkdir -p .agents/artifacts/reviews && cp {work_dir}/report.md .agents/artifacts/reviews/attack-review-{YYYYMMDD-HHMM}.md

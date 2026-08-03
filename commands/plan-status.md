@@ -2,7 +2,7 @@
 description: "plan のステータスと進捗を更新する"
 ---
 
-Artifact paths follow the [Agent Artifact Store contract](../skills/shared/references/artifact-store.md).
+Artifact paths follow the [Artifact Store consumer contract](../skills/shared/references/artifact-paths.md).
 
 `plan` スキルの **Status更新** ワークフローを実行する。
 

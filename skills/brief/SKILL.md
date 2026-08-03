@@ -5,7 +5,7 @@ description: Reconstruct a change, an implementation plan, a handoff, or an in-f
 
 # Brief
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md).
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md).
 Resolve and validate the store before reading or writing artifacts.
 
 Turn work that is written for machines into a page a human actually reads.

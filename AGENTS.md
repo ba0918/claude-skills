@@ -41,7 +41,7 @@ worktree を使うかどうかは `.agents/workspace.yml` の `isolation` 設定
 - スキル内リンクは相対 md リンクを使い、ファイル移動時は参照も更新する。
 - スキルを追加・削除・改名したら `README.md` と必要な plugin manifest を更新する。常時指示の詳細化で解決せず、機械検証やスキル本文を正本にする。
 - `CLAUDE.md` へ直接プロジェクト指示を追加しない。共通指示が必要ならこの `AGENTS.md` を更新する。
-- スキルの新規作成や大幅改訂時は [skills/shared/references/skill-authoring.md](skills/shared/references/skill-authoring.md) を参照する。特に既存 SKILL.md の圧縮・スリム化を検討する際は同ファイルの「When Prompt Compression Works」節（empirical-prompt-tuning 実測に基づく効くパターン / 効かないパターン / 削るべきでない項目）を先に読む。スキル本文へ行を足す前には同ファイルの「Anti-bloat Clause」（判断はことば・保証はコードという責務配置の判定基準と、SKILL.md ~400 行 / 1 実行の総ロード ~1000 行という設計臭閾値）に適合するか確認する。機構の欠陥（競合・crash 窓・順序）への修正を散文追記で行わない。
+- スキルの新規作成や大幅改訂時は [skills/shared/references/skill-authoring.md](skills/shared/references/skill-authoring.md) を参照する。特に既存 SKILL.md の圧縮・スリム化を検討する際は同ファイルの「When Prompt Compression Works」節（empirical-prompt-tuning 実測に基づく効くパターン / 効かないパターン / 削るべきでない項目）を先に読む。スキル本文へ行を足す前には同ファイルの「Anti-bloat Clause」（判断はことば・保証はコードという責務配置の判定基準と、1 実行経路の総ロード ~500 行という設計臭閾値。ゲートではなく診断値で、少ないほどよい）に適合するか確認する。機構の欠陥（競合・crash 窓・順序）への修正を散文追記で行わない。
 
 ## 検証
 

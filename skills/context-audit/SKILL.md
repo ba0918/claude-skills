@@ -5,7 +5,7 @@ description: An inventory skill that audits LLM instruction files (CLAUDE.md / A
 
 # context-audit
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 The behavioral quality of an LLM depends on the health of the instruction layer (CLAUDE.md / AGENTS.md / rules / memory).
 When that layer decays over long-term operation (obsolete references, contradictions, destructive permissions, cross-tool divergence), the LLM's behavior degrades — yet the existing doc-check (docs⇔code) and doc-audit (docs⇔docs) do not look at this "**quality as instructions**",

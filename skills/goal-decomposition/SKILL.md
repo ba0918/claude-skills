@@ -5,7 +5,7 @@ description: Compile a broad goal (for example "go through the whole codebase an
 
 # Goal Decomposition
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 The entry point that compiles a natural-language high-level goal into a machine-verifiable **Loop Readiness Dossier**.
 

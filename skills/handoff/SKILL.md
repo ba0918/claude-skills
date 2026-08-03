@@ -5,7 +5,7 @@ description: Carry context across sessions. When context is under pressure, save
 
 # Handoff — Session Context Relay
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Relay the working state to the next session, LLM-first, when context pressure builds up.
 

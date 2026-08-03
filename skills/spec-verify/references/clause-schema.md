@@ -183,7 +183,7 @@ prohibited** (hand-adding a binding alone does not promote it). The philosophy o
 | Clause files | `specs/clauses/*.json` | Committed (the source of truth) |
 | Evidence manifest | `specs/evidence/manifest.json` | Committed |
 | Generated matrix | stdout / temporary area | Ephemeral. Not committed |
-| draft (unapproved clauses) | `.agents/artifacts/spec-verify/drafts/` | Isolated from the canonical tree (conforms to the [artifact-store contract](../../shared/references/artifact-store.md)). Outside the search scope of lint / trace. Moved to `specs/clauses/` on approval (apply) |
+| draft (unapproved clauses) | `.agents/artifacts/spec-verify/drafts/` | Isolated from the canonical tree (conforms to the [artifact-store consumer contract](../../shared/references/artifact-paths.md)). Outside the search scope of lint / trace. Moved to `specs/clauses/` on approval (apply) |
 
 Drafts are kept out of the canonical tree to structurally prevent the accident where an
 unapproved clause slips into lint / traceability aggregation and gets treated as "an approved

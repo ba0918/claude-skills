@@ -5,7 +5,7 @@ description: Refactor finished code while preserving its behavior exactly, and s
 
 # Refactor
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Fully understand the code in the specified scope, then improve its expression **while preserving behavior completely**,
 and propagate the improvement to similar code across the codebase with context verification.
