@@ -273,13 +273,13 @@
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
-      "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
+      "skills/shared/references/measurement-identity.md": "4891703c2d8c88017bc823e2f1a53bb85528fea39708ec104d83b8e2b054e411",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
-      "skills/skill-regression/scripts/ledger.py": "2e12e8d0f4c467b0c451d968048562190ccd2027b520a5ff35331d128fce0e80"
+      "skills/skill-regression/scripts/ledger.py": "464ba2d510fd77fa77f8045fe2eaf75a367b972688b1212869bd9b47176ec03c"
     },
-    "note": "#182 run: 8/8 pass（実測 executor は低単価 tier）。ledger.py の severity 導入（contract-change 判定の発生源）を含む surface で全シナリオ再実走。gi-001 の tick は adapter CLI + 疑似コードトレースで実施（単一 tick コマンドは設計上存在しない）",
-    "result": "pass",
+    "note": "#182 fix-warn 後の再 accept: 直前 run (8/8 pass, 964367f の 5 コミット前) との surface 差分は measurement-identity.md の outcome 集合追記（散文）と ledger.py のコメント追加+RESULT_* 定数抽出（挙動不変、テスト固定）のみ。実行挙動に影響する変更なしと人間判断",
+    "result": "accepted-without-run",
     "surface": [
       "skills/github-issue/SKILL.md",
       "skills/github-issue/fixtures.json",
@@ -306,7 +306,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "b80cb10c5176c70d24c6c6697b269a505242f9dcbaf93b81c364133db3dab418",
+    "surface_sha256": "47c807174c00b28d6eb109ebb1d1cfd73540de175f9f878211da75dc33f564aa",
     "verified": "2026-08-03"
   },
   "handoff": {
@@ -357,10 +357,10 @@
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec",
-      "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
+      "skills/shared/references/measurement-identity.md": "4891703c2d8c88017bc823e2f1a53bb85528fea39708ec104d83b8e2b054e411",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "#201 作業4-1: quote-not-load 適用。規則本文は一字不変でインライン引用 + provenance マーカー化のみ（実行時ロード対象から外しただけ）。fixtures の要件文が該当規則の記述位置に依存しないことを grep で確認済み",
+    "note": "#182: measurement-identity.md §4 の outcome 集合へ accepted-addition を追記した散文変更のみ。機械パーストークン・コード・コマンド不変",
     "result": "accepted-without-run",
     "surface": [
       "skills/issue/SKILL.md",
@@ -374,7 +374,7 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "d820b12fd330ca617495aa36abd8ea6b6027a7c0906987192952de6fdbc6a243",
+    "surface_sha256": "e86c755f745e9c8e7ae1e6124faade26ed4c36f1da66429d2afc642fc23ad9a4",
     "verified": "2026-08-03"
   },
   "iterate": {
@@ -552,15 +552,15 @@
       "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
-      "skills/skill-regression/scripts/ledger.py": "2e12e8d0f4c467b0c451d968048562190ccd2027b520a5ff35331d128fce0e80",
+      "skills/skill-regression/scripts/ledger.py": "464ba2d510fd77fa77f8045fe2eaf75a367b972688b1212869bd9b47176ec03c",
       "skills/skill-reviewer/SKILL.md": "1dae27c5e1048d50e76925ce8d7b1760019bf5ee984a881cdba68630d5da5e31",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
-      "skills/skill-reviewer/references/evidence-and-coverage.md": "038a929b9af70186414aa747477e5feb647b23312545fa224670de53dc54a2a6",
+      "skills/skill-reviewer/references/evidence-and-coverage.md": "8b22969de41d90187b9d02987ac8bd4691a2f42fa4d17d1e7607a4327ece05bc",
       "skills/skill-reviewer/references/output-contract.md": "f5e6e2ad5b0173899bcaa5b6f2d060dc3c95bdfaee484d7f7e146f17f11fe46a",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "#182 run: 3/3 pass（実測 executor は低単価 tier）。誤 BLOCK ゼロの oracle 2 本と正例 BLOCK 1 本の両方向を確認、出力は全件 validate_review_output.py 適合",
-    "result": "pass",
+    "note": "#182 fix-warn 後の再 accept: 直前 run (3/3 pass) との差分は evidence-and-coverage.md の写像規則明記（散文）と ledger.py のコメント+定数抽出（挙動不変）のみ",
+    "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/coverage-ledger.md",
       "skills/shared/references/fix-action-taxonomy.md",
@@ -574,7 +574,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "758f3f55912eb685d57de03dda8448c899794a820b12969e251b1683345d233f",
+    "surface_sha256": "ef4d9ff988f876f3553eed84a3a6d2b2153c8245d3dbe19a74d4c9078d44a0f3",
     "verified": "2026-08-03"
   },
   "sweep-fix": {
