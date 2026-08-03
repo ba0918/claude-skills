@@ -326,9 +326,9 @@ This flow is the gateway that "concentrates human subjective judgement into a si
 1. Check whether `DESIGN.md` exists at the project root
    - If not, state that DESIGN.md should be created with `/claude-skills:design-guide`, then stop
 2. Check whether `.design/tokens.json` exists
-   - If not, state that tokens should be generated with `/claude-skills:design-scaffold`, then stop
+   - If not, state that tokens should be generated with `/claude-skills:design-scaffold tokens`, then stop
 3. Check whether `.design/component-catalog.json` exists
-   - If not, state that the catalog should be generated with `/claude-skills:design-scaffold`, then stop
+   - If not, state that the catalog should be generated with `/claude-skills:design-scaffold catalog`, then stop
 4. Read every file:
    - `.design/tokens.json`
    - `.design/tokens.css`
@@ -483,8 +483,8 @@ options:
 
 | Kind of feedback | Loops back to | Operation |
 |------------------|---------|------|
-| Token adjustment | `/design-guide-update` → `/design-scaffold` → Step 3 | Edit DESIGN.md → regenerate tokens → regenerate mockups |
-| Component adjustment | `/design-scaffold` → Step 3 | Edit the catalog → regenerate mockups |
+| Token adjustment | `/design-guide-update` → `/design-scaffold tokens` → Step 3 | Edit DESIGN.md → regenerate tokens → regenerate mockups |
+| Component adjustment | `/design-scaffold catalog` → Step 3 | Edit the catalog → regenerate mockups |
 | Page-structure change | Step 2 → Step 3 | Edit the page-schema → regenerate mockups |
 | Fine-tuning (text, placement) | Step 3 | Edit the mockup directly → re-lint |
 

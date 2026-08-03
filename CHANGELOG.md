@@ -11,6 +11,17 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: design-scaffold をステージ別 3 ファイル + ルータへ分割（#201 作業 4 第 6 弾）
+
+- Step 1〜12 一直線・完了レポート 3 箇所で「どこで終わってよいか不明瞭」だった 600 行を、
+  ルータ（63 行、ステージ表 + 停止点契約）+ stage-a-tokens（223）/ stage-b-catalog（266）/
+  stage-c-layout（66）へ verbatim 分割。3 つの完了レポートが「正当な停止点」であることを
+  ルータが明文化し、ステージ引数（tokens / catalog / layout）で単一ステージを指名可能に
+- 経路別ロード: 全通し 600 → 実行ステージ分のみ（Stage A 停止なら本文 63+223 行）。
+  JSON スキーマ 4 本への「conforming to」一言参照は各ステージの生成ステップで
+  明示読込指示に格上げ（under-loading ガード）
+- schema JSON は design-generate / design-validate が直リンクするため移動しない
+
 ### Changed: mockup-diff の Phase 0 SETUP を条件付きロードへ分離（#201 作業 4 第 5 弾）
 
 - config.json 生成済みの 2 回目以降でも SETUP のフレームワーク表 + config スキーマ

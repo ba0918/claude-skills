@@ -195,15 +195,15 @@
   },
   "design-guide": {
     "file_sha256": {
-      "skills/design-guide/SKILL.md": "9a04df651d13037de2683358bc0392db355f0d1175fcf2db9199a4f0f9c267cc",
+      "skills/design-guide/SKILL.md": "77fc7a65e3a3a30878df53adbcbdff4afae4761da04ddca665f0a521b81c6754",
       "skills/design-guide/fixtures.json": "dd17b40c38c3e77e1c203326cc150737fd43fbae81682f9bf1962354432110f9",
       "skills/design-guide/references/anti-patterns.md": "c6425c16968c81c9c4da81167c8c153e949142a3868aaef39095a7c85fa44ee6",
       "skills/design-guide/references/design-md-template.md": "c7cd973cdc830319577035215de0cb2097c2dad3ba77d27a7075b661390158c3",
       "skills/design-guide/references/discovery-questions.md": "1efca8547738730215ccc9dc666cc3b58919c7676166161075f824519ea0fc2e",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "process 経路（claude-exec バックエンド）で全 2 シナリオを実行し critical 全 ○；読み取り専用要件 dg-001/dg-003 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
-    "result": "pass",
+    "note": "#201 作業4-6 (PR #217): design-scaffold のステージ引数化に伴う Mockup ワークフロー導線 4 行（L329/331/486/487）の指名引数追加のみ。fixtures dg-001（Session compliance probe）/ dg-003（Update fail-fast）は Mockup 経路に非依存で合否基準不変",
+    "result": "accepted-without-run",
     "surface": [
       "skills/design-guide/SKILL.md",
       "skills/design-guide/fixtures.json",
@@ -212,8 +212,8 @@
       "skills/design-guide/references/discovery-questions.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "38349448a111bfcdf3105bac54ad22533737c09d5b403f05ea20c3b7ebf24181",
-    "verified": "2026-07-27"
+    "surface_sha256": "46c1f7ee433d5666e27e1588c12b03e460c4b93378cf6c2cabc667d67909fc98",
+    "verified": "2026-08-03"
   },
   "doc-write": {
     "file_sha256": {
