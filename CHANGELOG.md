@@ -11,6 +11,14 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: cycle skill-review-routing — validator 不適合の再委譲 role を `post-review-skill-retry` に確定（#208）
+
+- skill-review-routing.md の「redelegate once」に `{role}` = `post-review-skill-retry` を明記。
+  未定義のため cy-020 実走で executor が `post-review-skill-2` を推測割り当てし、delegation
+  result relay のファイル名から「fix 後の再レビュー」と「validator 不適合の再委譲」を識別
+  できなかった。fix iteration を経ない再委譲のため `post-review-skill-{N}` 名前空間は不適用と
+  併記し、2 種類のイベントの命名混在を遮断
+
 ### Changed: skill-reviewer 出力契約の精度課題 2 件の裁定反映（#203）
 
 - output-contract.md フィールド表の `fix_action` / `qualification_reason` 行を、検証器

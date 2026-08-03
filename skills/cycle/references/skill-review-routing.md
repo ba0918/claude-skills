@@ -42,7 +42,8 @@ policy per path contradicts nothing. Routing diagnostic output into that blanket
 diagnostic instrument turns back into a gate.
 
 If the delegate reports that its output failed the validator, treat the review as not delivered and redelegate
-once. If the redelegation also fails, discard the findings for control purposes — a non-conforming document
+once with `{role}` = `post-review-skill-retry` — this redelegation follows no fix iteration, so the
+`post-review-skill-{N}` namespace does not apply. If the redelegation also fails, discard the findings for control purposes — a non-conforming document
 carries none of the validator's channel guarantees, so nothing in it may drive the Step 2s branches (no fix loop,
 no auto-fix, no stop) — and attach the raw findings to the Phase 5 record alongside the gap, as record only.
 A malformed diagnostic never escalates into a stop.
