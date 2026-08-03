@@ -11,6 +11,17 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: attack-criteria.md（824 行）を per-agent 6 ファイルへ分割（#201 作業 4 第 2 弾）
+
+- 6 専門 subagent が各自の担当分（~1/6）のために 824 行を全文ロードしていた
+  セクション参照 monolith を、出力 JSON の stem と 1:1 対応する
+  criteria-agent-{N}-*.md（123〜144 行）へ verbatim 分割（連結 diff で byte 一致検証済み）。
+  1 run のロード削減は 6 agent 合計 ~4100 行
+- attack-criteria.md は削除せず 42 行の index（前文 + Risk Matrix + 語彙統一宣言 +
+  ファイル表）として維持。既存リンク・lang-profiles の言及・語彙契約の記述を全部生かす
+- agent-prompts.md の Section Extraction Rules を「`---` 境界の verbatim 抜き出し手順」から
+  「対応ファイルを丸ごと」へ単純化（Agent 6 の EOF 終端で抽出規則が未定義だった問題も解消）
+
 ### Changed: 「1 文出典の全文ロード」7 箇所へ quote-not-load を適用（#201 作業 4 第 1 弾）
 
 - 棚卸し実測で特定した「規則 1 文のために巨大契約・スキル全文をロードする」引用箇所を、
