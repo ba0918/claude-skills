@@ -106,10 +106,11 @@ class TestStaleSeverity(unittest.TestCase):
         self.assertIsNone(severity)
         self.assertEqual(changed, [])
 
-    def test_empty_recorded_is_contract_addition(self):
-        # 台帳側に file_sha256 が無い旧エントリでも比較は成立させる（追加のみ扱い）
+    def test_missing_baseline_is_contract_change(self):
+        # file_sha256 を持たない旧エントリ。差分は形式上「追加のみ」に見えるが、
+        # 比較基準が無い以上「追加だけ」と断じる根拠も無い
         severity, changed = ledger.stale_severity({}, {"a.md": "h1"})
-        self.assertEqual(severity, ledger.SEVERITY_ADDITION)
+        self.assertEqual(severity, ledger.SEVERITY_CHANGE)
         self.assertEqual(changed, ["a.md"])
 
 
@@ -165,6 +166,16 @@ class TestCheck(unittest.TestCase):
             self.assertEqual([i[0] for i in issues], ["stale"])
             self.assertTrue(issues[0][2].startswith("[contract-addition]"))
             self.assertIn("skills/a/extra.md", issues[0][2])
+
+    def test_legacy_entry_without_hashes_is_labeled_contract_change(self):
+        """--check の表示と --accept の記録値が同じ規則で動く（食い違わせない）。"""
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            entries = {"a": {"surface": [], "result": "pass",
+                             "verified": "2026-07-07"}}
+            issues = ledger.check(root, entries)
+            self.assertEqual([i[0] for i in issues], ["stale"])
+            self.assertTrue(issues[0][2].startswith("[contract-change]"))
 
     def test_orphan_when_fixtures_removed(self):
         with tempfile.TemporaryDirectory() as root:

@@ -79,8 +79,10 @@ def stale_severity(recorded, current):
     recorded / current はどちらも {root 相対パス: sha256（不在は MISSING）}。
     面にファイルが増えただけ（既存ファイルの hash は全一致）なら contract-addition、
     既存ファイルの内容変更・削除が 1 つでもあれば contract-change。
-    ただし追加ファイルの hash が MISSING（実体のない参照先＝壊れたリンク）の場合は
-    contract-addition ではなく contract-change として扱う（迷ったら重い側の fail-safe）。
+    迷ったら重い側という fail-safe を 2 箇所で効かせる。追加ファイルの hash が
+    MISSING（実体のない参照先＝壊れたリンク）の場合と、recorded が空（file_sha256 を
+    持たない旧エントリ＝比較基準が無い）の場合は、形式上「追加のみ」に見えても
+    contract-change として扱う。
 
     判定材料を hash 差分だけに閉じているのは、git 履歴やコミット範囲に依存せず
     「前回検証した内容そのもの」との比較で決まる決定性を優先したため。
@@ -94,10 +96,8 @@ def stale_severity(recorded, current):
     changed = sorted(added + removed + modified)
     if not changed:
         return None, []
-    # 実体のない参照先（MISSING）が面に入った追加は壊れたリンクであって契約の追加ではない。
-    # 迷ったら重い側という fail-safe に倒す
     dangling = [rel for rel in added if current[rel] == _MISSING]
-    if removed or modified or dangling:
+    if not recorded or removed or modified or dangling:
         return SEVERITY_CHANGE, changed
     return SEVERITY_ADDITION, changed
 
@@ -106,11 +106,9 @@ def accept_result(recorded, current):
     """--accept で記録する result を severity から決める。
 
     addition-only と機械的に確認できた承認だけを "accepted-addition" にする。
-    比較基準（前回の file_sha256）が無いエントリは、軽いと断じる根拠も無いので
-    現行どおり "accepted-without-run"。
+    比較基準の無いエントリを弾く判断は stale_severity に持たせてあり、ここでは
+    再実装しない（--check の表示と記録値が別々の規則で動くと食い違うため）。
     """
-    if not recorded:
-        return "accepted-without-run"
     severity, _ = stale_severity(recorded, current)
     if severity == SEVERITY_ADDITION:
         return "accepted-addition"
