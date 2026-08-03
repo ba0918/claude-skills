@@ -21,7 +21,7 @@ Every value can be overridden with the `--config key=value` argument.
 | `require_author_association` | `OWNER,MEMBER,COLLABORATOR` | csv | Skip polling when the issue author is none of these |
 | `enable_base64_scan` | `false` | bool | Whether to enable secret-scanner's generic Base64 pattern. Off by default because it produces many false positives. See [`secret-scanner.md`](secret-scanner.md) for details |
 | `rollback_gh_fetch_cap` | `10` | count | Compatibility key for the per-tick cap on `get_issue` calls in `rollback_orphans()` steps ③ / ④. The excess carries over to the next tick (preventing a fetch storm)|
-| `impact_command` | (unset) | command | The external command that computes the blast radius of a change, used by [Gate 0](polling-adapter.md#self-drive-gates). `{files}` expands to the declared paths, space separated. **When unset, Gate 0's impact check is a no-op** (the skill is distributed to other repositories, and there is no portable oracle) |
+| `impact_command` | (unset) | command | The external command that computes the blast radius of a change, used by [Gate 0](self-drive-gates.md#self-drive-gates). `{files}` expands to the declared paths, space separated. **When unset, Gate 0's impact check is a no-op** (the skill is distributed to other repositories, and there is no portable oracle) |
 | `max_impacted_units` | `1` | count | The upper bound on impacted units that still allows self-driving. Applied only when `impact_command` is set |
 | `forbidden_path_globs` | `skills/shared/**` | glob csv | Paths that reject self-driving regardless of the impact count. Evaluated **without** the oracle, so it stays in force even when `impact_command` is unset |
 | `default_branch` | (resolved per run) | name | **Not a stored setting**: resolved per run with the selected transport's `repository_info` operation and used as the branch point (`origin/{default_branch}`) of the dedicated worktree. Never hardcoded and not user-overridable — a configured branch point would reintroduce the nondeterministic PR bases that issue #83 removed |
@@ -41,7 +41,7 @@ This repository configures:
 
 The command's stdout is read as **one impacted unit per line** (in this repository, a skill name), and
 the line count is the impact count. A non-zero exit is **fail-closed**: never read it as "0 impacted
-units" (see [`polling-adapter.md §Self-Drive Gates`](polling-adapter.md#self-drive-gates)).
+units" (see [`self-drive-gates.md §Self-Drive Gates`](self-drive-gates.md#self-drive-gates)).
 
 > **Where the per-repository value is persisted**: until `.agents/config/` exists, pass it through
 > `--config` and keep the table above as the documented value.

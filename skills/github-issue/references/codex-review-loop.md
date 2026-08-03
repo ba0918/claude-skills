@@ -72,11 +72,11 @@ normalize_github_error(raw_exc_or_response) -> error_kind:
 
 **Review convention**: a PR adding a new exception type must add the corresponding case to `normalize_github_error`.
 
-- For the definition of the `error_kind` enum, see [`polling-adapter.md §error_kind Enum`](polling-adapter.md#error_kind-enum)
+- For the definition of the `error_kind` enum, see [`error-kinds.md §error_kind Enum`](error-kinds.md#error_kind-enum)
 - The Transient / Permanent classification is decided by the `classify_failure` pure function (shared contract §4)
 - Transient: `{network, rate_limit, timeout, lock}` (4 kinds)
 - Permanent: `{test, compile, abort, lgtm_parse_fail, sanitize_failed, security, not_found, tool_missing, unknown}` (9 kinds)
-- `lock` is classified as Transient but carries a special rule that it is not counted toward `failed_streak` (for details see [`polling-adapter.md §error_kind Handling Rules`](polling-adapter.md#error_kind-handling-rules))
+- `lock` is classified as Transient but carries a special rule that it is not counted toward `failed_streak` (for details see [`error-kinds.md §error_kind Handling Rules`](error-kinds.md#error_kind-handling-rules))
 
 ## How Codex Is Invoked
 

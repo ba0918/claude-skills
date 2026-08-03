@@ -78,7 +78,7 @@ Only a worktree satisfying **all** of the following is a cleanup target.
 
 > **Conservative cleanup**: all 5 conditions above are required, ANDed together. If even one is doubtful, do not delete.
 
-This detection is called from `rollback_orphans()` step ① (`_check_worktree_orphans`). See [`polling-adapter.md §rollback_orphans Sub-Steps`](polling-adapter.md#rollback_orphans-sub-steps) for details.
+This detection is called from `rollback_orphans()` step ① (`_check_worktree_orphans`). See [`adapter-internals.md §rollback_orphans Sub-Steps`](adapter-internals.md#rollback_orphans-sub-steps) for details.
 
 ## Deletion Procedure
 
@@ -109,7 +109,7 @@ for wt in candidates:
 
 ## Partial Claim Rollback
 
-Because the atomic-claim 3 layers of defense in Cycle Workflow Step 2 (see [`polling-adapter.md §claim() 3 Layers of Defense`](polling-adapter.md#claim-3-layers-of-defense)) execute in sequence, side effects can remain when an intermediate stage fails. The case where acquiring the lockfile succeeded but setting the assignee / label failed is rolled back explicitly by the following procedure:
+Because the atomic-claim 3 layers of defense in Cycle Workflow Step 2 (see [`adapter-internals.md §claim() 3 Layers of Defense`](adapter-internals.md#claim-3-layers-of-defense)) execute in sequence, side effects can remain when an intermediate stage fails. The case where acquiring the lockfile succeeded but setting the assignee / label failed is rolled back explicitly by the following procedure:
 
 1. Call `edit_issue_labels(${N}, add=[], remove=["claude-running"])` best-effort (in case it had already been added)
 2. Call `remove_issue_actor(${N})` best-effort (in case you had become the assignee)

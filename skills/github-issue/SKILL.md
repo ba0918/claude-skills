@@ -31,7 +31,7 @@ Run these at the start of every workflow.
 1. **Configuration values**: load the defaults from `references/config-defaults.md`. Any value overridden by an argument takes precedence.
 2. **Transport resolution**: resolve `github_transport` once using [`references/gh-commands.md §Transport resolution`](references/gh-commands.md#transport-resolution). `auto` selects installed `gh`; only when `gh` is absent does it try a connected GitHub integration. Keep the selected transport fixed for the invocation.
 3. **Authentication check**: call the selected transport's `check_authentication`. An available backend that rejects authentication fails as `security`; an unavailable selected backend fails as `tool_missing`.
-4. **Repository check**: call `repository_info` and confirm the current directory maps to a GitHub repository. On failure you may resolve it through the same order as `fetch_git_remote_url()` ([`references/polling-adapter.md §state_root Resolution`](references/polling-adapter.md#state_root-resolution)) — `git remote get-url origin` first, then the selected transport's repository URL as the fallback. Keeping both in the same order guarantees that repository checking and state-root resolution never disagree about the URL source.
+4. **Repository check**: call `repository_info` and confirm the current directory maps to a GitHub repository. On failure you may resolve it through the same order as `fetch_git_remote_url()` ([provenance: `references/state-root.md §state_root Resolution`](references/state-root.md#state_root-resolution) — the order is quoted in this sentence; not read at runtime) — `git remote get-url origin` first, then the selected transport's repository URL as the fallback. Keeping both in the same order guarantees that repository checking and state-root resolution never disagree about the URL source.
 
 > **Relationship to Polling (fail-closed)**: a failure of the pre-checks above does not start a polling tick. Missing all usable transports is `tool_missing`; authentication or authorization rejection is `security`. The one exception: when the user explicitly asks for a check that needs no GitHub access (confirming a kill file stop, for example), you may record the pre-check failure and continue with that check alone.
 
@@ -39,7 +39,7 @@ Run these at the start of every workflow.
 
 See the following references for the details of each workflow. The shared polling contract is referenced by direct link to [`../shared/references/polling-pattern.md`](../shared/references/polling-pattern.md) (drift prevention §11).
 
-- [`references/polling-adapter.md`](references/polling-adapter.md) — Label state adapter implementation spec (Interface Table / state_root / error_kind / the three-stage claim defence / rollback sub-steps)
+- [`references/polling-adapter.md`](references/polling-adapter.md) — Label state adapter interface contract and index (Interface Table + §Split Reference Files: label-mapping / self-drive-gates / state-root / error-kinds / adapter-internals — load only the file the current step names)
 - [`references/label-spec.md`](references/label-spec.md) — Label definitions + Backward Compatibility + Migration Exit Strategy
 - [`references/codex-review-loop.md`](references/codex-review-loop.md) — Codex PR review delegation prompt + normalize_github_error + the fail-closed override
 - [`references/config-defaults.md`](references/config-defaults.md) — Table of GitHub-specific configuration values (anything duplicated from shared contract §10 is a direct SSOT link)
@@ -86,7 +86,7 @@ List the open issues carrying the `claude-auto` label.
 
 1. Run Common Pre-checks
 2. Call `list_issues` for open issues carrying `claude-auto`, requesting number, title, labels, assignees, author, and author association with limit 100
-3. Classify client-side and display (for the precedence rule see [`references/polling-adapter.md §state_of_failure Precedence Rule`](references/polling-adapter.md#state_of_failure-precedence-rule)):
+3. Classify client-side and display (for the precedence rule see [`references/label-mapping.md §state_of_failure Precedence Rule`](references/label-mapping.md#state_of_failure-precedence-rule)):
    - **Ready**: carries none of `claude-running`, `claude-review`, or the failed labels
    - **Running**: carries `claude-running`
    - **In Review**: carries `claude-review`
@@ -112,15 +112,15 @@ The headless tick called periodically from `/loop github-issue-polling`. When se
 
 This workflow is **a thin orchestrator conforming to the tick() pseudocode in shared contract [`../shared/references/polling-pattern.md §5 Tick Orchestration`](../shared/references/polling-pattern.md#5-tick-orchestration-pseudocode-declaration-level)**. The state machine (§2), the pure functions (§4), the safety brake (§6), and the Tick Schema (§7) live in the shared contract; this file describes only the order in which adapter methods are called.
 
-Label adapter implementation details — the three-stage claim defence, state_root resolution, error_kind classification, the five-stage rollback — are hidden inside [`references/polling-adapter.md`](references/polling-adapter.md) (SKILL.md only calls `claim(slug)`).
+Label adapter implementation details — the three-stage claim defence, state_root resolution, error_kind classification, the five-stage rollback — are hidden behind the interface contract [`references/polling-adapter.md`](references/polling-adapter.md) and its per-concern split files (SKILL.md only calls `claim(slug)`). Each step below names the one file it needs; do not load the whole set.
 
 ### Steps
 
 1. Run **Common Pre-checks**
-2. **Adapter init**: obtain the Label adapter instance. Resolving `state_root` runs the XDG fallback, the exclusive creation of `.clone_url`, and the `unsupported FS fail-closed` (details in [`references/polling-adapter.md §state_root Resolution`](references/polling-adapter.md#state_root-resolution))
+2. **Adapter init**: obtain the Label adapter instance. Resolving `state_root` runs the XDG fallback, the exclusive creation of `.clone_url`, and the `unsupported FS fail-closed` (details in [`references/state-root.md §state_root Resolution`](references/state-root.md#state_root-resolution))
 3. **Kill file check**: use `adapter.kill_file_path()` and check `.STOP.hard` then `.STOP`, in that order. Halt immediately if either exists (shared contract §6.1)
    - Under `--stateless`, evaluate `adapter.load_session()` → `session_resume_action(prev, now, config)` right after this; on `Halt{reason}`, finish immediately with `TickResult(halt_reason=reason)` without claiming (shared contract §6.5)
-4. **Orphan recovery**: run the five-stage recovery with `adapter.rollback_orphans(now)` (shared contract §6.4 + [`references/polling-adapter.md §rollback_orphans Sub-Steps`](references/polling-adapter.md#rollback_orphans-sub-steps))
+4. **Orphan recovery**: run the five-stage recovery with `adapter.rollback_orphans(now)` (shared contract §6.4 + [`references/adapter-internals.md §rollback_orphans Sub-Steps`](references/adapter-internals.md#rollback_orphans-sub-steps))
 5. **Archive**: `adapter.archive_month_boundary()` (a no-op on GitHub; it only refreshes the cache)
 6. **Rate limit pre-check**: `rate_limit` ≥ `min_rate_limit_remaining`. Quiet skip when below
 7. **List ready**: call `adapter.list_ready(effective_parallel)` with `effective_parallel = min(max_parallel, parallel_worktree_limit)` (for the precedence rule see [`references/config-defaults.md`](references/config-defaults.md)). One API call; do not re-fetch even if the client-side filter leaves fewer than the limit
@@ -132,7 +132,7 @@ Label adapter implementation details — the three-stage claim defence, state_ro
     - **Transient failure**: `n = adapter.increment_retry(slug)` → `kind = should_promote_to_permanent(n, config.transient_retry_limit) ? Permanent : Transient` → `adapter.mark_failed(slug, kind)` (per the shared contract §5 Classify & persist block)
     - **Permanent failure**: `adapter.mark_failed(slug, Permanent)` (skip `increment_retry`; apply the shared contract §4 `classify_failure` pure function directly)
     - `mark_failed` is an atomic dual-write plus verification in one `edit_issue_labels` operation (details in [`references/polling-adapter.md §mark_failed(slug, kind)`](references/polling-adapter.md#mark_failedslug-kind))
-    - `error_kind = "lock"` does not count towards `failed_streak` (silent skip; see [`references/polling-adapter.md §error_kind Handling Rules`](references/polling-adapter.md#error_kind-handling-rules))
+    - `error_kind = "lock"` does not count towards `failed_streak` (silent skip; see [`references/error-kinds.md §error_kind Handling Rules`](references/error-kinds.md#error_kind-handling-rules))
 12. **Emit TickResult**: return the structured counters conforming to shared contract §7 Tick Schema — `{run_id, tick_started_at, claimed, done, failed_transient, failed_permanent, halt_reason?}`. All seven fields including `run_id` and `tick_started_at` are invariant (see shared contract §7)
 13. **On the first successful tick**: create `<state_root>/.polling-initialized` with `write_atomic` (which lifts the forced dry-run from the next tick on)
 14. **Session persist (`--stateless` only)**: compute the counter update and the halt decision with `next_session_state(session, tick_result)`, then persist with `adapter.save_session()` (shared contract §6.5)
@@ -166,7 +166,7 @@ The core workflow that drives a single issue to completion.
 
 Delegated to the adapter: just call `adapter.claim(slug)`. On failure, quiet abort with `ClaimFailed{reason}` (no retry).
 
-The three-stage defence (lockfile + selected-transport update + re-verify) is hidden in [`references/polling-adapter.md §claim() 3 Layers of Defense`](references/polling-adapter.md#claim-3-layers-of-defense). SKILL.md knows only the interface and does not depend on the internals (shared contract §3 + Layer Separation).
+The three-stage defence (lockfile + selected-transport update + re-verify) is hidden in [`references/adapter-internals.md §claim() 3 Layers of Defense`](references/adapter-internals.md#claim-3-layers-of-defense). SKILL.md knows only the interface and does not depend on the internals (shared contract §3 + Layer Separation).
 
 - lockfile path: `<state_root>/claim/{N}.lock` (non-blocking `flock(2)`)
 - Failure reasons: one of `LockBusy` / `github update failed` / `post-claim verify failed`
@@ -188,7 +188,7 @@ The three-stage defence (lockfile + selected-transport update + re-verify) is hi
    - With no contradiction, continue normally
 3. Build a plan by invoking the `claude-skills:plan` skill from the issue body and acceptance criteria
 4. **Gate 0b — the halt gate.** Before implementing anything, take the set of files the plan targets and run
-   the two checks of [`references/polling-adapter.md §Gate 0b — the halt gate`](references/polling-adapter.md#gate-0b--the-halt-gate):
+   the two checks of [`references/self-drive-gates.md §Gate 0b — the halt gate`](references/self-drive-gates.md#gate-0b--the-halt-gate):
    scope containment against the body's `## 変更対象` declaration, then the blast-radius check. On either
    rejection, stop with a **permanent failed** without starting the implementation. Gate 0a already applied
    the same thresholds to the *declared* paths at claim time; this pass exists because the plan is what

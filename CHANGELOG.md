@@ -11,6 +11,20 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: polling-adapter.md（765 行）を関心事別 6 ファイルへ分割（#201 作業 4 第 3 弾）
+
+- github-issue の list/polling/cycle が「SKILL.md は claim(slug) しか呼ばない」という
+  レイヤリング宣言に反して 765 行を全文ロードしていた monolith を、完全連続な
+  パーティション（連結 diff で byte 一致検証済み）で分割: index + 利用側契約
+  （polling-adapter.md、182 行）/ label-mapping（46）/ self-drive-gates（179）/
+  state-root（168）/ error-kinds（85）/ adapter-internals（119）
+- 経路別ロード: list 765→46、cycle 765→~380、polling は step 単位の条件付き
+  ロード化（kill file 早期停止 tick は 765→~350）。参照 33 箇所を張り替え、
+  見出し文字列は不変更（既存アンカー全維持）。fixture gi-005/006 が要求する
+  自走可否ゲートの根拠節は self-drive-gates.md 内に残し実行時到達性を維持
+- Label Mapping の canonical SSOT 宣言は節と一緒に label-mapping.md へ移動
+  （二重正本を作らない）。前文の stale な Tests checklist 言及も修正
+
 ### Changed: attack-criteria.md（824 行）を per-agent 6 ファイルへ分割（#201 作業 4 第 2 弾）
 
 - 6 専門 subagent が各自の担当分（~1/6）のために 824 行を全文ロードしていた

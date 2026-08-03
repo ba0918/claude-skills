@@ -24,7 +24,7 @@ issue-polling と完全同形式:
 - `XDG_STATE_HOME` 未設定時は `~/.local/state` が fallback
 - `repo_slug` は `sanitize_repo_slug(nameWithOwner)`（path segment 変換）
 - `clone_id` は `sha1(normalize_git_url(remote_url))[:16]`（64-bit）
-- 詳細は [`../skills/github-issue/references/polling-adapter.md#state_root-resolution`](../skills/github-issue/references/polling-adapter.md#state_root-resolution) を参照
+- 詳細は [`../skills/github-issue/references/state-root.md#state_root-resolution`](../skills/github-issue/references/state-root.md#state_root-resolution) を参照
 
 ## Safety Brakes
 
