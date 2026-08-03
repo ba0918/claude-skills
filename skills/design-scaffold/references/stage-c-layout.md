@@ -44,7 +44,7 @@ options:
 
 For each selected page:
 1. Get the recommended layout pattern from `patterns` in layout-rules.json
-2. Build the recommended placement for each section from the components in catalog.json
+2. Build the recommended placement for each section from the components in `.design/component-catalog.json`
 3. Generate a page definition conforming to [page-schema.json](page-schema.json) — read the schema in full before generating
 4. Save it to `.design/pages/{page-name}.json`
 

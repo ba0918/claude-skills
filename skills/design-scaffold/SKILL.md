@@ -28,8 +28,8 @@ execute, in full:
 | Stage | Argument | Generates | Prerequisite | File |
 |---|---|---|---|---|
 | A | `tokens` | tokens.json / tokens.css / lint-config.json / (React theme) | DESIGN.md | [references/stage-a-tokens.md](references/stage-a-tokens.md) |
-| B | `catalog` | component-catalog.json / (React components) | Stage A outputs | [references/stage-b-catalog.md](references/stage-b-catalog.md) |
-| C | `layout` | layout-rules.json / pages/*.json | Stage B outputs | [references/stage-c-layout.md](references/stage-c-layout.md) |
+| B | `catalog` | component-catalog.json / (React components) | `.design/tokens.json` (+ `.design/tokens.css` only when generating React/Preact components) | [references/stage-b-catalog.md](references/stage-b-catalog.md) |
+| C | `layout` | layout-rules.json / pages/*.json | `.design/tokens.json` + `.design/component-catalog.json` | [references/stage-c-layout.md](references/stage-c-layout.md) |
 
 Stopping after Stage A gives the minimum design-lint needs; after Stage B the
 design-generate prerequisites are ready; after Stage C, continue to the Base Design
@@ -38,7 +38,7 @@ naming the missing file and the stage that produces it.
 
 ## Overwrite Confirmation for an Existing .design/
 
-When `.design/tokens.json` already exists:
+Applies only when running Stage A. When `.design/tokens.json` already exists:
 
 1. Read the existing `version`
 2. Present options to the user and confirm:
