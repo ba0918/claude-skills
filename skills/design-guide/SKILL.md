@@ -27,11 +27,12 @@ questions to "just write the file" is the exact failure this skill exists to pre
 workflow files carry the full constraint tables and red flags; this line is the floor, not
 the whole rule.
 
-## Completion report (all workflows)
+## Completion report (Session Workflow)
 
-Every workflow's final message conforms to the
+The Session Workflow's completion display (after DESIGN.md is generated) conforms to the
 [human-readable summary contract](../shared/references/human-readable-summary.md) and begins
-with the fixed label `📝 In short:`.
+with the fixed label `📝 In short:` — session-workflow.md Phase 6 carries the template.
+Update and Mockup keep their own completion templates defined in their workflow files.
 
 ## References
 

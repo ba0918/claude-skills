@@ -195,7 +195,7 @@
   },
   "design-guide": {
     "file_sha256": {
-      "skills/design-guide/SKILL.md": "9374d401ac5104b5518458267858aa832b6ec4dc80981f447a8e045e470971cb",
+      "skills/design-guide/SKILL.md": "b61a7e4eafcc3589ec46ee8190162a4ad63c0e40dd5b3f19889541e5a03d90b6",
       "skills/design-guide/fixtures.json": "dd17b40c38c3e77e1c203326cc150737fd43fbae81682f9bf1962354432110f9",
       "skills/design-guide/references/anti-patterns.md": "c6425c16968c81c9c4da81167c8c153e949142a3868aaef39095a7c85fa44ee6",
       "skills/design-guide/references/design-md-template.md": "c7cd973cdc830319577035215de0cb2097c2dad3ba77d27a7075b661390158c3",
@@ -206,8 +206,8 @@
       "skills/design-guide/references/update-workflow.md": "0cdcba65ca5f45739b2af34c5b23de344bebac33e8df1c108a0621b6eb67589b",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "#201 作業4-7: SKILL.md 547→46 行のルータ化 + 4 workflow ファイル分割後の実走。dg-001/dg-003 とも critical 全○（sha256 baseline 比較で無編集を裏取り、外部からの status 照会 0 回）。経路: router→session-workflow→discovery-phases（dg-001）/ router→update-workflow の Pre-check 1 で fail-fast（dg-003）。executor 申告の新規曖昧点 2 件（$ARGUMENTS の扱いが回答代替か参考情報か / multiSelect 上限の強制力）は非 critical で fixture 側課題として記録",
-    "result": "pass",
+    "note": "#201 作業4-7 追補: Codex BLOCK 2 件反映 — ルータの完了報告契約を旧実態どおり Session スコープに限定（過剰拡張の撤回、workflow ファイル本文は不変更）。dg-001/dg-003 の実走 pass（直前の run）の合否に影響する変更ではない",
+    "result": "accepted-without-run",
     "surface": [
       "skills/design-guide/SKILL.md",
       "skills/design-guide/fixtures.json",
@@ -220,7 +220,7 @@
       "skills/design-guide/references/update-workflow.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "3445b7d08f8f6e8cce0dddd9e21dedf9ec98173bfe109f6b988d1129bf8bffbb",
+    "surface_sha256": "5e8b5117c220977a1fc02eba549d65c62c6cf09b8855e23fdc59b653e7c0647e",
     "verified": "2026-08-03"
   },
   "doc-write": {
