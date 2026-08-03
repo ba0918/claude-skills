@@ -108,7 +108,8 @@ Grade each requirement as pass/fail/partial, attach a one-line rationale, and re
 
 ### Phase 3 — Two-sided evaluation
 
-Record the following from the returned results (append to `iterations.jsonl`):
+Record the following from the returned results (append to `iterations.jsonl`, conforming to
+[references/iteration-schema.md](references/iteration-schema.md) — read it before the first append):
 
 **Checker grading (quantitative):**
 - success/failure: success when every `[critical]` requirement passes

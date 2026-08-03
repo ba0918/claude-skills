@@ -244,6 +244,12 @@ Phase 4 (§Important: status.md Write Suppression).
 
 ## Phase 1: Orthogonality Check & Grouping
 
+**Step 1.0 (plan-file mode only)**: Phase 0 was skipped, so its Step 0.0 has not run — take the
+main working tree here per the [Workspace Lock contract](../shared/references/workspace-lock.md),
+before writing any project state or creating worktrees, with the same `LOCK_HELD` /
+`STALE_RECLAIMED` / `UNAVAILABLE` handling and release-on-every-exit rule. Both input modes must
+hold the lock from this point on; skipping Phase 0 never means skipping the lock.
+
 See [references/orthogonality-check.md](references/orthogonality-check.md) for detailed logic.
 
 ### Step 1.1: Extract Affected Files and Dependencies
