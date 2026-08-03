@@ -40,13 +40,12 @@ Field rules:
 - `contract` MUST be `quality-gate-contract`; `contract_version` MUST resolve to the
   published version declared in the canonical contract's §Contract Identity. A version
   that does not resolve is invalid evidence (contract §Contract Identity).
-- `profile` is `null` until a conformance profile is **in force**; once one applies, it
-  becomes `{"name": ..., "version": ...}` and binding extends to the profile version
-  (contract §2). A profile document may be published ahead of taking force (as a forward
-  declaration), but no profile is in force in v1 — taking force requires a profile-aware
-  verifier — so the v1 verifier rejects every non-null `profile` as unresolvable — and
-  therefore invalid — evidence; a profile-aware verifier version will compare name and
-  version exactly instead.
+- The profile-aware verifier mechanically resolves the `profile` rule from the in-force
+  declaration in the repository-root profile file. When the file is absent or contains no
+  declaration, `profile` MUST be `null`; any non-null value is invalid. When a profile is
+  in force, `profile` MUST exactly equal its `{"name": ..., "version": ...}` binding as a
+  JSON object: `null`, missing or extra keys, and a different name or version are invalid
+  (contract §2).
 - `grounds` is required and non-empty: evidence that cannot say what produced it is not
   evidence (the same Iron Law as CONFIRMED in
   [severity-and-verdicts.md](severity-and-verdicts.md)).
@@ -70,15 +69,19 @@ store — `.agents/artifacts/reviews/evidence/` under the v1 defaults of
 
 ```bash
 python3 skills/shared/scripts/evidence_check.py \
-  [--evidence-dir DIR] [--target-sha SHA] [--contract PATH] [--repo-root DIR]
+  [--evidence-dir DIR] [--target-sha SHA] [--contract PATH] [--profile PATH] \
+  [--repo-root DIR]
 ```
 
 - `--evidence-dir` defaults to the artifact-store resolution above; `--target-sha`
   defaults to the repository's current `HEAD`; `--contract` defaults to the canonical
-  contract file in the repository.
-- The verifier always prints what it checked (target SHA, published contract version, and
-  the per-state judgment) — an empty or missing evidence directory is reported explicitly,
-  never passed over.
+  contract file in the repository; `--profile` defaults to
+  `skills/shared/references/skill-repository-profile.md` below the repository root.
+  This placement is adoption: a repository that puts the profile at that path adopts its
+  machine-readable in-force declaration.
+- The verifier always prints what it checked (target SHA, published contract version,
+  resolved in-force profile state, and the per-state judgment) — an empty or missing
+  evidence directory is reported explicitly, never passed over.
 
 Exit codes separate judgment from breakage (a vacuous pass is structurally impossible —
 absent evidence is a *negative judgment*, not a skip):
@@ -86,8 +89,8 @@ absent evidence is a *negative judgment*, not a skip):
 | Exit | Meaning |
 |---|---|
 | 0 | `publishable`: both states hold valid evidence bound to the exact target SHA and the published contract version |
-| 1 | Not publishable: at least one state's evidence is absent, expired (SHA mismatch), or invalid (unresolvable version, malformed record). Reasons are printed per state |
-| 2 | The check itself could not run: contract file unreadable or its version undeclarable, target SHA unresolvable, evidence dir path invalid |
+| 1 | Not publishable: at least one state's evidence is absent, expired (SHA mismatch), or invalid (unresolvable version, malformed record, an in-force profile bound as `null`, or a profile name × version mismatch). Reasons are printed per state |
+| 2 | The check itself could not run: contract file unreadable or its version undeclarable, target SHA unresolvable, evidence dir path invalid, or the profile declaration is unresolvable (conflicting declared versions, a conforming contract version different from the published contract, or an existing profile file that is unreadable) |
 
 Per contract §2, expired and invalid evidence are judged identically to absent evidence
 (exit 1); exit 2 is reserved for the verifier lacking its own preconditions, so automation

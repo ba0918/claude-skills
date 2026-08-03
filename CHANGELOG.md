@@ -356,6 +356,16 @@ claude-skills プラグインのバージョン履歴。
 - `run_checks.sh` の `STRICT_GATES` が「環境欠損 skip」と「空集合 no-op」を区別するようにした。
   従来は翻訳変更を含まない実行で `STRICT_GATES` が構造的に常に失敗していた
 
+### Changed: skill-repository profile を発効し verifier を profile-aware 化する（#221）
+
+- 発効は profile md の機械可読宣言行 1 行で制御し、宣言行の削除で旧挙動へ完全復帰する
+- 発効後は本リポジトリの publish 型遷移の evidence に profile 束縛（name×version 厳密一致）
+  が必須となり、`null` は invalid に反転する
+- evidence writer（`release_tool.py`）も同時に profile 自動充填へ追従する
+- #143 の未決事項「証跡を誰が書くか」は「publish 遷移の実行側が書く（cycle Phase 4 は
+  書かない）」の現行構造を正式裁定として確定する
+- `semantic_reviewed` の ledger 構造化検証は v2 スコープ外を維持する
+
 ## 1.72.0
 
 共有契約 2 本（output-language / execution-context）の新設と、既存スキルの仕様欠落 3 件の

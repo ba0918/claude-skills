@@ -18,19 +18,21 @@ Machine-readable identifier: **`skill-repository-profile 1.0.0`**, conforming to
 §Contract Identity apply unchanged: semantic changes bump the version, editorial changes do
 not, and versions identify **published** states only.
 
-**This profile is published but not yet in force** (the same distinction
-[evidence-format.md](evidence-format.md) draws: a profile document may ship as a forward
-declaration while no profile is in force). "In force" means a profile *applies*
-in the sense of contract §2, which then requires every piece of evidence to bind to the
-profile's version — and the v1 verifier of [evidence-format.md](evidence-format.md)
-deliberately rejects any non-null `profile` field. Requiring this profile's obligations
-while its binding is unrecordable would make valid evidence impossible, so the two are
-coupled: this profile **takes force only when a profile-aware verifier ships** (contract
-§8). Until that moment, no change is judged against this profile; evidence keeps
-`profile: null` and binds to the generic contract alone, and reviews may use this file as
-forward guidance without recording profile conformance. This paragraph is the
-non-contradiction rule, not a loophole — a repository claiming conformance to this profile
-before it is in force is making an unverifiable claim.
+**In force:** `in-force: skill-repository-profile 1.0.0 since 2026-08-03`
+
+This profile took force on 2026-08-03 when the profile-aware verifier
+(`skills/shared/scripts/evidence_check.py`) shipped, satisfying the activation condition
+in contract §8. Taking force extends contract §2 evidence binding to the profile's
+name × version. Every piece of evidence for a publish-type transition in this repository
+therefore requires `{"name": "skill-repository-profile", "version": "1.0.0"}`;
+`profile: null` is invalid. [evidence-format.md](evidence-format.md) defines the current
+profile-aware record and verifier behavior.
+
+The verifier mechanically resolves force from the declaration line in this file at the
+repository-root profile path. A revision that removes that line returns the repository
+fully to the not-in-force behavior: evidence must use `profile: null` and binds only to
+the generic contract. Profile version `1.0.0` remains unchanged because this declaration
+records effectiveness rather than a semantic change to the profile's obligations.
 
 ## Domain Characteristics
 

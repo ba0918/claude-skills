@@ -231,7 +231,7 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 
 - 正本: [quality-gate-contract.md](skills/shared/references/quality-gate-contract.md) — 状態機械（machine_verified ⊥ semantic_reviewed → publishable）・証跡の失効規則・独立性の定義・収束条件
 - 証跡: [evidence-format.md](skills/shared/references/evidence-format.md) + `skills/shared/scripts/evidence_check.py` — publishable 判定の機械検証（証跡不在は否定判定に倒す fail-closed）
-- 適合プロファイル: [skill-repository-profile.md](skills/shared/references/skill-repository-profile.md) — 公開済みだが未発効（発効は profile 対応 verifier の出荷に結合）
+- 適合プロファイル: [skill-repository-profile.md](skills/shared/references/skill-repository-profile.md) — 2026-08-03 発効（profile-aware verifier `evidence_check.py` が in-force 宣言を機械検証）
 - 想起: SessionStart hook によるポインタ注入（インストール節を参照）
 
 ## プロンプト設計方針
