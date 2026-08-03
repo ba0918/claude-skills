@@ -195,24 +195,32 @@
   },
   "design-guide": {
     "file_sha256": {
-      "skills/design-guide/SKILL.md": "77fc7a65e3a3a30878df53adbcbdff4afae4761da04ddca665f0a521b81c6754",
+      "skills/design-guide/SKILL.md": "b61a7e4eafcc3589ec46ee8190162a4ad63c0e40dd5b3f19889541e5a03d90b6",
       "skills/design-guide/fixtures.json": "dd17b40c38c3e77e1c203326cc150737fd43fbae81682f9bf1962354432110f9",
       "skills/design-guide/references/anti-patterns.md": "c6425c16968c81c9c4da81167c8c153e949142a3868aaef39095a7c85fa44ee6",
       "skills/design-guide/references/design-md-template.md": "c7cd973cdc830319577035215de0cb2097c2dad3ba77d27a7075b661390158c3",
+      "skills/design-guide/references/discovery-phases.md": "d70ed0ed5cc07b0684ea507cf0f3d84c8598cf796a94322bbb7ef8c8cfab6b1c",
       "skills/design-guide/references/discovery-questions.md": "1efca8547738730215ccc9dc666cc3b58919c7676166161075f824519ea0fc2e",
+      "skills/design-guide/references/mockup-workflow.md": "8210de37547a6b5300e0572e6177bb2e4e21039273d1b115a11a611c18b806a3",
+      "skills/design-guide/references/session-workflow.md": "d30d2bd659a31b8458274944b45f852700739fc0b85bab918b14f864576ef5d9",
+      "skills/design-guide/references/update-workflow.md": "0cdcba65ca5f45739b2af34c5b23de344bebac33e8df1c108a0621b6eb67589b",
       "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec"
     },
-    "note": "#201 作業4-6 (PR #217): design-scaffold のステージ引数化に伴う Mockup ワークフロー導線 4 行（L329/331/486/487）の指名引数追加のみ。fixtures dg-001（Session compliance probe）/ dg-003（Update fail-fast）は Mockup 経路に非依存で合否基準不変",
+    "note": "#201 作業4-7 追補: Codex BLOCK 2 件反映 — ルータの完了報告契約を旧実態どおり Session スコープに限定（過剰拡張の撤回、workflow ファイル本文は不変更）。dg-001/dg-003 の実走 pass（直前の run）の合否に影響する変更ではない",
     "result": "accepted-without-run",
     "surface": [
       "skills/design-guide/SKILL.md",
       "skills/design-guide/fixtures.json",
       "skills/design-guide/references/anti-patterns.md",
       "skills/design-guide/references/design-md-template.md",
+      "skills/design-guide/references/discovery-phases.md",
       "skills/design-guide/references/discovery-questions.md",
+      "skills/design-guide/references/mockup-workflow.md",
+      "skills/design-guide/references/session-workflow.md",
+      "skills/design-guide/references/update-workflow.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "46c1f7ee433d5666e27e1588c12b03e460c4b93378cf6c2cabc667d67909fc98",
+    "surface_sha256": "5e8b5117c220977a1fc02eba549d65c62c6cf09b8855e23fdc59b653e7c0647e",
     "verified": "2026-08-03"
   },
   "doc-write": {
