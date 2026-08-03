@@ -552,15 +552,15 @@
       "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
-      "skills/skill-regression/scripts/ledger.py": "464ba2d510fd77fa77f8045fe2eaf75a367b972688b1212869bd9b47176ec03c",
+      "skills/skill-regression/scripts/ledger.py": "4db94c455ea36f02d03d9554afd2a633de2c8490a08634d8409f3887b46f9d76",
       "skills/skill-reviewer/SKILL.md": "1dae27c5e1048d50e76925ce8d7b1760019bf5ee984a881cdba68630d5da5e31",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "8b22969de41d90187b9d02987ac8bd4691a2f42fa4d17d1e7607a4327ece05bc",
       "skills/skill-reviewer/references/output-contract.md": "f5e6e2ad5b0173899bcaa5b6f2d060dc3c95bdfaee484d7f7e146f17f11fe46a",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "#182 fix-warn 後の再 accept: 直前 run (3/3 pass) との差分は evidence-and-coverage.md の写像規則明記（散文）と ledger.py のコメント+定数抽出（挙動不変）のみ",
-    "result": "accepted-without-run",
+    "note": "#182 最終 surface (810b6b1) で 3/3 pass（実測 executor は低単価 tier）。accepted-addition リテラルを決定表へ足した変更（機械パーストークン）を run で検証 — 再レビュー cc-1 指摘に従い acceptance を run pass で上書き。sr-002 は初回 executor が対象パスをスキル本体リポジトリ側で解決する前提ズレで無効化し、環境節明示で再走 pass（bf-001/006 と同型の観測 3 例目）",
+    "result": "pass",
     "surface": [
       "skills/shared/references/coverage-ledger.md",
       "skills/shared/references/fix-action-taxonomy.md",
@@ -574,7 +574,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "ef4d9ff988f876f3553eed84a3a6d2b2153c8245d3dbe19a74d4c9078d44a0f3",
+    "surface_sha256": "f7bbd5f000b24b524d2faf4e440009d4042da5c906fd5338c9896fa68bc82f11",
     "verified": "2026-08-03"
   },
   "sweep-fix": {
