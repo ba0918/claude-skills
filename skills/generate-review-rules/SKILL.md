@@ -5,7 +5,7 @@ description: Analyze a project's CLAUDE.md, documentation, and code structure, a
 
 # Generate Review Rules
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Analyze the project's documentation and code structure to generate project-specific review rules in `.agents/config/review-rules.md` for use with plan-reviewer and code reviews.
 

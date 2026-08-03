@@ -211,7 +211,7 @@ requires a definition of the population, is not handled in v1, and **completenes
   **by count only, separately** in the summary. Bindings / observations referencing a tombstone
   are not dangling and are excluded from aggregation.
 - **drafts** (under `.agents/artifacts/spec-verify/drafts/`, conforming to the
-  [artifact-store contract](../../shared/references/artifact-store.md)) are **outside
+  [artifact-store consumer contract](../../shared/references/artifact-paths.md)) are **outside
   `trace_matrix`'s search scope** (the scripts read only under `specs/`). When a draft directory
   exists, only the **file count** is listed separately in the summary (the contents are not
   parsed — so unapproved clauses never enter the aggregation).

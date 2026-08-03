@@ -5,7 +5,7 @@ description: Record and elicit architecture and technology-selection decisions i
 
 # Decision Journal
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Record and interview architecture and technology decisions as a body of case law.
 The skill does not recommend what to decide; it is limited to **rejecting bad bets up front

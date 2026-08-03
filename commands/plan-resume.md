@@ -2,7 +2,7 @@
 description: "前セッションの plan 作業を引き継ぐ"
 ---
 
-Artifact paths follow the [Agent Artifact Store contract](../skills/shared/references/artifact-store.md).
+Artifact paths follow the [Artifact Store consumer contract](../skills/shared/references/artifact-paths.md).
 
 `plan` スキルの **Resume** ワークフローを実行する。
 

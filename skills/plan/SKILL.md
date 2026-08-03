@@ -5,7 +5,7 @@ description: Create timestamped implementation plans from brainstorm agreements.
 
 # Plan
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Create implementation plans with timestamp-based filenames and automatic project status tracking. A plan is the record of agreed-upon implementation steps — not a proposal or approval document. Design and specification decisions are made in brainstorm; the plan captures how to implement them.
 

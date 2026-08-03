@@ -5,7 +5,7 @@ description: Run follow-up instructions after a cycle completes, through a size-
 
 # Iterate
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Skill that auto-determines task size for additional instructions after a cycle, then runs the appropriate improvement loop.
 

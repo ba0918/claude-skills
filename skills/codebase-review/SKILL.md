@@ -11,7 +11,7 @@ Review the entire codebase with 4 specialized agents + Codex second opinion in p
 
 **Headless execution**: Do not prompt the user for confirmation. All agents run autonomously. If a review agent fails, continue with the remaining agents (graceful degradation).
 
-**Report placement**: Review reports contain internal vulnerability details and must never be committed. The final report goes to `.agents/artifacts/reviews/` per the [Agent Artifact Store contract](../shared/references/artifact-store.md) (Git-ignored local store), never under `docs/`.
+**Report placement**: Review reports contain internal vulnerability details and must never be committed. The final report goes to `.agents/artifacts/reviews/` per the [Artifact Store consumer contract](../shared/references/artifact-paths.md) (Git-ignored local store), never under `docs/`.
 
 ## Progress Checklist
 
@@ -285,7 +285,7 @@ Do not include any other text in your final response.
 After confirming the integration agent has completed:
 
 1. Read `{work_dir}/summary.txt` and print it to the console verbatim
-2. Copy it with shell commands (if the store is not initialized yet, guarantee the ignore rule first — the lazy initialization in the [artifact-store contract](../shared/references/artifact-store.md)):
+2. Copy it with shell commands (if the store is not initialized yet, guarantee the ignore rule first — the lazy initialization in the [artifact-store consumer contract](../shared/references/artifact-paths.md)):
    ```bash
    grep -qxF '/.agents/artifacts/' .gitignore 2>/dev/null || printf '\n# Agent Artifact Store\n/.agents/artifacts/\n' >> .gitignore
    mkdir -p .agents/artifacts/reviews && cp {work_dir}/report.md .agents/artifacts/reviews/review-{YYYYMMDD-HHMM}.md

@@ -5,7 +5,7 @@ description: Scan every artifact under docs (ideas, issues, cycles, session-hist
 
 # Doc Audit
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Skill that scans all documentation artifacts within the project and detects/fixes inconsistencies between them.
 

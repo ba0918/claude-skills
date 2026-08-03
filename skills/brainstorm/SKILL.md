@@ -5,7 +5,7 @@ description: The entry point for specification and design decisions. Spar on ide
 
 # Brainstorm
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 The entry point for specification and design decisions. Discussion only during the session — the agent never drifts into implementation. On wrap, the session outcomes are structured into an exit contract that routes agreements to their proper destinations (ledger, docs, clauses, plan).
 

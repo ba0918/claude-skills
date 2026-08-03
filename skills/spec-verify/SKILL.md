@@ -96,7 +96,7 @@ The first argument branches the workflow:
    What the user reviews is not the JSON but "whether the concrete examples match the intent".
 4. **Approval protocol**: the choices are the 3 options **approve all / revise per clause / defer**.
    In headless execution, save the draft under `.agents/artifacts/spec-verify/drafts/`
-   (conforming to the [artifact-store contract](../shared/references/artifact-store.md); outside the
+   (conforming to the [artifact-store consumer contract](../shared/references/artifact-paths.md); outside the
    search scope of lint / trace. The path is **relative to {project_root}** and may be lazily created
    directly under project_root even in a project outside git), and **do not canonicalize until approved**.
    The draft filename is `<scope slug>-<yyyymmddhhmmss>.json`. **Slug normalization rule**:

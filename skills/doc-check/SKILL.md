@@ -5,7 +5,7 @@ description: Verify that project documentation (README.md, CLAUDE.md, API docs, 
 
 # Doc Check
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Skill that verifies consistency between documentation and the codebase, and auto-fixes discrepancies.
 

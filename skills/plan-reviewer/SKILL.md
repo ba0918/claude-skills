@@ -5,7 +5,7 @@ description: Review implementation results across 7 dimensions (correctness, sec
 
 # Plan Reviewer
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Review implementation results against the agreed specification. Findings are classified into two categories for escalation:
 - **Local fix**: bugs, convention violations, test gaps → fix in the implementation loop

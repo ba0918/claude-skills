@@ -5,7 +5,7 @@ description: The loop hub skill that detects repository problems with sensors (v
 
 # Loop Triage
 
-Artifact paths follow the [Agent Artifact Store contract](../shared/references/artifact-store.md). Resolve and validate the store before reading or writing artifacts.
+Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
 Supply the findings detected by the sensors into the polling queue safely and without human intervention.
 **Shared contract (required reading, direct link):** [../shared/references/loop-engineering.md](../shared/references/loop-engineering.md)

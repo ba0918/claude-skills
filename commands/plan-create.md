@@ -2,7 +2,7 @@
 description: "タイムスタンプ付き実装計画を新規作成する"
 ---
 
-Artifact paths follow the [Agent Artifact Store contract](../skills/shared/references/artifact-store.md).
+Artifact paths follow the [Artifact Store consumer contract](../skills/shared/references/artifact-paths.md).
 
 `plan` スキルの **Plan作成** ワークフローを実行する。
 
