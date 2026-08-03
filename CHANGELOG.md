@@ -21,6 +21,11 @@ claude-skills プラグインのバージョン履歴。
   （judge 裁定 C 案）: 再委譲も不適合なら findings は制御用途（fix loop / auto-fix / stop）
   には全破棄し、Phase 5 記録へ生データ添付のみ。部分利用（現行）は検証器が塞いだ経路の
   迂回路になり、全破棄（Codex 案)は制御経路遮断後に安全性を追加しない情報損失のため両却下
+- 裁定 C のフォールバック経路を cy-020 として `skills/cycle/fixtures.json` に固定。
+  validator 不適合と生 findings（qualification_reason なき BLOCK / AUTO_FIX 付き診断という
+  検証器が塞ぐ最悪ケース）を注入で再現し、再委譲 1 回 → 制御用途全破棄 → 記録添付で続行を
+  critical 要件で測る。登録とセットで cycle 全 20 シナリオを実走し regression ledger を
+  pass 更新（合否基準の変更は実走で検証する原則に従う）
 
 ### Added: cycle cy-019 — diagnostics 不干渉（C1）の実走 fixture 登録（#202）
 
