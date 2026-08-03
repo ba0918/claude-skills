@@ -1,6 +1,6 @@
 # Attack Criteria
 
-Attack checklist referenced by attack-review agents. Each agent reads its assigned section and investigates the corresponding attack vectors.
+Index of the attack checklists referenced by attack-review agents. Each agent loads only its own criteria file (table below) and investigates the corresponding attack vectors.
 All checks are performed from an **attacker's perspective**. The question is not "Is this defense sufficient?" but rather "How do I break through?"
 
 ## Risk Matrix
