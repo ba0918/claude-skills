@@ -276,9 +276,9 @@
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
-      "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb"
+      "skills/skill-regression/scripts/ledger.py": "2e12e8d0f4c467b0c451d968048562190ccd2027b520a5ff35331d128fce0e80"
     },
-    "note": "#169 run: 8/8 pass（実測 executor は低単価 tier）。gi-001/gi-003 は fixture 前提『gh 未認証』が実環境では認証済みという齟齬あり（要件は認証状態に非依存で判定影響なし）。報告未着の状況照会 4 回（gi-003/gi-004/gi-006/gi-008、いずれも再送で回収）",
+    "note": "#182 run: 8/8 pass（実測 executor は低単価 tier）。ledger.py の severity 導入（contract-change 判定の発生源）を含む surface で全シナリオ再実走。gi-001 の tick は adapter CLI + 疑似コードトレースで実施（単一 tick コマンドは設計上存在しない）",
     "result": "pass",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -306,7 +306,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "b5c55791e1c8f7e78874fa75bb0fbe86dde11004197c9dfd6c1e64814105f216",
+    "surface_sha256": "b80cb10c5176c70d24c6c6697b269a505242f9dcbaf93b81c364133db3dab418",
     "verified": "2026-08-03"
   },
   "handoff": {
@@ -552,15 +552,15 @@
       "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
-      "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb",
+      "skills/skill-regression/scripts/ledger.py": "2e12e8d0f4c467b0c451d968048562190ccd2027b520a5ff35331d128fce0e80",
       "skills/skill-reviewer/SKILL.md": "1dae27c5e1048d50e76925ce8d7b1760019bf5ee984a881cdba68630d5da5e31",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "038a929b9af70186414aa747477e5feb647b23312545fa224670de53dc54a2a6",
       "skills/skill-reviewer/references/output-contract.md": "f5e6e2ad5b0173899bcaa5b6f2d060dc3c95bdfaee484d7f7e146f17f11fe46a",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "#201: 総ロード予算を ~400/~1000 二重閾値から 1 経路 ~500 単一閾値へ改定 + Load-reduction patterns 5 種追記（追補: パターン4 の文言をアンカー警告回避で調整、意味変更なし）。fixtures sr-001..003 はチャネル規律を検証し数値非依存を確認済み",
-    "result": "accepted-without-run",
+    "note": "#182 run: 3/3 pass（実測 executor は低単価 tier）。誤 BLOCK ゼロの oracle 2 本と正例 BLOCK 1 本の両方向を確認、出力は全件 validate_review_output.py 適合",
+    "result": "pass",
     "surface": [
       "skills/shared/references/coverage-ledger.md",
       "skills/shared/references/fix-action-taxonomy.md",
@@ -574,7 +574,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "d3dc50cd2b35bfe07591d99371d71f0751c3275289ce2583c08e8f141ebb5ca7",
+    "surface_sha256": "758f3f55912eb685d57de03dda8448c899794a820b12969e251b1683345d233f",
     "verified": "2026-08-03"
   },
   "sweep-fix": {
