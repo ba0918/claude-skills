@@ -69,6 +69,16 @@ case "$2" in
     rm -f "$FAKE_DIR/release"
     ;;
   create)
+    prev=""
+    for arg in "$@"; do
+      if [ "$prev" = "--target" ]; then
+        grep -qxF "$arg" "$FAKE_DIR/remote_shas" 2>/dev/null || {
+          echo "fake: target commitish $arg is not reachable on the remote" >&2
+          exit 1
+        }
+      fi
+      prev="$arg"
+    done
     echo "true" > "$FAKE_DIR/release"
     ;;
   edit)
@@ -134,7 +144,13 @@ class ReleasePublishTest(unittest.TestCase):
             return handle.read().strip()
 
     def test_fresh_release_completes_draft_before_any_push(self):
-        """新規リリースは draft 完成 → atomic push → publish の順で完走する。"""
+        """新規リリースは draft 完成 → atomic push → publish の順で完走する。
+
+        fake gh の release create は、リモート未到達の commitish を --target に
+        受け取ると失敗する。fixture は HEAD をリモート到達済みに登録しない
+        （changed=true の初回経路: release commit は draft 作成時点で未 push）ため、
+        このテストの完走自体が「draft 作成が未 push SHA を参照しない」ことの検証になる。
+        """
         proc = self._run()
 
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -144,8 +160,26 @@ class ReleasePublishTest(unittest.TestCase):
         edit = next(i for i, c in enumerate(calls) if c.startswith("gh release edit"))
         self.assertLess(create, push)
         self.assertLess(push, edit)
+        self.assertNotIn("--target", calls[create])
         self.assertIn("--atomic origin HEAD:main refs/tags/v1.73.0", calls[push])
         self.assertEqual(self._release_state(), "false")
+
+    def test_fake_gh_rejects_unpushed_target_commitish(self):
+        """fake gh 自体の検出力: リモート未到達 SHA の --target は create を落とす。
+
+        本体が --target を復活させる回帰をテストが検出できることの自己検証。
+        """
+        env = dict(os.environ)
+        env["PATH"] = self.bin_dir + os.pathsep + env["PATH"]
+        env["FAKE_DIR"] = self.fake_dir
+        proc = subprocess.run(
+            ["gh", "release", "create", "v1.73.0", "--draft", "--target", HEAD_SHA],
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("not reachable", proc.stderr)
 
     def test_draft_failure_leaves_nothing_public(self):
         """draft 作成が失敗したら push は走らず、公開物ゼロで失敗する。"""

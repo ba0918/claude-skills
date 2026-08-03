@@ -61,9 +61,13 @@ if is_draft="$(gh release view "$TAG" --json isDraft -q .isDraft 2>/dev/null)"; 
 fi
 
 # --- 3) draft Release を asset 込みで完成させる（失敗しても公開物ゼロ） ---
+# --target は渡さない: changed=true の初回経路では release commit（HEAD）が
+# まだ push されておらず、リモートで解決できない commitish を draft 作成時に
+# 参照すると失敗する。publish（5）はタグの atomic push 後にしか走らず、タグが
+# 既に存在する Release では target_commitish は未使用（GitHub 仕様）のため、
+# 束縛は常に既存タグ = TARGET_SHA 経由で決まる。
 gh release create "$TAG" \
   --draft \
-  --target "$TARGET_SHA" \
   --title "$TAG" \
   --notes-file "$NOTES_FILE" \
   "$@"
