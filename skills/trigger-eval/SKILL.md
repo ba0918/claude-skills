@@ -35,7 +35,7 @@ The detailed contracts for judging and aggregation are split into reference mate
 - Case design guidelines: [references/testcase-design.md](references/testcase-design.md)
 - The strict definition of the metrics: [references/metrics-spec.md](references/metrics-spec.md)
 
-For the general rules on countering bias see `skills/shared/references/codex-integration.md`, and for the model tiers of subagent invocation see `skills/shared/references/orchestration-patterns.md` (do not restate them).
+For the general rules on countering bias see `skills/shared/references/codex-integration.md` (do not restate them). Subagent invocations state a high-capability model explicitly — judging work has no verification gate, so never let it fall to a default cheap tier (model-tier provenance: `skills/shared/references/orchestration-patterns.md`, quoted here; not read at runtime).
 
 ## Workflow
 

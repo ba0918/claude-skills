@@ -81,9 +81,17 @@ With `--dry-run`, present a per-route summary here and stop.
 
 ### Step 5: enqueue (route = "enqueue" only)
 
-For each enqueue target, generate an issue following [the Slug definition of issue](../issue/SKILL.md#slug-definition):
+For each enqueue target, generate an issue:
 
-1. slug: `{yyyymmddhhmmss}_{suggested_title kebab-cased in English}` (non-ASCII is translated to English by meaning)
+1. slug: `{yyyymmddhhmmss}_{kebab-title}` from suggested_title (timestamp via `date +%Y%m%d%H%M%S`).
+   Strip path separators and special characters (`/`, `..`, `\`), then kebab-case (spaces → hyphens,
+   lowercase, keep only `[a-z0-9-]`). For a non-ASCII title produce a meaning-based English kebab-title
+   (transliteration or translation, whichever yields a readable identifier — never romanize
+   character-by-character), then apply the ASCII rules above; if the result is empty use
+   `untitled-{short_hash}` (first 8 hex of `echo -n "$title" | sha1sum`). The conversion applies to the
+   slug only — the template's title field keeps the original wording. (Provenance:
+   [the Slug definition of issue](../issue/SKILL.md#slug-definition) and its Create Workflow step 5,
+   quoted in full here; not re-read at runtime for this rule.)
 2. Create `.agents/artifacts/issues/ready/{slug}.md` conforming to [issue-template](../issue/references/issue-template.md), with
    the frontmatter as follows:
    ```yaml
@@ -94,8 +102,9 @@ For each enqueue target, generate an issue following [the Slug definition of iss
    The body's overview = what + why, and the notes = the acceptance condition (a way to confirm mechanically that the finding is resolved; for example, that the finding_id disappears when the sensor is re-run)
 3. Add a row to `.agents/artifacts/issues/issue-status.md` (create it from the issue skill's template if it does not exist.
    Match the Issue column's link to the real file location, `ready/{slug}.md`, rather than leaving the template's example path.
-   Use the finding's what (its first sentence) for the Summary column. The escaping rules for pipes and newlines follow
-   [issue SKILL.md](../issue/SKILL.md) Create Workflow Step 7).
+   Use the finding's what (its first sentence) for the Summary column. Escape it: replace every literal `|` with `\|`
+   and every newline with a single space; do not truncate (provenance: [issue SKILL.md](../issue/SKILL.md)
+   Create Workflow Step 7, stated in full here; not read at runtime).
 
 Run the whole text through a secret check before writing it out — `skills/shared/scripts/secret_detect.py` is
 a module without a CLI, so import `detect_secrets` and apply it

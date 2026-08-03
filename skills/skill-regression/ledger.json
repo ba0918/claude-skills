@@ -245,7 +245,7 @@
   },
   "github-issue": {
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "6b3b8f13f5c36183c0058db996b2b3f07f3eb594a0bc0de9540a3ba64c6b89ae",
+      "skills/github-issue/SKILL.md": "7047d583e0d2e82252b23ef55adb6a413975751a93b50cbabc0df7b8c8ba0bbd",
       "skills/github-issue/fixtures.json": "ba5c2b7c8cdf313cd16caa43a7f90e09130834a81a960275b9db92d64fa1d279",
       "skills/github-issue/references/cleanup-spec.md": "5133b196d6df014e23f9a581064084719e761bb15c8630f978a7f24fc47f82ff",
       "skills/github-issue/references/codex-review-loop.md": "715d028c6561e3ec4b08f28605075c80d3bfe56728b10f32c6750a273ed5f6cd",
@@ -264,7 +264,7 @@
       "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
       "skills/skill-regression/scripts/ledger.py": "2e087336c5b851e0988d118cae637e6b470db33a14c03b4d782630e798609bcb"
     },
-    "note": "#201: line-8 参照の consumer contract 化のみ。worktree-artifact-transport fixture は worktree-cycle.md 経由で全文契約に到達可能なまま",
+    "note": "#201 作業4-1: quote-not-load 適用。規則本文は一字不変でインライン引用 + provenance マーカー化のみ（実行時ロード対象から外しただけ）。fixtures の要件文が該当規則の記述位置に依存しないことを grep で確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -286,7 +286,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "c454684ec9f0aa5eef7708cdee4b05c8cc1b6356d867ab8d87b2d9ae28b41977",
+    "surface_sha256": "8f5569105df1095d69efb503a969e04659660efc7bd840dc183f3cbb3a6334d5",
     "verified": "2026-08-03"
   },
   "handoff": {
@@ -329,7 +329,7 @@
   },
   "issue": {
     "file_sha256": {
-      "skills/issue/SKILL.md": "700b55a7cf50b78b3b41b850e0239eb329a83c574b4bed0bda6eefb798f21350",
+      "skills/issue/SKILL.md": "e5504927662f1d80435c9634269c6ab748ccdf3358696c2a756e9f6a1de7b906",
       "skills/issue/fixtures.json": "40065f95ee8d35d14806fcc5a922fb9525d75658cac163cd9fc0c8d1ca894ad7",
       "skills/issue/references/issue-template.md": "6c27174d5b7b8c6fa00b66b69d4a90df0c38af36ebf8c3b90fcef78c57a0715f",
       "skills/issue/references/polling-state-machine.md": "7c65e6079934335d3a891e49c798e2a8761ce443dc63b6f1600be21a96131d70",
@@ -340,7 +340,7 @@
       "skills/shared/references/measurement-identity.md": "ca9b62e1e911e69d585c789023add424a7da0d40a8569eeb72012d683429b103",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
+    "note": "#201 作業4-1: quote-not-load 適用。規則本文は一字不変でインライン引用 + provenance マーカー化のみ（実行時ロード対象から外しただけ）。fixtures の要件文が該当規則の記述位置に依存しないことを grep で確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/issue/SKILL.md",
@@ -354,7 +354,7 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "3f844137a5538e7038039b03ec0aab5a0d8d87f582ad3210c7a69528d99f7fa1",
+    "surface_sha256": "d820b12fd330ca617495aa36abd8ea6b6027a7c0906987192952de6fdbc6a243",
     "verified": "2026-08-03"
   },
   "iterate": {
@@ -455,7 +455,7 @@
   },
   "plan-reviewer": {
     "file_sha256": {
-      "skills/plan-reviewer/SKILL.md": "dc5f18a756d10b5f3efd7e78229a480560d54ad819fae0073d2436d7bdb5c277",
+      "skills/plan-reviewer/SKILL.md": "dbdbf9c82d37ac8bb23635a06c07cf99932bf5af87ecbd7b9f796497118dfa16",
       "skills/plan-reviewer/fixtures.json": "2cc32f3bd853aa54ec6c192d4fb3f7467e64fa429bc47200363b61865f939b0e",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan-reviewer/references/review-dimensions.md": "326db4f76dda4577fdea158b4967c0aefc9fe9fe7cd2569321e3d078e35c033c",
@@ -465,7 +465,7 @@
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c"
     },
-    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
+    "note": "#201 作業4-1: quote-not-load 適用。規則本文は一字不変でインライン引用 + provenance マーカー化のみ（実行時ロード対象から外しただけ）。fixtures の要件文が該当規則の記述位置に依存しないことを grep で確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/plan-reviewer/SKILL.md",
@@ -478,7 +478,7 @@
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md"
     ],
-    "surface_sha256": "8c7bc5f9845d18403ee4106c2ef5217f22d31a68f61eeb58fb3be19757174ec5",
+    "surface_sha256": "1bc880d4e4fb3bc6fc8af74080c9d2ebe41d72c472ae491f95feb508edf064f4",
     "verified": "2026-08-03"
   },
   "problem-solving": {
@@ -563,12 +563,12 @@
       "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/sweep-fix/SKILL.md": "03c5f2beedfef324c844c8fa06eaed3d1d672fef9d6a103c00593d7d7b07c465",
+      "skills/sweep-fix/SKILL.md": "bc33d9ab675fac2e4a502371a840083b0f4970315020f8189582b04c57182806",
       "skills/sweep-fix/fixtures.json": "5406b7dba570b6294cdd9e978fc618eb2fa8c0e504ef014438853e37d0338b88",
       "skills/sweep-fix/references/context-verification.md": "1e835b97a51ea34723c6b20f23a16b0c3e690a32316208dd0a1ec91c50b07104",
       "skills/sweep-fix/references/pattern-extraction.md": "9f4c15f68c82b80c7d97ee28010270f6adbd65266bf7df1ca980f7871364ffa8"
     },
-    "note": "severity-and-verdicts への OPPORTUNITY 1 行追加と skill-reviewer 方言節の追加のみが surface 差分。方言は BLOCK の入場条件を skill-reviewer 側でのみ狭める規則で、既存 4 値の意味と本スキルが読む分岐を変えないため実走せず accept",
+    "note": "#201 作業4-1: quote-not-load 適用。規則本文は一字不変でインライン引用 + provenance マーカー化のみ（実行時ロード対象から外しただけ）。fixtures の要件文が該当規則の記述位置に依存しないことを grep で確認済み",
     "result": "accepted-without-run",
     "surface": [
       "skills/shared/references/execution-context.md",
@@ -580,7 +580,7 @@
       "skills/sweep-fix/references/context-verification.md",
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
-    "surface_sha256": "3d03ca13cdc0b2d1138b76eba9f00f0bd709f9e640ebc409a91f0f8a2bf6bf83",
+    "surface_sha256": "6c28b37471452c0b576dd90ed81ed096f6c3114383cb7a9de6699b1fb252442b",
     "verified": "2026-08-03"
   },
   "systematic-debugging": {

@@ -66,7 +66,7 @@ The LLM evaluates the SI-C\* rules. Keep this clearly separate from Phase 1.
 2. **"Not applicable" is a legitimate state**: a read-only skill (investigate) needs no side-effect declaration, and a single-workflow skill needs no delegation conditions. If you can judge that "given this skill's nature, this contract element is unnecessary", it is a PASS
 3. The criterion is not "does the section exist" but "**could an LLM misunderstand this point and cause an accident**"
 4. Every finding is REPORT\_ONLY. Include a patch candidate (a draft of the concrete text to add) in `fix_draft`
-5. A patch candidate is capped at NEEDS\_JUDGMENT and is **never applied automatically** ([fix-action-taxonomy.md](../shared/references/fix-action-taxonomy.md): semantic rewriting of a body must not be AUTO\_FIX)
+5. A patch candidate is capped at NEEDS\_JUDGMENT and is **never applied automatically** — semantic rewriting of a body must not be AUTO\_FIX (provenance: [fix-action-taxonomy.md](../shared/references/fix-action-taxonomy.md) — this cited rule is quoted in full here, so do not re-read the file for this step; the reference stays available for the three-value definitions)
 
 ### Phase 3: Aggregate and bridge
 
