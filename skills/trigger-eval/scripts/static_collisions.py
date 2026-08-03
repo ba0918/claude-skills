@@ -2,11 +2,16 @@
 """
 trigger-eval: Static collision pre-pass.
 
-Ranks description pairs by lexical Jaccard similarity to surface
-collision candidates. Pure functions, no LLM. Used for:
-  (a) defining "adjacent" skills for hard-negative case generation,
-  (b) rework prioritization,
-  (c) surfacing self-evident merge candidates without a judge round.
+Ranks description pairs by lexical Jaccard similarity. Pure functions, no LLM.
+Used ONLY for defining "adjacent" skills for hard-negative case generation.
+
+Not a predictor of measured confusion: in the 2026-07-27 run (188 cases) the
+top 3 pairs by this ranking had zero confusion while the only confused pair
+ranked 7th (#81). Confusion comes from missing discriminating information,
+which vocabulary set operations cannot see — so this ranking must not drive
+revision priority or merge-candidate nomination. Hard-negative generation
+survives because it needs pairs that *look* confusable, not pairs that
+*are* confused.
 """
 
 import argparse

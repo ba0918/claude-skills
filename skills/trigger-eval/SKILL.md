@@ -70,7 +70,7 @@ python3 skills/trigger-eval/scripts/static_collisions.py \
   --output .agents/tmp/trigger-eval-{ts}/collisions.json
 ```
 
-The top pairs are used for (a) defining the "neighboring skills" for hard-negative generation, (b) prioritizing revisions, and (c) obvious merge candidates that need no judging.
+The top pairs are used **only** for defining the "neighboring skills" for hard-negative generation. Do not use the ranking to prioritize revisions or to nominate merge candidates: the 2026-07-27 measurement (188 cases) showed the top 3 static pairs had zero measured confusion while the only confused pair ranked 7th — lexical overlap does not predict confusion (confusion comes from missing discriminating information, which set operations on vocabulary cannot see; #81). Hard-negative material needs pairs that *look* confusable, not pairs that *are* confused, so that use survives.
 
 ### Phase 2: Generate the test cases and freeze them in advance
 
@@ -139,7 +139,7 @@ Emit to `.agents/tmp/trigger-eval-{ts}/report.md`:
 - The metric trajectory / the top confusions (**only the non-zero cells and the top N pairs, not a full matrix dump**, listing both the raw value and the normalized rate `confusion(A,B)/related_cases(A,B)`)
 - **The selection / autonomous modes side by side** (selection only under `--selection-only`). Place selection as the primary metric and autonomous as a reference series, and note the divergence between them as a salience signal. **Never emit a mixed value**
 - The revision diffs / the Tier1↔Tier2 divergence rate / the holdout judgment
-- **Candidate pairs for merging or redesigned separation** (the top of the static pre-pass, plus pairs whose confusion does not resolve after two revisions)
+- **Candidate pairs for merging or redesigned separation** (only pairs whose measured confusion does not resolve after two revisions — never the static pre-pass ranking, which does not predict confusion; #81)
 - Execution metadata (the judging model / the date / the sha256 of `cases.json` and `cases_holdout.json` / the stability sample ledger)
 
 **What is retained is report.md / cases.json / cases_holdout.json / the metrics JSON of each iteration** (the anchors for reproduction and cross-run comparison). **The harvest files containing raw prompt bodies (the `--capture-prompts` output) are deleted.** Prompt deletion of `trigger-eval-*` directories older than 30 days. The failure examples put into report.md are **only cases that passed the anonymization inspection** (transcribing a raw seed is forbidden).
