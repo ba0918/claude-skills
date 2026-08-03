@@ -34,8 +34,11 @@ runs the regression evaluation only against the skills whose behavior surface ch
 - When judging without running that "this change does not affect behavior", use `--update <skill> --accept`.
   It is recorded explicitly in the ledger as an acceptance, leaving a trace of the judgment (distinguishable from ignoring it).
   Which value gets recorded is decided by the machine, not by the operator: `accepted-addition` when it can confirm the
-  behavior surface only gained files on top of a real run's `pass`, and `accepted-without-run` whenever it cannot.
-  A self-declared "it was a light change" would leave an unbacked claim in the ledger, so the flag does not let you choose
+  behavior surface only gained files on top of a real run's `pass`, `accepted-prose` when it can confirm every changed
+  file is an existing md whose machine-parsed tokens (frontmatter, code fences, inline code, link targets, tables,
+  headings) are untouched — again only on top of a real run's `pass` — and `accepted-without-run` whenever it cannot
+  confirm either. A self-declared "it was a light change" would leave an unbacked claim in the ledger, so the flag does
+  not let you choose
 
 ## Workflow selection
 
@@ -61,7 +64,7 @@ runs the regression evaluation only against the skills whose behavior surface ch
 4. **Record in the ledger**: `python3 {skill_dir}/scripts/ledger.py --update <skill> {repo_root}`
 5. **Append a measurement event**: because the ledger holds only the latest entry, append the history of verification events
    following [measurement-identity.md §4](../shared/references/measurement-identity.md#4-mapping-table-for-the-existing-systems):
-   `python3 skills/shared/scripts/measurement_identity.py emit --system skill-regression --event verification --skill <skill> --repo-root {repo_root} --outcome '{"result":"pass","scenarios":N}'` (with `--accept`, use whichever value the ledger actually recorded — `"result":"accepted-addition"` or `"result":"accepted-without-run"`)
+   `python3 skills/shared/scripts/measurement_identity.py emit --system skill-regression --event verification --skill <skill> --repo-root {repo_root} --outcome '{"result":"pass","scenarios":N}'` (with `--accept`, use whichever value the ledger actually recorded — `"result":"accepted-addition"`, `"result":"accepted-prose"` or `"result":"accepted-without-run"`)
 
 ## run — regression evaluation
 
@@ -106,8 +109,10 @@ runs the regression evaluation only against the skills whose behavior surface ch
   for every tracked skill
 - `--check` is the same judgment as CI (exit 1 if there is any issue). Clean up orphans with `--remove <skill>`.
   Each `[stale]` line carries a severity: `[contract-addition]` when the machine could confirm the surface only gained
-  files, and `[contract-change]` in every other case. Read it as triage, not as permission —
-  `contract-addition` still has to be resolved, only with `--accept` as a defensible option
+  files from inside the skill's own directory, `[prose-change]` when it could confirm the only modifications are to the
+  prose of existing md files (machine-parsed tokens untouched), and `[contract-change]` in every other case. Read it as
+  triage, not as permission — `contract-addition` and `prose-change` still have to be resolved, only with `--accept` as
+  a defensible option
 - `--coverage` displays **the denominator of what is tracked at all** as covered / exempt / uncovered.
   Because `--check` is an opt-in gate that looks only at skills holding a fixture, "skills with no fixture written"
   do not enter the count even when everything passes. The two answer different questions:
@@ -143,8 +148,9 @@ The philosophy of this gate is not to stop drift but to **make only ignoring it 
 ## Red flags
 
 - The ledger's `result` is nothing but `accepted-without-run` (a sign that run has become a formality).
-  `accepted-addition` does not count toward this signal. What remains under `accepted-without-run` is a superset of
-  the acceptances a human waved through — the cases the machine could not confirm either way land there too
+  `accepted-addition` and `accepted-prose` do not count toward this signal. What remains under `accepted-without-run`
+  is a superset of the acceptances a human waved through — the cases the machine could not confirm either way land
+  there too
 - The same skill's fixture is rewritten repeatedly in a short span as "obsolete"
 - The run report does not state which critical items failed
 - CI's `[stale]` is being piled onto main instead of resolved within the PR
