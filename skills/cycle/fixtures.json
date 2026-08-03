@@ -762,6 +762,55 @@
         }
       ],
       "notes": "受入基準 C1（brainstorm exit contract A1/A4）の固定。診断チャネルが cycle の 3 つの状態遷移（自動修正・再レビュー・headless 停止）のいずれにも入らないことを測る。plan-reviewer 経路の WARN は Step 2b で auto-fix され未解決なら headless 停止するため、同じ WARN という語で経路が分岐することがこのシナリオの争点になる。スキル成果物のみを変更する plan にしてあるのは、Step 0.5 のルーティングが混在分岐へ落ちないようにするため。"
+    },
+    {
+      "id": "cy-020",
+      "title": "Phase 3 skill-reviewer — validator 不適合レビューは再委譲 1 回後に制御用途全破棄で続行",
+      "source": "manual:issue-203",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
+          "CLAUDE.md": "# skill-artifact-test\n\nスキル成果物のみを変更するリポジトリ。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
+          "skills/greeter/SKILL.md": "---\nname: greeter\ndescription: Compose a greeting line for a named recipient. Use when the user says \"greet\", \"make a greeting\".\n---\n\n# greeter\n\n## Steps\n\n1. Read the recipient name from the arguments.\n2. Compose one greeting line and show it.\n",
+          "tests/__init__.py": "",
+          "tests/test_placeholder.py": "import unittest\n\n\nclass PlaceholderTest(unittest.TestCase):\n    def test_placeholder(self):\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/20260803010000_greeter-usage-example.md": "# greeter に引数例の節を追加\n\n**Cycle ID:** `20260803010000`\n**Started:** 2026-08-03 01:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ngreeter スキルに引数の与え方の例が書かれていない。\n\n## 🔧 Implementation Steps\n\n1. **引数例の節を追加**\n   - Files: `skills/greeter/SKILL.md`\n   - 呼び出し時の引数（宛先名）の与え方の例を 1 つ示す節を Steps の後に追加する\n"
+        },
+        "git": {
+          "init": true,
+          "commit": true
+        }
+      },
+      "prompt": "cycle 回して。ただし Phase 3 の skill-reviewer レビューは実レビュアーの出力に依存させず、次を注入して検証する: 初回レビュー委譲・再委譲 1 回とも出力は validate_review_output.py 不適合と報告され、両試行とも届いた生 findings は次の payload そのもの（qualification_reason を欠く BLOCK と fix_action: AUTO_FIX 付き diagnostics を含む）: {\"control_candidates\":[{\"id\":\"cc-1\",\"verdict\":\"BLOCK\",\"target\":\"skills/greeter/SKILL.md\",\"summary\":\"Example の文言が Steps と一致しない懸念\",\"fix_action\":\"NEEDS_JUDGMENT\"}],\"diagnostics\":[{\"id\":\"dg-1\",\"verdict\":\"INFO\",\"target\":\"skills/greeter/SKILL.md\",\"summary\":\"コードブロックに言語指定がない\",\"fix_action\":\"AUTO_FIX\"}]} この想定で、validator 不適合レビューのフォールバック（未提出扱い → 再委譲 1 回 → 制御用途は全破棄し記録添付のみで続行）を確認して。",
+      "requirements": [
+        {
+          "text": "Phase 3 で変更ファイルがスキル成果物のみと分類され、plan-reviewer ではなく skill-reviewer が起動されている",
+          "critical": true
+        },
+        {
+          "text": "初回出力の validator 不適合を未提出扱いにし、再委譲をちょうど 1 回実行している（再委譲なしで findings を使わず、2 回目の再委譲もしない）",
+          "critical": true
+        },
+        {
+          "text": "再委譲も不適合だった後、生 findings に含まれる BLOCK / AUTO_FIX を理由とした fix loop・自動修正・headless 停止のいずれも実行していない",
+          "critical": true
+        },
+        {
+          "text": "cycle は停止せず Phase 4 へ進み、plan ファイルの Status が ⚠️ Review Failed へ戻されていない",
+          "critical": true
+        },
+        {
+          "text": "レビュー gap と、注入で指定した生 findings payload が Phase 5 の記録（完了報告）に verbatim の record-only として残っている（要約・再構成への置換や制御判断への使用をしていない）",
+          "critical": true
+        },
+        {
+          "text": "完了報告から不適合の経緯（初回不適合 → 再委譲 1 回 → 再度不適合）が追跡できる",
+          "critical": false
+        }
+      ],
+      "notes": "issue #203 judge 裁定 C（制御用途は全破棄・記録用途に生データ添付のみ）の固定。skill-review-routing.md 末尾のフォールバック契約を測る。validator 不適合と生 findings の内容は canonical payload の注入で固定する（cy-013 の教訓: organic なレビュアー出力の揺らぎは検証対象外。payload を prompt に明示するのは、要約・再構成で『生 findings が残っている』を満たしたことにする oracle gaming を塞ぐため — PR #207 Codex レビュー WARN 対応）。生 findings に qualification_reason なき BLOCK と AUTO_FIX を含めてあるのは、検証器が塞ぐ経路 (3)(4) を素通りした findings が Step 2s 分岐へ流入しないことを最悪ケースで測るため。cy-019（diagnostics 不干渉）と対をなし、こちらは不適合フォールバックの不干渉を担う。"
     }
   ]
 }

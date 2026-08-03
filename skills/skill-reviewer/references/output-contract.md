@@ -65,8 +65,8 @@ hardest kind of divergence to notice, so a typo fails as a violation.
 | `evidence[]` | ✓ | May be empty. `skill` / `state` (+ optional `reason`, boolean `run_evidence`, string `surface_sha256` — other types are rejected) |
 | `control_candidates[]` / `diagnostics[]` | ✓ | May be empty, but both keys are always present |
 | Finding `id` / `target` / `summary` | ✓ | `id` is unique across both channels |
-| Finding `fix_action` | control channel only | Required on every `control_candidates` entry |
-| Finding `qualification_reason` | BLOCK only | Forbidden in `diagnostics` — it is a statement about BLOCK eligibility |
+| Finding `fix_action` | Required on every `control_candidates` entry | Optional in `diagnostics`, where the value `AUTO_FIX` is rejected |
+| Finding `qualification_reason` | Required on control BLOCK; optional on control WARN | The key itself is rejected in `diagnostics` — it is a statement about BLOCK eligibility |
 | `target` / `summary` (top level), finding `detail` | - | Free text for the human reader |
 
 ## The non-evidence declaration
