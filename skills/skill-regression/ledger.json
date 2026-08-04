@@ -440,22 +440,22 @@
       "skills/issue/references/polling-state.md": "98c1614b8a7c03bf5dddc90c238582f394bca03eeb204620c763e312e1c6bbfd",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
-      "skills/shared/references/human-readable-summary.md": "13dd5c9e96fcd85c9c1c78ef081c75cff2960349fc6c824f5b009fd40dd103ec",
+      "skills/shared/references/human-readable-summary.md": "b05c88ef0690e7a16357909a66b7429708ec15f352c53c0998e50e7fbdd1d0d4",
       "skills/shared/references/measurement-identity.md": "9ab3ee1deb9b9cb46f181cd3ee691272f4a2b6f7d2852c13ad6c16188752bd50",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "blank-slate Sonnet 実走 4/4、照会 0 回。全シナリオ inline substitution（契約擬似コードの逐語 FS 実行）、is-003 は EPERM→alive 分岐を実測",
+    "note": "対象読者契約（human-readable-summary.md の tier 分割 + Target audience 節新設）に対する実走。4 シナリオ全 critical ○ で pass。executor は Sonnet 相当を 4 並列、全シナリオとも実行経路は inline substitution（委譲なし）、外部からの状況照会 0 回。環境制約: background executor の通常出力が呼び出し側へ届かず、判定は worktree の成果物 + baseline hash 突合（is-001/is-002 の ready ファイル、is-003 の alive .claim / issue.md はいずれも baseline と一致）と transcript 末尾の報告から行った。is-003 の executor は SKILL.md が宣言レベルの擬似コードのみで実行体を持たないため tick スクリプトを自作して回している（次回も同じ経路になる想定、回帰ではない）。is-004 で既存の契約矛盾を検出: SKILL.md Step 9 の完了表示テンプレートに To confirm 行がないが、共有契約 Required element 2 は確認事項ゼロでも \"To confirm: none\" の明示を要求しており、executor は SKILL.md 側を優先した。今回の変更起因ではなく既存の齟齬。",
     "result": "pass",
     "structural_sha256": {
-      "skills/issue/SKILL.md": "c6694621b18711bfd6efa4e04427ba3598a78ce9ae658b724da1963ce05a2a71",
-      "skills/issue/references/issue-template.md": "287a28629cfda95ddfe540b4d05e472aed34c8f4c824db738c99c7079ab24eed",
-      "skills/issue/references/polling-state-machine.md": "a4dc6e5f2957ab268f2d46a0c7f5d5bd1b170657cf70e7407da6a87b34dca33b",
-      "skills/issue/references/polling-state.md": "7f0eb3535ab9a9b65c9f37f9cddec97bb3bc6bcb71e41be6b7fdcc3a3fc3a289",
-      "skills/shared/references/artifact-paths.md": "1705d074211a7ee5c8a0292c368bed405fd2c9ae29cbb1e8ddc86b882e9179b4",
-      "skills/shared/references/checkpoint-pattern.md": "81ff32fb67ca657cad4d8ee017538b0df53a572635d8be38f29eeb0e805ec699",
-      "skills/shared/references/human-readable-summary.md": "8e338aed298e461efe40f4beec4138ae7afd2e6b54661dbe072c235b5da917c6",
-      "skills/shared/references/measurement-identity.md": "ae8cc8b862dfbe0df94d20f3bea00138813562806ff78b61a51313917f887158",
-      "skills/shared/references/polling-pattern.md": "c79bc164458ded69bb54fd7af4419ca36b962d063c4ab684e4f5c9d79f5c680a"
+      "skills/issue/SKILL.md": "60d9447bad63adb7a677451d993389c664afe9441b8d64ad45021e76f5d92d07",
+      "skills/issue/references/issue-template.md": "b05f1f37ffa72767c5c8058a4d108ece75bc19e9d171a552eb88e68e462cbc1e",
+      "skills/issue/references/polling-state-machine.md": "cc2bf9fd62453ef750e5b880a943084fcb3a0a52c7d0ea90aba143769568807d",
+      "skills/issue/references/polling-state.md": "70201875cde1ebfb14c5a713676503fe1f8f08498a47106382f4e0250f391667",
+      "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
+      "skills/shared/references/checkpoint-pattern.md": "a61525a996a23732b83b3734123718be41dfc54876c6d26154d0e14ffca37a33",
+      "skills/shared/references/human-readable-summary.md": "5d3a67f08c2990caa942b9453c49bc1c42a05680042250582a849939b9adebe6",
+      "skills/shared/references/measurement-identity.md": "fc16d83ed9e3a19cb3abbe91b042e7258fb5e4d81281ba8e4a20bc2f5e0ab3fd",
+      "skills/shared/references/polling-pattern.md": "17c29aaec95e63f92f96f3d9eba7bc5827c21f592023ee03e48b8aabdd5b79f0"
     },
     "surface": [
       "skills/issue/SKILL.md",
@@ -469,8 +469,8 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "9c7c80dad4a5ec625231b78aaae33002dc281df8a3fe737aabfd1f2a27036923",
-    "verified": "2026-08-03"
+    "surface_sha256": "76695123060a5af7232a1662ea1170374a267c4172ea7758f2a685c70e346dc8",
+    "verified": "2026-08-04"
   },
   "iterate": {
     "file_sha256": {
