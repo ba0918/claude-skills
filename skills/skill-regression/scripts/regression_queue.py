@@ -25,6 +25,7 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -252,6 +253,12 @@ def _sha256_file(path):
         return None
 
 
+def _scenario_sha256(scenario):
+    return hashlib.sha256(
+        json.dumps(scenario, ensure_ascii=False,
+                   sort_keys=True).encode("utf-8")).hexdigest()
+
+
 def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None):
     """Materialise every scenario and emit prompts, a work queue, and a manifest."""
     batch_dir = os.path.abspath(batch_dir)
@@ -307,6 +314,8 @@ def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None):
                 "work_dir": staged["dir"],
                 "baseline": staged["baseline"],
                 "unmaterialized": staged["unmaterialized"],
+                "fixture_path": os.path.abspath(fixture_path),
+                "scenario_sha256": _scenario_sha256(scenario),
             }
 
     if not units:
@@ -334,6 +343,77 @@ def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None):
         "manifest": manifest_path,
         "units": len(units),
         "unmaterialized": unmaterialized,
+    }
+
+
+def rerun(batch_dir, *, units=None):
+    """Restore unfinished (or named) units to their fixture baseline for a re-run.
+
+    Deleting a unit's `report.json` alone re-runs the scenario on top of whatever the
+    first run's executor left in `work/<unit>/` — measured in batch
+    prompt-audit-regression-20260804-r2, a rerun executor found the previous run's
+    implementation already sitting in the seed tree, so the scenario's premise (a true
+    RED in the seed) no longer held. The runner cannot own this guard: it is fixture
+    knowledge, and the runner is deliberately fixture-blind (process-delegation.md §11).
+
+    Refuses when the fixture's scenario no longer matches what `build` staged: grading
+    a new scenario with the old manifest key is a rebuild, not a rerun.
+    """
+    batch_dir = os.path.abspath(batch_dir)
+    manifest = json.loads(_read(os.path.join(batch_dir, "manifest.json")))
+
+    unfinished = [
+        uid for uid in sorted(manifest)
+        if not os.path.isfile(os.path.join(batch_dir, "work", uid, REPORT_NAME))
+    ]
+    if units:
+        unknown = sorted(set(units) - set(manifest))
+        if unknown:
+            raise QueueError(f"unknown unit(s): {', '.join(unknown)}")
+        # Named units ADD to the unfinished set, never replace it: a rerun that
+        # skipped the unfinished units would re-run them on contaminated trees —
+        # the exact failure this guard exists to stop.
+        targets = sorted(set(units) | set(unfinished))
+    else:
+        targets = unfinished
+
+    fixtures = {}
+    for uid in targets:
+        entry = manifest[uid]
+        if "fixture_path" not in entry or "scenario_sha256" not in entry:
+            raise QueueError(
+                f"manifest entry {uid} predates rerun support — rebuild the batch")
+        # Manifest keys are validated at build time, but the manifest is a plain file;
+        # re-check before rmtree so a hand-edited id cannot escape the batch root.
+        if not process_runner.ID_RE.fullmatch(uid):
+            raise QueueError(f"unit id {uid!r} is not a valid unit id")
+
+        fixture_path = entry["fixture_path"]
+        if fixture_path not in fixtures:
+            fixtures[fixture_path] = json.loads(_read(fixture_path))
+        scenario = next(
+            (s for s in fixtures[fixture_path]["scenarios"]
+             if s["id"] == entry["scenario_id"]), None)
+        if scenario is None or _scenario_sha256(scenario) != entry["scenario_sha256"]:
+            raise QueueError(
+                f"scenario {entry['scenario_id']} changed since build (or was "
+                f"removed); the manifest grading key no longer matches — rebuild "
+                f"the batch")
+
+        unit_dir = os.path.join(batch_dir, "work", uid)
+        shutil.rmtree(unit_dir, ignore_errors=True)
+        staged = fixture_setup.materialize(
+            scenario, os.path.join(unit_dir, STAGED_SUBDIR))
+        if staged["baseline"] != entry["baseline"]:
+            raise QueueError(
+                f"re-materialised baseline for {uid} does not match the manifest; "
+                f"the environment stages this scenario differently now — rebuild "
+                f"the batch")
+
+    return {
+        "batch": batch_dir,
+        "rematerialized": targets,
+        "untouched": [uid for uid in sorted(manifest) if uid not in set(targets)],
     }
 
 
@@ -398,6 +478,12 @@ def _cli_grade(args):
     return 0
 
 
+def _cli_rerun(args):
+    print(json.dumps(rerun(args.batch, units=args.unit), ensure_ascii=False,
+                     indent=2, sort_keys=True))
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Fixture -> process-delegation work queue -> mechanical tally.")
@@ -415,6 +501,13 @@ def main(argv=None):
     grade_parser = sub.add_parser("grade", help="tally the returned reports")
     grade_parser.add_argument("--batch", required=True)
     grade_parser.set_defaults(func=_cli_grade)
+
+    rerun_parser = sub.add_parser(
+        "rerun", help="restore unfinished units to their fixture baseline")
+    rerun_parser.add_argument("--batch", required=True)
+    rerun_parser.add_argument("--unit", action="append",
+                              help="also reset these finished unit ids (repeatable)")
+    rerun_parser.set_defaults(func=_cli_rerun)
 
     args = parser.parse_args(argv)
     try:

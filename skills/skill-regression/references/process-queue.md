@@ -103,5 +103,16 @@ path that disagrees is then a path difference to investigate, not an unexplained
 - **Containment is not a sandbox.** The runner keeps queue-supplied paths inside the batch root;
   it does not stop an executor from wandering into a sibling unit's directory. Real confinement
   is whatever the backend's own flags provide.
-- **No retries.** A `needs_rerun` scenario is re-run by deleting its `report.json` and running
-  the queue again; everything already finished is skipped.
+- **No retries.** A `needs_rerun` scenario is re-run by restoring its working directory
+  first, then running the queue again; everything already finished is skipped:
+
+  ```bash
+  python3 {skill_dir}/scripts/regression_queue.py rerun --batch <batch_dir> [--unit <id>]
+  ```
+
+  `rerun` wipes and re-materialises every unit that has no `report.json` (plus any unit
+  named with `--unit`, finished or not), and refuses when the fixture changed since
+  `build` — that is a rebuild, not a rerun. Deleting `report.json` by hand is not enough:
+  the first run's edits survive in `work/<unit>/`, and re-running on top of them evaluates
+  the skill against a contaminated premise (measured: a rerun executor found the previous
+  run's implementation already sitting in the seed tree).
