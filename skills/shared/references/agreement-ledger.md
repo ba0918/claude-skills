@@ -208,13 +208,15 @@ undefined-word detection (which covers all states):
 a human.** Lint is a detector that proposes pending-vocabulary; it does not settle vocabulary or
 promote agreements (even for vocabulary, the LLM is a proposer and cannot be an approver). It
 follows the line of implementing the contract and the detector only, and not building out
-auto-promotion logic or admission-threshold tuning (the pilot-first policy of §E).
+auto-promotion logic or admission-threshold tuning (pilot-first: those wait for measurements
+from real-project pilots).
 
 ## File Structure
 
 The top level of a ledger file is an object (JSON) carrying the following keys. It takes the 2
-required keys `schema_version` / `rows` plus optionally `batch_manifests` (§B; for backward
-compatibility, existing ledgers need not carry `batch_manifests`):
+required keys `schema_version` / `rows` plus optionally `batch_manifests` (see the "Batch
+Approval Manifest" section; for backward compatibility, existing ledgers need not carry
+`batch_manifests`):
 
 | Field | Type | Required | Description |
 |-----------|-----|------|------|
