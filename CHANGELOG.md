@@ -19,7 +19,7 @@ claude-skills プラグインのバージョン履歴。
 ### Added: fixture が「対象 phase の直前状態」を宣言で seed できる（phase 終端型）
 
 - `setup.git.commits`（baseline 後に積む追加コミット列）と `{{fixture:sha:baseline}}` / `{{fixture:sha:commits[N]}}` プレースホルダを追加。実装済みの履歴と、それを指す文書を宣言だけで再現できる（#242）
-- cycle の 20 シナリオを phase 終端型へ作り替え、Phase 1 の implement 実走を大半から除去。通し実行は cy-001 の smoke が担う（#242）
+- cycle の主要シナリオ（20 本中 16 本）を phase 終端型へ作り替え、Phase 1 の implement 実走を除去。通し実行は cy-001 の smoke が担う（#242）
 - 「seed で飛ばした phase を誰が保証するか」の境界を fixture-schema.md § Guarantee boundaries に明文化（#242）
 
 ### Changed: CHANGELOG エントリの行数規範を冒頭ポリシーへ明文化

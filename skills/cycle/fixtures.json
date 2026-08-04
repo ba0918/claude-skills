@@ -803,7 +803,7 @@
           "critical": false
         }
       ],
-      "notes": "cycle_start_sha 永続化の回帰。初回実行で Base SHA を plan に記録し、再実行時はそれを再利用することで、元の実装が常にレビュー範囲に含まれることを固定する。fixture 環境では SHA を埋め込まず、Phase 0 Step 3 のロジック自体を検証する。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 3 終端型。実装コミットと Base SHA を seed したことで、本シナリオが名指しする経路（既存 Base SHA → 採用）が模擬ではなく実走になった。代わりに「Base SHA が無い場合に HEAD を記録する」要件は実走しなくなるため cy-011 へ移管済み（cy-011 の plan は Base SHA を持たない）。 レビュー verdict は PASS 注入で固定し、fix loop の実走コストを持ち込まない。"
+      "notes": "cycle_start_sha 永続化の回帰。初回実行で Base SHA を plan に記録し、再実行時はそれを再利用することで、元の実装が常にレビュー範囲に含まれることを固定する。fixture 環境には baseline の実 SHA が {{fixture:sha:baseline}} の置換で埋まっており、plan の Base SHA が実在するコミットを指す状態で Phase 0 Step 3 を通す。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 3 終端型。実装コミットと Base SHA を seed したことで、本シナリオが名指しする経路（既存 Base SHA → 採用）が模擬ではなく実走になった。代わりに「Base SHA が無い場合に HEAD を記録する」要件は実走しなくなるため cy-011 へ移管済み（cy-011 の plan は Base SHA を持たない）。 レビュー verdict は PASS 注入で固定し、fix loop の実走コストを持ち込まない。"
     },
     {
       "id": "cy-013",
