@@ -18,6 +18,11 @@ The reliability of the evaluation depends entirely on the executor being a blank
     (keep the `isolation: worktree` notation in fixtures.json as it is)
   - **Corroborating zero edits**: record a sha256 baseline of `setup.files` before the run and compare afterwards.
     Base the verdict for read-only critical requirements on this hash comparison, not on self-report
+  - **Machine-judged requirements**: a requirement carrying `assert` predicates
+    ([fixture-schema.md § Machine-judged requirements](fixture-schema.md#machine-judged-requirements-assert))
+    is judged from post-state by fixed grader code, and that verdict is authoritative over the
+    self-report in both directions. The predicates are withheld from the executor for the same
+    reason as the `critical` flags; the executor still self-reports every requirement
   - **Cleanup**: when discarding (deregister + delete) is refused by a permission or mount constraint,
     **do not route around the deletion with another tool**. Record it in the report as inert debris in a
     git-ignored area, and offer the human a cleanup command (e.g. `git worktree prune && rm -rf <path>`)

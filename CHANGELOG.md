@@ -15,6 +15,11 @@ claude-skills プラグインのバージョン履歴。
 
 - `regression_queue.py rerun` を新設。未完了 unit の work dir を fixture baseline へ再実体化してから再走し、fixture が build 後に変わっていれば拒否する（#250）
 
+### Added: requirement の機械判定（assert 述語）— 実行と判定の分離
+
+- `requirements[].assert` に型付き述語（file/git/regex 系 7 型）を宣言でき、該当要件は self-report でなく post-state の機械判定で採点される。述語は executor から秘匿（#241）
+- 併せて #243 の前提裁定「regression ledger は quality-gate contract §2 の evidence ではない」を fixture-schema.md に明記
+
 ### Changed: fixture カバレッジを階層宣言制にし「未着手」と「意図的 static-only」を区別
 
 - ledger に static-only 階層（23 スキル・理由必須）を追加。未保有は parallel-cycle の 1 件だけになり、基準は fixture-schema.md § Coverage tiers に明文化（#244）
