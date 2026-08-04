@@ -208,27 +208,13 @@
           ".agents/artifacts/status.md": "SENTINEL STATUS\n",
           ".agents/artifacts/session-history.md": "SENTINEL HISTORY\n",
           ".agents/artifacts/idea-status.md": "SENTINEL DERIVED INDEX\n",
-          ".agents/artifacts/plans/progress/20260729000000.md": "# Progress: Inner plan\n\n**Plan:** .agents/artifacts/plans/20260729000000_inner.md\n**Cycle ID:** 20260729000000\n**Last Updated:** 2026-07-29 00:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | Step 1 | 🟢 Done | src/inner.py, tests/__init__.py, tests/test_inner.py | 1 | inner_feature() returns the contract string; src/__init__.py was written but never committed |\n",
-          ".agents/artifacts/plans/20260729000000_inner.md": "# Inner plan\n\n**Cycle ID:** `20260729000000`\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 🎯 Goal\n\nAdd a minimal inner feature with a stable, testable contract.\n\n## ✅ Acceptance criteria\n\n- `src.inner.inner_feature()` exists and returns the exact string `inner feature`.\n- `tests/test_inner.py` covers the return value.\n- The implementation and test are committed while singleton artifact files remain untouched in satellite mode.\n\n## 🔧 Implementation Steps\n\n1. **Step 1**\n   - Files: `src/inner.py`, `src/__init__.py`, `tests/test_inner.py`\n   - Implement `inner_feature()` and its unittest according to the acceptance criteria.\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. Step 1 | 🟢 |\n\nThe implementation was committed by the previous run (`{{fixture:sha:commits[0]}}`); `src/__init__.py` was written but never committed, so the package is still not importable.\n",
-          ".agents/runtime/satellite-capability": "fixture-capability",
-          "src/__init__.py": ""
+          ".agents/artifacts/plans/20260729000000_inner.md": "# Inner plan\n\n**Cycle ID:** `20260729000000`\n**Status:** 🟡 Planning\n\n---\n\n## 🎯 Goal\n\nAdd a minimal inner feature with a stable, testable contract.\n\n## ✅ Acceptance criteria\n\n- `src.inner.inner_feature()` exists and returns the exact string `inner feature`.\n- `tests/test_inner.py` covers the return value.\n- The implementation and test are committed while singleton artifact files remain untouched in satellite mode.\n\n## 🔧 Implementation Steps\n\n1. **Step 1**\n   - Files: `src/inner.py`, `tests/test_inner.py`\n   - Implement `inner_feature()` and its unittest according to the acceptance criteria.\n",
+          ".agents/runtime/satellite-capability": "fixture-capability"
         },
         "git": {
           "init": true,
           "branch": "feat/inner",
-          "commit": [
-            ".gitignore"
-          ],
-          "commits": [
-            {
-              "files": {
-                "src/inner.py": "def inner_feature() -> str:\n    return \"inner feature\"\n",
-                "tests/__init__.py": "",
-                "tests/test_inner.py": "import unittest\n\nfrom src.inner import inner_feature\n\n\nclass InnerFeatureTest(unittest.TestCase):\n    def test_returns_the_contract_string(self):\n        self.assertEqual(inner_feature(), \"inner feature\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
-              },
-              "message": "feat: add inner_feature (TDD)"
-            }
-          ]
+          "commit": true
         }
       },
       "prompt": "The previous run committed the implementation and stopped before the review phases. Resume it: run cycle with pinned_plan=.agents/artifacts/plans/20260729000000_inner.md, resolved_isolation=worktree, satellite_run_id=batch-42-A, and satellite_capability_file=.agents/runtime/satellite-capability.",
@@ -295,20 +281,14 @@
         },
         {
           "text": "inner mode でも tracked commit は省略していない",
-          "critical": true,
-          "assert": [
-            {
-              "type": "git_path_committed",
-              "path": "src/__init__.py"
-            }
-          ]
+          "critical": true
         },
         {
           "text": "raw capability を prompt、artifact、report に含めていない",
           "critical": true
         }
       ],
-      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic / independent とも worktree diff 対象）。 【#242 phase 終端化】原出典は manual:worktree-artifact-transport-step3。 要件が Phase 3/4/5 横断のため終端型にはせず、実装 seed で Phase 1 の実走コストのみ落とした。seed は「実装コミット済み + src/__init__.py だけ未コミット」とした。Phase 2 の tracked commit 必須要件は、コミット対象が実在しないと「実行したが no-op」と「省略した」を区別できず観測不能になるため。 inner の延期契約（result artifact / issue close / facts 返却）は元は 1 要件だったが、result artifact 不在だけが機械判定可能なため 3 つに分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。"
+      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic / independent とも worktree diff 対象）。 【#242 phase 終端化】原出典は manual:worktree-artifact-transport-step3。 要件が Phase 3/4/5 横断のため終端型にはせず、実装 seed で Phase 1 の実走コストのみ落とした。seed は「実装コミット済み + src/__init__.py だけ未コミット」とした。Phase 2 の tracked commit 必須要件は、コミット対象が実在しないと「実行したが no-op」と「省略した」を区別できず観測不能になるため。 inner の延期契約（result artifact / issue close / facts 返却）は元は 1 要件だったが、result artifact 不在だけが機械判定可能なため 3 つに分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。 【#242 実走裁定 2026-08-05】初回実走で R3（4 フィールドの plan-implement への中継）が観測不能になった。実装 seed + 進捗ファイル + Progress 🟢 が「Phase 1 委譲のスキップ」を誘発し、中継の観測前提（委譲の発生）を壊したため（fixture-schema 指針 7 の到達性違反）。seed を外し BASE の実 Phase 1 委譲形へ復帰。tracked commit 要件の git_path_committed(src/__init__.py) assert は seed が置く未コミットファイルに縛られた述語だったため除去し、要件文は不変のまま LLM 裁定へ返した（判定手段の巻き戻しであり緩和ではない）。"
     },
     {
       "id": "cy-005",
