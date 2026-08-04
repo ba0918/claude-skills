@@ -157,7 +157,7 @@ confidentiality rule: omit or replace with a category name):
    To confirm: {decisions left open for the human, or "none"}
 
 Saved: .agents/artifacts/handoff/{filename}
-Run `/handoff-restore` next session to pick up exactly where this left off.
+Run `/claude-skills:handoff-restore` next session to pick up exactly where this left off.
 ```
 
 ## Restore Workflow

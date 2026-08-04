@@ -25,10 +25,10 @@ Older versions of this plugin stored plan files under `docs/cycles/`. This cause
 2. Run the migration script:
 
 ```bash
-bash skills/migrate-cycles-to-plans/scripts/migrate-cycles-to-plans.sh {mode}
+bash {skill_dir}/scripts/migrate-cycles-to-plans.sh {mode}
 ```
 
-The script path is relative to the plugin root. The script uses `git rev-parse --show-toplevel` to find the **user's project root**, so it operates on the current project regardless of where the plugin is installed.
+`{skill_dir}` is this skill's installed directory as an absolute path (in this repository `skills/migrate-cycles-to-plans/`; the plugin cache when used as a plugin) — the script lives where the skill is distributed, not in the target project. The script uses `git rev-parse --show-toplevel` to find the **user's project root**, so it operates on the current project regardless of where the plugin is installed.
 
 3. Display the script output to the user as-is.
 
