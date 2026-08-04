@@ -151,9 +151,9 @@
         { "text": "現在の branch のまま nested worktree を作らず実行している", "critical": true },
         { "text": "pinned_plan、resolved_isolation、satellite_run_id、satellite_capability_file の完全な context を plan-implement へ変更せず中継している", "critical": true },
         { "text": "status.md、session-history.md、derived index の singleton sentinel を変更していない", "critical": true },
-        { "text": "Phase 3 のレビューが satellite mode でも実行されている（fix commit は satellite worktree に適用される）", "critical": true },
+        { "text": "Phase 3 のレビューが satellite mode でも satellite worktree の diff に対して実行されている（fix loop に入った場合、fix commit は satellite worktree に適用される）", "critical": true },
         { "text": "Phase 4 の最終ゲートが satellite mode でも実行されている（holistic review は satellite worktree の diff に対して実行される）", "critical": true },
-        { "text": "inner Phase 5 では result artifact と issue close を outer orchestrator へ延期し、review verdict と final gate verdict を含む必要な facts を返している", "critical": true },
+        { "text": "inner では result artifact と issue close を自ら作成せず outer orchestrator へ延期している。Phase 5 到達時は review verdict と final gate verdict を含む facts を、Phase 4 停止時は停止理由と各レビューの verdict を含む stop facts を返している", "critical": true },
         { "text": "inner mode でも tracked commit は省略していない", "critical": true },
         { "text": "raw capability を prompt、artifact、report に含めていない", "critical": true }
       ],
@@ -697,7 +697,7 @@
         },
         "git": { "init": true, "commit": true }
       },
-      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが BLOCK で、fix loop 1 回目の fix 後の再レビューが WARN になった想定で、WARN が Step 2b（WARN auto-fix）にルーティングされることを確認して。PASS / WARN を同一扱いせず、WARN は WARN ゲートを通ることを検証して。",
+      "prompt": "cycle 回して。ただしレビュー verdict は次の台本で固定して扱い、実レビューの結果には置き換えないこと（ルーティング検証のためのスタブ）: Phase 3 初回レビュー = BLOCK、fix loop 1 回目の fix 後の再レビュー = WARN、Step 2b auto-fix 後の再レビュー = PASS。この台本のもとで、WARN が Step 2b（WARN auto-fix）にルーティングされることを確認して。PASS / WARN を同一扱いせず、WARN は WARN ゲートを通ることを検証して。",
       "requirements": [
         {
           "text": "Phase 3 の初回レビューが BLOCK で fix loop に入り、1 回目の fix 後の再レビューが WARN を返している",
@@ -708,7 +708,7 @@
           "critical": true
         },
         {
-          "text": "Step 2b の auto-fix が実行され、再レビュー結果に応じた処理（PASS → Phase 4 / WARN → headless 停止）が行われている",
+          "text": "Step 2b の auto-fix が実行され、台本どおり再レビュー PASS を受けて Phase 4 へ進んでいる（WARN → headless 停止の分岐と取り違えていない）",
           "critical": true
         },
         {
@@ -716,7 +716,7 @@
           "critical": true
         }
       ],
-      "notes": "BLOCK→fix→WARN の Step 2b ルーティング固定。fix loop が BLOCK を解消したが WARN が残った場合、PASS と同一扱いせず WARN ゲート（auto-fix + acknowledgement）を通ることを検証する。cy-013（BLOCK→fix→PASS）との対比。"
+      "notes": "BLOCK→fix→WARN の Step 2b ルーティング固定。fix loop が BLOCK を解消したが WARN が残った場合、PASS と同一扱いせず WARN ゲート（auto-fix + acknowledgement）を通ることを検証する。cy-013（BLOCK→fix→PASS）との対比。【2026-08-04 再設計】実レビューの verdict は非決定で（誠実な fix は PASS に到達しうる）、ルーティング検証の観測可能性が run に依存していたため、prompt で verdict 台本を固定する形へ変更。要件は同一で観測可能性のみを固定した（シナリオを楽にする方向の変更ではない）。"
     },
     {
       "id": "cy-019",
