@@ -172,6 +172,11 @@ which fixes the rules around it:
   `regression_queue.py rerun` demands an exact match between the manifest's baseline
   and a re-materialized one, so any wall-clock dependence would make every seeded
   scenario impossible to re-run.
+- Reproducibility is bought with a **fixed** author/committer date on every seeded
+  commit (`2026-01-01T00:00:00+00:00`), so a scenario must never assume elapsed time
+  or a relative period ("committed three days ago", "the last week of history") — the
+  seed cannot express it. When a premise genuinely needs time, declare it with
+  `setup.mtimes`, which is relative to materialization time by design.
 
 `setup` is materialized by [scripts/fixture_setup.py](../scripts/fixture_setup.py).
 Never assemble the isolated area by hand during run / capture — hand assembly is precisely the path by which premises leak
