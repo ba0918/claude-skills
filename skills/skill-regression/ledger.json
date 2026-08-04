@@ -8,9 +8,9 @@
       "skills/brainstorm/references/spec-generation.md": "1633706e12a8ba3e0b876bbcdd72ab7c24280c9423c94b138a9f587ceb4edf1e",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
-      "skills/shared/references/human-readable-summary.md": "b05c88ef0690e7a16357909a66b7429708ec15f352c53c0998e50e7fbdd1d0d4"
+      "skills/shared/references/human-readable-summary.md": "b7fdc0fdfd264d172cf75332c1c89733684efd3fb6b0473578410946cb7ec019"
     },
-    "note": "対象読者定義（human-readable-summary.md の Target audience 節新設 + 適用範囲の tier 1/tier 2 分割）と spec-generation.md の Spec File Format 節への読者基準 1 段落の追加。実走なしで安全と判断した根拠: 既存の tier 2 要件（固定ラベル・約 10 行上限・summary-first 配置）は 1 文字も変えておらず、bs-001 の要約ブロック要件が参照する条項は同一。bs-004 が測るのは spec 草稿の生成と human gate 経路の遵守で、追加した段落は草稿本文の書き方（初出用語の噛み砕き）を要求するだけで経路分岐を変えない。",
+    "note": "PR #236 Codex レビュー指摘の修正: tier 2 対象の数え上げ不一致（and others 削除・six→five 統一）と tier 1 境界の明確化（agent 主消費の節は tier 1 外）。構造フィンガープリント一致の散文修正のみ",
     "result": "accepted-without-run",
     "structural_sha256": {
       "skills/brainstorm/SKILL.md": "8bbe0225800e7e38cbec2ff4106225048a8450021cce6113ee21ea8de64b5011",
@@ -31,7 +31,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "2170158d698ae81ca717da20c4bcfeaaf467e0b5744d4a0f5d3a6581e0d8d7a6",
+    "surface_sha256": "3721e524377e08411b980e7158e6a47e2e677823ff3aa3e07e3d7aa4f25be3b0",
     "verified": "2026-08-04"
   },
   "brief": {
@@ -237,9 +237,9 @@
       "skills/design-guide/references/mockup-workflow.md": "8210de37547a6b5300e0572e6177bb2e4e21039273d1b115a11a611c18b806a3",
       "skills/design-guide/references/session-workflow.md": "99a23de6c2a91a8f9751ff39ff02ce82fe68c8f055e3f6d648ed7daee607c241",
       "skills/design-guide/references/update-workflow.md": "0cdcba65ca5f45739b2af34c5b23de344bebac33e8df1c108a0621b6eb67589b",
-      "skills/shared/references/human-readable-summary.md": "b05c88ef0690e7a16357909a66b7429708ec15f352c53c0998e50e7fbdd1d0d4"
+      "skills/shared/references/human-readable-summary.md": "b7fdc0fdfd264d172cf75332c1c89733684efd3fb6b0473578410946cb7ec019"
     },
-    "note": "session-workflow.md の完了表示テンプレへ To confirm 行 1 行を追加のみ（契約矛盾解消の横展開、is-004 検出）。手順・判断ロジックは無変更のため実走なしで安全と判断",
+    "note": "PR #236 Codex レビュー指摘の修正: tier 2 対象の数え上げ不一致（and others 削除・six→five 統一）と tier 1 境界の明確化（agent 主消費の節は tier 1 外）。構造フィンガープリント一致の散文修正のみ",
     "result": "accepted-without-run",
     "structural_sha256": {
       "skills/design-guide/SKILL.md": "b19de6095794e69bab056bf48a6652dd958f61d914953e2e6e5d57349d502cb8",
@@ -264,7 +264,7 @@
       "skills/design-guide/references/update-workflow.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "87906a9207f2ee1b9bc6105e7108d99018e70017d17572931c3864e92b341ae7",
+    "surface_sha256": "aef3cfe8d0ec659896fe1ae22e6e81409af9a90b81f61058e105d0c473e332bc",
     "verified": "2026-08-04"
   },
   "doc-write": {
@@ -276,10 +276,10 @@
       "skills/doc-write/references/mermaid-guidelines.md": "175dbb2f8dfbb7aa88c0d98b7a89f000971b3c7098b4101c306e4763feabfe2e",
       "skills/doc-write/references/tech-note-template.md": "8f287b7120f738f72ac65a0d17af8683828f14b00afca0eb81009147a9887975",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
-      "skills/shared/references/human-readable-summary.md": "b05c88ef0690e7a16357909a66b7429708ec15f352c53c0998e50e7fbdd1d0d4",
+      "skills/shared/references/human-readable-summary.md": "b7fdc0fdfd264d172cf75332c1c89733684efd3fb6b0473578410946cb7ec019",
       "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452"
     },
-    "note": "To confirm 行 1 行をテンプレへ追加のみ（契約矛盾解消の横展開、is-004 検出）。表示テンプレの追記で手順・判断ロジックは無変更のため実走なしで安全と判断",
+    "note": "PR #236 Codex レビュー指摘の修正: tier 2 対象の数え上げ不一致（and others 削除・six→five 統一）と tier 1 境界の明確化（agent 主消費の節は tier 1 外）。構造フィンガープリント一致の散文修正のみ",
     "result": "accepted-without-run",
     "structural_sha256": {
       "skills/doc-write/SKILL.md": "0953d1c864381dbd62b492e73bb876d6d526615c8d352b3003c6475a7c991f1f",
@@ -302,7 +302,7 @@
       "skills/shared/references/human-readable-summary.md",
       "skills/shared/references/output-language.md"
     ],
-    "surface_sha256": "98ba10d352c9e279c39f4d4760fc389a927897b7b1fbbb32a7367c17d58ac3a2",
+    "surface_sha256": "1c98bdbae27bd0db9a8a61399a6771d808c77705ee22c1f35aae45df91d4bb44",
     "verified": "2026-08-04"
   },
   "github-issue": {
@@ -392,11 +392,11 @@
       "skills/handoff/fixtures.json": "2b5028db210b7dc154d45862acaf9b579fe870ca30275c745bf751627190485f",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
-      "skills/shared/references/human-readable-summary.md": "b05c88ef0690e7a16357909a66b7429708ec15f352c53c0998e50e7fbdd1d0d4",
+      "skills/shared/references/human-readable-summary.md": "b7fdc0fdfd264d172cf75332c1c89733684efd3fb6b0473578410946cb7ec019",
       "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "To confirm 行 1 行をテンプレへ追加のみ（契約矛盾解消の横展開、is-004 検出）。表示テンプレの追記で手順・判断ロジックは無変更のため実走なしで安全と判断",
+    "note": "PR #236 Codex レビュー指摘の修正: tier 2 対象の数え上げ不一致（and others 削除・six→five 統一）と tier 1 境界の明確化（agent 主消費の節は tier 1 外）。構造フィンガープリント一致の散文修正のみ",
     "result": "accepted-without-run",
     "structural_sha256": {
       "skills/handoff/SKILL.md": "263fbfcd2449539a80fc1a60169c9ccd80a3d2c539a06c85da4b1cfc29ca7ec9",
@@ -414,7 +414,7 @@
       "skills/shared/references/output-language.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "4cb2538f851f7ef88490da0aa214ceb8d820f29b84ba1f5f33dbe51e4415039e",
+    "surface_sha256": "6bf504cdd4799607b9779cc63a4ca38d6858edae58f11e2aaf253e7ed94e983c",
     "verified": "2026-08-04"
   },
   "investigate": {
@@ -440,12 +440,12 @@
       "skills/issue/references/polling-state.md": "98c1614b8a7c03bf5dddc90c238582f394bca03eeb204620c763e312e1c6bbfd",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
-      "skills/shared/references/human-readable-summary.md": "b05c88ef0690e7a16357909a66b7429708ec15f352c53c0998e50e7fbdd1d0d4",
+      "skills/shared/references/human-readable-summary.md": "b7fdc0fdfd264d172cf75332c1c89733684efd3fb6b0473578410946cb7ec019",
       "skills/shared/references/measurement-identity.md": "9ab3ee1deb9b9cb46f181cd3ee691272f4a2b6f7d2852c13ad6c16188752bd50",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "skills/issue/SKILL.md の Create 完了表示テンプレートへ To confirm 行を追加した変更への追随再実走（前回 note に記録した SKILL.md ⇔ 共有契約 Required element 2 の矛盾の解消）。4 シナリオ全 critical ○ で pass。executor は Sonnet 相当を 4 並列 blank-slate、全シナリオとも実行経路は inline substitution（skills/issue/ に実行体スクリプトがないため executor が FS adapter 相当を直接実行する経路。github-issue と異なる）、外部からの状況照会 0 回。環境制約は前回と同じで background executor の通常出力が呼び出し側へ届かず、判定は worktree 成果物 + baseline hash 突合（is-001/is-002 の ready ファイル、is-003 の alive .claim / issue.md がいずれも baseline と一致）と transcript 末尾の報告から行った。is-004 は完了表示に To confirm 行が出る状態で要件と衝突せず（要約ブロックは 3 行、summary-first 配置維持）、前回の矛盾が解消されたことを確認。worktree は HEAD から作成し未コミットの skills/*.md 4 件を反映させて実走している（surface_sha256 の変化で反映を確認）。",
-    "result": "pass",
+    "note": "PR #236 Codex レビュー指摘の修正: tier 2 対象の数え上げ不一致（and others 削除・six→five 統一）と tier 1 境界の明確化（agent 主消費の節は tier 1 外）。構造フィンガープリント一致の散文修正のみ",
+    "result": "accepted-prose",
     "structural_sha256": {
       "skills/issue/SKILL.md": "c3fedf96f8ca2317ba617ed3c7f3e32b40c1e2a37c3f52f63f94d8673c1700c5",
       "skills/issue/references/issue-template.md": "b05f1f37ffa72767c5c8058a4d108ece75bc19e9d171a552eb88e68e462cbc1e",
@@ -469,7 +469,7 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "e47a266461170618144062f3ea1ec51c54d545d66dc4f4749f03a8ae6f68a01a",
+    "surface_sha256": "1741f0d2beeb91af0b87d8f74c582a120b0d9e38304217a7e29d3a6d579b5c8a",
     "verified": "2026-08-04"
   },
   "iterate": {
@@ -531,7 +531,7 @@
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "1aa0095ac6962156f5a482a371cd8e523430aace4d09cf17b9eaffcf9e777dbe",
+      "skills/plan/SKILL.md": "6acd3e1ab98d9b031be083a4d74c0119810136adbe76b85382890af41fb92251",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
       "skills/plan/references/plan-template.md": "1e63da8f61032af9bcaafc633820aee2213fc011e99a0a3d2d9c8370d757d50a",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
@@ -539,13 +539,13 @@
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
-      "skills/shared/references/human-readable-summary.md": "b05c88ef0690e7a16357909a66b7429708ec15f352c53c0998e50e7fbdd1d0d4",
+      "skills/shared/references/human-readable-summary.md": "b7fdc0fdfd264d172cf75332c1c89733684efd3fb6b0473578410946cb7ec019",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "plan/SKILL.md L12・Notes の 2 レイヤー宣言（What & Why / Goals = 人間向け、Design 以降 = LLM 向け）、plan-template.md の該当 placeholder への平易文指示、および human-readable-summary.md の tier 分割。実走なしで安全と判断した根拠: pl-001〜pl-004 が測るのは headless での plan 作成手順・アーカイブ choreography・status 遷移・checkpoint 分岐であり、テンプレートの節構成・ファイル名規則・遷移条件はいずれも無改変。変更は placeholder 内の書き方指示に閉じている。",
+    "note": "PR #236 Codex レビュー指摘の修正: SKILL.md L12 の 2 レイヤー宣言から「Design を人間が検証する」という共有契約 tier 1 と矛盾する主張を除去（検証面は What & Why / Goals、Design は技術読者の監査対象だが契約上は LLM 消費）。手順・テンプレ構成・遷移条件は無変更のため実走なしで安全と判断",
     "result": "accepted-without-run",
     "structural_sha256": {
-      "skills/plan/SKILL.md": "a0e0d44015ed2fba39b48b6412c51f35347c99f7bf9724120839957727ee1481",
+      "skills/plan/SKILL.md": "05f35620b9088921efd8bda003e2d13e5013189539e9ec124e9d27d5feecbc86",
       "skills/plan/references/plan-template.md": "50e6a4353b0f37726af85fa2709fe31db12cc73db76bbd4d57651eec0ff0df20",
       "skills/plan/references/status-template.md": "4ab54b5caa51f85660dd9de21b39f19386a5b9afcada80b67faa11f20fec576d",
       "skills/plan/references/status-update-guide.md": "7cce88c03df6d16c609b08ce4b055d21dd27aff1b677a6a8ebcfa9d5213ba83f",
@@ -566,7 +566,7 @@
       "skills/shared/references/human-readable-summary.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "4cb0aa76df285b8c717a5cdc3e5d7f3ee3ca7a8a1f4dc59d8ca7b5fb5dc5b027",
+    "surface_sha256": "6f8d686551747fca3dfe79eee00ecc5df851d355d37631feae67c999da879d07",
     "verified": "2026-08-04"
   },
   "plan-implement": {

@@ -9,7 +9,7 @@ Artifact paths follow the [Artifact Store consumer contract](../shared/reference
 
 Create implementation plans with timestamp-based filenames and automatic project status tracking. A plan is the record of agreed-upon implementation steps — not a proposal or approval document. Design and specification decisions are made in brainstorm; the plan captures how to implement them.
 
-A plan has two layers. **What & Why and Goals are written for a human** — the reader defined in [Target audience](../shared/references/human-readable-summary.md#target-audience), someone without the project's background who must be able to follow them without opening another file. **Design and everything after it is written for the LLM** that cycle consumes, so keep it dense and complete rather than plain. The structured Markdown (numbered steps, file lists, test lists) still lets the human verify "is that how you intend to implement it?" before cycle runs.
+A plan has two layers. **What & Why and Goals are written for a human** — the reader defined in [Target audience](../shared/references/human-readable-summary.md#target-audience), someone without the project's background who must be able to follow them without opening another file. **Design and everything after it is written for the LLM** that cycle consumes, so keep it dense and complete rather than plain. The human verifies "is that how you intend to implement it?" through What & Why and Goals before cycle runs; the structured Markdown of the later sections (numbered steps, file lists, test lists) keeps them auditable for a technical reader, but their contract is LLM consumption.
 
 ## Quick Start
 

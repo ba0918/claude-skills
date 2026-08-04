@@ -3,12 +3,15 @@
 This contract has two tiers, and a document that links here takes on only the tier it links for.
 
 1. **The target-audience definition (general).** Who a human-facing document is written for, and
-   when it is good enough. It governs every surface a human reads — a spec, the human-facing sections
-   of a plan, a completion report. It runs from here through the "Target audience" section below.
+   when it is good enough. It governs every surface produced for a human to read — a spec, the
+   human-facing sections of a plan, a completion report. A section whose primary consumer is an
+   agent (such as a plan's implementation sections) sits outside this tier even when a human may
+   audit it; the human-facing layer must then carry everything the human needs in order to decide.
+   The tier runs from here through the "Target audience" section below.
 2. **The completion-report summary block (specific).** The extra requirements for the
-   utterance-sized summary block that report-producing skills (brainstorm wrap / issue create /
-   handoff save / doc-write / design-guide and others) carry in their completion display. It runs
-   from "Required elements" to the end.
+   utterance-sized summary block that the five report-producing skills (brainstorm wrap /
+   issue create / handoff save / doc-write / design-guide) carry in their completion display.
+   It runs from "Required elements" to the end.
 
 Linking here for tier 1 does **not** impose the tier-2 obligations (the `📝 In short:` label, the
 roughly-10-line bound, the summary-first placement). Those bind the listed report-producing skills only.
@@ -68,12 +71,12 @@ The summary block satisfies the following.
 
 - The summary block begins with the fixed label **`📝 In short:`**.
 - Place it at the **very top** of the completion display (before file paths and Next Steps). The placement is
-  visually unified across the six skills (the summary-first placement contract).
+  visually unified across the five skills (the summary-first placement contract).
 
 ## Before / After worked example (an anchor for a subjective criterion)
 
 "Graspable in one read" is an un-testable subjective criterion, so at least one before/after is
-built into the contract to calibrate the implementers of the six skills onto the same level.
+built into the contract to calibrate the implementers of the five skills onto the same level.
 
 **Before (boilerplate only — the substance does not reach the human):**
 
