@@ -446,13 +446,14 @@ claude-skills プラグインのバージョン履歴。
   `/claude-skills:handoff-restore` へ統一（リポジトリ内 93 箇所で唯一の不整合。
   スラッシュ記法自体は既存慣行として維持の裁定）
 - measurement-identity の trigger-eval 行だけ "(recommended)" の推奨形だったのを他行と
-  同じ義務形へ。decision-journal の Workflow Selection から飾りの Hick's Law 括弧書きを削除
-- Low/flag の残り（Rationalization 表・Red flags 群・挙動を担う本文の削除候補・
-  fix-action-taxonomy の履歴語り 1 文）は据え置き。争点のある削除は挙動プローブが先の
-  原則に従い、履歴語り 1 文は cycle の再検証コストに見合わないため将来の cycle 変更へ同乗させる
+  同じ義務形へ。decision-journal の Workflow Selection から飾りの Hick's Law 括弧書き、
+  fix-action-taxonomy 冒頭の出自語り 1 文（doc-audit ローカル分類からの昇格経緯）を削除
+- Low/flag の残り（Rationalization 表・Red flags 群・挙動を担う本文の削除候補）は据え置き。
+  争点のある削除は挙動プローブが先の原則に従う
 - ledger の支払い: decision-journal は `prose-change` 機械判定で `accepted-prose`
-  （軽量レール初適用）、handoff は process-queue 実走 4/4 で pass、github-issue / issue は
-  表 1 セルの文言差のみとするユーザー裁定（2026-08-04）で `accepted-without-run`
+  （軽量レール初適用）、handoff は process-queue 実走 4/4 で pass、github-issue / issue /
+  cycle / context-audit / skill-reviewer は挙動に触れない文言差のみとするユーザー裁定
+  （2026-08-04）で `accepted-without-run`
 
 ## 1.72.0
 

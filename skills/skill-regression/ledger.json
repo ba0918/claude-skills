@@ -101,14 +101,14 @@
       "skills/context-audit/scripts/static_checks.py": "87d54d880ddfe445e4872378b0024893a848efc6592cef19255afde7179b9216",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
-      "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
+      "skills/shared/references/fix-action-taxonomy.md": "9f686fb66e66491c6a2260d427c18b2e2bcfbecc995cf899414045150b8d1c71",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
       "skills/shared/scripts/frontmatter.py": "3c6d76a04346f1b2251d39b005f526073981a3425ce9fabc7523d99a791fedb8",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
-    "result": "pass",
+    "note": "prompt-audit Low/flag: fix-action-taxonomy.md 冒頭の出自語り 1 文（doc-audit ローカル分類から昇格した経緯）の削除のみ。契約の語彙・規則は不変。ユーザー裁定 2026-08-04（影響軽微な文言変更は --accept）で実走せず承認",
+    "result": "accepted-without-run",
     "structural_sha256": {
       "skills/context-audit/SKILL.md": "55d14784ead7c634f7f6d2076273a226e809cc4168512d029767c0b4d70227fb",
       "skills/context-audit/references/baseline-format.md": "df1c6707513214b24599b22893510bb354baf58b66ec781ae7a078f8f3dfe575",
@@ -116,7 +116,7 @@
       "skills/context-audit/references/rule-catalog.md": "c5fa0bee20b8cec242f4d6164f0baaed80a791628ffd08d23222c717048465d0",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
       "skills/shared/references/execution-context.md": "cf213a8a2c15855c4147e01fd5bd524afa8007f51f4b68afb0faa38f53506d50",
-      "skills/shared/references/fix-action-taxonomy.md": "cf45d893a25a3f85e85c264cea989c1ce1f58800da54792de93a5bed8974f807",
+      "skills/shared/references/fix-action-taxonomy.md": "f10504693453f7cc768ac00ec34708f41d22a8e713ca503b47d9322b4d44c81b",
       "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
       "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd"
     },
@@ -138,7 +138,7 @@
       "skills/shared/scripts/frontmatter.py",
       "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "63612b18d33b1224518de0588a967832344a75cba9279a14aff22bb48d111ead",
+    "surface_sha256": "defc9acba7e77ea6b39c70b21dd6f030b6e95302b5f89088538a69bd2e9e12b6",
     "verified": "2026-08-04"
   },
   "cycle": {
@@ -156,7 +156,7 @@
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/evidence-format.md": "96da494ddf512e5de33fbcc2a87eb0b5e97058c765a5b7e956151246e4c4d751",
-      "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
+      "skills/shared/references/fix-action-taxonomy.md": "9f686fb66e66491c6a2260d427c18b2e2bcfbecc995cf899414045150b8d1c71",
       "skills/shared/references/orchestration-patterns.md": "9672c4f21d72957d8c2cfec1673af412de49fc8634d2fe2ece39121d05d4779b",
       "skills/shared/references/publication-protocol.md": "5aaaf09134900951ddfa3edd3523676ecbd98e8f6c5755f6b20520ee04b376b3",
       "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
@@ -167,8 +167,8 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "process-path run (r5 batch, sonnet-5 executor, 20 scenarios): 18 self-pass; cy-009 req4 and cy-016 req2 caller-adjudicated to pass per executor-contract (cy-009: suppression corroborated by artifact absence — no results/, no issue close, sentinels uncomposed, main fixed across 3 failure cases; cy-016: env permission gate denied 'git reset --hard', executor's disclosed content-equivalent restore verified by empty 'git diff pre_fix_sha revert_commit')",
-    "result": "pass",
+    "note": "prompt-audit Low/flag: fix-action-taxonomy.md 冒頭の出自語り 1 文（doc-audit ローカル分類から昇格した経緯）の削除のみ。契約の語彙・規則は不変。ユーザー裁定 2026-08-04（影響軽微な文言変更は --accept）で実走せず承認",
+    "result": "accepted-without-run",
     "structural_sha256": {
       "skills/cycle/SKILL.md": "086560464952dd2e79c52fd254b6b5133a4a1c7b005a27b189c7257eb1ebc1f7",
       "skills/cycle/references/completion.md": "1b2e05b6506e5b46edc76d4cb90f5c92ae938317eeb7cd477c2aec240536072c",
@@ -182,7 +182,7 @@
       "skills/shared/references/artifact-store.md": "4ab7297bbce0294646093f50c818c13d31e9212e3ad9bbeffc74318686d03b06",
       "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
       "skills/shared/references/evidence-format.md": "4caa3fb0bb6e4c2fb5516c0d882a7b5e26845b3bb0695bbd5c05c21b7ee070de",
-      "skills/shared/references/fix-action-taxonomy.md": "cf45d893a25a3f85e85c264cea989c1ce1f58800da54792de93a5bed8974f807",
+      "skills/shared/references/fix-action-taxonomy.md": "f10504693453f7cc768ac00ec34708f41d22a8e713ca503b47d9322b4d44c81b",
       "skills/shared/references/orchestration-patterns.md": "2abc40814ffa144d4cdad8ca5ef33c4d21471f28dc77c0bd89cf8efe9f5a25d0",
       "skills/shared/references/publication-protocol.md": "e042692698eff9de64abd51a9fa5396a0b6a076160f5bc6510c474a55df2f412",
       "skills/shared/references/tdd-contract.md": "b562a71a8064dfaca6c40b2c6e81efbed397ac03acf9ec6f835f45930703d3fe",
@@ -214,7 +214,7 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "3b77fe99b596a0b3785eacdd423ce2d6bcc102016cba395296de593c778e527b",
+    "surface_sha256": "e3212549ec102e05d63bd0b0ad1680c12c5b657c14e305b78212b7d50b8d6d0c",
     "verified": "2026-08-04"
   },
   "decision-journal": {
@@ -738,7 +738,7 @@
   "skill-reviewer": {
     "file_sha256": {
       "skills/shared/references/coverage-ledger.md": "10c3ea12cf96f31749eacce497f43d5db9b6d26b495a55e6552c10089fff8376",
-      "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
+      "skills/shared/references/fix-action-taxonomy.md": "9f686fb66e66491c6a2260d427c18b2e2bcfbecc995cf899414045150b8d1c71",
       "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
@@ -750,11 +750,11 @@
       "skills/skill-reviewer/references/output-contract.md": "7cd2fc72d01be97efab8fa5b0302de986e0ffec38fd4dadbfc2282f9e1982b81",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
-    "result": "pass",
+    "note": "prompt-audit Low/flag: fix-action-taxonomy.md 冒頭の出自語り 1 文（doc-audit ローカル分類から昇格した経緯）の削除のみ。契約の語彙・規則は不変。ユーザー裁定 2026-08-04（影響軽微な文言変更は --accept）で実走せず承認",
+    "result": "accepted-without-run",
     "structural_sha256": {
       "skills/shared/references/coverage-ledger.md": "f8d5f2a4c845758b1cd6436a931a74ac05af93f30391791b5ea15535e68d0579",
-      "skills/shared/references/fix-action-taxonomy.md": "cf45d893a25a3f85e85c264cea989c1ce1f58800da54792de93a5bed8974f807",
+      "skills/shared/references/fix-action-taxonomy.md": "f10504693453f7cc768ac00ec34708f41d22a8e713ca503b47d9322b4d44c81b",
       "skills/shared/references/quality-gate-contract.md": "e76eed7335874bca058f208d15dbdda334bfe7d25f3c3246ce36f29ef54eae58",
       "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
       "skills/shared/references/skill-authoring.md": "01e3fba72d34b8cffee48dda5e6ae0c4f5255326a9bc577129e88eeb7e5da08e",
@@ -777,7 +777,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "b2c8ac9008f03efc3a80898e1ab308738bbc50c930502ebc57dcdafc3477bc12",
+    "surface_sha256": "21130c81235afcb3ea34cc1c4cfaf936553eafbcaa974e6154916a143eee7222",
     "verified": "2026-08-04"
   },
   "sweep-fix": {
