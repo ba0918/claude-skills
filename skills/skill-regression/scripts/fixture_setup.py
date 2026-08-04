@@ -53,13 +53,19 @@ NOT_A_REGULAR_FILE = "NOT-A-REGULAR-FILE"
 
 # 実体化した git リポジトリの著者情報。実行環境の gitconfig に依存すると
 # サンドボックスで読み取りを拒否されて実体化ごと失敗するため固定する。
+# 日時も固定する。既定の「現在時刻」ではコミット SHA が実体化のたびに変わり、
+# SHA を埋めた文書のハッシュまで動く。rerun は manifest の baseline と再実体化した
+# baseline の厳密一致を要求するので、時刻依存を残すと seed を持つシナリオは
+# 再走そのものができない。
 _GIT_ENV = {
     "GIT_CONFIG_NOSYSTEM": "1",
     "GIT_CONFIG_GLOBAL": "/dev/null",
     "GIT_AUTHOR_NAME": "fixture",
     "GIT_AUTHOR_EMAIL": "fixture@local",
+    "GIT_AUTHOR_DATE": "2026-01-01T00:00:00+00:00",
     "GIT_COMMITTER_NAME": "fixture",
     "GIT_COMMITTER_EMAIL": "fixture@local",
+    "GIT_COMMITTER_DATE": "2026-01-01T00:00:00+00:00",
 }
 
 # git hook の中では GIT_DIR などが環境に置かれており、それを引き継ぐと隔離領域の

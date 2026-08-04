@@ -167,6 +167,11 @@ which fixes the rules around it:
 - The `baseline` hashes returned by materialize are taken from the **substituted**
   file on disk, keeping the "corroborate zero edits against reality, not the
   declaration" rule intact.
+- Materialization is **reproducible**: the same declaration always yields the same
+  seeded SHAs, and therefore the same substituted contents and `baseline` hashes.
+  `regression_queue.py rerun` demands an exact match between the manifest's baseline
+  and a re-materialized one, so any wall-clock dependence would make every seeded
+  scenario impossible to re-run.
 
 `setup` is materialized by [scripts/fixture_setup.py](../scripts/fixture_setup.py).
 Never assemble the isolated area by hand during run / capture — hand assembly is precisely the path by which premises leak

@@ -468,6 +468,66 @@ class TestMaterializeSeededHistory(unittest.TestCase):
             int(os.stat(os.path.join(dest, self.PLAN)).st_mtime), 1_699_996_400)
 
 
+class TestMaterializeIsReproducible(unittest.TestCase):
+    """同じ宣言を 2 回実体化したら、seed の SHA も baseline ハッシュも一致すること。
+
+    rerun は manifest に残した baseline と再実体化した baseline を厳密比較してから
+    work dir を作り直す。実体化のたびに seed コミットの SHA が変わると、SHA を埋めた
+    文書のハッシュも動くので、rerun は毎回「fixture が build 後に変わった」と判定し、
+    seed を持つシナリオを再走できなくなる。
+    """
+
+    SETUP = {
+        "files": {
+            ".gitignore": "/.agents/artifacts/\n",
+            "README.md": "# seed\n",
+            ".agents/artifacts/plans/p.md":
+                "**Implementation Base SHA:** {{fixture:sha:baseline}}\n"
+                "実装済み: {{fixture:sha:commits[0]}}\n",
+        },
+        "git": {"init": True, "commit": True, "message": "chore: baseline",
+                "commits": [{"files": {"app.py": "def f():\n    return 1\n"},
+                             "message": "feat: add f"}]},
+    }
+
+    DATES = ("GIT_AUTHOR_DATE", "GIT_COMMITTER_DATE")
+
+    def setUp(self):
+        # 実体化の合間に時計が進む状況を決定的に作る。素の 2 連続呼び出しでは同じ秒に
+        # 収まってしまい、時刻依存が緑のまま隠れる（git のコミット時刻は秒精度）
+        previous = {name: os.environ.get(name) for name in self.DATES}
+
+        def restore():
+            for name, value in previous.items():
+                if value is None:
+                    os.environ.pop(name, None)
+                else:
+                    os.environ[name] = value
+        self.addCleanup(restore)
+
+    def _materialize(self, ambient_date):
+        for name in self.DATES:
+            os.environ[name] = ambient_date
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        return fixture_setup.materialize(
+            {"id": "s", "setup": self.SETUP}, temp.name, base_time=1_750_000_000)
+
+    def _twice(self):
+        return (self._materialize("2026-01-02T03:04:05+00:00"),
+                self._materialize("2026-06-07T08:09:10+00:00"))
+
+    def test_the_seeded_shas_are_identical_across_materialisations(self):
+        first, second = self._twice()
+        self.assertEqual(first["git"]["baseline"], second["git"]["baseline"])
+        self.assertEqual(first["git"]["commits"], second["git"]["commits"])
+
+    def test_the_baseline_hash_map_is_identical_across_materialisations(self):
+        # SHA を埋めた文書のハッシュまで含めて一致すること（rerun の比較対象そのもの）
+        first, second = self._twice()
+        self.assertEqual(first["baseline"], second["baseline"])
+
+
 class TestArtifactStoreDeclaration(unittest.TestCase):
     """`.agents/` を宣言する fixture が Artifact Store 契約を満たすか（静的検査）。
 
