@@ -685,6 +685,56 @@ class TestMaterialize(unittest.TestCase):
             hashlib.sha256(b"API_KEY=dummy\n").hexdigest())
 
 
+class TestShippedSeededScenariosReachTheirPhase(unittest.TestCase):
+    """seed した履歴が、対象 phase へ到達できる形になっていること。
+
+    phase 終端型の fixture は「baseline より後に実装コミットがあり、文書が baseline を
+    指している」ことで対象 phase に入る。ここが崩れたシナリオは赤くならず、空 diff
+    ガードなど別の経路を測って合格するので、宣言の時点で機械的に止める。
+    """
+
+    SKILLS = os.path.normpath(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+    def _seeded(self):
+        for name in sorted(os.listdir(self.SKILLS)):
+            path = os.path.join(self.SKILLS, name, "fixtures.json")
+            if not os.path.isfile(path):
+                continue
+            with open(path, encoding="utf-8") as handle:
+                doc = json.load(handle)
+            for scenario in doc["scenarios"]:
+                git = (scenario.get("setup") or {}).get("git") or {}
+                if git.get("commits"):
+                    yield doc["skill"], scenario
+
+    def test_every_seeded_scenario_leaves_a_non_empty_range_from_its_baseline(self):
+        checked = []
+        for skill, scenario in self._seeded():
+            where = f"{skill}/{scenario['id']}"
+            with tempfile.TemporaryDirectory() as dest:
+                result = fixture_setup.materialize(
+                    scenario, dest, base_time=1_750_000_000)
+                baseline = result["git"]["baseline"]
+                diff = subprocess.run(
+                    ["git", "diff", "--name-only", f"{baseline}..HEAD"], cwd=dest,
+                    capture_output=True, text=True,
+                    env=dict(os.environ, **fixture_setup._GIT_ENV))
+                self.assertTrue(
+                    diff.stdout.strip(),
+                    f"{where}: baseline..HEAD が空（対象 phase の手前で止まる）")
+                for path, declared in (scenario["setup"].get("files") or {}).items():
+                    if "{{fixture:sha:baseline}}" not in declared:
+                        continue
+                    with open(os.path.join(dest, path), encoding="utf-8") as handle:
+                        written = handle.read()
+                    self.assertIn(
+                        baseline, written,
+                        f"{where}: {path} が baseline を指していない")
+            checked.append(where)
+        self.assertTrue(checked, "commits を宣言するシナリオが 1 件も無い（検出側の壊れ）")
+
+
 class TestShippedFixtures(unittest.TestCase):
     """リポジトリ同梱の fixtures.json が契約に適合していること。"""
 
