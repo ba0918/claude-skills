@@ -118,6 +118,55 @@ granularity does not touch §2's totality of invalidation.
 | `commit` | `true` = create a baseline commit containing every file and leave the working tree clean / an array of paths = commit only those files and leave the rest untracked (declaring "a baseline exists but the working changes are uncommitted") |
 | `message` | the message of the baseline commit. `fixture baseline` when omitted. In a scenario measuring "match the style of the existing history", the history's language and form are themselves the premise, so declare it |
 | `remote` | the URL of origin |
+| `commits` | an array of **further commits stacked after the baseline**, in declared order. Each element is `{ "files": {path: contents}, "message": "..." }`: the files are written into the worktree and committed together under that message. Requires `init` and a baseline `commit`. This is what makes seeded history declarable — see § Seeded history and SHA placeholders |
+
+### Seeded history and SHA placeholders
+
+A fixture that starts a skill **mid-workflow** needs history that already exists: work
+committed after the baseline, plus a document pointing at the baseline as the scope
+boundary (a plan's `**Implementation Base SHA:**`, a review range, a revert target).
+`setup.files` cannot express it, because the SHA only exists once materialization has
+run — and "let the executor look the SHA up and write it in" is exactly the
+discretion design guideline 8 forbids: when the filling changes, so does the path
+being measured.
+
+```json
+"setup": {
+  "files": {
+    ".agents/artifacts/plans/20260801040000_add-normalize.md":
+      "...\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n..."
+  },
+  "git": {
+    "init": true,
+    "commit": true,
+    "commits": [
+      { "files": { "app.py": "...", "tests/test_app.py": "..." },
+        "message": "feat: implement normalize (TDD)" }
+    ]
+  }
+}
+```
+
+| Placeholder | Resolves to |
+|---|---|
+| `{{fixture:sha:baseline}}` | the 40-hex SHA of the baseline commit (`setup.git.commit`) |
+| `{{fixture:sha:commits[N]}}` | the SHA of the `N`-th element of `setup.git.commits`, 0-based |
+
+Substitution runs over the contents of `setup.files` **after every commit is made**,
+which fixes the rules around it:
+
+- A file carrying a placeholder must not be part of any commit — neither the baseline
+  (`commit: true` commits everything, so such a scenario needs a path list or the file
+  under a gitignored root) nor any `commits` element. Rewriting a tracked file after
+  committing it would leave the working tree dirty, destroying the very premise the
+  seed exists to create. Validation rejects the combination.
+- An unresolved placeholder (a typo, an out-of-range index) is a materialization
+  error, never a silently literal string: a plan carrying `{{fixture:sha:baseline}}`
+  verbatim sends the skill down its "unresolvable base SHA" path instead of the one
+  under test.
+- The `baseline` hashes returned by materialize are taken from the **substituted**
+  file on disk, keeping the "corroborate zero edits against reality, not the
+  declaration" rule intact.
 
 `setup` is materialized by [scripts/fixture_setup.py](../scripts/fixture_setup.py).
 Never assemble the isolated area by hand during run / capture — hand assembly is precisely the path by which premises leak
@@ -138,6 +187,32 @@ requirement assumed the contents, fix the fixture side.
 
 Schema conformance can be checked with `--validate`, and check 17 of `scripts/validate_repo.py` enforces the same validation
 in CI over every `skills/*/fixtures.json`.
+
+## Guarantee boundaries: which layer proves what
+
+A multi-stage skill can be measured without re-running every stage. Replacing the
+earlier stages with seeded artifacts (a **phase-terminal** fixture: the scenario
+starts where the phase under test starts, and ends there) removes the dominant cost —
+nested delegation, which stalls and burns the caller's watchdog — but it also moves a
+guarantee. Declare where it moved (#242):
+
+| Layer | Proven by | Why there |
+|---|---|---|
+| workspace lock / worktree isolation / publication transitions / evidence checking | unit tests (`test_workspace_lock.py` and siblings) | mechanism defects are pinned by code plus tests, not by prose or by an LLM run |
+| that the phases actually chain into one another | a **through-run smoke, one per skill** | the only live proof of what the seeds skipped |
+| phase routing decisions, verdict interpretation, abort conditions, inline fallback | phase-terminal fixtures | LLM judgement itself, which no unit test can pin |
+
+Rules:
+
+- For a multi-stage delegating skill, phase-terminal is the **default** shape, and
+  exactly one through-run smoke stays. Do not remove the smoke: phase chaining,
+  the delegation relay, and result relay have no substitute in either unit tests or
+  terminal fixtures.
+- Seeding is a change of *where the scenario starts*, not of what it demands. The
+  no-easier-editing rule (guideline 5) applies unchanged: when a rewrite retires a
+  requirement because the seed now covers that ground, the requirement moves to a
+  named owner and the move is recorded in `notes`, with `source` updated to the
+  adjudicating document. Silently dropping it is a relaxation.
 
 ## Design guidelines
 
