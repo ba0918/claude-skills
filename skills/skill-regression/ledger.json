@@ -235,11 +235,11 @@
       "skills/design-guide/references/discovery-phases.md": "d70ed0ed5cc07b0684ea507cf0f3d84c8598cf796a94322bbb7ef8c8cfab6b1c",
       "skills/design-guide/references/discovery-questions.md": "1efca8547738730215ccc9dc666cc3b58919c7676166161075f824519ea0fc2e",
       "skills/design-guide/references/mockup-workflow.md": "8210de37547a6b5300e0572e6177bb2e4e21039273d1b115a11a611c18b806a3",
-      "skills/design-guide/references/session-workflow.md": "d30d2bd659a31b8458274944b45f852700739fc0b85bab918b14f864576ef5d9",
+      "skills/design-guide/references/session-workflow.md": "99a23de6c2a91a8f9751ff39ff02ce82fe68c8f055e3f6d648ed7daee607c241",
       "skills/design-guide/references/update-workflow.md": "0cdcba65ca5f45739b2af34c5b23de344bebac33e8df1c108a0621b6eb67589b",
       "skills/shared/references/human-readable-summary.md": "b05c88ef0690e7a16357909a66b7429708ec15f352c53c0998e50e7fbdd1d0d4"
     },
-    "note": "human-readable-summary.md の適用範囲を tier 1（対象読者定義・汎用）/ tier 2（完了報告の要約ブロック固有）へ分割し Target audience 節を新設。実走なしで安全と判断した根拠: design-guide の 2 シナリオ（dg-001 ディスカバリー中の DESIGN.md 非書き込み / dg-003 DESIGN.md 不在時の即時案内）はいずれも完了報告の要約ブロックを測っておらず、契約のうち design-guide が負う tier 2 条項は無改変。",
+    "note": "session-workflow.md の完了表示テンプレへ To confirm 行 1 行を追加のみ（契約矛盾解消の横展開、is-004 検出）。手順・判断ロジックは無変更のため実走なしで安全と判断",
     "result": "accepted-without-run",
     "structural_sha256": {
       "skills/design-guide/SKILL.md": "b19de6095794e69bab056bf48a6652dd958f61d914953e2e6e5d57349d502cb8",
@@ -248,7 +248,7 @@
       "skills/design-guide/references/discovery-phases.md": "43ff52d09cf3a806fe5da36ef198b5152bee70a93df9a5e21a5e61a43e2d71d0",
       "skills/design-guide/references/discovery-questions.md": "cb2c0328b44923dc05c1d948cd5f659dcc1e0a3701795851b6d9847cdb61323c",
       "skills/design-guide/references/mockup-workflow.md": "1b5efa63bbb92d7bc17268ee425f601c19b6e1daafb3a3cf18a2492db9656643",
-      "skills/design-guide/references/session-workflow.md": "c2ef6e7fd01d9bd66dfc5f83f972190f8e410a59a767a463e7f1d3db86a66412",
+      "skills/design-guide/references/session-workflow.md": "cbe877b09bfc0c550885ce9bfb080daa91ca749f8ff0167a57eb6d14ec36bb81",
       "skills/design-guide/references/update-workflow.md": "4dadd0f922f09629400270eaa2605bef27d06420416a9003eb29e6724038ed47",
       "skills/shared/references/human-readable-summary.md": "5d3a67f08c2990caa942b9453c49bc1c42a05680042250582a849939b9adebe6"
     },
@@ -264,12 +264,12 @@
       "skills/design-guide/references/update-workflow.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "20d85cd608c13058e399c5bb889cd1837362af3f0f582faf4044aaa51a896108",
+    "surface_sha256": "87906a9207f2ee1b9bc6105e7108d99018e70017d17572931c3864e92b341ae7",
     "verified": "2026-08-04"
   },
   "doc-write": {
     "file_sha256": {
-      "skills/doc-write/SKILL.md": "4a0bd53578e69d21547c0ec56e9a8b0ede5274cdcd32f6082e4ef2f0fbd7ce71",
+      "skills/doc-write/SKILL.md": "8dc18c8e30098d59f0d8d71cbfe90e3470fe80efc004cb5594bbe11d1c53029f",
       "skills/doc-write/fixtures.json": "25923dc521df83866b6ecab0f94dfe23a9853f12180fad532182d268d8d18def",
       "skills/doc-write/references/adr-template.md": "67384d585ee51ab5093757397be8470cc1c65357b21c9096e61ccc73fe8ee28f",
       "skills/doc-write/references/discussion-summary-template.md": "130ccf87b8c2bee7840d2bb2611e46454df5addc25e254b8af287bdd12f2faa6",
@@ -279,10 +279,10 @@
       "skills/shared/references/human-readable-summary.md": "b05c88ef0690e7a16357909a66b7429708ec15f352c53c0998e50e7fbdd1d0d4",
       "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452"
     },
-    "note": "human-readable-summary.md の tier 分割 + Target audience 節新設。実走なしで安全と判断した根拠: doc-write の 4 シナリオは想定読者の既知/不明による停止分岐・出典捏造の禁止・resume の slug 解決を測るもので、要約ブロックの形式要件には触れない。追加分は tier 1（対象読者の合格基準）で、doc-write が既に負っていた tier 2 条項の文面は変わっていない。",
+    "note": "To confirm 行 1 行をテンプレへ追加のみ（契約矛盾解消の横展開、is-004 検出）。表示テンプレの追記で手順・判断ロジックは無変更のため実走なしで安全と判断",
     "result": "accepted-without-run",
     "structural_sha256": {
-      "skills/doc-write/SKILL.md": "f5ca9535ed7e24a725909c7724f005642cda21ca1acd0f410efd535ec4c0cd49",
+      "skills/doc-write/SKILL.md": "0953d1c864381dbd62b492e73bb876d6d526615c8d352b3003c6475a7c991f1f",
       "skills/doc-write/references/adr-template.md": "27c0326d55c2942ce823b6d9c214b6eca943ca2475f86a5540232db8e11a1143",
       "skills/doc-write/references/discussion-summary-template.md": "e178f79abd512bd20e18c9f7875f6b2f1ee4cea0e16cd63673650be9728a5ec5",
       "skills/doc-write/references/mermaid-guidelines.md": "a3ea5ff06d26520851f7026530a9226603d01bbe4d1d3655f7e1280f6e80464f",
@@ -302,7 +302,7 @@
       "skills/shared/references/human-readable-summary.md",
       "skills/shared/references/output-language.md"
     ],
-    "surface_sha256": "9f8a1aa43e2e17629938603c04387a7703a33541c8eaa6a832c3c77983287fe8",
+    "surface_sha256": "98ba10d352c9e279c39f4d4760fc389a927897b7b1fbbb32a7367c17d58ac3a2",
     "verified": "2026-08-04"
   },
   "github-issue": {
@@ -388,7 +388,7 @@
   },
   "handoff": {
     "file_sha256": {
-      "skills/handoff/SKILL.md": "9328e326313cfdeddef9fce07224aa268e62d88e2c411d9c3731e762947e3c67",
+      "skills/handoff/SKILL.md": "980ad9cbcd3712521d3c69f868faa1fafa3c50d0e11cdb978a17ee73cf57d49a",
       "skills/handoff/fixtures.json": "2b5028db210b7dc154d45862acaf9b579fe870ca30275c745bf751627190485f",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
@@ -396,10 +396,10 @@
       "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "human-readable-summary.md の tier 分割 + Target audience 節新設。実走なしで安全と判断した根拠: handoff の 4 シナリオは restore の選択規則・固定サマリ文言・復元後の自動削除・checkpoint fallback を測る。ho-001 が固定する固定サマリの文言要件は契約の tier 2 側にあり無改変で、追加した tier 1 は読者基準を述べるのみ。",
+    "note": "To confirm 行 1 行をテンプレへ追加のみ（契約矛盾解消の横展開、is-004 検出）。表示テンプレの追記で手順・判断ロジックは無変更のため実走なしで安全と判断",
     "result": "accepted-without-run",
     "structural_sha256": {
-      "skills/handoff/SKILL.md": "8a50c137e435b0b9701fb78f588547a5ccd1d7d46d548b3c28815fa076b07776",
+      "skills/handoff/SKILL.md": "263fbfcd2449539a80fc1a60169c9ccd80a3d2c539a06c85da4b1cfc29ca7ec9",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
       "skills/shared/references/checkpoint-pattern.md": "a61525a996a23732b83b3734123718be41dfc54876c6d26154d0e14ffca37a33",
       "skills/shared/references/human-readable-summary.md": "5d3a67f08c2990caa942b9453c49bc1c42a05680042250582a849939b9adebe6",
@@ -414,7 +414,7 @@
       "skills/shared/references/output-language.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "a7083af4560f725c7e0f4f7cbdd45960ad980f1028661f4b94a1bfd2cfd093c7",
+    "surface_sha256": "4cb2538f851f7ef88490da0aa214ceb8d820f29b84ba1f5f33dbe51e4415039e",
     "verified": "2026-08-04"
   },
   "investigate": {
@@ -433,7 +433,7 @@
   },
   "issue": {
     "file_sha256": {
-      "skills/issue/SKILL.md": "e5504927662f1d80435c9634269c6ab748ccdf3358696c2a756e9f6a1de7b906",
+      "skills/issue/SKILL.md": "9aa4511d2b15fea983c59277b1066c248040a5fd8ff26e977d80a3339d490ba1",
       "skills/issue/fixtures.json": "40065f95ee8d35d14806fcc5a922fb9525d75658cac163cd9fc0c8d1ca894ad7",
       "skills/issue/references/issue-template.md": "6c27174d5b7b8c6fa00b66b69d4a90df0c38af36ebf8c3b90fcef78c57a0715f",
       "skills/issue/references/polling-state-machine.md": "7c65e6079934335d3a891e49c798e2a8761ce443dc63b6f1600be21a96131d70",
@@ -444,10 +444,10 @@
       "skills/shared/references/measurement-identity.md": "9ab3ee1deb9b9cb46f181cd3ee691272f4a2b6f7d2852c13ad6c16188752bd50",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "対象読者契約（human-readable-summary.md の tier 分割 + Target audience 節新設）に対する実走。4 シナリオ全 critical ○ で pass。executor は Sonnet 相当を 4 並列、全シナリオとも実行経路は inline substitution（委譲なし）、外部からの状況照会 0 回。環境制約: background executor の通常出力が呼び出し側へ届かず、判定は worktree の成果物 + baseline hash 突合（is-001/is-002 の ready ファイル、is-003 の alive .claim / issue.md はいずれも baseline と一致）と transcript 末尾の報告から行った。is-003 の executor は SKILL.md が宣言レベルの擬似コードのみで実行体を持たないため tick スクリプトを自作して回している（次回も同じ経路になる想定、回帰ではない）。is-004 で既存の契約矛盾を検出: SKILL.md Step 9 の完了表示テンプレートに To confirm 行がないが、共有契約 Required element 2 は確認事項ゼロでも \"To confirm: none\" の明示を要求しており、executor は SKILL.md 側を優先した。今回の変更起因ではなく既存の齟齬。",
+    "note": "skills/issue/SKILL.md の Create 完了表示テンプレートへ To confirm 行を追加した変更への追随再実走（前回 note に記録した SKILL.md ⇔ 共有契約 Required element 2 の矛盾の解消）。4 シナリオ全 critical ○ で pass。executor は Sonnet 相当を 4 並列 blank-slate、全シナリオとも実行経路は inline substitution（skills/issue/ に実行体スクリプトがないため executor が FS adapter 相当を直接実行する経路。github-issue と異なる）、外部からの状況照会 0 回。環境制約は前回と同じで background executor の通常出力が呼び出し側へ届かず、判定は worktree 成果物 + baseline hash 突合（is-001/is-002 の ready ファイル、is-003 の alive .claim / issue.md がいずれも baseline と一致）と transcript 末尾の報告から行った。is-004 は完了表示に To confirm 行が出る状態で要件と衝突せず（要約ブロックは 3 行、summary-first 配置維持）、前回の矛盾が解消されたことを確認。worktree は HEAD から作成し未コミットの skills/*.md 4 件を反映させて実走している（surface_sha256 の変化で反映を確認）。",
     "result": "pass",
     "structural_sha256": {
-      "skills/issue/SKILL.md": "60d9447bad63adb7a677451d993389c664afe9441b8d64ad45021e76f5d92d07",
+      "skills/issue/SKILL.md": "c3fedf96f8ca2317ba617ed3c7f3e32b40c1e2a37c3f52f63f94d8673c1700c5",
       "skills/issue/references/issue-template.md": "b05f1f37ffa72767c5c8058a4d108ece75bc19e9d171a552eb88e68e462cbc1e",
       "skills/issue/references/polling-state-machine.md": "cc2bf9fd62453ef750e5b880a943084fcb3a0a52c7d0ea90aba143769568807d",
       "skills/issue/references/polling-state.md": "70201875cde1ebfb14c5a713676503fe1f8f08498a47106382f4e0250f391667",
@@ -469,7 +469,7 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "76695123060a5af7232a1662ea1170374a267c4172ea7758f2a685c70e346dc8",
+    "surface_sha256": "e47a266461170618144062f3ea1ec51c54d545d66dc4f4749f03a8ae6f68a01a",
     "verified": "2026-08-04"
   },
   "iterate": {
