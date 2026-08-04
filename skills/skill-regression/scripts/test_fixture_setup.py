@@ -919,11 +919,34 @@ class TestShippedSeededScenariosReachTheirPhase(unittest.TestCase):
             ids.add(header.group(1) if header else match.group(1))
         return ids
 
+    DONE_STATUS = "🟢 Done"
+
+    @classmethod
+    def _step_statuses(cls, contents):
+        """progress の Steps 表から Status 列を取り出す（見出しと区切り行は除く）。"""
+        statuses = []
+        for line in (contents or "").splitlines():
+            line = line.strip()
+            if not line.startswith("|"):
+                continue
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if len(cells) < 3:
+                continue
+            status = cells[2]
+            if status == "Status" or set(status) <= set("-: "):
+                continue
+            statuses.append(status)
+        return statuses
+
     def test_every_seeded_scenario_declares_the_progress_file_of_its_cycle(self):
         # runtime-progress § Rules の re-entry: 再入時は progress を読んで 🟢 Done の
         # step を再実装しない。seed した実装に対応する progress が宣言から抜けると、
         # skill は完了済みの step を最初から実装し直し、phase 終端型の前提が崩れる。
-        # 落ちるのではなく前の phase を測って合格するので、宣言の時点で止める
+        # 落ちるのではなく前の phase を測って合格するので、宣言の時点で止める。
+        # 存在だけでは足りない: 全 step が ⚪ Pending の progress を宣言すると
+        # 「宣言はある」まま Phase 1 が再実装に入り、同じ穴が開いたまま合格する。
+        # seed した実装と step の対応は宣言から機械的に引けないので、
+        # 「seed があるなら Done の step が最低 1 つある」を下限として要求する
         checked = []
         for skill, scenario in self._seeded():
             where = f"{skill}/{scenario['id']}"
@@ -932,11 +955,23 @@ class TestShippedSeededScenariosReachTheirPhase(unittest.TestCase):
             progress = {
                 os.path.splitext(p[len(self.PROGRESS_DIR):])[0]
                 for p in files if p.startswith(self.PROGRESS_DIR)}
+            matched = progress & cycle_ids
             self.assertTrue(
-                progress & cycle_ids,
+                matched,
                 f"{where}: seed した実装に対応する "
                 f"{self.PROGRESS_DIR}{{cycle_id}}.md が宣言されていない "
                 f"(cycle_id={sorted(cycle_ids)} progress={sorted(progress)})")
+            for cycle_id in sorted(matched):
+                statuses = self._step_statuses(
+                    files[f"{self.PROGRESS_DIR}{cycle_id}.md"])
+                self.assertTrue(
+                    statuses,
+                    f"{where}: progress/{cycle_id}.md の Steps 表に step 行が無い")
+                self.assertIn(
+                    self.DONE_STATUS, statuses,
+                    f"{where}: progress/{cycle_id}.md の step が 1 つも "
+                    f"{self.DONE_STATUS} でない（seed 済みの step を再実装する）"
+                    f" statuses={statuses}")
             checked.append(where)
         self.assertTrue(checked, "commits を宣言するシナリオが 1 件も無い（検出側の壊れ）")
 
