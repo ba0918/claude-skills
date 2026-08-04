@@ -72,7 +72,7 @@ State every inferred item explicitly in the final response, in a form the user c
 
 **File path:** `.agents/artifacts/plans/{timestamp}_{feature-slug}.md`
 
-**CRITICAL**: Plan files MUST be created under `.agents/artifacts/plans/` directory. Do NOT use `docs/cycles/` or any other directory. This constraint applies regardless of how this skill is invoked (directly, via issue-cycle, or any other caller).
+Plan files are always created under `.agents/artifacts/plans/` — never `docs/cycles/` (the pre-migration location) or any other directory. This applies regardless of how this skill is invoked (directly, via issue-cycle, or any other caller).
 
 **Feature slug**: `[a-z0-9-]+` only (standard URL slugification). For non-ASCII input (Japanese and the like), prefer a meaning-based translation and align it with related existing naming inside the project (skills, existing plans). Romanize (Hepburn) only proper nouns that resist translation, and ask the user when the meaning is ambiguous (falling back to an empty or garbled slug is forbidden). Keep the original feature name verbatim in the plan header `# {Feature Name}` and in the `Feature` column of status.md.
 
@@ -238,14 +238,9 @@ Use when user wants to update implementation progress:
 
 ## Lightweight TDD Workflow
 
-After creating the plan, follow this simple workflow:
-
-1. **Write tests** - Create failing tests for the feature
-2. **Implement** - Write minimal code to pass tests
-3. **Refactor** - Clean up code while keeping tests green
-4. **Commit** - Use `claude-skills:commit` to commit changes
-
-No heavy review processes. Keep the tempo fast and development flow smooth.
+After creating the plan, implementation follows the
+[tdd-contract](../shared/references/tdd-contract.md) (RED → GREEN → REFACTOR); commit with
+`claude-skills:commit`.
 
 ## File Organization
 

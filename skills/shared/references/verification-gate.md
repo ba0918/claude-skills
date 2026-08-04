@@ -62,7 +62,6 @@ Forbidden classes of claim, with English and Japanese examples:
 | "Just this once" | No exceptions |
 | "The linter passed" | Linter ≠ compiler ≠ tests |
 | "The agent said it succeeded" | Verify independently |
-| "I'm tired" | Fatigue is not a reason to skip |
 | "A partial check is enough" | A partial check proves nothing |
 
 ## Integration guidance per skill

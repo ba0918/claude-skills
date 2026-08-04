@@ -18,8 +18,6 @@ A four-phase structured debugging skill. It blocks random fixes and makes identi
 NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST
 ```
 
-You may not propose a fix until Phase 1 is complete.
-
 ## Phase 1: Root Cause Investigation
 
 **Propose no fix whatsoever. Investigation only.**
@@ -35,8 +33,8 @@ When `$ARGUMENTS` contains the path to an investigate skill output file, read th
 3. Do not ignore warning messages either
 
 **When the bug raises no exception**, there is no message, stack trace, or error code to
-record — the return value, the state, or the output is simply wrong. Do not read this step as
-unsatisfiable and skip it. Record the observed symptom as the substitute evidence:
+record — the return value, the state, or the output is simply wrong. Record the observed
+symptom as the substitute evidence:
 
 1. The expected value and the actual value, side by side
 2. The observation that exposes the corruption (which state or intermediate value you

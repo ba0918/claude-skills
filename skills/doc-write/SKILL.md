@@ -168,10 +168,3 @@ Follow the [output language contract](../shared/references/output-language.md).
 - **Reader-facing content (language of the request)**: the document body, frontmatter
   values (the title string, the audience description), completion message body text.
 
-## Notes
-
-- Start with the three template types and add more as needed
-- Start with minimal Mermaid guidelines and grow them through use
-- investigate's output can serve as an input source
-- The frontmatter holds the document's metadata (intended audience, template type, updated
-  date)

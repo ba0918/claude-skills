@@ -165,7 +165,7 @@ Following §9 of [design-principles.md](design-principles.md) (single canonical 
 `checkpoint.py` and proven by `test_checkpoint.py`:
 
 - **Execution**: `verify_on_restore` is structured `{cmd, args}` only; a free-form shell string is forbidden (rejected at parse).
-  restore **never executes automatically** at any verdict (display only). In headless / bypassPermissions environments
+  restore **never executes automatically** at any verdict (display only). In headless environments
   (cycle and polling), not even a confirmation prompt appears — display only. A relaxation premised on "human confirmation"
   is nullified in an unattended loop, so **execution itself is removed from the specification**.
 - **Parsing**: PyYAML is not used (structurally eliminating deserialization RCE via `yaml.load` and friends). The strict parser

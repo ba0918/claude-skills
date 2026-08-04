@@ -163,7 +163,7 @@ Print a report in the conversation with the structure below, then delete the int
 
 **When the deletion is refused or fails** (a permission gate, a mount constraint): do not force it through by another route. State the surviving path in the report and finish normally — the run counts as complete. The leftovers are inert intermediate files, not an unfinished fix.
 
-**This exit is open only to a deletion that was actually attempted and refused — it is not a licence to skip the attempt.** Reporting leftovers without having run the deletion violates this phase, however confidently you predict the refusal. When the leftovers survive **and** Phase 1 found the location is not ignored by the VCS, they will surface in the user's `git status` and can be swept into their next commit: state that in the report too, and ask them to delete the path by hand or add an ignore entry.
+When the leftovers survive **and** Phase 1 found the location is not ignored by the VCS, they will surface in the user's `git status` and can be swept into their next commit: state that in the report too, and ask them to delete the path by hand or add an ignore entry.
 
 ```
 ══════════════════════════════════════

@@ -131,5 +131,3 @@ DOC-CHECK ({scope}: {N} commits / all)
 - **Do not commit changes** — Only apply fixes; leave committing to the user
 - **Maintain generality** — Do not hardcode specific project structures. Detect dynamically from actual state
 - **Do not delete extra entries** — They may be intentionally kept; only report them
-- **Run structural checks first** — Perform fast, reliable structural checks first; defer costly content checks
-- **Leverage parallel execution** — Run content checks in parallel subagents per document to reduce processing time

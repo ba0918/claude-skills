@@ -120,7 +120,7 @@ Display a list of open issues.
    ```
    📊 Open issues: {N}
    ```
-4. If open issue count is **11 or more** (i.e. `N >= 11`, not `N > 10` interpreted as `N >= 10`), display a warning **in addition to** the Step 3 summary:
+4. If open issue count is **11 or more**, display a warning **in addition to** the Step 3 summary:
    ```
    ⚠️ Open issues: {N} — check whether any issue has gone unused. `/claude-skills:issue-close` archives the ones you no longer need.
    ```
@@ -143,8 +143,8 @@ This procedure is used by both Plan Workflow and Cycle Workflow. Do NOT duplicat
    - If not found: Display the file list in `.agents/artifacts/issues/` and exit with an error message
 4. Execute `claude-skills:plan-create` via the skill invocation based on the issue content (title and summary)
    - Arguments: Pass the issue's title and summary
-   - **CRITICAL**: The plan file MUST be created at `.agents/artifacts/plans/{timestamp}_{slug}.md`. Do NOT use `docs/cycles/` or any other directory. Verify the file was created in `.agents/artifacts/plans/` before proceeding.
-   - **IMPORTANT**: Include `**Issue:** {slug}` in the plan header (no underscores, no markdown emphasis — just the raw slug). This field is used by `cycle` to auto-close the issue upon completion. See `plan/SKILL.md` "Optional `Issue` field" for the authoritative format.
+   - The plan file must be created at `.agents/artifacts/plans/{timestamp}_{slug}.md` (not `docs/cycles/` or any other directory). Verify the file was created in `.agents/artifacts/plans/` before proceeding.
+   - Include `**Issue:** {slug}` in the plan header (no underscores, no markdown emphasis — just the raw slug). This field is used by `cycle` to auto-close the issue upon completion. See `plan/SKILL.md` "Optional `Issue` field" for the authoritative format.
 
 ---
 

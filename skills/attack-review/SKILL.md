@@ -15,20 +15,6 @@ Review the codebase from an **attacker's perspective** with 6 specialized penetr
 
 **Key difference from codebase-review**: This skill thinks like an attacker ("how do I break in?"), not a defender ("is this secure?"). Output is attack scenarios with reproduction steps, not quality scores.
 
-## Progress Checklist
-
-```
-attack-review Progress:
-- [ ] Determine mode (full/server/client/auto-detect)
-- [ ] Detect languages & analyze project structure
-- [ ] Prepare work directory & write context.json
-- [ ] Preflight check (work directory write permission)
-- [ ] Launch specialist agents + Codex in parallel
-- [ ] Wait for agents & handle failures
-- [ ] Launch integration agent
-- [ ] Display summary & place report
-```
-
 ## Workflow
 
 ### Step 1: Determine Mode

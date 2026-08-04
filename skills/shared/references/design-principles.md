@@ -8,13 +8,6 @@ Every principle exists to serve one supreme goal: **Testability**.
 In the age of LLM-assisted development, a single instruction can produce vast amounts of code.
 Human review alone cannot keep up. The only reliable safety net is **mechanically verifiable correctness** — meaning tests.
 
-This problem will only accelerate. As LLMs grow more capable, the volume of generated code will scale from hundreds to thousands to tens of thousands of lines per instruction — while human cognitive capacity remains constant. The gap between what is produced and what can be manually reviewed will widen relentlessly. Testability is not a trend; it is the only architecture that survives this trajectory.
-
-Therefore, testability is not one concern among many; it is THE concern.
-Every other principle below exists because it makes code more testable.
-
-If a design cannot be tested, the design is wrong. Full stop.
-
 ## Core Principles
 
 ### 1. Compose Small Parts into Larger Parts

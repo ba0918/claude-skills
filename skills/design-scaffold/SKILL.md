@@ -48,9 +48,9 @@ Applies only when running Stage A. When `.design/tokens.json` already exists:
 
 ## Absolute Constraints
 
-- **Never add** a value to tokens.json that is not defined in DESIGN.md
-- tokens.json must conform to the schema 100% (fix schema violations immediately)
-- CSS custom property names must follow the design-system-contract naming rules **strictly**
+- Add no value to tokens.json that is not defined in DESIGN.md
+- tokens.json conforms to the schema; fix schema violations before finishing
+- CSS custom property names follow the design-system-contract naming rules
 - Always include an "Auto-generated, DO NOT EDIT MANUALLY" comment at the top of generated files
 
 ## References

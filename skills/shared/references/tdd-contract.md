@@ -56,16 +56,6 @@ REFACTOR → improve while the tests stay green → confirm everything passes (r
 
 **Required**: run the tests and **confirm that everything still passes**.
 
-## Rationalization table (top 5)
-
-| Excuse | Rebuttal |
-|--------|------|
-| "Just skip it this once" | That is rationalization. TDD has no exceptions |
-| "I already know it is correct" | Confidence is not evidence. Prove it with a test |
-| "I will write the test later" | "Later" is a synonym for "never" |
-| "This code is hard to test" | Hard to test = bad design. Fix the design first |
-| "It is a prototype, so it needs no tests" | A prototype turning into production is the classic outcome |
-
 ## Red Flags (signs of a TDD violation)
 
 - Production code was changed before the test file
