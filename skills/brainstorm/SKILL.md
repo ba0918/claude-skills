@@ -49,7 +49,7 @@ Allowed: read-only codebase investigation (file reads, pattern search, file list
       - `pattern` — learn from a pattern in another domain
       ```
    c. **Codex second opinion** (only while `codex_available == true`): dispatch the Codex subagent with the theme, the user's message, and a 1–3 sentence summary of the discussion so far (use the literal string `(first turn, no history)` on the first turn). Prompt: "For the sparring theme and user message below, offer a different perspective, a counterargument, an overlooked angle, or a related idea. Theme: {theme}. User message: {user_message}. Discussion so far: {summary}". Pass conversation text only — never file-read results.
-      - On failure (call errors out, times out, Codex is unavailable in the environment, or the response is empty / malformed): display `⚠️ Codex unavailable — proceeding with Claude only` once in the step-d response (positioned per the fixed output order above), set `codex_available = false`, and skip Codex on later turns. Do not fabricate a Codex opinion.
+      - On failure (call errors out, times out, Codex is unavailable in the environment, or the response is empty / malformed): display `⚠️ Codex unavailable — proceeding without a second opinion` once in the step-d response (positioned per the fixed output order above), set `codex_available = false`, and skip Codex on later turns. Do not fabricate a Codex opinion.
    d. Generate the response (integrating Codex's opinion when present): question, probe, push back, offer alternative angles. When a Codex opinion exists, append at the end:
       ```
       💡 Codex's perspective:

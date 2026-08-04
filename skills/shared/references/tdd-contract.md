@@ -18,9 +18,9 @@ If code was written before the test, delete it and start over. No exceptions.
 ## The RED-GREEN-REFACTOR cycle
 
 ```
-RED    → write one failing test → confirm it fails (run it with Bash)
-GREEN  → write the minimum code that passes the test → confirm everything passes (run it with Bash)
-REFACTOR → improve while the tests stay green → confirm everything passes (run it with Bash)
+RED    → write one failing test → confirm it fails (run the test command in a shell)
+GREEN  → write the minimum code that passes the test → confirm everything passes (run the tests in a shell)
+REFACTOR → improve while the tests stay green → confirm everything passes (run the tests in a shell)
 ```
 
 ### RED — write a failing test

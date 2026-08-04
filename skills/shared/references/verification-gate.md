@@ -90,4 +90,4 @@ Forbidden classes of claim, with English and Japanese examples:
 ### Integration into test-driven-development
 
 - Apply the Gate Function in each of the RED / GREEN / REFACTOR phases
-- The Bash output of the test run is the transition condition of each phase
+- The shell output of the test run is the transition condition of each phase

@@ -260,7 +260,7 @@ Extraction rules:
 
 ## Design Principles
 
-- **LLM-first**: structured information the next Claude can resume from with minimal
+- **LLM-first**: structured information the next session can resume from with minimal
   reading, over human-oriented narrative
 - **Autonomous extraction**: never quiz the user during save; transcribe from the
   conversation history
