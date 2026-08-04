@@ -92,7 +92,7 @@ built into the contract to calibrate the implementers of the five skills onto th
 📝 In short: a proposal to stop making the completion report just "✅ + a path", and instead
    convey the substance of the artifact to the human in a few lines. A countermeasure to
    approval becoming a ritual in which the substance goes unread.
-   To confirm: is narrowing the target skills down to 6 acceptable?
+   To confirm: is narrowing the target skills down to 5 acceptable?
 
 ✅ Idea saved!
 📄 File: .agents/artifacts/ideas/20260721_foo.md
