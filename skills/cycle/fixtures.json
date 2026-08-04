@@ -77,7 +77,7 @@
           "critical": true
         },
         {
-          "text": "docs/plans/20260710090000_legacy-feature.md が移動・コピー・編集されていない（mv はユーザーへの復旧案内としてのみ提示され、実行者自身はファイルを動かして続行していない）",
+          "text": "docs/plans/20260710090000_legacy-feature.md が原位置に原文のまま残り、.agents/artifacts/plans/ 配下への複製がコミットされていない",
           "critical": true,
           "assert": [
             {
@@ -91,6 +91,10 @@
               "expect": false
             }
           ]
+        },
+        {
+          "text": "mv はユーザーへの復旧案内としてのみ提示され、実行者自身がファイルを移動・コピー・編集して続行していない",
+          "critical": true
         },
         {
           "text": "implement のフェーズが一切実行されず、リポジトリに新規コミット・ファイル変更がない（git status が clean のまま）",
@@ -110,7 +114,7 @@
           "critical": false
         }
       ],
-      "notes": "Phase 0 Step 1.5 のパス検証 edge。CYCLE START 前の中断・mv 非実行（案内のみ）・migration 注記を固定する。 【#242】既に Phase 0 終端型のため setup は不変更。#241 の型付き assert を付与し、ファイル不動とコミットゼロを LLM 裁定から機械判定へ移した。"
+      "notes": "Phase 0 Step 1.5 のパス検証 edge。CYCLE START 前の中断・mv 非実行（案内のみ）・migration 注記を固定する。 【#242】既に Phase 0 終端型のため setup は不変更。#241 の型付き assert を付与し、ファイル不動とコミットゼロを LLM 裁定から機械判定へ移した。 「原本が原位置に残る」と「mv は案内のみで実行者は動かしていない」は元は 1 要件だったが、前者だけが機械判定可能なため分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。"
     },
     {
       "id": "cy-003",
@@ -174,7 +178,7 @@
           ]
         },
         {
-          "text": "完了済み計画ファイル 20260722080000_parse-duration.md が変更されていない",
+          "text": "完了済み計画ファイル 20260722080000_parse-duration.md の Status が ✅ Completed のまま残っている",
           "critical": false,
           "assert": [
             {
@@ -183,9 +187,13 @@
               "pattern": "\\*\\*Status:\\*\\* ✅ Completed"
             }
           ]
+        },
+        {
+          "text": "完了済み計画ファイル 20260722080000_parse-duration.md が Status 行以外も含めて一切変更されていない",
+          "critical": false
         }
       ],
-      "notes": "自動選択（完了済みスキップ）+ Phase 5 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase5_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。2026-08-02: 実レビュー verdict の非決定性で 2 実走連続 Phase 3/4 WARN 正規停止となり本シナリオ固有の Phase 5 分岐に到達しなかったため、cy-005 以降と同じ verdict 仮定方式にプロンプトを変更（要件 = oracle は不変更）。live レビューのフルサイクルは cy-001 が引き続きカバーする。 【#242 phase 終端化】原出典は empirical-tuning:20260722-lean-rollout。 Phase 5 終端型（実装は seed 済みコミット）。要件 2 だった「選択した計画のステップが TDD エビデンス付きで実装され実装コミットが git log に存在する」はcy-001（through-run smoke）へ移管し、空いた critical 枠には Phase 5 のplan status 更新（本シナリオ本来の関心）を機械判定で置いた。"
+      "notes": "自動選択（完了済みスキップ）+ Phase 5 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase5_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。2026-08-02: 実レビュー verdict の非決定性で 2 実走連続 Phase 3/4 WARN 正規停止となり本シナリオ固有の Phase 5 分岐に到達しなかったため、cy-005 以降と同じ verdict 仮定方式にプロンプトを変更（要件 = oracle は不変更）。live レビューのフルサイクルは cy-001 が引き続きカバーする。 【#242 phase 終端化】原出典は empirical-tuning:20260722-lean-rollout。 Phase 5 終端型（実装は seed 済みコミット）。要件 2 だった「選択した計画のステップが TDD エビデンス付きで実装され実装コミットが git log に存在する」はcy-001（through-run smoke）へ移管し、空いた critical 枠には Phase 5 のplan status 更新（本シナリオ本来の関心）を機械判定で置いた。 完了済み計画の「Status 行が残存している」と「全文が変更されていない」は元は 1 要件だったが、前者だけが機械判定可能なため分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。全文不変を表現できる述語は存在しないため、後者は baseline との突き合わせによる LLM 裁定に残す。"
     },
     {
       "id": "cy-004",
@@ -265,7 +273,7 @@
           "critical": true
         },
         {
-          "text": "inner では result artifact と issue close を自ら作成せず outer orchestrator へ延期している。Phase 5 到達時は review verdict と final gate verdict を含む facts を、Phase 4 停止時は停止理由と各レビューの verdict を含む stop facts を返している",
+          "text": "inner では result artifact を自ら作成せず outer orchestrator へ延期している",
           "critical": true,
           "assert": [
             {
@@ -274,6 +282,14 @@
               "expect": false
             }
           ]
+        },
+        {
+          "text": "inner では issue close を自ら実行せず outer orchestrator へ延期している",
+          "critical": true
+        },
+        {
+          "text": "Phase 5 到達時は review verdict と final gate verdict を含む facts を、Phase 4 停止時は停止理由と各レビューの verdict を含む stop facts を返している",
+          "critical": true
         },
         {
           "text": "inner mode でも tracked commit は省略していない",
@@ -290,7 +306,7 @@
           "critical": true
         }
       ],
-      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic / independent とも worktree diff 対象）。 【#242 phase 終端化】原出典は manual:worktree-artifact-transport-step3。 要件が Phase 3/4/5 横断のため終端型にはせず、実装 seed で Phase 1 の実走コストのみ落とした。seed は「実装コミット済み + src/__init__.py だけ未コミット」とした。Phase 2 の tracked commit 必須要件は、コミット対象が実在しないと「実行したが no-op」と「省略した」を区別できず観測不能になるため。"
+      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic / independent とも worktree diff 対象）。 【#242 phase 終端化】原出典は manual:worktree-artifact-transport-step3。 要件が Phase 3/4/5 横断のため終端型にはせず、実装 seed で Phase 1 の実走コストのみ落とした。seed は「実装コミット済み + src/__init__.py だけ未コミット」とした。Phase 2 の tracked commit 必須要件は、コミット対象が実在しないと「実行したが no-op」と「省略した」を区別できず観測不能になるため。 inner の延期契約（result artifact / issue close / facts 返却）は元は 1 要件だったが、result artifact 不在だけが機械判定可能なため 3 つに分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。"
     },
     {
       "id": "cy-005",
@@ -506,17 +522,10 @@
         },
         {
           "text": "dirty files の一覧が中断メッセージに含まれている",
-          "critical": false,
-          "assert": [
-            {
-              "type": "git_path_committed",
-              "path": "helpers.py",
-              "expect": false
-            }
-          ]
+          "critical": false
         }
       ],
-      "notes": "Phase 2 clean tree gate の固定。commit 失敗で dirty tree が残ると Phase 3/4 の git diff cycle_start_sha..HEAD にその変更が含まれずレビューをバイパスするため、Phase 3 に進まず中断する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 2 終端型。実装コミットは seed し、切り出したヘルパ helpers.py を未コミットのまま残すことで dirty tree gate に直行させる（baseline はcommit のパス配列形、実装は commits 併用）。dirty file の実体があるため、中断メッセージの一覧要件も「helpers.py がコミットされていない」で機械判定できる。"
+      "notes": "Phase 2 clean tree gate の固定。commit 失敗で dirty tree が残ると Phase 3/4 の git diff cycle_start_sha..HEAD にその変更が含まれずレビューをバイパスするため、Phase 3 に進まず中断する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 2 終端型。実装コミットは seed し、切り出したヘルパ helpers.py を未コミットのまま残すことで dirty tree gate に直行させる（baseline はcommit のパス配列形、実装は commits 併用）。中断メッセージの一覧要件に付けていた git_path_committed(helpers.py, expect=false) は、要件文（メッセージに一覧が含まれる）のどの節とも対応せず seed の前提だけで恒真だったため削除し、LLM 裁定に戻した（複合要件への部分 assert は未 assert 節を判定から消すため、無価値な述語を要件に残さない）。"
     },
     {
       "id": "cy-008",
