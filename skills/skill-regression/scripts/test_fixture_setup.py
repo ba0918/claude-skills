@@ -821,19 +821,42 @@ class TestShippedSeededScenariosReachTheirPhase(unittest.TestCase):
                 if self._is_seeded(scenario):
                     yield doc["skill"], scenario
 
+    # 最終 phase の完了処理まで到達することを要求する言い回し。別スキルが seed を
+    # 使い始めたら、そのスキルの完了語彙をここへ足す
+    COMPLETION_MARKERS = ("完了処理", "CYCLE COMPLETE", "アーカイブ", "archived")
+    # 停止系シナリオは「最終 phase が実行されていない」を要件に書く。完了語の出現
+    # だけを見ると、連鎖を測らない停止系まで smoke に数えてしまう
+    NEGATION_MARKERS = ("実行されていない", "実行されず", "生成されていない",
+                        "生成されておらず", "行われていない")
+
+    @classmethod
+    def _requires_final_phase_completion(cls, scenario):
+        for requirement in scenario["requirements"]:
+            text = requirement["text"]
+            if (any(m in text for m in cls.COMPLETION_MARKERS)
+                    and not any(m in text for m in cls.NEGATION_MARKERS)):
+                return True
+        return False
+
     def test_a_fixture_with_seeded_scenarios_keeps_a_through_run_smoke(self):
         # fixture-schema § Guarantee boundaries: seed は「phase が実際に連鎖するか」の
         # 保証を通し実行の smoke へ移す変更なので、smoke は 1 本残す規則になっている。
         # 全シナリオが seed 済みになると、連鎖と委譲リレーを測る経路が誰も残らない
-        # （unit テストにも phase 終端型にも代替が無い）
+        # （unit テストにも phase 終端型にも代替が無い）。
+        # 「非 seed が 1 本以上」では守れない: 停止系シナリオは非 seed でも途中 phase で
+        # 終わるので、通し実行の smoke を seed 化しても残りの停止系が数に入って通る。
+        # 残っているべきは「最終 phase の完了処理まで要求する」非 seed シナリオ
         checked = []
         for doc in self._fixtures():
             if not any(self._is_seeded(s) for s in doc["scenarios"]):
                 continue
             checked.append(doc["skill"])
             self.assertTrue(
-                [s["id"] for s in doc["scenarios"] if not self._is_seeded(s)],
-                f"{doc['skill']}: 全シナリオが seed 済みで、通し実行の smoke が 1 本も無い")
+                [s["id"] for s in doc["scenarios"]
+                 if not self._is_seeded(s)
+                 and self._requires_final_phase_completion(s)],
+                f"{doc['skill']}: 最終 phase の完了処理まで要求する非 seed シナリオが"
+                f" 1 本も無く、通し実行の smoke が消えている")
         self.assertTrue(checked, "commits を宣言する fixture が 1 件も無い（検出側の壊れ）")
 
     def test_every_seeded_scenario_leaves_a_non_empty_range_from_its_baseline(self):
