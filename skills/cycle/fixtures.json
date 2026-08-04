@@ -140,7 +140,7 @@
             {
               "files": {
                 "timeutil.py": "\"\"\"時間ユーティリティ。\"\"\"\nimport re\n\n_DURATION_RE = re.compile(r\"(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?\")\n\n\ndef parse_duration(text: str) -> int:\n    \"\"\"\"1h2m3s\" 形式の文字列を秒数に変換する。\"\"\"\n    m = _DURATION_RE.fullmatch(text.strip())\n    if not m or not any(m.groups()):\n        raise ValueError(f\"invalid duration: {text!r}\")\n    h, mi, s = (int(g) if g else 0 for g in m.groups())\n    return h * 3600 + mi * 60 + s\n\n\ndef format_duration(seconds: int) -> str:\n    \"\"\"秒数を \"1h 2m 3s\" 形式へ変換する。ゼロの単位は省略する。\"\"\"\n    if seconds < 0:\n        raise ValueError(f\"negative duration: {seconds!r}\")\n    if seconds == 0:\n        return \"0s\"\n    h, rest = divmod(seconds, 3600)\n    mi, s = divmod(rest, 60)\n    parts = [f\"{v}{u}\" for v, u in ((h, \"h\"), (mi, \"m\"), (s, \"s\")) if v]\n    return \" \".join(parts)\n",
-                "tests/test_timeutil.py": "import unittest\n\nfrom timeutil import format_duration, parse_duration\n\n\nclass ParseDurationTest(unittest.TestCase):\n    def test_full_form(self):\n        self.assertEqual(parse_duration(\"1h2m3s\"), 3723)\n\n    def test_rejects_garbage(self):\n        with self.assertRaises(ValueError):\n            parse_duration(\"abc\")\n\n\nclass FormatDurationTest(unittest.TestCase):\n    def test_full_form(self):\n        self.assertEqual(format_duration(3723), \"1h 2m 3s\")\n\n    def test_omits_zero_units(self):\n        self.assertEqual(format_duration(90), \"1m 30s\")\n\n    def test_zero(self):\n        self.assertEqual(format_duration(0), \"0s\")\n\n    def test_rejects_negative(self):\n        with self.assertRaises(ValueError):\n            format_duration(-1)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_timeutil.py": "import unittest\n\nfrom timeutil import format_duration, parse_duration\n\n\nclass ParseDurationTest(unittest.TestCase):\n    def test_full_form(self):\n        self.assertEqual(parse_duration(\"1h2m3s\"), 3723)\n\n    def test_partial_form(self):\n        self.assertEqual(parse_duration(\"90s\"), 90)\n\n    def test_rejects_garbage(self):\n        with self.assertRaises(ValueError):\n            parse_duration(\"abc\")\n\n\nclass FormatDurationTest(unittest.TestCase):\n    def test_full_form(self):\n        self.assertEqual(format_duration(3723), \"1h 2m 3s\")\n\n    def test_omits_zero_units(self):\n        self.assertEqual(format_duration(90), \"1m 30s\")\n\n    def test_zero(self):\n        self.assertEqual(format_duration(0), \"0s\")\n\n    def test_rejects_negative(self):\n        with self.assertRaises(ValueError):\n            format_duration(-1)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: format_duration を実装（TDD）"
             }
@@ -322,7 +322,7 @@
           "CLAUDE.md": "# escalate-test\n\nESCALATE テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def greet(name: str) -> str:\n    return f\"Hello, {name}!\"\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import greet\n\nclass GreetTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(greet(\"World\"), \"Hello, World!\")\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "tests/test_app.py": "import unittest\nfrom app import greet\n\nclass GreetTest(unittest.TestCase):\n    def test_greet_returns_a_greeting(self):\n        self.assertEqual(greet(\"World\"), \"Hello, World!\")\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/progress/20260731000000.md": "# Progress: farewell 機能追加\n\n**Plan:** .agents/artifacts/plans/20260731000000_add-farewell.md\n**Cycle ID:** 20260731000000\n**Last Updated:** 2026-07-31 00:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | farewell 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 1 | A1 の合意どおり Goodbye, {name}! 形式を返す farewell を実装 |\n",
           ".agents/artifacts/plans/20260731000000_add-farewell.md": "# farewell 機能追加\n\n**Cycle ID:** `20260731000000`\n**Started:** 2026-07-31 00:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nfarewell 関数を追加する。仕様は合意済み。\n\n## 🔧 Implementation Steps\n\n1. **farewell 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - farewell(name) -> str を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. farewell 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n",
           ".agents/artifacts/ledger/agreements.md": "# Agreement Ledger\n\n| # | Item | Status | Decision |\n|---|------|--------|----------|\n| A1 | farewell の戻り値形式 | AGREED | \"Goodbye, {name}!\" 形式 |\n"
@@ -334,7 +334,7 @@
             {
               "files": {
                 "app.py": "def greet(name: str) -> str:\n    return f\"Hello, {name}!\"\n\n\ndef farewell(name: str) -> str:\n    return f\"Goodbye, {name}!\"\n",
-                "tests/test_app.py": "import unittest\nfrom app import greet, farewell\n\nclass GreetTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(greet(\"World\"), \"Hello, World!\")\n\nclass FarewellTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(farewell(\"World\"), \"Goodbye, World!\")\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_app.py": "import unittest\nfrom app import greet, farewell\n\nclass GreetTest(unittest.TestCase):\n    def test_greet_returns_a_greeting(self):\n        self.assertEqual(greet(\"World\"), \"Hello, World!\")\n\nclass FarewellTest(unittest.TestCase):\n    def test_farewell_returns_a_farewell(self):\n        self.assertEqual(farewell(\"World\"), \"Goodbye, World!\")\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: farewell を追加（TDD）"
             }
@@ -393,7 +393,7 @@
           "CLAUDE.md": "# gate-test\n\nPhase 4 BLOCK テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def add(a: int, b: int) -> int:\n    return a + b\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import add\n\nclass AddTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(add(1, 2), 3)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "tests/test_app.py": "import unittest\nfrom app import add\n\nclass AddTest(unittest.TestCase):\n    def test_adds_two_numbers(self):\n        self.assertEqual(add(1, 2), 3)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/progress/20260731010000.md": "# Progress: multiply 機能追加\n\n**Plan:** .agents/artifacts/plans/20260731010000_add-multiply.md\n**Cycle ID:** 20260731010000\n**Last Updated:** 2026-07-31 01:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | multiply 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 2 | multiply(a, b) を実装。ゼロ倍のケースも含めて検証 |\n",
           ".agents/artifacts/plans/20260731010000_add-multiply.md": "# multiply 機能追加\n\n**Cycle ID:** `20260731010000`\n**Started:** 2026-07-31 01:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nmultiply 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **multiply 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - multiply(a, b) -> int を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. multiply 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
@@ -404,7 +404,7 @@
             {
               "files": {
                 "app.py": "def add(a: int, b: int) -> int:\n    return a + b\n\n\ndef multiply(a: int, b: int) -> int:\n    return a * b\n",
-                "tests/test_app.py": "import unittest\nfrom app import add, multiply\n\nclass AddTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(add(1, 2), 3)\n\nclass MultiplyTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(multiply(3, 4), 12)\n    def test_case_1(self):\n        self.assertEqual(multiply(0, 5), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_app.py": "import unittest\nfrom app import add, multiply\n\nclass AddTest(unittest.TestCase):\n    def test_adds_two_numbers(self):\n        self.assertEqual(add(1, 2), 3)\n\nclass MultiplyTest(unittest.TestCase):\n    def test_multiplies_two_numbers(self):\n        self.assertEqual(multiply(3, 4), 12)\n    def test_multiplying_by_zero_is_zero(self):\n        self.assertEqual(multiply(0, 5), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: multiply を追加（TDD）"
             }
@@ -467,7 +467,7 @@
           "CLAUDE.md": "# dirty-test\n\nDirty tree gate テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def double(x: int) -> int:\n    return x * 2\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import double\n\nclass DoubleTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(double(3), 6)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "tests/test_app.py": "import unittest\nfrom app import double\n\nclass DoubleTest(unittest.TestCase):\n    def test_doubles_the_value(self):\n        self.assertEqual(double(3), 6)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/progress/20260731020000.md": "# Progress: triple 機能追加\n\n**Plan:** .agents/artifacts/plans/20260731020000_add-triple.md\n**Cycle ID:** 20260731020000\n**Last Updated:** 2026-07-31 02:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | triple 実装（TDD） | 🟢 Done | app.py, helpers.py, tests/test_app.py | 1 | scale ヘルパを切り出して triple を実装。helpers.py はコミットできていない |\n",
           ".agents/artifacts/plans/20260731020000_add-triple.md": "# triple 機能追加\n\n**Cycle ID:** `20260731020000`\n**Started:** 2026-07-31 02:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\ntriple 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **triple 実装（TDD）**\n   - Files: `app.py`, `helpers.py`, `tests/test_app.py`\n   - scale ヘルパを切り出し triple(x) -> int を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. triple 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n",
           "helpers.py": "\"\"\"実装の途中で切り出したヘルパ。\"\"\"\n\n\ndef scale(x: int, factor: int) -> int:\n    return x * factor\n"
@@ -485,7 +485,7 @@
             {
               "files": {
                 "app.py": "from helpers import scale\n\n\ndef double(x: int) -> int:\n    return scale(x, 2)\n\n\ndef triple(x: int) -> int:\n    return scale(x, 3)\n",
-                "tests/test_app.py": "import unittest\nfrom app import double, triple\n\nclass DoubleTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(double(3), 6)\n\nclass TripleTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(triple(3), 9)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_app.py": "import unittest\nfrom app import double, triple\n\nclass DoubleTest(unittest.TestCase):\n    def test_doubles_the_value(self):\n        self.assertEqual(double(3), 6)\n\nclass TripleTest(unittest.TestCase):\n    def test_triples_the_value(self):\n        self.assertEqual(triple(3), 9)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: triple を追加（TDD）"
             }
@@ -544,7 +544,7 @@
           "CLAUDE.md": "# unverified-test\n\nUNVERIFIED gate テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def square(x: int) -> int:\n    return x * x\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import square\n\nclass SquareTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(square(4), 16)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "tests/test_app.py": "import unittest\nfrom app import square\n\nclass SquareTest(unittest.TestCase):\n    def test_squares_the_value(self):\n        self.assertEqual(square(4), 16)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/progress/20260731030000.md": "# Progress: cube 機能追加\n\n**Plan:** .agents/artifacts/plans/20260731030000_add-cube.md\n**Cycle ID:** 20260731030000\n**Last Updated:** 2026-07-31 03:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | cube 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 1 | cube(x) を実装 |\n",
           ".agents/artifacts/plans/20260731030000_add-cube.md": "# cube 機能追加\n\n**Cycle ID:** `20260731030000`\n**Started:** 2026-07-31 03:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\ncube 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **cube 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - cube(x) -> int を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. cube 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
@@ -555,7 +555,7 @@
             {
               "files": {
                 "app.py": "def square(x: int) -> int:\n    return x * x\n\n\ndef cube(x: int) -> int:\n    return x * x * x\n",
-                "tests/test_app.py": "import unittest\nfrom app import square, cube\n\nclass SquareTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(square(4), 16)\n\nclass CubeTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(cube(3), 27)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_app.py": "import unittest\nfrom app import square, cube\n\nclass SquareTest(unittest.TestCase):\n    def test_squares_the_value(self):\n        self.assertEqual(square(4), 16)\n\nclass CubeTest(unittest.TestCase):\n    def test_cubes_the_value(self):\n        self.assertEqual(cube(3), 27)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: cube を追加（TDD）"
             }
@@ -646,7 +646,7 @@
           "CLAUDE.md": "# fixloop-test\n\nFix loop exhaustion テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def negate(x: int) -> int:\n    return -x\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import negate\n\nclass NegateTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(negate(5), -5)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "tests/test_app.py": "import unittest\nfrom app import negate\n\nclass NegateTest(unittest.TestCase):\n    def test_negates_the_value(self):\n        self.assertEqual(negate(5), -5)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/progress/20260801010000.md": "# Progress: absolute 機能追加\n\n**Plan:** .agents/artifacts/plans/20260801010000_add-absolute.md\n**Cycle ID:** 20260801010000\n**Last Updated:** 2026-08-01 01:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | absolute 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 2 | absolute(x) を実装。正負の両方を検証 |\n",
           ".agents/artifacts/plans/20260801010000_add-absolute.md": "# absolute 機能追加\n\n**Cycle ID:** `20260801010000`\n**Started:** 2026-08-01 01:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nabsolute 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **absolute 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - absolute(x) -> int を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. absolute 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
@@ -657,7 +657,7 @@
             {
               "files": {
                 "app.py": "def negate(x: int) -> int:\n    return -x\n\n\ndef absolute(x: int) -> int:\n    return x if x >= 0 else -x\n",
-                "tests/test_app.py": "import unittest\nfrom app import negate, absolute\n\nclass NegateTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(negate(5), -5)\n\nclass AbsoluteTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(absolute(-5), 5)\n    def test_case_1(self):\n        self.assertEqual(absolute(5), 5)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_app.py": "import unittest\nfrom app import negate, absolute\n\nclass NegateTest(unittest.TestCase):\n    def test_negates_the_value(self):\n        self.assertEqual(negate(5), -5)\n\nclass AbsoluteTest(unittest.TestCase):\n    def test_absolute_of_a_negative_is_positive(self):\n        self.assertEqual(absolute(-5), 5)\n    def test_absolute_of_a_positive_is_unchanged(self):\n        self.assertEqual(absolute(5), 5)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: absolute を追加（TDD）"
             }
@@ -791,7 +791,7 @@
           "CLAUDE.md": "# reexec-test\n\nRe-execution テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def inc(x: int) -> int:\n    return x + 1\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import inc\n\nclass IncTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(inc(0), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "tests/test_app.py": "import unittest\nfrom app import inc\n\nclass IncTest(unittest.TestCase):\n    def test_increments_the_value(self):\n        self.assertEqual(inc(0), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/progress/20260801030000.md": "# Progress: dec 機能追加\n\n**Plan:** .agents/artifacts/plans/20260801030000_add-dec.md\n**Cycle ID:** 20260801030000\n**Last Updated:** 2026-08-01 03:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | dec 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 1 | dec(x) を実装。Phase 4 の BLOCK 後に /iterate で修正済み |\n",
           ".agents/artifacts/plans/20260801030000_add-dec.md": "# dec 機能追加\n\n**Cycle ID:** `20260801030000`\n**Started:** 2026-08-01 03:00:00\n**Status:** ⚠️ Review Failed\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\ndec 関数を追加する。Phase 4 で BLOCK され、/iterate で修正済み。\n\n## 🔧 Implementation Steps\n\n1. **dec 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - dec(x) -> int を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. dec 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
@@ -802,7 +802,7 @@
             {
               "files": {
                 "app.py": "def inc(x: int) -> int:\n    return x + 1\n\n\ndef dec(x: int) -> int:\n    return x - 1\n",
-                "tests/test_app.py": "import unittest\nfrom app import inc, dec\n\nclass IncTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(inc(0), 1)\n\nclass DecTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(dec(1), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_app.py": "import unittest\nfrom app import inc, dec\n\nclass IncTest(unittest.TestCase):\n    def test_increments_the_value(self):\n        self.assertEqual(inc(0), 1)\n\nclass DecTest(unittest.TestCase):\n    def test_decrements_the_value(self):\n        self.assertEqual(dec(1), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: dec を追加（TDD）"
             }
@@ -842,7 +842,7 @@
           "CLAUDE.md": "# fixloop-success-test\n\nFix loop 成功テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def clamp(x: int, lo: int, hi: int) -> int:\n    return max(lo, min(hi, x))\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import clamp\n\nclass ClampTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(clamp(5, 0, 10), 5)\n    def test_case_1(self):\n        self.assertEqual(clamp(-1, 0, 10), 0)\n    def test_case_2(self):\n        self.assertEqual(clamp(11, 0, 10), 10)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "tests/test_app.py": "import unittest\nfrom app import clamp\n\nclass ClampTest(unittest.TestCase):\n    def test_keeps_a_value_inside_the_range(self):\n        self.assertEqual(clamp(5, 0, 10), 5)\n    def test_clamps_below_the_lower_bound(self):\n        self.assertEqual(clamp(-1, 0, 10), 0)\n    def test_clamps_above_the_upper_bound(self):\n        self.assertEqual(clamp(11, 0, 10), 10)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/progress/20260801040000.md": "# Progress: normalize 機能追加\n\n**Plan:** .agents/artifacts/plans/20260801040000_add-normalize.md\n**Cycle ID:** 20260801040000\n**Last Updated:** 2026-08-01 04:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | normalize 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 2 | clamp を使って normalize(x, lo, hi) を 0.0〜1.0 に正規化 |\n",
           ".agents/artifacts/plans/20260801040000_add-normalize.md": "# normalize 機能追加\n\n**Cycle ID:** `20260801040000`\n**Started:** 2026-08-01 04:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nnormalize 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **normalize 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - normalize(x, lo, hi) -> float を実装（0.0〜1.0 に正規化）\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. normalize 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
@@ -853,7 +853,7 @@
             {
               "files": {
                 "app.py": "def clamp(x: int, lo: int, hi: int) -> int:\n    return max(lo, min(hi, x))\n\n\ndef normalize(x: int, lo: int, hi: int) -> float:\n    return (clamp(x, lo, hi) - lo) / (hi - lo)\n",
-                "tests/test_app.py": "import unittest\nfrom app import clamp, normalize\n\nclass ClampTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(clamp(5, 0, 10), 5)\n    def test_case_1(self):\n        self.assertEqual(clamp(-1, 0, 10), 0)\n\nclass NormalizeTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(normalize(5, 0, 10), 0.5)\n    def test_case_1(self):\n        self.assertEqual(normalize(-1, 0, 10), 0.0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_app.py": "import unittest\nfrom app import clamp, normalize\n\nclass ClampTest(unittest.TestCase):\n    def test_keeps_a_value_inside_the_range(self):\n        self.assertEqual(clamp(5, 0, 10), 5)\n    def test_clamps_below_the_lower_bound(self):\n        self.assertEqual(clamp(-1, 0, 10), 0)\n    def test_clamps_above_the_upper_bound(self):\n        self.assertEqual(clamp(11, 0, 10), 10)\n\nclass NormalizeTest(unittest.TestCase):\n    def test_maps_the_midpoint_to_half(self):\n        self.assertEqual(normalize(5, 0, 10), 0.5)\n    def test_clamps_below_the_range_to_zero(self):\n        self.assertEqual(normalize(-1, 0, 10), 0.0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: normalize を追加（TDD）"
             }
@@ -897,7 +897,7 @@
           "CLAUDE.md": "# warn-autofix-test\n\nWARN auto-fix テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def half(x: int) -> int:\n    return x // 2\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import half\n\nclass HalfTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(half(10), 5)\n    def test_case_1(self):\n        self.assertEqual(half(7), 3)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "tests/test_app.py": "import unittest\nfrom app import half\n\nclass HalfTest(unittest.TestCase):\n    def test_halves_an_even_number(self):\n        self.assertEqual(half(10), 5)\n    def test_rounds_down_an_odd_number(self):\n        self.assertEqual(half(7), 3)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/progress/20260802000000.md": "# Progress: quarter 機能追加\n\n**Plan:** .agents/artifacts/plans/20260802000000_add-quarter.md\n**Cycle ID:** 20260802000000\n**Last Updated:** 2026-08-02 00:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | quarter 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 2 | quarter(x) を x // 4 で実装 |\n",
           ".agents/artifacts/plans/20260802000000_add-quarter.md": "# quarter 機能追加\n\n**Cycle ID:** `20260802000000`\n**Started:** 2026-08-02 00:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nquarter 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **quarter 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - quarter(x) -> int を実装（x // 4）\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. quarter 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
@@ -908,7 +908,7 @@
             {
               "files": {
                 "app.py": "def half(x: int) -> int:\n    return x // 2\n\n\ndef quarter(x: int) -> int:\n    return x // 4\n",
-                "tests/test_app.py": "import unittest\nfrom app import half, quarter\n\nclass HalfTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(half(10), 5)\n\nclass QuarterTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(quarter(8), 2)\n    def test_case_1(self):\n        self.assertEqual(quarter(7), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_app.py": "import unittest\nfrom app import half, quarter\n\nclass HalfTest(unittest.TestCase):\n    def test_halves_an_even_number(self):\n        self.assertEqual(half(10), 5)\n    def test_rounds_down_an_odd_number(self):\n        self.assertEqual(half(7), 3)\n\nclass QuarterTest(unittest.TestCase):\n    def test_quarters_a_multiple_of_four(self):\n        self.assertEqual(quarter(8), 2)\n    def test_rounds_down_a_remainder(self):\n        self.assertEqual(quarter(7), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: quarter を追加（TDD）"
             }
@@ -952,7 +952,7 @@
           "CLAUDE.md": "# warn-remain-test\n\nWARN 残存テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def modulo(a: int, b: int) -> int:\n    return a % b\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import modulo\n\nclass ModuloTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(modulo(10, 3), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "tests/test_app.py": "import unittest\nfrom app import modulo\n\nclass ModuloTest(unittest.TestCase):\n    def test_returns_the_remainder(self):\n        self.assertEqual(modulo(10, 3), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/progress/20260802010000.md": "# Progress: divmod 機能追加\n\n**Plan:** .agents/artifacts/plans/20260802010000_add-divmod.md\n**Cycle ID:** 20260802010000\n**Last Updated:** 2026-08-02 01:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | divmod_pair 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 1 | divmod_pair(a, b) が商と剰余のタプルを返す |\n",
           ".agents/artifacts/plans/20260802010000_add-divmod.md": "# divmod 機能追加\n\n**Cycle ID:** `20260802010000`\n**Started:** 2026-08-02 01:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\ndivmod_pair 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **divmod_pair 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - divmod_pair(a, b) -> tuple[int, int] を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. divmod_pair 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
@@ -963,7 +963,7 @@
             {
               "files": {
                 "app.py": "def modulo(a: int, b: int) -> int:\n    return a % b\n\n\ndef divmod_pair(a: int, b: int) -> tuple[int, int]:\n    return a // b, a % b\n",
-                "tests/test_app.py": "import unittest\nfrom app import modulo, divmod_pair\n\nclass ModuloTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(modulo(10, 3), 1)\n\nclass DivmodPairTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(divmod_pair(10, 3), (3, 1))\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_app.py": "import unittest\nfrom app import modulo, divmod_pair\n\nclass ModuloTest(unittest.TestCase):\n    def test_returns_the_remainder(self):\n        self.assertEqual(modulo(10, 3), 1)\n\nclass DivmodPairTest(unittest.TestCase):\n    def test_returns_the_quotient_and_the_remainder(self):\n        self.assertEqual(divmod_pair(10, 3), (3, 1))\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: divmod_pair を追加（TDD）"
             }
@@ -1022,7 +1022,7 @@
           "CLAUDE.md": "# warn-block-regress-test\n\nWARN BLOCK 回帰テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def power(base: int, exp: int) -> int:\n    return base ** exp\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import power\n\nclass PowerTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(power(2, 3), 8)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "tests/test_app.py": "import unittest\nfrom app import power\n\nclass PowerTest(unittest.TestCase):\n    def test_raises_to_the_power(self):\n        self.assertEqual(power(2, 3), 8)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/progress/20260802020000.md": "# Progress: root 機能追加\n\n**Plan:** .agents/artifacts/plans/20260802020000_add-root.md\n**Cycle ID:** 20260802020000\n**Last Updated:** 2026-08-02 02:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | root 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 1 | root(x, n) を x ** (1 / n) で実装 |\n",
           ".agents/artifacts/plans/20260802020000_add-root.md": "# root 機能追加\n\n**Cycle ID:** `20260802020000`\n**Started:** 2026-08-02 02:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nroot 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **root 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - root(x, n) -> float を実装（x の n 乗根）\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. root 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
@@ -1033,7 +1033,7 @@
             {
               "files": {
                 "app.py": "def power(base: int, exp: int) -> int:\n    return base ** exp\n\n\ndef root(x: float, n: int) -> float:\n    return x ** (1 / n)\n",
-                "tests/test_app.py": "import unittest\nfrom app import power, root\n\nclass PowerTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(power(2, 3), 8)\n\nclass RootTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertAlmostEqual(root(8, 3), 2.0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_app.py": "import unittest\nfrom app import power, root\n\nclass PowerTest(unittest.TestCase):\n    def test_raises_to_the_power(self):\n        self.assertEqual(power(2, 3), 8)\n\nclass RootTest(unittest.TestCase):\n    def test_returns_the_nth_root(self):\n        self.assertAlmostEqual(root(8, 3), 2.0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: root を追加（TDD）"
             }
@@ -1096,7 +1096,7 @@
           "CLAUDE.md": "# phase4-warn-test\n\nPhase 4 WARN テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def sign(x: int) -> int:\n    if x > 0:\n        return 1\n    if x < 0:\n        return -1\n    return 0\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import sign\n\nclass SignTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(sign(5), 1)\n    def test_case_1(self):\n        self.assertEqual(sign(-3), -1)\n    def test_case_2(self):\n        self.assertEqual(sign(0), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "tests/test_app.py": "import unittest\nfrom app import sign\n\nclass SignTest(unittest.TestCase):\n    def test_a_positive_value_is_one(self):\n        self.assertEqual(sign(5), 1)\n    def test_a_negative_value_is_minus_one(self):\n        self.assertEqual(sign(-3), -1)\n    def test_zero_is_zero(self):\n        self.assertEqual(sign(0), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/progress/20260802030000.md": "# Progress: abs_sign 機能追加\n\n**Plan:** .agents/artifacts/plans/20260802030000_add-abs-sign.md\n**Cycle ID:** 20260802030000\n**Last Updated:** 2026-08-02 03:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | abs_sign 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 1 | abs_sign(x) が絶対値と sign のタプルを返す |\n",
           ".agents/artifacts/plans/20260802030000_add-abs-sign.md": "# abs_sign 機能追加\n\n**Cycle ID:** `20260802030000`\n**Started:** 2026-08-02 03:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nabs_sign 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **abs_sign 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - abs_sign(x) -> tuple[int, int] を実装（絶対値と sign のタプル）\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. abs_sign 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
@@ -1107,7 +1107,7 @@
             {
               "files": {
                 "app.py": "def sign(x: int) -> int:\n    if x > 0:\n        return 1\n    if x < 0:\n        return -1\n    return 0\n\n\ndef abs_sign(x: int) -> tuple[int, int]:\n    return abs(x), sign(x)\n",
-                "tests/test_app.py": "import unittest\nfrom app import sign, abs_sign\n\nclass SignTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(sign(5), 1)\n    def test_case_1(self):\n        self.assertEqual(sign(0), 0)\n\nclass AbsSignTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(abs_sign(-3), (3, -1))\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_app.py": "import unittest\nfrom app import sign, abs_sign\n\nclass SignTest(unittest.TestCase):\n    def test_a_positive_value_is_one(self):\n        self.assertEqual(sign(5), 1)\n    def test_a_negative_value_is_minus_one(self):\n        self.assertEqual(sign(-3), -1)\n    def test_zero_is_zero(self):\n        self.assertEqual(sign(0), 0)\n\nclass AbsSignTest(unittest.TestCase):\n    def test_returns_the_absolute_value_and_the_sign(self):\n        self.assertEqual(abs_sign(-3), (3, -1))\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: abs_sign を追加（TDD）"
             }
@@ -1170,7 +1170,7 @@
           "CLAUDE.md": "# block-to-warn-test\n\nBLOCK→fix→WARN ルーティングテスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def factorial(n: int) -> int:\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import factorial\n\nclass FactorialTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(factorial(0), 1)\n    def test_case_1(self):\n        self.assertEqual(factorial(5), 120)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          "tests/test_app.py": "import unittest\nfrom app import factorial\n\nclass FactorialTest(unittest.TestCase):\n    def test_factorial_of_zero_is_one(self):\n        self.assertEqual(factorial(0), 1)\n    def test_multiplies_down_to_one(self):\n        self.assertEqual(factorial(5), 120)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/progress/20260802040000.md": "# Progress: combo 機能追加\n\n**Plan:** .agents/artifacts/plans/20260802040000_add-combo.md\n**Cycle ID:** 20260802040000\n**Last Updated:** 2026-08-02 04:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | combination 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 2 | factorial を使って combination(n, r) を実装 |\n",
           ".agents/artifacts/plans/20260802040000_add-combo.md": "# combo 機能追加\n\n**Cycle ID:** `20260802040000`\n**Started:** 2026-08-02 04:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\ncombination 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **combination 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - combination(n, r) -> int を実装（nCr）\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. combination 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
@@ -1181,7 +1181,7 @@
             {
               "files": {
                 "app.py": "def factorial(n: int) -> int:\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\n\ndef combination(n: int, r: int) -> int:\n    return factorial(n) // (factorial(r) * factorial(n - r))\n",
-                "tests/test_app.py": "import unittest\nfrom app import factorial, combination\n\nclass FactorialTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(factorial(5), 120)\n\nclass CombinationTest(unittest.TestCase):\n    def test_case_0(self):\n        self.assertEqual(combination(5, 2), 10)\n    def test_case_1(self):\n        self.assertEqual(combination(5, 0), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+                "tests/test_app.py": "import unittest\nfrom app import factorial, combination\n\nclass FactorialTest(unittest.TestCase):\n    def test_factorial_of_zero_is_one(self):\n        self.assertEqual(factorial(0), 1)\n    def test_multiplies_down_to_one(self):\n        self.assertEqual(factorial(5), 120)\n\nclass CombinationTest(unittest.TestCase):\n    def test_counts_the_combinations(self):\n        self.assertEqual(combination(5, 2), 10)\n    def test_choosing_none_is_one(self):\n        self.assertEqual(combination(5, 0), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
               },
               "message": "feat: combination を追加（TDD）"
             }
