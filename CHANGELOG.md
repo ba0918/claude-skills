@@ -9,6 +9,12 @@ claude-skills プラグインのバージョン履歴。
 ルート `package.json`（OpenCode git plugin）を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
+## Unreleased
+
+### Fixed: process-queue の再実行が初回実行の残骸を残したまま再評価される
+
+- `regression_queue.py rerun` を新設。未完了 unit の work dir を fixture baseline へ再実体化してから再走し、fixture が build 後に変わっていれば拒否する（#250）
+
 ## 1.73.0
 
 ### Fixed: release workflow の初回経路が draft 作成前のローカルタグで必ず落ちる

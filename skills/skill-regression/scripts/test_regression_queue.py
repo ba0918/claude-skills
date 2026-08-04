@@ -414,6 +414,102 @@ class TestGrade(_Harness):
 
 
 # ==========================================================================
+# rerun
+# ==========================================================================
+class TestRerun(_Harness):
+    UID = "demo-skill-ds-001"
+
+    def _contaminate(self, uid=UID):
+        """Simulate what a first run's executor leaves behind: an edited staged file
+        plus an untracked leftover. Measured in batch prompt-audit-regression-20260804-r2:
+        a rerun executor found the previous run's implementation already in the seed
+        tree, so the scenario's premise no longer held."""
+        staged_dir = os.path.join(self.batch, "work", uid, rq.STAGED_SUBDIR)
+        edited = os.path.join(staged_dir, "src", "a.py")
+        with open(edited, "w") as handle:
+            handle.write("print(999)\n")
+        leftover = os.path.join(staged_dir, "src", "leftover_test.py")
+        with open(leftover, "w") as handle:
+            handle.write("assert True\n")
+        return edited, leftover
+
+    def _two_scenario_fixture(self):
+        fixture = _fixture()
+        second = json.loads(json.dumps(fixture["scenarios"][0]))
+        second["id"] = "ds-002"
+        fixture["scenarios"].append(second)
+        return fixture
+
+    def test_restores_a_drifted_unfinished_unit_to_baseline(self):
+        self.build()
+        edited, leftover = self._contaminate()
+        summary = rq.rerun(self.batch)
+        self.assertEqual(summary["rematerialized"], [self.UID])
+        with open(edited) as handle:
+            self.assertEqual(handle.read(), "print(1)\n")
+        self.assertFalse(os.path.exists(leftover))
+
+    def test_the_documented_old_procedure_is_what_this_guards_against(self):
+        """Deleting report.json alone re-runs the scenario on top of the first run's
+        residue; rerun must leave the start tree identical to the fixture baseline."""
+        self.build()
+        self.write_report(self.UID, self.report("yes", "yes"))
+        edited, leftover = self._contaminate()
+        os.remove(os.path.join(self.batch, "work", self.UID, rq.REPORT_NAME))
+        rq.rerun(self.batch)
+        with open(edited) as handle:
+            self.assertEqual(handle.read(), "print(1)\n")
+        self.assertFalse(os.path.exists(leftover))
+
+    def test_leaves_finished_units_untouched(self):
+        self.build(self._two_scenario_fixture())
+        self.write_report(self.UID, self.report("yes", "yes"))
+        edited, _leftover = self._contaminate()
+        summary = rq.rerun(self.batch)
+        self.assertEqual(summary["rematerialized"], ["demo-skill-ds-002"])
+        self.assertIn(self.UID, summary["untouched"])
+        with open(edited) as handle:
+            self.assertEqual(handle.read(), "print(999)\n")
+        self.assertTrue(os.path.isfile(
+            os.path.join(self.batch, "work", self.UID, rq.REPORT_NAME)))
+
+    def test_a_named_unit_is_reset_even_when_finished(self):
+        self.build()
+        self.write_report(self.UID, self.report("yes", "yes"))
+        edited, _leftover = self._contaminate()
+        summary = rq.rerun(self.batch, units=[self.UID])
+        self.assertEqual(summary["rematerialized"], [self.UID])
+        self.assertFalse(os.path.isfile(
+            os.path.join(self.batch, "work", self.UID, rq.REPORT_NAME)))
+        with open(edited) as handle:
+            self.assertEqual(handle.read(), "print(1)\n")
+
+    def test_refuses_when_the_scenario_changed_since_build(self):
+        """A rerun against an edited fixture would grade new behaviour with the old
+        manifest key. That is a rebuild, not a rerun."""
+        fixture_path = self.write_fixture()
+        rq.build([fixture_path], self.batch, self.repo)
+        changed = _fixture()
+        changed["scenarios"][0]["requirements"][0]["text"] = "something stricter"
+        with open(fixture_path, "w") as handle:
+            json.dump(changed, handle)
+        with self.assertRaises(rq.QueueError) as ctx:
+            rq.rerun(self.batch)
+        self.assertIn("rebuild", str(ctx.exception))
+
+    def test_refuses_an_unknown_unit(self):
+        self.build()
+        with self.assertRaises(rq.QueueError):
+            rq.rerun(self.batch, units=["demo-skill-no-such"])
+
+    def test_nothing_to_do_is_a_no_op(self):
+        self.build()
+        self.write_report(self.UID, self.report("yes", "yes"))
+        summary = rq.rerun(self.batch)
+        self.assertEqual(summary["rematerialized"], [])
+
+
+# ==========================================================================
 # CLI
 # ==========================================================================
 class TestCli(_Harness):
@@ -432,6 +528,22 @@ class TestCli(_Harness):
                                      "--repo-root", self.repo]), 0)
         self.write_report("demo-skill-ds-001", self.report("yes", "yes"))
         self.assertEqual(self._main(["grade", "--batch", self.batch]), 0)
+
+    def test_rerun_via_cli(self):
+        fixture = self.write_fixture()
+        self._main(["build", "--fixture", fixture, "--batch", self.batch,
+                    "--repo-root", self.repo])
+        self.assertEqual(self._main(["rerun", "--batch", self.batch]), 0)
+
+    def test_rerun_reports_a_changed_fixture_as_an_error(self):
+        fixture_path = self.write_fixture()
+        self._main(["build", "--fixture", fixture_path, "--batch", self.batch,
+                    "--repo-root", self.repo])
+        changed = _fixture()
+        changed["scenarios"][0]["prompt"] = "an entirely different situation"
+        with open(fixture_path, "w") as handle:
+            json.dump(changed, handle)
+        self.assertEqual(self._main(["rerun", "--batch", self.batch]), 1)
 
     def test_build_reports_a_bad_fixture_as_an_error(self):
         bad = _fixture()
