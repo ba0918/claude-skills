@@ -656,6 +656,19 @@ def _declared_files(at, value):
     return value
 
 
+def _declared_mtimes(value):
+    """setup.mtimes を「パス → 整数秒」の宣言として正規化する。
+
+    bool は int のサブクラスなので明示的に弾く（True が 1 秒として通る）。
+    """
+    value = _declared_mapping("setup.mtimes", value)
+    for path, offset in value.items():
+        if not isinstance(offset, int) or isinstance(offset, bool):
+            raise MaterializeError(
+                f"setup.mtimes[{path!r}] は整数秒（基準時刻からの相対）である必要がある")
+    return value
+
+
 def _declared_commits(git):
     """setup.git.commits を (files, message) の列に正規化する。"""
     commits = git.get("commits")
@@ -686,7 +699,7 @@ def materialize(scenario, dest, base_time=None):
         base_time = time.time()
     setup = scenario.get("setup") or {}
     files = _declared_files("setup.files", setup.get("files"))
-    mtimes = _declared_mapping("setup.mtimes", setup.get("mtimes"))
+    mtimes = _declared_mtimes(setup.get("mtimes"))
     git = _declared_mapping("setup.git", setup.get("git"))
     env = _declared_mapping("setup.env", setup.get("env"))
     # 宣言の正規化は書き込みの前に済ませる。途中で落ちると、隔離領域に
@@ -730,8 +743,14 @@ def materialize(scenario, dest, base_time=None):
             for path, content in entry_files.items():
                 _write(dest, path, content)
                 expected[path] = content
-            _run_git(["add", "--"] + list(entry_files), dest)
-            # --allow-empty は付けない。空コミットが積まれる状況（add の拒否など）は
+            # add の失敗は検査する。拒否されたパスがあっても残りが staged なら
+            # commit は成功し、宣言の一部だけを積んだ履歴が黙って出来上がる
+            added = _run_git(["add", "--"] + list(entry_files), dest)
+            if added.returncode != 0:
+                raise MaterializeError(
+                    f"setup.git.commits[{index}] の add が拒否された: "
+                    f"{(added.stderr or added.stdout).strip()[:200]}")
+            # --allow-empty は付けない。空コミットが積まれる状況は
             # 「seed したつもりの実装が履歴に無い」ことであり、黙って通してはならない
             result = _run_git(["commit", "-q", "-m", message], dest)
             if result.returncode != 0:
@@ -774,9 +793,6 @@ def materialize(scenario, dest, base_time=None):
     # mtime は他の書き込みが全て終わってから適用する。合間に適用すると、後続の
     # 書き込み（seed コミットのファイル・プレースホルダ置換）が順序を巻き戻す
     for path, offset in mtimes.items():
-        if not isinstance(offset, int) or isinstance(offset, bool):
-            raise MaterializeError(
-                f"setup.mtimes[{path!r}] は整数秒（基準時刻からの相対）である必要がある")
         full = os.path.join(dest, path)
         if os.path.isfile(full):
             stamp = base_time + offset

@@ -896,6 +896,33 @@ class TestMaterializeRejectsBrokenDeclarations(unittest.TestCase):
                         "commits": [{"files": {".git/hooks/pre-commit": "#!/bin/sh\n"},
                                      "message": "feat: hook"}]}})
 
+    def test_a_broken_mtimes_declaration_is_reported_before_anything_is_written(self):
+        # 宣言の正規化は書き込みの前に済ませる規則。壊れた宣言のまま書き始めると、
+        # 隔離領域に「宣言のどれでもない」中途半端な状態が残る
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        with self.assertRaises(fixture_setup.MaterializeError):
+            fixture_setup.materialize(
+                {"id": "s", "setup": {"files": {"a.md": "x"},
+                                      "mtimes": {"a.md": "1h"}}},
+                temp.name)
+        self.assertFalse(os.path.exists(os.path.join(temp.name, "a.md")))
+
+    def test_a_seeded_commit_whose_add_is_refused_is_reported(self):
+        # add が一部のパスを拒否しても、残りが staged なら commit は成功する。
+        # 黙って通すと「seed したつもりの実装が履歴に無い」状態で対象 phase に入る。
+        # 無視設定が後続の seed コミットで入る形は、setup.files['.gitignore'] しか
+        # 読まない静的検査では捕まらないので、実体化側で止めるほかない
+        with self.assertRaises(fixture_setup.MaterializeError):
+            self._materialize({
+                "files": {"a.md": "x"},
+                "git": {"init": True, "commit": True,
+                        "commits": [
+                            {"files": {".gitignore": "/build/\n"},
+                             "message": "chore: build を無視する"},
+                            {"files": {"app.py": "x\n", "build/out.py": "y\n"},
+                             "message": "feat: app"}]}})
+
 
 class TestShippedFixtures(unittest.TestCase):
     """リポジトリ同梱の fixtures.json が契約に適合していること。"""
