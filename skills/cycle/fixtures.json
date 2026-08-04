@@ -605,7 +605,7 @@
           "critical": true
         },
         {
-          "text": "canonical evidence checker を explicit post_merge_sha・contract path・repo root で実行し、exit 0 の場合だけ main を advance して publish を許可している",
+          "text": "main の advance を publication_advance.py の advance サブコマンド 1 本で行い（evidence checker の判定と破壊的操作が同一実装内）、exit 0 のときだけ publish へ進んでいる。git 遷移を手書きしていない",
           "critical": true
         },
         {
@@ -617,7 +617,7 @@
           "critical": false
         }
       ],
-      "notes": "standalone outer orchestrator が所有する protected-state transition の回帰。Phase 4 の pre-merge verdict を evidence として再利用せず、merge 後 SHA で両 state を再取得して checker を fail-closed に扱う。3つの負経路は同一 gate の判定表として固定する。"
+      "notes": "standalone outer orchestrator が所有する protected-state transition の回帰。Phase 4 の pre-merge verdict を evidence として再利用せず、merge 後 SHA で両 state を再取得して checker を fail-closed に扱う。3つの負経路は同一 gate の判定表として固定する。 【#242 / #228 点検】profile 発効（2026-08-03）後も要件 1・2・4・5 はpublication-protocol / evidence-format の現行契約と一致する。要件 3 だけが「canonical evidence checker を明示引数で実行し、exit 0 なら main を advance」という旧い形を指しており、checker 判定と破壊的操作を advance サブコマンド 1 本に閉じた現行契約と矛盾していた（設計指針 7 の contract consistency 違反）ため現行手順へ言い換えた。要求水準は変えていない（fail-closed の線は要件 4 が担う）。"
     },
     {
       "id": "cy-010",
