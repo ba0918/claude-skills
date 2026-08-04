@@ -106,9 +106,10 @@ For each enqueue target, generate an issue:
    and every newline with a single space; do not truncate (provenance: [issue SKILL.md](../issue/SKILL.md)
    Create Workflow Step 7, stated in full here; not read at runtime).
 
-Run the whole text through a secret check before writing it out — `skills/shared/scripts/secret_detect.py` is
-a module without a CLI, so import `detect_secrets` and apply it
-(for example: `python3 -c "import sys; sys.path.insert(0, 'skills/shared/scripts'); from secret_detect import detect_secrets; ..."`).
+Run the whole text through a secret check before writing it out — `secret_detect.py` in `{shared_scripts}`
+(the `shared/scripts` directory where the skills are installed, as an absolute path; in this repository
+`skills/shared/scripts/`) is a module without a CLI, so import `detect_secrets` and apply it
+(for example: `python3 -c "import sys; sys.path.insert(0, '{shared_scripts}'); from secret_detect import detect_secrets; ..."`).
 On a detection, do not enqueue that finding and demote it to the inbox (reason: "secret-suspect").
 
 ### Step 6: inbox (route = "inbox")

@@ -153,18 +153,6 @@ Leave no dimension unbounded:
 3. The `max_iterations = 5` hard cap on the revision loop, plus the regression guard
 4. JSONL is pre-filtered by mtime and streamed line by line; Tier 2 is 6 sessions × (a 2-turn cap + a 180s timeout)
 
-## Preventing rationalization
-
-| Excuse | Reality |
-|--------|------|
-| "Padding the description will fix it" | The 1024-character cap, the trigger-word convention, and the body-consistency check are the ceiling. Passing validate_repo.py is the completion condition |
-| "I want to swap the cases out afterwards" | That violates the freeze-in-advance principle. The holdout gate detects the overfitting |
-| "Tier 2 is expensive, so always skip it" | It runs by default. Skipping requires an explicit `--no-e2e` |
-| "It is not converging, so let us do one more round" | The `max_iterations=5` hard cap |
-| "It regressed, but the average improved" | The 5pt regression guard on per-skill recall/precision plus specificity/invalid_rate reverts it |
-| "The holdout is bad but train is good, so adopt it" | The holdout is an adoption gate. On FAIL, revert |
-| "Showing the body to the judge would raise accuracy" | That diverges from the model's field of view at real triggering time and produces false positives. description-only is the specification |
-
 ## Red flags (signs of a trigger-eval violation)
 
 - Passing the SKILL.md body to the judging agent

@@ -136,16 +136,6 @@ skill holding a fixture has changed since the last verification, CI fails and de
 re-evaluation (run → `--update`) or an explicit judgment that it is unnecessary (`--update --accept`).
 The philosophy of this gate is not to stop drift but to **make only ignoring it impossible**.
 
-## Preventing rationalization
-
-| Excuse | Reality |
-|--------|------|
-| "It is a comment fix, so behavior is unaffected — ignore the check" | If it is unaffected, record the judgment with `--update --accept`. Ignoring it gets mixed into the next real change and becomes untraceable |
-| "Running every scenario is heavy, so just one" | One passing is not passing. The ledger records that every scenario passed. If it is heavy, cut the number of scenarios at capture time |
-| "It failed only because the fixture is old" | Do not assert that without the evidence to separate the causes. Making a scenario easier to pass is concealing a regression |
-| "Handing the executor the previous result would be faster" | Then it is no longer a blank-slate executor and the evaluation is contaminated. Dispatch fresh every time |
-| "I read the SKILL.md myself and judged it fine" | Re-reading it yourself is a lump of bias. If you are going to judge, leave a trace with `--accept` |
-
 ## Red flags
 
 - The ledger's `result` is nothing but `accepted-without-run` (a sign that run has become a formality).

@@ -21,7 +21,7 @@ forward-recorded entry carries more evidential weight than a backward interview.
 
 ## Workflow Selection
 
-The leading keyword of $ARGUMENTS selects the workflow (Hick's Law: keep the choice at four).
+The leading keyword of $ARGUMENTS selects the workflow.
 
 - `start` → **Start Workflow** (the one-line pre-commitment protocol; declare the success criterion)
 - `capture` → **Capture Workflow** (freeze an LLM selection conversation into a decision record — the main one)

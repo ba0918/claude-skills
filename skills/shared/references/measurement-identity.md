@@ -68,7 +68,7 @@ Event {
 |---|---|---|---|
 | `polling-fs` / `polling-label` | `tick` | `{claimed, done, failed_transient, failed_permanent, halt_reason?}` (identical to TickResult §7) | Immediately after the tick emits its TickResult (the final Step of each SKILL.md). `skill` = issue / github-issue, and `surface_sha256` is computed at the start of the tick |
 | `skill-regression` | `verification` | `{result: "pass" \| "accepted-addition" \| "accepted-prose" \| "accepted-without-run", scenarios?: int}` (`accepted-addition` = accepted without a run, but hash comparison mechanically confirmed the surface only gained files; `accepted-prose` = accepted without a run, but structural fingerprints mechanically confirmed only the prose of existing md files changed) | Immediately after running `ledger.py --update` (ledger.json holds only the latest; events hold the history) |
-| `trigger-eval` | `eval` | `{recall, precision, stability}` (one line per target skill) | On completing the Tier 1/2 measurement (recommended) |
+| `trigger-eval` | `eval` | `{recall, precision, stability}` (one line per target skill) | On completing the Tier 1/2 measurement |
 | `empirical` | `tuning` | `{iterations, scenario_count, converged, final_precision, precision_delta, prompt_bytes_delta}` | On convergence (`exit_verdict == "converged"`). **Wired only when the target is a repo skill** (when the target is an arbitrary prompt, a CLAUDE.md section, and so on, `surface_sha256` cannot be computed, so the wiring is skipped. Record `instruction_fingerprint` in the iteration JSON instead) |
 
 Read-only systems:

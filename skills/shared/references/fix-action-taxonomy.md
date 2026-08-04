@@ -2,8 +2,7 @@
 
 The axis, shared by doc-audit / context-audit, for "how to handle a detected finding".
 This is **a separate axis, orthogonal to severity (BLOCK/WARN/INFO/PASS, [severity-and-verdicts.md](severity-and-verdicts.md))**;
-it decides "may this finding be fixed automatically". It originated as a local classification in doc-audit's
-`references/checks.md`, and was promoted to a shared contract once context-audit became the third consumer.
+it decides "may this finding be fixed automatically".
 
 ## The two axes are orthogonal
 

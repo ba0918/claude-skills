@@ -209,11 +209,7 @@ SWEEP-FIX REPORT
 | "Narrow the search pattern and verification becomes unnecessary" | A narrowed search only increases false negatives. Searching wide and narrowing by verification is the design |
 | "There are no tests, so skip the verification gate" | If no test is detected, state "not detected" in the report. Do not skip it silently |
 | "There are many sites to fix, so bulk-replace with sed" | Adapting to each site's context is Phase 4's responsibility. Mechanical replacement destroys context |
-| "The intermediate-file deletion was refused, so remove it by another route" | Bypassing a refused deletion is forbidden. Record the surviving path in the report and finish |
-| "Delete the intermediate files first to keep the workspace clean, then write the report" | verdicts.json is the only record of the verdict bases. Deleting before transcription destroys the evidence |
-| "The deletion gets refused in this environment anyway, so report the leftovers without trying" | The exit for a refusal belongs to a deletion that was attempted. Predicting a refusal is not attempting it |
-| "The intermediate files show up in `git status`, so they are an unintended change" | The intermediate-file location is this skill's own workspace and is excluded from the Phase 4-3 comparison. Report it as an ignore-status finding, not as a stray fix |
-| "The intermediate files are not ignored, so add them to .gitignore / move the location" | Rewriting the user's repository setup is outside this skill's scope. Report it and leave the decision to them |
+| "The intermediate files are in the way — delete them early, bypass a refused deletion, or reconfigure the repository around them" | Their location is this skill's own workspace (excluded from the Phase 4-3 comparison). Transcribe verdicts.json into the report before any deletion, exit only through a deletion that was actually attempted (record a refusal's surviving path), and leave the user's repository setup untouched |
 
 ## Red Flags — Signs the Skill Is Not Being Followed
 
