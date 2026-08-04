@@ -232,10 +232,8 @@ record stays in the language of the request.
 
 - **skills-first**: add no command. The workflow branches on the leading keyword of $ARGUMENTS
   (the same shape as brainstorm).
-- **Platform-agnostic**: use no specific tool API name or model name.
 - **Not a recommender**: v1 is limited to eliciting constraints, recording abandonment
-  conditions, and structuring provenance. Measure capture rate, false-trigger rate, and
-  re-evaluation rate before considering making the gate blocking.
+  conditions, and structuring provenance.
 - **Boundary with brainstorm / plan**: brainstorm is idea divergence, plan is the
   implementation plan. This skill owns recording, interviewing, and preserving the provenance
   of decisions.

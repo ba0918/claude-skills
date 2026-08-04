@@ -139,7 +139,7 @@ Emit to `.agents/tmp/trigger-eval-{ts}/report.md`:
 - The metric trajectory / the top confusions (**only the non-zero cells and the top N pairs, not a full matrix dump**, listing both the raw value and the normalized rate `confusion(A,B)/related_cases(A,B)`)
 - **The selection / autonomous modes side by side** (selection only under `--selection-only`). Place selection as the primary metric and autonomous as a reference series, and note the divergence between them as a salience signal. **Never emit a mixed value**
 - The revision diffs / the Tier1↔Tier2 divergence rate / the holdout judgment
-- **Candidate pairs for merging or redesigned separation** (only pairs whose measured confusion does not resolve after two revisions — never the static pre-pass ranking, which does not predict confusion; #81)
+- **Candidate pairs for merging or redesigned separation** (only pairs whose measured confusion does not resolve after two revisions — never the static pre-pass ranking; see Phase 1.5)
 - Execution metadata (the judging model / the date / the sha256 of `cases.json` and `cases_holdout.json` / the stability sample ledger)
 
 **What is retained is report.md / cases.json / cases_holdout.json / the metrics JSON of each iteration** (the anchors for reproduction and cross-run comparison). **The harvest files containing raw prompt bodies (the `--capture-prompts` output) are deleted.** Prompt deletion of `trigger-eval-*` directories older than 30 days. The failure examples put into report.md are **only cases that passed the anonymization inspection** (transcribing a raw seed is forbidden).

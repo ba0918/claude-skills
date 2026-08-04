@@ -131,6 +131,6 @@ completion report heavy).
 
 ## Being referenced from the plan skills (the dependency-inversion anchor)
 
-The completion display of the plan skills (plan-create / plan-implement / cycle) is implemented by
-agreement-ledger plan (`20260721082248`) Phase B2 **by referencing this contract**.
-This contract is the canonical source for the summary format, and B2 is subordinate to it.
+The completion display of the plan skills (plan-create / plan-implement / cycle) is implemented
+**by referencing this contract**. This contract is the canonical source for the summary format,
+and the plan skills' completion displays are subordinate to it.

@@ -249,15 +249,15 @@ artifacts** are `skills/*/SKILL.md`, `skills/*/references/**`, `skills/*/fixture
 | Both | Both, each scoped to its own file set. Read the same reference for the skill-artifact half |
 
 A recall-optimized plan review applied to natural-language artifacts produced a
-22-round finding→prose→finding loop (PR #190); routing by file kind is what keeps that
+22-round finding→prose→finding loop; routing by file kind is what keeps that
 review off skill bodies. The skill-reviewer path carries a different consumer policy,
 so it lives in that reference and is loaded only when the diff reaches it.
 
-`skills/*/scripts/**` is general on purpose: scripts are code, the PR #190 pathology is
+`skills/*/scripts/**` is general on purpose: scripts are code, that pathology is
 specific to natural-language artifacts, and skill-reviewer's BLOCK admission
 (pre-existing mechanical evidence only) would leave a novel code bug — a boundary
 condition, an injection, an ordering — at a non-stopping WARN. Routing scripts to
-plan-reviewer keeps Correctness/Security stopping power on code (#200).
+plan-reviewer keeps Correctness/Security stopping power on code.
 
 ### Step 1: Initial review
 
@@ -394,8 +394,8 @@ catching cross-cutting issues Phase 3's dimensional review may have missed.
 
 Step 0.5's reviewer routing does not apply here: this gate reviews the full diff
 regardless of file kind. A holistic pass is not the recall-optimized dimensional
-review that caused PR #190, and with no fix loop a finding→prose→finding spiral
-cannot start (#200).
+review that produces the finding→prose→finding pathology, and with no fix loop
+such a spiral cannot start.
 
 Phase 4 produces a review verdict; it does not itself transition the change into a
 protected state such as `publishable`. Do not block this review because SHA-bound

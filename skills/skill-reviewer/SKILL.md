@@ -16,7 +16,7 @@ The merge gates already exist: the repository's canonical check runner and the r
 failures and explicit contract violations. This skill adds **no** new enforcement on top of them. It exists because
 applying a recall-optimized plan review to natural-language artifacts produced a self-amplifying loop — a finding
 answered with more prose, that prose opening new interpretation branches, those branches becoming the next round's
-findings — that took 22 rounds to converge (PR #190).
+findings.
 
 So three things hold throughout:
 
@@ -80,8 +80,8 @@ for instructions that change no behavior.
 
 The budget of [the authoring guide](../shared/references/skill-authoring.md) (one execution path loading beyond
 ~500 lines in total) is a design smell that calls for re-placing responsibility — not a threshold to
-BLOCK on, and not a cue to reword more tightly. Fewer lines are better at every size. Shorter is not automatically better: cutting a convention, a path
-constraint, or a safe-side default degrades compliance.
+BLOCK on, and not a cue to reword more tightly. Shorter is not automatically better: cutting a convention, a path
+constraint, or a safe-side default degrades compliance. Reduce lines only by re-placing responsibility, not by rewording.
 
 ### 3. Responsibility placement
 
@@ -142,7 +142,7 @@ label rather than one you compose.
 |--------|---------|
 | "It is obviously wrong, so it is a BLOCK" | Conviction is not evidence. BLOCK needs evidence that already exists, named in `qualification_reason` |
 | "The body is over the line budget, so BLOCK" | A budget crossing is a design smell. It is an OPPORTUNITY to re-place responsibility |
-| "The instruction is ambiguous — I will add a clarifying sentence" | Adding prose is the loop that cost 22 rounds. Report the ambiguity; you do not edit the artifact |
+| "The instruction is ambiguous — I will add a clarifying sentence" | Adding prose restarts the amplification loop. Report the ambiguity; you do not edit the artifact |
 | "There is no fixture, so the change cannot be approved" | Absent run evidence is a coverage state (`uncovered`), not a defect, and never a gate |
 | "Every static check passed, so the skill works" | Static conformance says nothing about execution quality. Cap the claim at what the evidence supports |
 | "A quick regression run would settle this" | Sensor cost is a human's call. Recommend it with blast radius and cost; do not run it |
