@@ -94,6 +94,7 @@ Template: use [references/design-md-template.md](design-md-template.md).
       Coloring: {the direction of the chosen palette, in plain words, 1 line}
       Fonts: {the feel of the chosen fonts, 1 line}
       Tone: {the overall impression and world, 1 line}
+      To confirm: {anything left undecided, or "none"}
 
    ✅ DESIGN.md generated!
    📄 File: DESIGN.md

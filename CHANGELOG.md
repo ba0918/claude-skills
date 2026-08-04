@@ -11,7 +11,36 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
-### Changed: skill-regression の stale 検出に prose-change を追加し軽量承認を md 散文変更へ拡張（#222）
+### Changed: 人間向け成果物の対象読者を契約化し plan を 2 レイヤーへ分離
+
+- `human-readable-summary.md` に **Target audience 節**を新設。人間が読む面の合格基準を
+  「非技術者・初学者が、他の文書を開かずに何を・なぜを追える」と明文化した。従来は
+  読者が未定義で、事実上「書いた本人が読めればいい」に落ちていた
+- 同契約の適用範囲を **2 段構成**へ書き直した。従来は冒頭で「完了報告の要約ブロックの契約」と
+  自己申告しており、spec / plan がリンクすると `📝 In short:` ラベル・約 10 行上限・
+  summary-first 配置まで背負ったように読めた。tier 1（対象読者定義・汎用）/ tier 2
+  （完了報告の要約ブロック固有・従来 5 スキル）を明示分離し、tier 1 参照が tier 2 の
+  義務を負わないことを契約本文に書いた。`validate_repo.py` チェック 14 の 5 スキル
+  固定リストは変更していない
+- 用語の説明と行数上限が衝突したときの解を明記: **説明を削るのではなく用語を捨てる**。
+  予算内で噛み砕けない語は日常語へ言い換える
+- 人間ゲートを実行できない自動ループ向けに**代理基準**を規定: 本文中の専門用語・内部略語・
+  コードネーム・issue 番号・ファイルパスを列挙し、各々が初出で説明済みであることを示す。
+  未説明 1 件で不合格。代理基準は前置きフィルタであり人間判定の代替ではない
+- `spec-generation.md` の Spec File Format 節が「human-readable prose」の一語で
+  済ませていた読者を、正本へのリンクで具体化した
+- **plan を 2 レイヤーと宣言**（`plan/SKILL.md` / `plan-template.md`）。What & Why と Goals は
+  人間向け基準、Design 以降は cycle が消費する LLM 向けとして密度を維持する。plan 全体の
+  平易化は LLM 消費の精度低下と文書肥大を招くため採らない
+
+### Fixed: 完了報告テンプレートの確認事項行の欠落（契約矛盾の解消）
+
+- 共有契約 `human-readable-summary.md` の必須要素 2 は「確認事項がなくても
+  `To confirm: none` を明示せよ」と定めるのに、tier 2 対象スキルのうち issue / handoff /
+  doc-write / design-guide の完了表示テンプレートにはその行が無く、契約と
+  テンプレートが食い違っていた（issue の fixture 実走 is-004 が検出）。4 スキルの
+  テンプレートへ `To confirm:` 行を追加した。brainstorm は `Undecided:` 行で
+  既に明示していたため無改変
 
 - #182 の分類は hash 比較のみのため、既存 md の散文だけを言い換えた変更も
   `contract-change` に落ち、軽量承認レールに乗らなかった。台帳エントリへ md ごとの

@@ -1,8 +1,20 @@
 # Human-Readable Summary Shared Contract
 
-The shared contract for the "utterance-sized human-readable summary" that the **completion report** of
-report-producing skills (brainstorm wrap / issue create / handoff save / doc-write /
-design-guide and others) must carry.
+This contract has two tiers, and a document that links here takes on only the tier it links for.
+
+1. **The target-audience definition (general).** Who a human-facing document is written for, and
+   when it is good enough. It governs every surface produced for a human to read — a spec, the
+   human-facing sections of a plan, a completion report. A section whose primary consumer is an
+   agent (such as a plan's implementation sections) sits outside this tier even when a human may
+   audit it; the human-facing layer must then carry everything the human needs in order to decide.
+   The tier runs from here through the "Target audience" section below.
+2. **The completion-report summary block (specific).** The extra requirements for the
+   utterance-sized summary block that the five report-producing skills (brainstorm wrap /
+   issue create / handoff save / doc-write / design-guide) carry in their completion display.
+   It runs from "Required elements" to the end.
+
+Linking here for tier 1 does **not** impose the tier-2 obligations (the `📝 In short:` label, the
+roughly-10-line bound, the summary-first placement). Those bind the listed report-producing skills only.
 
 A skill that embeds a summary block in its completion display links to this contract with a relative md link and
 follows the required elements, presentation, anti-patterns, and degradation rules below.
@@ -19,6 +31,26 @@ thinning the canonical artifact, or by reproducing it verbatim in the completion
 
 What lowers cognitive load is **plainness of explanation, not compression of line count**. Being short is
 meaningless if it is a pile of fragments and jargon. Solve it by making the words easier, not by adding lines.
+
+## Target audience
+
+The reader of a human-facing document is **a non-specialist or a beginner** who holds none of the
+project's background knowledge. The acceptance criterion: that reader can follow *what* and *why*
+from this document alone, without opening any other file.
+
+1. Unpack a technical term, an internal abbreviation, or a code name **on the spot, at first use**.
+   Write a pointer to an issue number or a past decision so that it still carries its meaning
+   without opening the thing it points at.
+2. Technical subject matter is fine. What is banned is **unexplained assumed knowledge**, not
+   technical content.
+3. When plainness collides with a length bound, **drop the word, not the explanation**. Rephrase a
+   term you cannot unpack within budget into everyday language. Keeping the term and deleting its
+   explanation to fit the bound fails this criterion.
+4. The real test is handing the document to a reader outside the project. Inside an automated loop,
+   where no human is reachable, judge by the **proxy criterion**: enumerate every technical term,
+   internal abbreviation, code name, issue number, and file path in the text, and show that each is
+   unpacked at first use. One unexplained item fails. The proxy is a pre-filter, not a substitute —
+   a human still makes the final call.
 
 ## Required elements
 
@@ -39,12 +71,12 @@ The summary block satisfies the following.
 
 - The summary block begins with the fixed label **`📝 In short:`**.
 - Place it at the **very top** of the completion display (before file paths and Next Steps). The placement is
-  visually unified across the six skills (the summary-first placement contract).
+  visually unified across the five skills (the summary-first placement contract).
 
 ## Before / After worked example (an anchor for a subjective criterion)
 
 "Graspable in one read" is an un-testable subjective criterion, so at least one before/after is
-built into the contract to calibrate the implementers of the six skills onto the same level.
+built into the contract to calibrate the implementers of the five skills onto the same level.
 
 **Before (boilerplate only — the substance does not reach the human):**
 
@@ -60,7 +92,7 @@ built into the contract to calibrate the implementers of the six skills onto the
 📝 In short: a proposal to stop making the completion report just "✅ + a path", and instead
    convey the substance of the artifact to the human in a few lines. A countermeasure to
    approval becoming a ritual in which the substance goes unread.
-   To confirm: is narrowing the target skills down to 6 acceptable?
+   To confirm: is narrowing the target skills down to 5 acceptable?
 
 ✅ Idea saved!
 📄 File: .agents/artifacts/ideas/20260721_foo.md

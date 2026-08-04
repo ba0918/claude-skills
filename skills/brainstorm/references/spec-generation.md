@@ -93,6 +93,8 @@ When interaction is impossible (headless mode), do NOT write directly to `docs/s
 
 Specs are human-readable prose with tables and code blocks as supplements. No frontmatter, no machine-consumable metadata. The spec is the source of truth for what to build; the plan references it but does not copy its content.
 
+"Human-readable" here means the audience defined in [Target audience](../../shared/references/human-readable-summary.md#target-audience): a non-specialist or beginner who must be able to follow the spec without opening another file. So unpack every technical term, internal abbreviation, and code name at first use, and write each reference to an issue or an earlier decision so it still carries its meaning on its own. Before presenting the draft, run that section's proxy criterion and show the result.
+
 ```markdown
 # {Domain Name}
 
