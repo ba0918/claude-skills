@@ -96,6 +96,7 @@ If arguments are given as free-form text without flags, extract title from the f
    ```
    📝 In short: "{title}" — {what the issue is about at heart, in one plain line
       that reaches someone who has not read the body}
+      To confirm: {points needing the human's judgment, or "none"}
 
    ✅ Issue created!
    📄 File: .agents/artifacts/issues/{slug}.md

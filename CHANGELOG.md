@@ -33,7 +33,14 @@ claude-skills プラグインのバージョン履歴。
   人間向け基準、Design 以降は cycle が消費する LLM 向けとして密度を維持する。plan 全体の
   平易化は LLM 消費の精度低下と文書肥大を招くため採らない
 
-### Changed: skill-regression の stale 検出に prose-change を追加し軽量承認を md 散文変更へ拡張（#222）
+### Fixed: 完了報告テンプレートの確認事項行の欠落（契約矛盾の解消）
+
+- 共有契約 `human-readable-summary.md` の必須要素 2 は「確認事項がなくても
+  `To confirm: none` を明示せよ」と定めるのに、tier 2 対象スキルのうち issue / handoff /
+  doc-write / design-guide の完了表示テンプレートにはその行が無く、契約と
+  テンプレートが食い違っていた（issue の fixture 実走 is-004 が検出）。4 スキルの
+  テンプレートへ `To confirm:` 行を追加した。brainstorm は `Undecided:` 行で
+  既に明示していたため無改変
 
 - #182 の分類は hash 比較のみのため、既存 md の散文だけを言い換えた変更も
   `contract-change` に落ち、軽量承認レールに乗らなかった。台帳エントリへ md ごとの

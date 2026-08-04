@@ -95,6 +95,7 @@ The leading keyword of $ARGUMENTS selects the workflow:
    words). Keep confidential values out of the summary:
    ```
    📝 In short: {one plain line conveying what this document explains, reaching someone who has not read it}
+      To confirm: {points needing the human's judgment, or "none"}
 
    ✅ Document saved!
    📄 File: docs/writings/{slug}.md

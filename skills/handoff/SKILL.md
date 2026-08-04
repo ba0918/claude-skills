@@ -154,6 +154,7 @@ confidentiality rule: omit or replace with a category name):
    Goal: {what is being aimed at — 1 line}
    Where we are: {how far it has come — 1 line}
    Next move: {what to do first next session — 1 line}
+   To confirm: {decisions left open for the human, or "none"}
 
 Saved: .agents/artifacts/handoff/{filename}
 Run `/handoff-restore` next session to pick up exactly where this left off.
