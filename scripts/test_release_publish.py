@@ -43,7 +43,11 @@ case "$1" in
     exit 0
     ;;
   tag)
-    cat "$FAKE_DIR/head" > "$FAKE_DIR/local_tag"
+    if [ "$2" = "-d" ]; then
+      rm -f "$FAKE_DIR/local_tag"
+    else
+      cat "$FAKE_DIR/head" > "$FAKE_DIR/local_tag"
+    fi
     ;;
   push)
     ;;
@@ -69,6 +73,10 @@ case "$2" in
     rm -f "$FAKE_DIR/release"
     ;;
   create)
+    if [ -f "$FAKE_DIR/local_tag" ] && [ ! -f "$FAKE_DIR/ls_remote_out" ]; then
+      echo "fake: tag exists locally but has not been pushed" >&2
+      exit 1
+    fi
     prev=""
     for arg in "$@"; do
       if [ "$prev" = "--target" ]; then
@@ -156,9 +164,11 @@ class ReleasePublishTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         calls = self._calls()
         create = next(i for i, c in enumerate(calls) if c.startswith("gh release create"))
+        tag = next(i for i, c in enumerate(calls) if c.startswith("git tag -a"))
         push = next(i for i, c in enumerate(calls) if c.startswith("git push"))
         edit = next(i for i, c in enumerate(calls) if c.startswith("gh release edit"))
-        self.assertLess(create, push)
+        self.assertLess(create, tag)
+        self.assertLess(tag, push)
         self.assertLess(push, edit)
         self.assertNotIn("--target", calls[create])
         self.assertIn("--atomic origin HEAD:main refs/tags/v1.73.0", calls[push])
@@ -180,6 +190,53 @@ class ReleasePublishTest(unittest.TestCase):
         )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("not reachable", proc.stderr)
+
+    def test_fake_gh_rejects_local_unpushed_tag(self):
+        """fake gh 自体の検出力: 未 push のローカルタグがあると create を落とす。
+
+        実 gh は「ローカルにあるがリモートに無い」タグの release create を拒否する
+        （1.73.0 の初回 release run が本番でこの拒否に落ちた）。本体がタグ作成を
+        draft 作成より前へ戻す回帰をテストが検出できることの自己検証。
+        """
+        self._write("local_tag", HEAD_SHA + "\n")
+        env = dict(os.environ)
+        env["PATH"] = self.bin_dir + os.pathsep + env["PATH"]
+        env["FAKE_DIR"] = self.fake_dir
+        proc = subprocess.run(
+            ["gh", "release", "create", "v1.73.0", "--draft"],
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("exists locally but has not been pushed", proc.stderr)
+
+    def test_stale_local_tag_is_validated_then_recreated(self):
+        """検証済みの未 push ローカルタグは draft 作成前に消され、push 前に作り直される。"""
+        self._write("local_tag", HEAD_SHA + "\n")
+
+        proc = self._run()
+
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        calls = self._calls()
+        delete = next(i for i, c in enumerate(calls) if c.startswith("git tag -d"))
+        create = next(i for i, c in enumerate(calls) if c.startswith("gh release create"))
+        recreate = next(i for i, c in enumerate(calls) if c.startswith("git tag -a"))
+        self.assertLess(delete, create)
+        self.assertLess(create, recreate)
+        self.assertEqual(self._release_state(), "false")
+
+    def test_mismatched_local_tag_fails_before_any_mutation(self):
+        """未 push ローカルタグが別 SHA を指すなら、消さずに失敗する。"""
+        self._write("local_tag", OTHER_SHA + "\n")
+
+        proc = self._run()
+
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("local tag v1.73.0 points to", proc.stderr)
+        calls = self._calls()
+        self.assertFalse(any(c.startswith("git tag -d") for c in calls))
+        self.assertFalse(any(c.startswith("gh ") for c in calls))
 
     def test_draft_failure_leaves_nothing_public(self):
         """draft 作成が失敗したら push は走らず、公開物ゼロで失敗する。"""

@@ -11,6 +11,16 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Fixed: release workflow の初回経路が draft 作成前のローカルタグで必ず落ちる
+
+- `release_publish.sh` が draft Release 作成より先にローカルタグを打っていたため、
+  リリースコマンドが「ローカルにあるがリモートに無いタグ」の release create を拒否し、
+  新規タグの初回経路が必ず失敗した（1.73.0 の初回 release run で実発生。公開物ゼロの
+  fail-closed 側に落ちたため実害なし）。タグ作成を draft 完成後・atomic push 直前へ移し、
+  検証済みの未 push ローカルタグは draft 作成前に削除して作り直す
+- fake のリリースコマンドにこの拒否挙動を追加し、偽陰性だった失敗経路を回帰テスト化
+  （順序契約・検証済みローカルタグの作り直し・別 SHA ローカルタグの不変性）
+
 ### Fixed: doc-audit の旧 `docs/` レイアウト前提と cycle satellite 契約の穴
 
 - doc-audit の前提チェック・エラー表・書込境界が旧レイアウト `docs/` を指したままで、
