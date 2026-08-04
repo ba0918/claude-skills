@@ -257,12 +257,20 @@ def _validate_git(where, git, files):
                 where,
                 "setup.git.commit の空配列は意図が曖昧（全件は true、"
                 "ベースラインコミットを作らないならキー自体を省く）"))
+        gitignore = files.get(".gitignore", "")
         for path in commit:
             if not isinstance(path, str):
                 errors.append(_err(where, "setup.git.commit の各要素は文字列である必要がある"))
             elif path not in files:
                 errors.append(_err(
                     where, f"setup.git.commit[{path!r}] に対応する setup.files がない"))
+            elif _gitignore_covers(gitignore, path):
+                # git add が拒否する。それでも --allow-empty の baseline は作られ、
+                # 宣言したパスが 1 つも追跡されないまま commit 済みとして先へ進む
+                errors.append(_err(
+                    where,
+                    f"setup.git.commit[{path!r}] を setup.files['.gitignore'] が"
+                    f"無視している（コミットできないパスは baseline に置けない）"))
     elif commit is not None and not isinstance(commit, bool):
         errors.append(_err(
             where, "setup.git.commit は true / パス配列である必要がある"))
@@ -729,8 +737,16 @@ def materialize(scenario, dest, base_time=None):
             # パス配列は「ベースラインに含めるファイル」の宣言。残りは未追跡のまま
             # 残り、「未コミットの作業がある」状態そのものが前提になるシナリオ
             # （commit スキル等）を宣言で作れる
-            paths = ["-A"] if commit is True else list(commit)
-            _run_git(["add"] + paths, dest)
+            # 配列形はパスの列なので `--` で区切る（`-` 始まりのファイル名が
+            # オプションとして解釈されるのを防ぐ）
+            args = ["add", "-A"] if commit is True else ["add", "--"] + list(commit)
+            added = _run_git(args, dest)
+            # add の失敗は検査する。拒否されても後続の --allow-empty が baseline を
+            # 作ってしまい、宣言のどれも追跡されないまま commit 済みとして先へ進む
+            if added.returncode != 0:
+                raise MaterializeError(
+                    f"setup.git.commit の add が拒否された: "
+                    f"{(added.stderr or added.stdout).strip()[:200]}")
             # --allow-empty: setup.files が空でも基準コミットを作る
             # （「作業ツリーが clean」を要件にするシナリオの前提）
             result = _run_git(

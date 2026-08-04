@@ -213,6 +213,16 @@ class TestValidateSetup(unittest.TestCase):
         })
         self.assertTrue(any("無視" in e for e in fixture_setup.validate(f)))
 
+    def test_baseline_commit_list_of_a_gitignored_path_is_reported(self):
+        # 配列形の baseline も seed コミットと同じ穴を持つ。git add が拒否されても
+        # --allow-empty が空の baseline を作るので、宣言のどれも追跡されないまま
+        # git_state["commit"] は True で返り、シナリオは前提が崩れた状態で走る
+        f = _fixture(setup={
+            "files": {".gitignore": "/build/\n", "build/out.py": "y"},
+            "git": {"init": True, "commit": ["build/out.py"]},
+        })
+        self.assertTrue(any("無視" in e for e in fixture_setup.validate(f)))
+
 
     def test_path_escaping_isolation_is_reported(self):
         f = _fixture(setup={"files": {"../outside.md": "x"}})
@@ -1042,6 +1052,15 @@ class TestMaterializeRejectsBrokenDeclarations(unittest.TestCase):
                              "message": "chore: build を無視する"},
                             {"files": {"app.py": "x\n", "build/out.py": "y\n"},
                              "message": "feat: app"}]}})
+
+    def test_a_baseline_add_whose_paths_are_refused_is_reported(self):
+        # 配列形の baseline も同じ扱いにする。ここで通すと baseline は
+        # --allow-empty の空コミットになり、宣言したファイルが 1 つも
+        # 追跡されていないのに commit 済みとして先へ進む
+        with self.assertRaises(fixture_setup.MaterializeError):
+            self._materialize({
+                "files": {".gitignore": "/build/\n", "build/out.py": "y\n"},
+                "git": {"init": True, "commit": ["build/out.py"]}})
 
 
 class TestShippedFixtures(unittest.TestCase):
