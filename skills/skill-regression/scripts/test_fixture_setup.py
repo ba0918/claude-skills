@@ -7,6 +7,7 @@
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -884,6 +885,81 @@ class TestShippedSeededScenariosReachTheirPhase(unittest.TestCase):
                         f"{where}: {path} が baseline を指していない")
             checked.append(where)
         self.assertTrue(checked, "commits を宣言するシナリオが 1 件も無い（検出側の壊れ）")
+
+    PROGRESS_DIR = ".agents/artifacts/plans/progress/"
+    PLAN_RE = re.compile(r"^\.agents/artifacts/plans/(\d{14})_[^/]+\.md$")
+    CYCLE_ID_RE = re.compile(r"\*\*Cycle ID:\*\*\s*`?([0-9]{14})`?")
+
+    @classmethod
+    def _declared_cycle_ids(cls, files):
+        """runtime-progress の解決順（plan の Cycle ID ヘッダ → ファイル名の timestamp）。"""
+        ids = set()
+        for path, contents in files.items():
+            match = cls.PLAN_RE.match(path)
+            if not match:
+                continue
+            header = cls.CYCLE_ID_RE.search(contents or "")
+            ids.add(header.group(1) if header else match.group(1))
+        return ids
+
+    def test_every_seeded_scenario_declares_the_progress_file_of_its_cycle(self):
+        # runtime-progress § Rules の re-entry: 再入時は progress を読んで 🟢 Done の
+        # step を再実装しない。seed した実装に対応する progress が宣言から抜けると、
+        # skill は完了済みの step を最初から実装し直し、phase 終端型の前提が崩れる。
+        # 落ちるのではなく前の phase を測って合格するので、宣言の時点で止める
+        checked = []
+        for skill, scenario in self._seeded():
+            where = f"{skill}/{scenario['id']}"
+            files = (scenario.get("setup") or {}).get("files") or {}
+            cycle_ids = self._declared_cycle_ids(files)
+            progress = {
+                os.path.splitext(p[len(self.PROGRESS_DIR):])[0]
+                for p in files if p.startswith(self.PROGRESS_DIR)}
+            self.assertTrue(
+                progress & cycle_ids,
+                f"{where}: seed した実装に対応する "
+                f"{self.PROGRESS_DIR}{{cycle_id}}.md が宣言されていない "
+                f"(cycle_id={sorted(cycle_ids)} progress={sorted(progress)})")
+            checked.append(where)
+        self.assertTrue(checked, "commits を宣言するシナリオが 1 件も無い（検出側の壊れ）")
+
+    TEST_DEF_RE = re.compile(r"^\s*(?:async\s+)?def\s+(test_\w+)", re.M)
+
+    @classmethod
+    def _test_names_in_the_tree(cls, dest):
+        names = set()
+        for root, dirs, files in os.walk(dest):
+            dirs[:] = [d for d in dirs if d != ".git"]
+            for name in files:
+                try:
+                    with open(os.path.join(root, name), encoding="utf-8") as handle:
+                        names |= set(cls.TEST_DEF_RE.findall(handle.read()))
+                except (UnicodeDecodeError, OSError):
+                    continue
+        return names
+
+    def test_a_seed_never_drops_a_test_declared_in_the_baseline(self):
+        # seed コミットは setup.files と同じパスを重ね書きできる。baseline が持って
+        # いたテストを seed が削ると、シナリオが前提にしている安全網（既存テストが
+        # 通る状態から始まる）が黙って消え、実装が壊れても赤くならない経路ができる
+        checked = []
+        for skill, scenario in self._seeded():
+            where = f"{skill}/{scenario['id']}"
+            declared = set()
+            for contents in ((scenario.get("setup") or {}).get("files") or {}).values():
+                declared |= set(self.TEST_DEF_RE.findall(contents or ""))
+            if not declared:
+                continue
+            with tempfile.TemporaryDirectory() as dest:
+                fixture_setup.materialize(scenario, dest, base_time=1_750_000_000)
+                seeded = self._test_names_in_the_tree(dest)
+            self.assertLessEqual(
+                declared, seeded,
+                f"{where}: baseline のテスト {sorted(declared - seeded)} が "
+                f"seed 適用後のツリーから消えている")
+            checked.append(where)
+        self.assertTrue(
+            checked, "baseline にテストを宣言する seed シナリオが 1 件も無い（検出側の壊れ）")
 
     def test_every_seeded_scenario_materialises_all_of_its_declared_paths(self):
         # 実体化できなかったパスは baseline が実体と食い違い、編集ゼロの裏取りが
