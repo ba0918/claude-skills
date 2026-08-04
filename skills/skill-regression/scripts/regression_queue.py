@@ -170,6 +170,7 @@ PREDICATE_KEYS = {
     "git_clean": set(),
     "git_commit_count": set(),
     "git_subject_regex": {"rev", "pattern"},
+    "git_subjects_regex": {"pattern"},
     "git_path_committed": {"path"},
     "git_no_commit_touches_both": {"path_a", "path_b"},
 }
@@ -249,6 +250,13 @@ def _eval_one(pred, work_dir):
         matched = re.search(pred["pattern"], subject) is not None
         return (matched == expect,
                 f"git_subject_regex({pred['rev']})={subject!r}")
+    if kind == "git_subjects_regex":
+        subjects = _git_lines(work_dir, ["log", "--format=%s"])
+        skip = pred.get("skip_oldest", 0)
+        checked = subjects[:len(subjects) - skip] if skip else subjects
+        bad = [s for s in checked if re.search(pred["pattern"], s) is None]
+        return ((not bad) == expect,
+                f"git_subjects_regex: {len(checked)} checked, bad={bad!r}")
     if kind == "git_path_committed":
         paths = set(_git_lines(work_dir, ["log", "--name-only", "--format="]))
         actual = pred["path"] in paths

@@ -502,6 +502,22 @@ class TestEvaluateAssert(unittest.TestCase):
         self.assertTrue(self._ok(
             {"type": "git_path_committed", "path": "secret.env", "expect": False}))
 
+    def test_git_subjects_regex(self):
+        # skip_oldest でベースラインコミットを判定から除く。executor が作る
+        # コミット数は可変なので、単一 rev 指定では「全部が形式準拠」を測れない
+        self._commit("b.py", "b\n", "feat: add b")
+        self._commit("c.md", "c\n", "docs: add c")
+        conventional = r"^(feat|fix|docs|chore|refactor|test|perf|style|build|ci)(\(.+\))?: .+"
+        self.assertTrue(self._ok({"type": "git_subjects_regex",
+                                  "pattern": conventional, "skip_oldest": 1}))
+        self._commit("d.py", "d\n", "WIP stuff")
+        self.assertFalse(self._ok({"type": "git_subjects_regex",
+                                   "pattern": conventional, "skip_oldest": 1}))
+
+    def test_git_subjects_regex_with_no_new_commits_holds_vacuously(self):
+        self.assertTrue(self._ok({"type": "git_subjects_regex",
+                                  "pattern": r"^feat: ", "skip_oldest": 1}))
+
     def test_git_no_commit_touches_both(self):
         self._commit("src/f.py", "f\n", "feat: f")
         self._commit("docs/n.md", "n\n", "docs: n")
