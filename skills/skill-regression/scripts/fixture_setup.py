@@ -29,7 +29,7 @@ SCENARIO_KEYS = (
     "id", "title", "source", "executor_tier", "isolation", "setup",
     "prompt", "requirements", "notes",
 )
-REQUIREMENT_KEYS = ("text", "critical")
+REQUIREMENT_KEYS = ("text", "critical", "assert")
 SETUP_KEYS = ("files", "mtimes", "git", "env")
 GIT_KEYS = ("init", "commit", "remote", "branch", "message")
 
@@ -356,6 +356,15 @@ def validate_with_warnings(fixture, source="fixtures.json"):
                     errors.append(_err(
                         where,
                         f"未知の requirements キー {key!r}（有効: {', '.join(REQUIREMENT_KEYS)}）"))
+            # 述語の深い検証（型・必須キー）は評価器と同居する regression_queue 側。
+            # ここは「宣言の形」だけを見る
+            asserts = req.get("assert")
+            if asserts is not None and (
+                    not isinstance(asserts, list) or not asserts
+                    or not all(isinstance(p, dict) and p.get("type")
+                               for p in asserts)):
+                errors.append(_err(
+                    where, "assert は type を持つオブジェクトの非空配列である必要がある"))
         # critical が 1 つも無い fixture は「落ちても合格」になり回帰を検出しない
         if not any(isinstance(r, dict) and r.get("critical") for r in requirements):
             errors.append(_err(where, "critical: true の要件が 1 つもない（回帰を検出できない）"))

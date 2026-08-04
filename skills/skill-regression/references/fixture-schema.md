@@ -52,12 +52,61 @@ The CONFIRMED / FALSE_POSITIVE / UNCERTAIN in the example are the vocabulary of
 | `scenarios[].setup.git` | - | the git state of the isolated area. The keys are in the table below |
 | `scenarios[].setup.env` | - | environment variables given to the executor as a premise (name → value). They are not set during materialization; the caller injects them into the prompt |
 | `scenarios[].prompt` | ✓ | the situation handed to the executor. Write it as a natural user utterance (never name the skill directly — firing is trigger-eval's domain, and what is measured here is only the quality of body execution) |
-| `scenarios[].requirements[]` | ✓ | the requirements the artifact must satisfy. 3-7 items, with at least one `critical: true`. The only keys are `text` / `critical` |
+| `scenarios[].requirements[]` | ✓ | the requirements the artifact must satisfy. 3-7 items, with at least one `critical: true`. The only keys are `text` / `critical` / `assert` |
+| `scenarios[].requirements[].assert` | - | typed predicate objects for machine judgement (see § Machine-judged requirements). When present, the machine verdict replaces the executor's self-report for that requirement |
 | `scenarios[].notes` | - | notes on design decisions (the intent of an edge case, the reason for a tier change, etc.) |
 
 Unknown keys are rejected by validation (at every level: top level, scenario, `requirements`, `setup`, `setup.git`).
 Silently ignoring them would skew what is measured in the hardest way to notice — "a premise you believed you declared is
 never materialized" — so typos included, they fail as violations.
+
+## Machine-judged requirements (`assert`)
+
+A requirement whose satisfaction is a **post-state property** (file contents, git shape, text
+patterns) may declare `assert`: a non-empty list of typed predicate objects. The grader
+evaluates them against the unit's staged tree, and the machine verdict is authoritative for
+that requirement — the executor's self-report is not consulted, in either direction (#241,
+ruling: typed predicate objects; a DSL and per-scenario checker scripts were rejected).
+
+```json
+{ "text": ".env is absent from every commit", "critical": true,
+  "assert": [ { "type": "git_path_committed", "path": ".env", "expect": false } ] }
+```
+
+| Predicate `type` | Required keys | Holds when |
+|---|---|---|
+| `file_exists` | `path` | the file exists (`expect: false` inverts, here and below) |
+| `file_regex` | `path`, `pattern` | the file exists and the regex matches its contents |
+| `git_clean` | — | `git status --porcelain` is empty |
+| `git_commit_count` | one of `equals` / `min` / `max` | `git rev-list HEAD --count` satisfies the bound(s) |
+| `git_subject_regex` | `rev`, `pattern` | the regex matches the subject of commit `rev` |
+| `git_path_committed` | `path` | the path appears in some commit reachable from HEAD |
+| `git_no_commit_touches_both` | `path_a`, `path_b` | no single commit touches both paths |
+
+Rules:
+
+- **Assertion is a change of judgement means, not a relaxation.** The no-easier-editing rule
+  above applies unchanged: converting a requirement to `assert` must preserve what it demands,
+  and dropping a requirement because it cannot be asserted *is* a relaxation and is forbidden.
+  Requirements that are partly semantic (a report must explain something) stay LLM-judged.
+- **Asserts are withheld from the executor prompt**, for the same reason as the `critical`
+  flags: an executor that can see the predicates optimises for the predicates instead of
+  following the skill. The executor still self-reports every requirement.
+- **Predicate implementations are fixed code** in the grader (`regression_queue.py`), never
+  fixture-supplied: fixtures stay declaration-only and never gain execution rights. Adding a
+  predicate type is a code change and passes review like any other guarantee.
+
+## Relation to the quality gate contract
+
+The regression ledger (`ledger.json`) is an **internal input to the `machine_verified`
+verification entry point**, not evidence in the sense of
+[quality-gate-contract.md §2](../../shared/references/quality-gate-contract.md#2-evidence-validity)
+(adjudicated 2026-08-04, issue #243). Its entries bind to skill surface content hashes, not to
+a target version × contract version pair; the contract-level evidence is the fact that the
+canonical entry point (run_checks) passed in full against the exact target version, and that
+state is re-earned in full on every run. The ledger's internal freshness rules (which skills
+or scenarios need re-running) are therefore the ledger's own policy, and refining their
+granularity does not touch §2's totality of invalidation.
 
 ### The keys of `setup.git`
 

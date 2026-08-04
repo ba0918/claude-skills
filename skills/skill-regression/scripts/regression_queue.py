@@ -25,6 +25,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 
@@ -156,6 +157,138 @@ def unit_id(skill, scenario_id):
 
 
 # ==========================================================================
+# Assert predicates
+# ==========================================================================
+# The evaluators live here as fixed code and the fixture only declares typed
+# predicate objects (#241 ruling c): a fixture that could carry code would hand
+# its author arbitrary execution, and a DSL would add a parser surface that a
+# handful of predicate types does not justify. Adding a type is a code change,
+# so it passes review like any other guarantee.
+PREDICATE_KEYS = {
+    "file_exists": {"path"},
+    "file_regex": {"path", "pattern"},
+    "git_clean": set(),
+    "git_commit_count": set(),
+    "git_subject_regex": {"rev", "pattern"},
+    "git_path_committed": {"path"},
+    "git_no_commit_touches_both": {"path_a", "path_b"},
+}
+
+
+class _PredicateFailure(Exception):
+    """A predicate could not be evaluated (broken git state etc.).
+
+    Reads as a failed requirement, never as a harness error: an executor that
+    destroyed the staged state failed whatever was asserted about it.
+    """
+
+
+def _validate_pred(pred, where):
+    if not isinstance(pred, dict):
+        raise QueueError(f"{where}: assert entry is not an object")
+    kind = pred.get("type")
+    if kind not in PREDICATE_KEYS:
+        raise QueueError(
+            f"{where}: unknown predicate type {kind!r} "
+            f"(allowed: {', '.join(sorted(PREDICATE_KEYS))})")
+    missing = PREDICATE_KEYS[kind] - set(pred)
+    if missing:
+        raise QueueError(
+            f"{where}: predicate {kind} missing {', '.join(sorted(missing))}")
+    if kind == "git_commit_count" and not {"equals", "min", "max"} & set(pred):
+        raise QueueError(
+            f"{where}: git_commit_count needs one of equals/min/max")
+
+
+def validate_asserts(requirements):
+    """Producer-side validation: a batch the grader would reject fails here,
+    while it is still cheap to fix (same obligation as the queue dogfooding)."""
+    for index, requirement in enumerate(requirements, start=1):
+        for pred in requirement.get("assert") or ():
+            _validate_pred(pred, where=f"requirement {index}")
+
+
+def _git_lines(work_dir, args):
+    result = fixture_setup._run_git(args, work_dir)
+    if result.returncode != 0:
+        raise _PredicateFailure((result.stderr or "git failed").strip()[:200])
+    return result.stdout.splitlines()
+
+
+def _eval_one(pred, work_dir):
+    kind = pred["type"]
+    expect = pred.get("expect", True)
+    if kind == "file_exists":
+        actual = os.path.isfile(os.path.join(work_dir, pred["path"]))
+        return actual == expect, f"file_exists({pred['path']})={actual}"
+    if kind == "file_regex":
+        full = os.path.join(work_dir, pred["path"])
+        if not os.path.isfile(full):
+            return False, f"file_regex({pred['path']}): file missing"
+        try:
+            content = _read(full)
+        except (OSError, UnicodeDecodeError) as exc:
+            # An unreadable or binary file is a failed predicate, not a harness
+            # crash: what the executor left there is the thing under judgement.
+            return False, f"file_regex({pred['path']}): unreadable ({exc})"
+        matched = re.search(pred["pattern"], content) is not None
+        return (matched == expect,
+                f"file_regex({pred['path']}, {pred['pattern']!r})={matched}")
+    if kind == "git_clean":
+        actual = not _git_lines(work_dir, ["status", "--porcelain"])
+        return actual == expect, f"git_clean={actual}"
+    if kind == "git_commit_count":
+        count = int(_git_lines(work_dir, ["rev-list", "HEAD", "--count"])[0])
+        ok = (count == pred["equals"] if "equals" in pred else True) \
+            and (count >= pred["min"] if "min" in pred else True) \
+            and (count <= pred["max"] if "max" in pred else True)
+        return ok, f"git_commit_count={count}"
+    if kind == "git_subject_regex":
+        subject = "\n".join(
+            _git_lines(work_dir, ["log", "-1", "--format=%s", pred["rev"]]))
+        matched = re.search(pred["pattern"], subject) is not None
+        return (matched == expect,
+                f"git_subject_regex({pred['rev']})={subject!r}")
+    if kind == "git_path_committed":
+        paths = set(_git_lines(work_dir, ["log", "--name-only", "--format="]))
+        actual = pred["path"] in paths
+        return actual == expect, f"git_path_committed({pred['path']})={actual}"
+    if kind == "git_no_commit_touches_both":
+        commit_paths = []
+        for line in _git_lines(work_dir, ["log", "--name-only", "--format=%H"]):
+            if re.fullmatch(r"[0-9a-f]{40}", line):
+                commit_paths.append(set())
+            elif line and commit_paths:
+                commit_paths[-1].add(line)
+        mixed = any(pred["path_a"] in paths and pred["path_b"] in paths
+                    for paths in commit_paths)
+        return ((not mixed) == expect,
+                f"git_no_commit_touches_both({pred['path_a']}, "
+                f"{pred['path_b']})={not mixed}")
+    raise QueueError(f"unhandled predicate type {kind!r}")
+
+
+def evaluate_assert(preds, work_dir):
+    """Evaluate one requirement's declared predicates against a unit's tree.
+
+    Returns (ok, evidence). All predicates must hold. The machine verdict
+    replaces the executor's self-report for the asserted requirement — in both
+    directions, because the requirement is defined by post-state, not by what
+    the executor believes about it.
+    """
+    ok_all, evidences = True, []
+    for pred in preds:
+        _validate_pred(pred, where="assert")
+        try:
+            ok, evidence = _eval_one(pred, work_dir)
+        except _PredicateFailure as exc:
+            ok, evidence = False, f"{pred['type']}: {exc}"
+        ok_all = ok_all and ok
+        evidences.append(("PASS " if ok else "FAIL ") + evidence)
+    return ok_all, "; ".join(evidences)
+
+
+# ==========================================================================
 # Grading (pure)
 # ==========================================================================
 def parse_report(text, expected_count):
@@ -195,11 +328,15 @@ def parse_report(text, expected_count):
     return report, by_index
 
 
-def grade_scenario(requirements, by_index, *, drifted=()):
+def grade_scenario(requirements, by_index, *, drifted=(), machine=None):
     """Mechanical part of the scenario judgement.
 
     `partial` counts as a miss: executor-contract fails safe, because a lenient tally
     empties the ledger of meaning.
+
+    `machine` carries the assert verdicts ({index: {ok, evidence}}) and is
+    authoritative for those indexes — the self-report is not consulted, in either
+    direction, because an asserted requirement is defined by post-state.
 
     `baseline_drift` is evidence, never a verdict. Whether an edit to a staged file is a
     violation depends on the requirement, not on the scenario's isolation mode — a
@@ -208,20 +345,26 @@ def grade_scenario(requirements, by_index, *, drifted=()):
     caller can hold a self-reported "yes" against it, per executor-contract's rule that
     read-only judgements rest on hash comparison rather than self-report.
     """
+    machine = machine or {}
     critical_missed, other_missed = [], []
     for index, requirement in enumerate(requirements, start=1):
-        verdict = by_index[index]["verdict"]
+        if index in machine:
+            verdict = "yes" if machine[index]["ok"] else "no"
+            evidence = machine[index]["evidence"]
+        else:
+            verdict = by_index[index]["verdict"]
+            evidence = by_index[index].get("evidence", "")
         if verdict == "yes":
             continue
         target = critical_missed if requirement.get("critical") else other_missed
         target.append({"index": index, "text": requirement["text"],
-                       "verdict": verdict,
-                       "evidence": by_index[index].get("evidence", "")})
+                       "verdict": verdict, "evidence": evidence})
     return {
         "verdict": "fail" if critical_missed else "unadjudicated_pass",
         "critical_missed": critical_missed,
         "other_missed": other_missed,
         "baseline_drift": sorted(drifted),
+        "machine_checked": sorted(machine),
     }
 
 
@@ -280,6 +423,7 @@ def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None):
         for scenario in fixture["scenarios"]:
             if scenario_ids and scenario["id"] not in scenario_ids:
                 continue
+            validate_asserts(scenario["requirements"])
             uid = unit_id(skill, scenario["id"])
             unit_dir = os.path.join(batch_dir, "work", uid)
             staged = fixture_setup.materialize(
@@ -447,8 +591,14 @@ def grade(batch_dir):
                     path for path, digest in entry["baseline"].items()
                     if _sha256_file(os.path.join(entry["work_dir"], path)) != digest
                 ]
+                machine = {}
+                for index, requirement in enumerate(requirements, start=1):
+                    preds = requirement.get("assert")
+                    if preds:
+                        ok, evidence = evaluate_assert(preds, entry["work_dir"])
+                        machine[index] = {"ok": ok, "evidence": evidence}
                 result.update(grade_scenario(
-                    requirements, by_index, drifted=drifted))
+                    requirements, by_index, drifted=drifted, machine=machine))
                 result["execution_path"] = report.get("execution_path", "")
                 result["unclear"] = report.get("unclear", [])
         by_skill.setdefault(entry["skill"], []).append(result)

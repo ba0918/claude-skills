@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "..", "shared", "scripts"))
 
+import fixture_setup  # noqa: E402
 import process_runner  # noqa: E402
 import regression_queue as rq  # noqa: E402
 
@@ -411,6 +412,178 @@ class TestGrade(_Harness):
         self.write_report("demo-skill-ds-001", self.report("yes", "yes"))
         scenario = rq.grade(self.batch)["skills"]["demo-skill"]["scenarios"][0]
         self.assertEqual(scenario["execution_path"], "inline")
+
+
+# ==========================================================================
+# assert predicates
+# ==========================================================================
+class TestEvaluateAssert(unittest.TestCase):
+    """型付き述語の評価器。実装は固定コード側に置き、fixture は宣言のみ
+    （#241 裁定 c: DSL・シナリオ付属スクリプトは却下）。"""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        fixture_setup._run_git(["init", "-q", "-b", "work"], self.tmp)
+        self._write("a.py", "print(1)\n")
+        self._git(["add", "a.py"])
+        self._git(["commit", "-q", "-m", "chore: base"])
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _write(self, path, content):
+        full = os.path.join(self.tmp, path)
+        os.makedirs(os.path.dirname(full) or self.tmp, exist_ok=True)
+        with open(full, "w") as handle:
+            handle.write(content)
+
+    def _git(self, args):
+        result = fixture_setup._run_git(args, self.tmp)
+        assert result.returncode == 0, result.stderr
+        return result
+
+    def _commit(self, path, content, message):
+        self._write(path, content)
+        self._git(["add", path])
+        self._git(["commit", "-q", "-m", message])
+
+    def _ok(self, *preds):
+        return rq.evaluate_assert(list(preds), self.tmp)[0]
+
+    def test_file_exists(self):
+        self.assertTrue(self._ok({"type": "file_exists", "path": "a.py"}))
+        self.assertFalse(self._ok({"type": "file_exists", "path": "nope.py"}))
+        self.assertTrue(self._ok(
+            {"type": "file_exists", "path": "nope.py", "expect": False}))
+
+    def test_file_regex(self):
+        self.assertTrue(self._ok(
+            {"type": "file_regex", "path": "a.py", "pattern": r"print\(1\)"}))
+        self.assertFalse(self._ok(
+            {"type": "file_regex", "path": "a.py", "pattern": "banana"}))
+        self.assertFalse(self._ok(
+            {"type": "file_regex", "path": "missing.py", "pattern": "x"}))
+
+    def test_file_regex_on_a_binary_file_fails_without_crashing(self):
+        # executor が対象パスへ何を書いても採点は落ちない（不成立になるだけ）
+        with open(os.path.join(self.tmp, "blob.bin"), "wb") as handle:
+            handle.write(b"\xff\xfe\x00\x01binary")
+        ok, evidence = rq.evaluate_assert(
+            [{"type": "file_regex", "path": "blob.bin", "pattern": "x"}], self.tmp)
+        self.assertFalse(ok)
+        self.assertIn("unreadable", evidence)
+
+    def test_git_clean(self):
+        self.assertTrue(self._ok({"type": "git_clean"}))
+        self._write("dirty.txt", "x\n")
+        self.assertFalse(self._ok({"type": "git_clean"}))
+        self.assertTrue(self._ok({"type": "git_clean", "expect": False}))
+
+    def test_git_commit_count(self):
+        self.assertTrue(self._ok({"type": "git_commit_count", "equals": 1}))
+        self._commit("b.py", "print(2)\n", "feat: add b")
+        self.assertTrue(self._ok({"type": "git_commit_count", "equals": 2}))
+        self.assertTrue(self._ok({"type": "git_commit_count", "min": 2}))
+        self.assertFalse(self._ok({"type": "git_commit_count", "max": 1}))
+
+    def test_git_subject_regex(self):
+        self._commit("b.py", "print(2)\n", "feat: add b")
+        self.assertTrue(self._ok({"type": "git_subject_regex", "rev": "HEAD",
+                                  "pattern": r"^feat: "}))
+        self.assertTrue(self._ok({"type": "git_subject_regex", "rev": "HEAD~1",
+                                  "pattern": r"^chore: "}))
+        self.assertFalse(self._ok({"type": "git_subject_regex", "rev": "HEAD",
+                                   "pattern": r"^docs: "}))
+
+    def test_git_path_committed(self):
+        self.assertTrue(self._ok({"type": "git_path_committed", "path": "a.py"}))
+        self.assertFalse(self._ok(
+            {"type": "git_path_committed", "path": "secret.env"}))
+        self.assertTrue(self._ok(
+            {"type": "git_path_committed", "path": "secret.env", "expect": False}))
+
+    def test_git_no_commit_touches_both(self):
+        self._commit("src/f.py", "f\n", "feat: f")
+        self._commit("docs/n.md", "n\n", "docs: n")
+        self.assertTrue(self._ok({"type": "git_no_commit_touches_both",
+                                  "path_a": "src/f.py", "path_b": "docs/n.md"}))
+        self._write("src/g.py", "g\n")
+        self._write("docs/m.md", "m\n")
+        self._git(["add", "src/g.py", "docs/m.md"])
+        self._git(["commit", "-q", "-m", "feat: mixed"])
+        self.assertFalse(self._ok({"type": "git_no_commit_touches_both",
+                                   "path_a": "src/g.py", "path_b": "docs/m.md"}))
+
+    def test_a_broken_repo_reads_as_predicate_failure_not_a_crash(self):
+        # executor が .git を壊すのも「要件不成立」の一形態。ハーネス例外にしない
+        shutil.rmtree(os.path.join(self.tmp, ".git"))
+        ok, evidence = rq.evaluate_assert(
+            [{"type": "git_clean"}], self.tmp)
+        self.assertFalse(ok)
+        self.assertTrue(evidence)
+
+    def test_all_predicates_must_hold(self):
+        ok, _ = rq.evaluate_assert(
+            [{"type": "file_exists", "path": "a.py"},
+             {"type": "file_exists", "path": "nope.py"}], self.tmp)
+        self.assertFalse(ok)
+
+    def test_unknown_predicate_type_is_a_queue_error(self):
+        with self.assertRaises(rq.QueueError):
+            rq.evaluate_assert([{"type": "teleport"}], self.tmp)
+
+    def test_missing_required_key_is_a_queue_error(self):
+        with self.assertRaises(rq.QueueError):
+            rq.evaluate_assert([{"type": "file_exists"}], self.tmp)
+
+
+class TestAssertGrading(_Harness):
+    """assert 付き requirement は機械判定が self-report より優先される。"""
+
+    def _assert_fixture(self):
+        fixture = _fixture()
+        fixture["scenarios"][0]["requirements"] = [
+            {"text": "src/a.py is untouched", "critical": True,
+             "assert": [{"type": "file_regex", "path": "src/a.py",
+                         "pattern": r"print\(1\)"}]},
+            {"text": "explains the bottleneck", "critical": True},
+        ]
+        return fixture
+
+    def test_machine_no_overrides_a_self_reported_yes(self):
+        self.build(self._assert_fixture())
+        staged = os.path.join(self.batch, "work", "demo-skill-ds-001",
+                              rq.STAGED_SUBDIR, "src", "a.py")
+        with open(staged, "w") as handle:
+            handle.write("print(2)\n")
+        self.write_report("demo-skill-ds-001", self.report("yes", "yes"))
+        result = rq.grade(self.batch)
+        scenario = result["skills"]["demo-skill"]["scenarios"][0]
+        self.assertEqual(scenario["verdict"], "fail")
+        self.assertEqual(scenario["critical_missed"][0]["index"], 1)
+
+    def test_machine_yes_is_authoritative(self):
+        self.build(self._assert_fixture())
+        self.write_report("demo-skill-ds-001", self.report("no", "yes"))
+        result = rq.grade(self.batch)
+        scenario = result["skills"]["demo-skill"]["scenarios"][0]
+        self.assertEqual(scenario["verdict"], "unadjudicated_pass")
+
+    def test_asserts_never_reach_the_executor_prompt(self):
+        """assert を見た executor は述語に最適化する — critical フラグ秘匿と同じ理由。"""
+        self.build(self._assert_fixture())
+        with open(os.path.join(self.batch, "prompts",
+                               "demo-skill-ds-001.md")) as handle:
+            prompt = handle.read()
+        self.assertNotIn("assert", prompt.lower())
+        self.assertNotIn("file_regex", prompt)
+
+    def test_build_rejects_an_unknown_predicate_type(self):
+        fixture = self._assert_fixture()
+        fixture["scenarios"][0]["requirements"][0]["assert"] = [
+            {"type": "teleport"}]
+        with self.assertRaises(rq.QueueError):
+            self.build(fixture)
 
 
 # ==========================================================================
