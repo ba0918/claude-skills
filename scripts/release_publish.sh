@@ -22,6 +22,10 @@ TAG="v$VERSION"
 TARGET_SHA="$(git rev-parse HEAD)"
 
 # --- 1) タグ三分岐: リモートが正。ローカルタグは判定に使わない ---
+# draft 作成（3）の時点でローカルタグが存在してはならない: gh release create は
+# 「ローカルにあるがリモートに無い」タグを --target なしでは拒否する
+# （1.73.0 の初回 release run が本番でこの拒否に落ちた）。タグ作成は draft 完成後の
+# 4) まで遅らせ、検証済みの未 push ローカルタグはここで消して 4) で作り直す。
 remote_tag="$(git ls-remote origin "refs/tags/$TAG")"
 if [ -z "$remote_tag" ]; then
   if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null 2>&1; then
@@ -30,8 +34,7 @@ if [ -z "$remote_tag" ]; then
       echo "local tag $TAG points to $local_sha, expected $TARGET_SHA" >&2
       exit 1
     fi
-  else
-    git tag -a "$TAG" -m "$TAG"
+    git tag -d "$TAG"
   fi
   tag_created=true
 else
@@ -74,6 +77,7 @@ gh release create "$TAG" \
 
 # --- 4) commit と tag を 1 回の atomic push で公開 ---
 if [ "$tag_created" = "true" ]; then
+  git tag -a "$TAG" -m "$TAG"
   git push --atomic origin HEAD:main "refs/tags/$TAG"
 else
   git push --atomic origin HEAD:main
