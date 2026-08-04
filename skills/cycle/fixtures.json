@@ -18,7 +18,10 @@
           ".agents/artifacts/plans/20260721100000_level-count-summary.md": "# レベル別集計サマリー\n\n**Cycle ID:** `20260721100000`\n**Started:** 2026-07-21 10:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nlogtool にログレベル別の件数集計と整形サマリー出力を追加する。運用時にエラー傾向を一目で把握できるようにするため。\n\n## 🎯 Goals\n\n- パース済みログ行をレベル別に集計できる\n- 集計結果を人が読めるサマリー文字列に整形できる\n\n## 📐 Design\n\n### Files to Change\n\n```\nlogtool/\n  stats.py - 新規。count_by_level / format_summary を実装\ntests/\n  test_stats.py - 新規。両関数のユニットテスト\n```\n\n### Key Points\n\n- **count_by_level(lines)**: `parse_line` でパースできた行だけをレベル別に数え、`{level: count}` の dict を返す。パース不能行は黙って無視する\n- **format_summary(counts)**: 件数降順で `\"LEVEL: N\"` を改行連結して返す。同数はレベル名の昇順。空 dict は `\"(no entries)\"` を返す\n\n## ✅ Tests\n\n- [ ] count_by_level が複数レベル混在の行リストを正しく集計する\n- [ ] count_by_level がパース不能行を無視する\n- [ ] format_summary が件数降順・同数レベル名昇順で整形する\n- [ ] format_summary が空 dict で \"(no entries)\" を返す\n\n## 🔧 Implementation Steps\n\n1. **count_by_level 実装（TDD）**\n   - Files: `logtool/stats.py`, `tests/test_stats.py`\n   - parse_line でパースできた行だけをレベル別に数え、{level: count} の dict を返す\n\n2. **format_summary 実装（TDD）**\n   - Files: `logtool/stats.py`, `tests/test_stats.py`\n   - 件数降順で LEVEL: N を改行連結して返す。空 dict は (no entries) を返す\n",
           ".agents/artifacts/status.md": "# Project Status\n\n**Last Updated:** 2026-07-21 10:00:00\n\n---\n\n## 🎯 Current Session\n\n| Field | Value |\n|-------|-------|\n| **Cycle ID** | `20260721100000` |\n| **Feature** | レベル別集計サマリー |\n| **Started** | 2026-07-21 10:00:00 |\n| **Phase** | 🟡 Planning |\n| **Plan** | [.agents/artifacts/plans/20260721100000_level-count-summary.md](./plans/20260721100000_level-count-summary.md) |\n\n**Current Focus:**\nログレベル別集計とサマリー整形の追加。計画作成済み、実装待ち。\n\n---\n\n## 📜 Session History\n\n_Archived sessions can be found in [session-history.md](./session-history.md)._\n\n<!-- Note: Completed sessions are automatically archived to .agents/artifacts/session-history.md.\n     Only active sessions remain in this section. -->\n\n---\n\n## 🔗 Quick Links\n\n- [All Plans](./plans/)\n- [Project Root](../)\n\n---\n\n**Note:** This file is auto-managed by the `plan` skill.\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true
+        }
       },
       "prompt": "cycle 回して。",
       "requirements": [
@@ -47,7 +50,7 @@
           "critical": false
         }
       ],
-      "notes": "フルサイクルの中央値。TDD 2 ステップ実装 → Phase 2 アーティファクト → Phase 3 レビュー → Phase 4 最終ゲート → Phase 5 完了処理（status.md Case 2 アーカイブ + result ファイル + 成果物コミット）を固定する。サブエージェント不可環境ではインライン fallback 経路を通る（それ自体が仕様）。実行には plan-implement / plan-reviewer(+references) / plan(references) / commit の各スキルと共有契約（artifact-store / orchestration-patterns / tdd-contract / verification-gate / design-principles / testing-anti-patterns / severity-and-verdicts / codex-integration / status-update-guide）の同梱が必要。"
+      "notes": "フルサイクルの中央値。TDD 2 ステップ実装 → Phase 2 アーティファクト → Phase 3 レビュー → Phase 4 最終ゲート → Phase 5 完了処理（status.md Case 2 アーカイブ + result ファイル + 成果物コミット）を固定する。サブエージェント不可環境ではインライン fallback 経路を通る（それ自体が仕様）。実行には plan-implement / plan-reviewer(+references) / plan(references) / commit の各スキルと共有契約（artifact-store / orchestration-patterns / tdd-contract / verification-gate / design-principles / testing-anti-patterns / severity-and-verdicts / codex-integration / status-update-guide）の同梱が必要。 【#242】本スキル唯一の through-run smoke として維持（phase 連鎖・委譲リレーの実走保証は unit テストにも phase 終端型にも代替が無い）。cy-003 から移管された「選択した計画のステップが TDD エビデンス付きで実装され実装コミットが git log に存在する」要件は、本シナリオの要件 1 が同内容で担う。"
     },
     {
       "id": "cy-002",
@@ -62,7 +65,10 @@
           "src/relay.py": "\"\"\"Webhook 転送のコア。\"\"\"\n\n\ndef build_forward_headers(headers: dict) -> dict:\n    \"\"\"hop-by-hop ヘッダを除いた転送用ヘッダを作る。\"\"\"\n    hop_by_hop = {\"connection\", \"keep-alive\", \"transfer-encoding\", \"upgrade\"}\n    return {k: v for k, v in headers.items() if k.lower() not in hop_by_hop}\n",
           "docs/plans/20260710090000_legacy-feature.md": "# リトライキューの追加\n\n**Cycle ID:** `20260710090000`\n**Started:** 2026-07-10 09:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n転送失敗した Webhook を指数バックオフで再送するリトライキューを追加する。\n\n## 🎯 Goals\n\n- 転送失敗時に最大 3 回まで再送する\n\n## 🔧 Implementation Steps\n\n1. **リトライキュー実装（TDD）**\n   - Files: `src/retry.py`, `tests/test_retry.py`\n   - 指数バックオフで最大 3 回再送するキューを実装\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true
+        }
       },
       "prompt": "cycle を docs/plans/20260710090000_legacy-feature.md で実行して。",
       "requirements": [
@@ -71,24 +77,49 @@
           "critical": true
         },
         {
-          "text": "docs/plans/20260710090000_legacy-feature.md が移動・コピー・編集されていない（mv はユーザーへの復旧案内としてのみ提示され、実行者自身はファイルを動かして続行していない）",
+          "text": "docs/plans/20260710090000_legacy-feature.md が原位置に原文のまま残り、.agents/artifacts/plans/ 配下への複製がコミットされていない",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": "docs/plans/20260710090000_legacy-feature.md",
+              "pattern": "# リトライキューの追加"
+            },
+            {
+              "type": "git_path_committed",
+              "path": ".agents/artifacts/plans/20260710090000_legacy-feature.md",
+              "expect": false
+            }
+          ]
+        },
+        {
+          "text": "mv はユーザーへの復旧案内としてのみ提示され、実行者自身がファイルを移動・コピー・編集して続行していない",
           "critical": true
         },
         {
           "text": "implement のフェーズが一切実行されず、リポジトリに新規コミット・ファイル変更がない（git status が clean のまま）",
-          "critical": true
+          "critical": true,
+          "assert": [
+            {
+              "type": "git_clean"
+            },
+            {
+              "type": "git_commit_count",
+              "equals": 1
+            }
+          ]
         },
         {
           "text": "レガシー配置からの移行は artifact store 契約の migration 手順の対象になりうる旨（単純 mv は新規作成ファイルの置き場違い向けの簡易復旧であること）が案内に添えられている",
           "critical": false
         }
       ],
-      "notes": "Phase 0 Step 1.5 のパス検証 edge。CYCLE START 前の中断・mv 非実行（案内のみ）・migration 注記を固定する。"
+      "notes": "Phase 0 Step 1.5 のパス検証 edge。CYCLE START 前の中断・mv 非実行（案内のみ）・migration 注記を固定する。 【#242】既に Phase 0 終端型のため setup は不変更。#241 の型付き assert を付与し、ファイル不動とコミットゼロを LLM 裁定から機械判定へ移した。 「原本が原位置に残る」と「mv は案内のみで実行者は動かしていない」は元は 1 要件だったが、前者だけが機械判定可能なため分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。"
     },
     {
       "id": "cy-003",
       "title": "自動選択 — 完了済み計画のスキップと status.md 不在の部分失敗許容",
-      "source": "empirical-tuning:20260722-lean-rollout",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -99,19 +130,39 @@
           "tests/__init__.py": "",
           "tests/test_timeutil.py": "import unittest\n\nfrom timeutil import parse_duration\n\n\nclass ParseDurationTest(unittest.TestCase):\n    def test_full_form(self):\n        self.assertEqual(parse_duration(\"1h2m3s\"), 3723)\n\n    def test_partial_form(self):\n        self.assertEqual(parse_duration(\"90s\"), 90)\n\n    def test_rejects_garbage(self):\n        with self.assertRaises(ValueError):\n            parse_duration(\"abc\")\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/20260722080000_parse-duration.md": "# parse_duration の実装\n\n**Cycle ID:** `20260722080000`\n**Started:** 2026-07-22 08:00:00\n**Status:** ✅ Completed\n\n---\n\n## 📝 What & Why\n\n\"1h2m3s\" 形式の文字列を秒数へ変換する parse_duration を実装する。\n\n## 🎯 Goals\n\n- 時間・分・秒の任意の組み合わせをパースできる\n\n## 🔧 Implementation Steps\n\n1. **parse_duration 実装（TDD）**\n   - Files: `timeutil.py`, `tests/test_timeutil.py`\n   - 正規表現で時間・分・秒を抽出し秒数に変換する\n",
-          ".agents/artifacts/plans/20260720150000_format-duration.md": "# format_duration の実装\n\n**Cycle ID:** `20260720150000`\n**Started:** 2026-07-20 15:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\n秒数を \"1h 2m 3s\" 形式の人が読める文字列へ変換する format_duration を追加する。parse_duration の逆方向で、ログ表示・レポート出力に使う。\n\n## 🎯 Goals\n\n- 秒数から時間・分・秒の表記を生成できる\n- ゼロの単位は省略する\n\n## 📐 Design\n\n### Files to Change\n\n```\ntimeutil.py - format_duration(seconds: int) -> str を追加\ntests/test_timeutil.py - format_duration のテストを追加\n```\n\n### Key Points\n\n- **format_duration(seconds)**: `3723 -> \"1h 2m 3s\"`。ゼロの単位は省略（`90 -> \"1m 30s\"`）。0 は `\"0s\"` を返す。負数は ValueError\n\n## ✅ Tests\n\n- [ ] 3723 が \"1h 2m 3s\" になる\n- [ ] 90 が \"1m 30s\" になる（ゼロ単位省略）\n- [ ] 0 が \"0s\" になる\n- [ ] 負数で ValueError\n\n## 🔧 Implementation Steps\n\n1. **format_duration 実装（TDD）**\n   - Files: `timeutil.py`, `tests/test_timeutil.py`\n   - 秒数から時分秒表記を生成。ゼロの単位は省略\n"
+          ".agents/artifacts/plans/progress/20260720150000.md": "# Progress: format_duration の実装\n\n**Plan:** .agents/artifacts/plans/20260720150000_format-duration.md\n**Cycle ID:** 20260720150000\n**Last Updated:** 2026-07-20 15:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | format_duration 実装（TDD） | 🟢 Done | timeutil.py, tests/test_timeutil.py | 4 | 秒数から時分秒表記を生成。ゼロの単位は省略し、0 は 0s、負数は ValueError |\n",
+          ".agents/artifacts/plans/20260720150000_format-duration.md": "# format_duration の実装\n\n**Cycle ID:** `20260720150000`\n**Started:** 2026-07-20 15:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\n秒数を \"1h 2m 3s\" 形式の人が読める文字列へ変換する format_duration を追加する。parse_duration の逆方向で、ログ表示・レポート出力に使う。\n\n## 🔧 Implementation Steps\n\n1. **format_duration 実装（TDD）**\n   - Files: `timeutil.py`, `tests/test_timeutil.py`\n   - 秒数から時分秒表記を生成。ゼロの単位は省略し、0 は \"0s\"、負数は ValueError\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. format_duration 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "timeutil.py": "\"\"\"時間ユーティリティ。\"\"\"\nimport re\n\n_DURATION_RE = re.compile(r\"(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?\")\n\n\ndef parse_duration(text: str) -> int:\n    \"\"\"\"1h2m3s\" 形式の文字列を秒数に変換する。\"\"\"\n    m = _DURATION_RE.fullmatch(text.strip())\n    if not m or not any(m.groups()):\n        raise ValueError(f\"invalid duration: {text!r}\")\n    h, mi, s = (int(g) if g else 0 for g in m.groups())\n    return h * 3600 + mi * 60 + s\n\n\ndef format_duration(seconds: int) -> str:\n    \"\"\"秒数を \"1h 2m 3s\" 形式へ変換する。ゼロの単位は省略する。\"\"\"\n    if seconds < 0:\n        raise ValueError(f\"negative duration: {seconds!r}\")\n    if seconds == 0:\n        return \"0s\"\n    h, rest = divmod(seconds, 3600)\n    mi, s = divmod(rest, 60)\n    parts = [f\"{v}{u}\" for v, u in ((h, \"h\"), (mi, \"m\"), (s, \"s\")) if v]\n    return \" \".join(parts)\n",
+                "tests/test_timeutil.py": "import unittest\n\nfrom timeutil import format_duration, parse_duration\n\n\nclass ParseDurationTest(unittest.TestCase):\n    def test_full_form(self):\n        self.assertEqual(parse_duration(\"1h2m3s\"), 3723)\n\n    def test_partial_form(self):\n        self.assertEqual(parse_duration(\"90s\"), 90)\n\n    def test_rejects_garbage(self):\n        with self.assertRaises(ValueError):\n            parse_duration(\"abc\")\n\n\nclass FormatDurationTest(unittest.TestCase):\n    def test_full_form(self):\n        self.assertEqual(format_duration(3723), \"1h 2m 3s\")\n\n    def test_omits_zero_units(self):\n        self.assertEqual(format_duration(90), \"1m 30s\")\n\n    def test_zero(self):\n        self.assertEqual(format_duration(0), \"0s\")\n\n    def test_rejects_negative(self):\n        with self.assertRaises(ValueError):\n            format_duration(-1)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: format_duration を実装（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle 回して。ただし Phase 3 と Phase 4 のレビュー verdict はいずれも PASS と仮定して（実レビューの findings に関わらず PASS 扱いで先へ進め）、Phase 5 の完了処理経路を確認して。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。続きから cycle 回して。ただし Phase 3 と Phase 4 のレビュー verdict はいずれも PASS と仮定して（実レビューの findings に関わらず PASS 扱いで先へ進め）、Phase 5 の完了処理経路を確認して。実装対象の計画は自動選択で決めること。",
       "requirements": [
         {
           "text": "計画の自動選択で、ファイル名タイムスタンプが最新の完了済み計画（20260722080000_parse-duration.md）をスキップし、未完了の 20260720150000_format-duration.md を選択している（完了済み計画を再実装せず、「実装対象の計画がない」の no-op 中断もしていない）",
           "critical": true
         },
         {
-          "text": "選択した計画のステップ（format_duration）がテスト追加 + 全テストパスのエビデンス（テスト実行コマンドと結果出力）付きで実装され、実装コミットが git log に存在する",
-          "critical": true
+          "text": "Phase 5 で選択した計画ファイルの Status が ✅ Completed に更新されている",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260720150000_format-duration.md",
+              "pattern": "\\*\\*Status:\\*\\* ✅ Completed"
+            }
+          ]
         },
         {
           "text": "status.md が存在しないため Phase 5 の status 更新は失敗として記録され（phase5_failures 相当の扱い）、cycle 全体は中断せず最終表示まで完走し、最終表示に Partial failures の警告が含まれている",
@@ -119,19 +170,36 @@
         },
         {
           "text": "result ファイルが .agents/artifacts/plans/results/ 配下に生成されている",
-          "critical": false
+          "critical": false,
+          "assert": [
+            {
+              "type": "file_exists",
+              "path": ".agents/artifacts/plans/results/20260720150000_format-duration_result.md"
+            }
+          ]
         },
         {
-          "text": "完了済み計画ファイル 20260722080000_parse-duration.md が変更されていない",
+          "text": "完了済み計画ファイル 20260722080000_parse-duration.md の Status が ✅ Completed のまま残っている",
+          "critical": false,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260722080000_parse-duration.md",
+              "pattern": "\\*\\*Status:\\*\\* ✅ Completed"
+            }
+          ]
+        },
+        {
+          "text": "完了済み計画ファイル 20260722080000_parse-duration.md が Status 行以外も含めて一切変更されていない",
           "critical": false
         }
       ],
-      "notes": "自動選択（完了済みスキップ）+ Phase 5 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase5_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。2026-08-02: 実レビュー verdict の非決定性で 2 実走連続 Phase 3/4 WARN 正規停止となり本シナリオ固有の Phase 5 分岐に到達しなかったため、cy-005 以降と同じ verdict 仮定方式にプロンプトを変更（要件 = oracle は不変更）。live レビューのフルサイクルは cy-001 が引き続きカバーする。"
+      "notes": "自動選択（完了済みスキップ）+ Phase 5 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase5_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。2026-08-02: 実レビュー verdict の非決定性で 2 実走連続 Phase 3/4 WARN 正規停止となり本シナリオ固有の Phase 5 分岐に到達しなかったため、cy-005 以降と同じ verdict 仮定方式にプロンプトを変更（要件 = oracle は不変更）。live レビューのフルサイクルは cy-001 が引き続きカバーする。 【#242 phase 終端化】原出典は empirical-tuning:20260722-lean-rollout。 Phase 5 終端型（実装は seed 済みコミット）。要件 2 だった「選択した計画のステップが TDD エビデンス付きで実装され実装コミットが git log に存在する」はcy-001（through-run smoke）へ移管し、空いた critical 枠には Phase 5 のplan status 更新（本シナリオ本来の関心）を機械判定で置いた。 完了済み計画の「Status 行が残存している」と「全文が変更されていない」は元は 1 要件だったが、前者だけが機械判定可能なため分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。全文不変を表現できる述語は存在しないため、後者は baseline との突き合わせによる LLM 裁定に残す。"
     },
     {
       "id": "cy-004",
       "title": "inner satellite context — 外側の worktree 解決を再実行しない",
-      "source": "manual:worktree-artifact-transport-step3",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -143,26 +211,89 @@
           ".agents/artifacts/plans/20260729000000_inner.md": "# Inner plan\n\n**Cycle ID:** `20260729000000`\n**Status:** 🟡 Planning\n\n---\n\n## 🎯 Goal\n\nAdd a minimal inner feature with a stable, testable contract.\n\n## ✅ Acceptance criteria\n\n- `src.inner.inner_feature()` exists and returns the exact string `inner feature`.\n- `tests/test_inner.py` covers the return value.\n- The implementation and test are committed while singleton artifact files remain untouched in satellite mode.\n\n## 🔧 Implementation Steps\n\n1. **Step 1**\n   - Files: `src/inner.py`, `tests/test_inner.py`\n   - Implement `inner_feature()` and its unittest according to the acceptance criteria.\n",
           ".agents/runtime/satellite-capability": "fixture-capability"
         },
-        "git": { "init": true, "branch": "feat/inner", "commit": true }
+        "git": {
+          "init": true,
+          "branch": "feat/inner",
+          "commit": true
+        }
       },
       "prompt": "Run cycle with pinned_plan=.agents/artifacts/plans/20260729000000_inner.md, resolved_isolation=worktree, satellite_run_id=batch-42-A, and satellite_capability_file=.agents/runtime/satellite-capability.",
       "requirements": [
-        { "text": "pinned_plan を直接採用し、resolved_isolation を再解決せず workspace claim/release を行っていない", "critical": true },
-        { "text": "現在の branch のまま nested worktree を作らず実行している", "critical": true },
-        { "text": "pinned_plan、resolved_isolation、satellite_run_id、satellite_capability_file の完全な context を plan-implement へ変更せず中継している", "critical": true },
-        { "text": "status.md、session-history.md、derived index の singleton sentinel を変更していない", "critical": true },
-        { "text": "Phase 3 のレビューが satellite mode でも satellite worktree の diff に対して実行されている（fix loop に入った場合、fix commit は satellite worktree に適用される）", "critical": true },
-        { "text": "Phase 4 の最終ゲートが satellite mode でも実行されている（holistic review は satellite worktree の diff に対して実行される）", "critical": true },
-        { "text": "inner では result artifact と issue close を自ら作成せず outer orchestrator へ延期している。Phase 5 到達時は review verdict と final gate verdict を含む facts を、Phase 4 停止時は停止理由と各レビューの verdict を含む stop facts を返している", "critical": true },
-        { "text": "inner mode でも tracked commit は省略していない", "critical": true },
-        { "text": "raw capability を prompt、artifact、report に含めていない", "critical": true }
+        {
+          "text": "pinned_plan を直接採用し、resolved_isolation を再解決せず workspace claim/release を行っていない",
+          "critical": true
+        },
+        {
+          "text": "現在の branch のまま nested worktree を作らず実行している",
+          "critical": true
+        },
+        {
+          "text": "pinned_plan、resolved_isolation、satellite_run_id、satellite_capability_file の完全な context を plan-implement へ変更せず中継している",
+          "critical": true
+        },
+        {
+          "text": "status.md、session-history.md、derived index の singleton sentinel を変更していない",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/status.md",
+              "pattern": "SENTINEL STATUS"
+            },
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/session-history.md",
+              "pattern": "SENTINEL HISTORY"
+            },
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/idea-status.md",
+              "pattern": "SENTINEL DERIVED INDEX"
+            }
+          ]
+        },
+        {
+          "text": "Phase 3 のレビューが satellite mode でも satellite worktree の diff に対して実行されている（fix loop に入った場合、fix commit は satellite worktree に適用される）",
+          "critical": true
+        },
+        {
+          "text": "Phase 4 の最終ゲートが satellite mode でも実行されている（holistic review は satellite worktree の diff に対して実行される）",
+          "critical": true
+        },
+        {
+          "text": "inner では result artifact を自ら作成せず outer orchestrator へ延期している",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_exists",
+              "path": ".agents/artifacts/plans/results/20260729000000_inner_result.md",
+              "expect": false
+            }
+          ]
+        },
+        {
+          "text": "inner では issue close を自ら実行せず outer orchestrator へ延期している",
+          "critical": true
+        },
+        {
+          "text": "Phase 5 到達時は review verdict と final gate verdict を含む facts を、Phase 4 停止時は停止理由と各レビューの verdict を含む stop facts を返している",
+          "critical": true
+        },
+        {
+          "text": "inner mode でも tracked commit は省略していない",
+          "critical": true
+        },
+        {
+          "text": "raw capability を prompt、artifact、report に含めていない",
+          "critical": true
+        }
       ],
-      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic / independent とも worktree diff 対象）。"
+      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic / independent とも worktree diff 対象）。 【#242 phase 終端化】原出典は manual:worktree-artifact-transport-step3。 要件が Phase 3/4/5 横断のため終端型にはしない（一時導入した実装 seed は下記の実走裁定で撤回済み。現在は BASE と同じく Phase 1 が実委譲で走る）。 inner の延期契約（result artifact / issue close / facts 返却）は元は 1 要件だったが、result artifact 不在だけが機械判定可能なため 3 つに分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。 【#242 実走裁定 2026-08-05】初回実走で R3（4 フィールドの plan-implement への中継）が観測不能になった。実装 seed + 進捗ファイル + Progress 🟢 が「Phase 1 委譲のスキップ」を誘発し、中継の観測前提（委譲の発生）を壊したため（fixture-schema 指針 7 の到達性違反）。seed を外し BASE の実 Phase 1 委譲形へ復帰。tracked commit 要件の git_path_committed(src/__init__.py) assert は seed が置く未コミットファイルに縛られた述語だったため除去し、要件文は不変のまま LLM 裁定へ返した（判定手段の巻き戻しであり緩和ではない）。"
     },
     {
       "id": "cy-005",
       "title": "Phase 3 ESCALATE — spec gap 検出で即時中断し plan を再選択可能にする",
-      "source": "manual:issue-187-stop-path",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -171,13 +302,26 @@
           "CLAUDE.md": "# escalate-test\n\nESCALATE テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def greet(name: str) -> str:\n    return f\"Hello, {name}!\"\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import greet\n\nclass GreetTest(unittest.TestCase):\n    def test_greet(self):\n        self.assertEqual(greet(\"World\"), \"Hello, World!\")\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260731000000_add-farewell.md": "# farewell 機能追加\n\n**Cycle ID:** `20260731000000`\n**Started:** 2026-07-31 00:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nfarewell 関数を追加する。仕様は合意済み。\n\n## 🔧 Implementation Steps\n\n1. **farewell 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - farewell(name) -> str を実装\n",
+          "tests/test_app.py": "import unittest\nfrom app import greet\n\nclass GreetTest(unittest.TestCase):\n    def test_greet_returns_a_greeting(self):\n        self.assertEqual(greet(\"World\"), \"Hello, World!\")\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/progress/20260731000000.md": "# Progress: farewell 機能追加\n\n**Plan:** .agents/artifacts/plans/20260731000000_add-farewell.md\n**Cycle ID:** 20260731000000\n**Last Updated:** 2026-07-31 00:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | farewell 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 1 | A1 の合意どおり Goodbye, {name}! 形式を返す farewell を実装 |\n",
+          ".agents/artifacts/plans/20260731000000_add-farewell.md": "# farewell 機能追加\n\n**Cycle ID:** `20260731000000`\n**Started:** 2026-07-31 00:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nfarewell 関数を追加する。仕様は合意済み。\n\n## 🔧 Implementation Steps\n\n1. **farewell 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - farewell(name) -> str を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. farewell 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n",
           ".agents/artifacts/ledger/agreements.md": "# Agreement Ledger\n\n| # | Item | Status | Decision |\n|---|------|--------|----------|\n| A1 | farewell の戻り値形式 | AGREED | \"Goodbye, {name}!\" 形式 |\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "app.py": "def greet(name: str) -> str:\n    return f\"Hello, {name}!\"\n\n\ndef farewell(name: str) -> str:\n    return f\"Goodbye, {name}!\"\n",
+                "tests/test_app.py": "import unittest\nfrom app import greet, farewell\n\nclass GreetTest(unittest.TestCase):\n    def test_greet_returns_a_greeting(self):\n        self.assertEqual(greet(\"World\"), \"Hello, World!\")\n\nclass FarewellTest(unittest.TestCase):\n    def test_farewell_returns_a_farewell(self):\n        self.assertEqual(farewell(\"World\"), \"Goodbye, World!\")\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: farewell を追加（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle 回して。ただし plan-reviewer の結果は ESCALATE と仮定して（A1 の合意内容を変更する必要がある指摘が出た想定で）、Phase 3 の ESCALATE 中断パスを確認して。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。実装は既にコミット済みで、plan にも Implementation Base SHA が記録されている。その続きから cycle 回して。ただし plan-reviewer の結果は ESCALATE と仮定して（A1 の合意内容を変更する必要がある指摘が出た想定で）、Phase 3 の ESCALATE 中断パスを確認して。",
       "requirements": [
         {
           "text": "Phase 3 で ESCALATE verdict が検出され、⛔ CYCLE ABORTED: Specification gap detected のメッセージが表示されている",
@@ -185,23 +329,37 @@
         },
         {
           "text": "plan ファイルの Status が ⚠️ Review Failed に戻されており、次回 cycle の自動選択で再選択可能な状態になっている",
-          "critical": true
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260731000000_add-farewell.md",
+              "pattern": "⚠️ Review Failed"
+            }
+          ]
         },
         {
-          "text": "Phase 5 が実行されていない（status.md の更新、issue close、result ファイル生成が行われていない）",
-          "critical": true
+          "text": "Phase 5 が実行されていない（result ファイルが生成されていない）",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_exists",
+              "path": ".agents/artifacts/plans/results/20260731000000_add-farewell_result.md",
+              "expect": false
+            }
+          ]
         },
         {
           "text": "brainstorm への差し戻し案内（/claude-skills:brainstorm）が表示されている",
           "critical": false
         }
       ],
-      "notes": "Phase 3 ESCALATE 中断パスの固定。ESCALATE は spec gap 検出による意図的中断で、Phase 5 を実行せず plan status を復元する。実際の plan-reviewer 実行は必須ではなく、ESCALATE verdict の模擬で経路を検証する。"
+      "notes": "Phase 3 ESCALATE 中断パスの固定。ESCALATE は spec gap 検出による意図的中断で、Phase 5 を実行せず plan status を復元する。実際の plan-reviewer 実行は必須ではなく、ESCALATE verdict の模擬で経路を検証する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 3 終端型。plan Status は seed 時点で 🟡 In Progress とし、⚠️ Review Failed への復元が実遷移として観測できるようにした（復元後の値を始点にすると要件が自明に満たされる）。要件 3 の「issue close が行われていない」節は本 fixture に issue 実体が無く判定不能だったため除去し、最終的に result ファイル不在の機械判定だけを主張する形にした。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-006",
       "title": "Phase 4 BLOCK — 最終ゲート不合格で cycle 停止し plan を再選択可能にする",
-      "source": "manual:issue-187-stop-path",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -210,12 +368,25 @@
           "CLAUDE.md": "# gate-test\n\nPhase 4 BLOCK テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def add(a: int, b: int) -> int:\n    return a + b\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import add\n\nclass AddTest(unittest.TestCase):\n    def test_add(self):\n        self.assertEqual(add(1, 2), 3)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260731010000_add-multiply.md": "# multiply 機能追加\n\n**Cycle ID:** `20260731010000`\n**Started:** 2026-07-31 01:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nmultiply 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **multiply 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - multiply(a, b) -> int を実装\n"
+          "tests/test_app.py": "import unittest\nfrom app import add\n\nclass AddTest(unittest.TestCase):\n    def test_adds_two_numbers(self):\n        self.assertEqual(add(1, 2), 3)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/progress/20260731010000.md": "# Progress: multiply 機能追加\n\n**Plan:** .agents/artifacts/plans/20260731010000_add-multiply.md\n**Cycle ID:** 20260731010000\n**Last Updated:** 2026-07-31 01:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | multiply 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 2 | multiply(a, b) を実装。ゼロ倍のケースも含めて検証 |\n",
+          ".agents/artifacts/plans/20260731010000_add-multiply.md": "# multiply 機能追加\n\n**Cycle ID:** `20260731010000`\n**Started:** 2026-07-31 01:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nmultiply 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **multiply 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - multiply(a, b) -> int を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. multiply 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "app.py": "def add(a: int, b: int) -> int:\n    return a + b\n\n\ndef multiply(a: int, b: int) -> int:\n    return a * b\n",
+                "tests/test_app.py": "import unittest\nfrom app import add, multiply\n\nclass AddTest(unittest.TestCase):\n    def test_adds_two_numbers(self):\n        self.assertEqual(add(1, 2), 3)\n\nclass MultiplyTest(unittest.TestCase):\n    def test_multiplies_two_numbers(self):\n        self.assertEqual(multiply(3, 4), 12)\n    def test_multiplying_by_zero_is_zero(self):\n        self.assertEqual(multiply(0, 5), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: multiply を追加（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle 回して。ただし Phase 4 の holistic review の結果が BLOCK と仮定して（設計の整合性に重大な問題がある想定で）、Phase 4 の BLOCK 停止パスを確認して。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。実装は既にコミット済みで、plan にも Implementation Base SHA が記録されている。その続きから cycle 回して。ただしレビュー verdict は注入で固定して扱い、Phase 3 は PASS で素通し、Phase 4 の holistic review の結果が BLOCK と仮定して（設計の整合性に重大な問題がある想定で）、Phase 4 の BLOCK 停止パスを確認して。",
       "requirements": [
         {
           "text": "Phase 3 のレビュー（PASS または WARN）を通過した後に Phase 4 に到達している",
@@ -227,23 +398,37 @@
         },
         {
           "text": "plan ファイルの Status が ⚠️ Review Failed に戻されており、次回 cycle の自動選択で再選択可能な状態になっている",
-          "critical": true
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260731010000_add-multiply.md",
+              "pattern": "⚠️ Review Failed"
+            }
+          ]
         },
         {
-          "text": "Phase 5 が実行されていない（status.md の更新、issue close、result ファイル生成が行われていない）",
-          "critical": true
+          "text": "Phase 5 が実行されていない（result ファイルが生成されていない）",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_exists",
+              "path": ".agents/artifacts/plans/results/20260731010000_add-multiply_result.md",
+              "expect": false
+            }
+          ]
         },
         {
           "text": "/iterate で対応してから cycle を再実行する旨の案内が表示されている",
           "critical": false
         }
       ],
-      "notes": "Phase 4 BLOCK 停止パスの固定。最終ゲートの BLOCK は fix loop なしで停止し、Phase 5 を実行せず plan status を復元する。Phase 3 通過後の停止であることを確認する。"
+      "notes": "Phase 4 BLOCK 停止パスの固定。最終ゲートの BLOCK は fix loop なしで停止し、Phase 5 を実行せず plan status を復元する。Phase 3 通過後の停止であることを確認する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 Phase 3 の verdict は PASS 注入で固定した（Phase 4 に到達しないと本シナリオの対象経路を測れず、実レビューの verdict は非決定のため）。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-007",
       "title": "Phase 2 dirty tree gate — commit 失敗後の未コミット変更で cycle 中断",
-      "source": "manual:issue-187-stop-path",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -252,12 +437,32 @@
           "CLAUDE.md": "# dirty-test\n\nDirty tree gate テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def double(x: int) -> int:\n    return x * 2\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import double\n\nclass DoubleTest(unittest.TestCase):\n    def test_double(self):\n        self.assertEqual(double(3), 6)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260731020000_add-triple.md": "# triple 機能追加\n\n**Cycle ID:** `20260731020000`\n**Started:** 2026-07-31 02:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ntriple 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **triple 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - triple(x) -> int を実装\n"
+          "tests/test_app.py": "import unittest\nfrom app import double\n\nclass DoubleTest(unittest.TestCase):\n    def test_doubles_the_value(self):\n        self.assertEqual(double(3), 6)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/progress/20260731020000.md": "# Progress: triple 機能追加\n\n**Plan:** .agents/artifacts/plans/20260731020000_add-triple.md\n**Cycle ID:** 20260731020000\n**Last Updated:** 2026-07-31 02:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | triple 実装（TDD） | 🟢 Done | app.py, helpers.py, tests/test_app.py | 1 | scale ヘルパを切り出して triple を実装。helpers.py はコミットできていない |\n",
+          ".agents/artifacts/plans/20260731020000_add-triple.md": "# triple 機能追加\n\n**Cycle ID:** `20260731020000`\n**Started:** 2026-07-31 02:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\ntriple 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **triple 実装（TDD）**\n   - Files: `app.py`, `helpers.py`, `tests/test_app.py`\n   - scale ヘルパを切り出し triple(x) -> int を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. triple 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n",
+          "helpers.py": "\"\"\"実装の途中で切り出したヘルパ。\"\"\"\n\n\ndef scale(x: int, factor: int) -> int:\n    return x * factor\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": [
+            ".gitignore",
+            "CLAUDE.md",
+            "app.py",
+            "tests/__init__.py",
+            "tests/test_app.py"
+          ],
+          "commits": [
+            {
+              "files": {
+                "app.py": "from helpers import scale\n\n\ndef double(x: int) -> int:\n    return scale(x, 2)\n\n\ndef triple(x: int) -> int:\n    return scale(x, 3)\n",
+                "tests/test_app.py": "import unittest\nfrom app import double, triple\n\nclass DoubleTest(unittest.TestCase):\n    def test_doubles_the_value(self):\n        self.assertEqual(double(3), 6)\n\nclass TripleTest(unittest.TestCase):\n    def test_triples_the_value(self):\n        self.assertEqual(triple(3), 9)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: triple を追加（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle 回して。ただし Phase 2 の commit が失敗したと仮定して（commit skill がエラーを返した想定で）、dirty tree が残った場合の中断パスを確認して。",
+      "prompt": "前回の cycle は実装フェーズまで終わったが、切り出したヘルパがコミットされないまま止まっている。続きから cycle 回して。ただし Phase 2 の commit が失敗したと仮定して（commit skill がエラーを返した想定で）、dirty tree が残った場合の中断パスを確認して。",
       "requirements": [
         {
           "text": "Phase 2 の clean tree gate で ⛔ CYCLE ABORTED: Uncommitted implementation changes detected のメッセージが表示されている",
@@ -265,23 +470,37 @@
         },
         {
           "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
-          "critical": true
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260731020000_add-triple.md",
+              "pattern": "⚠️ Review Failed"
+            }
+          ]
         },
         {
-          "text": "Phase 3/4/5 が実行されていない",
-          "critical": true
+          "text": "Phase 3/4/5 が実行されていない（result ファイルが生成されていない）",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_exists",
+              "path": ".agents/artifacts/plans/results/20260731020000_add-triple_result.md",
+              "expect": false
+            }
+          ]
         },
         {
           "text": "dirty files の一覧が中断メッセージに含まれている",
           "critical": false
         }
       ],
-      "notes": "Phase 2 clean tree gate の固定。commit 失敗で dirty tree が残ると Phase 3/4 の git diff cycle_start_sha..HEAD にその変更が含まれずレビューをバイパスするため、Phase 3 に進まず中断する。"
+      "notes": "Phase 2 clean tree gate の固定。commit 失敗で dirty tree が残ると Phase 3/4 の git diff cycle_start_sha..HEAD にその変更が含まれずレビューをバイパスするため、Phase 3 に進まず中断する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 2 終端型。実装コミットは seed し、切り出したヘルパ helpers.py を未コミットのまま残すことで dirty tree gate に直行させる（baseline はcommit のパス配列形、実装は commits 併用）。中断メッセージの一覧要件に付けていた git_path_committed(helpers.py, expect=false) は、要件文（メッセージに一覧が含まれる）のどの節とも対応せず seed の前提だけで恒真だったため削除し、LLM 裁定に戻した（複合要件への部分 assert は未 assert 節を判定から消すため、無価値な述語を要件に残さない）。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-008",
       "title": "Phase 4 UNVERIFIED — holistic 欠落 + independent PASS で cycle 停止",
-      "source": "manual:issue-187-stop-path",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -290,12 +509,25 @@
           "CLAUDE.md": "# unverified-test\n\nUNVERIFIED gate テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def square(x: int) -> int:\n    return x * x\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import square\n\nclass SquareTest(unittest.TestCase):\n    def test_square(self):\n        self.assertEqual(square(4), 16)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260731030000_add-cube.md": "# cube 機能追加\n\n**Cycle ID:** `20260731030000`\n**Started:** 2026-07-31 03:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ncube 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **cube 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - cube(x) -> int を実装\n"
+          "tests/test_app.py": "import unittest\nfrom app import square\n\nclass SquareTest(unittest.TestCase):\n    def test_squares_the_value(self):\n        self.assertEqual(square(4), 16)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/progress/20260731030000.md": "# Progress: cube 機能追加\n\n**Plan:** .agents/artifacts/plans/20260731030000_add-cube.md\n**Cycle ID:** 20260731030000\n**Last Updated:** 2026-07-31 03:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | cube 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 1 | cube(x) を実装 |\n",
+          ".agents/artifacts/plans/20260731030000_add-cube.md": "# cube 機能追加\n\n**Cycle ID:** `20260731030000`\n**Started:** 2026-07-31 03:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\ncube 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **cube 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - cube(x) -> int を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. cube 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "app.py": "def square(x: int) -> int:\n    return x * x\n\n\ndef cube(x: int) -> int:\n    return x * x * x\n",
+                "tests/test_app.py": "import unittest\nfrom app import square, cube\n\nclass SquareTest(unittest.TestCase):\n    def test_squares_the_value(self):\n        self.assertEqual(square(4), 16)\n\nclass CubeTest(unittest.TestCase):\n    def test_cubes_the_value(self):\n        self.assertEqual(cube(3), 27)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: cube を追加（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle 回して。ただし Phase 4 の holistic review が利用不能（タイムアウト + 再委譲も失敗）で、independent review は PASS と仮定して、UNVERIFIED 停止パスを確認して。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。実装は既にコミット済みで、plan にも Implementation Base SHA が記録されている。その続きから cycle 回して。ただしレビュー verdict は注入で固定して扱い、Phase 3 は PASS で素通し、Phase 4 の holistic review が利用不能（タイムアウト + 再委譲も失敗）で、independent review は PASS と仮定して、UNVERIFIED 停止パスを確認して。",
       "requirements": [
         {
           "text": "Phase 4 で ⛔ CYCLE STOPPED: Final gate UNVERIFIED のメッセージが表示されている",
@@ -311,10 +543,17 @@
         },
         {
           "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
-          "critical": true
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260731030000_add-cube.md",
+              "pattern": "⚠️ Review Failed"
+            }
+          ]
         }
       ],
-      "notes": "Phase 4 UNVERIFIED 停止パスの固定。holistic review は高性能モデルで cross-cutting 分析を行う必須レビューで、外部システムで実行される independent review では代替できない。independent が PASS でも holistic が欠落すれば UNVERIFIED で停止する。"
+      "notes": "Phase 4 UNVERIFIED 停止パスの固定。holistic review は高性能モデルで cross-cutting 分析を行う必須レビューで、外部システムで実行される independent review では代替できない。independent が PASS でも holistic が欠落すれば UNVERIFIED で停止する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。 Phase 3 の verdict は PASS 注入で固定した（Phase 4 に到達しないと本シナリオの対象経路を測れず、実レビューの verdict は非決定のため）。"
     },
     {
       "id": "cy-009",
@@ -329,7 +568,11 @@
           ".agents/artifacts/plans/20260801000000_publish.md": "# Standalone publish plan\n\n**Cycle ID:** `20260801000000`\n**Status:** 🟡 Planning\n\n---\n\n## Goal\n\nImplement and publish a small verified change.\n\n## Implementation Steps\n\n1. Update `feature.txt` and verify it.\n",
           "feature.txt": "before\n"
         },
-        "git": { "init": true, "branch": "feat/publish-gate", "commit": true }
+        "git": {
+          "init": true,
+          "branch": "feat/publish-gate",
+          "commit": true
+        }
       },
       "prompt": "standalone worktree mode で cycle を実行し、merge 後の publish gate を確認して。checker 入力について (1) machine evidence 欠落、(2) merge 前 SHA の stale semantic evidence、(3) checker 自体の error の各結果を想定し、publish 可否と復旧状態を示して。",
       "requirements": [
@@ -342,7 +585,7 @@
           "critical": true
         },
         {
-          "text": "canonical evidence checker を explicit post_merge_sha・contract path・repo root で実行し、exit 0 の場合だけ main を advance して publish を許可している",
+          "text": "main の advance を publication_advance.py の advance サブコマンド 1 本で行い（evidence checker の判定と破壊的操作が同一実装内）、exit 0 のときだけ publish へ進んでいる。git 遷移を手書きしていない",
           "critical": true
         },
         {
@@ -354,12 +597,12 @@
           "critical": false
         }
       ],
-      "notes": "standalone outer orchestrator が所有する protected-state transition の回帰。Phase 4 の pre-merge verdict を evidence として再利用せず、merge 後 SHA で両 state を再取得して checker を fail-closed に扱う。3つの負経路は同一 gate の判定表として固定する。"
+      "notes": "standalone outer orchestrator が所有する protected-state transition の回帰。Phase 4 の pre-merge verdict を evidence として再利用せず、merge 後 SHA で両 state を再取得して checker を fail-closed に扱う。3つの負経路は同一 gate の判定表として固定する。 【#242 / #228 点検】profile 発効（2026-08-03）後も要件 1・2・4・5 はpublication-protocol / evidence-format の現行契約と一致する。要件 3 だけが「canonical evidence checker を明示引数で実行し、exit 0 なら main を advance」という旧い形を指しており、checker 判定と破壊的操作を advance サブコマンド 1 本に閉じた現行契約と矛盾していた（設計指針 7 の contract consistency 違反）ため現行手順へ言い換えた。要求水準は変えていない（fail-closed の線は要件 4 が担う）。"
     },
     {
       "id": "cy-010",
       "title": "Phase 3 fix loop exhaustion — 2回修正後も BLOCK で cycle 停止",
-      "source": "manual:pr-190-review-round7",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -368,12 +611,25 @@
           "CLAUDE.md": "# fixloop-test\n\nFix loop exhaustion テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def negate(x: int) -> int:\n    return -x\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import negate\n\nclass NegateTest(unittest.TestCase):\n    def test_negate(self):\n        self.assertEqual(negate(5), -5)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260801010000_add-absolute.md": "# absolute 機能追加\n\n**Cycle ID:** `20260801010000`\n**Started:** 2026-08-01 01:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nabsolute 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **absolute 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - absolute(x) -> int を実装\n"
+          "tests/test_app.py": "import unittest\nfrom app import negate\n\nclass NegateTest(unittest.TestCase):\n    def test_negates_the_value(self):\n        self.assertEqual(negate(5), -5)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/progress/20260801010000.md": "# Progress: absolute 機能追加\n\n**Plan:** .agents/artifacts/plans/20260801010000_add-absolute.md\n**Cycle ID:** 20260801010000\n**Last Updated:** 2026-08-01 01:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | absolute 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 2 | absolute(x) を実装。正負の両方を検証 |\n",
+          ".agents/artifacts/plans/20260801010000_add-absolute.md": "# absolute 機能追加\n\n**Cycle ID:** `20260801010000`\n**Started:** 2026-08-01 01:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nabsolute 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **absolute 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - absolute(x) -> int を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. absolute 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "app.py": "def negate(x: int) -> int:\n    return -x\n\n\ndef absolute(x: int) -> int:\n    return x if x >= 0 else -x\n",
+                "tests/test_app.py": "import unittest\nfrom app import negate, absolute\n\nclass NegateTest(unittest.TestCase):\n    def test_negates_the_value(self):\n        self.assertEqual(negate(5), -5)\n\nclass AbsoluteTest(unittest.TestCase):\n    def test_absolute_of_a_negative_is_positive(self):\n        self.assertEqual(absolute(-5), 5)\n    def test_absolute_of_a_positive_is_unchanged(self):\n        self.assertEqual(absolute(5), 5)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: absolute を追加（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle 回して。ただし Phase 3 の fix loop が 2 回とも BLOCK verdict（critical findings が残る）で終了した想定で、fix loop exhaustion の停止パスを確認して。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。実装は既にコミット済みで、plan にも Implementation Base SHA が記録されている。その続きから cycle 回して。ただし Phase 3 の fix loop が 2 回とも BLOCK verdict（critical findings が残る）で終了した想定で、fix loop exhaustion の停止パスを確認して。",
       "requirements": [
         {
           "text": "2 回の fix iteration が実行され、各 iteration 後の re-review がいずれも BLOCK verdict を返している",
@@ -385,23 +641,37 @@
         },
         {
           "text": "plan ファイルの Status が ⚠️ Review Failed に戻されており、次回 cycle の自動選択で再選択可能な状態になっている",
-          "critical": true
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260801010000_add-absolute.md",
+              "pattern": "⚠️ Review Failed"
+            }
+          ]
         },
         {
-          "text": "Phase 4 および Phase 5 が実行されていない",
-          "critical": true
+          "text": "Phase 4 および Phase 5 が実行されていない（result ファイルが生成されていない）",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_exists",
+              "path": ".agents/artifacts/plans/results/20260801010000_add-absolute_result.md",
+              "expect": false
+            }
+          ]
         },
         {
           "text": "/iterate で対応してから cycle を再実行する旨の案内が表示されている",
           "critical": false
         }
       ],
-      "notes": "Phase 3 fix loop exhaustion の固定。2 回の fix iteration 後も BLOCK findings が残る場合、fix loop を打ち切り plan status を復元して cycle を停止する。Phase 4/5 は実行されない。"
+      "notes": "Phase 3 fix loop exhaustion の固定。2 回の fix iteration 後も BLOCK findings が残る場合、fix loop を打ち切り plan status を復元して cycle を停止する。Phase 4/5 は実行されない。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-011",
       "title": "Phase 1 retry exhaustion — 2回失敗で plan status 復元して cycle 中断",
-      "source": "manual:pr-190-review-round7",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -413,7 +683,10 @@
           "tests/test_app.py": "import unittest\nfrom app import identity\n\nclass IdentityTest(unittest.TestCase):\n    def test_identity(self):\n        self.assertEqual(identity(42), 42)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
           ".agents/artifacts/plans/20260801020000_add-transform.md": "# transform 機能追加\n\n**Cycle ID:** `20260801020000`\n**Started:** 2026-08-01 02:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ntransform 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **transform 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - transform(x) -> str を実装\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true
+        }
       },
       "prompt": "cycle 回して。ただし Phase 1 の implement agent が 2 回とも失敗した（サブエージェントエラー）と仮定して、retry exhaustion の中断パスを確認して。",
       "requirements": [
@@ -422,45 +695,79 @@
           "critical": true
         },
         {
-          "text": "リトライも失敗した後、plan ファイルの Status が ⚠️ Review Failed に戻されている",
-          "critical": true
+          "text": "Phase 0 Step 3 で plan に Implementation Base SHA 行が無いため、現在の HEAD が 40-hex で記録されている",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260801020000_add-transform.md",
+              "pattern": "\\*\\*Implementation Base SHA:\\*\\* [0-9a-f]{40}"
+            }
+          ]
         },
         {
-          "text": "Phase 2/3/4/5 が実行されていない",
-          "critical": true
+          "text": "リトライも失敗した後、plan ファイルの Status が ⚠️ Review Failed に戻されている",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260801020000_add-transform.md",
+              "pattern": "⚠️ Review Failed"
+            }
+          ]
+        },
+        {
+          "text": "Phase 2/3/4/5 が実行されていない（result ファイルが生成されていない）",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_exists",
+              "path": ".agents/artifacts/plans/results/20260801020000_add-transform_result.md",
+              "expect": false
+            }
+          ]
         },
         {
           "text": "エラー内容と実装の進捗状況（how far the steps got）が表示されている",
           "critical": false
         }
       ],
-      "notes": "Phase 1 retry exhaustion の固定。plan-implement が plan status を 🟡 In Progress に変更した後にサブエージェントが 2 回失敗した場合、plan status を ⚠️ Review Failed に復元して次回 auto-select を可能にする。"
+      "notes": "Phase 1 retry exhaustion の固定。plan-implement が plan status を 🟡 In Progress に変更した後にサブエージェントが 2 回失敗した場合、plan status を ⚠️ Review Failed に復元して次回 auto-select を可能にする。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 1 終端型のため seed しない（実装が走らないことがシナリオの前提）。本シナリオの plan は Base SHA を持たないため Phase 0 Step 3 の記録経路が実走する。phase 終端化で cy-012 が「既存 Base SHA を採用する」側へ寄った結果、記録側の実走保証が空くため、その要件をここへ移管した。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-012",
       "title": "Re-execution after BLOCK — Implementation Base SHA が保持されレビュー範囲が初回実装を含む",
-      "source": "manual:pr-190-review-round7",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {
           ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
           "CLAUDE.md": "# reexec-test\n\nRe-execution テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
-          "app.py": "def inc(x: int) -> int:\n    return x + 1\n\ndef dec(x: int) -> int:\n    return x - 1\n",
+          "app.py": "def inc(x: int) -> int:\n    return x + 1\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import inc, dec\n\nclass IncTest(unittest.TestCase):\n    def test_inc(self):\n        self.assertEqual(inc(0), 1)\n\nclass DecTest(unittest.TestCase):\n    def test_dec(self):\n        self.assertEqual(dec(1), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260801030000_add-dec.md": "# dec 機能追加\n\n**Cycle ID:** `20260801030000`\n**Started:** 2026-08-01 03:00:00\n**Status:** ⚠️ Review Failed\n\n---\n\n## 📝 What & Why\n\ndec 関数を追加する。Phase 4 で BLOCK され、/iterate で修正済み。\n\n## 🔧 Implementation Steps\n\n1. **dec 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - dec(x) -> int を実装\n"
+          "tests/test_app.py": "import unittest\nfrom app import inc\n\nclass IncTest(unittest.TestCase):\n    def test_increments_the_value(self):\n        self.assertEqual(inc(0), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/progress/20260801030000.md": "# Progress: dec 機能追加\n\n**Plan:** .agents/artifacts/plans/20260801030000_add-dec.md\n**Cycle ID:** 20260801030000\n**Last Updated:** 2026-08-01 03:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | dec 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 1 | dec(x) を実装。Phase 4 の BLOCK 後に /iterate で修正済み |\n",
+          ".agents/artifacts/plans/20260801030000_add-dec.md": "# dec 機能追加\n\n**Cycle ID:** `20260801030000`\n**Started:** 2026-08-01 03:00:00\n**Status:** ⚠️ Review Failed\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\ndec 関数を追加する。Phase 4 で BLOCK され、/iterate で修正済み。\n\n## 🔧 Implementation Steps\n\n1. **dec 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - dec(x) -> int を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. dec 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "app.py": "def inc(x: int) -> int:\n    return x + 1\n\n\ndef dec(x: int) -> int:\n    return x - 1\n",
+                "tests/test_app.py": "import unittest\nfrom app import inc, dec\n\nclass IncTest(unittest.TestCase):\n    def test_increments_the_value(self):\n        self.assertEqual(inc(0), 1)\n\nclass DecTest(unittest.TestCase):\n    def test_decrements_the_value(self):\n        self.assertEqual(dec(1), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: dec を追加（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle を .agents/artifacts/plans/20260801030000_add-dec.md で再実行して。初回 cycle で Implementation Base SHA が記録された後の再実行を模擬する想定で、Phase 0 Step 3 の Base SHA 保持ロジックと、Phase 3 の空 diff ガードの動作を確認して。plan に既存 Base SHA がある場合は HEAD でなくそれを使うこと、ない場合は記録すること。",
+      "prompt": "前回の cycle は Phase 4 の BLOCK で停止し、/iterate で修正済み。plan には Implementation Base SHA が記録され、実装はコミット済みになっている。この plan で cycle を再実行して、Phase 0 Step 3 の Base SHA 保持ロジックと、Phase 3 の空 diff ガードの動作を確認して。計画は .agents/artifacts/plans/20260801030000_add-dec.md を使うこと。 Phase 3 と Phase 4 のレビュー verdict はいずれも PASS と仮定してよい（本シナリオの関心はレビュー内容ではなく diff の範囲）。",
       "requirements": [
         {
-          "text": "Phase 0 Step 3 で plan ファイルに Implementation Base SHA が存在しない場合、現在の HEAD を記録している",
-          "critical": true
-        },
-        {
-          "text": "Phase 0 Step 3 で plan ファイルに Implementation Base SHA が既に存在する場合、それを cycle_start_sha として採用し HEAD に上書きしない（再実行保護）",
+          "text": "Phase 0 Step 3 で plan の既存 Implementation Base SHA を cycle_start_sha として採用し、HEAD で上書きしていない（再実行保護）",
           "critical": true
         },
         {
@@ -468,16 +775,20 @@
           "critical": true
         },
         {
+          "text": "レビュー範囲に前回実行の実装コミット（dec の追加）が含まれている（diff が baseline からのもので、直近コミットのみに縮んでいない）",
+          "critical": true
+        },
+        {
           "text": "diff が空の場合に plan status を ⚠️ Review Failed に戻して UNVERIFIED 停止する経路が規定されている",
           "critical": false
         }
       ],
-      "notes": "cycle_start_sha 永続化の回帰。初回実行で Base SHA を plan に記録し、再実行時はそれを再利用することで、元の実装が常にレビュー範囲に含まれることを固定する。fixture 環境では SHA を埋め込まず、Phase 0 Step 3 のロジック自体を検証する。"
+      "notes": "cycle_start_sha 永続化の回帰。初回実行で Base SHA を plan に記録し、再実行時はそれを再利用することで、元の実装が常にレビュー範囲に含まれることを固定する。fixture 環境には baseline の実 SHA が {{fixture:sha:baseline}} の置換で埋まっており、plan の Base SHA が実在するコミットを指す状態で Phase 0 Step 3 を通す。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 3 終端型。実装コミットと Base SHA を seed したことで、本シナリオが名指しする経路（既存 Base SHA → 採用）が模擬ではなく実走になった。代わりに「Base SHA が無い場合に HEAD を記録する」要件は実走しなくなるため cy-011 へ移管済み（cy-011 の plan は Base SHA を持たない）。 レビュー verdict は PASS 注入で固定し、fix loop の実走コストを持ち込まない。"
     },
     {
       "id": "cy-013",
       "title": "Phase 3 fix loop 成功 — BLOCK→fix→PASS で Phase 4 到達",
-      "source": "manual:pr-190-fable-residual",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -486,12 +797,25 @@
           "CLAUDE.md": "# fixloop-success-test\n\nFix loop 成功テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def clamp(x: int, lo: int, hi: int) -> int:\n    return max(lo, min(hi, x))\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import clamp\n\nclass ClampTest(unittest.TestCase):\n    def test_clamp_within(self):\n        self.assertEqual(clamp(5, 0, 10), 5)\n    def test_clamp_low(self):\n        self.assertEqual(clamp(-1, 0, 10), 0)\n    def test_clamp_high(self):\n        self.assertEqual(clamp(11, 0, 10), 10)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260801040000_add-normalize.md": "# normalize 機能追加\n\n**Cycle ID:** `20260801040000`\n**Started:** 2026-08-01 04:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nnormalize 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **normalize 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - normalize(x, lo, hi) -> float を実装（0.0〜1.0 に正規化）\n"
+          "tests/test_app.py": "import unittest\nfrom app import clamp\n\nclass ClampTest(unittest.TestCase):\n    def test_keeps_a_value_inside_the_range(self):\n        self.assertEqual(clamp(5, 0, 10), 5)\n    def test_clamps_below_the_lower_bound(self):\n        self.assertEqual(clamp(-1, 0, 10), 0)\n    def test_clamps_above_the_upper_bound(self):\n        self.assertEqual(clamp(11, 0, 10), 10)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/progress/20260801040000.md": "# Progress: normalize 機能追加\n\n**Plan:** .agents/artifacts/plans/20260801040000_add-normalize.md\n**Cycle ID:** 20260801040000\n**Last Updated:** 2026-08-01 04:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | normalize 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 2 | clamp を使って normalize(x, lo, hi) を 0.0〜1.0 に正規化 |\n",
+          ".agents/artifacts/plans/20260801040000_add-normalize.md": "# normalize 機能追加\n\n**Cycle ID:** `20260801040000`\n**Started:** 2026-08-01 04:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nnormalize 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **normalize 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - normalize(x, lo, hi) -> float を実装（0.0〜1.0 に正規化）\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. normalize 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "app.py": "def clamp(x: int, lo: int, hi: int) -> int:\n    return max(lo, min(hi, x))\n\n\ndef normalize(x: int, lo: int, hi: int) -> float:\n    return (clamp(x, lo, hi) - lo) / (hi - lo)\n",
+                "tests/test_app.py": "import unittest\nfrom app import clamp, normalize\n\nclass ClampTest(unittest.TestCase):\n    def test_keeps_a_value_inside_the_range(self):\n        self.assertEqual(clamp(5, 0, 10), 5)\n    def test_clamps_below_the_lower_bound(self):\n        self.assertEqual(clamp(-1, 0, 10), 0)\n    def test_clamps_above_the_upper_bound(self):\n        self.assertEqual(clamp(11, 0, 10), 10)\n\nclass NormalizeTest(unittest.TestCase):\n    def test_maps_the_midpoint_to_half(self):\n        self.assertEqual(normalize(5, 0, 10), 0.5)\n    def test_clamps_below_the_range_to_zero(self):\n        self.assertEqual(normalize(-1, 0, 10), 0.0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: normalize を追加（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle 回して。ただし Phase 3 のレビュー verdict は実レビュアーの起動結果に依存させず、想定値を注入して分岐を検証する: 初回レビューが BLOCK、1 回目の fix 後の再レビューが PASS になった想定で、fix loop 成功パス（BLOCK→targeted-fix→PASS→Phase 4 到達）を確認して。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。実装は既にコミット済みで、plan にも Implementation Base SHA が記録されている。その続きから cycle 回して。ただし Phase 3 のレビュー verdict は実レビュアーの起動結果に依存させず、想定値を注入して分岐を検証する: 初回レビューが BLOCK、1 回目の fix 後の再レビューが PASS になった想定で、fix loop 成功パス（BLOCK→targeted-fix→PASS→Phase 4 到達）を確認して。",
       "requirements": [
         {
           "text": "Phase 3 の初回レビューが BLOCK verdict を返し、fix loop に入っている",
@@ -514,12 +838,12 @@
           "critical": false
         }
       ],
-      "notes": "Phase 3 fix loop の成功系固定。BLOCK→targeted-fix→re-review PASS で Phase 4 到達。allowed-files が trusted diff から導出されることも検証する。cy-010（失敗系）と対をなす。レビュー verdict は注入で固定する（organic なレビュアー出力の揺らぎは検証対象外。2026-08-03 の実走で 2 回連続、実レビュアーの fix 後再レビューが WARN を返し想定が実現しなかったため、注入指定を prompt に明文化した。requirements は不変更）。"
+      "notes": "Phase 3 fix loop の成功系固定。BLOCK→targeted-fix→re-review PASS で Phase 4 到達。allowed-files が trusted diff から導出されることも検証する。cy-010（失敗系）と対をなす。レビュー verdict は注入で固定する（organic なレビュアー出力の揺らぎは検証対象外。2026-08-03 の実走で 2 回連続、実レビュアーの fix 後再レビューが WARN を返し想定が実現しなかったため、注入指定を prompt に明文化した。requirements は不変更）。 【#242 phase 終端化】原出典は manual:pr-190-fable-residual。 Phase 3 終端型（実装は seed 済みコミット）。"
     },
     {
       "id": "cy-014",
       "title": "Phase 3 WARN auto-fix 成功 — WARN→auto-fix→PASS で Phase 4 到達",
-      "source": "manual:pr-190-warn-autofix",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -528,12 +852,25 @@
           "CLAUDE.md": "# warn-autofix-test\n\nWARN auto-fix テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def half(x: int) -> int:\n    return x // 2\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import half\n\nclass HalfTest(unittest.TestCase):\n    def test_half_even(self):\n        self.assertEqual(half(10), 5)\n    def test_half_odd(self):\n        self.assertEqual(half(7), 3)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260802000000_add-quarter.md": "# quarter 機能追加\n\n**Cycle ID:** `20260802000000`\n**Started:** 2026-08-02 00:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nquarter 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **quarter 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - quarter(x) -> int を実装（x // 4）\n"
+          "tests/test_app.py": "import unittest\nfrom app import half\n\nclass HalfTest(unittest.TestCase):\n    def test_halves_an_even_number(self):\n        self.assertEqual(half(10), 5)\n    def test_rounds_down_an_odd_number(self):\n        self.assertEqual(half(7), 3)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/progress/20260802000000.md": "# Progress: quarter 機能追加\n\n**Plan:** .agents/artifacts/plans/20260802000000_add-quarter.md\n**Cycle ID:** 20260802000000\n**Last Updated:** 2026-08-02 00:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | quarter 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 2 | quarter(x) を x // 4 で実装 |\n",
+          ".agents/artifacts/plans/20260802000000_add-quarter.md": "# quarter 機能追加\n\n**Cycle ID:** `20260802000000`\n**Started:** 2026-08-02 00:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nquarter 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **quarter 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - quarter(x) -> int を実装（x // 4）\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. quarter 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "app.py": "def half(x: int) -> int:\n    return x // 2\n\n\ndef quarter(x: int) -> int:\n    return x // 4\n",
+                "tests/test_app.py": "import unittest\nfrom app import half, quarter\n\nclass HalfTest(unittest.TestCase):\n    def test_halves_an_even_number(self):\n        self.assertEqual(half(10), 5)\n    def test_rounds_down_an_odd_number(self):\n        self.assertEqual(half(7), 3)\n\nclass QuarterTest(unittest.TestCase):\n    def test_quarters_a_multiple_of_four(self):\n        self.assertEqual(quarter(8), 2)\n    def test_rounds_down_a_remainder(self):\n        self.assertEqual(quarter(7), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: quarter を追加（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle 回して。ただし Phase 3 のレビュー verdict は実レビュアーの起動結果に依存させず、想定値を注入して分岐を検証する: 初回レビューが WARN（minor finding あり）、WARN auto-fix 後の再レビューが PASS。この注入のもとで WARN auto-fix 成功パスを確認して。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。実装は既にコミット済みで、plan にも Implementation Base SHA が記録されている。その続きから cycle 回して。ただし Phase 3 のレビュー verdict は実レビュアーの起動結果に依存させず、想定値を注入して分岐を検証する: 初回レビューが WARN（minor finding あり）、WARN auto-fix 後の再レビューが PASS。この注入のもとで WARN auto-fix 成功パスを確認して。",
       "requirements": [
         {
           "text": "Phase 3 の初回レビューが WARN verdict を返し、WARN auto-fix（Step 2b）に入っている",
@@ -556,12 +893,12 @@
           "critical": false
         }
       ],
-      "notes": "Phase 3 WARN auto-fix の成功系固定。WARN→auto-fix→re-review PASS でユーザー確認をスキップし Phase 4 到達。headless 自走性の維持を検証する。cy-010/cy-013（BLOCK fix loop）とは異なる WARN 専用経路。"
+      "notes": "Phase 3 WARN auto-fix の成功系固定。WARN→auto-fix→re-review PASS でユーザー確認をスキップし Phase 4 到達。headless 自走性の維持を検証する。cy-010/cy-013（BLOCK fix loop）とは異なる WARN 専用経路。 【#242 phase 終端化】原出典は manual:pr-190-warn-autofix。 Phase 3 終端型（実装は seed 済みコミット）。"
     },
     {
       "id": "cy-015",
       "title": "Phase 3 WARN auto-fix 失敗 — WARN 残存で headless 停止",
-      "source": "manual:pr-190-warn-coverage",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -570,12 +907,25 @@
           "CLAUDE.md": "# warn-remain-test\n\nWARN 残存テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def modulo(a: int, b: int) -> int:\n    return a % b\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import modulo\n\nclass ModuloTest(unittest.TestCase):\n    def test_modulo(self):\n        self.assertEqual(modulo(10, 3), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260802010000_add-divmod.md": "# divmod 機能追加\n\n**Cycle ID:** `20260802010000`\n**Started:** 2026-08-02 01:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ndivmod_pair 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **divmod_pair 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - divmod_pair(a, b) -> tuple[int, int] を実装\n"
+          "tests/test_app.py": "import unittest\nfrom app import modulo\n\nclass ModuloTest(unittest.TestCase):\n    def test_returns_the_remainder(self):\n        self.assertEqual(modulo(10, 3), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/progress/20260802010000.md": "# Progress: divmod 機能追加\n\n**Plan:** .agents/artifacts/plans/20260802010000_add-divmod.md\n**Cycle ID:** 20260802010000\n**Last Updated:** 2026-08-02 01:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | divmod_pair 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 1 | divmod_pair(a, b) が商と剰余のタプルを返す |\n",
+          ".agents/artifacts/plans/20260802010000_add-divmod.md": "# divmod 機能追加\n\n**Cycle ID:** `20260802010000`\n**Started:** 2026-08-02 01:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\ndivmod_pair 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **divmod_pair 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - divmod_pair(a, b) -> tuple[int, int] を実装\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. divmod_pair 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "app.py": "def modulo(a: int, b: int) -> int:\n    return a % b\n\n\ndef divmod_pair(a: int, b: int) -> tuple[int, int]:\n    return a // b, a % b\n",
+                "tests/test_app.py": "import unittest\nfrom app import modulo, divmod_pair\n\nclass ModuloTest(unittest.TestCase):\n    def test_returns_the_remainder(self):\n        self.assertEqual(modulo(10, 3), 1)\n\nclass DivmodPairTest(unittest.TestCase):\n    def test_returns_the_quotient_and_the_remainder(self):\n        self.assertEqual(divmod_pair(10, 3), (3, 1))\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: divmod_pair を追加（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが WARN で、WARN auto-fix 後の再レビューもまだ WARN（finding が残っている）想定で、headless 停止パスを確認して。再レビューの WARN verdict は注入で固定してよい（organic なレビュアー出力の揺らぎは検証対象外）。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。実装は既にコミット済みで、plan にも Implementation Base SHA が記録されている。その続きから cycle 回して。ただし Phase 3 の初回レビューが WARN で、WARN auto-fix 後の再レビューもまだ WARN（finding が残っている）想定で、headless 停止パスを確認して。再レビューの WARN verdict は注入で固定してよい（organic なレビュアー出力の揺らぎは検証対象外）。",
       "requirements": [
         {
           "text": "Phase 3 の初回レビューが WARN で、WARN auto-fix（Step 2b）に入っている",
@@ -587,19 +937,33 @@
         },
         {
           "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
-          "critical": true
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260802010000_add-divmod.md",
+              "pattern": "⚠️ Review Failed"
+            }
+          ]
         },
         {
-          "text": "Phase 4 および Phase 5 が実行されていない",
-          "critical": true
+          "text": "Phase 4 および Phase 5 が実行されていない（result ファイルが生成されていない）",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_exists",
+              "path": ".agents/artifacts/plans/results/20260802010000_add-divmod_result.md",
+              "expect": false
+            }
+          ]
         }
       ],
-      "notes": "WARN auto-fix の失敗系固定。auto-fix で WARN が解消されず headless 停止する経路。cy-014（成功系）と対をなす。再レビュー verdict は注入で固定する（cy-013 と同じ裁定: 2026-08-04 の実走で process / subagent 両経路とも auto-fix 後の実レビューが PASS に収束し想定が実現しなかったため、注入指定を prompt に明文化した。requirements は不変更）。"
+      "notes": "WARN auto-fix の失敗系固定。auto-fix で WARN が解消されず headless 停止する経路。cy-014（成功系）と対をなす。再レビュー verdict は注入で固定する（cy-013 と同じ裁定: 2026-08-04 の実走で process / subagent 両経路とも auto-fix 後の実レビューが PASS に収束し想定が実現しなかったため、注入指定を prompt に明文化した。requirements は不変更）。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-016",
       "title": "Phase 3 WARN auto-fix BLOCK 回帰 — revert して headless 停止",
-      "source": "manual:pr-190-warn-coverage",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -608,12 +972,25 @@
           "CLAUDE.md": "# warn-block-regress-test\n\nWARN BLOCK 回帰テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
           "app.py": "def power(base: int, exp: int) -> int:\n    return base ** exp\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import power\n\nclass PowerTest(unittest.TestCase):\n    def test_power(self):\n        self.assertEqual(power(2, 3), 8)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260802020000_add-root.md": "# root 機能追加\n\n**Cycle ID:** `20260802020000`\n**Started:** 2026-08-02 02:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nroot 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **root 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - root(x, n) -> float を実装（x の n 乗根）\n"
+          "tests/test_app.py": "import unittest\nfrom app import power\n\nclass PowerTest(unittest.TestCase):\n    def test_raises_to_the_power(self):\n        self.assertEqual(power(2, 3), 8)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/progress/20260802020000.md": "# Progress: root 機能追加\n\n**Plan:** .agents/artifacts/plans/20260802020000_add-root.md\n**Cycle ID:** 20260802020000\n**Last Updated:** 2026-08-02 02:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | root 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 1 | root(x, n) を x ** (1 / n) で実装 |\n",
+          ".agents/artifacts/plans/20260802020000_add-root.md": "# root 機能追加\n\n**Cycle ID:** `20260802020000`\n**Started:** 2026-08-02 02:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nroot 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **root 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - root(x, n) -> float を実装（x の n 乗根）\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. root 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "app.py": "def power(base: int, exp: int) -> int:\n    return base ** exp\n\n\ndef root(x: float, n: int) -> float:\n    return x ** (1 / n)\n",
+                "tests/test_app.py": "import unittest\nfrom app import power, root\n\nclass PowerTest(unittest.TestCase):\n    def test_raises_to_the_power(self):\n        self.assertEqual(power(2, 3), 8)\n\nclass RootTest(unittest.TestCase):\n    def test_returns_the_nth_root(self):\n        self.assertAlmostEqual(root(8, 3), 2.0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: root を追加（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが WARN で、WARN auto-fix 後の再レビューが BLOCK（auto-fix が regression を導入）になった想定で、BLOCK 回帰→revert→headless 停止のパスを確認して。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。実装は既にコミット済みで、plan にも Implementation Base SHA が記録されている。その続きから cycle 回して。ただし Phase 3 の初回レビューが WARN で、WARN auto-fix 後の再レビューが BLOCK（auto-fix が regression を導入）になった想定で、BLOCK 回帰→revert→headless 停止のパスを確認して。",
       "requirements": [
         {
           "text": "Phase 3 の初回レビューが WARN で、WARN auto-fix（Step 2b）に入っている",
@@ -629,33 +1006,60 @@
         },
         {
           "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
-          "critical": true
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260802020000_add-root.md",
+              "pattern": "⚠️ Review Failed"
+            }
+          ]
         },
         {
-          "text": "Phase 4 および Phase 5 が実行されていない",
-          "critical": true
+          "text": "Phase 4 および Phase 5 が実行されていない（result ファイルが生成されていない）",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_exists",
+              "path": ".agents/artifacts/plans/results/20260802020000_add-root_result.md",
+              "expect": false
+            }
+          ]
         }
       ],
-      "notes": "WARN auto-fix の BLOCK 回帰固定。auto-fix が regression を導入し BLOCK 化した場合、pre-fix 状態に revert して元の WARN findings で停止する（regressed state ではない）。revert に git clean -fd が含まれることも検証する。"
+      "notes": "WARN auto-fix の BLOCK 回帰固定。auto-fix が regression を導入し BLOCK 化した場合、pre-fix 状態に revert して元の WARN findings で停止する（regressed state ではない）。revert に git clean -fd が含まれることも検証する。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-017",
       "title": "Phase 4 WARN — headless 停止",
-      "source": "manual:pr-190-warn-coverage",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {
           ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
           "CLAUDE.md": "# phase4-warn-test\n\nPhase 4 WARN テスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
-          "app.py": "def sign(x: int) -> int:\n    if x > 0: return 1\n    if x < 0: return -1\n    return 0\n",
+          "app.py": "def sign(x: int) -> int:\n    if x > 0:\n        return 1\n    if x < 0:\n        return -1\n    return 0\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import sign\n\nclass SignTest(unittest.TestCase):\n    def test_positive(self):\n        self.assertEqual(sign(5), 1)\n    def test_negative(self):\n        self.assertEqual(sign(-3), -1)\n    def test_zero(self):\n        self.assertEqual(sign(0), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260802030000_add-abs-sign.md": "# abs_sign 機能追加\n\n**Cycle ID:** `20260802030000`\n**Started:** 2026-08-02 03:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\nabs_sign 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **abs_sign 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - abs_sign(x) -> tuple[int, int] を実装（絶対値とsignのタプル）\n"
+          "tests/test_app.py": "import unittest\nfrom app import sign\n\nclass SignTest(unittest.TestCase):\n    def test_a_positive_value_is_one(self):\n        self.assertEqual(sign(5), 1)\n    def test_a_negative_value_is_minus_one(self):\n        self.assertEqual(sign(-3), -1)\n    def test_zero_is_zero(self):\n        self.assertEqual(sign(0), 0)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/progress/20260802030000.md": "# Progress: abs_sign 機能追加\n\n**Plan:** .agents/artifacts/plans/20260802030000_add-abs-sign.md\n**Cycle ID:** 20260802030000\n**Last Updated:** 2026-08-02 03:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | abs_sign 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 1 | abs_sign(x) が絶対値と sign のタプルを返す |\n",
+          ".agents/artifacts/plans/20260802030000_add-abs-sign.md": "# abs_sign 機能追加\n\n**Cycle ID:** `20260802030000`\n**Started:** 2026-08-02 03:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\nabs_sign 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **abs_sign 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - abs_sign(x) -> tuple[int, int] を実装（絶対値と sign のタプル）\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. abs_sign 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "app.py": "def sign(x: int) -> int:\n    if x > 0:\n        return 1\n    if x < 0:\n        return -1\n    return 0\n\n\ndef abs_sign(x: int) -> tuple[int, int]:\n    return abs(x), sign(x)\n",
+                "tests/test_app.py": "import unittest\nfrom app import sign, abs_sign\n\nclass SignTest(unittest.TestCase):\n    def test_a_positive_value_is_one(self):\n        self.assertEqual(sign(5), 1)\n    def test_a_negative_value_is_minus_one(self):\n        self.assertEqual(sign(-3), -1)\n    def test_zero_is_zero(self):\n        self.assertEqual(sign(0), 0)\n\nclass AbsSignTest(unittest.TestCase):\n    def test_returns_the_absolute_value_and_the_sign(self):\n        self.assertEqual(abs_sign(-3), (3, -1))\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: abs_sign を追加（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle 回して。ただし Phase 3 は PASS で通過し、Phase 4 の holistic review が WARN を返した想定で、Phase 4 WARN の headless 停止パスを確認して。Phase 4 では auto-fix なし（quality gate 原則）であることも確認して。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。実装は既にコミット済みで、plan にも Implementation Base SHA が記録されている。その続きから cycle 回して。ただし Phase 3 は PASS で通過し、Phase 4 の holistic review が WARN を返した想定で、Phase 4 WARN の headless 停止パスを確認して。Phase 4 では auto-fix なし（quality gate 原則）であることも確認して。",
       "requirements": [
         {
           "text": "Phase 3 が PASS で通過した後に Phase 4 に到達している",
@@ -671,33 +1075,60 @@
         },
         {
           "text": "plan ファイルの Status が ⚠️ Review Failed に戻されている",
-          "critical": true
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260802030000_add-abs-sign.md",
+              "pattern": "⚠️ Review Failed"
+            }
+          ]
         },
         {
-          "text": "Phase 5 が実行されていない",
-          "critical": true
+          "text": "Phase 5 が実行されていない（result ファイルが生成されていない）",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_exists",
+              "path": ".agents/artifacts/plans/results/20260802030000_add-abs-sign_result.md",
+              "expect": false
+            }
+          ]
         }
       ],
-      "notes": "Phase 4 WARN headless 停止の固定。Phase 4 は quality gate であり auto-fix なし。WARN は headless で停止し、ユーザー確認が必要。Phase 3 の WARN（auto-fix あり）との非対称性を検証する。"
+      "notes": "Phase 4 WARN headless 停止の固定。Phase 4 は quality gate であり auto-fix なし。WARN は headless で停止し、ユーザー確認が必要。Phase 3 の WARN（auto-fix あり）との非対称性を検証する。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-018",
       "title": "Phase 3 BLOCK fix → WARN — Step 2b ルーティング",
-      "source": "manual:pr-190-warn-coverage",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
         "files": {
           ".gitignore": "__pycache__/\n*.pyc\n.claude/\n.mcp.json\n/.agents/artifacts/\n/.agents/runtime/\n",
           "CLAUDE.md": "# block-to-warn-test\n\nBLOCK→fix→WARN ルーティングテスト用。テストは `python3 -m unittest discover -s tests -t .` で実行する\n",
-          "app.py": "def factorial(n: int) -> int:\n    if n <= 1: return 1\n    return n * factorial(n - 1)\n",
+          "app.py": "def factorial(n: int) -> int:\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n",
           "tests/__init__.py": "",
-          "tests/test_app.py": "import unittest\nfrom app import factorial\n\nclass FactorialTest(unittest.TestCase):\n    def test_base(self):\n        self.assertEqual(factorial(0), 1)\n    def test_five(self):\n        self.assertEqual(factorial(5), 120)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260802040000_add-combo.md": "# combo 機能追加\n\n**Cycle ID:** `20260802040000`\n**Started:** 2026-08-02 04:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ncombination 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **combination 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - combination(n, r) -> int を実装（nCr）\n"
+          "tests/test_app.py": "import unittest\nfrom app import factorial\n\nclass FactorialTest(unittest.TestCase):\n    def test_factorial_of_zero_is_one(self):\n        self.assertEqual(factorial(0), 1)\n    def test_multiplies_down_to_one(self):\n        self.assertEqual(factorial(5), 120)\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+          ".agents/artifacts/plans/progress/20260802040000.md": "# Progress: combo 機能追加\n\n**Plan:** .agents/artifacts/plans/20260802040000_add-combo.md\n**Cycle ID:** 20260802040000\n**Last Updated:** 2026-08-02 04:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | combination 実装（TDD） | 🟢 Done | app.py, tests/test_app.py | 2 | factorial を使って combination(n, r) を実装 |\n",
+          ".agents/artifacts/plans/20260802040000_add-combo.md": "# combo 機能追加\n\n**Cycle ID:** `20260802040000`\n**Started:** 2026-08-02 04:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\ncombination 関数を追加する。\n\n## 🔧 Implementation Steps\n\n1. **combination 実装（TDD）**\n   - Files: `app.py`, `tests/test_app.py`\n   - combination(n, r) -> int を実装（nCr）\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. combination 実装（TDD） | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
-        "git": { "init": true, "commit": true }
+        "git": {
+          "init": true,
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "app.py": "def factorial(n: int) -> int:\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\n\ndef combination(n: int, r: int) -> int:\n    return factorial(n) // (factorial(r) * factorial(n - r))\n",
+                "tests/test_app.py": "import unittest\nfrom app import factorial, combination\n\nclass FactorialTest(unittest.TestCase):\n    def test_factorial_of_zero_is_one(self):\n        self.assertEqual(factorial(0), 1)\n    def test_multiplies_down_to_one(self):\n        self.assertEqual(factorial(5), 120)\n\nclass CombinationTest(unittest.TestCase):\n    def test_counts_the_combinations(self):\n        self.assertEqual(combination(5, 2), 10)\n    def test_choosing_none_is_one(self):\n        self.assertEqual(combination(5, 0), 1)\n\nif __name__ == \"__main__\":\n    unittest.main()\n"
+              },
+              "message": "feat: combination を追加（TDD）"
+            }
+          ]
+        }
       },
-      "prompt": "cycle 回して。ただしレビュー verdict は次の台本で固定して扱い、実レビューの結果には置き換えないこと（ルーティング検証のためのスタブ）: Phase 3 初回レビュー = BLOCK、fix loop 1 回目の fix 後の再レビュー = WARN、Step 2b auto-fix 後の再レビュー = PASS。この台本のもとで、WARN が Step 2b（WARN auto-fix）にルーティングされることを確認して。PASS / WARN を同一扱いせず、WARN は WARN ゲートを通ることを検証して。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。実装は既にコミット済みで、plan にも Implementation Base SHA が記録されている。その続きから cycle 回して。ただしレビュー verdict は次の台本で固定して扱い、実レビューの結果には置き換えないこと（ルーティング検証のためのスタブ）: Phase 3 初回レビュー = BLOCK、fix loop 1 回目の fix 後の再レビュー = WARN、Step 2b auto-fix 後の再レビュー = PASS。この台本のもとで、WARN が Step 2b（WARN auto-fix）にルーティングされることを確認して。PASS / WARN を同一扱いせず、WARN は WARN ゲートを通ることを検証して。",
       "requirements": [
         {
           "text": "Phase 3 の初回レビューが BLOCK で fix loop に入り、1 回目の fix 後の再レビューが WARN を返している",
@@ -716,12 +1147,12 @@
           "critical": true
         }
       ],
-      "notes": "BLOCK→fix→WARN の Step 2b ルーティング固定。fix loop が BLOCK を解消したが WARN が残った場合、PASS と同一扱いせず WARN ゲート（auto-fix + acknowledgement）を通ることを検証する。cy-013（BLOCK→fix→PASS）との対比。【2026-08-04 再設計】実レビューの verdict は非決定で（誠実な fix は PASS に到達しうる）、ルーティング検証の観測可能性が run に依存していたため、prompt で verdict 台本を固定する形へ変更。要件は同一で観測可能性のみを固定した（シナリオを楽にする方向の変更ではない）。"
+      "notes": "BLOCK→fix→WARN の Step 2b ルーティング固定。fix loop が BLOCK を解消したが WARN が残った場合、PASS と同一扱いせず WARN ゲート（auto-fix + acknowledgement）を通ることを検証する。cy-013（BLOCK→fix→PASS）との対比。【2026-08-04 再設計】実レビューの verdict は非決定で（誠実な fix は PASS に到達しうる）、ルーティング検証の観測可能性が run に依存していたため、prompt で verdict 台本を固定する形へ変更。要件は同一で観測可能性のみを固定した（シナリオを楽にする方向の変更ではない）。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型（実装は seed 済みコミット）。"
     },
     {
       "id": "cy-019",
       "title": "Phase 3 skill-reviewer — diagnostics のみで状態遷移せず続行",
-      "source": "manual:issue-196",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -731,14 +1162,23 @@
           "skills/greeter/SKILL.md": "---\nname: greeter\ndescription: Compose a greeting line for a named recipient. Use when the user says \"greet\", \"make a greeting\".\n---\n\n# greeter\n\n## Steps\n\n1. Read the recipient name from the arguments.\n2. Compose one greeting line and show it.\n",
           "tests/__init__.py": "",
           "tests/test_placeholder.py": "import unittest\n\n\nclass PlaceholderTest(unittest.TestCase):\n    def test_placeholder(self):\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260803000000_greeter-stop-condition.md": "# greeter に停止条件を追加\n\n**Cycle ID:** `20260803000000`\n**Started:** 2026-08-03 00:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ngreeter スキルに、宛先名が取れない場合の停止条件が書かれていない。\n\n## 🔧 Implementation Steps\n\n1. **停止条件の節を追加**\n   - Files: `skills/greeter/SKILL.md`\n   - 宛先名が取得できないときは挨拶文を作らず、その旨を伝えて停止する節を Steps の後に 1 つ追加する\n"
+          ".agents/artifacts/plans/progress/20260803000000.md": "# Progress: greeter に停止条件を追加\n\n**Plan:** .agents/artifacts/plans/20260803000000_greeter-stop-condition.md\n**Cycle ID:** 20260803000000\n**Last Updated:** 2026-08-03 00:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | 停止条件の節を追加 | 🟢 Done | skills/greeter/SKILL.md | 0 | 宛先名が取れないときは挨拶文を作らず停止する節を Steps の後に追加 |\n",
+          ".agents/artifacts/plans/20260803000000_greeter-stop-condition.md": "# greeter に停止条件を追加\n\n**Cycle ID:** `20260803000000`\n**Started:** 2026-08-03 00:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\ngreeter スキルに、宛先名が取れない場合の停止条件が書かれていない。\n\n## 🔧 Implementation Steps\n\n1. **停止条件の節を追加**\n   - Files: `skills/greeter/SKILL.md`\n   - 宛先名が取得できないときは挨拶文を作らず、その旨を伝えて停止する節をSteps の後に 1 つ追加する\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. 停止条件の節を追加 | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
         "git": {
           "init": true,
-          "commit": true
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "skills/greeter/SKILL.md": "---\nname: greeter\ndescription: Compose a greeting line for a named recipient. Use when the user says \"greet\", \"make a greeting\".\n---\n\n# greeter\n\n## Steps\n\n1. Read the recipient name from the arguments.\n2. Compose one greeting line and show it.\n\n## Stop condition\n\nIf no recipient name can be read from the arguments, do not compose a greeting. Say that the name is missing and stop.\n"
+              },
+              "message": "docs(greeter): 停止条件の節を追加"
+            }
+          ]
         }
       },
-      "prompt": "cycle 回して。ただし Phase 3 のレビュー結果は diagnostics チャネルに WARN と OPPORTUNITY が 1 件ずつあるだけで control_candidates は空だった想定で、診断チャネルが cycle の状態遷移に影響しないことを確認して。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。実装は既にコミット済みで、plan にも Implementation Base SHA が記録されている。その続きから cycle 回して。ただし Phase 3 のレビュー結果は diagnostics チャネルに WARN と OPPORTUNITY が 1 件ずつあるだけで control_candidates は空だった想定で、診断チャネルが cycle の状態遷移に影響しないことを確認して。",
       "requirements": [
         {
           "text": "Phase 3 で変更ファイルがスキル成果物のみと分類され、plan-reviewer ではなく skill-reviewer が起動されている",
@@ -754,19 +1194,27 @@
         },
         {
           "text": "plan ファイルの Status が ⚠️ Review Failed へ戻されていない",
-          "critical": true
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260803000000_greeter-stop-condition.md",
+              "pattern": "⚠️ Review Failed",
+              "expect": false
+            }
+          ]
         },
         {
           "text": "diagnostics の内容が表示または完了報告に記録として残っている",
           "critical": false
         }
       ],
-      "notes": "受入基準 C1（brainstorm exit contract A1/A4）の固定。診断チャネルが cycle の 3 つの状態遷移（自動修正・再レビュー・headless 停止）のいずれにも入らないことを測る。plan-reviewer 経路の WARN は Step 2b で auto-fix され未解決なら headless 停止するため、同じ WARN という語で経路が分岐することがこのシナリオの争点になる。スキル成果物のみを変更する plan にしてあるのは、Step 0.5 のルーティングが混在分岐へ落ちないようにするため。"
+      "notes": "受入基準 C1（brainstorm exit contract A1/A4）の固定。診断チャネルが cycle の 3 つの状態遷移（自動修正・再レビュー・headless 停止）のいずれにも入らないことを測る。plan-reviewer 経路の WARN は Step 2b で auto-fix され未解決なら headless 停止するため、同じ WARN という語で経路が分岐することがこのシナリオの争点になる。スキル成果物のみを変更する plan にしてあるのは、Step 0.5 のルーティングが混在分岐へ落ちないようにするため。 【#242 phase 終端化】原出典は manual:issue-196。 Phase 3 終端型。skill 成果物のみを変更する実装コミットを seed してあり、Step 0.5 のルーティングは seed した diff に対して行われる。"
     },
     {
       "id": "cy-020",
       "title": "Phase 3 skill-reviewer — validator 不適合レビューは再委譲 1 回後に制御用途全破棄で続行",
-      "source": "manual:issue-203",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
       "setup": {
@@ -776,14 +1224,23 @@
           "skills/greeter/SKILL.md": "---\nname: greeter\ndescription: Compose a greeting line for a named recipient. Use when the user says \"greet\", \"make a greeting\".\n---\n\n# greeter\n\n## Steps\n\n1. Read the recipient name from the arguments.\n2. Compose one greeting line and show it.\n",
           "tests/__init__.py": "",
           "tests/test_placeholder.py": "import unittest\n\n\nclass PlaceholderTest(unittest.TestCase):\n    def test_placeholder(self):\n        self.assertTrue(True)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
-          ".agents/artifacts/plans/20260803010000_greeter-usage-example.md": "# greeter に引数例の節を追加\n\n**Cycle ID:** `20260803010000`\n**Started:** 2026-08-03 01:00:00\n**Status:** 🟡 Planning\n\n---\n\n## 📝 What & Why\n\ngreeter スキルに引数の与え方の例が書かれていない。\n\n## 🔧 Implementation Steps\n\n1. **引数例の節を追加**\n   - Files: `skills/greeter/SKILL.md`\n   - 呼び出し時の引数（宛先名）の与え方の例を 1 つ示す節を Steps の後に追加する\n"
+          ".agents/artifacts/plans/progress/20260803010000.md": "# Progress: greeter に引数例の節を追加\n\n**Plan:** .agents/artifacts/plans/20260803010000_greeter-usage-example.md\n**Cycle ID:** 20260803010000\n**Last Updated:** 2026-08-03 01:20:00\n\n## Steps\n\n| # | Title | Status | Files Changed | Tests | Notes |\n|---|-------|--------|---------------|-------|-------|\n| 1 | 引数例の節を追加 | 🟢 Done | skills/greeter/SKILL.md | 0 | 呼び出し時の宛先名の与え方の例を Steps の後に追加 |\n",
+          ".agents/artifacts/plans/20260803010000_greeter-usage-example.md": "# greeter に引数例の節を追加\n\n**Cycle ID:** `20260803010000`\n**Started:** 2026-08-03 01:00:00\n**Status:** 🟡 In Progress\n**Implementation Base SHA:** {{fixture:sha:baseline}}\n\n---\n\n## 📝 What & Why\n\ngreeter スキルに引数の与え方の例が書かれていない。\n\n## 🔧 Implementation Steps\n\n1. **引数例の節を追加**\n   - Files: `skills/greeter/SKILL.md`\n   - 呼び出し時の引数（宛先名）の与え方の例を 1 つ示す節を Steps の後に追加する\n\n## 📊 Progress\n\n| Step | Status |\n|------|--------|\n| 1. 引数例の節を追加 | 🟢 |\n\n**Legend:** ⚪ Pending · 🟡 In Progress · 🟢 Done\n\n実装は前回の実行でコミット済み（`{{fixture:sha:commits[0]}}`）。残りの作業はレビュー以降のフェーズのみ。\n"
         },
         "git": {
           "init": true,
-          "commit": true
+          "commit": true,
+          "commits": [
+            {
+              "files": {
+                "skills/greeter/SKILL.md": "---\nname: greeter\ndescription: Compose a greeting line for a named recipient. Use when the user says \"greet\", \"make a greeting\".\n---\n\n# greeter\n\n## Steps\n\n1. Read the recipient name from the arguments.\n2. Compose one greeting line and show it.\n\n## Example\n\nPass the recipient name as the first argument: `greeter Ada` composes one line addressed to Ada.\n"
+              },
+              "message": "docs(greeter): 引数例の節を追加"
+            }
+          ]
         }
       },
-      "prompt": "cycle 回して。ただし Phase 3 の skill-reviewer レビューは実レビュアーの出力に依存させず、次を注入して検証する: 初回レビュー委譲・再委譲 1 回とも出力は validate_review_output.py 不適合と報告され、両試行とも届いた生 findings は次の payload そのもの（qualification_reason を欠く BLOCK と fix_action: AUTO_FIX 付き diagnostics を含む）: {\"control_candidates\":[{\"id\":\"cc-1\",\"verdict\":\"BLOCK\",\"target\":\"skills/greeter/SKILL.md\",\"summary\":\"Example の文言が Steps と一致しない懸念\",\"fix_action\":\"NEEDS_JUDGMENT\"}],\"diagnostics\":[{\"id\":\"dg-1\",\"verdict\":\"INFO\",\"target\":\"skills/greeter/SKILL.md\",\"summary\":\"コードブロックに言語指定がない\",\"fix_action\":\"AUTO_FIX\"}]} この想定で、validator 不適合レビューのフォールバック（未提出扱い → 再委譲 1 回 → 制御用途は全破棄し記録添付のみで続行）を確認して。",
+      "prompt": "前回の cycle は実装フェーズまで終わり、レビュー段で停止している。実装は既にコミット済みで、plan にも Implementation Base SHA が記録されている。その続きから cycle 回して。ただし Phase 3 の skill-reviewer レビューは実レビュアーの出力に依存させず、次を注入して検証する: 初回レビュー委譲・再委譲 1 回とも出力は validate_review_output.py 不適合と報告され、両試行とも届いた生 findings は次の payload そのもの（qualification_reason を欠く BLOCK と fix_action: AUTO_FIX 付き diagnostics を含む）: {\"control_candidates\":[{\"id\":\"cc-1\",\"verdict\":\"BLOCK\",\"target\":\"skills/greeter/SKILL.md\",\"summary\":\"Example の文言が Steps と一致しない懸念\",\"fix_action\":\"NEEDS_JUDGMENT\"}],\"diagnostics\":[{\"id\":\"dg-1\",\"verdict\":\"INFO\",\"target\":\"skills/greeter/SKILL.md\",\"summary\":\"コードブロックに言語指定がない\",\"fix_action\":\"AUTO_FIX\"}]} この想定で、validator 不適合レビューのフォールバック（未提出扱い → 再委譲 1 回 → 制御用途は全破棄し記録添付のみで続行）を確認して。",
       "requirements": [
         {
           "text": "Phase 3 で変更ファイルがスキル成果物のみと分類され、plan-reviewer ではなく skill-reviewer が起動されている",
@@ -798,8 +1255,20 @@
           "critical": true
         },
         {
-          "text": "cycle は停止せず Phase 4 へ進み、plan ファイルの Status が ⚠️ Review Failed へ戻されていない",
+          "text": "cycle は停止せず Phase 4 へ進んでいる",
           "critical": true
+        },
+        {
+          "text": "plan ファイルの Status が ⚠️ Review Failed へ戻されていない",
+          "critical": true,
+          "assert": [
+            {
+              "type": "file_regex",
+              "path": ".agents/artifacts/plans/20260803010000_greeter-usage-example.md",
+              "pattern": "⚠️ Review Failed",
+              "expect": false
+            }
+          ]
         },
         {
           "text": "レビュー gap と、注入で指定した生 findings payload が Phase 5 の記録（完了報告）に verbatim の record-only として残っている（要約・再構成への置換や制御判断への使用をしていない）",
@@ -810,7 +1279,7 @@
           "critical": false
         }
       ],
-      "notes": "issue #203 judge 裁定 C（制御用途は全破棄・記録用途に生データ添付のみ）の固定。skill-review-routing.md 末尾のフォールバック契約を測る。validator 不適合と生 findings の内容は canonical payload の注入で固定する（cy-013 の教訓: organic なレビュアー出力の揺らぎは検証対象外。payload を prompt に明示するのは、要約・再構成で『生 findings が残っている』を満たしたことにする oracle gaming を塞ぐため — PR #207 Codex レビュー WARN 対応）。生 findings に qualification_reason なき BLOCK と AUTO_FIX を含めてあるのは、検証器が塞ぐ経路 (3)(4) を素通りした findings が Step 2s 分岐へ流入しないことを最悪ケースで測るため。cy-019（diagnostics 不干渉）と対をなし、こちらは不適合フォールバックの不干渉を担う。"
+      "notes": "issue #203 judge 裁定 C（制御用途は全破棄・記録用途に生データ添付のみ）の固定。skill-review-routing.md 末尾のフォールバック契約を測る。validator 不適合と生 findings の内容は canonical payload の注入で固定する（cy-013 の教訓: organic なレビュアー出力の揺らぎは検証対象外。payload を prompt に明示するのは、要約・再構成で『生 findings が残っている』を満たしたことにする oracle gaming を塞ぐため — PR #207 Codex レビュー WARN 対応）。生 findings に qualification_reason なき BLOCK と AUTO_FIX を含めてあるのは、検証器が塞ぐ経路 (3)(4) を素通りした findings が Step 2s 分岐へ流入しないことを最悪ケースで測るため。cy-019（diagnostics 不干渉）と対をなし、こちらは不適合フォールバックの不干渉を担う。 【#242 phase 終端化】原出典は manual:issue-203。 Phase 3 終端型。「停止せず Phase 4 へ進む」と「plan status が戻されていない」は元は 1 要件だったが、後者だけが機械判定可能なため分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。"
     }
   ]
 }

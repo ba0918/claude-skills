@@ -670,7 +670,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         return args.func(args)
-    except (QueueError, process_runner.ParseError,
+    except (QueueError, fixture_setup.MaterializeError, process_runner.ParseError,
             process_runner.ContainmentError, OSError) as exc:
         print(json.dumps({"error": type(exc).__name__, "detail": str(exc)},
                          ensure_ascii=False), file=sys.stderr)
