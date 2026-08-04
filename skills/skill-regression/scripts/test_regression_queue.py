@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -747,6 +748,11 @@ class TestRerunOfASeededScenarioAcrossProcesses(_Harness):
             "--repo-root", self.repo)
         self.assertEqual(build.returncode, 0, build.stderr)
 
+        # 秒を跨がせてから rerun する。git のコミット日時は秒精度で、build は
+        # 1 秒かからず終わる。待たないと「実行時刻を使う」実装でも両プロセスが
+        # 同じ秒に収まって SHA が一致し、このテストは変異を 8 回に 1 回しか
+        # 落とせない（実測）。sleep を消すと検出力が消える
+        time.sleep(1.1)
         rerun = self._in_a_separate_process("rerun", "--batch", self.batch)
         self.assertEqual(rerun.returncode, 0, rerun.stderr)
         self.assertEqual(
