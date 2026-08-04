@@ -803,17 +803,38 @@ class TestShippedSeededScenariosReachTheirPhase(unittest.TestCase):
     SKILLS = os.path.normpath(os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 
-    def _seeded(self):
+    @staticmethod
+    def _is_seeded(scenario):
+        return bool(((scenario.get("setup") or {}).get("git") or {}).get("commits"))
+
+    def _fixtures(self):
         for name in sorted(os.listdir(self.SKILLS)):
             path = os.path.join(self.SKILLS, name, "fixtures.json")
             if not os.path.isfile(path):
                 continue
             with open(path, encoding="utf-8") as handle:
-                doc = json.load(handle)
+                yield json.load(handle)
+
+    def _seeded(self):
+        for doc in self._fixtures():
             for scenario in doc["scenarios"]:
-                git = (scenario.get("setup") or {}).get("git") or {}
-                if git.get("commits"):
+                if self._is_seeded(scenario):
                     yield doc["skill"], scenario
+
+    def test_a_fixture_with_seeded_scenarios_keeps_a_through_run_smoke(self):
+        # fixture-schema § Guarantee boundaries: seed は「phase が実際に連鎖するか」の
+        # 保証を通し実行の smoke へ移す変更なので、smoke は 1 本残す規則になっている。
+        # 全シナリオが seed 済みになると、連鎖と委譲リレーを測る経路が誰も残らない
+        # （unit テストにも phase 終端型にも代替が無い）
+        checked = []
+        for doc in self._fixtures():
+            if not any(self._is_seeded(s) for s in doc["scenarios"]):
+                continue
+            checked.append(doc["skill"])
+            self.assertTrue(
+                [s["id"] for s in doc["scenarios"] if not self._is_seeded(s)],
+                f"{doc['skill']}: 全シナリオが seed 済みで、通し実行の smoke が 1 本も無い")
+        self.assertTrue(checked, "commits を宣言する fixture が 1 件も無い（検出側の壊れ）")
 
     def test_every_seeded_scenario_leaves_a_non_empty_range_from_its_baseline(self):
         checked = []
