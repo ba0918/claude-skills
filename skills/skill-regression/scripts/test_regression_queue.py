@@ -484,6 +484,18 @@ class TestRerun(_Harness):
         with open(edited) as handle:
             self.assertEqual(handle.read(), "print(1)\n")
 
+    def test_named_units_add_to_the_unfinished_set_not_replace_it(self):
+        # 置き換えだと指名 rerun のたびに未完了 unit が汚染ツリーのまま再走される —
+        # このガードが塞ぐはずの穴が指名モードで再発する
+        self.build(self._two_scenario_fixture())
+        self.write_report(self.UID, self.report("yes", "yes"))
+        edited_002, _ = self._contaminate("demo-skill-ds-002")
+        summary = rq.rerun(self.batch, units=[self.UID])
+        self.assertEqual(summary["rematerialized"],
+                         [self.UID, "demo-skill-ds-002"])
+        with open(edited_002) as handle:
+            self.assertEqual(handle.read(), "print(1)\n")
+
     def test_refuses_when_the_scenario_changed_since_build(self):
         """A rerun against an edited fixture would grade new behaviour with the old
         manifest key. That is a rebuild, not a rerun."""

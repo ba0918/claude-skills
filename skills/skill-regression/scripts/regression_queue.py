@@ -362,16 +362,20 @@ def rerun(batch_dir, *, units=None):
     batch_dir = os.path.abspath(batch_dir)
     manifest = json.loads(_read(os.path.join(batch_dir, "manifest.json")))
 
+    unfinished = [
+        uid for uid in sorted(manifest)
+        if not os.path.isfile(os.path.join(batch_dir, "work", uid, REPORT_NAME))
+    ]
     if units:
         unknown = sorted(set(units) - set(manifest))
         if unknown:
             raise QueueError(f"unknown unit(s): {', '.join(unknown)}")
-        targets = sorted(set(units))
+        # Named units ADD to the unfinished set, never replace it: a rerun that
+        # skipped the unfinished units would re-run them on contaminated trees —
+        # the exact failure this guard exists to stop.
+        targets = sorted(set(units) | set(unfinished))
     else:
-        targets = [
-            uid for uid in sorted(manifest)
-            if not os.path.isfile(os.path.join(batch_dir, "work", uid, REPORT_NAME))
-        ]
+        targets = unfinished
 
     fixtures = {}
     for uid in targets:
