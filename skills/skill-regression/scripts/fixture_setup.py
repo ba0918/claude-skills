@@ -101,6 +101,22 @@ def _err(where, message):
     return f"[fixture] {where}: {message}"
 
 
+def _unsafe_path(path):
+    """宣言できないパスなら理由を返す（安全なら None）。
+
+    `.git/` を許すと、実体化しただけで hook などが隔離領域の外へ効果を及ぼす。
+    宣言と実体化の両方が同じ規則を見るよう、判定はここに一本化する。
+    """
+    if not isinstance(path, str):
+        return "パスが文字列でない"
+    segments = path.split("/")
+    if os.path.isabs(path) or ".." in segments:
+        return "隔離領域の外を指している"
+    if ".git" in segments:
+        return "git のメタデータ領域 (.git/) を指している"
+    return None
+
+
 def _declared_policy(files):
     """setup.files の `.agents/artifacts.yml` から (root, visibility, explicit) を読む。
 
@@ -297,8 +313,9 @@ def _validate_commits(where, git, files):
         for path, content in entry_files.items():
             if not isinstance(content, str):
                 errors.append(_err(where, f"{at}.files[{path!r}] の内容が文字列でない"))
-            if os.path.isabs(path) or ".." in path.split("/"):
-                errors.append(_err(where, f"{at}.files[{path!r}] が隔離領域の外を指している"))
+            unsafe = _unsafe_path(path)
+            if unsafe:
+                errors.append(_err(where, f"{at}.files[{path!r}] が{unsafe}"))
             elif _gitignore_covers(gitignore, path):
                 # git add が拒否し、空のコミットが積まれる（宣言と履歴が食い違う）
                 errors.append(_err(
@@ -341,41 +358,42 @@ def _validate_sha_placeholders(where, files, git):
     committed = _committed_paths(git, files)
     errors = []
 
-    sources = [(path, content, path in committed)
+    # 由来（どの宣言に書いたか）を message に残す。setup.files 一択で報告すると
+    # seed コミット側の書き損じを直す先が分からない
+    sources = [(f"setup.files[{path!r}]", content, path in committed)
                for path, content in files.items() if isinstance(content, str)]
-    for entry in commits:
+    for index, entry in enumerate(commits):
         if isinstance(entry, dict) and isinstance(entry.get("files"), dict):
-            sources += [(path, content, True)
+            sources += [(f"setup.git.commits[{index}].files[{path!r}]", content, True)
                         for path, content in entry["files"].items()
                         if isinstance(content, str)]
 
-    for path, content, is_committed in sources:
+    for at, content, is_committed in sources:
         tokens = _SHA_TOKEN.findall(content)
         if not tokens:
             continue
         if is_committed:
             errors.append(_err(
                 where,
-                f"setup.files[{path!r}] は SHA プレースホルダを含むがコミット対象になっている"
+                f"{at} は SHA プレースホルダを含むがコミット対象になっている"
                 f"（置換はコミット後の書き換えなので working tree が dirty になる）"))
         for token in tokens:
             match = _SHA_TOKEN_STRICT.fullmatch(token)
             if not match:
                 errors.append(_err(
                     where,
-                    f"setup.files[{path!r}] の {token} が解決できない形式"
+                    f"{at} の {token} が解決できない形式"
                     f"（有効: {{{{fixture:sha:baseline}}}} / {{{{fixture:sha:commits[N]}}}}）"))
                 continue
             if match.group(1) is None:
                 if not git.get("commit"):
                     errors.append(_err(
                         where,
-                        f"setup.files[{path!r}] の {token} は"
-                        f" setup.git.commit（baseline）を必要とする"))
+                        f"{at} の {token} は setup.git.commit（baseline）を必要とする"))
             elif int(match.group(1)) >= len(commits):
                 errors.append(_err(
                     where,
-                    f"setup.files[{path!r}] の commits[{match.group(1)}] が"
+                    f"{at} の commits[{match.group(1)}] が"
                     f" setup.git.commits の範囲外（宣言は {len(commits)} 件）"))
     return errors
 
@@ -396,8 +414,9 @@ def _validate_setup(where, setup):
     for path, content in files.items():
         if not isinstance(content, str):
             errors.append(_err(where, f"setup.files[{path!r}] の内容が文字列でない"))
-        if os.path.isabs(path) or ".." in path.split("/"):
-            errors.append(_err(where, f"setup.files[{path!r}] が隔離領域の外を指している"))
+        unsafe = _unsafe_path(path)
+        if unsafe:
+            errors.append(_err(where, f"setup.files[{path!r}] が{unsafe}"))
 
     mtimes = setup.get("mtimes") or {}
     if not isinstance(mtimes, dict):
@@ -605,6 +624,51 @@ def _substitute_sha(content, path, baseline_sha, commit_shas):
     return _SHA_TOKEN_STRICT.sub(resolve, content)
 
 
+def _declared_mapping(at, value):
+    """宣言のオブジェクト部分を取り出す。
+
+    materialize は --validate を通さない経路（CLI 直叩き）からも呼ばれる。そこで
+    生の KeyError / TypeError を出すと、呼び出し側の MaterializeError 捕捉から漏れる
+    うえに宣言のどこが壊れているかも伝わらない。宣言の壊れはここで型を揃える。
+    """
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise MaterializeError(f"{at} はオブジェクトである必要がある")
+    return value
+
+
+def _declared_files(at, value):
+    """パス → 内容の宣言を、実体化できる形か確かめて返す。"""
+    value = _declared_mapping(at, value)
+    for path, content in value.items():
+        unsafe = _unsafe_path(path)
+        if unsafe:
+            raise MaterializeError(f"{at}[{path!r}] が{unsafe}")
+        if not isinstance(content, str):
+            raise MaterializeError(f"{at}[{path!r}] の内容が文字列でない")
+    return value
+
+
+def _declared_commits(git):
+    """setup.git.commits を (files, message) の列に正規化する。"""
+    commits = git.get("commits")
+    if commits is None:
+        return []
+    if not isinstance(commits, list):
+        raise MaterializeError("setup.git.commits は配列である必要がある")
+    normalized = []
+    for index, entry in enumerate(commits):
+        at = f"setup.git.commits[{index}]"
+        if not isinstance(entry, dict):
+            raise MaterializeError(f"{at} はオブジェクトである必要がある")
+        message = entry.get("message")
+        if not isinstance(message, str) or not message.strip():
+            raise MaterializeError(f"{at}.message は空でない文字列である必要がある")
+        normalized.append((_declared_files(f"{at}.files", entry.get("files")), message))
+    return normalized
+
+
 def materialize(scenario, dest, base_time=None):
     """シナリオの setup を dest に実体化し、{dir, baseline, env, git} を返す。
 
@@ -615,13 +679,21 @@ def materialize(scenario, dest, base_time=None):
     if base_time is None:
         base_time = time.time()
     setup = scenario.get("setup") or {}
-    files = setup.get("files") or {}
-    mtimes = setup.get("mtimes") or {}
-    git = setup.get("git") or {}
+    files = _declared_files("setup.files", setup.get("files"))
+    mtimes = _declared_mapping("setup.mtimes", setup.get("mtimes"))
+    git = _declared_mapping("setup.git", setup.get("git"))
+    env = _declared_mapping("setup.env", setup.get("env"))
+    # 宣言の正規化は書き込みの前に済ませる。途中で落ちると、隔離領域に
+    # 「宣言のどれでもない」中途半端な状態が残る
+    commits = _declared_commits(git)
 
+    # 同じパスは複数の宣言から書かれうる（setup.files → seed コミット → SHA 置換）。
+    # 期待値は最後に書いた宣言のもの。書いた順に上書きして重ね合わせの最終状態を持つ
+    expected = {}
     os.makedirs(dest, exist_ok=True)
     for path, content in files.items():
         _write(dest, path, content)
+        expected[path] = content
 
     git_state = {}
     baseline_sha, commit_shas = None, []
@@ -648,14 +720,14 @@ def materialize(scenario, dest, base_time=None):
             git_state["commit"] = result.returncode == 0
             baseline_sha = _head_sha(dest)
             git_state["baseline"] = baseline_sha
-        for index, entry in enumerate(git.get("commits") or []):
-            entry_files = entry.get("files") or {}
+        for index, (entry_files, message) in enumerate(commits):
             for path, content in entry_files.items():
                 _write(dest, path, content)
+                expected[path] = content
             _run_git(["add", "--"] + list(entry_files), dest)
             # --allow-empty は付けない。空コミットが積まれる状況（add の拒否など）は
             # 「seed したつもりの実装が履歴に無い」ことであり、黙って通してはならない
-            result = _run_git(["commit", "-q", "-m", entry["message"]], dest)
+            result = _run_git(["commit", "-q", "-m", message], dest)
             if result.returncode != 0:
                 raise MaterializeError(
                     f"setup.git.commits[{index}] をコミットできない: "
@@ -666,27 +738,27 @@ def materialize(scenario, dest, base_time=None):
 
     # プレースホルダ置換は全コミット完了後。ここで書き換えるファイルは検証側で
     # 「コミット対象でないこと」を保証済みなので、置換で tree は dirty にならない
-    resolved = {path: _substitute_sha(content, path, baseline_sha, commit_shas)
-                if _SHA_TOKEN.search(content) else content
-                for path, content in files.items()}
-    for path, content in resolved.items():
-        if content != files[path]:
-            _write(dest, path, content)
+    for path, content in files.items():
+        if not _SHA_TOKEN.search(content):
+            continue
+        resolved = _substitute_sha(content, path, baseline_sha, commit_shas)
+        _write(dest, path, resolved)
+        expected[path] = resolved
 
     # baseline ハッシュは宣言でなく書き込み後の実体から取る。実行基盤が機微な名前の
     # ファイル（.env 等）に /dev/null を被せることがあり、書き込みが黙って捨てられる。
     # 宣言のハッシュを baseline にすると、実体と食い違ったまま「編集ゼロ」を判定する
     baseline = {}
     unmaterialized = []
-    for path, content in resolved.items():
+    for path, content in expected.items():
         full = os.path.join(dest, path)
-        expected = content.encode("utf-8")
+        wanted = content.encode("utf-8")
         actual = None
         if os.path.isfile(full):
             with open(full, "rb") as handle:
                 actual = handle.read()
-        if actual == expected:
-            baseline[path] = hashlib.sha256(expected).hexdigest()
+        if actual == wanted:
+            baseline[path] = hashlib.sha256(wanted).hexdigest()
         else:
             unmaterialized.append(path)
             baseline[path] = (
@@ -696,6 +768,9 @@ def materialize(scenario, dest, base_time=None):
     # mtime は他の書き込みが全て終わってから適用する。合間に適用すると、後続の
     # 書き込み（seed コミットのファイル・プレースホルダ置換）が順序を巻き戻す
     for path, offset in mtimes.items():
+        if not isinstance(offset, int) or isinstance(offset, bool):
+            raise MaterializeError(
+                f"setup.mtimes[{path!r}] は整数秒（基準時刻からの相対）である必要がある")
         full = os.path.join(dest, path)
         if os.path.isfile(full):
             stamp = base_time + offset
@@ -704,7 +779,7 @@ def materialize(scenario, dest, base_time=None):
     return {
         "dir": os.path.abspath(dest),
         "baseline": baseline,
-        "env": dict(setup.get("env") or {}),
+        "env": dict(env),
         "git": git_state,
         "unmaterialized": unmaterialized,
     }
