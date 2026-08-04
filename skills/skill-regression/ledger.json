@@ -786,19 +786,19 @@
       "skills/shared/references/orchestration-patterns.md": "9672c4f21d72957d8c2cfec1673af412de49fc8634d2fe2ece39121d05d4779b",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
-      "skills/sweep-fix/SKILL.md": "b15e3fe1ccb9619a3125212714edfc2f00da12b364f0046eb3fdb1c9f08d39d8",
+      "skills/sweep-fix/SKILL.md": "72641e55735147ddc49528110ccad99aedef264dc624013f82d4a0483793dda9",
       "skills/sweep-fix/fixtures.json": "5406b7dba570b6294cdd9e978fc618eb2fa8c0e504ef014438853e37d0338b88",
       "skills/sweep-fix/references/context-verification.md": "1e835b97a51ea34723c6b20f23a16b0c3e690a32316208dd0a1ec91c50b07104",
       "skills/sweep-fix/references/pattern-extraction.md": "9f4c15f68c82b80c7d97ee28010270f6adbd65266bf7df1ca980f7871364ffa8"
     },
-    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
-    "result": "pass",
+    "note": "prompt-audit Low/flag: Rationalization Guard の中間ファイル関連 6 行を意味保存で 1 行に縮約したのみ（規則の実体は本文定義が正本）。ユーザー裁定 2026-08-04（挙動に触れない文言変更は --accept、適用後はドッグフーディングで観測）で実走せず承認",
+    "result": "accepted-without-run",
     "structural_sha256": {
       "skills/shared/references/execution-context.md": "cf213a8a2c15855c4147e01fd5bd524afa8007f51f4b68afb0faa38f53506d50",
       "skills/shared/references/orchestration-patterns.md": "2abc40814ffa144d4cdad8ca5ef33c4d21471f28dc77c0bd89cf8efe9f5a25d0",
       "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
       "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd",
-      "skills/sweep-fix/SKILL.md": "a378ea262319ea60f39a76d192a0d5a11527e20146501e91582d46c647dc4087",
+      "skills/sweep-fix/SKILL.md": "e57d6adc98fb184123a5981a05df9bb23fd5699082114097bd2249bf08f61890",
       "skills/sweep-fix/references/context-verification.md": "889915c992c7438890a373688099edb7945488552c603a29ab5ca9663d4220d2",
       "skills/sweep-fix/references/pattern-extraction.md": "b47311be6288e014c8ff65b34a40eb649f685fc7acf1f3f8bade865d1529171a"
     },
@@ -812,7 +812,7 @@
       "skills/sweep-fix/references/context-verification.md",
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
-    "surface_sha256": "4a247c16c5bbd8187422f0997da911e4886f20d46b3b0c4f5f69cb5ab8247f91",
+    "surface_sha256": "b42d2a8ac11a259b36e7f6ad77bb0fe6651649ec8e96deb6f3b0f9e80d59cdb1",
     "verified": "2026-08-04"
   },
   "systematic-debugging": {

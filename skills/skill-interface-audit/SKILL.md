@@ -106,15 +106,6 @@ Map SI-C\* findings onto empirical-prompt-tuning's fixed taxonomy to prevent the
 - **Ground the basis of a severity in experience**: "directly causes accidents" at a given tier is an empirical claim. Anything that cannot be tied to skill-improve's friction data or to an empirical measurement stays at INFO
 - **Do not invent new criteria**: the SI-\* rules audit the principles of skill-authoring.md and never create quality criteria of their own ([skill-authoring.md](../shared/references/skill-authoring.md) #5)
 
-## Preventing rationalization
-
-| Excuse | Reality |
-|--------|------|
-| "This skill is simple, so it needs no side-effect declaration" | The simpler the skill, the more freely an LLM extends it |
-| "The completion condition is obvious from context" | Obvious and guessed cannot be told apart. State it, or judge it N/A |
-| "Findings come out for every skill, so it is meaningless" | Suppress them with the baseline and look only at the new findings |
-| "Just apply the patch candidates as they are" | A patch is NEEDS\_JUDGMENT. Check the context before deciding |
-
 ## Side effects
 
 - Generates a report and a findings JSON under `.agents/tmp/skill-interface-audit/`

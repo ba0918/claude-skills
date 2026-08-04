@@ -448,12 +448,18 @@ claude-skills プラグインのバージョン履歴。
 - measurement-identity の trigger-eval 行だけ "(recommended)" の推奨形だったのを他行と
   同じ義務形へ。decision-journal の Workflow Selection から飾りの Hick's Law 括弧書き、
   fix-action-taxonomy 冒頭の出自語り 1 文（doc-audit ローカル分類からの昇格経緯）を削除
-- Low/flag の残り（Rationalization 表・Red flags 群・挙動を担う本文の削除候補）は据え置き。
-  争点のある削除は挙動プローブが先の原則に従う
+- 言い訳潰し表（Preventing rationalization）を trigger-eval / skill-regression /
+  skill-interface-audit から削除、sweep-fix の Rationalization Guard は中間ファイル関連
+  6 行を意味保存で 1 行へ縮約。表は本文で定義済みの規則の圧力再掲であり、規則の実体と
+  fixture の要件は不変。回帰はドッグフーディングと次回実走で観測するユーザー裁定
+  （Red flags 節は独自の観測シグナル定義を含むため全スキルで維持）
+- 挙動を担う本文の削除候補（systematic-debugging の浅い履歴フォールバック、brief の
+  retry 段落、context-vocabulary の移行注記）は据え置き。エッジパスの挙動定義であり、
+  削減行数に対して失う意味が大きい
 - ledger の支払い: decision-journal は `prose-change` 機械判定で `accepted-prose`
   （軽量レール初適用）、handoff は process-queue 実走 4/4 で pass、github-issue / issue /
-  cycle / context-audit / skill-reviewer は挙動に触れない文言差のみとするユーザー裁定
-  （2026-08-04）で `accepted-without-run`
+  cycle / context-audit / skill-reviewer / sweep-fix は挙動に触れない文言差のみとする
+  ユーザー裁定（2026-08-04）で `accepted-without-run`
 
 ## 1.72.0
 
