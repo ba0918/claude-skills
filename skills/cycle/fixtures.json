@@ -374,7 +374,7 @@
           "critical": false
         }
       ],
-      "notes": "Phase 3 ESCALATE 中断パスの固定。ESCALATE は spec gap 検出による意図的中断で、Phase 5 を実行せず plan status を復元する。実際の plan-reviewer 実行は必須ではなく、ESCALATE verdict の模擬で経路を検証する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 3 終端型。plan Status は seed 時点で 🟡 In Progress とし、⚠️ Review Failed への復元が実遷移として観測できるようにした（復元後の値を始点にすると要件が自明に満たされる）。要件 3 の「issue close が行われていない」節は本 fixture に issue 実体が無く判定不能だったため、観測可能な 2 点（result / status.md）へ言い換えて機械判定に落とした。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。要件単位で assert が self-report を置換する契約上、result ファイル述語が残る要件の未 assert 節は誰にも判定されないため、判定されない節を要件に残さない。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "Phase 3 ESCALATE 中断パスの固定。ESCALATE は spec gap 検出による意図的中断で、Phase 5 を実行せず plan status を復元する。実際の plan-reviewer 実行は必須ではなく、ESCALATE verdict の模擬で経路を検証する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 3 終端型。plan Status は seed 時点で 🟡 In Progress とし、⚠️ Review Failed への復元が実遷移として観測できるようにした（復元後の値を始点にすると要件が自明に満たされる）。要件 3 の「issue close が行われていない」節は本 fixture に issue 実体が無く判定不能だったため除去し、最終的に result ファイル不在の機械判定だけを主張する形にした。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-006",
@@ -443,7 +443,7 @@
           "critical": false
         }
       ],
-      "notes": "Phase 4 BLOCK 停止パスの固定。最終ゲートの BLOCK は fix loop なしで停止し、Phase 5 を実行せず plan status を復元する。Phase 3 通過後の停止であることを確認する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 Phase 3 の verdict は PASS 注入で固定した（Phase 4 に到達しないと本シナリオの対象経路を測れず、実レビューの verdict は非決定のため）。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。要件単位で assert が self-report を置換する契約上、result ファイル述語が残る要件の未 assert 節は誰にも判定されないため、判定されない節を要件に残さない。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "Phase 4 BLOCK 停止パスの固定。最終ゲートの BLOCK は fix loop なしで停止し、Phase 5 を実行せず plan status を復元する。Phase 3 通過後の停止であることを確認する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 Phase 3 の verdict は PASS 注入で固定した（Phase 4 に到達しないと本シナリオの対象経路を測れず、実レビューの verdict は非決定のため）。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-007",
@@ -515,7 +515,7 @@
           "critical": false
         }
       ],
-      "notes": "Phase 2 clean tree gate の固定。commit 失敗で dirty tree が残ると Phase 3/4 の git diff cycle_start_sha..HEAD にその変更が含まれずレビューをバイパスするため、Phase 3 に進まず中断する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 2 終端型。実装コミットは seed し、切り出したヘルパ helpers.py を未コミットのまま残すことで dirty tree gate に直行させる（baseline はcommit のパス配列形、実装は commits 併用）。中断メッセージの一覧要件に付けていた git_path_committed(helpers.py, expect=false) は、要件文（メッセージに一覧が含まれる）のどの節とも対応せず seed の前提だけで恒真だったため削除し、LLM 裁定に戻した（複合要件への部分 assert は未 assert 節を判定から消すため、無価値な述語を要件に残さない）。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。要件単位で assert が self-report を置換する契約上、result ファイル述語が残る要件の未 assert 節は誰にも判定されないため、判定されない節を要件に残さない。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "Phase 2 clean tree gate の固定。commit 失敗で dirty tree が残ると Phase 3/4 の git diff cycle_start_sha..HEAD にその変更が含まれずレビューをバイパスするため、Phase 3 に進まず中断する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 2 終端型。実装コミットは seed し、切り出したヘルパ helpers.py を未コミットのまま残すことで dirty tree gate に直行させる（baseline はcommit のパス配列形、実装は commits 併用）。中断メッセージの一覧要件に付けていた git_path_committed(helpers.py, expect=false) は、要件文（メッセージに一覧が含まれる）のどの節とも対応せず seed の前提だけで恒真だったため削除し、LLM 裁定に戻した（複合要件への部分 assert は未 assert 節を判定から消すため、無価値な述語を要件に残さない）。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-008",
@@ -686,7 +686,7 @@
           "critical": false
         }
       ],
-      "notes": "Phase 3 fix loop exhaustion の固定。2 回の fix iteration 後も BLOCK findings が残る場合、fix loop を打ち切り plan status を復元して cycle を停止する。Phase 4/5 は実行されない。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。要件単位で assert が self-report を置換する契約上、result ファイル述語が残る要件の未 assert 節は誰にも判定されないため、判定されない節を要件に残さない。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "Phase 3 fix loop exhaustion の固定。2 回の fix iteration 後も BLOCK findings が残る場合、fix loop を打ち切り plan status を復元して cycle を停止する。Phase 4/5 は実行されない。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-011",
@@ -752,7 +752,7 @@
           "critical": false
         }
       ],
-      "notes": "Phase 1 retry exhaustion の固定。plan-implement が plan status を 🟡 In Progress に変更した後にサブエージェントが 2 回失敗した場合、plan status を ⚠️ Review Failed に復元して次回 auto-select を可能にする。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 1 終端型のため seed しない（実装が走らないことがシナリオの前提）。本シナリオの plan は Base SHA を持たないため Phase 0 Step 3 の記録経路が実走する。phase 終端化で cy-012 が「既存 Base SHA を採用する」側へ寄った結果、記録側の実走保証が空くため、その要件をここへ移管した。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。要件単位で assert が self-report を置換する契約上、result ファイル述語が残る要件の未 assert 節は誰にも判定されないため、判定されない節を要件に残さない。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "Phase 1 retry exhaustion の固定。plan-implement が plan status を 🟡 In Progress に変更した後にサブエージェントが 2 回失敗した場合、plan status を ⚠️ Review Failed に復元して次回 auto-select を可能にする。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 1 終端型のため seed しない（実装が走らないことがシナリオの前提）。本シナリオの plan は Base SHA を持たないため Phase 0 Step 3 の記録経路が実走する。phase 終端化で cy-012 が「既存 Base SHA を採用する」側へ寄った結果、記録側の実走保証が空くため、その要件をここへ移管した。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-012",
@@ -978,7 +978,7 @@
           ]
         }
       ],
-      "notes": "WARN auto-fix の失敗系固定。auto-fix で WARN が解消されず headless 停止する経路。cy-014（成功系）と対をなす。再レビュー verdict は注入で固定する（cy-013 と同じ裁定: 2026-08-04 の実走で process / subagent 両経路とも auto-fix 後の実レビューが PASS に収束し想定が実現しなかったため、注入指定を prompt に明文化した。requirements は不変更）。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。要件単位で assert が self-report を置換する契約上、result ファイル述語が残る要件の未 assert 節は誰にも判定されないため、判定されない節を要件に残さない。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "WARN auto-fix の失敗系固定。auto-fix で WARN が解消されず headless 停止する経路。cy-014（成功系）と対をなす。再レビュー verdict は注入で固定する（cy-013 と同じ裁定: 2026-08-04 の実走で process / subagent 両経路とも auto-fix 後の実レビューが PASS に収束し想定が実現しなかったため、注入指定を prompt に明文化した。requirements は不変更）。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-016",
@@ -1047,7 +1047,7 @@
           ]
         }
       ],
-      "notes": "WARN auto-fix の BLOCK 回帰固定。auto-fix が regression を導入し BLOCK 化した場合、pre-fix 状態に revert して元の WARN findings で停止する（regressed state ではない）。revert に git clean -fd が含まれることも検証する。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。要件単位で assert が self-report を置換する契約上、result ファイル述語が残る要件の未 assert 節は誰にも判定されないため、判定されない節を要件に残さない。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "WARN auto-fix の BLOCK 回帰固定。auto-fix が regression を導入し BLOCK 化した場合、pre-fix 状態に revert して元の WARN findings で停止する（regressed state ではない）。revert に git clean -fd が含まれることも検証する。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-017",
@@ -1116,7 +1116,7 @@
           ]
         }
       ],
-      "notes": "Phase 4 WARN headless 停止の固定。Phase 4 は quality gate であり auto-fix なし。WARN は headless で停止し、ユーザー確認が必要。Phase 3 の WARN（auto-fix あり）との非対称性を検証する。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。要件単位で assert が self-report を置換する契約上、result ファイル述語が残る要件の未 assert 節は誰にも判定されないため、判定されない節を要件に残さない。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "Phase 4 WARN headless 停止の固定。Phase 4 は quality gate であり auto-fix なし。WARN は headless で停止し、ユーザー確認が必要。Phase 3 の WARN（auto-fix あり）との非対称性を検証する。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
     },
     {
       "id": "cy-018",
