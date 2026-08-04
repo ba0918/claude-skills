@@ -6,6 +6,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -708,6 +709,48 @@ class TestRerun(_Harness):
         self.write_report(self.UID, self.report("yes", "yes"))
         summary = rq.rerun(self.batch)
         self.assertEqual(summary["rematerialized"], [])
+
+
+class TestRerunOfASeededScenarioAcrossProcesses(_Harness):
+    """seed を持つシナリオが、build と rerun が別プロセスでも再走できること。
+
+    rerun は manifest の baseline と再実体化した baseline の厳密一致を要求する。
+    seed コミットの日時が実行時刻に依存すると SHA が動き、SHA を埋めた文書の
+    ハッシュまで動くので、seed を持つシナリオは二度と再走できなくなる。
+    同一プロセス内で 2 回実体化するテストでは「起動時に一度だけ時刻を決める」実装が
+    緑のまま隠れるため、この経路だけはプロセスを分けて実測する。
+    """
+
+    UID = "demo-skill-ds-001"
+
+    SEEDED_SETUP = {
+        "files": {
+            ".gitignore": "/.agents/artifacts/\n",
+            "src/a.py": "print(1)\n",
+            ".agents/artifacts/plans/p.md":
+                "**Implementation Base SHA:** {{fixture:sha:baseline}}\n",
+        },
+        "git": {"init": True, "commit": True, "message": "chore: baseline",
+                "commits": [{"files": {"src/b.py": "print(2)\n"},
+                             "message": "feat: b"}]},
+    }
+
+    def _in_a_separate_process(self, *argv):
+        return subprocess.run(
+            [sys.executable, os.path.abspath(rq.__file__), *argv],
+            capture_output=True, text=True)
+
+    def test_a_seeded_batch_built_by_one_process_is_rerunnable_by_another(self):
+        fixture = self.write_fixture(_fixture(setup=self.SEEDED_SETUP))
+        build = self._in_a_separate_process(
+            "build", "--fixture", fixture, "--batch", self.batch,
+            "--repo-root", self.repo)
+        self.assertEqual(build.returncode, 0, build.stderr)
+
+        rerun = self._in_a_separate_process("rerun", "--batch", self.batch)
+        self.assertEqual(rerun.returncode, 0, rerun.stderr)
+        self.assertEqual(
+            json.loads(rerun.stdout)["rematerialized"], [self.UID])
 
 
 # ==========================================================================
