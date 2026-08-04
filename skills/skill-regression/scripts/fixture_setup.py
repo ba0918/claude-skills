@@ -31,7 +31,16 @@ SCENARIO_KEYS = (
 )
 REQUIREMENT_KEYS = ("text", "critical", "assert")
 SETUP_KEYS = ("files", "mtimes", "git", "env")
-GIT_KEYS = ("init", "commit", "remote", "branch", "message")
+GIT_KEYS = ("init", "commit", "remote", "branch", "message", "commits")
+COMMIT_KEYS = ("files", "message")
+
+# 対象 phase から始まる fixture は「baseline より後に実装コミットがあり、
+# 文書がその baseline を指している」状態を要る。SHA は実体化時にしか決まらない
+# ため、宣言側はプレースホルダで書き、実体化後に置換する。
+# 緩いほうは書き損じ検出用（素通しすると文字列のまま plan に残り、測りたい経路
+# ではなく「SHA 解決不能」経路が走る）
+_SHA_TOKEN = re.compile(r"\{\{fixture:sha:[^}]*\}\}")
+_SHA_TOKEN_STRICT = re.compile(r"\{\{fixture:sha:(?:baseline|commits\[(\d+)\])\}\}")
 
 # 実体化した git リポジトリの既定値。git 本体の既定（init.defaultBranch 未設定時の
 # 分岐や実装バージョン）に委ねると実体化が環境依存になるため、ここで固定する。
@@ -78,6 +87,14 @@ RUNTIME_ROOT = ".agents/runtime"
 # public だけが追跡され、逆に無視されていてはならない
 IGNORED_VISIBILITIES = ("local", "shared-private")
 _YAML_SCALAR_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)\s*$")
+
+
+class MaterializeError(Exception):
+    """宣言どおりの隔離領域を作れなかった。
+
+    黙って続けると、宣言と食い違う前提でシナリオが走る（これは fixture が
+    そもそも防ごうとしている事故そのもの）ので、実体化ごと落とす。
+    """
 
 
 def _err(where, message):
@@ -199,7 +216,7 @@ def _validate_git(where, git, files):
             errors.append(
                 _err(where, f"未知の setup.git キー {key!r}（有効: {', '.join(GIT_KEYS)}）"))
     if not git.get("init"):
-        for dependent in ("commit", "remote", "branch", "message"):
+        for dependent in ("commit", "remote", "branch", "message", "commits"):
             if git.get(dependent):
                 errors.append(
                     _err(where, f"setup.git.{dependent} は init: true を必要とする"))
@@ -235,6 +252,131 @@ def _validate_git(where, git, files):
         if not commit:
             errors.append(_err(
                 where, "setup.git.message は commit を必要とする（コミットしないなら message は無意味）"))
+
+    errors += _validate_commits(where, git, files)
+    return errors
+
+
+def _validate_commits(where, git, files):
+    """baseline の後に積む追加コミット列を検証する。
+
+    ここが緩いと「seed したつもりの実装が履歴に無い」まま実行され、対象 phase
+    ではなく空 diff ガードの経路が走る。
+    """
+    commits = git.get("commits")
+    if commits is None:
+        return []
+    if not isinstance(commits, list):
+        return [_err(where, "setup.git.commits は配列である必要がある")]
+    if not commits:
+        return [_err(
+            where,
+            "setup.git.commits の空配列は意図が曖昧（追加コミットが無いならキー自体を省く）")]
+    if not git.get("commit"):
+        return [_err(
+            where,
+            "setup.git.commits は baseline の setup.git.commit を必要とする"
+            "（どこから後かが決まらない）")]
+
+    gitignore = files.get(".gitignore", "")
+    errors = []
+    for index, entry in enumerate(commits):
+        at = f"setup.git.commits[{index}]"
+        if not isinstance(entry, dict):
+            errors.append(_err(where, f"{at} はオブジェクトである必要がある"))
+            continue
+        for key in entry:
+            if key not in COMMIT_KEYS:
+                errors.append(_err(
+                    where,
+                    f"未知の {at} キー {key!r}（有効: {', '.join(COMMIT_KEYS)}）"))
+        entry_files = entry.get("files")
+        if not isinstance(entry_files, dict) or not entry_files:
+            errors.append(_err(where, f"{at}.files は空でないオブジェクトである必要がある"))
+            entry_files = {}
+        for path, content in entry_files.items():
+            if not isinstance(content, str):
+                errors.append(_err(where, f"{at}.files[{path!r}] の内容が文字列でない"))
+            if os.path.isabs(path) or ".." in path.split("/"):
+                errors.append(_err(where, f"{at}.files[{path!r}] が隔離領域の外を指している"))
+            elif _gitignore_covers(gitignore, path):
+                # git add が拒否し、空のコミットが積まれる（宣言と履歴が食い違う）
+                errors.append(_err(
+                    where,
+                    f"{at}.files[{path!r}] を setup.files['.gitignore'] が無視している"
+                    f"（コミットできないパスは seed に置けない）"))
+        message = entry.get("message")
+        if not isinstance(message, str) or not message.strip():
+            errors.append(_err(
+                where,
+                f"{at}.message は空でない文字列である必要がある"
+                f"（積んだコミットの subject は skill が読む履歴そのもの）"))
+    return errors
+
+
+def _committed_paths(git, files):
+    """宣言から「コミットされるパス」を求める（プレースホルダ検査用）。"""
+    committed = set()
+    commit = git.get("commit")
+    if commit is True:
+        gitignore = files.get(".gitignore", "")
+        committed |= {p for p in files if not _gitignore_covers(gitignore, p)}
+    elif isinstance(commit, list):
+        committed |= {p for p in commit if isinstance(p, str)}
+    for entry in git.get("commits") or []:
+        if isinstance(entry, dict) and isinstance(entry.get("files"), dict):
+            committed |= set(entry["files"])
+    return committed
+
+
+def _validate_sha_placeholders(where, files, git):
+    """SHA プレースホルダの書き損じと、置換が前提を壊す配置を検出する。
+
+    置換はコミット後の書き換えなので、対象が追跡されていると working tree が
+    dirty になり、seed が作ろうとしていた「clean な再入状態」ごと壊れる。
+    """
+    if not isinstance(git, dict):
+        git = {}
+    commits = git.get("commits") if isinstance(git.get("commits"), list) else []
+    committed = _committed_paths(git, files)
+    errors = []
+
+    sources = [(path, content, path in committed)
+               for path, content in files.items() if isinstance(content, str)]
+    for entry in commits:
+        if isinstance(entry, dict) and isinstance(entry.get("files"), dict):
+            sources += [(path, content, True)
+                        for path, content in entry["files"].items()
+                        if isinstance(content, str)]
+
+    for path, content, is_committed in sources:
+        tokens = _SHA_TOKEN.findall(content)
+        if not tokens:
+            continue
+        if is_committed:
+            errors.append(_err(
+                where,
+                f"setup.files[{path!r}] は SHA プレースホルダを含むがコミット対象になっている"
+                f"（置換はコミット後の書き換えなので working tree が dirty になる）"))
+        for token in tokens:
+            match = _SHA_TOKEN_STRICT.fullmatch(token)
+            if not match:
+                errors.append(_err(
+                    where,
+                    f"setup.files[{path!r}] の {token} が解決できない形式"
+                    f"（有効: {{{{fixture:sha:baseline}}}} / {{{{fixture:sha:commits[N]}}}}）"))
+                continue
+            if match.group(1) is None:
+                if not git.get("commit"):
+                    errors.append(_err(
+                        where,
+                        f"setup.files[{path!r}] の {token} は"
+                        f" setup.git.commit（baseline）を必要とする"))
+            elif int(match.group(1)) >= len(commits):
+                errors.append(_err(
+                    where,
+                    f"setup.files[{path!r}] の commits[{match.group(1)}] が"
+                    f" setup.git.commits の範囲外（宣言は {len(commits)} 件）"))
     return errors
 
 
@@ -276,6 +418,7 @@ def _validate_setup(where, setup):
         else:
             errors += _validate_git(where, git, files)
             errors += _validate_artifact_store(where, files, git)
+    errors += _validate_sha_placeholders(where, files, git)
 
     env = setup.get("env") or {}
     if not isinstance(env, dict):
@@ -386,6 +529,9 @@ def _check_unmaterialized_paths(where, scenario):
     """prompt / requirements 中のパス様文字列が setup.files に未宣言なら warning。"""
     setup = scenario.get("setup") or {}
     files = set((setup.get("files") or {}).keys())
+    for entry in (setup.get("git") or {}).get("commits") or []:
+        if isinstance(entry, dict) and isinstance(entry.get("files"), dict):
+            files |= set(entry["files"])
     texts = [scenario.get("prompt", "")]
     for r in scenario.get("requirements", []):
         if isinstance(r, dict):
@@ -427,6 +573,38 @@ def _run_git(args, cwd):
         ["git"] + args, cwd=cwd, env=env, capture_output=True, text=True)
 
 
+def _write(dest, path, content):
+    full = os.path.join(dest, path)
+    os.makedirs(os.path.dirname(full) or dest, exist_ok=True)
+    with open(full, "w", encoding="utf-8") as handle:
+        handle.write(content)
+    return full
+
+
+def _head_sha(dest):
+    result = _run_git(["rev-parse", "HEAD"], dest)
+    return result.stdout.strip() if result.returncode == 0 else None
+
+
+def _substitute_sha(content, path, baseline_sha, commit_shas):
+    """SHA プレースホルダを実 SHA に置換する。解決できなければ実体化ごと落とす。"""
+    def resolve(match):
+        index = match.group(1)
+        sha = baseline_sha if index is None else (
+            commit_shas[int(index)] if int(index) < len(commit_shas) else None)
+        if not sha:
+            raise MaterializeError(
+                f"{path}: {match.group(0)} を解決できない"
+                f"（baseline={baseline_sha!r} commits={len(commit_shas)} 件）")
+        return sha
+
+    leftover = [t for t in _SHA_TOKEN.findall(content)
+                if not _SHA_TOKEN_STRICT.fullmatch(t)]
+    if leftover:
+        raise MaterializeError(f"{path}: 未知のプレースホルダ {leftover[0]}")
+    return _SHA_TOKEN_STRICT.sub(resolve, content)
+
+
 def materialize(scenario, dest, base_time=None):
     """シナリオの setup を dest に実体化し、{dir, baseline, env, git} を返す。
 
@@ -442,38 +620,11 @@ def materialize(scenario, dest, base_time=None):
     git = setup.get("git") or {}
 
     os.makedirs(dest, exist_ok=True)
-    baseline = {}
-    unmaterialized = []
     for path, content in files.items():
-        full = os.path.join(dest, path)
-        os.makedirs(os.path.dirname(full) or dest, exist_ok=True)
-        with open(full, "w", encoding="utf-8") as handle:
-            handle.write(content)
-        # 書けたことを実体側で確認する。実行基盤が機微な名前のファイル（.env 等）に
-        # /dev/null を被せることがあり、書き込みが黙って捨てられる。宣言のハッシュを
-        # そのまま baseline にすると、実体と食い違ったまま「編集ゼロ」を判定してしまう
-        expected = content.encode("utf-8")
-        actual = None
-        if os.path.isfile(full):
-            with open(full, "rb") as handle:
-                actual = handle.read()
-        if actual == expected:
-            baseline[path] = hashlib.sha256(expected).hexdigest()
-        else:
-            unmaterialized.append(path)
-            baseline[path] = (
-                hashlib.sha256(actual).hexdigest() if actual is not None
-                else NOT_A_REGULAR_FILE)
-
-    # mtime は全ファイル書き込み後にまとめて適用する。書き込みの合間に適用すると
-    # 後続の書き込みが同一ディレクトリの mtime を巻き戻して順序が崩れる
-    for path, offset in mtimes.items():
-        full = os.path.join(dest, path)
-        if os.path.isfile(full):
-            stamp = base_time + offset
-            os.utime(full, (stamp, stamp))
+        _write(dest, path, content)
 
     git_state = {}
+    baseline_sha, commit_shas = None, []
     if git.get("init"):
         branch = git.get("branch") or DEFAULT_BRANCH
         _run_git(["init", "-q", "-b", branch], dest)
@@ -495,7 +646,60 @@ def materialize(scenario, dest, base_time=None):
                 ["commit", "-q", "-m", git.get("message") or DEFAULT_MESSAGE,
                  "--allow-empty"], dest)
             git_state["commit"] = result.returncode == 0
-            # commit 後に mtime が変わることはないが、checkout 系を足す場合は再適用が要る
+            baseline_sha = _head_sha(dest)
+            git_state["baseline"] = baseline_sha
+        for index, entry in enumerate(git.get("commits") or []):
+            entry_files = entry.get("files") or {}
+            for path, content in entry_files.items():
+                _write(dest, path, content)
+            _run_git(["add", "--"] + list(entry_files), dest)
+            # --allow-empty は付けない。空コミットが積まれる状況（add の拒否など）は
+            # 「seed したつもりの実装が履歴に無い」ことであり、黙って通してはならない
+            result = _run_git(["commit", "-q", "-m", entry["message"]], dest)
+            if result.returncode != 0:
+                raise MaterializeError(
+                    f"setup.git.commits[{index}] をコミットできない: "
+                    f"{(result.stderr or result.stdout).strip()[:200]}")
+            commit_shas.append(_head_sha(dest))
+        if commit_shas:
+            git_state["commits"] = commit_shas
+
+    # プレースホルダ置換は全コミット完了後。ここで書き換えるファイルは検証側で
+    # 「コミット対象でないこと」を保証済みなので、置換で tree は dirty にならない
+    resolved = {path: _substitute_sha(content, path, baseline_sha, commit_shas)
+                if _SHA_TOKEN.search(content) else content
+                for path, content in files.items()}
+    for path, content in resolved.items():
+        if content != files[path]:
+            _write(dest, path, content)
+
+    # baseline ハッシュは宣言でなく書き込み後の実体から取る。実行基盤が機微な名前の
+    # ファイル（.env 等）に /dev/null を被せることがあり、書き込みが黙って捨てられる。
+    # 宣言のハッシュを baseline にすると、実体と食い違ったまま「編集ゼロ」を判定する
+    baseline = {}
+    unmaterialized = []
+    for path, content in resolved.items():
+        full = os.path.join(dest, path)
+        expected = content.encode("utf-8")
+        actual = None
+        if os.path.isfile(full):
+            with open(full, "rb") as handle:
+                actual = handle.read()
+        if actual == expected:
+            baseline[path] = hashlib.sha256(expected).hexdigest()
+        else:
+            unmaterialized.append(path)
+            baseline[path] = (
+                hashlib.sha256(actual).hexdigest() if actual is not None
+                else NOT_A_REGULAR_FILE)
+
+    # mtime は他の書き込みが全て終わってから適用する。合間に適用すると、後続の
+    # 書き込み（seed コミットのファイル・プレースホルダ置換）が順序を巻き戻す
+    for path, offset in mtimes.items():
+        full = os.path.join(dest, path)
+        if os.path.isfile(full):
+            stamp = base_time + offset
+            os.utime(full, (stamp, stamp))
 
     return {
         "dir": os.path.abspath(dest),

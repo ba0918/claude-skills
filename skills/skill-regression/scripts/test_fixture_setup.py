@@ -147,6 +147,72 @@ class TestValidateSetup(unittest.TestCase):
         self.assertTrue(any("message は commit を必要とする" in e
                             for e in fixture_setup.validate(f)))
 
+    def test_seeded_commits_after_the_baseline_pass(self):
+        f = _fixture(setup={
+            "files": {"a.md": "x"},
+            "git": {"init": True, "commit": True,
+                    "commits": [{"files": {"b.py": "print(1)\n"}, "message": "feat: b"}]},
+        })
+        self.assertEqual(fixture_setup.validate(f), [])
+
+    def test_git_commits_without_baseline_commit_is_reported(self):
+        # baseline の無い積み上げは「どこから後か」が決まらない
+        f = _fixture(setup={
+            "files": {"a.md": "x"},
+            "git": {"init": True,
+                    "commits": [{"files": {"b.py": "y"}, "message": "feat: b"}]},
+        })
+        self.assertTrue(any("setup.git.commits" in e for e in fixture_setup.validate(f)))
+
+    def test_empty_git_commits_list_is_reported(self):
+        f = _fixture(setup={
+            "files": {"a.md": "x"},
+            "git": {"init": True, "commit": True, "commits": []},
+        })
+        self.assertTrue(any("意図が曖昧" in e for e in fixture_setup.validate(f)))
+
+    def test_unknown_key_in_a_seeded_commit_is_reported(self):
+        f = _fixture(setup={
+            "files": {"a.md": "x"},
+            "git": {"init": True, "commit": True,
+                    "commits": [{"files": {"b.py": "y"}, "msg": "feat: b"}]},
+        })
+        self.assertTrue(any("未知の setup.git.commits" in e
+                            for e in fixture_setup.validate(f)))
+
+    def test_seeded_commit_without_message_is_reported(self):
+        # 積んだコミットの subject は skill が読む履歴そのもので、既定に委ねられない
+        f = _fixture(setup={
+            "files": {"a.md": "x"},
+            "git": {"init": True, "commit": True, "commits": [{"files": {"b.py": "y"}}]},
+        })
+        self.assertTrue(any("message" in e for e in fixture_setup.validate(f)))
+
+    def test_seeded_commit_without_files_is_reported(self):
+        f = _fixture(setup={
+            "files": {"a.md": "x"},
+            "git": {"init": True, "commit": True, "commits": [{"message": "feat: b"}]},
+        })
+        self.assertTrue(any("files" in e for e in fixture_setup.validate(f)))
+
+    def test_seeded_commit_path_escaping_isolation_is_reported(self):
+        f = _fixture(setup={
+            "files": {"a.md": "x"},
+            "git": {"init": True, "commit": True,
+                    "commits": [{"files": {"../out.py": "y"}, "message": "feat: b"}]},
+        })
+        self.assertTrue(any("隔離領域の外" in e for e in fixture_setup.validate(f)))
+
+    def test_seeded_commit_of_a_gitignored_path_is_reported(self):
+        # git add が拒否し、空コミットが黙って積まれる（宣言と実体が食い違う）
+        f = _fixture(setup={
+            "files": {".gitignore": "/build/\n"},
+            "git": {"init": True, "commit": True,
+                    "commits": [{"files": {"build/out.py": "y"}, "message": "feat: b"}]},
+        })
+        self.assertTrue(any("無視" in e for e in fixture_setup.validate(f)))
+
+
     def test_path_escaping_isolation_is_reported(self):
         f = _fixture(setup={"files": {"../outside.md": "x"}})
         self.assertTrue(any("隔離領域の外" in e for e in fixture_setup.validate(f)))
@@ -162,6 +228,197 @@ class TestValidateSetup(unittest.TestCase):
     def test_non_string_env_value_is_reported(self):
         f = _fixture(setup={"env": {"PORT": 8080}})
         self.assertTrue(any("setup.env" in e for e in fixture_setup.validate(f)))
+
+
+class TestValidateShaPlaceholders(unittest.TestCase):
+    """SHA プレースホルダは「コミット後に書き換える」ので、対象が追跡されていると
+    working tree が dirty になり、seed が作ろうとしていた前提そのものが壊れる。"""
+
+    IGNORE = "/.agents/artifacts/\n"
+    PLAN = ".agents/artifacts/plans/p.md"
+
+    def _validate(self, files, git):
+        return fixture_setup.validate(_fixture(setup={"files": files, "git": git}))
+
+    def test_placeholder_in_an_untracked_file_passes(self):
+        errors = self._validate(
+            {".gitignore": self.IGNORE, self.PLAN: "base: {{fixture:sha:baseline}}\n"},
+            {"init": True, "commit": True,
+             "commits": [{"files": {"a.py": "x"}, "message": "feat: a"}]})
+        self.assertEqual(errors, [])
+
+    def test_placeholder_in_a_baseline_committed_file_is_reported(self):
+        errors = self._validate(
+            {"plan.md": "base: {{fixture:sha:baseline}}\n"},
+            {"init": True, "commit": True,
+             "commits": [{"files": {"a.py": "x"}, "message": "feat: a"}]})
+        self.assertTrue(any("コミット" in e for e in errors), errors)
+
+    def test_placeholder_in_a_seeded_commit_file_is_reported(self):
+        errors = self._validate(
+            {".gitignore": self.IGNORE},
+            {"init": True, "commit": True,
+             "commits": [{"files": {"a.py": "# {{fixture:sha:baseline}}\n"},
+                          "message": "feat: a"}]})
+        self.assertTrue(any("コミット" in e for e in errors), errors)
+
+    def test_commits_index_out_of_range_is_reported(self):
+        errors = self._validate(
+            {".gitignore": self.IGNORE, self.PLAN: "{{fixture:sha:commits[3]}}\n"},
+            {"init": True, "commit": True,
+             "commits": [{"files": {"a.py": "x"}, "message": "feat: a"}]})
+        self.assertTrue(any("commits[3]" in e for e in errors), errors)
+
+    def test_misspelled_placeholder_is_reported(self):
+        # 素通しすると plan に文字列のまま残り、skill は「SHA が解決できない」経路へ行く
+        errors = self._validate(
+            {".gitignore": self.IGNORE, self.PLAN: "{{fixture:sha:base}}\n"},
+            {"init": True, "commit": True,
+             "commits": [{"files": {"a.py": "x"}, "message": "feat: a"}]})
+        self.assertTrue(any("fixture:sha" in e for e in errors), errors)
+
+    def test_baseline_placeholder_without_a_baseline_commit_is_reported(self):
+        errors = self._validate(
+            {".gitignore": self.IGNORE, self.PLAN: "{{fixture:sha:baseline}}\n"},
+            {"init": True})
+        self.assertTrue(any("fixture:sha" in e for e in errors), errors)
+
+
+class TestMaterializeSeededHistory(unittest.TestCase):
+    """seed した履歴と SHA 置換が、宣言だけから決まること。"""
+
+    IGNORE = "/.agents/artifacts/\n"
+    PLAN = ".agents/artifacts/plans/p.md"
+
+    def _materialize(self, setup, **kwargs):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        scenario = {"id": "s", "setup": setup}
+        return temp.name, fixture_setup.materialize(scenario, temp.name, **kwargs)
+
+    def _git(self, dest, *args):
+        return subprocess.run(
+            ["git"] + list(args), cwd=dest, capture_output=True, text=True,
+            env=dict(os.environ, **fixture_setup._GIT_ENV)).stdout.strip()
+
+    SEED = {
+        "files": {".gitignore": IGNORE, "README.md": "# seed\n"},
+        "git": {"init": True, "commit": True, "message": "chore: baseline",
+                "commits": [
+                    {"files": {"app.py": "def f():\n    return 1\n"},
+                     "message": "feat: add f"},
+                    {"files": {"tests/test_app.py": "assert True\n",
+                               "app.py": "def f():\n    return 2\n"},
+                     "message": "test: cover f"},
+                ]},
+    }
+
+    def test_seeded_commits_are_stacked_after_the_baseline_in_order(self):
+        dest, result = self._materialize(self.SEED)
+        self.assertEqual(
+            self._git(dest, "log", "--format=%s").splitlines(),
+            ["test: cover f", "feat: add f", "chore: baseline"])
+        self.assertEqual(len(result["git"]["commits"]), 2)
+
+    def test_seeded_commit_contents_are_the_declared_ones(self):
+        dest, _ = self._materialize(self.SEED)
+        self.assertEqual(
+            self._git(dest, "show", "HEAD:app.py"), "def f():\n    return 2")
+        self.assertEqual(
+            self._git(dest, "show", "HEAD~1:app.py"), "def f():\n    return 1")
+        self.assertEqual(self._git(dest, "status", "--porcelain"), "")
+
+    def test_a_seeded_commit_holds_only_its_own_files(self):
+        # 各要素は宣言したファイルだけを含む（前の要素の変更を巻き込まない）
+        dest, _ = self._materialize(self.SEED)
+        self.assertEqual(
+            sorted(self._git(dest, "show", "--name-only", "--format=", "HEAD").split()),
+            ["app.py", "tests/test_app.py"])
+
+    def test_baseline_placeholder_resolves_to_the_baseline_sha(self):
+        setup = {
+            "files": {".gitignore": self.IGNORE,
+                      self.PLAN: "**Implementation Base SHA:** {{fixture:sha:baseline}}\n"},
+            "git": {"init": True, "commit": True,
+                    "commits": [{"files": {"app.py": "x\n"}, "message": "feat: a"}]},
+        }
+        dest, result = self._materialize(setup)
+        baseline_sha = self._git(dest, "rev-parse", "HEAD~1")
+        with open(os.path.join(dest, self.PLAN), encoding="utf-8") as handle:
+            written = handle.read()
+        self.assertEqual(
+            written, f"**Implementation Base SHA:** {baseline_sha}\n")
+        self.assertEqual(result["git"]["baseline"], baseline_sha)
+
+    def test_commits_placeholder_resolves_to_that_commit_sha(self):
+        setup = {
+            "files": {".gitignore": self.IGNORE,
+                      self.PLAN: "first={{fixture:sha:commits[0]}} "
+                                 "second={{fixture:sha:commits[1]}}\n"},
+            "git": {"init": True, "commit": True,
+                    "commits": [{"files": {"a.py": "1\n"}, "message": "feat: a"},
+                                {"files": {"b.py": "2\n"}, "message": "feat: b"}]},
+        }
+        dest, result = self._materialize(setup)
+        with open(os.path.join(dest, self.PLAN), encoding="utf-8") as handle:
+            written = handle.read()
+        self.assertEqual(
+            written,
+            f"first={self._git(dest, 'rev-parse', 'HEAD~1')} "
+            f"second={self._git(dest, 'rev-parse', 'HEAD')}\n")
+        self.assertEqual(result["git"]["commits"],
+                         [self._git(dest, "rev-parse", "HEAD~1"),
+                          self._git(dest, "rev-parse", "HEAD")])
+
+    def test_the_tree_stays_clean_after_substitution(self):
+        # 置換対象が追跡されていれば dirty になる。前提を壊さないことを実体で確かめる
+        setup = {
+            "files": {".gitignore": self.IGNORE,
+                      self.PLAN: "{{fixture:sha:baseline}}\n"},
+            "git": {"init": True, "commit": True,
+                    "commits": [{"files": {"app.py": "x\n"}, "message": "feat: a"}]},
+        }
+        dest, _ = self._materialize(setup)
+        self.assertEqual(
+            self._git(dest, "status", "--porcelain", "--untracked-files=all"), "")
+
+    def test_the_baseline_hash_is_taken_after_substitution(self):
+        setup = {
+            "files": {".gitignore": self.IGNORE,
+                      self.PLAN: "{{fixture:sha:baseline}}\n"},
+            "git": {"init": True, "commit": True,
+                    "commits": [{"files": {"app.py": "x\n"}, "message": "feat: a"}]},
+        }
+        dest, result = self._materialize(setup)
+        with open(os.path.join(dest, self.PLAN), "rb") as handle:
+            on_disk = hashlib.sha256(handle.read()).hexdigest()
+        self.assertEqual(result["baseline"][self.PLAN], on_disk)
+        self.assertNotEqual(
+            result["baseline"][self.PLAN],
+            hashlib.sha256(b"{{fixture:sha:baseline}}\n").hexdigest())
+
+    def test_an_unresolvable_placeholder_fails_materialization(self):
+        # 文字列のまま残すと、測りたい経路ではなく「SHA 解決不能」経路が走る
+        setup = {
+            "files": {".gitignore": self.IGNORE,
+                      self.PLAN: "{{fixture:sha:commits[7]}}\n"},
+            "git": {"init": True, "commit": True,
+                    "commits": [{"files": {"a.py": "1\n"}, "message": "feat: a"}]},
+        }
+        with self.assertRaises(fixture_setup.MaterializeError):
+            self._materialize(setup)
+
+    def test_declared_mtimes_survive_substitution(self):
+        setup = {
+            "files": {".gitignore": self.IGNORE,
+                      self.PLAN: "{{fixture:sha:baseline}}\n"},
+            "mtimes": {self.PLAN: -3600},
+            "git": {"init": True, "commit": True,
+                    "commits": [{"files": {"a.py": "1\n"}, "message": "feat: a"}]},
+        }
+        dest, _ = self._materialize(setup, base_time=1_700_000_000)
+        self.assertEqual(
+            int(os.stat(os.path.join(dest, self.PLAN)).st_mtime), 1_699_996_400)
 
 
 class TestArtifactStoreDeclaration(unittest.TestCase):
