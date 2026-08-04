@@ -17,7 +17,8 @@ claude-skills プラグインのバージョン履歴。
 
 ### Added: requirement の機械判定（assert 述語）— 実行と判定の分離
 
-- `requirements[].assert` に型付き述語（file/git/regex 系 7 型）を宣言でき、該当要件は self-report でなく post-state の機械判定で採点される。述語は executor から秘匿（#241）
+- `requirements[].assert` に型付き述語（file/git/regex 系 8 型）を宣言でき、該当要件は self-report でなく post-state の機械判定で採点される。述語は executor から秘匿（#241）
+- commit fixtures へ先行適用（5/10 要件を assert 化）し、3 シナリオ実走で pass を実測。LLM 裁定が要る要件は 10→5 に半減（#241 パイロット）
 - 併せて #243 の前提裁定「regression ledger は quality-gate contract §2 の evidence ではない」を fixture-schema.md に明記
 
 ### Changed: fixture カバレッジを階層宣言制にし「未着手」と「意図的 static-only」を区別

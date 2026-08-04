@@ -80,6 +80,7 @@ ruling: typed predicate objects; a DSL and per-scenario checker scripts were rej
 | `git_clean` | — | `git status --porcelain` is empty |
 | `git_commit_count` | one of `equals` / `min` / `max` | `git rev-list HEAD --count` satisfies the bound(s) |
 | `git_subject_regex` | `rev`, `pattern` | the regex matches the subject of commit `rev` |
+| `git_subjects_regex` | `pattern` (opt. `skip_oldest`) | every commit subject matches, excluding the `skip_oldest` oldest (baseline) commits |
 | `git_path_committed` | `path` | the path appears in some commit reachable from HEAD |
 | `git_no_commit_touches_both` | `path_a`, `path_b` | no single commit touches both paths |
 

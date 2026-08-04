@@ -71,10 +71,10 @@
   "commit": {
     "file_sha256": {
       "skills/commit/SKILL.md": "48dda355509fa476945de1d8e7ffbeb6d435e1d678d0b009617eca8db0184a0b",
-      "skills/commit/fixtures.json": "695f26893f3762173ca414166f83058d22e6d2d02164b738813f55efed74dbbd",
+      "skills/commit/fixtures.json": "b59f2fb07e073dbc52383e12f0e1f62f76247dd010c76d5ba5988859dd6d744d",
       "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c"
     },
-    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "note": "assert パイロット（#241）: process path 実走、batch cm-assert-20260804（sonnet-5）。3 シナリオ全 pass、機械判定 5/10 要件（critical 5/7）全 PASS・drift ゼロ。非 assert 5 件は成果物・ログで裏取り済み。economy 比較（Haiku 4.5、batch cm-assert-economy-20260804）も全シナリオ pass、差分は cm-001 #5（non-critical・日本語 subject 様式）の partial のみ",
     "result": "pass",
     "structural_sha256": {
       "skills/commit/SKILL.md": "dc8b2907b7d2fae202a365afadd377b7311de09fc770861f047024702981a743",
@@ -85,8 +85,8 @@
       "skills/commit/fixtures.json",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "b4eda2006a1088bfdaba03eb0cfc143d05090ad8247e36603b4c98e67655dcf8",
-    "verified": "2026-08-04"
+    "surface_sha256": "658febe9ac644d6baaa3021a7978a830ccafb1baaeed882b0d22c0da0f357b5c",
+    "verified": "2026-08-05"
   },
   "context-audit": {
     "file_sha256": {
