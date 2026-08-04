@@ -144,7 +144,7 @@
   "cycle": {
     "file_sha256": {
       "skills/cycle/SKILL.md": "8fcf89b2df01a9d09a74dc8225e2a51eb130e6bb849663125109aa8b0c2ba22a",
-      "skills/cycle/fixtures.json": "8d69ec930d4bb07271c74d0320f4350bf7e21a5f60fe972e6d9217ba5174afb5",
+      "skills/cycle/fixtures.json": "f7187c1d062713de72869b9b606502eaab57b66f3c3a8e86a2c95a4f2bf7c4cf",
       "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
@@ -167,8 +167,8 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "prompt-audit Low/flag: fix-action-taxonomy.md 冒頭の出自語り 1 文（doc-audit ローカル分類から昇格した経緯）の削除のみ。契約の語彙・規則は不変。ユーザー裁定 2026-08-04（影響軽微な文言変更は --accept）で実走せず承認",
-    "result": "accepted-without-run",
+    "note": "phase 終端化後の初回 20 scn 実走 (#242, Sonnet executor, batch cy-run-20260805 + cy004-rerun2)。全 critical pass、機械 assert 28 判定全通過。non-critical partial 2 件 (cy-009 R5 六行フォーマッタは散文責務で機械ゲートなし / cy-014 R5 表示は headless で artifact のみ)。watchdog status query は smoke cy-001 で 4 回、fix loop 系+satellite で計 11 回、終端型 13 本は 0 回 (旧設計は全 scn で発生)。cy-004 は初走で R3 到達性欠陥を検出し fixture 是正 (seed 撤回 ce14596+565fb0a) 後の再走で pass",
+    "result": "pass",
     "structural_sha256": {
       "skills/cycle/SKILL.md": "086560464952dd2e79c52fd254b6b5133a4a1c7b005a27b189c7257eb1ebc1f7",
       "skills/cycle/references/completion.md": "1b2e05b6506e5b46edc76d4cb90f5c92ae938317eeb7cd477c2aec240536072c",
@@ -214,8 +214,8 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "e3212549ec102e05d63bd0b0ad1680c12c5b657c14e305b78212b7d50b8d6d0c",
-    "verified": "2026-08-04"
+    "surface_sha256": "2883f504e232a2bbde4eb781ceb447807cd9d837ae6fc2a28df784eb6c555724",
+    "verified": "2026-08-05"
   },
   "decision-journal": {
     "file_sha256": {
