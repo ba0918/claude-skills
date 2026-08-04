@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 import fixture_setup
 
@@ -231,6 +232,12 @@ class TestValidateSetup(unittest.TestCase):
     def test_declaring_a_file_under_the_git_directory_is_reported(self):
         # .git/hooks/ を宣言できると、実体化しただけで隔離領域の外へ効果が漏れる
         f = _fixture(setup={"files": {".git/hooks/pre-commit": "#!/bin/sh\n"}})
+        self.assertTrue(any(".git/" in e for e in fixture_setup.validate(f)))
+
+    def test_declaring_a_file_under_a_case_variant_git_directory_is_reported(self):
+        # 大文字小文字を区別しない FS（macOS / Windows の既定）では .Git/hooks/ も
+        # .git/hooks/ に着地する。完全一致で判定すると遮断をすり抜ける
+        f = _fixture(setup={"files": {".Git/hooks/pre-commit": "#!/bin/sh\n"}})
         self.assertTrue(any(".git/" in e for e in fixture_setup.validate(f)))
 
     def test_seeded_commit_under_the_git_directory_is_reported(self):
@@ -1113,6 +1120,40 @@ class MaterializeIsHermeticAgainstAnInheritedRepository(unittest.TestCase):
         self.assertTrue(result["git"].get("init"))
         self.assertTrue(result["git"].get("commit"))
         self.assertTrue(has_git)
+
+    def test_it_ignores_an_inherited_config_injection(self):
+        # GIT_CONFIG_COUNT 系は「環境変数で渡す git config」そのもので、
+        # 引き継ぐと宣言していない設定が実体化に効く。ここでは呼び出し元の
+        # 除外規則が baseline から宣言済みファイルを外していないことを見る
+        with tempfile.TemporaryDirectory() as root:
+            excludes = os.path.join(root, "excludes")
+            with open(excludes, "w", encoding="utf-8") as handle:
+                handle.write("a.txt\n")
+            dest = os.path.join(root, "area")
+            with mock.patch.dict(os.environ, {
+                    "GIT_CONFIG_COUNT": "1",
+                    "GIT_CONFIG_KEY_0": "core.excludesFile",
+                    "GIT_CONFIG_VALUE_0": excludes}):
+                fixture_setup.materialize(self.SCENARIO, dest)
+            tracked = subprocess.run(
+                ["git", "ls-files"], cwd=dest, capture_output=True, text=True,
+                env=dict(os.environ, **fixture_setup._GIT_ENV))
+            self.assertIn("a.txt", tracked.stdout)
+
+    def test_it_ignores_an_inherited_template_directory(self):
+        # GIT_TEMPLATE_DIR を引き継ぐと、呼び出し元の hook が実体化した
+        # リポジトリへ複製され、隔離領域の中で他人のスクリプトが走る
+        with tempfile.TemporaryDirectory() as root:
+            template = os.path.join(root, "template")
+            os.makedirs(os.path.join(template, "hooks"))
+            with open(os.path.join(template, "hooks", "pre-commit"),
+                      "w", encoding="utf-8") as handle:
+                handle.write("#!/bin/sh\nexit 1\n")
+            dest = os.path.join(root, "area")
+            with mock.patch.dict(os.environ, {"GIT_TEMPLATE_DIR": template}):
+                fixture_setup.materialize(self.SCENARIO, dest)
+            self.assertFalse(
+                os.path.exists(os.path.join(dest, ".git", "hooks", "pre-commit")))
 
 
 if __name__ == "__main__":

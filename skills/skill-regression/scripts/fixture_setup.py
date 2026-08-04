@@ -79,7 +79,17 @@ _GIT_INHERITED = (
     "GIT_ALTERNATE_OBJECT_DIRECTORIES",
     "GIT_COMMON_DIR",
     "GIT_PREFIX",
+    # 環境変数で渡す git config そのもの。GIT_CONFIG_NOSYSTEM /
+    # GIT_CONFIG_GLOBAL では止まらず、除外規則や hook パスが実体化に効く
+    "GIT_CONFIG_COUNT",
+    # 呼び出し元の hook が `git init` で複製され、隔離領域の中で他人の
+    # スクリプトが走る
+    "GIT_TEMPLATE_DIR",
 )
+
+# GIT_CONFIG_COUNT に連なる添字付きの組は、呼び出し元の設定数だけ名前が伸びる。
+# 列挙では落とせないので接頭辞で落とす
+_GIT_INHERITED_PREFIXES = ("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_")
 
 
 # Agent Artifact Store 契約（skills/shared/references/artifact-store.md）の写し。
@@ -118,7 +128,9 @@ def _unsafe_path(path):
     segments = path.split("/")
     if os.path.isabs(path) or ".." in segments:
         return "隔離領域の外を指している"
-    if ".git" in segments:
+    # 大文字小文字を区別しない FS では `.Git/hooks/` も `.git/hooks/` へ着地する。
+    # 完全一致で判定すると、その環境でだけ遮断が空振りする
+    if any(segment.lower() == ".git" for segment in segments):
         return "git のメタデータ領域 (.git/) を指している"
     return None
 
@@ -601,6 +613,8 @@ def _check_env_usage(where, setup):
 def _run_git(args, cwd):
     env = dict(os.environ, **_GIT_ENV)
     for name in _GIT_INHERITED:
+        env.pop(name, None)
+    for name in [n for n in env if n.startswith(_GIT_INHERITED_PREFIXES)]:
         env.pop(name, None)
     return subprocess.run(
         ["git"] + args, cwd=cwd, env=env, capture_output=True, text=True)
