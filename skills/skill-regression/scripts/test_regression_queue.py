@@ -746,6 +746,24 @@ class TestCli(_Harness):
             json.dump(changed, handle)
         self.assertEqual(self._main(["rerun", "--batch", self.batch]), 1)
 
+    def test_build_reports_a_failed_materialisation_as_an_error(self):
+        # 静的検査を通っても実体化は失敗しうる（ここでは後続の seed コミットが
+        # 入れた無視設定で add が拒否される）。捕捉から漏れると、この失敗モードだけが
+        # 構造化エラーではなく生のトレースバックで出る
+        broken = _fixture()
+        broken["scenarios"][0]["setup"] = {
+            "files": {"a.md": "x\n"},
+            "git": {"init": True, "commit": True,
+                    "commits": [
+                        {"files": {".gitignore": "/build/\n"},
+                         "message": "chore: ignore build"},
+                        {"files": {"app.py": "x\n", "build/out.py": "y\n"},
+                         "message": "feat: app"}]},
+        }
+        path = self.write_fixture(broken, name="unmaterialisable.json")
+        self.assertEqual(self._main(["build", "--fixture", path, "--batch", self.batch,
+                                     "--repo-root", self.repo]), 1)
+
     def test_build_reports_a_bad_fixture_as_an_error(self):
         bad = _fixture()
         bad["scenarios"][0]["requirements"] = []
