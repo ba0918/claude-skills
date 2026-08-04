@@ -9,7 +9,7 @@ Artifact paths follow the [Artifact Store consumer contract](../shared/reference
 
 Create implementation plans with timestamp-based filenames and automatic project status tracking. A plan is the record of agreed-upon implementation steps — not a proposal or approval document. Design and specification decisions are made in brainstorm; the plan captures how to implement them.
 
-Both spec and plan are human-readable. The plan uses structured Markdown (numbered steps, file lists, test lists) that is readable by humans and consumable by LLMs. This ensures the human can verify "is that how you intend to implement it?" before cycle runs.
+A plan has two layers. **What & Why and Goals are written for a human** — the reader defined in [Target audience](../shared/references/human-readable-summary.md#target-audience), someone without the project's background who must be able to follow them without opening another file. **Design and everything after it is written for the LLM** that cycle consumes, so keep it dense and complete rather than plain. The structured Markdown (numbered steps, file lists, test lists) still lets the human verify "is that how you intend to implement it?" before cycle runs.
 
 ## Quick Start
 
@@ -280,4 +280,4 @@ Load these templates/guides when creating documents or updating status.
 - If you discover out-of-scope issues during investigation, record them with `/claude-skills:issue-create` and continue with the plan
 - If the problem's root cause is unclear before planning, suggest running `/claude-skills:investigate` first for a read-only, lightweight investigation
 - A plan is not a proposal — it records agreed implementation steps. Specification and design decisions belong in brainstorm, not in the plan
-- A plan is human-readable. Write implementation steps, file lists, and test lists in structured Markdown that a human can scan to confirm the implementation approach before cycle runs
+- A plan is two-layered. What & Why and Goals must clear the [Target audience](../shared/references/human-readable-summary.md#target-audience) criterion; Design onward stays dense for the LLM. Write implementation steps, file lists, and test lists in structured Markdown that a human can scan to confirm the implementation approach before cycle runs

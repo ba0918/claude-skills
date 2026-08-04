@@ -10,11 +10,11 @@
 
 ## 📝 What & Why
 
-{1-2 sentences describing what to build and why}
+{1-2 sentences describing what to build and why. This section and Goals are the human-facing layer: write them for the reader defined in [Target audience](../../shared/references/human-readable-summary.md#target-audience). Unpack every technical term, internal abbreviation, and code name at first use, and write references to issues or past decisions so they carry their meaning without being opened.}
 
 ## 🎯 Goals
 
-- {Goal 1}
+- {Goal 1 — same plain-language rule as What & Why: state the outcome in words a reader without project background understands}
 - {Goal 2}
 - {Goal 3}
 
