@@ -29,8 +29,8 @@ Parse `$ARGUMENTS` to determine the execution mode:
 
 Before starting, verify:
 
-1. Check if `docs/` directory exists in the project root
-   - If not found → report "Target directory `docs/` not found." and stop
+1. Resolve the artifact store root per [artifact-paths](../shared/references/artifact-paths.md) (default: `.agents/artifacts/`)
+   - If the resolved store does not exist → report "Artifact store not found." and stop
 2. Note which index files exist:
    - `.agents/artifacts/ideas/idea-status.md` — if missing, skip idea-related rules
    - `.agents/artifacts/issues/issue-status.md` — if missing, skip issue-related rules
@@ -197,7 +197,7 @@ After all fixes are processed, display the fix results report following the temp
 
 | Case | Action |
 |------|--------|
-| `docs/` directory does not exist | Report "Target directory not found" and exit |
+| Resolved artifact store does not exist | Report "Artifact store not found" and exit |
 | `idea-status.md` / `issue-status.md` missing | Skip the corresponding category's scan and note in report |
 | `.agents/artifacts/status.md` / `.agents/artifacts/session-history.md` missing | Skip related checks and note in report |
 | Markdown table parse failure | Skip the file's rule checks and report as WARN |
@@ -206,7 +206,7 @@ After all fixes are processed, display the fix results report following the temp
 
 ## Important Rules
 
-- **Path safety**: All file **write operations** (edit, move, create) must be within `docs/` directory. Read-only checks (e.g., verifying `skills/` directory existence for Rule 1) are permitted outside `docs/`. Do not access files outside the project root.
+- **Path safety**: All file **write operations** (edit, move, create) must be within the resolved artifact store. Read-only checks (e.g., verifying `skills/` directory existence for Rule 1) are permitted outside it. Do not access files outside the project root.
 - **Idempotent fixes**: Every AUTO_FIX operation must produce the same result when run multiple times.
 - **No data loss**: Never delete files. Move to archives instead of deleting. Status updates preserve existing content.
 - **Dry-run fidelity**: In dry-run mode, absolutely zero file modifications. Only read and report.
