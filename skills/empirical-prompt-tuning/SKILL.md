@@ -144,11 +144,9 @@ Repeat Phase 2-4 with a new subagent. Keep going until `exit_verdict` is anythin
 
 ## k-run Statistical Acceptance Gate
 
-The default is k=1 (compatible with the original, minimal cost). When a precise evaluation is needed:
-
-```
---k-run 2   # run each scenario twice in parallel
-```
+The default is k=1 (minimal cost). When a precise evaluation is needed, run each scenario k times
+in parallel on the harness side and record `k_runs` in `iterations.jsonl`
+([references/iteration-schema.md](references/iteration-schema.md)).
 
 - With k≥2, measure each scenario's precision k times and take the median
 - Improvement verdict: count it as "improved" only when the gap between the previous and current medians exceeds the noise_band (half the run-to-run difference)
