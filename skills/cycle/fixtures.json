@@ -533,7 +533,7 @@
         },
         "git": { "init": true, "commit": true }
       },
-      "prompt": "cycle 回して。ただし Phase 3 の初回レビューが WARN（minor finding あり）で、WARN auto-fix 後の再レビューが PASS になった想定で、WARN auto-fix 成功パスを確認して。",
+      "prompt": "cycle 回して。ただし Phase 3 のレビュー verdict は実レビュアーの起動結果に依存させず、想定値を注入して分岐を検証する: 初回レビューが WARN（minor finding あり）、WARN auto-fix 後の再レビューが PASS。この注入のもとで WARN auto-fix 成功パスを確認して。",
       "requirements": [
         {
           "text": "Phase 3 の初回レビューが WARN verdict を返し、WARN auto-fix（Step 2b）に入っている",
