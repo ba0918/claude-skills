@@ -9,7 +9,7 @@ claude-skills プラグインのバージョン履歴。
 ルート `package.json`（OpenCode git plugin）を揃えて bump する
 （マーケットプレイスがスキル変更を認識するのは version bump 時のみ）。
 
-## Unreleased
+## 1.73.0
 
 ### Fixed: release workflow の初回経路が draft 作成前のローカルタグで必ず落ちる
 
