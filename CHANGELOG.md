@@ -11,6 +11,37 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Fixed: doc-audit の旧 `docs/` レイアウト前提と cycle satellite 契約の穴
+
+- doc-audit の前提チェック・エラー表・書込境界が旧レイアウト `docs/` を指したままで、
+  artifact store 移行済みリポジトリでは起動即終了し修復操作が全て境界違反になる自己矛盾を
+  解消（artifact-paths の解決結果を基準に統一）
+- cycle inner satellite mode の契約に 2 つの穴があることを skill-regression 実走が特定し、
+  `inner-satellite.md` で封鎖: (1) Phase 4 停止（BLOCK / UNVERIFIED / WARN-headless）でも
+  stop facts（停止理由・各レビューの verdict・未解決 findings 要約）を outer へ返す、
+  (2) 実装プロンプト置換に「delegate は workspace lock を claim/release しない・isolation を
+  再解決しない」を明記（実測で plan-implement が satellite 内で自前 claim していた）
+- cycle fixtures cy-004 / cy-014 / cy-018 を、レビュー verdict の非決定性から観測可能性を
+  切り離した形（条件完備の文言・verdict 注入固定）へ再設計。要件の保護対象は不変
+
+### Changed: prompt-audit に基づく dated-pattern の一掃（High 21 件 + Medium 約 35 件）
+
+- SKILL.md 全 48 本 + 共有契約 34 本を監査し、現行世代に不要・有害な記述を除去
+- **プラットフォーム非依存化**: orchestration-patterns のモデル名ルーティング表を役割×tier
+  語彙へ置換（具体モデルはユーザースコープ設定に委譲）、tdd-contract / verification-gate の
+  ツール名 Bash をシェル表現へ、handoff の「the next Claude」等の固有名を除去、trigger-eval の
+  CLI 固有呼び出しを references / scripts 側へ寄せた
+- **出力文言の変更**: Codex 不可用時の警告を `⚠️ Codex unavailable — proceeding without a
+  second opinion` へ（codex-integration.md と brainstorm を同時変更）
+- **参照切れ修正**: agreement-ledger の存在しない節番号 §B/§E、workspace-isolation の
+  issue 番号でしか特定できない規範、empirical-prompt-tuning の実在しない `--k-run` フラグ
+- **重複・足場・圧力の削減**: Progress Checklist（codebase-review / attack-review）、TDD の
+  エラー手順二重定義、履歴語り（PR/issue 番号）、理由なし CRITICAL/MUST 強調、言い訳
+  ロールプレイ表（tdd-contract）等を除去。github-issue の手動隔離検証手順は
+  `references/isolation-verification.md` へ移設
+- 影響 20 スキルを skill-regression（process-queue 経路・90+ ユニット）で再検証し pass を
+  ledger に記録。監査レポート全文は `.agents/artifacts/reviews/20260804114657_prompt-audit-skills.md`
+
 ### Changed: 人間向け成果物の対象読者を契約化し plan を 2 レイヤーへ分離
 
 - `human-readable-summary.md` に **Target audience 節**を新設。人間が読む面の合格基準を
