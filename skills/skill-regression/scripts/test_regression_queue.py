@@ -464,6 +464,15 @@ class TestEvaluateAssert(unittest.TestCase):
         self.assertFalse(self._ok(
             {"type": "file_regex", "path": "missing.py", "pattern": "x"}))
 
+    def test_file_regex_on_a_binary_file_fails_without_crashing(self):
+        # executor が対象パスへ何を書いても採点は落ちない（不成立になるだけ）
+        with open(os.path.join(self.tmp, "blob.bin"), "wb") as handle:
+            handle.write(b"\xff\xfe\x00\x01binary")
+        ok, evidence = rq.evaluate_assert(
+            [{"type": "file_regex", "path": "blob.bin", "pattern": "x"}], self.tmp)
+        self.assertFalse(ok)
+        self.assertIn("unreadable", evidence)
+
     def test_git_clean(self):
         self.assertTrue(self._ok({"type": "git_clean"}))
         self._write("dirty.txt", "x\n")

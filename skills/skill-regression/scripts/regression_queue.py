@@ -225,7 +225,13 @@ def _eval_one(pred, work_dir):
         full = os.path.join(work_dir, pred["path"])
         if not os.path.isfile(full):
             return False, f"file_regex({pred['path']}): file missing"
-        matched = re.search(pred["pattern"], _read(full)) is not None
+        try:
+            content = _read(full)
+        except (OSError, UnicodeDecodeError) as exc:
+            # An unreadable or binary file is a failed predicate, not a harness
+            # crash: what the executor left there is the thing under judgement.
+            return False, f"file_regex({pred['path']}): unreadable ({exc})"
+        matched = re.search(pred["pattern"], content) is not None
         return (matched == expect,
                 f"file_regex({pred['path']}, {pred['pattern']!r})={matched}")
     if kind == "git_clean":
