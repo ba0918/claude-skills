@@ -5,7 +5,7 @@ This catalogs endorsed patterns proven in this repository and anti-patterns to a
 
 **Governing Principles**:
 
-1. **Orchestration depth is at most one layer** — Stop at skill/command -> Agent. Do not design Agent-calls-Agent flows (Claude Code forbids nested spawn, but this is a design rule independent of platform constraints)
+1. **Orchestration depth is at most one layer** — Stop at skill/command -> Agent. Do not design Agent-calls-Agent flows (a design rule that holds even where the platform permits nested spawn)
 2. **Pass data by file, not summary** — Handoffs between agents go through files under `.agents/tmp/`. Paraphrase hops degrade context and double token cost. This covers **intermediate results** (partial fan-out outputs that the orchestrator immediately merges). The **result/completion report** of delegation itself needs separate durability against delivery failure, so its location and obligations are separated and specified later in "Delegation Result Relay"
 3. **Autonomous loops require safety brakes** — If human checkpoints are removed, replace them with mechanical stop conditions
 
@@ -38,7 +38,7 @@ Input ──┼-> Viewpoint B Agent -> .agents/tmp/b.json ┼-> Integrate -> Rep
   - [ ] Are the viewpoints independent (no dependency on execution order or shared state)?
   - [ ] Do the viewpoints produce **different kinds** of findings (if they only repeat the same finding from another angle, merge the viewpoints)?
   - [ ] Does the merge fit in the context of main (or one integration Agent)?
-- **Required**: Issue multiple Agent calls for parallel execution **within the same message**. Sequential turns serialize execution
+- **Required**: Dispatch the delegations **concurrently in one batch**; issuing them one turn at a time serializes execution
 
 ### 3. Worktree-Isolated Parallel Execution
 
@@ -67,7 +67,7 @@ A loop that autonomously continues draining a queue. Replaces human checkpoints 
 
 Isolate large-volume file reading from the main context; the main context receives only a digest.
 
-- **Examples**: investigate, built-in Explore subagent
+- **Examples**: investigate, a built-in read-only research subagent (where the environment provides one)
 - **Adoption condition**: When investigation results are far smaller than inputs and main needs room for later work
 
 ## Anti-Patterns
@@ -183,31 +183,33 @@ This limit must not depend on a specific sleep API; write it as a natural-langua
 
 ## Model Tiering
 
-Subagents **inherit the session model**. If fan-out skills are launched from a session using an expensive model (Fable etc.), every downstream agent runs on that expensive model and costs can explode.
+Subagents **inherit the session model**. If fan-out skills are launched from a session using an expensive model, every downstream agent runs on that expensive model and costs can explode.
 To prevent this, **explicitly specify the `model` parameter on Agent calls** (do not rely on inheritance).
 
 ### Principles
 
 1. **Leverage**: The more upstream a decision is (plan creation, decomposition, consensus building), the larger its downstream impact. Place smarter models upstream
 2. **Phases protected by verification gates can be cheaper**: In phases where tdd-contract / verification-gate mechanically catches failures (implementation, etc.), model mistakes can be recovered by loops. These are candidates for cheaper models
-3. **Do not cheapen review/discovery without gates**: Misses in reviews are not mechanically detected and pass silently. Reviewers are reading-heavy and consume an order of magnitude fewer tokens than implementation, so the absolute cost of keeping opus is small (cheap insurance)
-4. **The primary purpose of explicit model selection is preventing expensive model inheritance**: The difference between opus and sonnet is much smaller than an accident where a session model such as Fable propagates to every downstream agent
+3. **Do not cheapen review/discovery without gates**: Misses in reviews are not mechanically detected and pass silently. Reviewers are reading-heavy and consume an order of magnitude fewer tokens than implementation, so the absolute cost of keeping a high-capability model is small (cheap insurance)
+4. **The primary purpose of explicit model selection is preventing expensive model inheritance**: The gap between adjacent model tiers is much smaller than the accident where an expensive session model propagates to every downstream agent
 
 ### Standard Mapping
 
-| Role | model specification | Examples |
+| Role | Model tier | Examples |
 |------|-----------|------|
 | Session body (brainstorming / plan creation / hard debugging / decomposition decisions) | Unspecified (user chooses through the session model) | brainstorm, parallel-cycle decomposition |
-| Implementation agents (long-running, large-scale) | `opus` | cycle Phase 1 (implement), iterate Phase 3 (Large), parallel-cycle cycle execution |
-| Lightweight implementation (small + verification gate) | `sonnet` | iterate Phase 3 (Small) |
-| Fan-out reviewers / integration agent | `opus` | plan-reviewer 7 viewpoints, codebase-review 4 agents + integration, attack-review 6 agents + integration, iterate Phase 4 |
-| Mechanical work (plan file generation, scanning) | `sonnet` or `haiku` | parallel-cycle Step 0.3 |
-| Read-only investigation | `Explore` subagent (has its own model setting) | iterate Phase 1 |
+| Implementation agents (long-running, large-scale) | high-capability | cycle Phase 1 (implement), iterate Phase 3 (Large), parallel-cycle cycle execution |
+| Lightweight implementation (small + verification gate) | mid-tier | iterate Phase 3 (Small) |
+| Fan-out reviewers / integration agent | high-capability | plan-reviewer 7 viewpoints, codebase-review 4 agents + integration, attack-review 6 agents + integration, iterate Phase 4 |
+| Mechanical work (plan file generation, scanning) | mid-tier or budget | parallel-cycle Step 0.3 |
+| Read-only investigation | a read-only research subagent (its own model setting) | iterate Phase 1 |
+
+Tier names are roles, not model IDs. The concrete model each tier resolves to is environment configuration (for example, user-scope routing rules) and is not part of this contract.
 
 ### Prohibitions and Cautions
 
-- **Do not run attack-review agents on `fable`**. Fable has a cybersecurity classifier and may return `refusal` even for legitimate defensive security reviews. The artifact breaks before cost matters
-- `model` specification is a parameter of Claude's Agent tool. **It does not apply to Codex agents (`codex:codex-rescue`)** (the Codex-side model follows Codex CLI settings)
+- **Do not route defensive security review agents to a model whose safety classifiers refuse security content**, even when the review is legitimate defensive work — the artifact breaks before cost matters. Verify on first use and record which models refuse
+- The model override is a parameter of the delegation mechanism. **It does not apply to Codex delegations** (the Codex-side model follows Codex CLI settings)
 - fork (context-inheriting) ignores `model` specification and runs on the session model. Do not route work that should use a cheaper model to fork
 
 ## Decision Flow

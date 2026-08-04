@@ -13,19 +13,6 @@ Review the entire codebase with 4 specialized agents + Codex second opinion in p
 
 **Report placement**: Review reports contain internal vulnerability details and must never be committed. The final report goes to `.agents/artifacts/reviews/` per the [Artifact Store consumer contract](../shared/references/artifact-paths.md) (Git-ignored local store), never under `docs/`.
 
-## Progress Checklist
-
-```
-codebase-review Progress:
-- [ ] Determine target scope
-- [ ] Analyze project structure & prepare work directory
-- [ ] Preflight check (work directory write permission)
-- [ ] Launch 4 review agents + Codex agent in parallel
-- [ ] Wait for all agents & handle failures (Codex failure is non-blocking)
-- [ ] Launch integration agent (with Codex perspective if available)
-- [ ] Display summary & place report
-```
-
 ## Workflow
 
 ### Step 1: Determine Target Scope
@@ -147,7 +134,7 @@ After all 5 agents complete, verify results:
    partial_overall = Σ(available subcategory score × weight) / Σ(available weights)
    ```
 
-   **Relation to the full-review formula (§Step 4 #2)**: The canonical formula `Overall = Σ(score × weight / 100)` assumes the 8 weights sum to 100, so dividing by 100 normalizes to 0-100. When some subcategories are absent, `Σ(available weights)` replaces the fixed 100 in the denominator. The two formulas are mathematically equivalent when all 8 subcategories are present; the partial form is a pure generalization.
+   **Relation to the full-review formula (§Step 4 #2)**: The canonical formula `Overall = Σ(score × weight / 100)` assumes the 8 weights sum to 100, so dividing by 100 normalizes to 0-100. When some subcategories are absent, `Σ(available weights)` replaces the fixed 100 in the denominator.
    - Weights are the percentage values defined in §Step 4 (security=20, secrets=15, ...). Because scores are 0-100 and `Σ(available weights)` is on the same scale, the division directly yields a 0-100 normalized value — **do not multiply by 100 again** (that would overflow).
    - Example: available={security(20)=78, secrets(15)=85, quality(15)=72, logic(15)=80} → (78·20 + 85·15 + 72·15 + 80·15) / (20+15+15+15) = 5115 / 65 ≈ 79.
    - Round to the nearest integer.

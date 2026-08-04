@@ -30,7 +30,7 @@ behavior-preserving improvement of expression. A bug you find is **not fixed** â
 - **iterate**: a post-cycle improvement loop where the user brings the fix instructions. refactor performs the discovery of improvement candidates itself, from an analysis of the specified scope
 - **investigate**: read-only analysis only. refactor goes as far as carrying out the improvement, in Phase 5
 - **systematic-debugging**: aims at identifying and fixing the root cause of a bug. refactor does not lay a hand on bugs
-- **simplify (a Claude Code built-in)**: a quality-only tidy-up of the most recent change diff. refactor targets a user-specified scope (existing code in general) and goes as far as sweeping, three-way verdicts, and proposing issue creation
+- **a built-in diff tidy-up command (where the environment provides one, e.g. `simplify`)**: a quality-only tidy-up of the most recent change diff. refactor targets a user-specified scope (existing code in general) and goes as far as sweeping, three-way verdicts, and proposing issue creation
 - **codebase-review**: a fixed whole-codebase scan that stops at a report. refactor starts from a user-specified scope and goes as far as making the fix
 
 ## Conformance to Shared Contracts

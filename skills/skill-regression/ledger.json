@@ -1,25 +1,25 @@
 {
   "brainstorm": {
     "file_sha256": {
-      "skills/brainstorm/SKILL.md": "650cf8a38ff69b148cb1204f93f6c30f844be00db4249981593ff9b7f3e79f2a",
+      "skills/brainstorm/SKILL.md": "53564e40fdb12e54de437dd714ae8e13a3419d94558f2d92847f0b20f29025c2",
       "skills/brainstorm/fixtures.json": "5ab5d3f5bd0267e46c8bdbefc417c1e142583752c01ce785d182167c47e9c27c",
       "skills/brainstorm/references/exit-contract-template.md": "0aa6389f378de90a5613c5dbe4517083ffdb4978e5e7849868c2a2d2a53f5d02",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
       "skills/brainstorm/references/spec-generation.md": "1633706e12a8ba3e0b876bbcdd72ab7c24280c9423c94b138a9f587ceb4edf1e",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
-      "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
-      "skills/shared/references/human-readable-summary.md": "78d68c6687fae83281354941ec05596394afd4d1a135f5d49258443df55fe96a"
+      "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
+      "skills/shared/references/human-readable-summary.md": "645e4ad07f8941a473d750a224840ddd4cbaa6b964be661dcbb76650a26cb4b0"
     },
-    "note": "PR #236 Codex 再レビュー残指摘の修正: worked example 内の対象スキル数 6→5（five 統一の取り残し）。例示テキスト 1 文字の修正のみで要件・手順は無変更のため実走なしで安全と判断",
-    "result": "accepted-without-run",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "result": "pass",
     "structural_sha256": {
-      "skills/brainstorm/SKILL.md": "8bbe0225800e7e38cbec2ff4106225048a8450021cce6113ee21ea8de64b5011",
+      "skills/brainstorm/SKILL.md": "c29fd97c0d2025fbf78eeced7ea68b31b21b3a55f9daa231092f3e4a19411a5f",
       "skills/brainstorm/references/exit-contract-template.md": "e58db2062a0fe870d06694b10fad357e560e57ef90a26df653efc000b997dcbe",
       "skills/brainstorm/references/idea-template.md": "77d2645476a8a0ecb2501e3bec131a89d9f79b070fcf28ca48423cf9d4fbce28",
       "skills/brainstorm/references/spec-generation.md": "18194aecc79e39908e4d0dfe1a8a611dbe35d25b54e99c0085a7ce21e56f6c40",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
-      "skills/shared/references/codex-integration.md": "cbe917646842d21292baafd40ddc07e351bd2c12e226d370dbc95175e6e0c274",
-      "skills/shared/references/human-readable-summary.md": "884c11e30b0470d1bfcc2d82107c5c2c7e545024cd5055cd69492b2981fdf07c"
+      "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
+      "skills/shared/references/human-readable-summary.md": "17963b524b543ee7d9760a8987f9b4ecf0cd562c24d2168d340396371c347905"
     },
     "surface": [
       "skills/brainstorm/SKILL.md",
@@ -31,7 +31,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "34fb7908907d089e6a366352df0cd0ba0050fd360ef507e1f634f6c5e1b2749f",
+    "surface_sha256": "c84f03240676517d9168f83f0e8b73961ba4a6c002512272330f9966faf5be37",
     "verified": "2026-08-04"
   },
   "brief": {
@@ -72,17 +72,21 @@
     "file_sha256": {
       "skills/commit/SKILL.md": "48dda355509fa476945de1d8e7ffbeb6d435e1d678d0b009617eca8db0184a0b",
       "skills/commit/fixtures.json": "695f26893f3762173ca414166f83058d22e6d2d02164b738813f55efed74dbbd",
-      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
+      "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c"
     },
-    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；読み取り専用要件 cm-003 は .claude/ 外の清浄環境で再実行して裏取り（書き込み拒否の交絡を除去）；外部からの状況照会 0 回",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
     "result": "pass",
+    "structural_sha256": {
+      "skills/commit/SKILL.md": "dc8b2907b7d2fae202a365afadd377b7311de09fc770861f047024702981a743",
+      "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd"
+    },
     "surface": [
       "skills/commit/SKILL.md",
       "skills/commit/fixtures.json",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "9f45164cd0d53e2510a7bc7e09fc9b3efb1d96648de2cbec1dd96c8701764873",
-    "verified": "2026-07-27"
+    "surface_sha256": "b4eda2006a1088bfdaba03eb0cfc143d05090ad8247e36603b4c98e67655dcf8",
+    "verified": "2026-08-04"
   },
   "context-audit": {
     "file_sha256": {
@@ -99,12 +103,23 @@
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
-      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
+      "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
       "skills/shared/scripts/frontmatter.py": "3c6d76a04346f1b2251d39b005f526073981a3425ce9fabc7523d99a791fedb8",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702"
     },
-    "note": "#169 run: 3/3 pass（実測 executor は低単価 tier）。全シナリオ headless 非対話フォールバック(c)経路で完走、対象ファイル無改変を sha256 baseline 比較で機械確認。状況照会 0 回",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
     "result": "pass",
+    "structural_sha256": {
+      "skills/context-audit/SKILL.md": "55d14784ead7c634f7f6d2076273a226e809cc4168512d029767c0b4d70227fb",
+      "skills/context-audit/references/baseline-format.md": "df1c6707513214b24599b22893510bb354baf58b66ec781ae7a078f8f3dfe575",
+      "skills/context-audit/references/memory-audit.md": "8e20a3f2c016ba6068cd5ddafe1c3ad7ae84c204ab04dd5ba8acf3eadac767c1",
+      "skills/context-audit/references/rule-catalog.md": "c5fa0bee20b8cec242f4d6164f0baaed80a791628ffd08d23222c717048465d0",
+      "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
+      "skills/shared/references/execution-context.md": "cf213a8a2c15855c4147e01fd5bd524afa8007f51f4b68afb0faa38f53506d50",
+      "skills/shared/references/fix-action-taxonomy.md": "cf45d893a25a3f85e85c264cea989c1ce1f58800da54792de93a5bed8974f807",
+      "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
+      "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd"
+    },
     "surface": [
       "skills/context-audit/SKILL.md",
       "skills/context-audit/fixtures.json",
@@ -123,55 +138,55 @@
       "skills/shared/scripts/frontmatter.py",
       "skills/shared/scripts/secret_detect.py"
     ],
-    "surface_sha256": "74e670fb473679f857130f435af80297824db539f53bffaa47fb764e8a4d02ee",
-    "verified": "2026-08-03"
+    "surface_sha256": "63612b18d33b1224518de0588a967832344a75cba9279a14aff22bb48d111ead",
+    "verified": "2026-08-04"
   },
   "cycle": {
     "file_sha256": {
-      "skills/cycle/SKILL.md": "0151a61230f340ecef018f7916cd8ced0c3c8c59925a05dd6a21c143d2bc4fb5",
-      "skills/cycle/fixtures.json": "2c570b47d5e04320ce16fe1172d15d80cc5a6d4c2a5f0953d98b6da6b95a1e1b",
+      "skills/cycle/SKILL.md": "8fcf89b2df01a9d09a74dc8225e2a51eb130e6bb849663125109aa8b0c2ba22a",
+      "skills/cycle/fixtures.json": "8d69ec930d4bb07271c74d0320f4350bf7e21a5f60fe972e6d9217ba5174afb5",
       "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
-      "skills/cycle/references/inner-satellite.md": "249e971fd95c7111435e004fbf4c251d58114f41060d8716a481f3c2628d913c",
+      "skills/cycle/references/inner-satellite.md": "d8bbd573f7915cb9cff12e8b0f94d16881294b6c7ec8adcc0cdc9f1d4b744f1a",
       "skills/cycle/references/skill-review-routing.md": "bacb33a67d1dd7ab325c142f2828f34b1c9f59caadcad36d0a03101d57acf21b",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
-      "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
+      "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/evidence-format.md": "96da494ddf512e5de33fbcc2a87eb0b5e97058c765a5b7e956151246e4c4d751",
       "skills/shared/references/fix-action-taxonomy.md": "50576c3dd1056f3e11044df0520a51cc507c178d08eaca256971d9fae56a620e",
-      "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
+      "skills/shared/references/orchestration-patterns.md": "9672c4f21d72957d8c2cfec1673af412de49fc8634d2fe2ece39121d05d4779b",
       "skills/shared/references/publication-protocol.md": "5aaaf09134900951ddfa3edd3523676ecbd98e8f6c5755f6b20520ee04b376b3",
-      "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
-      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
+      "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
+      "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
       "skills/shared/scripts/evidence_check.py": "17135f510679d2c7d01073f7ba65b2ba5ff0bb2626e9bcfc292976b238db8289",
       "skills/shared/scripts/publication_advance.py": "c17d4938f5db991e8cf3cbae6aacc93e48555351a38570485fc0f3a01205c8ed",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "process-queue(Sonnet,並列4) 16本 + subagent経路再実行 4本(cy-012/015/018/019)。process経路fail 4本は経路制約とレビューverdict非決定性が原因で再実行はいずれもpass。cy-015はcy-013判例に倣い注入指定をpromptへ明文化(requirements不変更)。watchdog照会5回・委譲完了の事実中継8回",
+    "note": "process-path run (r5 batch, sonnet-5 executor, 20 scenarios): 18 self-pass; cy-009 req4 and cy-016 req2 caller-adjudicated to pass per executor-contract (cy-009: suppression corroborated by artifact absence — no results/, no issue close, sentinels uncomposed, main fixed across 3 failure cases; cy-016: env permission gate denied 'git reset --hard', executor's disclosed content-equivalent restore verified by empty 'git diff pre_fix_sha revert_commit')",
     "result": "pass",
     "structural_sha256": {
-      "skills/cycle/SKILL.md": "51b6efbf7b77ee1d4dc032a567dbab21f54e1f14063031409b1dcd5cdcca5c38",
+      "skills/cycle/SKILL.md": "086560464952dd2e79c52fd254b6b5133a4a1c7b005a27b189c7257eb1ebc1f7",
       "skills/cycle/references/completion.md": "1b2e05b6506e5b46edc76d4cb90f5c92ae938317eeb7cd477c2aec240536072c",
       "skills/cycle/references/final-gate-delegation.md": "27d25341c480d9a3d6ad69a5c247b995082067c8eda58d93e3cc60036e34514b",
       "skills/cycle/references/fix-delegation.md": "bbbb683d7d408568579cdd71e9d00136f32f6143222fdcd905a9869edbc5968f",
-      "skills/cycle/references/inner-satellite.md": "76c64e328fc081df5cf1b85e97e33ff030d2a39a71ff4a30ab6bca973f6e15f6",
+      "skills/cycle/references/inner-satellite.md": "e311d257a402bef3f63d280af008feeaf3047d63630a6bb0706549bd11c7eebf",
       "skills/cycle/references/skill-review-routing.md": "932a73f6f0ae1f98eeb0f099ed6259c4502a7911696d4d4327f5ef9a8a70631a",
       "skills/plan-reviewer/references/output-format.md": "01ea67bdf460860ba93459c084bb26dcd9e817217fb4b8bac07ae852e7ae22a7",
       "skills/plan/references/status-update-guide.md": "7cce88c03df6d16c609b08ce4b055d21dd27aff1b677a6a8ebcfa9d5213ba83f",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
       "skills/shared/references/artifact-store.md": "4ab7297bbce0294646093f50c818c13d31e9212e3ad9bbeffc74318686d03b06",
-      "skills/shared/references/codex-integration.md": "cbe917646842d21292baafd40ddc07e351bd2c12e226d370dbc95175e6e0c274",
+      "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
       "skills/shared/references/evidence-format.md": "4caa3fb0bb6e4c2fb5516c0d882a7b5e26845b3bb0695bbd5c05c21b7ee070de",
       "skills/shared/references/fix-action-taxonomy.md": "cf45d893a25a3f85e85c264cea989c1ce1f58800da54792de93a5bed8974f807",
-      "skills/shared/references/orchestration-patterns.md": "15a11826bea07cf8005c8c27cb01d7cf59d4275ab1a34e9dbaabf3f1b648c488",
+      "skills/shared/references/orchestration-patterns.md": "2abc40814ffa144d4cdad8ca5ef33c4d21471f28dc77c0bd89cf8efe9f5a25d0",
       "skills/shared/references/publication-protocol.md": "e042692698eff9de64abd51a9fa5396a0b6a076160f5bc6510c474a55df2f412",
-      "skills/shared/references/tdd-contract.md": "fbcf6923f760432caef736a58c9b83679de91b3b5a25b42c6fbc62f91ccb9065",
-      "skills/shared/references/verification-gate.md": "78c103caf83aa10d6716762c96cb3e15803b000b0374db333862eb78a88eed55",
+      "skills/shared/references/tdd-contract.md": "b562a71a8064dfaca6c40b2c6e81efbed397ac03acf9ec6f835f45930703d3fe",
+      "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd",
       "skills/shared/references/workspace-lock.md": "93a8ff761e07d1c63c59c60de8ed3ecec3a64e05e0a3c21a5e42a5941ad4634b"
     },
     "surface": [
@@ -199,12 +214,12 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "85b720c716654401a669c1d2c955b6d007a1f67a5943b59dbbc230f99c174368",
+    "surface_sha256": "3b77fe99b596a0b3785eacdd423ce2d6bcc102016cba395296de593c778e527b",
     "verified": "2026-08-04"
   },
   "decision-journal": {
     "file_sha256": {
-      "skills/decision-journal/SKILL.md": "2e4c0cab8fdce0ff050175d1b674391937572cb8b5533c99c71afb113d8a8d0a",
+      "skills/decision-journal/SKILL.md": "7e02b635a7478efadc1f2b39ed7e6d06b1d41f3cc00408667af43399f4f5de31",
       "skills/decision-journal/fixtures.json": "0de02b85afcd969710a4717b8ec810834236d11457de16806ae2322bc0a0c613",
       "skills/decision-journal/references/decision-record-template.md": "43630f34fc89c487d055d64b2cae9a3d757da3dc443920e3438451ebeca68ac1",
       "skills/decision-journal/references/interview-guide.md": "6bd1bc4e989833d75637316c2380f4edd4a385a328f9f7a8186348bc330028b6",
@@ -212,8 +227,16 @@
       "skills/shared/references/decision-protocol.md": "9385ac847f75b4b23daaba710f72faee1f5319e88ef57ab45058c3d1a5db9629",
       "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452"
     },
-    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
-    "result": "accepted-without-run",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "result": "pass",
+    "structural_sha256": {
+      "skills/decision-journal/SKILL.md": "f91236c9d95537b8cf697f8bc0dfa256825b4f165515b3daff8fa52f8cdc03f9",
+      "skills/decision-journal/references/decision-record-template.md": "49c7d02669e7045635f4b0bd38ccfeefc7dc1ab555b83469c7fa2eff7e753b7a",
+      "skills/decision-journal/references/interview-guide.md": "66f52636f2fec67ccd8dab37a4ae0ea89110b378c5789f7a427d6ef27007078a",
+      "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
+      "skills/shared/references/decision-protocol.md": "5b466aca1be34d27f8c823676df05707471bde5863b0f96a844c653343349ae7",
+      "skills/shared/references/output-language.md": "4400e6f6dbccfa5852f7598e51ae9bfb6b09dbb018b4da71668921bbb2712712"
+    },
     "surface": [
       "skills/decision-journal/SKILL.md",
       "skills/decision-journal/fixtures.json",
@@ -223,8 +246,8 @@
       "skills/shared/references/decision-protocol.md",
       "skills/shared/references/output-language.md"
     ],
-    "surface_sha256": "4e14d071dabaca6b972068ff2b772a2a7115142b8baa3df1adfed1a4b9acdc2f",
-    "verified": "2026-08-03"
+    "surface_sha256": "a0aca64addc93efedbc4a88c7ae9059b49f11f27fb81bfbad050c33ecd59861a",
+    "verified": "2026-08-04"
   },
   "design-guide": {
     "file_sha256": {
@@ -237,10 +260,10 @@
       "skills/design-guide/references/mockup-workflow.md": "8210de37547a6b5300e0572e6177bb2e4e21039273d1b115a11a611c18b806a3",
       "skills/design-guide/references/session-workflow.md": "99a23de6c2a91a8f9751ff39ff02ce82fe68c8f055e3f6d648ed7daee607c241",
       "skills/design-guide/references/update-workflow.md": "0cdcba65ca5f45739b2af34c5b23de344bebac33e8df1c108a0621b6eb67589b",
-      "skills/shared/references/human-readable-summary.md": "78d68c6687fae83281354941ec05596394afd4d1a135f5d49258443df55fe96a"
+      "skills/shared/references/human-readable-summary.md": "645e4ad07f8941a473d750a224840ddd4cbaa6b964be661dcbb76650a26cb4b0"
     },
-    "note": "PR #236 Codex 再レビュー残指摘の修正: worked example 内の対象スキル数 6→5（five 統一の取り残し）。例示テキスト 1 文字の修正のみで要件・手順は無変更のため実走なしで安全と判断",
-    "result": "accepted-without-run",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "result": "pass",
     "structural_sha256": {
       "skills/design-guide/SKILL.md": "b19de6095794e69bab056bf48a6652dd958f61d914953e2e6e5d57349d502cb8",
       "skills/design-guide/references/anti-patterns.md": "d4c2cfe10c50857c7f2964f8870584f5a7e20fcc1dc574432c6f71ba427b1120",
@@ -250,7 +273,7 @@
       "skills/design-guide/references/mockup-workflow.md": "1b5efa63bbb92d7bc17268ee425f601c19b6e1daafb3a3cf18a2492db9656643",
       "skills/design-guide/references/session-workflow.md": "cbe877b09bfc0c550885ce9bfb080daa91ca749f8ff0167a57eb6d14ec36bb81",
       "skills/design-guide/references/update-workflow.md": "4dadd0f922f09629400270eaa2605bef27d06420416a9003eb29e6724038ed47",
-      "skills/shared/references/human-readable-summary.md": "884c11e30b0470d1bfcc2d82107c5c2c7e545024cd5055cd69492b2981fdf07c"
+      "skills/shared/references/human-readable-summary.md": "17963b524b543ee7d9760a8987f9b4ecf0cd562c24d2168d340396371c347905"
     },
     "surface": [
       "skills/design-guide/SKILL.md",
@@ -264,31 +287,31 @@
       "skills/design-guide/references/update-workflow.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "a3e4d8cf226fde6e573a6871d7389e74149c735c9222942b4e63cb4692d771ba",
+    "surface_sha256": "aec8f0aacce4ed7eecd6ed2ba9857a56a2ebc167fba3edc88c49969605d9f616",
     "verified": "2026-08-04"
   },
   "doc-write": {
     "file_sha256": {
-      "skills/doc-write/SKILL.md": "8dc18c8e30098d59f0d8d71cbfe90e3470fe80efc004cb5594bbe11d1c53029f",
+      "skills/doc-write/SKILL.md": "cb9e90ac602a45ee5df206b77f69a286e562c0ae2652a206b9de95ded3d9a9ff",
       "skills/doc-write/fixtures.json": "25923dc521df83866b6ecab0f94dfe23a9853f12180fad532182d268d8d18def",
       "skills/doc-write/references/adr-template.md": "67384d585ee51ab5093757397be8470cc1c65357b21c9096e61ccc73fe8ee28f",
       "skills/doc-write/references/discussion-summary-template.md": "130ccf87b8c2bee7840d2bb2611e46454df5addc25e254b8af287bdd12f2faa6",
       "skills/doc-write/references/mermaid-guidelines.md": "175dbb2f8dfbb7aa88c0d98b7a89f000971b3c7098b4101c306e4763feabfe2e",
       "skills/doc-write/references/tech-note-template.md": "8f287b7120f738f72ac65a0d17af8683828f14b00afca0eb81009147a9887975",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
-      "skills/shared/references/human-readable-summary.md": "78d68c6687fae83281354941ec05596394afd4d1a135f5d49258443df55fe96a",
+      "skills/shared/references/human-readable-summary.md": "645e4ad07f8941a473d750a224840ddd4cbaa6b964be661dcbb76650a26cb4b0",
       "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452"
     },
-    "note": "PR #236 Codex 再レビュー残指摘の修正: worked example 内の対象スキル数 6→5（five 統一の取り残し）。例示テキスト 1 文字の修正のみで要件・手順は無変更のため実走なしで安全と判断",
-    "result": "accepted-without-run",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "result": "pass",
     "structural_sha256": {
-      "skills/doc-write/SKILL.md": "0953d1c864381dbd62b492e73bb876d6d526615c8d352b3003c6475a7c991f1f",
+      "skills/doc-write/SKILL.md": "7ccc150dbc47b37ff477776ea2d058e6fc48721ecebbdaa1b30e932b1c2ce076",
       "skills/doc-write/references/adr-template.md": "27c0326d55c2942ce823b6d9c214b6eca943ca2475f86a5540232db8e11a1143",
       "skills/doc-write/references/discussion-summary-template.md": "e178f79abd512bd20e18c9f7875f6b2f1ee4cea0e16cd63673650be9728a5ec5",
       "skills/doc-write/references/mermaid-guidelines.md": "a3ea5ff06d26520851f7026530a9226603d01bbe4d1d3655f7e1280f6e80464f",
       "skills/doc-write/references/tech-note-template.md": "3878a101bd6fb6b3693564a56980da4d33e888372170faa487627d31e67875b3",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
-      "skills/shared/references/human-readable-summary.md": "884c11e30b0470d1bfcc2d82107c5c2c7e545024cd5055cd69492b2981fdf07c",
+      "skills/shared/references/human-readable-summary.md": "17963b524b543ee7d9760a8987f9b4ecf0cd562c24d2168d340396371c347905",
       "skills/shared/references/output-language.md": "4400e6f6dbccfa5852f7598e51ae9bfb6b09dbb018b4da71668921bbb2712712"
     },
     "surface": [
@@ -302,12 +325,12 @@
       "skills/shared/references/human-readable-summary.md",
       "skills/shared/references/output-language.md"
     ],
-    "surface_sha256": "a256621bf9f770fde4ee98360543927f2114797b4d810cd5d8a8c83eb4e9d256",
+    "surface_sha256": "0ffe9388bff70525141acbaee706587d783c69d54e5547926d291bb42714e674",
     "verified": "2026-08-04"
   },
   "github-issue": {
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "d3e05f0517839213d2013aa43bd2c5a0793fbd716c5d7e40121da12df8417aeb",
+      "skills/github-issue/SKILL.md": "3e57ded338522ae78561336a94e50dd5697042263e6e7a28b69ab2e665d6afab",
       "skills/github-issue/fixtures.json": "3997abfe50abd8de1470506c5137700dd1ad7b86e2c87790b24830cde793760b",
       "skills/github-issue/references/adapter-internals.md": "71a40216b3dc65afd4fe9eadbd322dcec9f7505e51e66805db841db6bfd3bb5a",
       "skills/github-issue/references/cleanup-spec.md": "a8a10b8352a5a22c190e92ab7408714461cfa48f93f84e4664331e2b4879df36",
@@ -315,6 +338,7 @@
       "skills/github-issue/references/config-defaults.md": "f610df99b3044706297ca6faeacf98655bbeae28ab0bea320605cef40f3725e8",
       "skills/github-issue/references/error-kinds.md": "0f9710cfd2e8d1244d6842478a3f6f1cdba67646fe6515bd45fef3a0404d0f39",
       "skills/github-issue/references/gh-commands.md": "c6e291c0afb5ddc195be1a9ff14ea7e47f4379ec46c2bdfb0e8e65e80fbaf6aa",
+      "skills/github-issue/references/isolation-verification.md": "24b9dd838bd4119a0f18af6feba62ab807ad813e7c17d5e4a8afb48ceac8528e",
       "skills/github-issue/references/label-mapping.md": "8a67daa0503fdfa5a19220a9c125e15277374b33e417c150d30dac4443c6395a",
       "skills/github-issue/references/label-spec.md": "851c00af6041bfad8beecabb646c98f122728533d153c59e5c0ac7916f6c3c4a",
       "skills/github-issue/references/polling-adapter.md": "3c7e5d5c1cbed6e24e7f01f92aa1a77c0c3b1481ca082d31b84dbd7ccf269080",
@@ -325,37 +349,38 @@
       "skills/github-issue/scripts/polling_adapter.py": "a5c20adfd78f9391af922c7ba239e42a2010c277ddafc062eb5ed06ed81785f3",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
-      "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
-      "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
+      "skills/shared/references/checkpoint-pattern.md": "48aaf4f43b52ae7e586271c084bedd6925a6fa0e5526cffab003848a37973158",
+      "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/measurement-identity.md": "9ab3ee1deb9b9cb46f181cd3ee691272f4a2b6f7d2852c13ad6c16188752bd50",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
-      "skills/shared/references/workspace-isolation.md": "3498b06938059bce940773aea70016e2380b8573116761f43b96b26a4a21c293",
+      "skills/shared/references/workspace-isolation.md": "8048ba07d1a7c112211ccaf56d503047af7494fcbef3c8ab6e7d10ab826d7ec5",
       "skills/skill-regression/scripts/ledger.py": "1a8139caa666d495f6628655e3f16f6ef19835b1d93b1f3c1f396743bc6df347"
     },
-    "note": "blank-slate Sonnet 実走 8/8、照会 0 回。gi-001 は inline substitution（polling_adapter.py 直接実行 + 手組み tick）、説明系 6 本は read-only 読解経路",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
     "result": "pass",
     "structural_sha256": {
-      "skills/github-issue/SKILL.md": "2b29a142e97d56a7c567389ff371185fe1c4c06345d1014165d5762082abd39c",
-      "skills/github-issue/references/adapter-internals.md": "55ff6de5267c0665b025c9895b47202553f61ad2cc50e658eb2263b868498590",
-      "skills/github-issue/references/cleanup-spec.md": "2603e97a1e03064444d939b2efd98edee65666ef982b45c1c53b8ce1a619825e",
-      "skills/github-issue/references/codex-review-loop.md": "4c7c228c812e9554584fa6f0223e80bd1fde2b00688ef3a3d7caf4896c444386",
-      "skills/github-issue/references/config-defaults.md": "827297a2d019b569b3d434df40b77b6679a5f76d9a895816a0e8e9180b6bcbd5",
-      "skills/github-issue/references/error-kinds.md": "15d035e657858c31b876c2323ed22848a1e5724226155918678b448726b4057c",
-      "skills/github-issue/references/gh-commands.md": "53a6d138d05254309fcfe38aab47df6a9da20a585da719e1f29c252bd49f514e",
-      "skills/github-issue/references/label-mapping.md": "40109725b42c0ae2e11c51f06fe1a2939cc7647feb654399f74b57c9930a9bde",
-      "skills/github-issue/references/label-spec.md": "ca945baea3512ea05abb13ab910a8dccebdfe552942418e43afef8616dfbb9e6",
-      "skills/github-issue/references/polling-adapter.md": "8cae04eb468798879d2895c3bb9326818896e459f88d2d386d13debc3ae2f798",
-      "skills/github-issue/references/secret-scanner.md": "cd125494d8df2a24d949da24e486ddc90b5362fc0a2eec7f459ad0527054d6ec",
-      "skills/github-issue/references/self-drive-gates.md": "240ade177ab542916e4049ff46f0311444a77d74d3a908cfaa1edd73f1661663",
-      "skills/github-issue/references/state-root.md": "f54ea50fcb232a6651b2f7330d32f0f28e1c708758e9425537e3ec0670004339",
-      "skills/github-issue/references/worktree-cycle.md": "27971cfe2eddb169b03c3af544e8fc4bec327bfb48119f0ebb595f61986bf9d1",
-      "skills/shared/references/artifact-paths.md": "1705d074211a7ee5c8a0292c368bed405fd2c9ae29cbb1e8ddc86b882e9179b4",
-      "skills/shared/references/artifact-store.md": "11712a1e4fbac4c4c997752b1481c2cb96044a11fe167b029950a2b91077a2db",
-      "skills/shared/references/checkpoint-pattern.md": "81ff32fb67ca657cad4d8ee017538b0df53a572635d8be38f29eeb0e805ec699",
-      "skills/shared/references/codex-integration.md": "027dbcb60c38ecfad4d632d98e79a46481e2571dec084713d4cee45203c5b74b",
-      "skills/shared/references/measurement-identity.md": "ae8cc8b862dfbe0df94d20f3bea00138813562806ff78b61a51313917f887158",
-      "skills/shared/references/polling-pattern.md": "c79bc164458ded69bb54fd7af4419ca36b962d063c4ab684e4f5c9d79f5c680a",
-      "skills/shared/references/workspace-isolation.md": "b607c07c18e961cb6dd24a3e1abbc30b8b38cf9f86234940b966875a772666eb"
+      "skills/github-issue/SKILL.md": "32b07c68d5054ea94ef92697bd304e3f41177b98a8878df4948e8379fac796ef",
+      "skills/github-issue/references/adapter-internals.md": "90918af8d308dddc6a4411f4e58b964e269e147d44bad3378202394c8078bf34",
+      "skills/github-issue/references/cleanup-spec.md": "b2708e8ef5275869f8e67911dd4ec836a07a9bf6fc1a8c82d7e699461c902662",
+      "skills/github-issue/references/codex-review-loop.md": "4dd087117a70053c6c6e2b6f0a42248369d23535e70fefb498e1fc40260a7f60",
+      "skills/github-issue/references/config-defaults.md": "e54039b3c0df6ea68a001064300eb9763ba58684a648710f8c875f5bf618b325",
+      "skills/github-issue/references/error-kinds.md": "5e9edc3d0932decaebd40d471287c0723a3078ff2a995eaaf00538180e1f7af5",
+      "skills/github-issue/references/gh-commands.md": "a1ea0368d952fc2344be72ab2f793926eff40a378a7372fc4ba9b4ccad6ae653",
+      "skills/github-issue/references/isolation-verification.md": "319cbc5223b73b1b83ec04ff46d3fdaec597d9f62201c3d8a21be04e2570dce8",
+      "skills/github-issue/references/label-mapping.md": "ef90088246afbf2a97c993bd53cf94071f83f8fba206db8b39b8ced80b18b213",
+      "skills/github-issue/references/label-spec.md": "529587c4af7c7e697d64f8f026021e9989190cb56cbce3b6ef1f5206fe025e07",
+      "skills/github-issue/references/polling-adapter.md": "5663feeb508e42d58ec66cc4091b8aa674ef58334d23d4e37cddc185f00c3f30",
+      "skills/github-issue/references/secret-scanner.md": "9b700f209ca49c018265ac324e2e5c5c403ec8e2d0a2ebf099dc929484fc3bd3",
+      "skills/github-issue/references/self-drive-gates.md": "0061b8838dca9abe9d5aa23bfa9c308dcb824be86a6424482317ec046d7ae860",
+      "skills/github-issue/references/state-root.md": "09e510dcff7e63353b1041bcf31ae4c752fe40c179efc64caf204543785845a8",
+      "skills/github-issue/references/worktree-cycle.md": "b99c6b4dfc2059cd14f2c74db39ee235cd7c1ef6581b3948c7fc615c3e8168e7",
+      "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
+      "skills/shared/references/artifact-store.md": "4ab7297bbce0294646093f50c818c13d31e9212e3ad9bbeffc74318686d03b06",
+      "skills/shared/references/checkpoint-pattern.md": "a9ea84e07aa85b8e9c4e916b6d48d8a8ec443ae29f48a21e5173b292e076ba8f",
+      "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
+      "skills/shared/references/measurement-identity.md": "fc16d83ed9e3a19cb3abbe91b042e7258fb5e4d81281ba8e4a20bc2f5e0ab3fd",
+      "skills/shared/references/polling-pattern.md": "17c29aaec95e63f92f96f3d9eba7bc5827c21f592023ee03e48b8aabdd5b79f0",
+      "skills/shared/references/workspace-isolation.md": "fa4e9700a0109191903e10480ae87c7848735452127e1cc99f87d836307b60ca"
     },
     "surface": [
       "skills/github-issue/SKILL.md",
@@ -366,6 +391,7 @@
       "skills/github-issue/references/config-defaults.md",
       "skills/github-issue/references/error-kinds.md",
       "skills/github-issue/references/gh-commands.md",
+      "skills/github-issue/references/isolation-verification.md",
       "skills/github-issue/references/label-mapping.md",
       "skills/github-issue/references/label-spec.md",
       "skills/github-issue/references/polling-adapter.md",
@@ -383,26 +409,26 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "6771e9d66d4988beacbab1b87639feaa84665530eb084704457d34a6f77ef7a6",
-    "verified": "2026-08-03"
+    "surface_sha256": "1b86c57f32d72a63e0c71209ed32c6e610afa48f62e2c058c77cdc970f3742f6",
+    "verified": "2026-08-04"
   },
   "handoff": {
     "file_sha256": {
-      "skills/handoff/SKILL.md": "980ad9cbcd3712521d3c69f868faa1fafa3c50d0e11cdb978a17ee73cf57d49a",
+      "skills/handoff/SKILL.md": "cc8112b04a8cf7ad0c2713c306418e05fba8ba922f1633228b68f4fda6317c84",
       "skills/handoff/fixtures.json": "2b5028db210b7dc154d45862acaf9b579fe870ca30275c745bf751627190485f",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
-      "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
-      "skills/shared/references/human-readable-summary.md": "78d68c6687fae83281354941ec05596394afd4d1a135f5d49258443df55fe96a",
+      "skills/shared/references/checkpoint-pattern.md": "48aaf4f43b52ae7e586271c084bedd6925a6fa0e5526cffab003848a37973158",
+      "skills/shared/references/human-readable-summary.md": "645e4ad07f8941a473d750a224840ddd4cbaa6b964be661dcbb76650a26cb4b0",
       "skills/shared/references/output-language.md": "03629705b5ccbaed3300a345c97d3bf9a09001034afff72ea47603e905f62452",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "PR #236 Codex 再レビュー残指摘の修正: worked example 内の対象スキル数 6→5（five 統一の取り残し）。例示テキスト 1 文字の修正のみで要件・手順は無変更のため実走なしで安全と判断",
-    "result": "accepted-without-run",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "result": "pass",
     "structural_sha256": {
-      "skills/handoff/SKILL.md": "263fbfcd2449539a80fc1a60169c9ccd80a3d2c539a06c85da4b1cfc29ca7ec9",
+      "skills/handoff/SKILL.md": "11779e5d2531632b13b80699444b5df14d510bceb1104c003703ccc2e73eff77",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
-      "skills/shared/references/checkpoint-pattern.md": "a61525a996a23732b83b3734123718be41dfc54876c6d26154d0e14ffca37a33",
-      "skills/shared/references/human-readable-summary.md": "884c11e30b0470d1bfcc2d82107c5c2c7e545024cd5055cd69492b2981fdf07c",
+      "skills/shared/references/checkpoint-pattern.md": "a9ea84e07aa85b8e9c4e916b6d48d8a8ec443ae29f48a21e5173b292e076ba8f",
+      "skills/shared/references/human-readable-summary.md": "17963b524b543ee7d9760a8987f9b4ecf0cd562c24d2168d340396371c347905",
       "skills/shared/references/output-language.md": "4400e6f6dbccfa5852f7598e51ae9bfb6b09dbb018b4da71668921bbb2712712"
     },
     "surface": [
@@ -414,7 +440,7 @@
       "skills/shared/references/output-language.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "1c89cbb640cb682af43e75ba8dcc626e731ac774afc55058fb98b364c35a9f37",
+    "surface_sha256": "880fcf628f7208c511d8eb6b1dad8bc970e6ae78e0605cf69d01bc46a32abc24",
     "verified": "2026-08-04"
   },
   "investigate": {
@@ -433,27 +459,27 @@
   },
   "issue": {
     "file_sha256": {
-      "skills/issue/SKILL.md": "9aa4511d2b15fea983c59277b1066c248040a5fd8ff26e977d80a3339d490ba1",
+      "skills/issue/SKILL.md": "9ec41f5b627b057cae2197cffae05af9be65552e8cdb4ddb30a0c661edb08325",
       "skills/issue/fixtures.json": "40065f95ee8d35d14806fcc5a922fb9525d75658cac163cd9fc0c8d1ca894ad7",
       "skills/issue/references/issue-template.md": "6c27174d5b7b8c6fa00b66b69d4a90df0c38af36ebf8c3b90fcef78c57a0715f",
       "skills/issue/references/polling-state-machine.md": "7c65e6079934335d3a891e49c798e2a8761ce443dc63b6f1600be21a96131d70",
       "skills/issue/references/polling-state.md": "98c1614b8a7c03bf5dddc90c238582f394bca03eeb204620c763e312e1c6bbfd",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
-      "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
-      "skills/shared/references/human-readable-summary.md": "78d68c6687fae83281354941ec05596394afd4d1a135f5d49258443df55fe96a",
+      "skills/shared/references/checkpoint-pattern.md": "48aaf4f43b52ae7e586271c084bedd6925a6fa0e5526cffab003848a37973158",
+      "skills/shared/references/human-readable-summary.md": "645e4ad07f8941a473d750a224840ddd4cbaa6b964be661dcbb76650a26cb4b0",
       "skills/shared/references/measurement-identity.md": "9ab3ee1deb9b9cb46f181cd3ee691272f4a2b6f7d2852c13ad6c16188752bd50",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "human-readable-summary.md の worked example 内の数字修正（対象スキル数 6 → 5 の five 統一取り残し、PR #236 の Codex 再レビュー指摘）への追随実走。同一 PR 内で 3 回目の issue 実走。4 シナリオ全 critical ○ で pass。executor は Sonnet 相当を 4 並列 blank-slate、全シナリオとも実行経路は inline substitution（skills/issue/ に実行体スクリプトがないため executor が FS adapter 相当を直接実行）、外部からの状況照会 0 回。判定は worktree 成果物 + baseline hash 突合（is-001/is-002 の ready ファイル、is-003 の alive .claim / issue.md がいずれも baseline と一致）と transcript 末尾の報告。background executor の通常出力が呼び出し側へ届かない環境制約は 3 回とも同じ。worktree は HEAD から作成し未コミットの human-readable-summary.md / plan/SKILL.md を反映（surface_sha256 は 1 回目 76695123 → 2 回目 e47a2664 → 3 回目 05902494 と変化し、各回とも反映を確認）。is-004 の完了表示は To confirm 行を含む形で安定して要件を満たしている。",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
     "result": "pass",
     "structural_sha256": {
-      "skills/issue/SKILL.md": "c3fedf96f8ca2317ba617ed3c7f3e32b40c1e2a37c3f52f63f94d8673c1700c5",
+      "skills/issue/SKILL.md": "360320ca5763ad9d848246870b71d59290544215664a9fc1c4bfe1f43932ea32",
       "skills/issue/references/issue-template.md": "b05f1f37ffa72767c5c8058a4d108ece75bc19e9d171a552eb88e68e462cbc1e",
       "skills/issue/references/polling-state-machine.md": "cc2bf9fd62453ef750e5b880a943084fcb3a0a52c7d0ea90aba143769568807d",
       "skills/issue/references/polling-state.md": "70201875cde1ebfb14c5a713676503fe1f8f08498a47106382f4e0250f391667",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
-      "skills/shared/references/checkpoint-pattern.md": "a61525a996a23732b83b3734123718be41dfc54876c6d26154d0e14ffca37a33",
-      "skills/shared/references/human-readable-summary.md": "884c11e30b0470d1bfcc2d82107c5c2c7e545024cd5055cd69492b2981fdf07c",
+      "skills/shared/references/checkpoint-pattern.md": "a9ea84e07aa85b8e9c4e916b6d48d8a8ec443ae29f48a21e5173b292e076ba8f",
+      "skills/shared/references/human-readable-summary.md": "17963b524b543ee7d9760a8987f9b4ecf0cd562c24d2168d340396371c347905",
       "skills/shared/references/measurement-identity.md": "fc16d83ed9e3a19cb3abbe91b042e7258fb5e4d81281ba8e4a20bc2f5e0ab3fd",
       "skills/shared/references/polling-pattern.md": "17c29aaec95e63f92f96f3d9eba7bc5827c21f592023ee03e48b8aabdd5b79f0"
     },
@@ -469,7 +495,7 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "0590249424df3b586e89e772e2517d2e0ee90c11b71c620fa53cb53044ec34d5",
+    "surface_sha256": "c90dc1bf9b61dc4600ba1a850c75a33271c979e74cc63a1a0ab90adccdcf4afe",
     "verified": "2026-08-04"
   },
   "iterate": {
@@ -479,33 +505,33 @@
       "skills/iterate/references/light-review.md": "f4b63a197756686af4f9313fd05da3c0e4bd88b24ca70779b3fa7f8f7ea6c322",
       "skills/iterate/references/scope-criteria.md": "fc0005c7a886ec6d3b9593bf6e9d6b607a6f4f6e6f000280844cf750de83ea21",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
-      "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
+      "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/evidence-format.md": "96da494ddf512e5de33fbcc2a87eb0b5e97058c765a5b7e956151246e4c4d751",
-      "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
+      "skills/shared/references/orchestration-patterns.md": "9672c4f21d72957d8c2cfec1673af412de49fc8634d2fe2ece39121d05d4779b",
       "skills/shared/references/publication-protocol.md": "5aaaf09134900951ddfa3edd3523676ecbd98e8f6c5755f6b20520ee04b376b3",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
-      "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
+      "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
-      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
+      "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
       "skills/shared/scripts/evidence_check.py": "17135f510679d2c7d01073f7ba65b2ba5ff0bb2626e9bcfc292976b238db8289",
       "skills/shared/scripts/publication_advance.py": "c17d4938f5db991e8cf3cbae6aacc93e48555351a38570485fc0f3a01205c8ed"
     },
-    "note": "process-queue(Sonnet) 3/3 pass。it-outer-worktreeはevidence_check.py実走(publishable確認後advance)を含む",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
     "result": "pass",
     "structural_sha256": {
       "skills/iterate/SKILL.md": "ecd76ff7616c3d797b3ff2cf409202375ceb19e01090075d17a2079a71512d27",
       "skills/iterate/references/light-review.md": "531c483a72d87e8b010305899eacc78e7c4dff9a95ceaaccc3f7c42322959d82",
       "skills/iterate/references/scope-criteria.md": "09c26cce4730e3e3633de6bac45580dd6f68bca6e8d7dfea722785190bdd09eb",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
-      "skills/shared/references/codex-integration.md": "cbe917646842d21292baafd40ddc07e351bd2c12e226d370dbc95175e6e0c274",
+      "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
       "skills/shared/references/evidence-format.md": "4caa3fb0bb6e4c2fb5516c0d882a7b5e26845b3bb0695bbd5c05c21b7ee070de",
-      "skills/shared/references/orchestration-patterns.md": "15a11826bea07cf8005c8c27cb01d7cf59d4275ab1a34e9dbaabf3f1b648c488",
+      "skills/shared/references/orchestration-patterns.md": "2abc40814ffa144d4cdad8ca5ef33c4d21471f28dc77c0bd89cf8efe9f5a25d0",
       "skills/shared/references/publication-protocol.md": "e042692698eff9de64abd51a9fa5396a0b6a076160f5bc6510c474a55df2f412",
       "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
-      "skills/shared/references/tdd-contract.md": "fbcf6923f760432caef736a58c9b83679de91b3b5a25b42c6fbc62f91ccb9065",
+      "skills/shared/references/tdd-contract.md": "b562a71a8064dfaca6c40b2c6e81efbed397ac03acf9ec6f835f45930703d3fe",
       "skills/shared/references/testing-anti-patterns.md": "e31cc2487959245c1c98e60cfbdc303990af03d306eedd1b10da6b264d3de829",
-      "skills/shared/references/verification-gate.md": "78c103caf83aa10d6716762c96cb3e15803b000b0374db333862eb78a88eed55",
+      "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd",
       "skills/shared/references/workspace-lock.md": "93a8ff761e07d1c63c59c60de8ed3ecec3a64e05e0a3c21a5e42a5941ad4634b"
     },
     "surface": [
@@ -526,33 +552,35 @@
       "skills/shared/scripts/evidence_check.py",
       "skills/shared/scripts/publication_advance.py"
     ],
-    "surface_sha256": "7f3eb35ddb8925f40cc26dd79cb0e8b5a73e71727732044925c9c8cab73a625b",
+    "surface_sha256": "84514309eec249844d237aa75af43a7b771051704d8d84595e93cb42298f33e9",
     "verified": "2026-08-04"
   },
   "plan": {
     "file_sha256": {
-      "skills/plan/SKILL.md": "23021621fbdd2aa7dbbd5b7a9ccfdd9ca005749395ea713322410c79ba2402c0",
+      "skills/plan/SKILL.md": "475b941112534b43b12cedbcfd39230564fc14041e3ddfba41ed98c7c46209b8",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
       "skills/plan/references/plan-template.md": "1e63da8f61032af9bcaafc633820aee2213fc011e99a0a3d2d9c8370d757d50a",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
-      "skills/shared/references/checkpoint-pattern.md": "f82a991acfb611f12fa5bfca90a82fc2826aa780c0f7b6d700d31ba567289153",
+      "skills/shared/references/checkpoint-pattern.md": "48aaf4f43b52ae7e586271c084bedd6925a6fa0e5526cffab003848a37973158",
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
-      "skills/shared/references/human-readable-summary.md": "78d68c6687fae83281354941ec05596394afd4d1a135f5d49258443df55fe96a",
+      "skills/shared/references/human-readable-summary.md": "645e4ad07f8941a473d750a224840ddd4cbaa6b964be661dcbb76650a26cb4b0",
+      "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "PR #236 Codex 再レビュー残指摘の修正: SKILL.md Notes 末尾の 2 レイヤー箇条書きから「Design を人間が確認に使う」残存表現を除去し L12 と整合（確認面は What & Why / Goals、構造化 Markdown は技術読者の監査可能性のため）。手順・テンプレ構成は無変更",
-    "result": "accepted-without-run",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "result": "pass",
     "structural_sha256": {
-      "skills/plan/SKILL.md": "5d0a164e9d1cd35b1893189dee57ee475c22cd8a7252e65916b165e149808344",
+      "skills/plan/SKILL.md": "ca2a45173b4e488e3eeec559d346c67e012ebd9e72f5ea196350ac6ab68035d3",
       "skills/plan/references/plan-template.md": "50e6a4353b0f37726af85fa2709fe31db12cc73db76bbd4d57651eec0ff0df20",
       "skills/plan/references/status-template.md": "4ab54b5caa51f85660dd9de21b39f19386a5b9afcada80b67faa11f20fec576d",
       "skills/plan/references/status-update-guide.md": "7cce88c03df6d16c609b08ce4b055d21dd27aff1b677a6a8ebcfa9d5213ba83f",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
-      "skills/shared/references/checkpoint-pattern.md": "a61525a996a23732b83b3734123718be41dfc54876c6d26154d0e14ffca37a33",
+      "skills/shared/references/checkpoint-pattern.md": "a9ea84e07aa85b8e9c4e916b6d48d8a8ec443ae29f48a21e5173b292e076ba8f",
       "skills/shared/references/execution-context.md": "cf213a8a2c15855c4147e01fd5bd524afa8007f51f4b68afb0faa38f53506d50",
-      "skills/shared/references/human-readable-summary.md": "884c11e30b0470d1bfcc2d82107c5c2c7e545024cd5055cd69492b2981fdf07c"
+      "skills/shared/references/human-readable-summary.md": "17963b524b543ee7d9760a8987f9b4ecf0cd562c24d2168d340396371c347905",
+      "skills/shared/references/tdd-contract.md": "b562a71a8064dfaca6c40b2c6e81efbed397ac03acf9ec6f835f45930703d3fe"
     },
     "surface": [
       "skills/plan/SKILL.md",
@@ -564,26 +592,38 @@
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/execution-context.md",
       "skills/shared/references/human-readable-summary.md",
+      "skills/shared/references/tdd-contract.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "714cdd69de5e3413feda8cf057331a6d0be517e348a785713031c61cd68633d4",
+    "surface_sha256": "a51f3dc496a56a4147d0427746ebb47fa31462ad112a003ea4236db68c8f01da",
     "verified": "2026-08-04"
   },
   "plan-implement": {
     "file_sha256": {
-      "skills/plan-implement/SKILL.md": "34bdc8d08ef9d414a1a070439d5c1c530c2e0f9d8a3109fcf7d010b873939baa",
+      "skills/plan-implement/SKILL.md": "921a9f5b412f296655c07711e90619bf841341b3906060b30f4c0d80e4b384e8",
       "skills/plan-implement/fixtures.json": "cbbfecde4c25225dbe80468c85e73e16a1fb7d99fce4e7370b68c44fdc5abad9",
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
-      "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
+      "skills/shared/references/design-principles.md": "d7cfeaad478b233e5daf502ad12ab8296e8050a010d3ba2c467c91c45ac7ed49",
       "skills/shared/references/runtime-progress.md": "ed37fbe9e91ba942a15feaeeec3b8610d57f14486e649190065f47e8179db7ca",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
-      "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
+      "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
-      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
+      "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "#201: artifact-store.md 冒頭への consumer contract 案内 4 行追記のみ（satellite 機構の規範文は不変更）",
-    "result": "accepted-without-run",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "result": "pass",
+    "structural_sha256": {
+      "skills/plan-implement/SKILL.md": "9b833bc6bc7f0c141178277969e94f49bbbe22416518448ac0cc192fb967414d",
+      "skills/shared/references/artifact-store.md": "4ab7297bbce0294646093f50c818c13d31e9212e3ad9bbeffc74318686d03b06",
+      "skills/shared/references/design-principles.md": "9b90272bdb55a9530723fce10ebb30f46a64bfde0101cd547129efb7f8735e20",
+      "skills/shared/references/runtime-progress.md": "f25d63b2c50e170ac24fd528f1440d7908cdff0908ac34d8cee2ffebe8398bac",
+      "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
+      "skills/shared/references/tdd-contract.md": "b562a71a8064dfaca6c40b2c6e81efbed397ac03acf9ec6f835f45930703d3fe",
+      "skills/shared/references/testing-anti-patterns.md": "e31cc2487959245c1c98e60cfbdc303990af03d306eedd1b10da6b264d3de829",
+      "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd",
+      "skills/shared/references/workspace-lock.md": "93a8ff761e07d1c63c59c60de8ed3ecec3a64e05e0a3c21a5e42a5941ad4634b"
+    },
     "surface": [
       "skills/plan-implement/SKILL.md",
       "skills/plan-implement/fixtures.json",
@@ -596,8 +636,8 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "34a7c11f3f421b99aac6dd21ba5e460648a6725f44c8849ea35bbfbdd9615dc1",
-    "verified": "2026-08-03"
+    "surface_sha256": "914bd9ea8731ce613d4e0de35812c35c1c28113f8fa869a490638dbdef2f34dc",
+    "verified": "2026-08-04"
   },
   "plan-reviewer": {
     "file_sha256": {
@@ -606,13 +646,23 @@
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
       "skills/plan-reviewer/references/review-dimensions.md": "326db4f76dda4577fdea158b4967c0aefc9fe9fe7cd2569321e3d078e35c033c",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
-      "skills/shared/references/codex-integration.md": "a7f9b3974df7eeb1927138fb3a94c00aa79e17b3d0bbf33f12a0f050cd2f2a5e",
-      "skills/shared/references/design-principles.md": "a5eeeda803c0bad12d25a6cca081608966db95177445aef73b00fd81cac83265",
-      "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
+      "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
+      "skills/shared/references/design-principles.md": "d7cfeaad478b233e5daf502ad12ab8296e8050a010d3ba2c467c91c45ac7ed49",
+      "skills/shared/references/orchestration-patterns.md": "9672c4f21d72957d8c2cfec1673af412de49fc8634d2fe2ece39121d05d4779b",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c"
     },
-    "note": "#201 作業4-1: quote-not-load 適用。規則本文は一字不変でインライン引用 + provenance マーカー化のみ（実行時ロード対象から外しただけ）。fixtures の要件文が該当規則の記述位置に依存しないことを grep で確認済み",
-    "result": "accepted-without-run",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "result": "pass",
+    "structural_sha256": {
+      "skills/plan-reviewer/SKILL.md": "e592fa4f8f42370a3cbe1f9f927bd55b7af7674e14e52ceab398ed8b7fe4cf08",
+      "skills/plan-reviewer/references/output-format.md": "01ea67bdf460860ba93459c084bb26dcd9e817217fb4b8bac07ae852e7ae22a7",
+      "skills/plan-reviewer/references/review-dimensions.md": "175509f8a9e48fc3a85cfa700c402e32c6f05e5b5718673672c11c2d5760c80b",
+      "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
+      "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
+      "skills/shared/references/design-principles.md": "9b90272bdb55a9530723fce10ebb30f46a64bfde0101cd547129efb7f8735e20",
+      "skills/shared/references/orchestration-patterns.md": "2abc40814ffa144d4cdad8ca5ef33c4d21471f28dc77c0bd89cf8efe9f5a25d0",
+      "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4"
+    },
     "surface": [
       "skills/plan-reviewer/SKILL.md",
       "skills/plan-reviewer/fixtures.json",
@@ -624,38 +674,52 @@
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md"
     ],
-    "surface_sha256": "1bc880d4e4fb3bc6fc8af74080c9d2ebe41d72c472ae491f95feb508edf064f4",
-    "verified": "2026-08-03"
+    "surface_sha256": "0feb192e0ac6f29d9562c1f83e52da50798f962c981cfc5d2de76a858f792022",
+    "verified": "2026-08-04"
   },
   "problem-solving": {
     "file_sha256": {
-      "skills/problem-solving/SKILL.md": "406850dc04a82af239124802bfb42a8d13a831b1e7302d322e7430879d6c6997",
+      "skills/problem-solving/SKILL.md": "aa652d572b158e57682dc1b44304afc341fbe5644d72c570c4228571d875c3ab",
       "skills/problem-solving/fixtures.json": "805584fb1dacbf7e18fac4fd53cc323faa0db29317f7f814514cc7da1f4d645c"
     },
-    "note": "process 経路（claude-exec バックエンド）で全 3 シナリオを実行し critical 全 ○；外部からの状況照会 0 回",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
     "result": "pass",
+    "structural_sha256": {
+      "skills/problem-solving/SKILL.md": "13944e51a89ac30f9e71b7ac4517e70c000e40e5e24c0900b5ae2f17f0990150"
+    },
     "surface": [
       "skills/problem-solving/SKILL.md",
       "skills/problem-solving/fixtures.json"
     ],
-    "surface_sha256": "2b3bc1c24590809a4db7e0874d03335b28bcd1fe55114835eb05b6c80124d728",
-    "verified": "2026-07-27"
+    "surface_sha256": "019eead20190c69a6574c3ec0d5aa270032130964b5b754ffcb4f33d1bfd7ec4",
+    "verified": "2026-08-04"
   },
   "refactor": {
     "file_sha256": {
-      "skills/refactor/SKILL.md": "7cdda2a58cd20dbf572d47c60616da0c1c8c4edd7f9bf87b7ef9885759b0f3f7",
+      "skills/refactor/SKILL.md": "bd48ab78c16a9abbea3923348c4be4d5a769ebda41f7f1216a86b668e1921d06",
       "skills/refactor/fixtures.json": "92339ba7db3548c4137b28dc2739a1673d3d158fb9af454993db68dd07ff8cee",
       "skills/refactor/references/behavior-preservation-checks.md": "35833e2e68e1b2a550ab12af4985e90a416642193d0d6881c9704ee5c8929284",
       "skills/refactor/references/refactoring-catalog.md": "90cb3d767e3f0c432c80334dc0f0bf56a59b04777e78d909bd4e60fbc2bf5569",
       "skills/refactor/references/similarity-detection.md": "a4ef8d314ff0bbeb89126d469eb1c3564b045dec08c4abfed9801ed258f6af33",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
-      "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
+      "skills/shared/references/orchestration-patterns.md": "9672c4f21d72957d8c2cfec1673af412de49fc8634d2fe2ece39121d05d4779b",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
-      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184"
+      "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c"
     },
-    "note": "#201: SKILL.md line-8 の artifact-store 参照を consumer contract (artifact-paths.md) へ張り替えのみ。消費側意味論（namespace/初期化/gitignore 不変条件）は contract 側に逐語保存、fixtures の要件は挙動（.agents/artifacts 配下への書き込み等）を検証しリンク先には依存しないことを確認済み",
-    "result": "accepted-without-run",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "result": "pass",
+    "structural_sha256": {
+      "skills/refactor/SKILL.md": "5b5d3e20d035bbf202bcf3fb1881068918e0fa6bb7fa8e4d98d8d486d707d4ba",
+      "skills/refactor/references/behavior-preservation-checks.md": "87725d6ce7a1b34f4c8ed3d92c88011ccfb9e236298e006613aea1fe3c0ec71f",
+      "skills/refactor/references/refactoring-catalog.md": "d9a175b95b8b2ca8e41aafc7e06bebcb26496dfada2705cbadafe76ca262a85c",
+      "skills/refactor/references/similarity-detection.md": "801a59b6e9519866fbf9aeb5d86faba16845825378ef9e4fd2757097d6db9312",
+      "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
+      "skills/shared/references/execution-context.md": "cf213a8a2c15855c4147e01fd5bd524afa8007f51f4b68afb0faa38f53506d50",
+      "skills/shared/references/orchestration-patterns.md": "2abc40814ffa144d4cdad8ca5ef33c4d21471f28dc77c0bd89cf8efe9f5a25d0",
+      "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
+      "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd"
+    },
     "surface": [
       "skills/refactor/SKILL.md",
       "skills/refactor/fixtures.json",
@@ -668,8 +732,8 @@
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "70957711abea4a447a89d82f7a49e080842d86707c5efa51529370d12c0d749d",
-    "verified": "2026-08-03"
+    "surface_sha256": "6e3a5b325175762c619cb0bfc8a93ee94f9a23be01cb49dd65768d9253e83e00",
+    "verified": "2026-08-04"
   },
   "skill-reviewer": {
     "file_sha256": {
@@ -680,13 +744,13 @@
       "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
       "skills/shared/references/skill-repository-profile.md": "fafc81d7ce71468606f3fd3c281b8f3a926dc3f0f48fcd221516720bf6c2fefe",
       "skills/skill-regression/scripts/ledger.py": "1a8139caa666d495f6628655e3f16f6ef19835b1d93b1f3c1f396743bc6df347",
-      "skills/skill-reviewer/SKILL.md": "1dae27c5e1048d50e76925ce8d7b1760019bf5ee984a881cdba68630d5da5e31",
+      "skills/skill-reviewer/SKILL.md": "e6d09f4bfa4201780f9b0724a63f1605826959226ba15c84c3efd64b0dbe9d85",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "db06e7e49c22d1eb0b4725304b4858152c4f0577fa1df0234d0a189f33c72bda",
       "skills/skill-reviewer/references/output-contract.md": "7cd2fc72d01be97efab8fa5b0302de986e0ffec38fd4dadbfc2282f9e1982b81",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "process-queue(Sonnet) 3/3 pass。sr-001は権限グラント試走を兼ねる。3本ともvalidate_review_output.py exit 0の実出力で判定",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
     "result": "pass",
     "structural_sha256": {
       "skills/shared/references/coverage-ledger.md": "f8d5f2a4c845758b1cd6436a931a74ac05af93f30391791b5ea15535e68d0579",
@@ -695,7 +759,7 @@
       "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
       "skills/shared/references/skill-authoring.md": "01e3fba72d34b8cffee48dda5e6ae0c4f5255326a9bc577129e88eeb7e5da08e",
       "skills/shared/references/skill-repository-profile.md": "2cb1fb93cb2af137f6e63400d7da8014a06b378e4daf224defe3f706809ac558",
-      "skills/skill-reviewer/SKILL.md": "804205da3a10cd86d613599abc8dddaeb45eba271536ffebfbc691d8073c7a51",
+      "skills/skill-reviewer/SKILL.md": "4dbdd6eda5a292567adc7dbefb5803449c674567ea102c3d7033007cfae3b1a9",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "140524c30eafb57aeb4340c2e6ffdbebc0bdd95f972b1303c70b3232f9a7caae",
       "skills/skill-reviewer/references/output-contract.md": "d642bfb128a8670450890607001eb91ca0dcde6faee720b04f947912ffcc800a"
     },
@@ -713,22 +777,31 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "55ea24b6e3f056560e9677d0876021c93c2718e9d10a9c81f248f72326c836b2",
+    "surface_sha256": "b2c8ac9008f03efc3a80898e1ab308738bbc50c930502ebc57dcdafc3477bc12",
     "verified": "2026-08-04"
   },
   "sweep-fix": {
     "file_sha256": {
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
-      "skills/shared/references/orchestration-patterns.md": "36846861b3f4f5c6859fdce175d5e29a1220374f557f3efc835656724b124a94",
+      "skills/shared/references/orchestration-patterns.md": "9672c4f21d72957d8c2cfec1673af412de49fc8634d2fe2ece39121d05d4779b",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
-      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/sweep-fix/SKILL.md": "bc33d9ab675fac2e4a502371a840083b0f4970315020f8189582b04c57182806",
+      "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
+      "skills/sweep-fix/SKILL.md": "b15e3fe1ccb9619a3125212714edfc2f00da12b364f0046eb3fdb1c9f08d39d8",
       "skills/sweep-fix/fixtures.json": "5406b7dba570b6294cdd9e978fc618eb2fa8c0e504ef014438853e37d0338b88",
       "skills/sweep-fix/references/context-verification.md": "1e835b97a51ea34723c6b20f23a16b0c3e690a32316208dd0a1ec91c50b07104",
       "skills/sweep-fix/references/pattern-extraction.md": "9f4c15f68c82b80c7d97ee28010270f6adbd65266bf7df1ca980f7871364ffa8"
     },
-    "note": "#201 作業4-1: quote-not-load 適用。規則本文は一字不変でインライン引用 + provenance マーカー化のみ（実行時ロード対象から外しただけ）。fixtures の要件文が該当規則の記述位置に依存しないことを grep で確認済み",
-    "result": "accepted-without-run",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "result": "pass",
+    "structural_sha256": {
+      "skills/shared/references/execution-context.md": "cf213a8a2c15855c4147e01fd5bd524afa8007f51f4b68afb0faa38f53506d50",
+      "skills/shared/references/orchestration-patterns.md": "2abc40814ffa144d4cdad8ca5ef33c4d21471f28dc77c0bd89cf8efe9f5a25d0",
+      "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
+      "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd",
+      "skills/sweep-fix/SKILL.md": "a378ea262319ea60f39a76d192a0d5a11527e20146501e91582d46c647dc4087",
+      "skills/sweep-fix/references/context-verification.md": "889915c992c7438890a373688099edb7945488552c603a29ab5ca9663d4220d2",
+      "skills/sweep-fix/references/pattern-extraction.md": "b47311be6288e014c8ff65b34a40eb649f685fc7acf1f3f8bade865d1529171a"
+    },
     "surface": [
       "skills/shared/references/execution-context.md",
       "skills/shared/references/orchestration-patterns.md",
@@ -739,19 +812,25 @@
       "skills/sweep-fix/references/context-verification.md",
       "skills/sweep-fix/references/pattern-extraction.md"
     ],
-    "surface_sha256": "6c28b37471452c0b576dd90ed81ed096f6c3114383cb7a9de6699b1fb252442b",
-    "verified": "2026-08-03"
+    "surface_sha256": "4a247c16c5bbd8187422f0997da911e4886f20d46b3b0c4f5f69cb5ab8247f91",
+    "verified": "2026-08-04"
   },
   "systematic-debugging": {
     "file_sha256": {
-      "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
-      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/systematic-debugging/SKILL.md": "9a16180e43476a3b83f0d1f92769607f94ef4c4222555899c82d5a495ed6ca49",
+      "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
+      "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
+      "skills/systematic-debugging/SKILL.md": "22256e62844c68a065b0a9a040f0a3de9d4531882d543418e322fd85e1acb353",
       "skills/systematic-debugging/fixtures.json": "3581f610b0b790518266ab8be0e3375bed56165386767c29740cbc681523a99f",
       "skills/systematic-debugging/references/root-cause-tracing.md": "27fb3aa57781e5fc843a459ab3ec53343a18fb979cd4525010603c2353ccdaef"
     },
-    "note": "Phase 3.2 を検証プローブ原則+fallback revert の二段構えに改訂（Iron Law との衝突を解消）",
-    "result": "accepted-without-run",
+    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "result": "pass",
+    "structural_sha256": {
+      "skills/shared/references/tdd-contract.md": "b562a71a8064dfaca6c40b2c6e81efbed397ac03acf9ec6f835f45930703d3fe",
+      "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd",
+      "skills/systematic-debugging/SKILL.md": "fdc0b667d92c63a795390fd3e056a5ee7931c4fb4f4550760eae5efd74d9d313",
+      "skills/systematic-debugging/references/root-cause-tracing.md": "2f870924745a4b5280c403e9663545ea339f4a8a9f5ccec2321d1799658e0ee4"
+    },
     "surface": [
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md",
@@ -759,20 +838,27 @@
       "skills/systematic-debugging/fixtures.json",
       "skills/systematic-debugging/references/root-cause-tracing.md"
     ],
-    "surface_sha256": "7af765e5ac423a35a22b61128433f591dc0a67a18d84896e29fc4b90f8d16c76",
-    "verified": "2026-07-28"
+    "surface_sha256": "a79a56473343c29209ee089b6eda8715c1644087b7783def6fc3cbf9bf0300ef",
+    "verified": "2026-08-04"
   },
   "test-driven-development": {
     "file_sha256": {
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
-      "skills/shared/references/tdd-contract.md": "858c119b7dfa29f4fee06254e051693f770652e038599c976b2fd9924f093f89",
+      "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
-      "skills/shared/references/verification-gate.md": "a39e6753c96bdb16d3b3b6a05a4ee941f53a34b9580e14184ab96f6637d2b184",
-      "skills/test-driven-development/SKILL.md": "6de1aa0a3100dd4b8dcea152879ae996820b38d88d64e5d42e7a9d2409d027ef",
+      "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
+      "skills/test-driven-development/SKILL.md": "1dd2daf267e5a03ece6ae5948c47edc20a761efa3809a331a54c99f101e4ab73",
       "skills/test-driven-development/fixtures.json": "ad73bf8a0daf85dad9eabdb049e48d449310be0db1ba0823a26aaa1376fb3ad4"
     },
-    "note": "execution-context.md contract link added; no behavioral change, existing headless definitions replaced with shared contract reference",
-    "result": "accepted-without-run",
+    "note": "process-path run (r2 batch + r3 clean rerun); td-001/002 pass on clean trees, td-003 clean-rerun pass (initial fail was a malformed verdict token; contaminated rerun excluded from evidence)",
+    "result": "pass",
+    "structural_sha256": {
+      "skills/shared/references/execution-context.md": "cf213a8a2c15855c4147e01fd5bd524afa8007f51f4b68afb0faa38f53506d50",
+      "skills/shared/references/tdd-contract.md": "b562a71a8064dfaca6c40b2c6e81efbed397ac03acf9ec6f835f45930703d3fe",
+      "skills/shared/references/testing-anti-patterns.md": "e31cc2487959245c1c98e60cfbdc303990af03d306eedd1b10da6b264d3de829",
+      "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd",
+      "skills/test-driven-development/SKILL.md": "3ce64a8dc50bf65949106ddac6c83c03b02499ba5359357bcf72c764f26b62a3"
+    },
     "surface": [
       "skills/shared/references/execution-context.md",
       "skills/shared/references/tdd-contract.md",
@@ -781,7 +867,7 @@
       "skills/test-driven-development/SKILL.md",
       "skills/test-driven-development/fixtures.json"
     ],
-    "surface_sha256": "47f2b1d8cde294e25aaa1a11ccfcbc52d5b07c23e0cfc770133b29fc56a1dad3",
-    "verified": "2026-07-29"
+    "surface_sha256": "8167761473b04bf83db9446df68cb3d0441dd2ebb47f9c505ff48b0d009184d3",
+    "verified": "2026-08-04"
   }
 }

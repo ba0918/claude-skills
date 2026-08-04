@@ -154,9 +154,7 @@ Receive the implementation result.
    - A review round that produced **zero findings is not counted as an iteration** — an iteration is a round trip that
      actually incorporated a fix. A review with nothing to fix ends the loop instead of consuming the iteration budget
 
-### Step D: Progress Update and Commit (mandatory — must not be skipped)
-
-**Always do this on completing each step. You must not skip it.**
+### Step D: Progress Update and Commit (mandatory on completing each step)
 
 1. Record progress in the runtime progress file (see
    [runtime-progress.md](../shared/references/runtime-progress.md) for format and rules).

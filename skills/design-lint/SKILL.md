@@ -86,7 +86,6 @@ The script is self-contained (standard library only, no dependencies), so it can
 - The lint **only reads** files. It performs no fixes (the script writes nothing other than
   saving the report to `--output`)
 - Detection is regex-based; no AST parser is used (this keeps it language-independent)
-- The agent never reproduces the rule logic in its head. Always run the script
 - Values inside comments are ignored (the script handles this)
 - `node_modules/` is always excluded
 - `.design/` itself is out of lint scope

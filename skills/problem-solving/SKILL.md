@@ -17,17 +17,15 @@ kind of impasse, guide reasoning at the conceptual level.
 
 ## Hard constraints
 
-### Forbidden operations (never perform, under any circumstances)
+### Forbidden operations (this skill is conceptual-only; it produces no artifacts)
 
 - Editing files
 - Creating or overwriting files
-- Editing notebooks
 
 ### Forbidden behaviour
 
 - No code generation, no implementation proposals (pseudo-code for explaining a concept is
   fine)
-- Never say "let's implement it" or "I'll write the code"
 - Stay on conceptual discussion
 
 ### Permitted operations

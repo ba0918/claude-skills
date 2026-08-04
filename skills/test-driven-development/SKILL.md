@@ -164,23 +164,6 @@ Result: ALL PASS ✅
    ══════════════════════════════════════
    ```
 
-## Error Handling
-
-### Test framework detection failed
-
-Ask the user for the test command. If the answer is "none", finish the session.
-
-### Test execution timeout (60 seconds or more)
-
-Abort the test, ask the user, and present three choices:
-1. Change the test command
-2. Ignore the timeout and continue
-3. Abort the session
-
-### Runtime error during test execution
-
-Display the error message and warn "There may be a problem with the test environment". Attempt a fix, then re-run the test.
-
 ## References
 
 - [../shared/references/tdd-contract.md](../shared/references/tdd-contract.md) — the shared TDD contract

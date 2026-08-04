@@ -14,7 +14,7 @@ A meta-skill that measures and improves, as a property of description quality, t
 ```
 trigger-eval                # Phase 0→6 over this repository's skills/
 trigger-eval --dir PATH     # any flat skill directory
-trigger-eval --user-scope   # ~/.claude/skills
+trigger-eval --user-scope   # the runtime's user-scope skill directory (resolved by collect_descriptions.py)
 trigger-eval --no-e2e       # skip the Tier 2 live-firing check (it runs by default)
 trigger-eval --selection-only  # measure Tier 1 in selection mode only (the default is selection + autonomous)
 ```
@@ -27,7 +27,7 @@ No command is created (the skills-first policy; being single-workflow, it needs 
 |----|------|--------|
 | Phase 1.5 static collision pre-pass | Compute all pairwise collision candidates deterministically from the vocabulary Jaccard of the descriptions (`static_collisions.py`, no LLM) | Nearly zero |
 | Tier 1 selection simulation | Pass a bias-free subagent only the description list plus a batch of fictional instructions, and have it choose the skill to use (or none) as JSON | Low (a lightweight model, ≤20 cases per call, dispatched in parallel) |
-| Tier 2 E2E real-triggering verification | Pass the fictional instructions raw to `claude -p` and detect the Skill tool_use from the stream-json. **Run it in a throwaway git worktree** | High (a total cap of 6 sessions, enforced by a driving-side shell loop) |
+| Tier 2 E2E real-triggering verification | Pass the fictional instructions raw to a fresh non-interactive agent session and detect the skill invocation from its execution trace (invocation mechanics: [references/judge-protocol.md](references/judge-protocol.md)). **Run it in a throwaway git worktree** | High (a total cap of 6 sessions, enforced by a driving-side shell loop) |
 
 The detailed contracts for judging and aggregation are split into reference material (progressive disclosure):
 
@@ -49,7 +49,7 @@ python3 skills/trigger-eval/scripts/collect_descriptions.py --dir skills \
 - Turn the `{name, description}` list into JSON. With no argument, the current repository's `skills/*/SKILL.md`. Apply it generally with `--user-scope` / `--dir PATH`.
 - **Normalize the skill names to the bare name with the plugin prefix removed**, and use that same namespace thereafter for the cases' correct labels, the judging choices, and the aggregation.
 - **Duplicate bare names are fail-fast** (v1 does not support duplicate namespaces).
-- **Out of scope for v1**: the hashed nested structure of the plugin cache (`~/.claude/plugins/cache/<mp>/<plugin>/<hash>/skills/`). Add the glob when it becomes necessary.
+- **Out of scope for v1**: the hashed nested layout of the runtime's plugin cache directory. Add the glob to `collect_descriptions.py` when it becomes necessary.
 
 ### Phase 1: Harvest real-data seeds (optional)
 
@@ -139,7 +139,7 @@ Emit to `.agents/tmp/trigger-eval-{ts}/report.md`:
 - The metric trajectory / the top confusions (**only the non-zero cells and the top N pairs, not a full matrix dump**, listing both the raw value and the normalized rate `confusion(A,B)/related_cases(A,B)`)
 - **The selection / autonomous modes side by side** (selection only under `--selection-only`). Place selection as the primary metric and autonomous as a reference series, and note the divergence between them as a salience signal. **Never emit a mixed value**
 - The revision diffs / the Tier1↔Tier2 divergence rate / the holdout judgment
-- **Candidate pairs for merging or redesigned separation** (only pairs whose measured confusion does not resolve after two revisions — never the static pre-pass ranking, which does not predict confusion; #81)
+- **Candidate pairs for merging or redesigned separation** (only pairs whose measured confusion does not resolve after two revisions — never the static pre-pass ranking; see Phase 1.5)
 - Execution metadata (the judging model / the date / the sha256 of `cases.json` and `cases_holdout.json` / the stability sample ledger)
 
 **What is retained is report.md / cases.json / cases_holdout.json / the metrics JSON of each iteration** (the anchors for reproduction and cross-run comparison). **The harvest files containing raw prompt bodies (the `--capture-prompts` output) are deleted.** Prompt deletion of `trigger-eval-*` directories older than 30 days. The failure examples put into report.md are **only cases that passed the anonymization inspection** (transcribing a raw seed is forbidden).
@@ -151,7 +151,7 @@ Leave no dimension unbounded:
 1. Judging batches of ≤20 cases per call, plus the judgments==cases verification
 2. Case generation of ≤10 skills per call, plus the count verification
 3. The `max_iterations = 5` hard cap on the revision loop, plus the regression guard
-4. JSONL is pre-filtered by mtime and streamed line by line; Tier 2 is 6 sessions × (`--max-turns 2` + a 180s timeout)
+4. JSONL is pre-filtered by mtime and streamed line by line; Tier 2 is 6 sessions × (a 2-turn cap + a 180s timeout)
 
 ## Preventing rationalization
 

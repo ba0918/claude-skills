@@ -41,8 +41,8 @@ The orchestrator copies the store-relative pinned plan into the satellite before
 delegation and passes a resolved context. Delegates update the pinned plan and other permitted
 per-entity artifacts. They MUST NOT update main-tree state or satellite singleton state.
 The main orchestrator alone composes `status.md`, `session-history.md`, and derived indexes.
-Issue #93 supersedes #92 only for progress transport: file harvest is authoritative, while
-#92's ingress and singleton-suppression requirements remain normative.
+File harvest is authoritative for progress transport; the ingress and singleton-suppression
+requirements above remain normative.
 
 ## Transactional lifecycle
 

@@ -61,11 +61,10 @@ The summary block satisfies the following.
    If there are none, state "To confirm: none" explicitly (do not omit it).
 3. **It must be a plain, digestible explanation** — not a pile of technical terms, internal abbreviations, or file paths;
    write it in words that let someone who has not read the artifact grasp "so what is it" in one read.
+   Do not settle for over-compressed fragments or a list of noun-ended phrases.
    This is the **acceptance criterion** for the summary, and the before/after worked example below
    anchors it so implementers do not drift into subjectivity.
 4. **An upper bound of about 10 lines** — bloat defeats the purpose. Ten lines is **an upper bound, not a lower bound**.
-5. **A digestible explanation is a first-class requirement** — the same point as 3. Do not settle for
-   over-compressed fragments or a list of noun-ended phrases.
 
 ## Shared presentation and placement (summary-first)
 
@@ -132,6 +131,6 @@ completion report heavy).
 
 ## Being referenced from the plan skills (the dependency-inversion anchor)
 
-The completion display of the plan skills (plan-create / plan-implement / cycle) is implemented by
-agreement-ledger plan (`20260721082248`) Phase B2 **by referencing this contract**.
-This contract is the canonical source for the summary format, and B2 is subordinate to it.
+The completion display of the plan skills (plan-create / plan-implement / cycle) is implemented
+**by referencing this contract**. This contract is the canonical source for the summary format,
+and the plan skills' completion displays are subordinate to it.

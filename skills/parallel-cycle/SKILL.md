@@ -388,12 +388,10 @@ For each cycle in the group, **in parallel**:
    successfully collected failed cycle is also preserved; collected state is not published unless
    its branch later merges and verifies.
 
-   Every preserved, conflict, or interrupted terminal path MUST use the shared six-line structured
-   diagnostic formatter from the workspace-isolation contract. Use
-   `reason_code=SATELLITE_PRESERVED` for a preserved satellite,
+   Use `reason_code=SATELLITE_PRESERVED` for a preserved satellite,
    `reason_code=HARVEST_CONFLICT` for an artifact conflict, and
-   `reason_code=HARVEST_INTERRUPTED` when harvest does not complete. Do not hand-compose a shortened
-   message: all six fields, including the `{satellite_run_id}` recovery command, are required.
+   `reason_code=HARVEST_INTERRUPTED` when harvest does not complete
+   (emitted through the §Recovery diagnostic formatter, as every terminal path is).
 
 5. **Do not remove the worktree here.** Removal is Step 3.4's decision, and only for a cycle that
    merged cleanly — a worktree torn down in Phase 2 is unavailable when Phase 3's post-merge test
@@ -422,9 +420,6 @@ delegate — neither the plan-generating subagents of Step 0.3 nor the cycles of
 are read-modify-write, and every delegate that touches them decides on its own which session to
 archive. The orchestrator performs a single consolidated update in Phase 4.
 
-The rule lives here, but it only takes effect where it is **said to the delegate**: it is written
-into the Step 0.3 delegation prompt and the Phase 2 one. A rule stated only in this section reaches
-no one who is about to write the file.
 
 ## Phase 3: Merge
 

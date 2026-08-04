@@ -11,8 +11,7 @@ subagent_type: "codex:codex-rescue"
 mode: bypassPermissions (or default)
 ```
 
-**Parallel execution**: achieved by issuing several Agent invocations within the same message.
-`run_in_background` is a parameter of the Bash tool and does not apply to the Agent tool.
+**Parallel execution**: achieved by dispatching several delegations concurrently in one batch.
 
 ### Prompt structure
 
@@ -28,7 +27,7 @@ The value of a second opinion lies in its independence. Without the following it
 
 | May be passed | Must not be passed |
 |-----------|----------------|
-| The artifact (plan file / diff / conversation text) | Your own (Claude-side) review results or list of findings |
+| The artifact (plan file / diff / conversation text) | Your own (caller-side) review results or list of findings |
 | The constraints and requirements to satisfy (specification, user instructions) | Your own conclusion or verdict ("I think it is fine, but please check") |
 | The output-format specification | Self-assessments such as "this should be…" / "this is correct" |
 
@@ -57,7 +56,7 @@ Check the task result of the Codex agent and handle it by these rules:
 |------|-----------|
 | Success | Integrate the result into the existing review (after deduplication) |
 | Error | Show a warning and continue with the existing processing only |
-| Timeout | brainstorm uses 10 seconds; others depend on the Agent tool's default timeout |
+| Timeout | brainstorm uses 10 seconds; others depend on the delegation mechanism's default timeout |
 | Malformed response format (JSON parse error, etc.) | Show a warning and continue with the existing processing only |
 
 ### Warning message templates
@@ -68,13 +67,13 @@ Check the task result of the Codex agent and handle it by these rules:
 
 On the first failure in brainstorm:
 ```
-⚠️ Codex unavailable — proceeding with Claude only
+⚠️ Codex unavailable — proceeding without a second opinion
 ```
 
 ## Security
 
 - Limit the context passed to Codex to **the plan file / diff / conversation text**
-  - Exception: in a fix-loop re-review (github-issue and similar), "Codex's own previous findings + the fix diff" may be passed. It is the context needed to confirm that the findings were addressed, and it is not the target of bias control (a Claude-side conclusion)
+  - Exception: in a fix-loop re-review (github-issue and similar), "Codex's own previous findings + the fix diff" may be passed. It is the context needed to confirm that the findings were addressed, and it is not the target of bias control (a caller-side conclusion)
 - When passing source code directly (codebase-review), exclude the following from `target_files`:
   - Files covered by `.gitignore`
   - Secret files such as `.env`, `credentials.*`, `*.key`, `*.pem`
@@ -90,5 +89,5 @@ On the first failure in brainstorm:
 
 ### Sounding-board skills (brainstorm)
 
-- Append Codex's opinion to Claude's response as a `💡 Codex's perspective:` section
-- Claude produces an integrated answer that takes Codex's response into account
+- Append Codex's opinion to your own response as a `💡 Codex's perspective:` section
+- The caller produces an integrated answer that takes Codex's response into account

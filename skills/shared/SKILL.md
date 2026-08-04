@@ -7,7 +7,7 @@ description: Shared contracts, references, and scripts used by other claude-skil
 
 Shared contracts, references, and utility scripts used by other skills in the claude-skills collection.
 
-**This skill does not provide standalone functionality.** It exists to support the `../shared/references/` relative path convention used by 33+ skills in this collection.
+**This skill does not provide standalone functionality.** It exists to support the `../shared/references/` relative path convention used by the other skills in this collection.
 
 ## Cross-Platform Compatibility
 

@@ -18,9 +18,9 @@ If code was written before the test, delete it and start over. No exceptions.
 ## The RED-GREEN-REFACTOR cycle
 
 ```
-RED    → write one failing test → confirm it fails (run it with Bash)
-GREEN  → write the minimum code that passes the test → confirm everything passes (run it with Bash)
-REFACTOR → improve while the tests stay green → confirm everything passes (run it with Bash)
+RED    → write one failing test → confirm it fails (run the test command in a shell)
+GREEN  → write the minimum code that passes the test → confirm everything passes (run the tests in a shell)
+REFACTOR → improve while the tests stay green → confirm everything passes (run the tests in a shell)
 ```
 
 ### RED — write a failing test
@@ -55,16 +55,6 @@ REFACTOR → improve while the tests stay green → confirm everything passes (r
   Recording only "REFACTOR done" without stating what was changed, or what made a change unnecessary, is not acceptable
 
 **Required**: run the tests and **confirm that everything still passes**.
-
-## Rationalization table (top 5)
-
-| Excuse | Rebuttal |
-|--------|------|
-| "Just skip it this once" | That is rationalization. TDD has no exceptions |
-| "I already know it is correct" | Confidence is not evidence. Prove it with a test |
-| "I will write the test later" | "Later" is a synonym for "never" |
-| "This code is hard to test" | Hard to test = bad design. Fix the design first |
-| "It is a prototype, so it needs no tests" | A prototype turning into production is the classic outcome |
 
 ## Red Flags (signs of a TDD violation)
 

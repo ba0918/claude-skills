@@ -208,8 +208,8 @@ The three-stage defence (lockfile + selected-transport update + re-verify) is hi
 
    - `default_branch` is resolved through the API on every run; never hardcode `main`
    - Branching from `origin/${default_branch}` makes the branch point deterministic whatever the
-     primary checkout's HEAD happens to be. Branching from HEAD is exactly how two unrelated
-     commits from another session's feature branch nearly leaked into a PR (issue #83)
+     primary checkout's HEAD happens to be. Branching from HEAD is how unrelated
+     commits from another session's feature branch can leak into a PR
    - The worktree directory and the branch share the `gh-issue-{N}-{timestamp}` name, so the
      orphan detection of [`references/cleanup-spec.md §Worktree Naming Convention`](references/cleanup-spec.md#worktree-naming-convention)
      recovers it with no changes
@@ -257,14 +257,8 @@ The three-stage defence (lockfile + selected-transport update + re-verify) is hi
    `recovery_command=/claude-skills:artifacts recover --run-id {satellite_run_id}`. The same orphan detection is
    only a discovery safety net when the process dies; it does not bypass the shared cleanup gate.
 
-**Isolation verification procedure** (how to confirm the contract above holds): in the primary
-checkout, switch to any non-default branch that is ahead of the default branch by unrelated commits,
-then run `cycle N` and confirm all three of:
-
-1. `git -C <worktree> log origin/${default_branch}..HEAD --oneline` lists only commits made by this
-   cycle — none of the unrelated commits appear
-2. the resulting PR diff (`get_pr_diff(<PR>)`) contains no changes outside the plan's scope
-3. after the run, the primary checkout still sits on the same branch and HEAD as before it
+To confirm the contract above holds, use the manual check in
+[references/isolation-verification.md](references/isolation-verification.md) (not executed on the cycle path).
 
 #### 5. Creating the draft PR
 
