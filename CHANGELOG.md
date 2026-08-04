@@ -15,6 +15,10 @@ claude-skills プラグインのバージョン履歴。
 
 - `regression_queue.py rerun` を新設。未完了 unit の work dir を fixture baseline へ再実体化してから再走し、fixture が build 後に変わっていれば拒否する（#250）
 
+### Changed: fixture カバレッジを階層宣言制にし「未着手」と「意図的 static-only」を区別
+
+- ledger に static-only 階層（23 スキル・理由必須）を追加。未保有は parallel-cycle の 1 件だけになり、基準は fixture-schema.md § Coverage tiers に明文化（#244）
+
 ## 1.73.0
 
 ### Fixed: release workflow の初回経路が draft 作成前のローカルタグで必ず落ちる

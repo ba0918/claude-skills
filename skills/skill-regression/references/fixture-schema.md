@@ -153,3 +153,25 @@ For capability constraints (e.g. "Codex is unavailable"), write requirements in 
   into requirements. Take only the items describing properties of the artifact, not the implementation steps
 - **Hand-designed**: turn what the skill's description promises into requirements.
   When the description and the body diverge, fix the skill itself before turning it into a fixture
+
+## Coverage tiers
+
+Not every skill is meant to carry a `fixtures.json`. The ledger counts four buckets, and the
+distinction between the last two is a declaration, not an accident (#244):
+
+| Tier | Meaning | Where it is declared |
+|---|---|---|
+| **covered** | Behavioral: fixtures exist and the ledger tracks their verification | `skills/<name>/fixtures.json` |
+| **exempt** | The concept of behavioral verification does not apply (shared library, one-shot migration) | `ledger.py COVERAGE_EXEMPT` |
+| **static-only** | Deliberately held at static verification: skill-interface-audit + structural sha + trigger-eval | `ledger.py COVERAGE_STATIC_ONLY` |
+| **uncovered** | Behavioral verification is intended but not yet built | (the remainder) |
+
+Assignment rules:
+
+- A static-only declaration carries a mandatory reason — an unreasoned entry is the same as
+  silently dropping the skill from the count (the coverage-ledger Iron Law).
+- A skill that is *planned* to become behavioral but has no fixtures yet stays **uncovered**;
+  parking it under static-only would hide a gap behind the word "deliberate".
+- Gaining a `fixtures.json` promotes the skill to covered; remove it from
+  `COVERAGE_STATIC_ONLY` at that point (a unit test detects stale entries mechanically).
+- Tier assignment changes are adjudicated by a human, not inferred by the tooling.

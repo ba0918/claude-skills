@@ -221,7 +221,7 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 | `trigger-eval` | description の発火精度を実測・改善 |
 | `empirical-prompt-tuning` | テキスト指示の品質を実測・反復改善 |
 | `context-audit` | 指示ファイルの老朽化を監査 |
-| `skill-regression` | 共有契約の変更による回帰を検出 |
+| `skill-regression` | 共有契約の変更による回帰を検出（カバレッジは behavioral / static-only / exempt の宣言制。基準は [fixture-schema.md § Coverage tiers](skills/skill-regression/references/fixture-schema.md)） |
 | `skill-interface-audit` | SKILL.md の API 契約完備性を静的監査 |
 | `migrate-cycles-to-plans` | 旧 docs/cycles/ から .agents/artifacts/plans/ への移行（一回限りの移行専用） |
 

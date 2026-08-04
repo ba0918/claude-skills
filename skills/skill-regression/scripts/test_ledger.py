@@ -670,5 +670,65 @@ class TestCoverage(unittest.TestCase):
             self.assertTrue(reason.strip(), f"理由が空: {skill}")
 
 
+class TestCoverageTiers(unittest.TestCase):
+    """static-only 階層。「まだ書いていない」と「意図的に static 検証へ留める」を
+    台帳の上で区別する（#244）。"""
+
+    STATIC_ONLY = {"analyzer": "read-only 分析。static 検証で担保"}
+
+    def _repo(self, root, skills):
+        for name, has_fixtures in skills.items():
+            _write(root, f"skills/{name}/SKILL.md", "body")
+            if has_fixtures:
+                _write(root, f"skills/{name}/fixtures.json", "{}")
+
+    def test_counts_static_only_separately_from_uncovered(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root, {"a": True, "analyzer": False, "b": False})
+            cov = ledger.coverage(root, exempt={}, static_only=self.STATIC_ONLY)
+            self.assertEqual(cov["covered"], ["a"])
+            self.assertEqual(list(cov["static_only"]), ["analyzer"])
+            self.assertEqual(cov["uncovered"], ["b"])
+
+    def test_static_only_reason_is_carried(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root, {"analyzer": False})
+            cov = ledger.coverage(root, exempt={}, static_only=self.STATIC_ONLY)
+            self.assertEqual(cov["static_only"]["analyzer"],
+                             "read-only 分析。static 検証で担保")
+
+    def test_static_only_skill_that_gained_fixtures_counts_as_covered(self):
+        # 宣言リストの取り残しで behavioral 昇格済みスキルが二重計上されないこと
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root, {"analyzer": True})
+            cov = ledger.coverage(root, exempt={}, static_only=self.STATIC_ONLY)
+            self.assertEqual(cov["covered"], ["analyzer"])
+            self.assertEqual(cov["static_only"], {})
+
+    def test_shipped_static_only_list_has_reasons(self):
+        # 理由なしの宣言は「黙って落とす」ことと同じ（coverage-ledger の Iron Law）
+        for skill, reason in ledger.COVERAGE_STATIC_ONLY.items():
+            self.assertTrue(reason.strip(), f"理由が空: {skill}")
+
+    def test_shipped_tier_lists_are_disjoint(self):
+        overlap = set(ledger.COVERAGE_EXEMPT) & set(ledger.COVERAGE_STATIC_ONLY)
+        self.assertEqual(overlap, set())
+
+    def test_shipped_static_only_skills_all_exist(self):
+        # typo・改名の取り残しを機械検出する。存在しない名前の宣言は誰も守らない
+        root = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "..", "..", "..")
+        skills = ledger._all_skills(root)
+        missing = set(ledger.COVERAGE_STATIC_ONLY) - skills
+        self.assertEqual(missing, set())
+
+    def test_shipped_static_only_skills_have_no_fixtures(self):
+        # fixture を得たら behavioral 昇格 = リストから外す。残すと宣言が嘘になる
+        root = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "..", "..", "..")
+        stale = set(ledger.COVERAGE_STATIC_ONLY) & ledger._fixtures_skills(root)
+        self.assertEqual(stale, set())
+
+
 if __name__ == "__main__":
     unittest.main()

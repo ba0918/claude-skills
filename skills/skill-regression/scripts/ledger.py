@@ -223,6 +223,38 @@ COVERAGE_EXEMPT = {
         "資産化しても再実行されない",
 }
 
+# 意図的に static 検証（skill-interface-audit + structural sha + trigger-eval）へ
+# 留めるスキル（#244 裁定）。exempt（挙動検証の概念が無い）とも uncovered
+# （まだ書いていない）とも別の階層で、理由必須。fixture を得たら behavioral 昇格 =
+# ここから外す（取り残しはテストが機械検出する）。behavioral 予定のまま未着手の
+# スキル（parallel-cycle）はここに載せず uncovered に残す — 「意図的」の看板で
+# 欠落を隠さないため。
+COVERAGE_STATIC_ONLY = {
+    "artifacts": "store 管理の薄い入口。機構は artifact_store 実装側が担う",
+    "attack-review": "read-only 分析。出力が自由形式の報告で fixture 判定に馴染まない",
+    "codebase-review": "read-only 分析。出力が自由形式の報告で fixture 判定に馴染まない",
+    "design-generate": "デザイン系。成果物検証は design-validate ゲート側が担う",
+    "design-lint": "デザイン系。機械判定は lint 側にあり本文は入口の分岐のみ",
+    "design-scaffold": "デザイン系。生成物の整合は design-validate ゲート側が担う",
+    "design-validate": "検証ゲート自身。判定は機械 lint と rubric 側にある",
+    "doc-audit": "docs 整合スキル。判定は機械チェッカ側にある",
+    "doc-check": "docs 整合スキル。判定は機械チェッカ側にある",
+    "empirical-prompt-tuning": "メタ評価ハーネス。挙動は計測運用そのもので検証される",
+    "generate-review-rules": "read-only 分析。出力が自由形式で fixture 判定に馴染まない",
+    "goal-decomposition": "ループ配線の型検査スキル。static 検証で担保",
+    "goal-loop": "収束ループ機構。長時間実走が前提で fixture 実走の経済性に合わない",
+    "ledger": "人間との裁定セッションが本体で、非対話 fixture では構造的に測れない",
+    "loop-triage": "ループ配線の型検査スキル。static 検証で担保",
+    "mockup-diff": "デザイン系。視覚差分の検証は視覚テスト側が担う",
+    "review-deps": "read-only 分析。出力が自由形式の報告で fixture 判定に馴染まない",
+    "review-testing": "read-only 分析。出力が自由形式の報告で fixture 判定に馴染まない",
+    "skill-improve": "メタ評価ハーネス。挙動は計測運用そのもので検証される",
+    "skill-interface-audit": "static 検証の実施側。自身を fixture で測る循環になる",
+    "skill-regression": "回帰基盤自身。機構は scripts の unit テストで固定済み",
+    "spec-verify": "契約抽出・PBT 生成系。機構は clause lint と PBT 側で固定される",
+    "trigger-eval": "メタ評価ハーネス。挙動は計測運用そのもので検証される",
+}
+
 
 def _all_skills(root):
     """skills/ 配下の全スキル名（SKILL.md を持つディレクトリ）。"""
@@ -245,23 +277,30 @@ def _fixtures_skills(root):
     }
 
 
-def coverage(root, exempt=None):
-    """fixture 保有状況を {covered, exempt, uncovered, total} で返す。
+def coverage(root, exempt=None, static_only=None):
+    """fixture 保有状況を {covered, exempt, static_only, uncovered, total} で返す。
 
     `--check` は fixture を持つスキルだけを見る opt-in ゲートなので、全件合格しても
     「検証されていない領域がどれだけあるか」は表せない。covered と uncovered を
     構造的に区別するのは coverage-ledger 契約と同じ考え方
-    （skills/shared/references/coverage-ledger.md）。
+    （skills/shared/references/coverage-ledger.md）。static_only は「意図的に
+    static 検証へ留める」宣言で、uncovered（まだ書いていない）と区別して計上する。
     """
     exempt = COVERAGE_EXEMPT if exempt is None else exempt
+    static_only = COVERAGE_STATIC_ONLY if static_only is None else static_only
     skills = _all_skills(root)
     with_fixtures = _fixtures_skills(root)
     covered = skills & with_fixtures
     exempted = {s: exempt[s] for s in sorted(skills & set(exempt)) if s not in covered}
+    static = {
+        s: static_only[s] for s in sorted(skills & set(static_only))
+        if s not in covered and s not in exempted
+    }
     return {
         "covered": sorted(covered),
         "exempt": exempted,
-        "uncovered": sorted(skills - covered - set(exempted)),
+        "static_only": static,
+        "uncovered": sorted(skills - covered - set(exempted) - set(static)),
         "total": len(skills),
     }
 
@@ -351,7 +390,8 @@ def main(argv):
         print(
             f"✓ regression ledger: fixture 保有 {len(cov['covered'])} スキルすべて検証済み"
             f"（{breakdown}"
-            f" / 対象外 {len(cov['exempt'])} / 未保有 {len(cov['uncovered'])} "
+            f" / 対象外 {len(cov['exempt'])} / static-only {len(cov['static_only'])}"
+            f" / 未保有 {len(cov['uncovered'])} "
             f"/ 全 {cov['total']}）"
         )
         return 0
@@ -367,16 +407,20 @@ def main(argv):
             print(f"{skill}\tcovered")
         for skill, reason in cov["exempt"].items():
             print(f"{skill}\texempt\t{reason}")
+        for skill, reason in cov["static_only"].items():
+            print(f"{skill}\tstatic-only\t{reason}")
         for skill in cov["uncovered"]:
             print(f"{skill}\tuncovered")
         print(
             f"covered {len(cov['covered'])} / exempt {len(cov['exempt'])} "
+            f"/ static-only {len(cov['static_only'])} "
             f"/ uncovered {len(cov['uncovered'])} / total {cov['total']}"
         )
         if strict and cov["uncovered"]:
             print(
                 f"✗ fixture 未保有 {len(cov['uncovered'])} 件。capture ワークフローで"
-                f"資産化するか、COVERAGE_EXEMPT に理由付きで登録すること"
+                f"資産化するか、COVERAGE_STATIC_ONLY / COVERAGE_EXEMPT に理由付きで"
+                f"登録すること"
             )
             return 1
         return 0
