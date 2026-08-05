@@ -28,10 +28,15 @@ CLI:
       severity が contract-addition / prose-change で前回が実走 pass なら
       accepted-addition / accepted-prose として自動で区別記録する。
       --note は run の性質（照会回数・実行者が通った経路など）の申し送り）
-  python3 ledger.py --update SKILL --partial [--scenario ID]... [--note TEXT] [root]
+  python3 ledger.py --update SKILL --partial [--scenario ID]... [--note TEXT]
+                    [--semantic JUDGMENT.json] [root]
       部分再走。--scenario で指名した id を「今回実走して合格」として記録し、
       残りは前回結果の持ち越しを試みる。持ち越せないものがあれば更新ごと拒否
       して列挙する（= それらも再走が必要）。詳細は references/partial-rerun.md
+      --semantic は semantic triage の判定ファイル。影響ありシナリオのうち
+      unaffected 判定の分を accepted-semantic として記録する（形式・diff ハッシュ
+      束縛・較正ゲートを全件検査し、1 つでも欠ければ記録ごと拒否）。
+      詳細は references/semantic-triage.md
   python3 ledger.py --seed-scenarios SKILL [root]
       移行用ワンショット。stale でないエントリへ per-scenario 記録を埋める
   python3 ledger.py --remove SKILL [root]
@@ -446,13 +451,59 @@ def skill_result(scenario_records):
 
     実走していないシナリオが 1 つでも混ざる限り pass を名乗らせない。全件が
     実走 pass（持ち越しはその有効性を機械確認したもの）のときだけ pass。
+
+    実走 pass と accepted-semantic だけで構成されるなら accepted-semantic。
+    判定器の確度（較正済みの確率的判断）は機械の形状証明より下・人間の目視
+    accept より上でも下でもなく**別種**なので、他の accepted と畳まずに独立の
+    段を持たせる。判定器より確度の説明が付かない記録が 1 つでも混ざれば、
+    従来どおり accepted-without-run まで落ちる。
     """
     results = {rec.get("result") for rec in scenario_records.values()}
-    return RESULT_PASS if results == {RESULT_PASS} else RESULT_ACCEPTED_WITHOUT_RUN
+    if results == {RESULT_PASS}:
+        return RESULT_PASS
+    if results and results <= {RESULT_PASS, RESULT_ACCEPTED_SEMANTIC}:
+        return RESULT_ACCEPTED_SEMANTIC
+    return RESULT_ACCEPTED_WITHOUT_RUN
+
+
+def semantic_block_reason(verdict, recorded, scenario):
+    """影響ありシナリオを accepted-semantic として記録できない理由（可なら None）。
+
+    記録を許すのは unaffected 判定だけで（C3）、かつシナリオ定義が前回検証時から
+    不変であることを要求する。合否基準そのものが動いたシナリオは判定器の管轄外
+    — 判定器が見ているのは「この差分が要件の充足を変えうるか」であって、
+    要件自体が別物になったかどうかは実走でしか確かめられない。
+    """
+    value = (verdict or {}).get("verdict")
+    if value is None:
+        return "semantic 判定がない"
+    if value != VERDICT_UNAFFECTED:
+        return (f"semantic 判定は {value}（記録できるのは {VERDICT_UNAFFECTED} "
+                f"のみ。実走するか人間が判断すること）")
+    if (recorded or {}).get("scenario_sha256") != scenario_sha256(scenario):
+        return "シナリオ定義が前回検証時から変わった（合否基準の変更は実走でのみ確かめられる）"
+    return None
+
+
+def load_judgment(path):
+    """判定ファイルを読む。(判定, エラー理由) のどちらか一方だけが埋まる。
+
+    読めない judgment を例外で落とすと、利用者には traceback だけが見えて
+    「何を直せば通るのか」が読めない。拒否理由の idiom（✗ 1 行）へ揃える。
+    """
+    if not os.path.isfile(path):
+        return None, f"判定ファイルが無い: {path}"
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f), None
+    except json.JSONDecodeError as exc:
+        return None, f"判定ファイルが JSON として読めない: {path}（{exc}）"
+    except OSError as exc:
+        return None, f"判定ファイルを開けない: {path}（{exc}）"
 
 
 def make_entry(root, surface, result, verified_date, note=None, scenarios=None,
-               carried_note=None):
+               carried_note=None, semantic=None):
     """台帳エントリを作る。
 
     result は "pass"（実走して全シナリオ合格）| "accepted-addition"（実走せず承認。
@@ -476,6 +527,10 @@ def make_entry(root, surface, result, verified_date, note=None, scenarios=None,
     前任の申し送りを黙って捨てると、実走証拠の性質（誰がどの経路を通ったか）が
     台帳から消え、持ち越し記録だけが残って由来が読めなくなる。スロットは 1 つ
     だけで、直近 1 世代の note しか保たない（連鎖して伸び続けさせない）。
+
+    semantic は accepted-semantic 記録の由来 {model, diff_sha256, scenarios}。
+    確率的判断で進めた記録は、後から抜き打ち監査する対象なので「どのモデルが
+    何を根拠に」を台帳から読めなければならない（docs/spec/semantic-triage.md）。
     """
     entry = {
         "surface": surface,
@@ -491,6 +546,8 @@ def make_entry(root, surface, result, verified_date, note=None, scenarios=None,
         entry["note"] = note
     if carried_note:
         entry["carried_note"] = carried_note
+    if semantic:
+        entry["semantic"] = semantic
     return entry
 
 
@@ -738,7 +795,8 @@ def _summarize_changed(changed, limit=3):
     return head if len(names) <= limit else f"{head} … ほか {len(names) - limit} 件"
 
 
-def partial_update(root, entries, skill, ran_ids, note=None, today=None):
+def partial_update(root, entries, skill, ran_ids, note=None, today=None,
+                   judgment=None):
     """実走したシナリオを記録し、残りを持ち越して台帳を進める。
 
     持ち越せないシナリオが 1 つでもあれば更新ごと拒否して列挙する。部分的に
@@ -753,6 +811,11 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None):
     別々の材料で動かさず、partial_update を影響規則の消費者にすることで
     「片方が全件再走を要求する状態で、もう片方が実走ゼロの更新を通す」
     食い違いを構造的に閉じる。
+
+    judgment（--semantic）は semantic triage の判定ファイル。影響ありシナリオの
+    うち unaffected 判定の分だけを accepted-semantic として記録する第 3 の経路
+    で、ここでも同じ消費者の位置に置く。判定器が持つ権限はこの記録 1 点だけで、
+    unclear / affected は従来どおり block へ落ちる（実走か人間判断）。
     """
     scenarios = load_scenarios(root, skill)
     if not scenarios:
@@ -773,6 +836,15 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None):
         own_prefix=f"skills/{skill}/")
     impacted = set(impacted_scenarios(
         skill, surface, scenarios, changed, recorded_scenarios))
+    verdicts = {}
+    if judgment is not None:
+        reason = validate_judgment(
+            judgment, skill, entry.get("file_sha256", {}), current,
+            load_calibration(root))
+        if reason:
+            print(f"✗ {reason}")
+            return 1
+        verdicts = judgment["scenarios"]
     records, blocked = {}, []
     for scenario in scenarios:
         sid = scenario["id"]
@@ -784,8 +856,23 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None):
             }
             continue
         if sid in impacted:
+            recorded = recorded_scenarios.get(sid) or {}
+            gap = semantic_block_reason(verdicts.get(sid), recorded, scenario)
+            if judgment is not None and gap is None:
+                records[sid] = {
+                    "scenario_sha256": scenario_sha256(scenario),
+                    "result": RESULT_ACCEPTED_SEMANTIC,
+                    # 実走していないので検証日は据え置く。accepted_scenarios_record
+                    # と同じ fail-honest 規則で、判定で進めた記録が実走記録と
+                    # 日付から区別できなくなるのを防ぐ
+                    "verified": (recorded.get("verified")
+                                 or entry.get("verified") or today),
+                }
+                continue
             reason = ("面の変更が影響する（--check / --impact-scenarios と同じ規則）: "
                       + _summarize_changed(changed))
+            if judgment is not None:
+                reason += f" / {gap}"
         else:
             reason = carryover_reason(
                 skill, scenario, surface, entry.get("file_sha256", {}), current,
@@ -800,12 +887,31 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None):
         print(f"✗ {len(blocked)} 件は持ち越せない。実走して --scenario で指名するか、"
               f"--partial を外して全シナリオ実走の --update にすること")
         return 1
+    semantic_ids = sorted(
+        sid for sid, rec in records.items()
+        if rec["result"] == RESULT_ACCEPTED_SEMANTIC)
+    # 記録した分の判定だけを残す。unclear / affected は人間への推奨表示であって
+    # 台帳が何かを載せている根拠ではないので、保存すると「台帳に残っている＝
+    # 機構が受け取った」という誤読を招く
+    semantic = {
+        "model": judgment["model"],
+        "diff_sha256": judgment["diff_sha256"],
+        "scenarios": {
+            sid: {"verdict": verdicts[sid]["verdict"],
+                  "rationale": verdicts[sid]["rationale"]}
+            for sid in semantic_ids
+        },
+    } if semantic_ids else None
     entries[skill] = make_entry(
         root, surface, skill_result(records), today, note=note,
-        scenarios=records, carried_note=carried_note(entry, note))
+        scenarios=records, carried_note=carried_note(entry, note),
+        semantic=semantic)
     save(root, entries)
-    print(f"✓ ledger 更新: {skill} (--partial: 実走 {len(ran_ids)} / "
-          f"持ち越し {len(records) - len(ran_ids)})")
+    summary = (f"実走 {len(ran_ids)} / "
+               f"持ち越し {len(records) - len(ran_ids) - len(semantic_ids)}")
+    if semantic_ids:
+        summary += f" / semantic {len(semantic_ids)}"
+    print(f"✓ ledger 更新: {skill} (--partial: {summary})")
     return 0
 
 
@@ -948,11 +1054,14 @@ def main(argv):
         entries = load(root)
         # accepted-addition を別建てで数える。畳んで表示すると「機械が安全側と
         # 確認した承認」が「人間が重い変更を承知で通した承認」に紛れ、
-        # Red flag の accepted-without-run 偏重チェックが鈍る
+        # Red flag の accepted-without-run 偏重チェックが鈍る。
+        # accepted-semantic も同じ理由で独立カウント（C4）— こちらは
+        # 「判定器に寄りかかりすぎている」という別種の危険信号を運ぶ
         counts = {
             RESULT_PASS: 0,
             RESULT_ACCEPTED_ADDITION: 0,
             RESULT_ACCEPTED_PROSE: 0,
+            RESULT_ACCEPTED_SEMANTIC: 0,
             RESULT_ACCEPTED_WITHOUT_RUN: 0,
         }
         for entry in entries.values():
@@ -1038,11 +1147,28 @@ def main(argv):
             if note is None:
                 return _usage("--note に本文がない")
             rest = rest[:note_idx] + rest[note_idx + 2:]
+        semantic_path = None
+        if "--semantic" in rest:
+            sem_idx = rest.index("--semantic")
+            semantic_path = _option_value(rest, sem_idx)
+            if semantic_path is None:
+                return _usage("--semantic に判定ファイルのパスがない")
+            rest = rest[:sem_idx] + rest[sem_idx + 2:]
         rc = _stray(args[:idx] + rest, f"{mode} SKILL")
         if rc is not None:
             return rc
         root = _root(rest)
         entries = load(root)
+        if semantic_path is not None:
+            if mode == "--remove" or accept:
+                print("✗ --semantic は --update --partial 専用で、--accept とは"
+                      "併用できない（判定器による記録と人間の承認が混ざると"
+                      "result の意味が読めなくなる）")
+                return 1
+            if not partial:
+                print("✗ --semantic は --partial と併せて指定すること"
+                      "（記録できるのは影響ありシナリオのうち unaffected 判定の分だけ）")
+                return 1
         if partial:
             if mode == "--remove" or accept:
                 print("✗ --partial は --update 専用で、--accept とは併用できない"
@@ -1051,7 +1177,14 @@ def main(argv):
             if skill not in _fixtures_skills(root):
                 print(f"✗ skills/{skill}/fixtures.json が存在しない")
                 return 1
-            return partial_update(root, entries, skill, ran_ids, note=note)
+            judgment = None
+            if semantic_path is not None:
+                judgment, error = load_judgment(semantic_path)
+                if error:
+                    print(f"✗ {error}")
+                    return 1
+            return partial_update(root, entries, skill, ran_ids, note=note,
+                                  judgment=judgment)
         if ran_ids:
             print("✗ --scenario は --partial と併せて指定すること")
             return 1
