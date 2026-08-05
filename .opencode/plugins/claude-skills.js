@@ -2,8 +2,8 @@
  * claude-skills plugin for OpenCode.
  *
  * - Registers skills/ via config.skills.paths (no symlinks).
- * - Injects skill-routing + quality-gate pointer on the first user message
- *   (Claude Code SessionStart equivalent).
+ * - Injects the using-workflow funnel (routing discipline included) + quality-gate
+ *   pointer on the first user message (Claude Code SessionStart equivalent).
  */
 
 import fs from "fs"
@@ -13,7 +13,7 @@ import { fileURLToPath } from "url"
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const PACKAGE_ROOT = path.resolve(__dirname, "../..")
 const SKILLS_DIR = path.join(PACKAGE_ROOT, "skills")
-const ROUTING_PATH = path.join(PACKAGE_ROOT, "rules", "skill-routing.md")
+const ROUTING_PATH = path.join(SKILLS_DIR, "using-workflow", "SKILL.md")
 const BOOTSTRAP_MARKER = "<!-- claude-skills-bootstrap -->"
 
 const QUALITY_GATE_FILES = [
@@ -30,6 +30,13 @@ function readText(filePath) {
   } catch {
     return null
   }
+}
+
+// SKILL.md is injected without its frontmatter (metadata for the skill loader,
+// noise in a resident-context injection).
+function stripFrontmatter(text) {
+  const m = /^---\n[\s\S]*?\n---\n?/.exec(text)
+  return m ? text.slice(m[0].length) : text
 }
 
 function buildQualityGatePointer() {
@@ -51,7 +58,7 @@ function getBootstrapContent() {
   const parts = [BOOTSTRAP_MARKER]
   const routing = readText(ROUTING_PATH)
   if (routing) {
-    parts.push(routing.trimEnd())
+    parts.push(stripFrontmatter(routing).trimEnd())
   }
 
   const quality = buildQualityGatePointer()

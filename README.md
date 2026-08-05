@@ -39,7 +39,7 @@ codex plugin add claude-skills@claude-skills
 }
 ```
 
-OpenCode を再起動すると、plugin が `skills/` を登録し、skill-routing と quality-gate ポインタをセッションへ注入する。
+OpenCode を再起動すると、plugin が `skills/` を登録し、using-workflow（幹の漏斗 + ルーティング規律）と quality-gate ポインタをセッションへ注入する。
 詳細・更新・トラブルシュートは [docs/README.opencode.md](docs/README.opencode.md)。
 
 ### Claude Code rules（Plugin 利用者は手動コピー不要）
@@ -48,14 +48,13 @@ Plugin をインストールすると、SessionStart hook（`hooks/hooks.json`�
 （startup / resume / clear / compact / fork）に次の 2 本を常駐コンテキストへ自動注入する。
 Plugin 利用者に手動コピーは不要である。
 
-- `rules/skill-routing.md` — スキル発火の routing 表（正本 47 行を全文注入）
+- `skills/using-workflow/SKILL.md` — 幹ワークフローの漏斗 + ルーティング規律（frontmatter を除く本文を注入。
+  旧 `rules/skill-routing.md` の語彙×スキル対応表はこの漏斗に統合・簡略化した）
 - 品質ゲート契約のポインタ（`hooks/inject-quality-gate.sh`）— 契約の存在・正本パス・事前条件の
   要旨のみ 4 行を注入し、契約本文（約 230 行）は複製しない
 
 注入対象は上記 2 本のみ。常駐コンテキストの予算を使うのは、実測で必要性が確認されたものだけに
-限るという意図的な選択で、`rules/` の他の文書（`information-placement.md` 等）は注入しない。
-
-手動コピーは「Plugin を使わず個別インストールする利用者」向けに残している。
+限るという意図的な選択で、`rules/` の文書（`information-placement.md` 等）は注入しない。
 OpenCode は上記 git plugin が同等の注入を行う（[docs/README.opencode.md](docs/README.opencode.md)）。
 
 ```bash
@@ -100,6 +99,18 @@ brainstorm で人間と対話しながら仕様・設計を合意し、合意内
 `cycle` は plan の自動実装をエージェントに委譲し、全自動で回す。
 `iterate` は cycle 後の軽微な修正に使う。タスクの大きさを自動判定し、大きければ新しい plan の作成を提案する。
 
+この流れへの道しるべ（漏斗）は `using-workflow` スキルが持つ。「作る・変える話の既定入口は brainstorm、例外は列挙された 3 カテゴリのみ」の 1 ルール + カテゴリ内の代表スキルで、数十行なので常駐できる。Plugin をインストールしていれば SessionStart hook が自動注入する（後述「Claude Code rules」節）。Plugin を使わない場合の hook 例（読み取り専用の注入のみ）:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "cat <スキル配置先>/skills/using-workflow/SKILL.md" } ] }
+    ]
+  }
+}
+```
+
 ## スキル一覧
 
 スキル群は「発生順の 3 レイヤ」で整理する。このリポジトリは元来メンテナ個人の作業用として plan → implement → review の基本サイクルから始まり、実務で必要になった順にスキルが増えていった。その履歴を初見の利用者にも見えるようにするため、次の 3 段で提示する。
@@ -114,7 +125,8 @@ plan → cycle → commit の基本ワークフローに必要な最小セット
 
 | スキル | 用途 |
 |--------|------|
-| `brainstorm` | 仕様・設計の壁打ちと合意形成（出口で ledger / plan に振り分け） |
+| `using-workflow` | 幹ワークフローの実行時漏斗（既定入口 = brainstorm、例外 3 カテゴリの列挙。常駐ロード向け） |
+| `brainstorm` | 幹の既定入口。要件定義・仕様定義を対話で詰め切る重フェーズ（出口で plan / issue / docs/spec に振り分け） |
 | `plan` | 合意済みの実装手順書の作成とステータス管理 |
 | `plan-reviewer` | 実装成果物のレビュー（差し戻し判定付き） |
 | `cycle` | plan の自動実装サイクル |

@@ -1260,22 +1260,22 @@ class TestCheckHumanReadableSummary(unittest.TestCase):
                   encoding="utf-8") as f:
             f.write(body)
 
-    def _skill(self, root, name, *, link=True, label=True):
-        sdir = os.path.join(root, "skills", name)
-        os.makedirs(sdir, exist_ok=True)
+    def _skill(self, root, name, rel="SKILL.md", *, link=True, label=True):
+        target = os.path.join(root, "skills", name, rel)
+        os.makedirs(os.path.dirname(target), exist_ok=True)
         body = "---\nname: {n}\ndescription: d\n---\n\n本文。\n".format(n=name)
         if link:
             body += "\n参照: [契約](../shared/references/human-readable-summary.md)\n"
         if label:
             body += "\n完了表示:\n```\n{label} 〜を保存したよ\n```\n".format(
                 label=HUMAN_READABLE_SUMMARY_LABEL)
-        with open(os.path.join(sdir, "SKILL.md"), "w", encoding="utf-8") as f:
+        with open(target, "w", encoding="utf-8") as f:
             f.write(body)
 
     def _all_conforming(self, root):
         self._contract(root)
-        for name in HUMAN_READABLE_SUMMARY_SKILLS:
-            self._skill(root, name)
+        for name, rel in HUMAN_READABLE_SUMMARY_SKILLS:
+            self._skill(root, name, rel)
 
     def test_all_conforming_passes(self):
         with tempfile.TemporaryDirectory() as root:
@@ -1284,36 +1284,44 @@ class TestCheckHumanReadableSummary(unittest.TestCase):
 
     def test_missing_contract_is_reported(self):
         with tempfile.TemporaryDirectory() as root:
-            for name in HUMAN_READABLE_SUMMARY_SKILLS:
-                self._skill(root, name)
+            for name, rel in HUMAN_READABLE_SUMMARY_SKILLS:
+                self._skill(root, name, rel)
             errors = check_human_readable_summary(root)
             self.assertTrue(any("human-readable-summary.md" in e for e in errors))
 
     def test_contract_without_before_after_example_is_reported(self):
         with tempfile.TemporaryDirectory() as root:
             self._contract(root, before_after=False)
-            for name in HUMAN_READABLE_SUMMARY_SKILLS:
-                self._skill(root, name)
+            for name, rel in HUMAN_READABLE_SUMMARY_SKILLS:
+                self._skill(root, name, rel)
             errors = check_human_readable_summary(root)
             self.assertTrue(any("before/after" in e.lower() for e in errors))
 
     def test_skill_missing_contract_link_is_reported(self):
         with tempfile.TemporaryDirectory() as root:
             self._all_conforming(root)
-            self._skill(root, HUMAN_READABLE_SUMMARY_SKILLS[0], link=False)
+            name, rel = HUMAN_READABLE_SUMMARY_SKILLS[0]
+            self._skill(root, name, rel, link=False)
             errors = check_human_readable_summary(root)
-            self.assertTrue(any(
-                HUMAN_READABLE_SUMMARY_SKILLS[0] in e and "リンク" in e
-                for e in errors))
+            self.assertTrue(any(name in e and "リンク" in e for e in errors))
 
     def test_skill_missing_summary_label_is_reported(self):
         with tempfile.TemporaryDirectory() as root:
             self._all_conforming(root)
-            self._skill(root, HUMAN_READABLE_SUMMARY_SKILLS[0], label=False)
+            name, rel = HUMAN_READABLE_SUMMARY_SKILLS[0]
+            self._skill(root, name, rel, label=False)
             errors = check_human_readable_summary(root)
-            self.assertTrue(any(
-                HUMAN_READABLE_SUMMARY_SKILLS[0] in e and "ラベル" in e
-                for e in errors))
+            self.assertTrue(any(name in e and "ラベル" in e for e in errors))
+
+    def test_non_skill_md_target_is_checked_in_place(self):
+        """workflow 分割スキルは完了表示の所有ファイル側で検査される。"""
+        with tempfile.TemporaryDirectory() as root:
+            self._all_conforming(root)
+            name, rel = HUMAN_READABLE_SUMMARY_SKILLS[0]
+            self.assertNotEqual("SKILL.md", rel)
+            os.remove(os.path.join(root, "skills", name, rel))
+            errors = check_human_readable_summary(root)
+            self.assertTrue(any(f"skills/{name}/{rel}" in e for e in errors))
 
 
 if __name__ == "__main__":
@@ -1360,7 +1368,7 @@ class TestCheckPluginHooks(unittest.TestCase):
     HOOKS_JSON = (
         '{"hooks": {"SessionStart": [{"matcher": "startup",'
         ' "hooks": [{"type": "command",'
-        ' "command": "\\"${CLAUDE_PLUGIN_ROOT}\\"/hooks/inject-skill-routing.sh"},'
+        ' "command": "\\"${CLAUDE_PLUGIN_ROOT}\\"/hooks/inject-using-workflow.sh"},'
         ' {"type": "command",'
         ' "command": "\\"${CLAUDE_PLUGIN_ROOT}\\"/hooks/inject-quality-gate.sh"}]}]}}'
     )
@@ -1375,9 +1383,9 @@ class TestCheckPluginHooks(unittest.TestCase):
 
     def _full_setup(self, root):
         self._write(root, "hooks/hooks.json", self.HOOKS_JSON)
-        self._write(root, "hooks/inject-skill-routing.sh",
-                    "#!/bin/sh\ncat rules/skill-routing.md\n", executable=True)
-        self._write(root, "rules/skill-routing.md", "# routing\n")
+        self._write(root, "hooks/inject-using-workflow.sh",
+                    "#!/bin/sh\ncat skills/using-workflow/SKILL.md\n", executable=True)
+        self._write(root, "skills/using-workflow/SKILL.md", "# funnel\n")
         self._write(root, "hooks/inject-quality-gate.sh",
                     "#!/bin/sh\nprintf 'pointer\\n'\n", executable=True)
         self._write(root,
@@ -1404,22 +1412,22 @@ class TestCheckPluginHooks(unittest.TestCase):
     def test_missing_command_script_is_flagged(self):
         with tempfile.TemporaryDirectory() as root:
             self._full_setup(root)
-            os.remove(os.path.join(root, "hooks/inject-skill-routing.sh"))
+            os.remove(os.path.join(root, "hooks/inject-using-workflow.sh"))
             errors = check_plugin_hooks(root)
             self.assertTrue(any("実体が存在しない" in e for e in errors))
 
     def test_missing_exec_bit_is_flagged(self):
         with tempfile.TemporaryDirectory() as root:
             self._full_setup(root)
-            os.chmod(os.path.join(root, "hooks/inject-skill-routing.sh"), 0o644)
+            os.chmod(os.path.join(root, "hooks/inject-using-workflow.sh"), 0o644)
             errors = check_plugin_hooks(root)
             self.assertEqual(len(errors), 1)
             self.assertIn("実行ビットがない", errors[0])
 
-    def test_missing_routing_table_is_flagged(self):
+    def test_missing_funnel_skill_is_flagged(self):
         with tempfile.TemporaryDirectory() as root:
             self._full_setup(root)
-            os.remove(os.path.join(root, "rules/skill-routing.md"))
+            os.remove(os.path.join(root, "skills/using-workflow/SKILL.md"))
             errors = check_plugin_hooks(root)
             self.assertEqual(len(errors), 1)
             self.assertIn("正本が存在しない", errors[0])
@@ -1441,11 +1449,11 @@ class TestCheckPluginHooks(unittest.TestCase):
                         '{"hooks": {"SessionStart": [{"matcher": "startup",'
                         ' "hooks": [{"type": "command",'
                         ' "command": "\\"${CLAUDE_PLUGIN_ROOT}\\"'
-                        '/hooks/inject-skill-routing.sh"}]}]}}')
-            self._write(root, "hooks/inject-skill-routing.sh",
-                        "#!/bin/sh\ncat rules/skill-routing.md\n",
+                        '/hooks/inject-using-workflow.sh"}]}]}}')
+            self._write(root, "hooks/inject-using-workflow.sh",
+                        "#!/bin/sh\ncat skills/using-workflow/SKILL.md\n",
                         executable=True)
-            self._write(root, "rules/skill-routing.md", "# routing\n")
+            self._write(root, "skills/using-workflow/SKILL.md", "# funnel\n")
             self.assertEqual(check_plugin_hooks(root), [])
 
     def test_whitespace_only_command_is_flagged_not_crash(self):

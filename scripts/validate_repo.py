@@ -32,7 +32,7 @@
   19. agent 生成物の置き場に `.claude/` を使っていないか
   20. リネーム許可表（scripts/rename-allowlist.json）の失効エントリ検出
   21. plugin hooks の整合性（hooks.json のパース / command パスの実在と実行ビット /
-      hook スクリプトが参照する rules/skill-routing.md の実在）
+      hook スクリプトが参照する正本（using-workflow / 品質ゲート契約）の実在）
   22. OpenCode git plugin（package.json main / plugin 実在 / 導入ドキュメント）
 
 チェック 10・11 と store 実在性:
@@ -233,14 +233,17 @@ def check_frontmatter_yaml_compat(root):
 # fixtures を持たない 3 スキル（brainstorm / doc-write / design-guide）
 # の要約"挙動"は behavior テストできないため、この統一テキストガードが最低ガードになる。
 # 要約"内容の質"はいずれのスキルも機械検証不能であることを受容した上での設計。
+# 検査対象は「完了表示を所有するファイル」。workflow 分割スキル（SKILL.md が
+# 薄い振り分け役）では完了表示が references/workflow-*.md 側に住むため、
+# スキルごとに (スキル名, スキル配下の相対パス) で指定する。
 HUMAN_READABLE_SUMMARY_CONTRACT = "skills/shared/references/human-readable-summary.md"
 HUMAN_READABLE_SUMMARY_LABEL = "📝 In short:"
 HUMAN_READABLE_SUMMARY_SKILLS = (
-    "brainstorm",
-    "issue",
-    "handoff",
-    "doc-write",
-    "design-guide",
+    ("brainstorm", "references/workflow-wrap.md"),
+    ("issue", "SKILL.md"),
+    ("handoff", "SKILL.md"),
+    ("doc-write", "SKILL.md"),
+    ("design-guide", "SKILL.md"),
 )
 
 
@@ -257,20 +260,21 @@ def check_human_readable_summary(root):
             f"[summary] 契約に before/after ワークト例がない: "
             f"{HUMAN_READABLE_SUMMARY_CONTRACT}"
         )
-    for skill in HUMAN_READABLE_SUMMARY_SKILLS:
-        skill_md = os.path.join(root, "skills", skill, "SKILL.md")
-        if not os.path.isfile(skill_md):
-            errors.append(f"[summary] SKILL.md がない: skills/{skill}/SKILL.md")
+    for skill, rel in HUMAN_READABLE_SUMMARY_SKILLS:
+        target = f"skills/{skill}/{rel}"
+        target_path = os.path.join(root, "skills", skill, rel)
+        if not os.path.isfile(target_path):
+            errors.append(f"[summary] 完了表示の所有ファイルがない: {target}")
             continue
-        text = _read(skill_md)
+        text = _read(target_path)
         if "human-readable-summary.md" not in text:
             errors.append(
-                f"[summary] {skill}: 契約への md リンクがない: skills/{skill}/SKILL.md"
+                f"[summary] {skill}: 契約への md リンクがない: {target}"
             )
         if HUMAN_READABLE_SUMMARY_LABEL not in text:
             errors.append(
                 f"[summary] {skill}: 要約ラベル「{HUMAN_READABLE_SUMMARY_LABEL}」が"
-                f"ない: skills/{skill}/SKILL.md"
+                f"ない: {target}"
             )
     return errors
 
@@ -659,8 +663,8 @@ _HOOKS_JSON_REL = os.path.join("hooks", "hooks.json")
 # hook スクリプト → そのスクリプトが読む正本。スクリプトが存在するときだけ正本の
 # 実在を検査する（条件出力の補助正本はここに載せない — 欠落時はスクリプト側が沈黙する）
 _HOOK_CANONICAL_SOURCES = {
-    os.path.join("hooks", "inject-skill-routing.sh"): os.path.join(
-        "rules", "skill-routing.md"
+    os.path.join("hooks", "inject-using-workflow.sh"): os.path.join(
+        "skills", "using-workflow", "SKILL.md"
     ),
     os.path.join("hooks", "inject-quality-gate.sh"): os.path.join(
         "skills", "shared", "references", "quality-gate-contract.md"
