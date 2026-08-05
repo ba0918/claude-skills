@@ -78,6 +78,30 @@ against, so the caller's re-judging duty from executor-contract cannot be discha
 such a unit says nothing about the skill. As with any process-path run, name the backend in the
 ledger `--note`.
 
+Two build-side adjustments exist so a text-only backend and a tool-using one are asked the
+same question. Both change the scaffolding, not the fixture:
+
+- **Empty working directories are named.** A scenario that stages nothing — no files and no
+  git state; an empty baseline map alone does not qualify, since a git-only setup still
+  materialises an observable `.git` — puts all its evidence in the Situation text, but the
+  process path still creates an empty `work/<unit>/repo/`. Only a backend that can list that directory learns the described
+  files are not on disk — measured, executors split on what to do with that, some declaring the
+  situation unjudgeable while others read the description and finished. `build` therefore
+  states the emptiness in the prompt and directs the executor to treat the Situation text as
+  primary evidence. Materialising a baseline instead was rejected: it replaces this asymmetry
+  with a worse one, between a backend that can read the staged files and one that cannot.
+- **`--inline-skill` embeds the target SKILL.md** in every prompt. Without it the prompt
+  carries only a path, which a text-only backend cannot follow, so the tool-using backend
+  reaches skill knowledge the other one never sees. With it, run **the identical prompt through
+  both backends** — that is the whole point. References are not inlined; if a measurement shows
+  a scenario needs them, argue the extension from that measurement. Inlining also brings
+  knowledge-explanation scenarios (report-style requirements that test what the skill body
+  says) into range for a text-only backend, which otherwise had to be excluded.
+
+Scaffolding is comparability-relevant (§ Comparability): a batch built with `--inline-skill`
+is not comparable with one built without it. Record which was used in the ledger `--note`;
+`build` reports the flag in its summary and in each manifest entry (`inline_skill`).
+
 `grade` reports one of three verdicts per scenario:
 
 | Verdict | Meaning |

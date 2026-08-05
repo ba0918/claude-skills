@@ -65,6 +65,11 @@ REPORT_SCHEMA = """{
   "discretion": ["<choices the instructions did not determine>"]
 }"""
 
+# Delimiters for an inlined SKILL.md. Not a fenced code block: skill bodies contain
+# fences of their own, and a fence would close on the first one.
+SKILL_MD_OPEN = "<skill_md>"
+SKILL_MD_CLOSE = "</skill_md>"
+
 
 class QueueError(Exception):
     """Malformed fixture, batch, or returned report."""
@@ -73,12 +78,26 @@ class QueueError(Exception):
 # ==========================================================================
 # Prompt rendering (pure)
 # ==========================================================================
-def render_prompt(skill, scenario, *, skill_md, work_dir, output_file, env=None):
+def render_prompt(skill, scenario, *, skill_md, work_dir, output_file, env=None,
+                  skill_md_text=None, empty_work_dir=False):
     """Render one executor prompt.
 
     Requirements are numbered and stripped of their `critical` flags: an executor that
     knows which items decide the verdict optimises for those items instead of following
     the skill, and the measurement stops being about the skill.
+
+    `skill_md_text` inlines the skill body instead of leaving only its path. A backend
+    with no file access cannot follow the path at all, so the path-only prompt hands a
+    tool-using backend knowledge the other one cannot reach; measured, that asymmetry
+    alone decided a requirement in a parallel run. References are deliberately not
+    inlined — one level, and any extension has to be argued from a measurement.
+
+    `empty_work_dir` says the scenario staged nothing on disk. Such a fixture carries its
+    evidence in the Situation text by design, but only a backend that can list the
+    directory can discover the described files are not there; measured, executors split
+    on that observation, some declaring the situation unjudgeable while others simply
+    read the description. Naming the emptiness removes the split without touching the
+    fixture.
     """
     lines = [
         f"You are an executor reading the `{skill}` skill's SKILL.md for the first time.",
@@ -87,8 +106,20 @@ def render_prompt(skill, scenario, *, skill_md, work_dir, output_file, env=None)
         "",
         f"{skill_md}",
         "",
-        "Read it, and follow any references it points to.",
-        "",
+    ]
+    if skill_md_text is None:
+        lines += ["Read it, and follow any references it points to.", ""]
+    else:
+        lines += [
+            "Its full text is inlined below, so you do not have to read it from disk. "
+            "The files it references are not inlined; work from what is here.",
+            "",
+            SKILL_MD_OPEN,
+            skill_md_text.rstrip("\n"),
+            SKILL_MD_CLOSE,
+            "",
+        ]
+    lines += [
         "## Working directory",
         "",
         f"{work_dir}",
@@ -98,6 +129,15 @@ def render_prompt(skill, scenario, *, skill_md, work_dir, output_file, env=None)
         "outside it.",
         "",
     ]
+    if empty_work_dir:
+        lines += [
+            "No files have been materialised there: the directory is empty. Any file, "
+            "diff, or command output the Situation section describes is given to you as "
+            "text — treat that text as the primary evidence. Its absence from disk is a "
+            "property of this exercise, not a finding about the situation, and not a "
+            "reason to withhold a judgement the description supports.",
+            "",
+        ]
     if env:
         lines += [
             "## Environment setup",
@@ -404,8 +444,17 @@ def _sha256_file(path):
         return None
 
 
-def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None):
-    """Materialise every scenario and emit prompts, a work queue, and a manifest."""
+def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None,
+          inline_skill=False):
+    """Materialise every scenario and emit prompts, a work queue, and a manifest.
+
+    `inline_skill` embeds each target SKILL.md in the prompt. The same prompt is then
+    usable by a backend with file access and by one without, which is the point: the
+    comparison is only about the backend once both read the same words. A batch built
+    this way carries different scaffolding from one built without it, so the two are not
+    comparable evidence (§ Comparability) — the flag is recorded in the manifest so the
+    ledger note can say which was used.
+    """
     batch_dir = os.path.abspath(batch_dir)
     repo_root = os.path.abspath(repo_root)
     for sub in ("prompts", "work"):
@@ -437,6 +486,12 @@ def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None):
                 work_dir=staged["dir"],
                 output_file=output_file,
                 env=staged["env"],
+                skill_md_text=_read(skill_md) if inline_skill else None,
+                # Empty only when nothing at all was staged. The baseline map alone
+                # cannot decide this: a git-only setup (init + --allow-empty commit,
+                # no files) stages a .git the executor can observe, and calling that
+                # directory empty would contradict what a tool-using backend sees.
+                empty_work_dir=not staged["baseline"] and not staged["git"],
             )
             prompt_rel = os.path.join("prompts", f"{uid}.md")
             with open(os.path.join(batch_dir, prompt_rel), "w",
@@ -462,6 +517,9 @@ def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None):
                 "unmaterialized": staged["unmaterialized"],
                 "fixture_path": os.path.abspath(fixture_path),
                 "scenario_sha256": fixture_setup.scenario_sha256(scenario),
+                # Scaffolding, not fixture: recorded per unit so a later reader can tell
+                # which prompt shape produced the report without diffing the prompts.
+                "inline_skill": bool(inline_skill),
             }
 
     if not units:
@@ -489,6 +547,7 @@ def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None):
         "manifest": manifest_path,
         "units": len(units),
         "unmaterialized": unmaterialized,
+        "inline_skill": bool(inline_skill),
     }
 
 
@@ -621,7 +680,8 @@ def grade(batch_dir):
 # ==========================================================================
 def _cli_build(args):
     summary = build(args.fixture, args.batch, args.repo_root,
-                    scenario_ids=set(args.scenario) if args.scenario else None)
+                    scenario_ids=set(args.scenario) if args.scenario else None,
+                    inline_skill=args.inline_skill)
     print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
 
@@ -650,6 +710,10 @@ def main(argv=None):
     build_parser.add_argument("--repo-root", default=".")
     build_parser.add_argument("--scenario", action="append",
                               help="restrict to these scenario ids (repeatable)")
+    build_parser.add_argument(
+        "--inline-skill", action="store_true",
+        help="inline the target SKILL.md body into each prompt, so a backend without "
+             "file access reads the same words as one with it")
     build_parser.set_defaults(func=_cli_build)
 
     grade_parser = sub.add_parser("grade", help="tally the returned reports")

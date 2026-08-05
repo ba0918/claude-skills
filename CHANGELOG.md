@@ -14,6 +14,13 @@ claude-skills プラグインのバージョン履歴。
 要るのは「更新すると何が変わる・何が壊れるか」だけ（1.74.0 未満の節はこの規範の適用前で、
 歴史記録として改稿しない）。
 
+## Unreleased
+
+### Changed: text-only backend との並走比較から scaffolding 由来の交絡が抜けた
+
+- `regression_queue.py build` が、何も実体化しないシナリオ（files も git 状態もなし。git-only setup は `.git` を実体化するので対象外）のプロンプトへ「working directory は空、Situation の記述が一次証拠」と明示する。ツールを持つ executor だけが空ディレクトリを観測して判断を止める非対称が消える。fixtures.json は無編集（#278）
+- `build --inline-skill` が対象 SKILL.md 本文をプロンプトへ同梱する。ファイルを読めない backend と読める backend へ同一プロンプトを流せる。references は非同梱。`inline_skill` は build 出力と manifest 各エントリに記録され、有無の異なる batch は比較不能（#278）
+
 ## 1.74.0
 
 ### Fixed: ledger.py が位置を誤った root を黙って捨て、cwd の台帳を更新する
