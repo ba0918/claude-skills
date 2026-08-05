@@ -7,8 +7,9 @@ description: The runtime funnel and routing discipline of the trunk workflow —
 
 The trunk: utterance / GitHub issue → brainstorm → plan → implement → review →
 alignment (write back to docs/spec) → PR. The canonical diagram and the funnel
-principle live in [skill-authoring](../shared/references/skill-authoring.md); this
-skill carries only the runtime routing rule.
+principle live in [skill-authoring](../shared/references/skill-authoring.md) — a
+provenance link for skill authors; routing needs nothing beyond this file, so do
+not load it at runtime.
 
 ## The Routing Check
 
