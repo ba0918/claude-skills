@@ -404,12 +404,6 @@ def _sha256_file(path):
         return None
 
 
-def _scenario_sha256(scenario):
-    return hashlib.sha256(
-        json.dumps(scenario, ensure_ascii=False,
-                   sort_keys=True).encode("utf-8")).hexdigest()
-
-
 def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None):
     """Materialise every scenario and emit prompts, a work queue, and a manifest."""
     batch_dir = os.path.abspath(batch_dir)
@@ -467,7 +461,7 @@ def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None):
                 "baseline": staged["baseline"],
                 "unmaterialized": staged["unmaterialized"],
                 "fixture_path": os.path.abspath(fixture_path),
-                "scenario_sha256": _scenario_sha256(scenario),
+                "scenario_sha256": fixture_setup.scenario_sha256(scenario),
             }
 
     if not units:
@@ -546,7 +540,9 @@ def rerun(batch_dir, *, units=None):
         scenario = next(
             (s for s in fixtures[fixture_path]["scenarios"]
              if s["id"] == entry["scenario_id"]), None)
-        if scenario is None or _scenario_sha256(scenario) != entry["scenario_sha256"]:
+        if (scenario is None
+                or fixture_setup.scenario_sha256(scenario)
+                != entry["scenario_sha256"]):
             raise QueueError(
                 f"scenario {entry['scenario_id']} changed since build (or was "
                 f"removed); the manifest grading key no longer matches — rebuild "

@@ -1191,5 +1191,87 @@ class MaterializeIsHermeticAgainstAnInheritedRepository(unittest.TestCase):
                 os.path.exists(os.path.join(dest, ".git", "hooks", "pre-commit")))
 
 
+class TestValidateExercises(unittest.TestCase):
+    """`exercises` は「このシナリオが踏む挙動面ファイル」の完全主張。
+
+    宣言が誤っていると台帳側は「踏まないから再走不要」と読んで持ち越す。
+    形の検査（配列・リポジトリ相対・skills/ 配下）はここで閉じ、面に実在するか
+    どうかは面を知っている ledger 側が判定する。
+    """
+
+    def test_valid_exercises_passes(self):
+        f = _fixture(exercises=["skills/shared/references/tdd-contract.md"])
+        self.assertEqual(fixture_setup.validate(f), [])
+
+    def test_empty_list_is_a_valid_declaration(self):
+        # 空配列 = 「SKILL.md 以外は踏まない」という主張。宣言なしとは別物
+        self.assertEqual(fixture_setup.validate(_fixture(exercises=[])), [])
+
+    def test_non_list_is_reported(self):
+        self.assertTrue(any(
+            "exercises" in e for e in
+            fixture_setup.validate(_fixture(exercises="skills/a/SKILL.md"))))
+
+    def test_non_string_element_is_reported(self):
+        self.assertTrue(any(
+            "exercises" in e
+            for e in fixture_setup.validate(_fixture(exercises=[1]))))
+
+    def test_absolute_path_is_reported(self):
+        self.assertTrue(any(
+            "リポジトリ相対" in e for e in
+            fixture_setup.validate(_fixture(exercises=["/etc/passwd"]))))
+
+    def test_parent_traversal_is_reported(self):
+        self.assertTrue(any(
+            "リポジトリ相対" in e for e in
+            fixture_setup.validate(_fixture(exercises=["skills/../../secret"]))))
+
+    def test_path_outside_skills_is_reported(self):
+        self.assertTrue(any(
+            "skills/" in e for e in
+            fixture_setup.validate(_fixture(exercises=["README.md"]))))
+
+
+class TestScenarioSha256(unittest.TestCase):
+    """シナリオ内容ハッシュの正本。`exercises` はハッシュ対象から外す。
+
+    exercises は影響メタデータであってシナリオの挙動定義ではない。含めると
+    宣言を足しただけで rerun ガードが再構築を要求し、台帳も差分ありと読む
+    （= 宣言の導入コストが実走 1 本ぶんになる）。
+    """
+
+    def test_is_stable_hex_digest(self):
+        scenario = _fixture()["scenarios"][0]
+        sha = fixture_setup.scenario_sha256(scenario)
+        self.assertEqual(len(sha), 64)
+        self.assertEqual(sha, fixture_setup.scenario_sha256(scenario))
+
+    def test_adding_exercises_does_not_change_the_sha(self):
+        base = _fixture()["scenarios"][0]
+        declared = dict(base, exercises=["skills/shared/references/tdd-contract.md"])
+        self.assertEqual(fixture_setup.scenario_sha256(base),
+                         fixture_setup.scenario_sha256(declared))
+
+    def test_changing_exercises_does_not_change_the_sha(self):
+        base = _fixture()["scenarios"][0]
+        one = dict(base, exercises=["skills/a/x.md"])
+        two = dict(base, exercises=["skills/a/y.md", "skills/a/z.md"])
+        self.assertEqual(fixture_setup.scenario_sha256(one),
+                         fixture_setup.scenario_sha256(two))
+
+    def test_changing_the_prompt_changes_the_sha(self):
+        base = _fixture()["scenarios"][0]
+        self.assertNotEqual(
+            fixture_setup.scenario_sha256(base),
+            fixture_setup.scenario_sha256(dict(base, prompt="別の指示")))
+
+    def test_changing_requirements_changes_the_sha(self):
+        base = _fixture()["scenarios"][0]
+        changed = dict(base, requirements=[{"text": "別の要件", "critical": True}])
+        self.assertNotEqual(fixture_setup.scenario_sha256(base),
+                            fixture_setup.scenario_sha256(changed))
+
+
 if __name__ == "__main__":
     unittest.main()

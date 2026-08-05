@@ -142,9 +142,10 @@
     "verified": "2026-08-04"
   },
   "cycle": {
+    "carried_note": "phase 終端化後の初回 20 scn 実走 (#242, Sonnet executor, batch cy-run-20260805 + cy004-rerun2)。全 critical pass、機械 assert 28 判定全通過。non-critical partial 2 件 (cy-009 R5 六行フォーマッタは散文責務で機械ゲートなし / cy-014 R5 表示は headless で artifact のみ)。watchdog status query は smoke cy-001 で 4 回、fix loop 系+satellite で計 11 回、終端型 13 本は 0 回 (旧設計は全 scn で発生)。cy-004 は初走で R3 到達性欠陥を検出し fixture 是正 (seed 撤回 ce14596+565fb0a) 後の再走で pass",
     "file_sha256": {
       "skills/cycle/SKILL.md": "8fcf89b2df01a9d09a74dc8225e2a51eb130e6bb849663125109aa8b0c2ba22a",
-      "skills/cycle/fixtures.json": "f7187c1d062713de72869b9b606502eaab57b66f3c3a8e86a2c95a4f2bf7c4cf",
+      "skills/cycle/fixtures.json": "dc8dd4157861dae3a71b38e7698e2cb83c26b74eb67e06a12f023c789e3bc6f5",
       "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
@@ -167,8 +168,110 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "phase 終端化後の初回 20 scn 実走 (#242, Sonnet executor, batch cy-run-20260805 + cy004-rerun2)。全 critical pass、機械 assert 28 判定全通過。non-critical partial 2 件 (cy-009 R5 六行フォーマッタは散文責務で機械ゲートなし / cy-014 R5 表示は headless で artifact のみ)。watchdog status query は smoke cy-001 で 4 回、fix loop 系+satellite で計 11 回、終端型 13 本は 0 回 (旧設計は全 scn で発生)。cy-004 は初走で R3 到達性欠陥を検出し fixture 是正 (seed 撤回 ce14596+565fb0a) 後の再走で pass",
+    "note": "#243 パイロット: exercises 宣言 17/20 を付与（cy-001 通し smoke・cy-004 satellite は面をほぼ全域踏むため、cy-009 standalone publish gate は実走証拠が設計経路を網羅しておらず宣言が過少になるため、いずれも意図的に未宣言）。実走ゼロ、全 20 シナリオを持ち越し。宣言は cy-run-20260805 の execution_path とスキルの phase→参照構造から導出",
     "result": "pass",
+    "scenarios": {
+      "cy-001": {
+        "result": "pass",
+        "scenario_sha256": "73bb611470d29721d749882dce27a34bb87c64cbdc814b50a4251b63a1e269ae",
+        "verified": "2026-08-05"
+      },
+      "cy-002": {
+        "result": "pass",
+        "scenario_sha256": "706ec1306d6bd20d228983f9ef7f24d5371c8b88b258cbe6ef35599a573656f2",
+        "verified": "2026-08-05"
+      },
+      "cy-003": {
+        "result": "pass",
+        "scenario_sha256": "4b08f44ffdb72531169fe9a7766cce80a5b677aa741752de3599ff297bd938e4",
+        "verified": "2026-08-05"
+      },
+      "cy-004": {
+        "result": "pass",
+        "scenario_sha256": "ef5e113cb63e64ea067072d94f58e7bff5f2953b5e6425aa6cc3b1aeb5bc4f7d",
+        "verified": "2026-08-05"
+      },
+      "cy-005": {
+        "result": "pass",
+        "scenario_sha256": "51743c8f308cbd3e00346dc66a3fce39d13492022dbaa981132154597cd884e5",
+        "verified": "2026-08-05"
+      },
+      "cy-006": {
+        "result": "pass",
+        "scenario_sha256": "e44d35f38412bda802701b25ecec8231bf3fe1377e1ab7495f79766f619991e2",
+        "verified": "2026-08-05"
+      },
+      "cy-007": {
+        "result": "pass",
+        "scenario_sha256": "d6b81926cd422647f463bfc89aee37b4c67a4e30f17d2ca4a5ccad288decd08e",
+        "verified": "2026-08-05"
+      },
+      "cy-008": {
+        "result": "pass",
+        "scenario_sha256": "0e515d11354fd7d76c4264681afe41cc0be175c552937cbe2ff91598b6c3e095",
+        "verified": "2026-08-05"
+      },
+      "cy-009": {
+        "result": "pass",
+        "scenario_sha256": "43c8a5790587bb67ba1115488760498b7cb14c4a8348e6419971c0c45f8d506d",
+        "verified": "2026-08-05"
+      },
+      "cy-010": {
+        "result": "pass",
+        "scenario_sha256": "250b624d78cafd9d71a7d434ea8a1e853402010080dfcd6ced4010b274539d7d",
+        "verified": "2026-08-05"
+      },
+      "cy-011": {
+        "result": "pass",
+        "scenario_sha256": "b70bfdad3c07b1a581b0f74b14dc6c8174d1f2c6ccda268f579bc813649525cf",
+        "verified": "2026-08-05"
+      },
+      "cy-012": {
+        "result": "pass",
+        "scenario_sha256": "ae6054ffe8c597e824a777fa9d4f29b56a73c510278ea6ea4b3c2e96bf5eb72c",
+        "verified": "2026-08-05"
+      },
+      "cy-013": {
+        "result": "pass",
+        "scenario_sha256": "32880e2e9ee4e1c3971dcf5becf654378b891cf5bd651e62de67cf38e35a222e",
+        "verified": "2026-08-05"
+      },
+      "cy-014": {
+        "result": "pass",
+        "scenario_sha256": "3e8b32740ab73c14509b3852d55da5323d9e3dbc75e95166a6d85e8ddab42383",
+        "verified": "2026-08-05"
+      },
+      "cy-015": {
+        "result": "pass",
+        "scenario_sha256": "4d5bf92cc1bb368653fe401dce277134611be132456737abfae9ced2f7b8d14f",
+        "verified": "2026-08-05"
+      },
+      "cy-016": {
+        "result": "pass",
+        "scenario_sha256": "593db8384d254a97214ee8f3fc8ad215a78efa2f6d002a4f3925bc96d75dd3b7",
+        "verified": "2026-08-05"
+      },
+      "cy-017": {
+        "result": "pass",
+        "scenario_sha256": "e5b2885a8105d80af99f6481aaa4e60df98d96a7011b3590dd3e0dfcaba975bc",
+        "verified": "2026-08-05"
+      },
+      "cy-018": {
+        "result": "pass",
+        "scenario_sha256": "5b984623dce237e26de717946982fcca8f1056e259c6c6b99e1eff3581d5d870",
+        "verified": "2026-08-05"
+      },
+      "cy-019": {
+        "result": "pass",
+        "scenario_sha256": "5e6059e68cfefb54d481983e07b1d95c7cfb944753c78bcf1ce941d33dae7c77",
+        "verified": "2026-08-05"
+      },
+      "cy-020": {
+        "result": "pass",
+        "scenario_sha256": "63948fb2f2f21565bc0fb7d1e733f898f95c7688ed9d8687cc232d902cc6a670",
+        "verified": "2026-08-05"
+      }
+    },
     "structural_sha256": {
       "skills/cycle/SKILL.md": "086560464952dd2e79c52fd254b6b5133a4a1c7b005a27b189c7257eb1ebc1f7",
       "skills/cycle/references/completion.md": "1b2e05b6506e5b46edc76d4cb90f5c92ae938317eeb7cd477c2aec240536072c",
@@ -214,7 +317,7 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "2883f504e232a2bbde4eb781ceb447807cd9d837ae6fc2a28df784eb6c555724",
+    "surface_sha256": "42cf2fe6013db72b685e1aaba1aba29f16f3dc9cd5dfb93207540f1bc3a35ce2",
     "verified": "2026-08-05"
   },
   "decision-journal": {
@@ -329,6 +432,7 @@
     "verified": "2026-08-04"
   },
   "github-issue": {
+    "carried_note": "#243 H-1/H-2/H-3 修正で ledger.py を変更（置き場所を誤ったオプションの拒否 / --accept の per-scenario 検証日の据え置き / 非 partial 経路の carried_note 引き継ぎ）。本スキルが呼ぶ --impact / --impact-scenarios / --status / --coverage は、変更前 HEAD 版を別ディレクトリで実行して出力・rc ともバイト一致を実測済みのため実走せず承認。",
     "file_sha256": {
       "skills/github-issue/SKILL.md": "3e57ded338522ae78561336a94e50dd5697042263e6e7a28b69ab2e665d6afab",
       "skills/github-issue/fixtures.json": "3997abfe50abd8de1470506c5137700dd1ad7b86e2c87790b24830cde793760b",
@@ -354,10 +458,52 @@
       "skills/shared/references/measurement-identity.md": "051807f31d7a6799049d0f14aad6824f1c0d87a80cb5e15251480aab4ffb0384",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/shared/references/workspace-isolation.md": "8048ba07d1a7c112211ccaf56d503047af7494fcbef3c8ab6e7d10ab826d7ec5",
-      "skills/skill-regression/scripts/ledger.py": "4e6a49306dc6ced7a90ffa92b1ff9779d96f764ebdbaefeb6e3846633c81af42"
+      "skills/skill-regression/scripts/ledger.py": "7194a7ac85e78b46e9834f9d981f02f7ff3e299b70e26fff76d57bbd255ad679"
     },
-    "note": "coverage static-only 階層の追加（#244）。ledger.py の変更は coverage()/--check 出力の追加のみで、github-issue が消費する経路（claim/label 側）に挙動変更なし",
+    "note": "ledger.py の R-2 修正（--impact-scenarios への誤配置フラグガード追加）。本スキルが読む --impact / --impact-scenarios / --status / --coverage の 4 経路とも変更前 HEAD 版と出力バイト一致を実測（正当入力の挙動不変）",
     "result": "accepted-without-run",
+    "scenarios": {
+      "gi-001": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "8e71e697f0ae942400a0b5936d64f8737ea3e30914fa183d8ba342e4cae7e070",
+        "verified": "2026-08-04"
+      },
+      "gi-002": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "7a0563b929328cb260f2978ff0152a39c21f542c846c7f0755d908aabf88691f",
+        "verified": "2026-08-04"
+      },
+      "gi-003": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "bcdb695fe63e4cdbd4bf01f8fb8aac6708cdf64641c8ce6de4390b54ec9c2cbe",
+        "verified": "2026-08-04"
+      },
+      "gi-004": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "5f06f1bf678290aecf0d27f08358f1791a2a5d821e9ffdcb3337214b8befad57",
+        "verified": "2026-08-04"
+      },
+      "gi-005": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "6bea91ef6ce5f8648256c5c2e594118e39cd7ca3c4538223a72d410ce0088d96",
+        "verified": "2026-08-04"
+      },
+      "gi-006": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "007b5f7a21161551fc1b1e6347b9d862aa681030721120c5df56120505893e29",
+        "verified": "2026-08-04"
+      },
+      "gi-007": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "e8ea3f5758d063b3dce0ba53bf759cb169b4f0b3dfee331a4196b2d1d30f3dd2",
+        "verified": "2026-08-04"
+      },
+      "gi-008": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "e2322250809b23250989075f68ee6ea6c2467fc4a31793bc7b869ff36bc02413",
+        "verified": "2026-08-04"
+      }
+    },
     "structural_sha256": {
       "skills/github-issue/SKILL.md": "32b07c68d5054ea94ef92697bd304e3f41177b98a8878df4948e8379fac796ef",
       "skills/github-issue/references/adapter-internals.md": "90918af8d308dddc6a4411f4e58b964e269e147d44bad3378202394c8078bf34",
@@ -409,8 +555,8 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "419d32b62c54ba197614dce7d966c0e74bc90aff3944f3b8680257f41d5aa0d5",
-    "verified": "2026-08-04"
+    "surface_sha256": "9c73ab772fd99072528885b29bb28d148a0938475d8d7a48aace7d86373c46ec",
+    "verified": "2026-08-05"
   },
   "handoff": {
     "file_sha256": {
@@ -736,6 +882,7 @@
     "verified": "2026-08-04"
   },
   "skill-reviewer": {
+    "carried_note": "#243 H-1/H-2/H-3 修正で ledger.py を変更（置き場所を誤ったオプションの拒否 / --accept の per-scenario 検証日の据え置き / 非 partial 経路の carried_note 引き継ぎ）。本スキルが呼ぶ --impact / --impact-scenarios / --status / --coverage は、変更前 HEAD 版を別ディレクトリで実行して出力・rc ともバイト一致を実測済みのため実走せず承認。",
     "file_sha256": {
       "skills/shared/references/coverage-ledger.md": "10c3ea12cf96f31749eacce497f43d5db9b6d26b495a55e6552c10089fff8376",
       "skills/shared/references/fix-action-taxonomy.md": "9f686fb66e66491c6a2260d427c18b2e2bcfbecc995cf899414045150b8d1c71",
@@ -743,15 +890,32 @@
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
       "skills/shared/references/skill-repository-profile.md": "fafc81d7ce71468606f3fd3c281b8f3a926dc3f0f48fcd221516720bf6c2fefe",
-      "skills/skill-regression/scripts/ledger.py": "4e6a49306dc6ced7a90ffa92b1ff9779d96f764ebdbaefeb6e3846633c81af42",
+      "skills/skill-regression/scripts/ledger.py": "7194a7ac85e78b46e9834f9d981f02f7ff3e299b70e26fff76d57bbd255ad679",
       "skills/skill-reviewer/SKILL.md": "e6d09f4bfa4201780f9b0724a63f1605826959226ba15c84c3efd64b0dbe9d85",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "db06e7e49c22d1eb0b4725304b4858152c4f0577fa1df0234d0a189f33c72bda",
       "skills/skill-reviewer/references/output-contract.md": "7cd2fc72d01be97efab8fa5b0302de986e0ffec38fd4dadbfc2282f9e1982b81",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "coverage static-only 階層の追加（#244）。ledger.py の変更は coverage()/--check 出力の追加のみで、skill-reviewer が消費する経路に挙動変更なし",
+    "note": "ledger.py の R-2 修正（--impact-scenarios への誤配置フラグガード追加）。本スキルが読む 4 経路とも変更前 HEAD 版と出力バイト一致を実測（正当入力の挙動不変）",
     "result": "accepted-without-run",
+    "scenarios": {
+      "sr-001": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "380dca494b96613297887dc66c1eeb2668bfd8cf058f9bca738d139c34395e0c",
+        "verified": "2026-08-04"
+      },
+      "sr-002": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "b6954bed3dd5fbece49eb3a7260a8746f79043e1dbd00e05c1baa7a77730672b",
+        "verified": "2026-08-04"
+      },
+      "sr-003": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "2c5d8ecf7cdaec7d614ebe01937f3f80378c2fecc443ffc59549daa9ddf40305",
+        "verified": "2026-08-04"
+      }
+    },
     "structural_sha256": {
       "skills/shared/references/coverage-ledger.md": "f8d5f2a4c845758b1cd6436a931a74ac05af93f30391791b5ea15535e68d0579",
       "skills/shared/references/fix-action-taxonomy.md": "f10504693453f7cc768ac00ec34708f41d22a8e713ca503b47d9322b4d44c81b",
@@ -777,8 +941,8 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "724dd64f2f50d95e2570478c39df40e1d1b3a14205bec6632a9cb17b97a05231",
-    "verified": "2026-08-04"
+    "surface_sha256": "f1dab64b73f537ab0bab85717468e814233b36e1f8c93f9ac6876b05dc8bcbcf",
+    "verified": "2026-08-05"
   },
   "sweep-fix": {
     "file_sha256": {

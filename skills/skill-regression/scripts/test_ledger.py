@@ -3,6 +3,8 @@
 挙動面フィンガープリントの決定性と、台帳照合（stale / unverified / orphan）
 の純関数を検証する。日付は DI（引数渡し）でテスト可能にする。
 """
+import datetime
+import json
 import os
 import tempfile
 import unittest
@@ -622,6 +624,793 @@ class TestEntryRoundtrip(unittest.TestCase):
                              "result": "pass", "verified": "2026-07-07"}}
             ledger.save(root, entries)
             self.assertEqual(ledger.load(root), entries)
+
+
+class TestImpactedScenarios(unittest.TestCase):
+    """変更ファイル → 影響シナリオ。判定規則はすべて安全側優先。
+
+    再走単位をスキルからシナリオへ細分化する中核。宣言を持たないシナリオが
+    従来どおり全変更で再走される（後方互換 = 安全側）ことが土台になる。
+    """
+
+    SKILL = "a"
+    SURFACE = [
+        "skills/a/SKILL.md",
+        "skills/a/fixtures.json",
+        "skills/shared/references/tdd.md",
+        "skills/shared/references/gate.md",
+    ]
+
+    def _scenarios(self):
+        return [
+            {"id": "a-001", "prompt": "one",
+             "exercises": ["skills/shared/references/tdd.md"]},
+            {"id": "a-002", "prompt": "two",
+             "exercises": ["skills/shared/references/gate.md"]},
+            {"id": "a-003", "prompt": "three"},
+        ]
+
+    def _impacted(self, changed, scenarios=None, recorded=None):
+        return ledger.impacted_scenarios(
+            self.SKILL, self.SURFACE, scenarios or self._scenarios(),
+            changed, recorded)
+
+    def _recorded(self, scenarios=None):
+        return {
+            s["id"]: {"scenario_sha256": ledger.scenario_sha256(s),
+                      "result": "pass", "verified": "2026-08-01"}
+            for s in (scenarios or self._scenarios())
+        }
+
+    def test_no_change_impacts_nothing(self):
+        self.assertEqual(self._impacted([]), [])
+
+    def test_skill_md_change_impacts_every_scenario(self):
+        # SKILL.md は全シナリオが必ず読む暗黙の依存
+        self.assertEqual(self._impacted(["skills/a/SKILL.md"]),
+                         ["a-001", "a-002", "a-003"])
+
+    def test_declared_file_change_impacts_declarers_and_undeclared_only(self):
+        self.assertEqual(self._impacted(["skills/shared/references/tdd.md"]),
+                         ["a-001", "a-003"])
+
+    def test_empty_declaration_is_a_claim_of_no_dependency(self):
+        # 空配列 = 「SKILL.md 以外は踏まない」。宣言なし（安全側）とは別物
+        scenarios = self._scenarios()
+        scenarios[2]["exercises"] = []
+        self.assertEqual(
+            self._impacted(["skills/shared/references/tdd.md"], scenarios),
+            ["a-001"])
+
+    def test_a_declaration_off_the_surface_is_always_impacted(self):
+        # typo・移動で面に無いパスを指した宣言は信用できない。安全側の常時再走へ
+        scenarios = self._scenarios()
+        scenarios[1]["exercises"] = ["skills/shared/references/typo.md"]
+        self.assertEqual(
+            self._impacted(["skills/shared/references/tdd.md"], scenarios),
+            ["a-001", "a-002", "a-003"])
+
+    def test_a_removed_surface_file_impacts_every_scenario(self):
+        # 面から消えたファイルは現在の宣言と突き合わせようがない（安全側）
+        self.assertEqual(self._impacted(["skills/shared/references/gone.md"]),
+                         ["a-001", "a-002", "a-003"])
+
+    def test_fixtures_change_impacts_only_scenarios_whose_content_moved(self):
+        recorded = self._recorded()
+        scenarios = self._scenarios()
+        scenarios[1]["prompt"] = "two, but stricter"
+        self.assertEqual(
+            self._impacted(["skills/a/fixtures.json"], scenarios, recorded),
+            ["a-002"])
+
+    def test_adding_a_declaration_alone_impacts_nothing(self):
+        # exercises は sha 対象外。宣言追加だけの fixtures.json 変更は再走ゼロ
+        recorded = self._recorded()
+        scenarios = self._scenarios()
+        scenarios[2]["exercises"] = ["skills/shared/references/gate.md"]
+        self.assertEqual(
+            self._impacted(["skills/a/fixtures.json"], scenarios, recorded), [])
+
+    def test_a_new_scenario_is_impacted(self):
+        recorded = self._recorded()
+        scenarios = self._scenarios() + [{"id": "a-004", "prompt": "four"}]
+        self.assertEqual(
+            self._impacted(["skills/a/fixtures.json"], scenarios, recorded),
+            ["a-004"])
+
+    def test_fixtures_change_without_per_scenario_record_impacts_all(self):
+        # 突き合わせ基準の無い旧エントリ。差分と断じる根拠がない
+        self.assertEqual(self._impacted(["skills/a/fixtures.json"]),
+                         ["a-001", "a-002", "a-003"])
+
+
+class TestImpactScenariosCli(unittest.TestCase):
+    """`--impact-scenarios` は skill<TAB>scenario_id 行を出す。"""
+
+    def _repo(self, root):
+        _write(root, "skills/skill-regression/SKILL.md", "self")
+        _write(root, "skills/shared/references/tdd.md", "contract")
+        _write(root, "skills/shared/references/gate.md", "contract")
+        _write(root, "skills/a/SKILL.md",
+               "see [tdd](../shared/references/tdd.md) and "
+               "[gate](../shared/references/gate.md)")
+        fixture = {
+            "skill": "a",
+            "scenarios": [
+                {"id": "a-001", "prompt": "one",
+                 "exercises": ["skills/shared/references/tdd.md"]},
+                {"id": "a-002", "prompt": "two",
+                 "exercises": ["skills/shared/references/gate.md"]},
+            ],
+        }
+        _write(root, "skills/a/fixtures.json",
+               json.dumps(fixture, ensure_ascii=False))
+
+    def _run(self, argv):
+        import io
+        import contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = ledger.main(argv)
+        return rc, buf.getvalue()
+
+    def test_prints_only_the_scenarios_that_exercise_the_changed_file(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            rc, out = self._run([
+                "--impact-scenarios", "skills/shared/references/tdd.md", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(out.strip(), "a\ta-001")
+
+    def test_unaffected_change_prints_nothing(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            rc, out = self._run(["--impact-scenarios", "README.md", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(out.strip(), "")
+
+    def test_a_file_deleted_from_the_surface_still_names_every_scenario(self):
+        # 削除されたファイルは現在の依存グラフのどの面にも載らない。台帳が記録した
+        # 前回の面から拾わないと、削除が「影響ゼロ」に見えて check() の
+        # 「scenarios: all」と食い違う
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            ledger.save(root, {
+                "a": ledger.make_entry(root, surface, "pass", "2026-08-01")})
+            os.remove(os.path.join(root, "skills/shared/references/gate.md"))
+            rc, out = self._run([
+                "--impact-scenarios", "skills/shared/references/gate.md", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(out.strip().splitlines(), ["a\ta-001", "a\ta-002"])
+
+
+class TestCheckShowsImpactedScenarios(unittest.TestCase):
+    """stale 表示にシナリオ粒度の内訳を添える（合否判定は不変）。"""
+
+    def _repo(self, root):
+        _write(root, "skills/shared/references/tdd.md", "contract")
+        _write(root, "skills/a/SKILL.md", "see [tdd](../shared/references/tdd.md)")
+        fixture = {
+            "skill": "a",
+            "scenarios": [
+                {"id": "a-001", "prompt": "one",
+                 "exercises": ["skills/shared/references/tdd.md"]},
+                {"id": "a-002", "prompt": "two", "exercises": []},
+            ],
+        }
+        _write(root, "skills/a/fixtures.json",
+               json.dumps(fixture, ensure_ascii=False))
+
+    def test_stale_detail_names_the_impacted_scenarios(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-08-01")}
+            _write(root, "skills/shared/references/tdd.md", "contract `changed`")
+            issues = ledger.check(root, entries)
+            self.assertEqual([i[0] for i in issues], ["stale"])  # kind は不変
+            self.assertIn("scenarios: a-001 (1/2)", issues[0][2])
+
+    def test_zero_impact_is_shown_as_none(self):
+        # 宣言追加だけの fixtures.json 変更。空文字を出すと「表示が壊れている」
+        # のか「再走ゼロ」なのかが読み手に判別できない
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entry = ledger.make_entry(root, surface, "pass", "2026-08-01")
+            entry["scenarios"] = ledger.full_scenarios_record(
+                root, "a", "pass", "2026-08-01")
+            fixture = json.loads(
+                open(os.path.join(root, "skills/a/fixtures.json")).read())
+            fixture["scenarios"][1]["exercises"] = [
+                "skills/shared/references/tdd.md"]
+            _write(root, "skills/a/fixtures.json",
+                   json.dumps(fixture, ensure_ascii=False))
+            issues = ledger.check(root, {"a": entry})
+            self.assertIn("scenarios: none (0/2)", issues[0][2])
+
+    def test_full_impact_is_shown_as_all(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-08-01")}
+            _write(root, "skills/a/SKILL.md",
+                   "see [tdd](../shared/references/tdd.md) `changed`")
+            issues = ledger.check(root, entries)
+            self.assertIn("scenarios: all (2/2)", issues[0][2])
+
+
+class _PartialHarness(unittest.TestCase):
+    """per-scenario 記録・持ち越し・部分更新の共通土台。"""
+
+    FIXTURE = {
+        "skill": "a",
+        "scenarios": [
+            {"id": "a-001", "prompt": "one",
+             "exercises": ["skills/shared/references/tdd.md"]},
+            {"id": "a-002", "prompt": "two",
+             "exercises": ["skills/shared/references/gate.md"]},
+            {"id": "a-003", "prompt": "three"},
+        ],
+    }
+
+    def _write_fixture(self, root, fixture=None):
+        _write(root, "skills/a/fixtures.json",
+               json.dumps(fixture or self.FIXTURE, ensure_ascii=False))
+
+    def _repo(self, root):
+        _write(root, "skills/skill-regression/SKILL.md", "self")
+        _write(root, "skills/shared/references/tdd.md", "tdd contract")
+        _write(root, "skills/shared/references/gate.md", "gate contract")
+        _write(root, "skills/a/SKILL.md",
+               "see [tdd](../shared/references/tdd.md) and "
+               "[gate](../shared/references/gate.md)")
+        self._write_fixture(root)
+
+    def _verified(self, root, result="pass", with_scenarios=True):
+        surface = ledger.skill_surface(root, "a")
+        entry = ledger.make_entry(root, surface, result, "2026-08-01")
+        if with_scenarios:
+            entry["scenarios"] = ledger.full_scenarios_record(
+                root, "a", result, "2026-08-01")
+        ledger.save(root, {"a": entry})
+        return entry
+
+    def _run(self, argv):
+        import io
+        import contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = ledger.main(argv)
+        return rc, buf.getvalue()
+
+
+class TestScenarioRecords(_PartialHarness):
+    """非 partial の --update も per-scenario 記録を書く（部分再走の土台）。"""
+
+    def test_update_records_every_scenario(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            rc, _ = self._run(["--update", "a", root])
+            self.assertEqual(rc, 0)
+            recorded = ledger.load(root)["a"]["scenarios"]
+            self.assertEqual(sorted(recorded), ["a-001", "a-002", "a-003"])
+            self.assertEqual(recorded["a-001"]["result"], "pass")
+
+    def test_recorded_sha_ignores_the_exercises_declaration(self):
+        # 宣言追加だけの fixtures.json 変更が「シナリオが変わった」にならない
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._run(["--update", "a", root])
+            before = ledger.load(root)["a"]["scenarios"]["a-003"]["scenario_sha256"]
+            fixture = json.loads(json.dumps(self.FIXTURE))
+            fixture["scenarios"][2]["exercises"] = ["skills/shared/references/gate.md"]
+            self._write_fixture(root, fixture)
+            after = ledger.scenario_sha256(fixture["scenarios"][2])
+            self.assertEqual(before, after)
+
+
+class TestCarryOver(_PartialHarness):
+    """持ち越しの有効性は直前エントリとの帰納で決まる。"""
+
+    def _reason(self, root, scenario_id, entry=None):
+        entry = entry or ledger.load(root)["a"]
+        surface = ledger.skill_surface(root, "a")
+        scenario = next(s for s in ledger.load_scenarios(root, "a")
+                        if s["id"] == scenario_id)
+        return ledger.carryover_reason(
+            "a", scenario, surface, entry.get("file_sha256", {}),
+            ledger.file_hashes(root, surface), entry.get("scenarios"))
+
+    def test_untouched_dependencies_carry_over(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self.assertIsNone(self._reason(root, "a-001"))
+
+    def test_a_changed_declared_dependency_blocks_carry_over(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/shared/references/tdd.md", "tdd contract CHANGED")
+            self.assertIsNotNone(self._reason(root, "a-001"))
+            # 宣言していないシナリオの合格は影響を受けない
+            self.assertIsNone(self._reason(root, "a-002"))
+
+    def test_an_undeclared_scenario_never_carries_over_a_surface_change(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/shared/references/gate.md", "gate contract CHANGED")
+            self.assertIsNotNone(self._reason(root, "a-003"))
+
+    def test_a_fixtures_edit_of_another_scenario_does_not_block(self):
+        # fixtures.json はシナリオ内容ハッシュで見る。ファイルハッシュで見ると
+        # 他シナリオの編集だけで全シナリオの持ち越しが壊れ、impact 規則と食い違う
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            fixture = json.loads(json.dumps(self.FIXTURE))
+            fixture["scenarios"][1]["prompt"] = "two, but stricter"
+            self._write_fixture(root, fixture)
+            self.assertIsNone(self._reason(root, "a-001"))
+            self.assertIsNotNone(self._reason(root, "a-002"))
+
+    def test_a_dependency_recorded_as_missing_blocks_carry_over(self):
+        # 前回検証時に実体が無かった参照（壊れたリンク）は帰納の土台にならない
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            entry = self._verified(root)
+            entry["file_sha256"]["skills/shared/references/tdd.md"] = ledger._MISSING
+            self.assertIsNotNone(self._reason(root, "a-001", entry))
+
+    def test_an_entry_without_scenario_records_blocks_carry_over(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            entry = self._verified(root, with_scenarios=False)
+            self.assertIsNotNone(self._reason(root, "a-001", entry))
+
+
+class TestPartialUpdate(_PartialHarness):
+    """`--update <skill> --partial` は実走分を記録し、残りを持ち越す。"""
+
+    def test_all_carried_over_keeps_the_skill_level_pass(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            fixture = json.loads(json.dumps(self.FIXTURE))
+            fixture["scenarios"][2]["exercises"] = ["skills/shared/references/gate.md"]
+            self._write_fixture(root, fixture)
+            rc, _ = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["result"], "pass")
+            # 持ち越したシナリオは前回の検証日を保つ（実走した日ではない）
+            self.assertEqual(entry["scenarios"]["a-001"]["verified"], "2026-08-01")
+
+    def test_a_rerun_scenario_is_recorded_with_todays_date(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/shared/references/tdd.md", "tdd contract CHANGED")
+            # a-003 は宣言を持たないので、面のどの変更でも再走側（安全側）
+            rc, _ = self._run([
+                "--update", "a", "--partial",
+                "--scenario", "a-001", "--scenario", "a-003", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["result"], "pass")
+            self.assertNotEqual(entry["scenarios"]["a-001"]["verified"], "2026-08-01")
+            self.assertEqual(entry["scenarios"]["a-002"]["verified"], "2026-08-01")
+
+    def test_it_refuses_and_lists_the_scenarios_that_still_need_a_run(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/shared/references/tdd.md", "tdd contract CHANGED")
+            rc, out = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 1)
+            self.assertIn("a-001", out)
+            self.assertNotIn("a-002", out)
+            # 拒否時に台帳は書き換わらない
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+    def test_it_refuses_an_unknown_scenario_id(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run(
+                ["--update", "a", "--partial", "--scenario", "a-999", root])
+            self.assertEqual(rc, 1)
+            self.assertIn("a-999", out)
+
+    def test_it_refuses_to_combine_with_accept(self):
+        # --accept は「実走せず承認」、--partial は「実走分を記録」。混ぜると
+        # 台帳の result がどちらの意味なのか読めなくなる
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, _ = self._run(["--update", "a", "--partial", "--accept", root])
+            self.assertEqual(rc, 1)
+
+    def test_a_carried_over_acceptance_does_not_become_a_pass(self):
+        # 実走していないシナリオが混ざる限り skill レベルを pass と名乗らせない
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root, result="accepted-without-run")
+            rc, _ = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["result"],
+                             "accepted-without-run")
+
+    def test_a_new_scenario_must_be_run(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            fixture = json.loads(json.dumps(self.FIXTURE))
+            fixture["scenarios"].append({"id": "a-004", "prompt": "four"})
+            self._write_fixture(root, fixture)
+            rc, out = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 1)
+            self.assertIn("a-004", out)
+
+    def test_a_file_leaving_the_surface_refuses_a_zero_run_partial(self):
+        # 削除は影響規則では「全シナリオ再走」。持ち越し規則だけで判定すると、
+        # 消えたファイルはどのシナリオの依存集合にも現れず全件が持ち越されてしまう
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            os.remove(os.path.join(root, "skills/shared/references/gate.md"))
+            rc, out = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 1)
+            for sid in ("a-001", "a-002", "a-003"):
+                self.assertIn(sid, out)
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+    def test_the_refusal_names_the_files_that_forced_the_rerun(self):
+        # 原因ファイルを理由行に添えないと、何が再走を呼んだのかを見るのに
+        # --impact-scenarios を別途叩き直すことになる
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            os.remove(os.path.join(root, "skills/shared/references/gate.md"))
+            rc, out = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 1)
+            self.assertIn("skills/shared/references/gate.md", out)
+
+
+class TestNoteIsNeverSilentlyDiscarded(_PartialHarness):
+    """エントリを作り直す更新が、前任の申し送りを黙って落とさない。
+
+    note には実走証拠の性質（誰がどの経路を通ったか）が入る。持ち越しだけの
+    更新でこれが消えると、台帳に残るのは記録の形だけで由来が読めなくなる。
+    """
+
+    def _verified_with_note(self, root, note):
+        entry = self._verified(root)
+        entry["note"] = note
+        ledger.save(root, {"a": entry})
+
+    def test_a_zero_run_partial_keeps_the_previous_note(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代: 実走 3 本 / 経路 B")
+            rc, _ = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["carried_note"],
+                             "初代: 実走 3 本 / 経路 B")
+
+    def test_a_new_note_does_not_erase_the_previous_one(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代: 実走 3 本 / 経路 B")
+            rc, _ = self._run(
+                ["--update", "a", "--partial", "--note", "二代目: 宣言追加のみ", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["note"], "二代目: 宣言追加のみ")
+            self.assertEqual(entry["carried_note"], "初代: 実走 3 本 / 経路 B")
+
+    def test_the_carried_note_survives_a_further_note_less_partial(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代: 実走 3 本 / 経路 B")
+            self._run(["--update", "a", "--partial", root])
+            rc, _ = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["carried_note"],
+                             "初代: 実走 3 本 / 経路 B")
+
+    def test_only_the_most_recent_prior_note_is_kept(self):
+        # 引き継ぎスロットは 1 つ。全世代を積むと台帳が伸び続ける
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代")
+            self._run(["--update", "a", "--partial", "--note", "二代目", root])
+            rc, _ = self._run(["--update", "a", "--partial", "--note", "三代目", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["note"], "三代目")
+            self.assertEqual(entry["carried_note"], "二代目")
+            self.assertNotIn("初代", json.dumps(entry, ensure_ascii=False))
+
+    def test_an_accept_keeps_the_previous_note(self):
+        # --partial だけが申し送りを守ると、定例の --accept 1 回で実走証拠が消える
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代: 実走 3 本 / 経路 B")
+            _write(root, "skills/a/extra.md", "new reference")
+            rc, _ = self._run(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["carried_note"],
+                             "初代: 実走 3 本 / 経路 B")
+
+    def test_a_full_update_keeps_the_previous_note(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代: 実走 3 本 / 経路 B")
+            rc, _ = self._run(["--update", "a", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["carried_note"],
+                             "初代: 実走 3 本 / 経路 B")
+
+    def test_a_chain_of_accepts_keeps_the_most_recent_prior_note(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代")
+            self._run(["--update", "a", "--accept", "--note", "二代目", root])
+            rc, _ = self._run(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["carried_note"], "二代目")
+
+
+class TestAcceptKeepsPerScenarioRunDates(_PartialHarness):
+    """1 本も走らせていない --accept が per-scenario の検証日を塗り替えない。
+
+    per-scenario の verified は「そのシナリオを最後に実走で確かめた日」で、
+    partial-rerun.md は run の新しさをここから読めと指示している。承認が今日で
+    上書きすると、実走記録と承認記録が日付から区別できなくなる。
+    """
+
+    def test_an_accept_keeps_the_dates_of_the_last_real_run(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/a/extra.md", "new reference")
+            rc, _ = self._run(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["result"], "accepted-addition")
+            for sid in ("a-001", "a-002", "a-003"):
+                # result は承認値へ倒す（partial-rerun.md の既存意味論）
+                self.assertEqual(entry["scenarios"][sid]["result"],
+                                 "accepted-addition")
+                self.assertEqual(entry["scenarios"][sid]["verified"], "2026-08-01")
+
+    def test_a_scenario_without_a_previous_record_falls_back_to_the_entry_date(self):
+        # 旧エントリには per-scenario 記録が無い。実走日を知る材料が無いので
+        # skill レベルの検証日まで落とす（今日を名乗らない）
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root, with_scenarios=False)
+            _write(root, "skills/a/extra.md", "new reference")
+            rc, _ = self._run(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["scenarios"]["a-001"]["verified"], "2026-08-01")
+
+    def test_a_first_accept_without_any_previous_entry_stamps_today(self):
+        # 前任がいない＝古い日付を捏造する材料が無い。today が唯一正直な値
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            rc, _ = self._run(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["scenarios"]["a-001"]["verified"],
+                             datetime.date.today().isoformat())
+
+    def test_a_full_run_update_still_stamps_today_on_every_scenario(self):
+        # --accept でない --update は全シナリオを実走した記録なので日付は動く
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, _ = self._run(["--update", "a", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            today = datetime.date.today().isoformat()
+            for sid in ("a-001", "a-002", "a-003"):
+                self.assertEqual(entry["scenarios"][sid]["verified"], today)
+
+
+class TestPartialUpdateAgreesWithTheImpactRule(_PartialHarness):
+    """影響ありと報告したシナリオを、同じ状態の --partial が持ち越さない。
+
+    影響規則（check / --impact-scenarios）と持ち越し規則が別々の材料で動くと、
+    片方が「全 20 本を再走せよ」と言う状態で、もう片方が実走ゼロの更新を通す。
+    """
+
+    def _impacted(self, root):
+        entry = ledger.load(root)["a"]
+        surface = ledger.skill_surface(root, "a")
+        _, changed = ledger.stale_severity(
+            entry.get("file_sha256", {}), ledger.file_hashes(root, surface),
+            entry.get("structural_sha256", {}),
+            ledger.structural_hashes(root, surface),
+            own_prefix="skills/a/")
+        return set(ledger.impacted_scenarios(
+            "a", surface, ledger.load_scenarios(root, "a"), changed,
+            entry.get("scenarios")))
+
+    def test_no_impacted_scenario_can_be_carried_over_after_a_deletion(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            os.remove(os.path.join(root, "skills/shared/references/gate.md"))
+            impacted = self._impacted(root)
+            self.assertTrue(impacted)
+            for held_back in sorted(impacted):
+                argv = ["--update", "a", "--partial"]
+                for sid in sorted(impacted - {held_back}):
+                    argv += ["--scenario", sid]
+                rc, out = self._run(argv + [root])
+                self.assertEqual(rc, 1, f"{held_back} が持ち越された")
+                self.assertIn(held_back, out)
+
+
+class TestSeedScenarios(_PartialHarness):
+    """`--seed-scenarios` は移行用ワンショット。検証イベントではない。"""
+
+    def test_it_fills_the_records_from_the_skill_level_entry(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root, with_scenarios=False)
+            rc, _ = self._run(["--seed-scenarios", "a", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(sorted(entry["scenarios"]), ["a-001", "a-002", "a-003"])
+            self.assertEqual(entry["scenarios"]["a-002"]["result"], "pass")
+            # 検証していないので検証日は動かさない
+            self.assertEqual(entry["scenarios"]["a-002"]["verified"], "2026-08-01")
+            self.assertEqual(entry["verified"], "2026-08-01")
+
+    def test_it_refuses_a_stale_entry(self):
+        # stale = 面が前回検証時と違う。「全シナリオ合格」の保証が今の面に無い
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root, with_scenarios=False)
+            _write(root, "skills/shared/references/tdd.md", "tdd contract CHANGED")
+            rc, out = self._run(["--seed-scenarios", "a", root])
+            self.assertEqual(rc, 1)
+            self.assertIn("stale", out)
+            self.assertNotIn("scenarios", ledger.load(root)["a"])
+
+    def test_it_refuses_when_records_already_exist(self):
+        # 既存記録の上書きを許すと、実走していないシナリオ記録を skill レベルの
+        # pass で塗り替えられる（承認の洗浄経路になる）
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, _ = self._run(["--seed-scenarios", "a", root])
+            self.assertEqual(rc, 1)
+
+    def test_it_refuses_a_skill_with_no_entry(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            rc, _ = self._run(["--seed-scenarios", "a", root])
+            self.assertEqual(rc, 1)
+
+
+class TestLegacyEntriesKeepWorking(_PartialHarness):
+    """scenarios キーを持たない旧エントリでも既存経路は現行どおり動く。"""
+
+    def test_check_status_and_update_are_unaffected(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root, with_scenarios=False)
+            self.assertEqual(ledger.check(root, ledger.load(root)), [])
+            rc, out = self._run(["--status", root])
+            self.assertEqual(rc, 0)
+            self.assertIn("verified", out)
+            rc, _ = self._run(["--update", "a", root])
+            self.assertEqual(rc, 0)
+
+    def test_accept_still_classifies_by_severity(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root, with_scenarios=False)
+            _write(root, "skills/a/extra.md", "new reference")
+            rc, _ = self._run(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["result"], "accepted-addition")
+
+
+class TestArgumentErrorsAreReported(_PartialHarness):
+    """値を伴うオプションの欠落は traceback ではなく usage + exit 2 で返す。"""
+
+    def test_scenario_without_a_value(self):
+        rc, out = self._run(["--update", "a", "--partial", "--scenario"])
+        self.assertEqual(rc, 2)
+        self.assertIn("--scenario", out)
+
+    def test_note_without_a_value(self):
+        rc, out = self._run(["--update", "a", "--partial", "--note"])
+        self.assertEqual(rc, 2)
+        self.assertIn("--note", out)
+
+    def test_update_without_a_skill(self):
+        rc, out = self._run(["--update"])
+        self.assertEqual(rc, 2)
+        self.assertIn("--update", out)
+
+    def test_seed_scenarios_without_a_skill(self):
+        rc, out = self._run(["--seed-scenarios"])
+        self.assertEqual(rc, 2)
+        self.assertIn("--seed-scenarios", out)
+
+    def test_impact_scenarios_without_any_changed_file(self):
+        # 何も出力せず rc 0 だと「再走すべきシナリオが無い」と区別が付かず、
+        # 呼び出し側の引数組み立てミスが影響ゼロに化ける
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            rc, _ = self._run(["--impact-scenarios", root])
+            self.assertNotEqual(rc, 0)
+
+
+class TestMisplacedOptionsAreRefused(_PartialHarness):
+    """モード指定より前に書かれた既知オプションを黙って捨てない。
+
+    位置依存で読むオプションは、置き場所を間違えると存在しなかったことになる。
+    捨てられた --partial / --scenario は「全シナリオを実走して合格した」という
+    偽の per-scenario 記録を台帳へ書き込み、以後の持ち越し帰納がその上に積まれる。
+    """
+
+    def test_partial_and_scenario_before_update_are_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run([
+                "--partial", "--scenario", "a-001", "--update", "a", root])
+            self.assertEqual(rc, 2)
+            self.assertIn("--partial", out)
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+    def test_accept_before_update_is_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run(["--accept", "--update", "a", root])
+            self.assertEqual(rc, 2)
+            self.assertIn("--accept", out)
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+    def test_a_misplaced_flag_on_check_is_refused(self):
+        # root の位置に `--partial` が居座ると、存在しない root の照合が
+        # 「issue なし」として rc 0 で通る
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run(["--check", "--partial", root])
+            self.assertEqual(rc, 2)
+            self.assertIn("--partial", out)
+
+    def test_a_correctly_ordered_invocation_still_works(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, _ = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 0)
+
+    def test_a_misplaced_flag_on_impact_scenarios_is_refused(self):
+        # フラグ風トークンが「変更ファイル」として消費されると、誤配置が
+        # 出力なし rc 0 =「再走対象なし」の顔になる
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run(["--impact-scenarios", "--partial", root])
+            self.assertEqual(rc, 2)
+            self.assertIn("--partial", out)
 
 
 class TestCoverage(unittest.TestCase):

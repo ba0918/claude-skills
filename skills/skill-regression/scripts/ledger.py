@@ -28,8 +28,17 @@ CLI:
       severity が contract-addition / prose-change で前回が実走 pass なら
       accepted-addition / accepted-prose として自動で区別記録する。
       --note は run の性質（照会回数・実行者が通った経路など）の申し送り）
+  python3 ledger.py --update SKILL --partial [--scenario ID]... [--note TEXT] [root]
+      部分再走。--scenario で指名した id を「今回実走して合格」として記録し、
+      残りは前回結果の持ち越しを試みる。持ち越せないものがあれば更新ごと拒否
+      して列挙する（= それらも再走が必要）。詳細は references/partial-rerun.md
+  python3 ledger.py --seed-scenarios SKILL [root]
+      移行用ワンショット。stale でないエントリへ per-scenario 記録を埋める
   python3 ledger.py --remove SKILL [root]
   python3 ledger.py --impact FILE... [root]    # 変更ファイル → 影響スキル
+  python3 ledger.py --impact-scenarios FILE... [root]
+      変更ファイル → 影響シナリオ（skill<TAB>scenario_id）。fixture の exercises
+      宣言を使って再走をシナリオ単位へ絞る。宣言なしのシナリオは常に影響側
   python3 ledger.py --status [root]
 """
 import datetime
@@ -40,10 +49,16 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dep_graph  # noqa: E402
+import fixture_setup  # noqa: E402
 import md_structure  # noqa: E402
 
 LEDGER_REL = os.path.join("skills", "skill-regression", "ledger.json")
 _MISSING = "MISSING"
+
+# シナリオ内容ハッシュの正本は fixture_setup 側。ここで再実装すると、rerun ガードと
+# 持ち越し判定が別々の規則で動き「台帳は持ち越せると言うのに rerun は再構築を
+# 要求する」食い違いが生まれる
+scenario_sha256 = fixture_setup.scenario_sha256
 
 
 def _file_sha256(root, rel):
@@ -184,7 +199,112 @@ def accept_result(recorded, current, prev_result, recorded_struct=None,
     return RESULT_ACCEPTED_WITHOUT_RUN
 
 
-def make_entry(root, surface, result, verified_date, note=None):
+def carryover_dependencies(skill, scenario, surface):
+    """持ち越し判定でハッシュ一致を要求するファイル集合。
+
+    fixtures.json はここに含めない。含めると他シナリオの編集や exercises 宣言の
+    追加だけで全シナリオの持ち越しが壊れ、シナリオ差分で見る impact 側の規則と
+    食い違う。シナリオ定義の変化は scenario_sha256 の比較が受け持つ。
+    """
+    fixtures_rel = f"skills/{skill}/fixtures.json"
+    deps = declared_dependencies(scenario, set(surface))
+    if deps is None:
+        return set(surface) - {fixtures_rel}
+    return deps | {f"skills/{skill}/SKILL.md"}
+
+
+def carryover_reason(skill, scenario, surface, recorded_hashes, current_hashes,
+                     recorded_scenarios):
+    """前回の合格を持ち越せない理由を返す（持ち越せるなら None）。
+
+    有効性は直前エントリとの**帰納**で決まる。直前エントリでこのシナリオは
+    有効だった（実走したか、同じ規則で有効性を機械確認して持ち越した）ので、
+    シナリオ定義が不変で、依存ファイルが 1 バイトも動いていなければ、その
+    合格は今も有効である。per-scenario にファイルハッシュを保存しなくても
+    これが成り立つのが本設計の要。
+
+    材料が欠けるケースはすべて持ち越し不可（安全側）。前回エントリに記録が
+    無い、前回時点で依存の実体が無かった（MISSING = 壊れた参照）、依存が
+    前回の面に無かった、のいずれも帰納の土台にならない。
+    """
+    recorded = (recorded_scenarios or {}).get(scenario["id"])
+    if not recorded:
+        return "前回エントリに per-scenario 記録がない（--seed-scenarios で移行）"
+    if recorded.get("scenario_sha256") != scenario_sha256(scenario):
+        return "シナリオ定義が前回検証時から変わった"
+    unbacked, drifted = [], []
+    for rel in sorted(carryover_dependencies(skill, scenario, surface)):
+        previous = recorded_hashes.get(rel)
+        if previous is None or previous == _MISSING:
+            unbacked.append(rel)
+        elif previous != current_hashes.get(rel):
+            drifted.append(rel)
+    if unbacked:
+        return "前回検証時に実体の無い依存がある: " + ", ".join(unbacked)
+    if drifted:
+        return "依存ファイルが変わった: " + ", ".join(drifted)
+    return None
+
+
+def full_scenarios_record(root, skill, result, verified_date):
+    """現在の fixtures.json の全シナリオを同一の result / 検証日で記録する。"""
+    return {
+        scenario["id"]: {
+            "scenario_sha256": scenario_sha256(scenario),
+            "result": result,
+            "verified": verified_date,
+        }
+        for scenario in load_scenarios(root, skill)
+    }
+
+
+def accepted_scenarios_record(root, skill, result, prev_entry, today):
+    """--accept 用の per-scenario 記録。result は承認値、検証日は据え置く。
+
+    per-scenario の verified は「そのシナリオを最後に実走で確かめた日」であり、
+    references/partial-rerun.md は run の新しさをここから読めと指示している
+    （持ち越したシナリオが古い日付を保つのはそのため）。1 本も走らせていない
+    --accept が今日で塗り替えると、実走記録と承認記録が日付から区別できなくなる。
+
+    前回記録が無いシナリオは前回エントリの skill レベル検証日へ、それも無ければ
+    today へ落とす。材料が無いときに古い日付を捏造しないための fail-honest な段階。
+    """
+    previous = (prev_entry or {}).get("scenarios") or {}
+    fallback = (prev_entry or {}).get("verified") or today
+    return {
+        scenario["id"]: {
+            "scenario_sha256": scenario_sha256(scenario),
+            "result": result,
+            "verified": previous.get(scenario["id"], {}).get("verified") or fallback,
+        }
+        for scenario in load_scenarios(root, skill)
+    }
+
+
+def carried_note(prev_entry, note):
+    """新エントリが引き継ぐ申し送り（スロットは 1 つ）。
+
+    直前の note があればそれを、無ければ直前が引き継いでいた分をそのまま次へ渡す。
+    エントリを作り直す更新はすべてこれを通す — 部分更新だけが申し送りを守ると、
+    定例の --accept 1 回で実走証拠の由来が台帳から消える。
+    """
+    prev_entry = prev_entry or {}
+    carried = prev_entry.get("note") or prev_entry.get("carried_note")
+    return None if carried == note else carried
+
+
+def skill_result(scenario_records):
+    """per-scenario 記録から skill レベルの result を決める。
+
+    実走していないシナリオが 1 つでも混ざる限り pass を名乗らせない。全件が
+    実走 pass（持ち越しはその有効性を機械確認したもの）のときだけ pass。
+    """
+    results = {rec.get("result") for rec in scenario_records.values()}
+    return RESULT_PASS if results == {RESULT_PASS} else RESULT_ACCEPTED_WITHOUT_RUN
+
+
+def make_entry(root, surface, result, verified_date, note=None, scenarios=None,
+               carried_note=None):
     """台帳エントリを作る。
 
     result は "pass"（実走して全シナリオ合格）| "accepted-addition"（実走せず承認。
@@ -196,9 +316,18 @@ def make_entry(root, surface, result, verified_date, note=None):
     structural_sha256 は次回照合時の散文のみ判定の比較基準（md のみ）。これを
     持たない旧エントリの変更は常に contract-change へ倒れる。
 
+    scenarios は per-scenario の {scenario_sha256, result, verified}。部分再走
+    （--partial）の持ち越し判定がこれを土台に帰納する。省略時はキーごと落とす
+    ので、記録を持たない旧エントリと同じ扱いになる（= 全シナリオ再走が必要）。
+
     note は素の pass だけでは次に回す者へ伝わらない run の性質を残すための欄
     （executor-contract が要求する照会回数、実行者が選んだ経路など）。
     合否には影響しない。
+
+    carried_note は直前エントリの note を引き継ぐ欄。エントリを作り直す更新で
+    前任の申し送りを黙って捨てると、実走証拠の性質（誰がどの経路を通ったか）が
+    台帳から消え、持ち越し記録だけが残って由来が読めなくなる。スロットは 1 つ
+    だけで、直近 1 世代の note しか保たない（連鎖して伸び続けさせない）。
     """
     entry = {
         "surface": surface,
@@ -208,8 +337,12 @@ def make_entry(root, surface, result, verified_date, note=None):
         "result": result,
         "verified": verified_date,
     }
+    if scenarios:
+        entry["scenarios"] = scenarios
     if note:
         entry["note"] = note
+    if carried_note:
+        entry["carried_note"] = carried_note
     return entry
 
 
@@ -305,6 +438,86 @@ def coverage(root, exempt=None, static_only=None):
     }
 
 
+def load_scenarios(root, skill):
+    """skills/<skill>/fixtures.json の scenarios を返す（読めなければ空）。"""
+    path = os.path.join(root, "skills", skill, "fixtures.json")
+    if not os.path.isfile(path):
+        return []
+    try:
+        with open(path, encoding="utf-8") as f:
+            fixture = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return []
+    scenarios = fixture.get("scenarios")
+    if not isinstance(scenarios, list):
+        return []
+    return [s for s in scenarios if isinstance(s, dict) and s.get("id")]
+
+
+def declared_dependencies(scenario, surface):
+    """シナリオが踏むと主張するファイル集合。宣言なし・宣言不正なら None。
+
+    None は「主張が無い＝どの変更でも影響しうる」という安全側の意味。宣言は
+    完全主張（ここに挙げたファイルと SKILL.md 以外は踏まない）なので、面に
+    実在しないパスが 1 つでも混ざれば主張全体を信用しない — typo や参照先の
+    移動が「踏まないから再走不要」という誤った持ち越しを生むのを防ぐ。
+    """
+    declared = scenario.get("exercises")
+    if not isinstance(declared, list):
+        return None
+    if any(path not in surface for path in declared):
+        return None
+    return set(declared)
+
+
+def changed_scenarios(scenarios, recorded_scenarios):
+    """fixtures.json の変更のうち、内容が動いた（または新規の）シナリオ id。"""
+    if not recorded_scenarios:
+        # 突き合わせ基準が無い（per-scenario 記録を持たない旧エントリ）。
+        # 「変わっていない」と断じる根拠もないので全件
+        return {s["id"] for s in scenarios}
+    return {
+        s["id"] for s in scenarios
+        if recorded_scenarios.get(s["id"], {}).get("scenario_sha256")
+        != scenario_sha256(s)
+    }
+
+
+def impacted_scenarios(skill, surface, scenarios, changed,
+                       recorded_scenarios=None):
+    """変更ファイル集合 → 影響を受けるシナリオ id（ソート済み）。
+
+    `changed` はこのスキルに関係すると呼び出し側が判断済みの root 相対パス。
+    判定規則はすべて安全側優先で、材料が足りない場合は必ず全シナリオへ倒す:
+
+    - `skills/<skill>/SKILL.md` は全シナリオが必ず読む暗黙の依存 → 全件
+    - 現在の面に無いパス（＝面から消えたファイル）は現在の宣言と突き合わせ
+      ようがない → 全件
+    - `skills/<skill>/fixtures.json` はシナリオ差分（内容ハッシュ比較）
+    - それ以外の面ファイル f は、f を宣言するシナリオと、宣言を持たない
+      （または宣言が不正な）シナリオ
+    """
+    surface = set(surface)
+    changed = set(changed)
+    ids = sorted(s["id"] for s in scenarios)
+    if not changed:
+        return []
+    skill_md = f"skills/{skill}/SKILL.md"
+    fixtures_rel = f"skills/{skill}/fixtures.json"
+    others = changed - {skill_md, fixtures_rel}
+    if skill_md in changed or (others - surface):
+        return ids
+    impacted = set()
+    if others:
+        for scenario in scenarios:
+            deps = declared_dependencies(scenario, surface)
+            if deps is None or (others & deps):
+                impacted.add(scenario["id"])
+    if fixtures_rel in changed:
+        impacted |= changed_scenarios(scenarios, recorded_scenarios)
+    return sorted(impacted)
+
+
 def check(root, entries):
     """台帳を照合し (kind, skill, detail) の一覧を返す。空なら合格。"""
     issues = []
@@ -333,7 +546,18 @@ def check(root, entries):
         )
         if severity is None:
             continue
-        issues.append(("stale", skill, f"[{severity}] " + ", ".join(changed)))
+        detail = f"[{severity}] " + ", ".join(changed)
+        # 再走の規模を stale 行そのものに出す。合否判定は不変（stale は update
+        # されるまで stale）で、これは「何本払えば済むか」を示す triage 情報
+        scenarios = load_scenarios(root, skill)
+        if scenarios:
+            hit = impacted_scenarios(
+                skill, current_surface, scenarios, changed,
+                entry.get("scenarios"))
+            label = ("all" if len(hit) == len(scenarios)
+                     else ",".join(hit) or "none")
+            detail += f" → scenarios: {label} ({len(hit)}/{len(scenarios)})"
+        issues.append(("stale", skill, detail))
     return issues
 
 
@@ -353,14 +577,215 @@ def save(root, entries):
         f.write("\n")
 
 
+def _summarize_changed(changed, limit=3):
+    """拒否理由へ添える変更ファイル名（先頭 limit 件 + 残数）。
+
+    「面の変更が影響する」だけでは、どのファイルが再走を呼んだのかを見るのに
+    --impact-scenarios を別途叩き直す必要がある。原因を理由行に同梱する。
+    """
+    names = sorted(changed)
+    if not names:
+        return "（変更ファイル不明）"
+    head = ", ".join(names[:limit])
+    return head if len(names) <= limit else f"{head} … ほか {len(names) - limit} 件"
+
+
+def partial_update(root, entries, skill, ran_ids, note=None, today=None):
+    """実走したシナリオを記録し、残りを持ち越して台帳を進める。
+
+    持ち越せないシナリオが 1 つでもあれば更新ごと拒否して列挙する。部分的に
+    書き込むと「台帳のどこまでが今も有効か」が読めなくなり、台帳が保証する
+    ものが「全シナリオ合格」から曖昧になるため。
+
+    影響側の規則（impacted_scenarios）を先に通し、影響ありと出たシナリオが
+    ran_ids に無ければ持ち越し判定を待たずに拒否する。持ち越し規則だけで
+    判定すると、依存集合の走査が**現在の面**を起点にしているため、面から
+    消えたファイルはどのシナリオの依存にも現れず全件が持ち越されてしまう
+    （check() は同じ状態を「scenarios: all」と報告する）。影響と持ち越しを
+    別々の材料で動かさず、partial_update を影響規則の消費者にすることで
+    「片方が全件再走を要求する状態で、もう片方が実走ゼロの更新を通す」
+    食い違いを構造的に閉じる。
+    """
+    scenarios = load_scenarios(root, skill)
+    if not scenarios:
+        print(f"✗ skills/{skill}/fixtures.json にシナリオがない")
+        return 1
+    unknown = sorted(set(ran_ids) - {s["id"] for s in scenarios})
+    if unknown:
+        print(f"✗ fixtures.json に無いシナリオ id: {', '.join(unknown)}")
+        return 1
+    today = today or datetime.date.today().isoformat()
+    entry = entries.get(skill, {})
+    surface = skill_surface(root, skill)
+    current = file_hashes(root, surface)
+    recorded_scenarios = entry.get("scenarios") or {}
+    _, changed = stale_severity(
+        entry.get("file_sha256", {}), current,
+        entry.get("structural_sha256", {}), structural_hashes(root, surface),
+        own_prefix=f"skills/{skill}/")
+    impacted = set(impacted_scenarios(
+        skill, surface, scenarios, changed, recorded_scenarios))
+    records, blocked = {}, []
+    for scenario in scenarios:
+        sid = scenario["id"]
+        if sid in ran_ids:
+            records[sid] = {
+                "scenario_sha256": scenario_sha256(scenario),
+                "result": RESULT_PASS,
+                "verified": today,
+            }
+            continue
+        if sid in impacted:
+            reason = ("面の変更が影響する（--check / --impact-scenarios と同じ規則）: "
+                      + _summarize_changed(changed))
+        else:
+            reason = carryover_reason(
+                skill, scenario, surface, entry.get("file_sha256", {}), current,
+                recorded_scenarios)
+        if reason:
+            blocked.append((sid, reason))
+        else:
+            records[sid] = dict(recorded_scenarios[sid])
+    if blocked:
+        for sid, reason in blocked:
+            print(f"✗ {sid}: {reason}")
+        print(f"✗ {len(blocked)} 件は持ち越せない。実走して --scenario で指名するか、"
+              f"--partial を外して全シナリオ実走の --update にすること")
+        return 1
+    entries[skill] = make_entry(
+        root, surface, skill_result(records), today, note=note,
+        scenarios=records, carried_note=carried_note(entry, note))
+    save(root, entries)
+    print(f"✓ ledger 更新: {skill} (--partial: 実走 {len(ran_ids)} / "
+          f"持ち越し {len(records) - len(ran_ids)})")
+    return 0
+
+
+def seed_scenarios(root, entries, skill):
+    """記録を持たない旧エントリへ per-scenario 記録を埋める移行用ワンショット。
+
+    skill レベルのエントリが「この面で全シナリオ合格（または明示的な承認）」を
+    保証しているので、面が前回検証時と一致している限り、その保証を各シナリオへ
+    分配するのは健全。検証イベントではないので検証日は動かさない。
+    """
+    entry = entries.get(skill)
+    if entry is None:
+        print(f"✗ 台帳にエントリがない: {skill}")
+        return 1
+    if entry.get("scenarios"):
+        print(f"✗ {skill} には既に per-scenario 記録がある。--seed-scenarios は"
+              f"記録を持たない旧エントリ専用で、上書きを許すと実走していない"
+              f"シナリオ記録を skill レベルの result で塗り替えられる")
+        return 1
+    scenarios = load_scenarios(root, skill)
+    if not scenarios:
+        print(f"✗ skills/{skill}/fixtures.json にシナリオがない")
+        return 1
+    surface = skill_surface(root, skill)
+    severity, changed = stale_severity(
+        entry.get("file_sha256", {}), file_hashes(root, surface),
+        entry.get("structural_sha256", {}), structural_hashes(root, surface),
+        own_prefix=f"skills/{skill}/")
+    if severity is not None:
+        print(f"✗ {skill} は stale [{severity}]: {', '.join(changed)}")
+        print("  シードの前提は「面が前回検証時のまま」であること。"
+              "先に run → --update で検証すること")
+        return 1
+    entry["scenarios"] = full_scenarios_record(
+        root, skill, entry.get("result", RESULT_ACCEPTED_WITHOUT_RUN),
+        entry.get("verified", ""))
+    save(root, entries)
+    print(f"✓ per-scenario 記録をシード: {skill}"
+          f"（{len(entry['scenarios'])} シナリオ / 検証日は据え置き）")
+    return 0
+
+
+def impact_scenarios_cli(root, changed_paths):
+    """変更ファイル → `skill<TAB>scenario_id` 行。"""
+    graph = dep_graph.build_graph(root)
+    skills, unresolved = dep_graph.impacted_skills(graph, changed_paths, root)
+    normalized = {dep_graph.normalize_path(p, root) for p in changed_paths}
+    normalized.discard(None)
+    entries = load(root)
+    with_fixtures = _fixtures_skills(root)
+    # 依存グラフは**現在の**面しか知らないので、削除されたファイルはどのスキルも
+    # 選ばない。台帳が記録した前回の面からも引き当てないと、削除が影響ゼロに
+    # 見えたまま rc 0 で何も出力されない（check() は同じ状態を全件再走と報告する）
+    recorded_hits = {
+        skill for skill, entry in entries.items()
+        if skill in with_fixtures and normalized & set(entry.get("file_sha256", {}))
+    }
+    for skill in sorted(set(skills) | recorded_hits):
+        if skill not in with_fixtures:
+            print(f"note: {skill} は fixtures.json を持たない（再走の対象外）",
+                  file=sys.stderr)
+            continue
+        entry = entries.get(skill, {})
+        surface = graph.get(skill, [])
+        # 面から消えたファイルも「このスキルに関係する変更」として渡す。
+        # 落とすと削除が影響ゼロに見える（impacted_scenarios 側で全件へ倒る）
+        relevant = normalized & (
+            set(surface) | set(entry.get("file_sha256", {})))
+        for sid in impacted_scenarios(
+                skill, surface, load_scenarios(root, skill), relevant,
+                entry.get("scenarios")):
+            print(f"{skill}\t{sid}")
+    for p in unresolved:
+        print(f"warning: unresolvable path: {p}", file=sys.stderr)
+    return 2 if unresolved else 0
+
+
+def _usage(message):
+    """引数の欠落を usage 付きで報告する（exit 2 = 引数エラー）。
+
+    値を伴うオプションの取りこぼしを素の IndexError で落とすと、利用者には
+    traceback だけが見えてどの引数が足りないのか読めない。
+    """
+    print(f"✗ {message}")
+    print(__doc__)
+    return 2
+
+
+def _option_value(args, idx):
+    """args[idx] のオプションが取る値。欠落（末尾・次も別オプション）なら None。"""
+    if idx + 1 >= len(args):
+        return None
+    value = args[idx + 1]
+    return None if value.startswith("--") else value
+
+
+def _stray_options(tokens):
+    """モードが読み終えた後に残った `--` 始まりトークン（root パスは残ってよい）。
+
+    オプションは位置依存で読むので、モード指定より前に置かれた既知フラグは
+    黙って捨てられる。捨てられた --partial / --scenario は「全シナリオを実走して
+    合格した」という偽の per-scenario 記録を書き込み、以後の持ち越し帰納が
+    その上に積まれる。未知トークン（typo）が root 解決で落ちるのと同じ扱いにする。
+    """
+    return [t for t in tokens if t.startswith("--")]
+
+
 def main(argv):
     args = list(argv)
 
     def _root(rest):
         return rest[0] if rest else os.getcwd()
 
+    def _stray(tokens, mode):
+        stray = _stray_options(tokens)
+        if not stray:
+            return None
+        return _usage(
+            f"解釈できないオプションが残っている: {', '.join(stray)}\n"
+            f"  オプションは対象指定（{mode} …）より後ろに書くこと。"
+            f"前に置くと黙って捨てられる"
+        )
+
     if "--check" in args:
         args.remove("--check")
+        rc = _stray(args, "--check")
+        if rc is not None:
+            return rc
         root = _root(args)
         issues = check(root, load(root))
         for kind, skill, detail in issues:
@@ -401,6 +826,9 @@ def main(argv):
         strict = "--strict" in args
         if strict:
             args.remove("--strict")
+        rc = _stray(args, "--coverage")
+        if rc is not None:
+            return rc
         root = _root(args)
         cov = coverage(root)
         for skill in cov["covered"]:
@@ -425,20 +853,60 @@ def main(argv):
             return 1
         return 0
 
+    if "--seed-scenarios" in args:
+        idx = args.index("--seed-scenarios")
+        skill = _option_value(args, idx)
+        if skill is None:
+            return _usage("--seed-scenarios にスキル名がない")
+        rest = args[:idx] + args[idx + 2:]
+        rc = _stray(rest, "--seed-scenarios SKILL")
+        if rc is not None:
+            return rc
+        root = _root(args[idx + 2:])
+        return seed_scenarios(root, load(root), skill)
+
     if "--update" in args or "--remove" in args:
         mode = "--update" if "--update" in args else "--remove"
         idx = args.index(mode)
-        skill = args[idx + 1]
+        skill = _option_value(args, idx)
+        if skill is None:
+            return _usage(f"{mode} にスキル名がない")
         rest = args[idx + 2:]
         accept = "--accept" in rest
-        rest = [a for a in rest if a != "--accept"]
+        partial = "--partial" in rest
+        rest = [a for a in rest if a not in ("--accept", "--partial")]
+        ran_ids = set()
+        while "--scenario" in rest:
+            sidx = rest.index("--scenario")
+            value = _option_value(rest, sidx)
+            if value is None:
+                return _usage("--scenario にシナリオ id がない")
+            ran_ids.add(value)
+            rest = rest[:sidx] + rest[sidx + 2:]
         note = None
         if "--note" in rest:
             note_idx = rest.index("--note")
-            note = rest[note_idx + 1]
+            note = _option_value(rest, note_idx)
+            if note is None:
+                return _usage("--note に本文がない")
             rest = rest[:note_idx] + rest[note_idx + 2:]
+        rc = _stray(args[:idx] + rest, f"{mode} SKILL")
+        if rc is not None:
+            return rc
         root = _root(rest)
         entries = load(root)
+        if partial:
+            if mode == "--remove" or accept:
+                print("✗ --partial は --update 専用で、--accept とは併用できない"
+                      "（承認と実走記録が混ざると result の意味が読めなくなる）")
+                return 1
+            if skill not in _fixtures_skills(root):
+                print(f"✗ skills/{skill}/fixtures.json が存在しない")
+                return 1
+            return partial_update(root, entries, skill, ran_ids, note=note)
+        if ran_ids:
+            print("✗ --scenario は --partial と併せて指定すること")
+            return 1
         if mode == "--remove":
             if entries.pop(skill, None) is None:
                 print(f"✗ 台帳にエントリがない: {skill}")
@@ -448,10 +916,10 @@ def main(argv):
                 print(f"✗ skills/{skill}/fixtures.json が存在しない")
                 return 1
             surface = skill_surface(root, skill)
+            prev_entry = entries.get(skill, {})
             result = RESULT_PASS
             if accept:
                 fixtures_rel = f"skills/{skill}/fixtures.json"
-                prev_entry = entries.get(skill, {})
                 prev = prev_entry.get("file_sha256", {})
                 prev_hash = prev.get(fixtures_rel)
                 curr_hash = _file_sha256(root, fixtures_rel)
@@ -466,19 +934,45 @@ def main(argv):
                     prev_entry.get("structural_sha256", {}),
                     structural_hashes(root, surface),
                     own_prefix=f"skills/{skill}/")
+            today = datetime.date.today().isoformat()
+            scenarios = (
+                accepted_scenarios_record(root, skill, result, prev_entry, today)
+                if accept
+                else full_scenarios_record(root, skill, result, today)
+            )
             entries[skill] = make_entry(
-                root, surface, result,
-                datetime.date.today().isoformat(), note=note,
+                root, surface, result, today, note=note, scenarios=scenarios,
+                carried_note=carried_note(prev_entry, note),
             )
         save(root, entries)
         print(f"✓ ledger 更新: {skill} ({mode})")
         return 0
+
+    if "--impact-scenarios" in args:
+        idx = args.index("--impact-scenarios")
+        rest = args[idx + 1:]
+        root = os.getcwd()
+        if rest and os.path.isdir(rest[-1]) and not rest[-1].endswith(".md"):
+            root, rest = rest[-1], rest[:-1]
+        # 変更ファイル 0 件で黙って rc 0 を返すと、「再走すべきシナリオが無い」と
+        # 区別が付かない。呼び出し側の引数組み立てミスが影響ゼロに化ける
+        if not rest:
+            return _usage("--impact-scenarios に変更ファイルが 1 つも無い")
+        # フラグ風トークンを変更ファイルとして消費すると、誤配置フラグが
+        # 「影響ゼロ」の顔で rc 0 になる（他モードの誤配置ガードと同じ穴）
+        rc = _stray(rest, "--impact-scenarios FILE...")
+        if rc is not None:
+            return rc
+        return impact_scenarios_cli(root, rest)
 
     if "--impact" in args:
         return dep_graph.main(args)
 
     if "--status" in args:
         args.remove("--status")
+        rc = _stray(args, "--status")
+        if rc is not None:
+            return rc
         root = _root(args)
         entries = load(root)
         issues = {s: k for k, s, _ in check(root, entries)}

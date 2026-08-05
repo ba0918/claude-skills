@@ -20,7 +20,7 @@ runs the regression evaluation only against the skills whose behavior surface ch
 
 | Term | Definition |
 |------|------|
-| behavior surface | The set of files that can affect a skill's runtime behavior. Everything under `skills/<name>/` (excluding test_*.py / __pycache__) plus the files under `skills/` referenced **one hop** away from that skill's own .md files (shared contracts included). References are picked up both from md links and from bare paths in the procedural text. Never traverse from files outside the skill — following the "related" links between shared contracts would put skills whose execution paths never meet onto the same surface (this matches the "references go one level deep" principle of [skill-authoring](../shared/references/skill-authoring.md)) |
+| behavior surface | The set of files that can affect a skill's runtime behavior. Everything under `skills/<name>/` (excluding test_*.py / __pycache__) plus the files under `skills/` referenced **one hop** away from that skill's own .md files (shared contracts included), picked up from md links and from bare paths in the procedural text alike. Never traverse from files outside the skill: following the "related" links between shared contracts puts skills whose execution paths never meet onto the same surface, and one hop matches the "references go one level deep" principle of [skill-authoring](../shared/references/skill-authoring.md). The worked example of the multi-hop failure is in `scripts/dep_graph.py` |
 | fixture | `skills/<name>/fixtures.json`. A set of scenarios plus a requirement checklist marked with [critical]. The schema is [references/fixture-schema.md](references/fixture-schema.md) |
 | ledger | `skills/skill-regression/ledger.json`. A record of the verification event "every scenario passed at this behavior surface". It is committed |
 
@@ -32,14 +32,10 @@ runs the regression evaluation only against the skills whose behavior surface ch
 - Updating the ledger (`--update`) happens **only after obtaining evidence that every scenario passed**.
   Conforming to [verification-gate.md](../shared/references/verification-gate.md) — never advance the ledger on an evidence-free "it should have passed"
 - When judging without running that "this change does not affect behavior", use `--update <skill> --accept`.
-  It is recorded explicitly in the ledger as an acceptance, leaving a trace of the judgment (distinguishable from ignoring it).
-  Which value gets recorded is decided by the machine, not by the operator: `accepted-addition` when it can confirm the
-  behavior surface only gained files on top of a real run's `pass`, `accepted-prose` when it can confirm every changed
-  file is an existing md where only plain paragraph prose changed (any line carrying structural syntax — headings,
-  lists, tables, fences, indented code, HTML, inline code, links — counts as machine-parsed and is compared verbatim) —
-  again only on top of a real run's `pass` — and `accepted-without-run` whenever it cannot
-  confirm either. A self-declared "it was a light change" would leave an unbacked claim in the ledger, so the flag does
-  not let you choose
+  The acceptance is recorded explicitly, so it stays distinguishable from ignoring the drift. **Which value gets recorded
+  is decided by the machine, not by the operator**: `accepted-addition` and `accepted-prose` mirror the same-named
+  severities under [status](#status--taking-stock) and are reachable only on top of a real run's `pass`; everything else
+  is `accepted-without-run`. A self-declared "it was a light change" would leave an unbacked claim in the ledger
 
 ## Workflow selection
 
@@ -74,13 +70,17 @@ runs the regression evaluation only against the skills whose behavior surface ch
      take `git diff --name-only HEAD` (uncommitted changes) or a specified commit range, and
      obtain the affected skills with `python3 {skill_dir}/scripts/ledger.py --impact <changed>... {repo_root}`.
      When git is unavailable, or the changed files were stated explicitly in conversation, pass those paths straight to `--impact`
+   - **Narrow to scenarios**: `--impact-scenarios <changed>... {repo_root}` prints `skill<TAB>scenario_id` for the
+     scenarios a change actually reaches, using the fixtures' `exercises` declarations (scenarios without one stay
+     on the safe side and are always listed). Run only those, then advance the ledger with `--partial` in Step 5.
+     Rules and fallbacks: [references/partial-rerun.md](references/partial-rerun.md)
    - Only affected skills that have a fixture are evaluated. List the ones that do not as out of scope in the report
    - **Rule of thumb for run vs `--accept`**: a purely prose change (punctuation, phrasing) that touches no
      machine-parsed token, code, command, or frontmatter key is `--accept` territory. Everything else is run.
      When in doubt, run (fail-safe)
    - Even when the ledger is already verified (including either accepted value), you may run if the user asks for a
      regression evaluation. Overwriting an acceptance with a real run's `pass` improves the ledger's quality
-2. **Execute**: read the target skill's `fixtures.json` and, per scenario, launch a blank-slate executor subagent
+2. **Execute** (only the scenarios Step 1 selected): read the target skill's `fixtures.json` and, per scenario, launch a blank-slate executor subagent
    under the contract of [references/executor-contract.md](references/executor-contract.md).
    - **Materialize the isolated area from the declaration**: `python3 {skill_dir}/scripts/fixture_setup.py --materialize
      skills/<skill>/fixtures.json <scenario_id> <dest>`. Do not assemble it by hand —
@@ -98,6 +98,9 @@ runs the regression evaluation only against the skills whose behavior surface ch
    A skill passes = every `[critical]` requirement is ○ in every scenario
 4. **Report**: present a per-scenario result table (pass/fail, which critical items failed, and the executor's self-reported points of ambiguity)
 5. **Update the ledger**: only for skills that passed everything, `--update <skill>` (append the measurement event as in capture Step 5).
+   After a scenario-granular run, use `--update <skill> --partial --scenario <id>...` instead: it records the ids you ran and
+   carries the rest over, refusing (and listing them) if any cannot be carried. Zero ids is legitimate — a declaration-only
+   fixture edit advances the ledger with no run at all.
    Because the same stop gets mistaken for a regression when the nature of a run does not reach whoever runs it next, record with `--note "<one line>"` the path the executor took,
    how many times it was asked for status from outside, and any harness constraints it worked around. For a failing skill, do not advance the ledger; instead
    separate the cause (a regression in the skill, or an obsolete fixture) and report it.
@@ -114,15 +117,10 @@ runs the regression evaluation only against the skills whose behavior surface ch
   prose of existing md files (machine-parsed tokens untouched), and `[contract-change]` in every other case. Read it as
   triage, not as permission — `contract-addition` and `prose-change` still have to be resolved, only with `--accept` as
   a defensible option
-- `--coverage` displays **the denominator of what is tracked at all** as covered / exempt / uncovered.
-  Because `--check` is an opt-in gate that looks only at skills holding a fixture, "skills with no fixture written"
-  do not enter the count even when everything passes. The two answer different questions:
-
-  | Question | Mode |
-  |------|-------|
-  | Have the verified assets gone stale? | `--check` |
-  | How much are we verifying in the first place? | `--coverage` |
-
+- `--coverage` displays **the denominator of what is tracked at all** as covered / exempt / uncovered. The two modes
+  answer different questions: `--check` asks whether the verified assets have gone stale, `--coverage` asks how much is
+  being verified in the first place. Because `--check` is an opt-in gate that looks only at skills holding a fixture,
+  "skills with no fixture written" never enter its count even when everything passes
 - Declare exclusions in `ledger.py`'s `COVERAGE_EXEMPT` **with a reason** (not on the skill side —
   otherwise merely touching a skill directory could make it disappear from the count).
   **"Not written yet" is not a reason for exemption.** That is uncovered
@@ -138,10 +136,9 @@ The philosophy of this gate is not to stop drift but to **make only ignoring it 
 
 ## Red flags
 
-- The ledger's `result` is nothing but `accepted-without-run` (a sign that run has become a formality).
-  `accepted-addition` and `accepted-prose` do not count toward this signal. What remains under `accepted-without-run`
-  is a superset of the acceptances a human waved through — the cases the machine could not confirm either way land
-  there too
+- The ledger's `result` is nothing but `accepted-without-run` (a sign that run has become a formality). `accepted-addition`
+  and `accepted-prose` do not count toward this signal; `accepted-without-run` is a superset of the acceptances a human
+  waved through, since whatever the machine could not confirm either way lands there too
 - The same skill's fixture is rewritten repeatedly in a short span as "obsolete"
 - The run report does not state which critical items failed
 - CI's `[stale]` is being piled onto main instead of resolved within the PR
@@ -151,16 +148,17 @@ The philosophy of this gate is not to stop drift but to **make only ignoring it 
 Computing the behavior surface (`dep_graph.py`) and reproducing a fixture target only what is under `skills/`, and
 handle only scenarios reproducible in the current execution environment. The reasons:
 
-1. Reproducing a fixture is a mechanism that launches a blank-slate executor as a subagent, and treating another
-   runtime's behavior as "reproduced" in the current execution environment would be a forgery of verification
-2. What this skill protects is "once triggered, does it execute correctly", and verifying runtime-specific behavior is
-   impossible in principle unless a tool-mapping-aware executor contract (a mechanism that launches a blank-slate executor on the target runtime) is newly created
-3. Should it become necessary, design a runtime variant of `references/executor-contract.md` first and only then
-   widen the scope of `dep_graph.py` (the order of extension: the means of execution → the detection range. Never the reverse)
+1. Reproducing a fixture launches a blank-slate executor as a subagent, so calling another runtime's behavior
+   "reproduced" in the current execution environment would be a forgery of verification
+2. What this skill protects is "once triggered, does it execute correctly", and runtime-specific behavior cannot be
+   verified in principle without a new tool-mapping-aware executor contract that launches on the target runtime
+3. Should it become necessary, design a runtime variant of `references/executor-contract.md` first and only then widen
+   `dep_graph.py` (extend the means of execution before the detection range, never the reverse)
 
 ## Related
 
 - [fixture-schema.md](references/fixture-schema.md) — the schema of fixtures.json and its design guidelines
 - [executor-contract.md](references/executor-contract.md) — the launch contract and judging rules for a blank-slate executor
+- [partial-rerun.md](references/partial-rerun.md) — the `exercises` declaration, scenario-granular impact, and ledger carry-over
 - [process-queue.md](references/process-queue.md) — the route for running a batch via separate-process delegation (it consumes no launch quota)
 - [orchestration-patterns.md](../shared/references/orchestration-patterns.md) / [verification-gate.md](../shared/references/verification-gate.md)
