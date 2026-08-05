@@ -133,6 +133,41 @@ class TestRenderPrompt(unittest.TestCase):
         self.assertIn("XDG_STATE_HOME", prompt)
         self.assertIn("not a hint", prompt)
 
+    def _render(self, **kwargs):
+        return rq.render_prompt(
+            "demo-skill", self.scenario, skill_md="/s.md", work_dir="/w",
+            output_file="/o.json", **kwargs)
+
+    def test_says_nothing_about_emptiness_when_the_scenario_stages_files(self):
+        self.assertNotIn("the directory is empty", self.prompt)
+
+    def test_names_the_empty_working_directory_for_a_nosetup_scenario(self):
+        """Only a backend that can list the directory learns the described files are
+        absent. Saying it in the prompt makes the two backends observe the same thing."""
+        prompt = self._render(empty_work_dir=True)
+        self.assertIn("the directory is empty", prompt)
+        self.assertIn("primary evidence", prompt)
+
+    def test_leaves_only_the_skill_path_by_default(self):
+        self.assertIn("Read it, and follow any references it points to", self.prompt)
+        self.assertNotIn(rq.SKILL_MD_OPEN, self.prompt)
+
+    def test_inlines_the_skill_body_when_asked(self):
+        prompt = self._render(skill_md_text="---\nname: demo-skill\n---\n# Body\n")
+        self.assertIn(rq.SKILL_MD_OPEN, prompt)
+        self.assertIn(rq.SKILL_MD_CLOSE, prompt)
+        self.assertIn("# Body", prompt)
+        # The path stays: the same prompt has to serve a backend that can read it.
+        self.assertIn("/s.md", prompt)
+        self.assertNotIn("Read it, and follow any references it points to", prompt)
+
+    def test_does_not_fence_the_inlined_body(self):
+        """A skill body carries its own fences; a fenced wrapper would close on the
+        first one and spill the rest of the skill into the surrounding prose."""
+        prompt = self._render(skill_md_text="```bash\necho hi\n```\n")
+        self.assertIn(f"{rq.SKILL_MD_OPEN}\n```bash", prompt)
+        self.assertIn(f"```\n{rq.SKILL_MD_CLOSE}", prompt)
+
 
 class TestUnitId(unittest.TestCase):
     def test_combines_skill_and_scenario(self):
@@ -291,6 +326,38 @@ class TestBuild(_Harness):
             unit = json.loads(handle.read().splitlines()[0])
         staged = os.path.join(unit["cwd"], rq.STAGED_SUBDIR)
         self.assertFalse(unit["output_file"].startswith(staged + os.sep))
+
+    def _prompt_text(self, uid="demo-skill-ds-001"):
+        with open(os.path.join(self.batch, "prompts", f"{uid}.md")) as handle:
+            return handle.read()
+
+    def test_a_staged_scenario_gets_no_empty_directory_notice(self):
+        self.build()
+        self.assertNotIn("the directory is empty", self._prompt_text())
+
+    def test_a_scenario_that_stages_nothing_is_told_its_directory_is_empty(self):
+        self.build(_fixture(setup={}))
+        self.assertIn("the directory is empty", self._prompt_text())
+
+    def test_leaves_the_skill_body_out_of_the_prompt_by_default(self):
+        summary = self.build()
+        self.assertFalse(summary["inline_skill"])
+        self.assertIn("/skills/demo-skill/SKILL.md", self._prompt_text())
+        self.assertNotIn(rq.SKILL_MD_OPEN, self._prompt_text())
+
+    def test_inline_skill_puts_the_skill_body_in_every_prompt(self):
+        summary = self.build(inline_skill=True)
+        self.assertTrue(summary["inline_skill"])
+        self.assertIn("name: demo-skill", self._prompt_text())
+        self.assertIn(rq.SKILL_MD_OPEN, self._prompt_text())
+
+    def test_the_manifest_records_which_scaffolding_was_used(self):
+        """Batches built with and without the body are not comparable evidence; a
+        reader has to be able to tell them apart without diffing prompts."""
+        self.build(inline_skill=True)
+        with open(os.path.join(self.batch, "manifest.json")) as handle:
+            manifest = json.load(handle)
+        self.assertTrue(manifest["demo-skill-ds-001"]["inline_skill"])
 
     def test_materialises_the_declared_setup(self):
         self.build()
@@ -794,6 +861,16 @@ class TestCli(_Harness):
                                      "--repo-root", self.repo]), 0)
         self.write_report("demo-skill-ds-001", self.report("yes", "yes"))
         self.assertEqual(self._main(["grade", "--batch", self.batch]), 0)
+
+    def test_inline_skill_flag_reaches_the_prompt(self):
+        fixture = self.write_fixture()
+        self.assertEqual(self._main(["build", "--fixture", fixture,
+                                     "--batch", self.batch,
+                                     "--repo-root", self.repo,
+                                     "--inline-skill"]), 0)
+        with open(os.path.join(self.batch, "prompts",
+                               "demo-skill-ds-001.md")) as handle:
+            self.assertIn(rq.SKILL_MD_OPEN, handle.read())
 
     def test_rerun_via_cli(self):
         fixture = self.write_fixture()
