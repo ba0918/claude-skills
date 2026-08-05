@@ -144,7 +144,7 @@
   "cycle": {
     "file_sha256": {
       "skills/cycle/SKILL.md": "8fcf89b2df01a9d09a74dc8225e2a51eb130e6bb849663125109aa8b0c2ba22a",
-      "skills/cycle/fixtures.json": "9bca5151bc1fa0f084f643069f6c819221ae81e06367224ee34c2044f7578414",
+      "skills/cycle/fixtures.json": "dc8dd4157861dae3a71b38e7698e2cb83c26b74eb67e06a12f023c789e3bc6f5",
       "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
@@ -167,7 +167,7 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "#243 パイロット: exercises 宣言 18/20 を付与（cy-001 通し smoke と cy-004 satellite は面をほぼ全域踏むため意図的に未宣言）。実走ゼロ、全 20 シナリオを持ち越し。宣言は cy-run-20260805 の execution_path とスキルの phase→参照構造から導出",
+    "note": "#243 パイロット: exercises 宣言 17/20 を付与（cy-001 通し smoke・cy-004 satellite は面をほぼ全域踏むため、cy-009 standalone publish gate は実走証拠が設計経路を網羅しておらず宣言が過少になるため、いずれも意図的に未宣言）。実走ゼロ、全 20 シナリオを持ち越し。宣言は cy-run-20260805 の execution_path とスキルの phase→参照構造から導出",
     "result": "pass",
     "scenarios": {
       "cy-001": {
@@ -316,7 +316,7 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "ee30442a9c551ecdbaebc07d609f0243af79cb8f1d9513a4e97b0c2a51f614cd",
+    "surface_sha256": "42cf2fe6013db72b685e1aaba1aba29f16f3dc9cd5dfb93207540f1bc3a35ce2",
     "verified": "2026-08-05"
   },
   "decision-journal": {
@@ -456,9 +456,9 @@
       "skills/shared/references/measurement-identity.md": "051807f31d7a6799049d0f14aad6824f1c0d87a80cb5e15251480aab4ffb0384",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/shared/references/workspace-isolation.md": "8048ba07d1a7c112211ccaf56d503047af7494fcbef3c8ab6e7d10ab826d7ec5",
-      "skills/skill-regression/scripts/ledger.py": "30499529429dfdeaba7a9ccae01b41f2c5aed898ccd9c7fa66fe67d3a0813254"
+      "skills/skill-regression/scripts/ledger.py": "dc4949c15c6300e5724728a140a064351cd12b2d221743d06c75117d8221cce2"
     },
-    "note": "#243: 面の変更は skills/skill-regression/scripts/ledger.py のみ。github-issue が呼ぶのは impact_command 経由の --impact だけで、その経路は dep_graph へ委譲したまま無改変（追加は --impact-scenarios / --partial / --seed-scenarios の新モードと stale 表示の内訳付加）。実走せず承認",
+    "note": "#243: 面の変更は skills/skill-regression/scripts/ledger.py のみ。github-issue が呼ぶのは impact_command 経由の --impact だけで、その経路は dep_graph へ委譲したまま無改変（今回の変更は --partial の影響規則整合と --impact-scenarios の削除ファイル解決）。実走せず承認",
     "result": "accepted-without-run",
     "scenarios": {
       "gi-001": {
@@ -553,7 +553,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "85a619af69f19d85cb2d2f87eb59e2e2aa45381d51c3bf22a1846d4bde57d7fa",
+    "surface_sha256": "d193260b9e2afcad0065c2e3c2433ffc20905936457cdcd061fd26ea908f0ed3",
     "verified": "2026-08-05"
   },
   "handoff": {
@@ -887,14 +887,14 @@
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
       "skills/shared/references/skill-repository-profile.md": "fafc81d7ce71468606f3fd3c281b8f3a926dc3f0f48fcd221516720bf6c2fefe",
-      "skills/skill-regression/scripts/ledger.py": "30499529429dfdeaba7a9ccae01b41f2c5aed898ccd9c7fa66fe67d3a0813254",
+      "skills/skill-regression/scripts/ledger.py": "dc4949c15c6300e5724728a140a064351cd12b2d221743d06c75117d8221cce2",
       "skills/skill-reviewer/SKILL.md": "e6d09f4bfa4201780f9b0724a63f1605826959226ba15c84c3efd64b0dbe9d85",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "db06e7e49c22d1eb0b4725304b4858152c4f0577fa1df0234d0a189f33c72bda",
       "skills/skill-reviewer/references/output-contract.md": "7cd2fc72d01be97efab8fa5b0302de986e0ffec38fd4dadbfc2282f9e1982b81",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "#243: 面の変更は skills/skill-regression/scripts/ledger.py のみ。skill-reviewer が evidence-and-coverage.md で呼ぶのは --status / --impact で、両経路とも出力形式を含め無改変（追加は新モードと stale 表示の内訳付加）。実走せず承認",
+    "note": "#243: 面の変更は skills/skill-regression/scripts/ledger.py のみ。skill-reviewer が evidence-and-coverage.md で呼ぶのは --status / --impact で、両経路とも出力形式を含め無改変（今回の変更は --partial の影響規則整合と --impact-scenarios の削除ファイル解決）。実走せず承認",
     "result": "accepted-without-run",
     "scenarios": {
       "sr-001": {
@@ -938,7 +938,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "510f832420c61645e14b95b6c6958ae998a019558efb0cb79ca9162b053f2ea3",
+    "surface_sha256": "0187ca28ee9f78ea8f37ff1f06f5103ef2bca5ce079465ac4a3303aa0ee62e6b",
     "verified": "2026-08-05"
   },
   "sweep-fix": {
