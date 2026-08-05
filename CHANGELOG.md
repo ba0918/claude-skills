@@ -16,6 +16,16 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Added: 幹ワークフローの宣言と実行時漏斗スキル using-workflow
+
+- skill-authoring に幹の図（brainstorm → plan → implement → review → 整合 → PR。ledger / spec-verify は支線）と漏斗原則、新スキルの「幹のどこに挿さるか」宣言チェックを追加。brainstorm の振る舞い正本を `docs/spec/brainstorm.md` に新設
+- `using-workflow` スキルを新設。「既定入口 = brainstorm + 例外 3 カテゴリ（幹の続き / 終端・セッション運搬 / 読み取り専用）」の実行時漏斗を数十行で持ち、常駐ロードできる。README にセッション開始時の読み込み設定例
+
+### Changed: brainstorm が要件・仕様を詰め切る幹の入口になった
+
+- description を再定位（要件定義・仕様定義の発火語彙、GitHub issue 起点も brainstorm 経由）し、セッション中の選択肢 UI 提示の禁止を明文化
+- 5 workflow を `references/workflow-*.md` へ逐語分割し SKILL.md を薄い振り分け役に変更。1 実行経路の総ロードが 309 行 → 60〜180 行に減少。validate_repo チェック 14 は検査対象を「完了表示の所有ファイル」指定に変更（workflow 分割スキル対応）
+
 ### Changed: ollama executor が成果物の実物を残し、自己申告の裏取りができるようになった
 
 - `ollama_executor.sh` が 2 段呼び出しになった。1 呼び目でシナリオの成果物本文を生成して `artifact.md`（report と同階層）に保存し、2 呼び目で会話を継続して自己評価 JSON を `OUTPUT_FILE` へ書く。呼び出し側の re-judge が「自己申告 vs 実物」の突き合わせ先を持てる。1 呼び目が失敗（途切れ・空応答・サーバエラー）したら 2 呼び目に進まず unit を失敗させる（#279）
