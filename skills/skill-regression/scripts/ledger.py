@@ -918,10 +918,15 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None,
         # severity が contract-change 帯かどうかはここでは見ない。帯のゲートは
         # 判定入力を組む semantic_diff.py 側にあり、二重化すると「実走した分＋
         # 判定で進める分」を混ぜた部分更新が prose-change 帯で丸ごと拒否され、
-        # 実走記録を捨てて --accept へ倒すしかなくなる。手書きの判定ファイルで
-        # 軽い帯を判定経路へ通せてしまうが、誤用の向きは安全側 — 機械が形状で
+        # 実走記録を捨てて --accept へ倒すしかなくなる。
+        # 代償として、手書きの判定ファイルなら軽い帯もこの経路へ通せる。その
+        # 誤用の向きは一様ではない。今回の記録だけ見れば安全側で、機械が形状で
         # 証明する accepted-prose / accepted-addition より弱い accepted-semantic が
-        # 付くだけで、実走を要求される範囲は広がりこそすれ狭まらない。
+        # 付く。反転するのは次回で、accepted-prose は accept_result の「土台は
+        # 実走」要求により次の --accept で accepted-without-run へ落ちるのに対し、
+        # accepted-semantic は自分自身を土台にできる唯一の軽量クラスであり
+        # （SEMANTIC_FOUNDATION_RESULTS）、一度きりの割引が恒久の割引に化ける。
+        # 帯の検査をここへ足すかは、段階 3（自動記録の解禁）到達時に再評価する。
         reason = validate_judgment(
             judgment, skill, entry.get("file_sha256", {}), current,
             load_calibration(root), {s["id"] for s in scenarios})

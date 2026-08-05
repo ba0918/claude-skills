@@ -143,6 +143,18 @@ writing nothing, when any of these holds — the same all-or-nothing rule `--par
 
 `--semantic` cannot be combined with `--accept`, and requires `--partial`.
 
+### What the ledger does not check here
+
+**The severity band.** The `[contract-change]`-only rule of [Where it applies](#where-it-applies) lives in
+`semantic_diff.py`, the script that builds the judge input. `ledger.py` does not re-check it, so a hand-written
+judgment file can route a `prose-change` or `contract-addition` diff through this path. That misuse does not
+point in one direction: on the record being written it is the safe direction — a weaker `accepted-semantic`
+lands where the mechanically proven `accepted-prose` / `accepted-addition` would have. It reverses on the
+*next* record. `accepted-prose` decays to `accepted-without-run` at the following `--accept` (a light class
+demands a real run underneath it), while `accepted-semantic` is the one light class allowed to stand on
+itself. So the same misuse turns a one-time discount into a standing one. Whether to add the band check to
+`--partial --semantic` is to be re-evaluated on reaching stage 3, when automatic recording is unlocked.
+
 ## Calibration
 
 The corpus lives in `skills/skill-regression/calibration/`, `must_flag/` and `must_pass/`, at least 20 cases per
