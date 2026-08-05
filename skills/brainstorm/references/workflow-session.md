@@ -6,7 +6,7 @@ Do not edit, create, or overwrite any file (including notebooks) during the sess
 
 Allowed: read-only codebase investigation (file reads, pattern search, file listing, read-only shell commands such as `git log`, `git diff`, `ls`), Codex second opinions via a subagent, and dialogue with the user.
 
-Dialogue is natural language only — do not present a choice UI (a pick-one option list, with or without a "recommended" marker) during the session. A recommended-choice list makes the user pick without thinking, reproducing exactly the ritual that requirements definition exists to prevent. Ask open questions — why? what would be enough? what breaks without it? — and let the user answer in their own words (provenance: [docs/spec/brainstorm.md](../../../docs/spec/brainstorm.md), not read at runtime — the rule is fully stated here).
+Dialogue is natural language only — do not present a choice UI (a pick-one option list, with or without a "recommended" marker) during the session. A recommended-choice list makes the user pick without thinking, reproducing exactly the ritual that requirements definition exists to prevent. Ask open questions — why? what would be enough? what breaks without it? — and let the user answer in their own words.
 
 ## Flow
 

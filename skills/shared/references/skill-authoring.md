@@ -57,6 +57,14 @@ category covers it. Not being able to state the position is a responsibility sme
 the same kind the Anti-bloat Clause tracks: a skill serving no station and no exception
 is either duplicating a station owner or bundling several responsibilities.
 
+### Specs Are Human-facing
+
+A spec under `docs/spec/` is the human-readable source of truth for **what** a behavior
+is; the skill body is the LLM-consumable instruction. When a skill's behavior has a
+spec, change the spec first and let the body follow — but the body does not link back
+to its spec: runtime instructions carry no maintenance metadata, and spec-body drift
+is the alignment station's job, not a prose pointer's.
+
 ## Directory Layout
 
 ```

@@ -1,9 +1,7 @@
 {
   "brainstorm": {
-    "carried_note": "measurement freeze (2026-08-06 ruling): phase 1-3 of plan 20260806074910 — description repositioned (requirements/spec vocabulary, C1), choice-UI prohibition added to session constraints (C2), 5 workflows split verbatim into references/workflow-*.md (A11, SKILL.md now a thin dispatcher). Behavior-preserving except C1/C2 additions. Re-run deferred to the post-freeze full measurement.",
     "file_sha256": {
-      "docs/spec/brainstorm.md": "e5e5a6d572d125ee8005ea793e1dfcde853b782f8667b15959dbadeed9e53436",
-      "skills/brainstorm/SKILL.md": "8886d091b03bada315bf110ecd5dfc2a8fd9d350afc997421dfb552bb319dc2e",
+      "skills/brainstorm/SKILL.md": "c41e28ddb13757e12b82f9ccb9cae03224617ab1b82808b5991eaf6059f9e3a5",
       "skills/brainstorm/fixtures.json": "5ab5d3f5bd0267e46c8bdbefc417c1e142583752c01ce785d182167c47e9c27c",
       "skills/brainstorm/references/exit-contract-template.md": "0aa6389f378de90a5613c5dbe4517083ffdb4978e5e7849868c2a2d2a53f5d02",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
@@ -11,13 +9,13 @@
       "skills/brainstorm/references/workflow-list.md": "3d07fba66cb55a9d4b781d9a5890d44ab47bce99a82fc31ce49d143b6da666eb",
       "skills/brainstorm/references/workflow-plan.md": "c3febd4bbfd4b9a4fd4cdada9c75b17c9ad0706fcf3dae5234259b10b7fbcfe4",
       "skills/brainstorm/references/workflow-resume.md": "6c06f2cdcc5ac2f6394c6d45ce55a292b88683359aa8325ba451cfe710d1dc77",
-      "skills/brainstorm/references/workflow-session.md": "de16343b7de6dc9dfb758072469f735c645df77540cda6300ee0b06bbb7efd88",
+      "skills/brainstorm/references/workflow-session.md": "a9ed6819a419e42b1190740d615da0a50460832f1df877c4a71d0194fa0221b0",
       "skills/brainstorm/references/workflow-wrap.md": "77d156951bbce65e8e115e439475d18d5d2f5f2a2afd2656cdcc5d18991b75a9",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/human-readable-summary.md": "645e4ad07f8941a473d750a224840ddd4cbaa6b964be661dcbb76650a26cb4b0"
     },
-    "note": "measurement freeze (2026-08-06 ruling): provenance-only clarification on spec links (docs/spec/brainstorm.md marked 'not read at runtime' in SKILL.md and workflow-session.md) — prose additions inside existing sentences, no procedural change. Re-run deferred to the post-freeze full measurement.",
+    "note": "measurement freeze (2026-08-06 ruling): removed spec backlinks from SKILL.md and workflow-session.md (specs are human-facing; drift detection belongs to the alignment station). No procedural change to any workflow. Re-run deferred to the post-freeze full measurement.",
     "result": "accepted-without-run",
     "scenarios": {
       "bs-001": {
@@ -57,22 +55,20 @@
       }
     },
     "structural_sha256": {
-      "docs/spec/brainstorm.md": "5329a4d107b5d5854fcb685892a1051790db78634aa10ce73fb48c0cb6f0e763",
-      "skills/brainstorm/SKILL.md": "579d09e997bc42037f8596f401a5bf18d1d7d4aa282d6bc1863302f1350f629b",
+      "skills/brainstorm/SKILL.md": "cb74523fad2df7eae266d5b13520a24b948f4a764123c8d82296147d927393dc",
       "skills/brainstorm/references/exit-contract-template.md": "e58db2062a0fe870d06694b10fad357e560e57ef90a26df653efc000b997dcbe",
       "skills/brainstorm/references/idea-template.md": "77d2645476a8a0ecb2501e3bec131a89d9f79b070fcf28ca48423cf9d4fbce28",
       "skills/brainstorm/references/spec-generation.md": "18194aecc79e39908e4d0dfe1a8a611dbe35d25b54e99c0085a7ce21e56f6c40",
       "skills/brainstorm/references/workflow-list.md": "e61ed16fd4d9f627dc6f03970645eabb476422d5d858a40e096e7c845d386308",
       "skills/brainstorm/references/workflow-plan.md": "6b819a0f57e140147ff1204df8c983d663af1c7ea9eaa9c4c3ebc723ce48b0dc",
       "skills/brainstorm/references/workflow-resume.md": "3aef63ccb0d9084f25aa81b1bd2b76e8b5d6b579284e1c6ab3689d73b7dd3e5b",
-      "skills/brainstorm/references/workflow-session.md": "5a1cb4c1748eea9298bcc49a36b2a0aea8aa3bbfa77dfe55210318b76f6e0097",
+      "skills/brainstorm/references/workflow-session.md": "80292ccfa5cdb6a42a5b3a53e94a445e352cf6bd3cfc0298c494696003198203",
       "skills/brainstorm/references/workflow-wrap.md": "999b323dc660a6ff204db52a4d582c61d10fe5ebbf50bfb5bff9edb4152e5e35",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
       "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
       "skills/shared/references/human-readable-summary.md": "17963b524b543ee7d9760a8987f9b4ecf0cd562c24d2168d340396371c347905"
     },
     "surface": [
-      "docs/spec/brainstorm.md",
       "skills/brainstorm/SKILL.md",
       "skills/brainstorm/fixtures.json",
       "skills/brainstorm/references/exit-contract-template.md",
@@ -87,7 +83,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "e8d66c09eace262f4fda0490b1ca5229edbf4ca5ef0b69a1b79096829d10af9a",
+    "surface_sha256": "44b2c2212d64609ca2fae56d7be91d5a265d6de4d4f24a9f106726d39f05792b",
     "verified": "2026-08-06"
   },
   "brief": {
@@ -943,13 +939,12 @@
     "verified": "2026-08-04"
   },
   "skill-reviewer": {
-    "carried_note": "#266: ledger.py CLI の誤配置 root 拒否（引数厳格化）。documented 呼び出し形（末尾 root / 省略時 cwd）の挙動不変は test_ledger.py で固定済み、参照側の呼び出し形に影響なしと判断",
     "file_sha256": {
       "skills/shared/references/coverage-ledger.md": "10c3ea12cf96f31749eacce497f43d5db9b6d26b495a55e6552c10089fff8376",
       "skills/shared/references/fix-action-taxonomy.md": "9f686fb66e66491c6a2260d427c18b2e2bcfbecc995cf899414045150b8d1c71",
       "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
-      "skills/shared/references/skill-authoring.md": "65adfde7880e110ec89842613208bc2302a1d5a038f31d1bdb1669c360888c1e",
+      "skills/shared/references/skill-authoring.md": "c00de5faad019234c27342e2aee273e738c9be8d2ca6be03572b223243233fe3",
       "skills/shared/references/skill-repository-profile.md": "fafc81d7ce71468606f3fd3c281b8f3a926dc3f0f48fcd221516720bf6c2fefe",
       "skills/skill-regression/scripts/ledger.py": "f6ade730f57c779b619b823075af9ef7e58dec339cc58c1a56df6204fc6a8ad5",
       "skills/skill-reviewer/SKILL.md": "e6d09f4bfa4201780f9b0724a63f1605826959226ba15c84c3efd64b0dbe9d85",
@@ -958,7 +953,7 @@
       "skills/skill-reviewer/references/output-contract.md": "7cd2fc72d01be97efab8fa5b0302de986e0ffec38fd4dadbfc2282f9e1982b81",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "measurement freeze (2026-08-06 ruling): trunk-workflow section added to skill-authoring.md (diagram + funnel principle, phase 1-2 of plan 20260806074910); no behavioral instruction to skill-reviewer changed. Re-run deferred to the post-freeze full measurement.",
+    "note": "measurement freeze (2026-08-06 ruling): skill-authoring gained the 'Specs Are Human-facing' subsection (spec-first maintenance rule, no backlinks from skill bodies); no behavioral instruction to skill-reviewer changed. Re-run deferred to the post-freeze full measurement.",
     "result": "accepted-without-run",
     "scenarios": {
       "sr-001": {
@@ -982,7 +977,7 @@
       "skills/shared/references/fix-action-taxonomy.md": "f10504693453f7cc768ac00ec34708f41d22a8e713ca503b47d9322b4d44c81b",
       "skills/shared/references/quality-gate-contract.md": "e76eed7335874bca058f208d15dbdda334bfe7d25f3c3246ce36f29ef54eae58",
       "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
-      "skills/shared/references/skill-authoring.md": "fd37fc9f9abff95d73ac3aa85e667c03604e9fe0e8e082e88b59f916440a4fb3",
+      "skills/shared/references/skill-authoring.md": "0b30b5d9609485d614737903c1ba4ece6dc909b5f4d7c566abe9d88184f67f72",
       "skills/shared/references/skill-repository-profile.md": "2cb1fb93cb2af137f6e63400d7da8014a06b378e4daf224defe3f706809ac558",
       "skills/skill-reviewer/SKILL.md": "4dbdd6eda5a292567adc7dbefb5803449c674567ea102c3d7033007cfae3b1a9",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "140524c30eafb57aeb4340c2e6ffdbebc0bdd95f972b1303c70b3232f9a7caae",
@@ -1002,7 +997,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "897f47b731456cd34c7284c62865258ff5370f1ab93f51765761d9eb5bd87c39",
+    "surface_sha256": "d5191e1cef62863e5c0f5795128f274db75040f009449efd76303960ff46d69c",
     "verified": "2026-08-06"
   },
   "sweep-fix": {

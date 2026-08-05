@@ -7,7 +7,7 @@ description: The default entry of the trunk workflow — a heavy phase that driv
 
 Artifact paths follow the [Artifact Store consumer contract](../shared/references/artifact-paths.md). Resolve and validate the store before reading or writing artifacts.
 
-The default entry of the trunk workflow — idea → requirements → specification, hammered out in dialogue. The behavioral spec is [docs/spec/brainstorm.md](../../docs/spec/brainstorm.md) — a maintenance rule, not a runtime read: when body and spec diverge, fix the spec first, then this body. Discussion only during the session — the agent never drifts into implementation. On wrap, the session outcomes are structured into an exit contract that routes agreements to their proper destinations (ledger, docs, clauses, plan).
+The default entry of the trunk workflow — idea → requirements → specification, hammered out in dialogue. Discussion only during the session — the agent never drifts into implementation. On wrap, the session outcomes are structured into an exit contract that routes agreements to their proper destinations (ledger, docs, clauses, plan).
 
 ## Workflow Selection
 
