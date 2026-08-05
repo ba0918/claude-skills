@@ -1260,22 +1260,22 @@ class TestCheckHumanReadableSummary(unittest.TestCase):
                   encoding="utf-8") as f:
             f.write(body)
 
-    def _skill(self, root, name, *, link=True, label=True):
-        sdir = os.path.join(root, "skills", name)
-        os.makedirs(sdir, exist_ok=True)
+    def _skill(self, root, name, rel="SKILL.md", *, link=True, label=True):
+        target = os.path.join(root, "skills", name, rel)
+        os.makedirs(os.path.dirname(target), exist_ok=True)
         body = "---\nname: {n}\ndescription: d\n---\n\n本文。\n".format(n=name)
         if link:
             body += "\n参照: [契約](../shared/references/human-readable-summary.md)\n"
         if label:
             body += "\n完了表示:\n```\n{label} 〜を保存したよ\n```\n".format(
                 label=HUMAN_READABLE_SUMMARY_LABEL)
-        with open(os.path.join(sdir, "SKILL.md"), "w", encoding="utf-8") as f:
+        with open(target, "w", encoding="utf-8") as f:
             f.write(body)
 
     def _all_conforming(self, root):
         self._contract(root)
-        for name in HUMAN_READABLE_SUMMARY_SKILLS:
-            self._skill(root, name)
+        for name, rel in HUMAN_READABLE_SUMMARY_SKILLS:
+            self._skill(root, name, rel)
 
     def test_all_conforming_passes(self):
         with tempfile.TemporaryDirectory() as root:
@@ -1284,36 +1284,44 @@ class TestCheckHumanReadableSummary(unittest.TestCase):
 
     def test_missing_contract_is_reported(self):
         with tempfile.TemporaryDirectory() as root:
-            for name in HUMAN_READABLE_SUMMARY_SKILLS:
-                self._skill(root, name)
+            for name, rel in HUMAN_READABLE_SUMMARY_SKILLS:
+                self._skill(root, name, rel)
             errors = check_human_readable_summary(root)
             self.assertTrue(any("human-readable-summary.md" in e for e in errors))
 
     def test_contract_without_before_after_example_is_reported(self):
         with tempfile.TemporaryDirectory() as root:
             self._contract(root, before_after=False)
-            for name in HUMAN_READABLE_SUMMARY_SKILLS:
-                self._skill(root, name)
+            for name, rel in HUMAN_READABLE_SUMMARY_SKILLS:
+                self._skill(root, name, rel)
             errors = check_human_readable_summary(root)
             self.assertTrue(any("before/after" in e.lower() for e in errors))
 
     def test_skill_missing_contract_link_is_reported(self):
         with tempfile.TemporaryDirectory() as root:
             self._all_conforming(root)
-            self._skill(root, HUMAN_READABLE_SUMMARY_SKILLS[0], link=False)
+            name, rel = HUMAN_READABLE_SUMMARY_SKILLS[0]
+            self._skill(root, name, rel, link=False)
             errors = check_human_readable_summary(root)
-            self.assertTrue(any(
-                HUMAN_READABLE_SUMMARY_SKILLS[0] in e and "リンク" in e
-                for e in errors))
+            self.assertTrue(any(name in e and "リンク" in e for e in errors))
 
     def test_skill_missing_summary_label_is_reported(self):
         with tempfile.TemporaryDirectory() as root:
             self._all_conforming(root)
-            self._skill(root, HUMAN_READABLE_SUMMARY_SKILLS[0], label=False)
+            name, rel = HUMAN_READABLE_SUMMARY_SKILLS[0]
+            self._skill(root, name, rel, label=False)
             errors = check_human_readable_summary(root)
-            self.assertTrue(any(
-                HUMAN_READABLE_SUMMARY_SKILLS[0] in e and "ラベル" in e
-                for e in errors))
+            self.assertTrue(any(name in e and "ラベル" in e for e in errors))
+
+    def test_non_skill_md_target_is_checked_in_place(self):
+        """workflow 分割スキルは完了表示の所有ファイル側で検査される。"""
+        with tempfile.TemporaryDirectory() as root:
+            self._all_conforming(root)
+            name, rel = HUMAN_READABLE_SUMMARY_SKILLS[0]
+            self.assertNotEqual("SKILL.md", rel)
+            os.remove(os.path.join(root, "skills", name, rel))
+            errors = check_human_readable_summary(root)
+            self.assertTrue(any(f"skills/{name}/{rel}" in e for e in errors))
 
 
 if __name__ == "__main__":
