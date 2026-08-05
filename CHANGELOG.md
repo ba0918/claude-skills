@@ -16,6 +16,11 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: fixture の要件数超過が検証で可視化され、cycle の cy-004 が 2 本へ分割された
+
+- `fixture_setup.py --validate` が requirements 7 件超のシナリオを `[info]` で報告する。violation ではないため既存の検証は止まらない（#262）
+- cycle の cy-004（11 要件・全 critical）を cy-004a（文脈採用と隔離規律 / 6 件）と cy-004b（フェーズ実行と outer への延期 / 5 件）へ分割。要件本文は逐語のまま再配置し、id `cy-004` は廃止。両者は prompt / setup が同一だが harness は 1 シナリオ = 1 実行のため、フル再走は 20 → 21 unit になる（#262）
+
 ### Added: `[contract-change]` の stale を LLM 判定で値切れる（semantic triage / 基盤のみ）
 
 - `semantic_diff.py` が台帳と git 履歴から判定入力（unified diff・正準 diff ハッシュ・判定ファイル skeleton）を作り、`ledger.py --update <skill> --partial --semantic <file>` が `unaffected` 判定のシナリオだけを新しい記録値 `accepted-semantic` として台帳へ書く。`unclear` / `affected` は従来どおり実走か人間判断（#268）
@@ -26,7 +31,7 @@ claude-skills プラグインのバージョン履歴。
 
 - fixture の `scenarios[].exercises` に「そのシナリオが踏む挙動面ファイル」を宣言でき、`ledger.py --impact-scenarios` が変更ファイルから再走対象シナリオだけを返す。宣言なしのシナリオは従来どおり常に再走（#243）
 - `ledger.py --update <skill> --partial [--scenario ID]...` が実走分を記録して残りを持ち越す。持ち越せないシナリオがあれば更新ごと拒否して列挙する。移行用に `--seed-scenarios` を追加（#243）
-- cycle の 20 シナリオのうち 17 本へ宣言を付与（cy-001 / cy-004 / cy-009 は面をほぼ全域踏む、または実走証拠が設計経路を網羅しないため意図的に未宣言）。fix-delegation.md の変更で再走が 20 → 9 本、completion.md で 20 → 10 本に絞られる（#243）
+- cycle の 21 シナリオのうち 17 本へ宣言を付与（cy-001 / cy-004a / cy-004b / cy-009 は面をほぼ全域踏む、または実走証拠が設計経路を網羅しないため意図的に未宣言）。fix-delegation.md の変更で再走が 21 → 10 本、completion.md で 21 → 11 本に絞られる（#243）
 - `ledger.py` の CLI 挙動が 2 点厳格化: モード指定より前に置いた既知フラグ（`--partial` / `--accept` 等）は黙殺せず usage + exit 2 で拒否。`--accept` は per-scenario の検証日を今日で塗り替えず前回実走日を保持する（#243）
 
 ### Added: fixture が「対象 phase の直前状態」を宣言で seed できる（phase 終端型）

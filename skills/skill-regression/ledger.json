@@ -142,10 +142,10 @@
     "verified": "2026-08-04"
   },
   "cycle": {
-    "carried_note": "phase 終端化後の初回 20 scn 実走 (#242, Sonnet executor, batch cy-run-20260805 + cy004-rerun2)。全 critical pass、機械 assert 28 判定全通過。non-critical partial 2 件 (cy-009 R5 六行フォーマッタは散文責務で機械ゲートなし / cy-014 R5 表示は headless で artifact のみ)。watchdog status query は smoke cy-001 で 4 回、fix loop 系+satellite で計 11 回、終端型 13 本は 0 回 (旧設計は全 scn で発生)。cy-004 は初走で R3 到達性欠陥を検出し fixture 是正 (seed 撤回 ce14596+565fb0a) 後の再走で pass",
+    "carried_note": "#262: cy-004 分割後の初走。cy-004a は実行経路 fork を実測 — inline fallback に倒れた 2 走（セッション内 subagent / process-queue batch cy004a-262-20260805）は R3=plan-implement への文脈中継が発生せず測定不能で不採用、実委譲経路の完全 run（匿名 delegate ×3、外部照会 0）で全 critical ○。cy-004b は 2 走とも 5/5 ○ で採用: inline fallback 走（成果物裏取り済み）と実委譲経路の背景 run（subagent a31dbda97d5026454、Phase 1/3/4 が匿名 delegate、independent review は quota エラーで unavailable 扱い）。cy-004b が inline 走でも判定できるのは、5 要件がいずれも委譲の発生に依存せず post-state と報告内容で観測できるためで、委譲行為そのものを見る cy-004a の R3 とは成立条件が異なる。ただし cy-004b の 2 走はいずれも要件 1/2/4 が難路未通過の浅い ○（verdict PASS で fix loop 未発火 / independent review は両走とも unavailable / plan に Issue 行が無く close 延期は空ケースのみ）。採用した 3 走はいずれもセッション transcript 上の background agent run で、ディスクに残る対照は不採用 batch cy004a-262-20260805 のみ。",
     "file_sha256": {
       "skills/cycle/SKILL.md": "8fcf89b2df01a9d09a74dc8225e2a51eb130e6bb849663125109aa8b0c2ba22a",
-      "skills/cycle/fixtures.json": "dc8dd4157861dae3a71b38e7698e2cb83c26b74eb67e06a12f023c789e3bc6f5",
+      "skills/cycle/fixtures.json": "3ced930955dbfac1d6817e91226dc76941e9299c4cda3e7d86a05b5f285a1657",
       "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
@@ -168,7 +168,7 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "#243 パイロット: exercises 宣言 17/20 を付与（cy-001 通し smoke・cy-004 satellite は面をほぼ全域踏むため、cy-009 standalone publish gate は実走証拠が設計経路を網羅しておらず宣言が過少になるため、いずれも意図的に未宣言）。実走ゼロ、全 20 シナリオを持ち越し。宣言は cy-run-20260805 の execution_path とスキルの phase→参照構造から導出",
+    "note": "#262: cy-004 分割後の初走。cy-004a は実行経路 fork を実測 — inline fallback に倒れた 2 走（セッション内 subagent / process-queue batch cy004a-262-20260805）は R3=plan-implement への文脈中継が発生せず測定不能で不採用、実委譲経路の完全 run（匿名 delegate ×3、外部照会 0）で全 critical ○。cy-004b は 2 走とも 5/5 ○ で採用: inline fallback 走（成果物裏取り済み）と実委譲経路の背景 run（subagent a31dbda97d5026454、Phase 1/3/4 が匿名 delegate、independent review は quota エラーで unavailable 扱い）。cy-004b が inline 走でも判定できるのは、5 要件がいずれも委譲の発生に依存せず post-state と報告内容で観測できるためで、委譲行為そのものを見る cy-004a の R3 とは成立条件が異なる。ただし cy-004b の 2 走はいずれも要件 1/2/4 が難路未通過の浅い ○（verdict PASS で fix loop 未発火 / independent review は両走とも unavailable / plan に Issue 行が無く close 延期は空ケースのみ）。採用した 3 走はいずれもセッション transcript 上の background agent run で、ディスクに残る対照は不採用 batch cy004a-262-20260805 のみ。持ち越し 19 本の実走由来は #242 batch cy-run-20260805 + cy004-rerun2（Sonnet executor）。exercises 未宣言 4 本（cy-001, cy-004a, cy-004b, cy-009）の理由は #243 裁定（面をほぼ全域踏む、または実走証拠が設計経路を網羅しない）。",
     "result": "pass",
     "scenarios": {
       "cy-001": {
@@ -186,9 +186,14 @@
         "scenario_sha256": "4b08f44ffdb72531169fe9a7766cce80a5b677aa741752de3599ff297bd938e4",
         "verified": "2026-08-05"
       },
-      "cy-004": {
+      "cy-004a": {
         "result": "pass",
-        "scenario_sha256": "ef5e113cb63e64ea067072d94f58e7bff5f2953b5e6425aa6cc3b1aeb5bc4f7d",
+        "scenario_sha256": "846a1b877d4c3a39b77f5f01944b8be4dbb8bed7d275384ce535599b9795f95d",
+        "verified": "2026-08-05"
+      },
+      "cy-004b": {
+        "result": "pass",
+        "scenario_sha256": "6b0a24a9dc1bbf98d75ad413630c4cc5b925a02219b715314a91009dbf6dc9ac",
         "verified": "2026-08-05"
       },
       "cy-005": {
@@ -317,7 +322,7 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "42cf2fe6013db72b685e1aaba1aba29f16f3dc9cd5dfb93207540f1bc3a35ce2",
+    "surface_sha256": "06cb135080b228a2924d716c1430416214404ff56c25b573be99d534fc3e754d",
     "verified": "2026-08-05"
   },
   "decision-journal": {

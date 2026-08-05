@@ -81,6 +81,49 @@ class TestValidate(unittest.TestCase):
                             for e in fixture_setup.validate(f)))
 
 
+class TestRequirementCountWarning(unittest.TestCase):
+    """要件数が設計目安（3-7 件）の上端を超えたシナリオを info で報告する。
+
+    超過そのものは不正ではなく、分割か裁定が要る設計上の兆候。violation に
+    すると多段スキルの恒常鳴りで検証が止まるため info 側に置く（#262）。
+    """
+
+    @staticmethod
+    def _validate(count):
+        fixture = _fixture(requirements=[
+            {"text": f"要件 {index}", "critical": True} for index in range(count)])
+        return fixture_setup.validate_with_warnings(fixture)
+
+    @staticmethod
+    def _count_warnings(warnings):
+        return [w for w in warnings if "requirements が" in w]
+
+    def test_at_the_guideline_upper_bound_stays_silent(self):
+        _, warnings = self._validate(7)
+        self.assertEqual(self._count_warnings(warnings), [])
+
+    def test_exceeding_the_guideline_is_reported_once_with_count_and_id(self):
+        _, warnings = self._validate(8)
+        hits = self._count_warnings(warnings)
+        self.assertEqual(len(hits), 1)
+        self.assertIn("8", hits[0])
+        self.assertIn("sf-001", hits[0])
+
+    def test_the_report_is_info_and_not_a_violation(self):
+        errors, warnings = self._validate(8)
+        self.assertEqual(errors, [])
+        self.assertTrue(self._count_warnings(warnings)[0].startswith("[info]"))
+
+    def test_the_cli_still_exits_zero_when_only_the_count_is_exceeded(self):
+        fixture = _fixture(requirements=[
+            {"text": f"要件 {index}", "critical": True} for index in range(8)])
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "fixtures.json")
+            with open(path, "w", encoding="utf-8") as handle:
+                json.dump(fixture, handle, ensure_ascii=False)
+            self.assertEqual(fixture_setup.main(["--validate", path]), 0)
+
+
 class TestValidateSetup(unittest.TestCase):
     def test_known_setup_keys_pass(self):
         f = _fixture(setup={
