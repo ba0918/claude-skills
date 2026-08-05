@@ -1067,6 +1067,73 @@ class TestPartialUpdate(_PartialHarness):
                 self.assertIn(sid, out)
             self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
 
+    def test_the_refusal_names_the_files_that_forced_the_rerun(self):
+        # 原因ファイルを理由行に添えないと、何が再走を呼んだのかを見るのに
+        # --impact-scenarios を別途叩き直すことになる
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            os.remove(os.path.join(root, "skills/shared/references/gate.md"))
+            rc, out = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 1)
+            self.assertIn("skills/shared/references/gate.md", out)
+
+
+class TestNoteIsNeverSilentlyDiscarded(_PartialHarness):
+    """エントリを作り直す更新が、前任の申し送りを黙って落とさない。
+
+    note には実走証拠の性質（誰がどの経路を通ったか）が入る。持ち越しだけの
+    更新でこれが消えると、台帳に残るのは記録の形だけで由来が読めなくなる。
+    """
+
+    def _verified_with_note(self, root, note):
+        entry = self._verified(root)
+        entry["note"] = note
+        ledger.save(root, {"a": entry})
+
+    def test_a_zero_run_partial_keeps_the_previous_note(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代: 実走 3 本 / 経路 B")
+            rc, _ = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["carried_note"],
+                             "初代: 実走 3 本 / 経路 B")
+
+    def test_a_new_note_does_not_erase_the_previous_one(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代: 実走 3 本 / 経路 B")
+            rc, _ = self._run(
+                ["--update", "a", "--partial", "--note", "二代目: 宣言追加のみ", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["note"], "二代目: 宣言追加のみ")
+            self.assertEqual(entry["carried_note"], "初代: 実走 3 本 / 経路 B")
+
+    def test_the_carried_note_survives_a_further_note_less_partial(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代: 実走 3 本 / 経路 B")
+            self._run(["--update", "a", "--partial", root])
+            rc, _ = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["carried_note"],
+                             "初代: 実走 3 本 / 経路 B")
+
+    def test_only_the_most_recent_prior_note_is_kept(self):
+        # 引き継ぎスロットは 1 つ。全世代を積むと台帳が伸び続ける
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代")
+            self._run(["--update", "a", "--partial", "--note", "二代目", root])
+            rc, _ = self._run(["--update", "a", "--partial", "--note", "三代目", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["note"], "三代目")
+            self.assertEqual(entry["carried_note"], "二代目")
+            self.assertNotIn("初代", json.dumps(entry, ensure_ascii=False))
+
 
 class TestPartialUpdateAgreesWithTheImpactRule(_PartialHarness):
     """影響ありと報告したシナリオを、同じ状態の --partial が持ち越さない。
@@ -1168,6 +1235,38 @@ class TestLegacyEntriesKeepWorking(_PartialHarness):
             rc, _ = self._run(["--update", "a", "--accept", root])
             self.assertEqual(rc, 0)
             self.assertEqual(ledger.load(root)["a"]["result"], "accepted-addition")
+
+
+class TestArgumentErrorsAreReported(_PartialHarness):
+    """値を伴うオプションの欠落は traceback ではなく usage + exit 2 で返す。"""
+
+    def test_scenario_without_a_value(self):
+        rc, out = self._run(["--update", "a", "--partial", "--scenario"])
+        self.assertEqual(rc, 2)
+        self.assertIn("--scenario", out)
+
+    def test_note_without_a_value(self):
+        rc, out = self._run(["--update", "a", "--partial", "--note"])
+        self.assertEqual(rc, 2)
+        self.assertIn("--note", out)
+
+    def test_update_without_a_skill(self):
+        rc, out = self._run(["--update"])
+        self.assertEqual(rc, 2)
+        self.assertIn("--update", out)
+
+    def test_seed_scenarios_without_a_skill(self):
+        rc, out = self._run(["--seed-scenarios"])
+        self.assertEqual(rc, 2)
+        self.assertIn("--seed-scenarios", out)
+
+    def test_impact_scenarios_without_any_changed_file(self):
+        # 何も出力せず rc 0 だと「再走すべきシナリオが無い」と区別が付かず、
+        # 呼び出し側の引数組み立てミスが影響ゼロに化ける
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            rc, _ = self._run(["--impact-scenarios", root])
+            self.assertNotEqual(rc, 0)
 
 
 class TestCoverage(unittest.TestCase):

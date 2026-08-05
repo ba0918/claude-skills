@@ -268,7 +268,8 @@ def skill_result(scenario_records):
     return RESULT_PASS if results == {RESULT_PASS} else RESULT_ACCEPTED_WITHOUT_RUN
 
 
-def make_entry(root, surface, result, verified_date, note=None, scenarios=None):
+def make_entry(root, surface, result, verified_date, note=None, scenarios=None,
+               carried_note=None):
     """台帳エントリを作る。
 
     result は "pass"（実走して全シナリオ合格）| "accepted-addition"（実走せず承認。
@@ -287,6 +288,11 @@ def make_entry(root, surface, result, verified_date, note=None, scenarios=None):
     note は素の pass だけでは次に回す者へ伝わらない run の性質を残すための欄
     （executor-contract が要求する照会回数、実行者が選んだ経路など）。
     合否には影響しない。
+
+    carried_note は直前エントリの note を引き継ぐ欄。エントリを作り直す更新で
+    前任の申し送りを黙って捨てると、実走証拠の性質（誰がどの経路を通ったか）が
+    台帳から消え、持ち越し記録だけが残って由来が読めなくなる。スロットは 1 つ
+    だけで、直近 1 世代の note しか保たない（連鎖して伸び続けさせない）。
     """
     entry = {
         "surface": surface,
@@ -300,6 +306,8 @@ def make_entry(root, surface, result, verified_date, note=None, scenarios=None):
         entry["scenarios"] = scenarios
     if note:
         entry["note"] = note
+    if carried_note:
+        entry["carried_note"] = carried_note
     return entry
 
 
@@ -534,6 +542,19 @@ def save(root, entries):
         f.write("\n")
 
 
+def _summarize_changed(changed, limit=3):
+    """拒否理由へ添える変更ファイル名（先頭 limit 件 + 残数）。
+
+    「面の変更が影響する」だけでは、どのファイルが再走を呼んだのかを見るのに
+    --impact-scenarios を別途叩き直す必要がある。原因を理由行に同梱する。
+    """
+    names = sorted(changed)
+    if not names:
+        return "（変更ファイル不明）"
+    head = ", ".join(names[:limit])
+    return head if len(names) <= limit else f"{head} … ほか {len(names) - limit} 件"
+
+
 def partial_update(root, entries, skill, ran_ids, note=None, today=None):
     """実走したシナリオを記録し、残りを持ち越して台帳を進める。
 
@@ -580,7 +601,8 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None):
             }
             continue
         if sid in impacted:
-            reason = "面の変更が影響する（--check / --impact-scenarios と同じ規則）"
+            reason = ("面の変更が影響する（--check / --impact-scenarios と同じ規則）: "
+                      + _summarize_changed(changed))
         else:
             reason = carryover_reason(
                 skill, scenario, surface, entry.get("file_sha256", {}), current,
@@ -595,9 +617,13 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None):
         print(f"✗ {len(blocked)} 件は持ち越せない。実走して --scenario で指名するか、"
               f"--partial を外して全シナリオ実走の --update にすること")
         return 1
+    # 直前の申し送りを引き継ぐ。note を持たないエントリなら、その前任から
+    # 引き継いでいた分をそのまま次へ渡す（実走証拠の由来が、note 無しの
+    # 部分更新 1 回で消えるのを防ぐ）
+    carried = entry.get("note") or entry.get("carried_note")
     entries[skill] = make_entry(
         root, surface, skill_result(records), today, note=note,
-        scenarios=records)
+        scenarios=records, carried_note=None if carried == note else carried)
     save(root, entries)
     print(f"✓ ledger 更新: {skill} (--partial: 実走 {len(ran_ids)} / "
           f"持ち越し {len(records) - len(ran_ids)})")
@@ -678,6 +704,25 @@ def impact_scenarios_cli(root, changed_paths):
     return 2 if unresolved else 0
 
 
+def _usage(message):
+    """引数の欠落を usage 付きで報告する（exit 2 = 引数エラー）。
+
+    値を伴うオプションの取りこぼしを素の IndexError で落とすと、利用者には
+    traceback だけが見えてどの引数が足りないのか読めない。
+    """
+    print(f"✗ {message}")
+    print(__doc__)
+    return 2
+
+
+def _option_value(args, idx):
+    """args[idx] のオプションが取る値。欠落（末尾・次も別オプション）なら None。"""
+    if idx + 1 >= len(args):
+        return None
+    value = args[idx + 1]
+    return None if value.startswith("--") else value
+
+
 def main(argv):
     args = list(argv)
 
@@ -752,14 +797,18 @@ def main(argv):
 
     if "--seed-scenarios" in args:
         idx = args.index("--seed-scenarios")
-        skill = args[idx + 1]
+        skill = _option_value(args, idx)
+        if skill is None:
+            return _usage("--seed-scenarios にスキル名がない")
         root = _root(args[idx + 2:])
         return seed_scenarios(root, load(root), skill)
 
     if "--update" in args or "--remove" in args:
         mode = "--update" if "--update" in args else "--remove"
         idx = args.index(mode)
-        skill = args[idx + 1]
+        skill = _option_value(args, idx)
+        if skill is None:
+            return _usage(f"{mode} にスキル名がない")
         rest = args[idx + 2:]
         accept = "--accept" in rest
         partial = "--partial" in rest
@@ -767,12 +816,17 @@ def main(argv):
         ran_ids = set()
         while "--scenario" in rest:
             sidx = rest.index("--scenario")
-            ran_ids.add(rest[sidx + 1])
+            value = _option_value(rest, sidx)
+            if value is None:
+                return _usage("--scenario にシナリオ id がない")
+            ran_ids.add(value)
             rest = rest[:sidx] + rest[sidx + 2:]
         note = None
         if "--note" in rest:
             note_idx = rest.index("--note")
-            note = rest[note_idx + 1]
+            note = _option_value(rest, note_idx)
+            if note is None:
+                return _usage("--note に本文がない")
             rest = rest[:note_idx] + rest[note_idx + 2:]
         root = _root(rest)
         entries = load(root)
@@ -830,6 +884,10 @@ def main(argv):
         root = os.getcwd()
         if rest and os.path.isdir(rest[-1]) and not rest[-1].endswith(".md"):
             root, rest = rest[-1], rest[:-1]
+        # 変更ファイル 0 件で黙って rc 0 を返すと、「再走すべきシナリオが無い」と
+        # 区別が付かない。呼び出し側の引数組み立てミスが影響ゼロに化ける
+        if not rest:
+            return _usage("--impact-scenarios に変更ファイルが 1 つも無い")
         return impact_scenarios_cli(root, rest)
 
     if "--impact" in args:
