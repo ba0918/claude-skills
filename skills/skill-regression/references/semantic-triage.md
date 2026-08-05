@@ -131,8 +131,8 @@ writing nothing, when any of these holds — the same all-or-nothing rule `--par
 - a verdict names a scenario id that is not in `fixtures.json` — otherwise a typo would surface only as "that
   scenario has no verdict", pointing at the wrong thing
 - `diff_sha256` does not match the current difference (an old judgement reused on a different change)
-- the judging model has no calibration record, its `must_flag_fn` is above 0, or its record was measured on a
-  different corpus revision
+- the judging model has no calibration record, its `must_flag_fn` is above 0, its record was measured on a
+  different corpus revision, or the corpus holds fewer than 20 cases on either side
 - an impacted scenario has no verdict, or its verdict is `unclear` / `affected`
 - an impacted scenario's `scenario_sha256` moved: when the acceptance criteria themselves changed, only a real
   run can settle it
@@ -155,9 +155,11 @@ python3 {skill_dir}/scripts/semantic_calibration.py --validate {repo_root}
 python3 {skill_dir}/scripts/semantic_calibration.py --score <results.json> {repo_root}
 ```
 
-Scoring records the measurement honestly whether or not it passes; `ledger.py` is what decides whether the gate
-opens (`must_flag_fn == 0` **and** the corpus fingerprint still matches). So a corpus revision and a model change
-both close the gate again, mechanically, with no prose rule to remember.
+Scoring records the measurement honestly whether or not it passes — including how many cases each side was
+measured on, so the weight behind a zero is auditable later. `ledger.py` is what decides whether the gate opens
+(`must_flag_fn == 0`, the corpus fingerprint still matches, **and** each side still holds at least 20 cases). So a
+corpus revision, a model change, and a thinned corpus all close the gate again, mechanically, with no prose rule
+to remember. `--min-cases` lowers the validator for local experiments; it cannot lower the gate.
 
 A false negative is a `must-flag` case judged `unaffected`. `unclear` on a `must-flag` case is not a false
 negative — it routes to a human, which is the intended safe outcome. On the `must-pass` side anything other than

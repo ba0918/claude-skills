@@ -1583,11 +1583,13 @@ class _JudgmentHarness(unittest.TestCase):
         judgment.update(overrides)
         return judgment
 
-    def _calibration(self, entries=None, corpus=None):
+    def _calibration(self, entries=None, corpus=None, counts=None):
         if entries is None:
             entries = {
                 self.MODEL: {
+                    "must_flag_cases": ledger.MIN_CASES,
                     "must_flag_fn": 0,
+                    "must_pass_cases": ledger.MIN_CASES,
                     "must_pass_fp": 2,
                     "corpus_sha256": self.CORPUS,
                     "verified": "2026-08-05",
@@ -1595,7 +1597,10 @@ class _JudgmentHarness(unittest.TestCase):
             }
         return ledger.CalibrationGate(
             entries=entries,
-            corpus_sha256=self.CORPUS if corpus is None else corpus)
+            corpus_sha256=self.CORPUS if corpus is None else corpus,
+            corpus_counts=({side: ledger.MIN_CASES
+                            for side in ledger.CALIBRATION_SIDES}
+                           if counts is None else counts))
 
     def _reason(self, judgment=None, calibration=None, known_ids=("a-001",)):
         return ledger.validate_judgment(
@@ -1738,6 +1743,24 @@ class TestCalibrationGate(_JudgmentHarness):
                 calibration = self._calibration(entries={self.MODEL: entry})
                 self.assertIsNotNone(self._reason(calibration=calibration))
 
+    def test_a_thin_corpus_blocks_the_gate_on_either_side(self):
+        # 偽陰性 0 の重みは母数で決まる。書き込み側の --min-cases で下限を
+        # 下げられる以上、ゲート側でも件数を束縛しないと 2 件の満点が通る
+        for thin_side in ledger.CALIBRATION_SIDES:
+            with self.subTest(side=thin_side):
+                counts = {side: ledger.MIN_CASES
+                          for side in ledger.CALIBRATION_SIDES}
+                counts[thin_side] = ledger.MIN_CASES - 1
+                reason = self._reason(
+                    calibration=self._calibration(counts=counts))
+                self.assertIsNotNone(reason)
+                self.assertIn(thin_side, reason)
+
+    def test_a_corpus_at_the_floor_passes(self):
+        counts = {side: ledger.MIN_CASES for side in ledger.CALIBRATION_SIDES}
+        self.assertIsNone(self._reason(
+            calibration=self._calibration(counts=counts)))
+
 
 class TestLoadCalibration(unittest.TestCase):
     """calibration.json とコーパスのフィンガープリントを読む I/O 層。"""
@@ -1758,6 +1781,19 @@ class TestLoadCalibration(unittest.TestCase):
             calibration = ledger.load_calibration(root)
             self.assertEqual(calibration.entries, {"m": {"must_flag_fn": 0}})
             self.assertEqual(len(calibration.corpus_sha256), 64)
+
+    def test_it_counts_the_cases_on_each_side(self):
+        # 件数はゲートの判定材料。フィンガープリントと同じ経路で運ばないと、
+        # 母数を検査しないまま較正記録を通す呼び出しが書けてしまう
+        with tempfile.TemporaryDirectory() as root:
+            self._corpus(root, must_flag=3, must_pass=2)
+            self.assertEqual(ledger.load_calibration(root).corpus_counts,
+                             {"must_flag": 3, "must_pass": 2})
+
+    def test_an_absent_corpus_counts_as_zero_on_both_sides(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.assertEqual(ledger.load_calibration(root).corpus_counts,
+                             {"must_flag": 0, "must_pass": 0})
 
     def test_the_corpus_fingerprint_moves_when_a_case_changes(self):
         with tempfile.TemporaryDirectory() as root:
@@ -1828,10 +1864,14 @@ class _SemanticHarness(_PartialHarness):
     MODEL = "judge-model-1"
 
     def _calibrate(self, root, model=None, must_flag_fn=0, corpus_sha256=None):
-        _write(root, "skills/skill-regression/calibration/must_flag/f0.json",
-               json.dumps({"id": "f0", "expected": "must-flag"}))
-        _write(root, "skills/skill-regression/calibration/must_pass/p0.json",
-               json.dumps({"id": "p0", "expected": "must-pass"}))
+        # ゲートは片側 MIN_CASES 件を要求するので、通る材料は下限ちょうどで組む
+        for i in range(ledger.MIN_CASES):
+            _write(root,
+                   f"skills/skill-regression/calibration/must_flag/f{i}.json",
+                   json.dumps({"id": f"f{i}", "expected": "must-flag"}))
+            _write(root,
+                   f"skills/skill-regression/calibration/must_pass/p{i}.json",
+                   json.dumps({"id": f"p{i}", "expected": "must-pass"}))
         _write(root, "skills/skill-regression/calibration.json", json.dumps({
             model or self.MODEL: {
                 "must_flag_fn": must_flag_fn,
@@ -2142,8 +2182,8 @@ class TestSemanticJudgmentIsRefusedWholesale(_SemanticHarness):
             self._setup(root)
             path = self._judgment(
                 root, {"a-001": "unaffected", "a-003": "unaffected"})
-            _write(root, "skills/skill-regression/calibration/must_flag/f1.json",
-                   json.dumps({"id": "f1", "expected": "must-flag"}))
+            _write(root, "skills/skill-regression/calibration/must_flag/fx.json",
+                   json.dumps({"id": "fx", "expected": "must-flag"}))
             rc, out = self._run(
                 ["--update", "a", "--partial", "--semantic", path, root])
             self.assertEqual(rc, 1)

@@ -25,7 +25,7 @@ CLI:
       判定結果を採点し calibration.json へ記録する。
       RESULTS.json は {"model": "<判定モデル識別子>", "results": {case_id: verdict}}
       採点値は正直に記録するだけで、ゲートを開けるかどうかは ledger.py が
-      判定する（must_flag_fn == 0 かつ corpus_sha256 一致）
+      判定する（must_flag_fn == 0 / corpus_sha256 一致 / 片側の件数が下限以上）
 """
 import datetime
 import json
@@ -35,9 +35,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ledger  # noqa: E402
 
-# 片側あたりの最低件数。痩せたコーパスでは「たまたま当たった」を見抜けず、
-# 偽陰性 0 という解禁ラインが母数の裏付けを失う
-MIN_CASES = 20
+# 片側あたりの最低件数。下限の正本は ledger 側に置く。ゲート（記録を通すか）と
+# 検査（コーパスが検査を通るか）が別々の数を持つと、--min-cases で下げた検査を
+# 通ったコーパスがゲートでは弾かれる／その逆が起きる
+MIN_CASES = ledger.MIN_CASES
 
 CASE_FIELDS = ("id", "expected", "before", "after", "requirements")
 EXPECTED_BY_SIDE = {"must_flag": "must-flag", "must_pass": "must-pass"}
@@ -148,6 +149,9 @@ def score(cases, results):
         "false_positives": false_positives,
         "cases": len(cases),
     }
+    for side, expected in EXPECTED_BY_SIDE.items():
+        scored[f"{side}_cases"] = sum(
+            1 for case in cases.values() if case["expected"] == expected)
     return scored, errors
 
 
@@ -157,10 +161,15 @@ def record_calibration(root, model, scored, today=None):
     測った値をそのまま残し、ゲートを開けるかどうかの判断は持たない。
     「合格した較正だけを書く」設計にすると、不合格の測定が台帳から消えて
     「まだ測っていない」と区別が付かなくなる。
+
+    誤り数だけでなく片側ごとの case 数も残す。偽陰性 0 の重みは母数で決まる
+    ので、「何件で測った 0 か」が記録に無いと、後から較正の強さを検証できない。
     """
     entries = dict(ledger.load_calibration(root).entries)
     entries[model] = {
+        "must_flag_cases": scored["must_flag_cases"],
         "must_flag_fn": scored["must_flag_fn"],
+        "must_pass_cases": scored["must_pass_cases"],
         "must_pass_fp": scored["must_pass_fp"],
         "corpus_sha256": ledger.corpus_sha256(root),
         "verified": today or datetime.date.today().isoformat(),
@@ -260,8 +269,9 @@ def main(argv):
             return 1
         entry = record_calibration(root, model, scored)
         print(f"✓ 較正を記録: {model}（{scored['cases']} case / "
-              f"must_flag_fn {scored['must_flag_fn']} / "
-              f"must_pass_fp {scored['must_pass_fp']}）")
+              f"must_flag {scored['must_flag_cases']} 件 → fn "
+              f"{scored['must_flag_fn']} / must_pass "
+              f"{scored['must_pass_cases']} 件 → fp {scored['must_pass_fp']}）")
         if scored["false_negatives"]:
             print(f"  偽陰性: {', '.join(scored['false_negatives'])}")
             print("  must_flag_fn > 0 の間、台帳側は accepted-semantic の記録を"

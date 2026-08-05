@@ -210,13 +210,46 @@ class TestCalibrationRecord(_CorpusHarness):
         return self._results(root, "judge-model-1",
                              {"f1": flag_verdict, "p1": "unaffected"})
 
-    def test_a_clean_run_opens_the_ledger_gate(self):
+    def _full_corpus_and_results(self, root):
+        """ゲートの件数下限を満たすコーパスと、その全件正解の判定結果。"""
+        cases = ([_case(f"f{i}", "must-flag") for i in range(ledger.MIN_CASES)]
+                 + [_case(f"p{i}", "must-pass")
+                    for i in range(ledger.MIN_CASES)])
+        self._corpus(root, cases)
+        return self._results(root, "judge-model-1", {
+            case["id"]: ("affected" if case["expected"] == "must-flag"
+                         else "unaffected")
+            for case in cases})
+
+    def test_a_clean_run_on_a_full_corpus_opens_the_ledger_gate(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = self._full_corpus_and_results(root)
+            rc, _ = self._run(["--score", path, root])
+            self.assertEqual(rc, 0)
+            self.assertIsNone(ledger.calibration_reason(
+                "judge-model-1", ledger.load_calibration(root)))
+
+    def test_lowering_the_min_cases_check_does_not_open_the_gate(self):
+        # 書き込み側の下限は --min-cases で下げられる。下げた検査を通った痩せた
+        # コーパスの満点でゲートが開くなら、母数の要件は散文の約束でしかない
         with tempfile.TemporaryDirectory() as root:
             path = self._corpus_and_results(root)
             rc, _ = self._run(["--score", path, "--min-cases", "1", root])
             self.assertEqual(rc, 0)
-            self.assertIsNone(ledger.calibration_reason(
-                "judge-model-1", ledger.load_calibration(root)))
+            reason = ledger.calibration_reason(
+                "judge-model-1", ledger.load_calibration(root))
+            self.assertIsNotNone(reason)
+            self.assertIn(str(ledger.MIN_CASES), reason)
+
+    def test_the_record_keeps_the_case_count_it_was_measured_on(self):
+        # 偽陰性 0 の重みは母数で決まる。件数が記録に残らないと、その較正が
+        # 48 件で測られたのか 2 件だったのかを後から検証できない
+        with tempfile.TemporaryDirectory() as root:
+            path = self._corpus_and_results(root)
+            self._run(["--score", path, "--min-cases", "1", root])
+            entry = ledger.load_calibration(root).entries["judge-model-1"]
+            self.assertEqual(entry["must_flag_cases"], 1)
+            self.assertEqual(entry["must_pass_cases"], 1)
 
     def test_a_false_negative_leaves_the_ledger_gate_shut(self):
         # 記録そのものは正直に残す（測った値を隠さない）。門は ledger 側が閉じる

@@ -121,11 +121,17 @@ CALIBRATION_REL = os.path.join("skills", "skill-regression", "calibration.json")
 CALIBRATION_CORPUS_REL = os.path.join("skills", "skill-regression", "calibration")
 CALIBRATION_SIDES = ("must_flag", "must_pass")
 
-# 較正ゲートの判定材料。「登録済みの較正記録」と「今のコーパスの内容」の 2 つが
-# 揃って初めてゲートを開けられる。片方だけを引数で運ぶと、コーパスを差し替えた
-# まま古い較正で記録を通す経路が開く
+# 片側あたりの最低 case 数。痩せたコーパスでは「たまたま当たった」を見抜けず、
+# 偽陰性 0 という解禁ラインが母数の裏付けを失う。書き込み側（semantic_calibration.py
+# の --min-cases）は運用の都合で下げられるので、ゲートの側にも同じ下限を持たせて
+# おかないと「2 件で測った満点」が記録経路を開けてしまう
+MIN_CASES = 20
+
+# 較正ゲートの判定材料。「登録済みの較正記録」と「今のコーパスの内容・件数」が
+# 揃って初めてゲートを開けられる。一部だけを引数で運ぶと、コーパスを差し替えた
+# まま古い較正で記録を通す経路や、母数を検査しないまま通す経路が開く
 CalibrationGate = collections.namedtuple(
-    "CalibrationGate", ["entries", "corpus_sha256"])
+    "CalibrationGate", ["entries", "corpus_sha256", "corpus_counts"])
 
 
 def structural_hashes(root, files):
@@ -270,6 +276,16 @@ def corpus_sha256(root):
     return fingerprint(root, corpus_files(root))
 
 
+def corpus_counts(root):
+    """較正コーパスの case ファイル数を {side: 件数} で返す。"""
+    counts = {side: 0 for side in CALIBRATION_SIDES}
+    for rel in corpus_files(root):
+        side = os.path.basename(os.path.dirname(rel))
+        if side in counts:
+            counts[side] += 1
+    return counts
+
+
 def load_calibration(root):
     """calibration.json の記録と、現在のコーパスのフィンガープリントを読む。
 
@@ -287,16 +303,22 @@ def load_calibration(root):
             loaded = None
         if isinstance(loaded, dict):
             entries = loaded
-    return CalibrationGate(entries=entries, corpus_sha256=corpus_sha256(root))
+    return CalibrationGate(entries=entries, corpus_sha256=corpus_sha256(root),
+                           corpus_counts=corpus_counts(root))
 
 
 def calibration_reason(model, calibration):
     """判定モデルが較正ゲートを通せない理由（通せるなら None）。
 
-    段階 3 の解禁・モデル変更 = 再較正・コーパス改訂 = 再較正の 3 つを、散文の
-    約束ではなくこの 1 か所の機械検査で守る（A7, A8）。危険なのは偽陰性方向
-    なので、通過条件は must_flag_fn == 0 だけに置き、偽陽性（must_pass_fp）は
-    記録するが門にはしない — 安全側の誤りで節約効果が減るだけだから。
+    段階 3 の解禁・モデル変更 = 再較正・コーパス改訂 = 再較正・母数の確保の
+    4 つを、散文の約束ではなくこの 1 か所の機械検査で守る（A7, A8）。危険なのは
+    偽陰性方向なので、誤り率の通過条件は must_flag_fn == 0 だけに置き、偽陽性
+    （must_pass_fp）は記録するが門にはしない — 安全側の誤りで節約効果が減るだけ。
+
+    件数を今のコーパスで数えるのは、記録された件数の自己申告より確かだから。
+    corpus_sha256 の一致は「較正時とコーパスが同一」を意味し、採点側は全 case の
+    判定を要求する（semantic_calibration.score）ので、今の件数が下限を満たせば
+    その較正が下限以上の母数で測られたことも同時に決まる。
     """
     entry = (calibration.entries or {}).get(model)
     if not isinstance(entry, dict):
@@ -310,6 +332,16 @@ def calibration_reason(model, calibration):
     if entry.get("corpus_sha256") != calibration.corpus_sha256:
         return (f"判定モデル {model} の較正は別版の corpus に対するもの — "
                 f"コーパスが改訂されている。再較正すること")
+    # 件数の検査は corpus の同一性を確かめた後に置く。先に置くと、較正が
+    # 一度も無い状態でも「コーパスが薄い」と報告してしまい、advisor 止まりの
+    # 本当の理由（未較正）が operator から見えなくなる
+    counts = calibration.corpus_counts or {}
+    thin = [f"{side} {counts.get(side, 0)} 件"
+            for side in CALIBRATION_SIDES if counts.get(side, 0) < MIN_CASES]
+    if thin:
+        return (f"較正コーパスが片側 {MIN_CASES} 件に満たない"
+                f"（{' / '.join(thin)}）— 母数が薄いと偽陰性 0 を偶然と"
+                f"区別できない。case を足して再較正すること")
     return None
 
 

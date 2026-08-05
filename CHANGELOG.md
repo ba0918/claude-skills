@@ -19,7 +19,7 @@ claude-skills プラグインのバージョン履歴。
 ### Added: `[contract-change]` の stale を LLM 判定で値切れる（semantic triage / 基盤のみ）
 
 - `semantic_diff.py` が台帳と git 履歴から判定入力（unified diff・正準 diff ハッシュ・判定ファイル skeleton）を作り、`ledger.py --update <skill> --partial --semantic <file>` が `unaffected` 判定のシナリオだけを新しい記録値 `accepted-semantic` として台帳へ書く。`unclear` / `affected` は従来どおり実走か人間判断（#268）
-- 記録には形式検査・diff ハッシュ束縛・較正ゲート（`semantic_calibration.py` が測る must-flag 偽陰性 0 + コーパス一致）・前回記録が `pass` か `accepted-semantic`（= 実走まで遡れる土台）であることの全通過が必要で、1 つでも欠ければ更新ごと拒否される。較正の実測は未実施のため、現状の判定は advisor 止まり（#268）
+- 記録には形式検査・diff ハッシュ束縛・較正ゲート（`semantic_calibration.py` が測る must-flag 偽陰性 0 + コーパス一致 + 片側 20 件の母数）・前回記録が `pass` か `accepted-semantic`（= 実走まで遡れる土台）であることの全通過が必要で、1 つでも欠ければ更新ごと拒否される。較正の実測は未実施のため、現状の判定は advisor 止まり（#268）
 - 判定器は再走・実走を自動で開始する経路を一切持たない。仕様は `docs/spec/semantic-triage.md`、手順と判定基準は `skills/skill-regression/references/semantic-triage.md`（#268）
 
 ### Added: 回帰再走の単位がスキルからシナリオへ細分化された（部分再走）
