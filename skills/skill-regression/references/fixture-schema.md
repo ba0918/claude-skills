@@ -54,6 +54,7 @@ The CONFIRMED / FALSE_POSITIVE / UNCERTAIN in the example are the vocabulary of
 | `scenarios[].prompt` | ✓ | the situation handed to the executor. Write it as a natural user utterance (never name the skill directly — firing is trigger-eval's domain, and what is measured here is only the quality of body execution) |
 | `scenarios[].requirements[]` | ✓ | the requirements the artifact must satisfy. 3-7 items, with at least one `critical: true`. The only keys are `text` / `critical` / `assert` |
 | `scenarios[].requirements[].assert` | - | typed predicate objects for machine judgement (see § Machine-judged requirements). When present, the machine verdict replaces the executor's self-report for that requirement |
+| `scenarios[].exercises` | - | the behavior-surface files this scenario touches, as a **complete claim** (`SKILL.md` and `fixtures.json` are implicit). Declaring narrows reruns to the scenarios a change actually reaches; omitting it keeps the safe side (always rerun). Semantics, fallbacks, and the guarantee boundary are in [partial-rerun.md](partial-rerun.md) |
 | `scenarios[].notes` | - | notes on design decisions (the intent of an edge case, the reason for a tier change, etc.) |
 
 Unknown keys are rejected by validation (at every level: top level, scenario, `requirements`, `setup`, `setup.git`).
