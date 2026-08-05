@@ -1402,6 +1402,16 @@ class TestMisplacedOptionsAreRefused(_PartialHarness):
             rc, _ = self._run(["--update", "a", "--partial", root])
             self.assertEqual(rc, 0)
 
+    def test_a_misplaced_flag_on_impact_scenarios_is_refused(self):
+        # フラグ風トークンが「変更ファイル」として消費されると、誤配置が
+        # 出力なし rc 0 =「再走対象なし」の顔になる
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run(["--impact-scenarios", "--partial", root])
+            self.assertEqual(rc, 2)
+            self.assertIn("--partial", out)
+
 
 class TestCoverage(unittest.TestCase):
     """fixture 保有率の計上。--check は opt-in ゲートなので母数を別に数える。"""

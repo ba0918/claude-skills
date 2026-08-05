@@ -958,6 +958,11 @@ def main(argv):
         # 区別が付かない。呼び出し側の引数組み立てミスが影響ゼロに化ける
         if not rest:
             return _usage("--impact-scenarios に変更ファイルが 1 つも無い")
+        # フラグ風トークンを変更ファイルとして消費すると、誤配置フラグが
+        # 「影響ゼロ」の顔で rc 0 になる（他モードの誤配置ガードと同じ穴）
+        rc = _stray(rest, "--impact-scenarios FILE...")
+        if rc is not None:
+            return rc
         return impact_scenarios_cli(root, rest)
 
     if "--impact" in args:
