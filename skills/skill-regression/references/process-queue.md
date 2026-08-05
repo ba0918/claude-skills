@@ -98,9 +98,24 @@ same question. Both change the scaffolding, not the fixture:
   knowledge-explanation scenarios (report-style requirements that test what the skill body
   says) into range for a text-only backend, which otherwise had to be excluded.
 
+A text-only wrapper runs each unit as **two chat calls** (this section is the normative home
+of the convention; the wrapper script only points here). Call 1 appends a stage note to the
+built prompt — do step 1 of the Task only: produce the deliverable itself, not the report
+JSON — and the validated response is saved as `artifact.md` next to the unit's report file.
+Call 2 continues the same conversation (the assistant turn is read back from `artifact.md`,
+so the model assesses exactly the text the caller will read) and asks for step 2: the report
+JSON alone. This restores the caller's re-judging duty from executor-contract: the
+self-report now has a counterpart artifact to be checked against, which is what a
+single-call wrapper structurally lacked — it wrote the whole response as the report, so
+"I produced a six-section report" was uncheckable. A failed call 1 (truncation, empty
+completion, server error) fails the unit without reaching call 2; self-assessing a
+deliverable that was never saved would manufacture the very unverifiable report this
+convention exists to prevent.
+
 Scaffolding is comparability-relevant (§ Comparability): a batch built with `--inline-skill`
-is not comparable with one built without it. Record which was used in the ledger `--note`;
-`build` reports the flag in its summary and in each manifest entry (`inline_skill`).
+is not comparable with one built without it, and units run through a one-call wrapper are
+not comparable with two-call runs. Record which was used in the ledger `--note`;
+`build` reports the inline flag in its summary and in each manifest entry (`inline_skill`).
 
 `grade` reports one of three verdicts per scenario:
 
