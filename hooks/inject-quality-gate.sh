@@ -1,7 +1,7 @@
 #!/bin/sh
 # SessionStart hook: 品質ゲート契約の所在と事前条件の要旨を常駐コンテキストへ注入する。
-# 契約本文（約 230 行）は注入しない。skill-routing と違い全文 cat は常駐コンテキスト
-# 予算を圧迫するため、正本パスの告知に留める（正本は skills/shared/references/ 側）。
+# 契約本文（約 230 行）は注入しない。using-workflow（数十行）と違い全文 cat は常駐
+# コンテキスト予算を圧迫するため、正本パスの告知に留める（正本は skills/shared/references/ 側）。
 set -u
 root="${CLAUDE_PLUGIN_ROOT:-.}"
 contract="skills/shared/references/quality-gate-contract.md"
