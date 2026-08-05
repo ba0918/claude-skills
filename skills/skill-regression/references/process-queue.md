@@ -66,7 +66,17 @@ unit — it is a permission, and permissions are the operator's (process-delegat
 `build` cannot verify the grant, and a unit that cannot read the skill fails exactly like a unit
 that read it and did badly. Run one unit first and confirm it, before spending a batch.
 
-## What `grade` decides, and what it does not
+### Text-only backends
+
+A backend that merely relays the prompt to a chat-completion API (a local-LLM wrapper, say) has
+no tool use and no file access at all: it cannot read the skill from the repository, cannot
+produce artifacts in the unit's working directory — and can still emit a plausible-looking
+report. Restrict such a backend to scenarios whose prompt is self-contained and whose only
+artifact is the report text (read-only / report-style fixtures). For action-style requirements
+(files edited, commits made, phases delegated) there is nothing to corroborate the self-report
+against, so the caller's re-judging duty from executor-contract cannot be discharged — grading
+such a unit says nothing about the skill. As with any process-path run, name the backend in the
+ledger `--note`.
 
 `grade` reports one of three verdicts per scenario:
 
