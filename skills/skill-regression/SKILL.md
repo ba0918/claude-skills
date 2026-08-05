@@ -78,6 +78,11 @@ runs the regression evaluation only against the skills whose behavior surface ch
    - **Rule of thumb for run vs `--accept`**: a purely prose change (punctuation, phrasing) that touches no
      machine-parsed token, code, command, or frontmatter key is `--accept` territory. Everything else is run.
      When in doubt, run (fail-safe)
+   - **`[contract-change]` stale can go through semantic triage first**: a judge reads the diff against each
+     scenario's requirements and returns `unaffected` / `unclear` / `affected`. It runs as an advisor from the
+     start (its verdicts never launch anything), and only the `unaffected` ones become ledger records, only
+     once the judging model has passed calibration. Procedure, judging criteria and the permission boundary:
+     [references/semantic-triage.md](references/semantic-triage.md)
    - Even when the ledger is already verified (including either accepted value), you may run if the user asks for a
      regression evaluation. Overwriting an acceptance with a real run's `pass` improves the ledger's quality
 2. **Execute** (only the scenarios Step 1 selected): read the target skill's `fixtures.json` and, per scenario, launch a blank-slate executor subagent
@@ -139,6 +144,9 @@ The philosophy of this gate is not to stop drift but to **make only ignoring it 
 - The ledger's `result` is nothing but `accepted-without-run` (a sign that run has become a formality). `accepted-addition`
   and `accepted-prose` do not count toward this signal; `accepted-without-run` is a superset of the acceptances a human
   waved through, since whatever the machine could not confirm either way lands there too
+- `accepted-semantic` outnumbers `pass` in `--check`'s breakdown, and stays that way (a sign of leaning on the
+  judge instead of running). It is a separate signal from the one above, which is why the count is separate.
+  Provisional reading — revisit the threshold once there is operating data
 - The same skill's fixture is rewritten repeatedly in a short span as "obsolete"
 - The run report does not state which critical items failed
 - CI's `[stale]` is being piled onto main instead of resolved within the PR
@@ -160,5 +168,6 @@ handle only scenarios reproducible in the current execution environment. The rea
 - [fixture-schema.md](references/fixture-schema.md) — the schema of fixtures.json and its design guidelines
 - [executor-contract.md](references/executor-contract.md) — the launch contract and judging rules for a blank-slate executor
 - [partial-rerun.md](references/partial-rerun.md) — the `exercises` declaration, scenario-granular impact, and ledger carry-over
+- [semantic-triage.md](references/semantic-triage.md) — judging a `[contract-change]` diff's impact, its calibration, and the judge's permission boundary
 - [process-queue.md](references/process-queue.md) — the route for running a batch via separate-process delegation (it consumes no launch quota)
 - [orchestration-patterns.md](../shared/references/orchestration-patterns.md) / [verification-gate.md](../shared/references/verification-gate.md)
