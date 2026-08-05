@@ -30,6 +30,9 @@ CLI:
       --note は run の性質（照会回数・実行者が通った経路など）の申し送り）
   python3 ledger.py --remove SKILL [root]
   python3 ledger.py --impact FILE... [root]    # 変更ファイル → 影響スキル
+  python3 ledger.py --impact-scenarios FILE... [root]
+      変更ファイル → 影響シナリオ（skill<TAB>scenario_id）。fixture の exercises
+      宣言を使って再走をシナリオ単位へ絞る。宣言なしのシナリオは常に影響側
   python3 ledger.py --status [root]
 """
 import datetime
@@ -40,10 +43,16 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import dep_graph  # noqa: E402
+import fixture_setup  # noqa: E402
 import md_structure  # noqa: E402
 
 LEDGER_REL = os.path.join("skills", "skill-regression", "ledger.json")
 _MISSING = "MISSING"
+
+# シナリオ内容ハッシュの正本は fixture_setup 側。ここで再実装すると、rerun ガードと
+# 持ち越し判定が別々の規則で動き「台帳は持ち越せると言うのに rerun は再構築を
+# 要求する」食い違いが生まれる
+scenario_sha256 = fixture_setup.scenario_sha256
 
 
 def _file_sha256(root, rel):
@@ -305,6 +314,86 @@ def coverage(root, exempt=None, static_only=None):
     }
 
 
+def load_scenarios(root, skill):
+    """skills/<skill>/fixtures.json の scenarios を返す（読めなければ空）。"""
+    path = os.path.join(root, "skills", skill, "fixtures.json")
+    if not os.path.isfile(path):
+        return []
+    try:
+        with open(path, encoding="utf-8") as f:
+            fixture = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return []
+    scenarios = fixture.get("scenarios")
+    if not isinstance(scenarios, list):
+        return []
+    return [s for s in scenarios if isinstance(s, dict) and s.get("id")]
+
+
+def declared_dependencies(scenario, surface):
+    """シナリオが踏むと主張するファイル集合。宣言なし・宣言不正なら None。
+
+    None は「主張が無い＝どの変更でも影響しうる」という安全側の意味。宣言は
+    完全主張（ここに挙げたファイルと SKILL.md 以外は踏まない）なので、面に
+    実在しないパスが 1 つでも混ざれば主張全体を信用しない — typo や参照先の
+    移動が「踏まないから再走不要」という誤った持ち越しを生むのを防ぐ。
+    """
+    declared = scenario.get("exercises")
+    if not isinstance(declared, list):
+        return None
+    if any(path not in surface for path in declared):
+        return None
+    return set(declared)
+
+
+def changed_scenarios(scenarios, recorded_scenarios):
+    """fixtures.json の変更のうち、内容が動いた（または新規の）シナリオ id。"""
+    if not recorded_scenarios:
+        # 突き合わせ基準が無い（per-scenario 記録を持たない旧エントリ）。
+        # 「変わっていない」と断じる根拠もないので全件
+        return {s["id"] for s in scenarios}
+    return {
+        s["id"] for s in scenarios
+        if recorded_scenarios.get(s["id"], {}).get("scenario_sha256")
+        != scenario_sha256(s)
+    }
+
+
+def impacted_scenarios(skill, surface, scenarios, changed,
+                       recorded_scenarios=None):
+    """変更ファイル集合 → 影響を受けるシナリオ id（ソート済み）。
+
+    `changed` はこのスキルに関係すると呼び出し側が判断済みの root 相対パス。
+    判定規則はすべて安全側優先で、材料が足りない場合は必ず全シナリオへ倒す:
+
+    - `skills/<skill>/SKILL.md` は全シナリオが必ず読む暗黙の依存 → 全件
+    - 現在の面に無いパス（＝面から消えたファイル）は現在の宣言と突き合わせ
+      ようがない → 全件
+    - `skills/<skill>/fixtures.json` はシナリオ差分（内容ハッシュ比較）
+    - それ以外の面ファイル f は、f を宣言するシナリオと、宣言を持たない
+      （または宣言が不正な）シナリオ
+    """
+    surface = set(surface)
+    changed = set(changed)
+    ids = sorted(s["id"] for s in scenarios)
+    if not changed:
+        return []
+    skill_md = f"skills/{skill}/SKILL.md"
+    fixtures_rel = f"skills/{skill}/fixtures.json"
+    others = changed - {skill_md, fixtures_rel}
+    if skill_md in changed or (others - surface):
+        return ids
+    impacted = set()
+    if others:
+        for scenario in scenarios:
+            deps = declared_dependencies(scenario, surface)
+            if deps is None or (others & deps):
+                impacted.add(scenario["id"])
+    if fixtures_rel in changed:
+        impacted |= changed_scenarios(scenarios, recorded_scenarios)
+    return sorted(impacted)
+
+
 def check(root, entries):
     """台帳を照合し (kind, skill, detail) の一覧を返す。空なら合格。"""
     issues = []
@@ -333,7 +422,17 @@ def check(root, entries):
         )
         if severity is None:
             continue
-        issues.append(("stale", skill, f"[{severity}] " + ", ".join(changed)))
+        detail = f"[{severity}] " + ", ".join(changed)
+        # 再走の規模を stale 行そのものに出す。合否判定は不変（stale は update
+        # されるまで stale）で、これは「何本払えば済むか」を示す triage 情報
+        scenarios = load_scenarios(root, skill)
+        if scenarios:
+            hit = impacted_scenarios(
+                skill, current_surface, scenarios, changed,
+                entry.get("scenarios"))
+            label = "all" if len(hit) == len(scenarios) else ",".join(hit)
+            detail += f" → scenarios: {label} ({len(hit)}/{len(scenarios)})"
+        issues.append(("stale", skill, detail))
     return issues
 
 
@@ -351,6 +450,33 @@ def save(root, entries):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(entries, f, ensure_ascii=False, indent=2, sort_keys=True)
         f.write("\n")
+
+
+def impact_scenarios_cli(root, changed_paths):
+    """変更ファイル → `skill<TAB>scenario_id` 行。"""
+    graph = dep_graph.build_graph(root)
+    skills, unresolved = dep_graph.impacted_skills(graph, changed_paths, root)
+    normalized = {dep_graph.normalize_path(p, root) for p in changed_paths}
+    normalized.discard(None)
+    entries = load(root)
+    with_fixtures = _fixtures_skills(root)
+    for skill in skills:
+        if skill not in with_fixtures:
+            print(f"note: {skill} は fixtures.json を持たない（再走の対象外）",
+                  file=sys.stderr)
+            continue
+        entry = entries.get(skill, {})
+        # 面から消えたファイルも「このスキルに関係する変更」として渡す。
+        # 落とすと削除が影響ゼロに見える（impacted_scenarios 側で全件へ倒る）
+        relevant = normalized & (
+            set(graph[skill]) | set(entry.get("file_sha256", {})))
+        for sid in impacted_scenarios(
+                skill, graph[skill], load_scenarios(root, skill), relevant,
+                entry.get("scenarios")):
+            print(f"{skill}\t{sid}")
+    for p in unresolved:
+        print(f"warning: unresolvable path: {p}", file=sys.stderr)
+    return 2 if unresolved else 0
 
 
 def main(argv):
@@ -473,6 +599,14 @@ def main(argv):
         save(root, entries)
         print(f"✓ ledger 更新: {skill} ({mode})")
         return 0
+
+    if "--impact-scenarios" in args:
+        idx = args.index("--impact-scenarios")
+        rest = args[idx + 1:]
+        root = os.getcwd()
+        if rest and os.path.isdir(rest[-1]) and not rest[-1].endswith(".md"):
+            root, rest = rest[-1], rest[:-1]
+        return impact_scenarios_cli(root, rest)
 
     if "--impact" in args:
         return dep_graph.main(args)

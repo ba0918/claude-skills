@@ -3,6 +3,7 @@
 挙動面フィンガープリントの決定性と、台帳照合（stale / unverified / orphan）
 の純関数を検証する。日付は DI（引数渡し）でテスト可能にする。
 """
+import json
 import os
 import tempfile
 import unittest
@@ -622,6 +623,188 @@ class TestEntryRoundtrip(unittest.TestCase):
                              "result": "pass", "verified": "2026-07-07"}}
             ledger.save(root, entries)
             self.assertEqual(ledger.load(root), entries)
+
+
+class TestImpactedScenarios(unittest.TestCase):
+    """変更ファイル → 影響シナリオ。判定規則はすべて安全側優先。
+
+    再走単位をスキルからシナリオへ細分化する中核。宣言を持たないシナリオが
+    従来どおり全変更で再走される（後方互換 = 安全側）ことが土台になる。
+    """
+
+    SKILL = "a"
+    SURFACE = [
+        "skills/a/SKILL.md",
+        "skills/a/fixtures.json",
+        "skills/shared/references/tdd.md",
+        "skills/shared/references/gate.md",
+    ]
+
+    def _scenarios(self):
+        return [
+            {"id": "a-001", "prompt": "one",
+             "exercises": ["skills/shared/references/tdd.md"]},
+            {"id": "a-002", "prompt": "two",
+             "exercises": ["skills/shared/references/gate.md"]},
+            {"id": "a-003", "prompt": "three"},
+        ]
+
+    def _impacted(self, changed, scenarios=None, recorded=None):
+        return ledger.impacted_scenarios(
+            self.SKILL, self.SURFACE, scenarios or self._scenarios(),
+            changed, recorded)
+
+    def _recorded(self, scenarios=None):
+        return {
+            s["id"]: {"scenario_sha256": ledger.scenario_sha256(s),
+                      "result": "pass", "verified": "2026-08-01"}
+            for s in (scenarios or self._scenarios())
+        }
+
+    def test_no_change_impacts_nothing(self):
+        self.assertEqual(self._impacted([]), [])
+
+    def test_skill_md_change_impacts_every_scenario(self):
+        # SKILL.md は全シナリオが必ず読む暗黙の依存
+        self.assertEqual(self._impacted(["skills/a/SKILL.md"]),
+                         ["a-001", "a-002", "a-003"])
+
+    def test_declared_file_change_impacts_declarers_and_undeclared_only(self):
+        self.assertEqual(self._impacted(["skills/shared/references/tdd.md"]),
+                         ["a-001", "a-003"])
+
+    def test_empty_declaration_is_a_claim_of_no_dependency(self):
+        # 空配列 = 「SKILL.md 以外は踏まない」。宣言なし（安全側）とは別物
+        scenarios = self._scenarios()
+        scenarios[2]["exercises"] = []
+        self.assertEqual(
+            self._impacted(["skills/shared/references/tdd.md"], scenarios),
+            ["a-001"])
+
+    def test_a_declaration_off_the_surface_is_always_impacted(self):
+        # typo・移動で面に無いパスを指した宣言は信用できない。安全側の常時再走へ
+        scenarios = self._scenarios()
+        scenarios[1]["exercises"] = ["skills/shared/references/typo.md"]
+        self.assertEqual(
+            self._impacted(["skills/shared/references/tdd.md"], scenarios),
+            ["a-001", "a-002", "a-003"])
+
+    def test_a_removed_surface_file_impacts_every_scenario(self):
+        # 面から消えたファイルは現在の宣言と突き合わせようがない（安全側）
+        self.assertEqual(self._impacted(["skills/shared/references/gone.md"]),
+                         ["a-001", "a-002", "a-003"])
+
+    def test_fixtures_change_impacts_only_scenarios_whose_content_moved(self):
+        recorded = self._recorded()
+        scenarios = self._scenarios()
+        scenarios[1]["prompt"] = "two, but stricter"
+        self.assertEqual(
+            self._impacted(["skills/a/fixtures.json"], scenarios, recorded),
+            ["a-002"])
+
+    def test_adding_a_declaration_alone_impacts_nothing(self):
+        # exercises は sha 対象外。宣言追加だけの fixtures.json 変更は再走ゼロ
+        recorded = self._recorded()
+        scenarios = self._scenarios()
+        scenarios[2]["exercises"] = ["skills/shared/references/gate.md"]
+        self.assertEqual(
+            self._impacted(["skills/a/fixtures.json"], scenarios, recorded), [])
+
+    def test_a_new_scenario_is_impacted(self):
+        recorded = self._recorded()
+        scenarios = self._scenarios() + [{"id": "a-004", "prompt": "four"}]
+        self.assertEqual(
+            self._impacted(["skills/a/fixtures.json"], scenarios, recorded),
+            ["a-004"])
+
+    def test_fixtures_change_without_per_scenario_record_impacts_all(self):
+        # 突き合わせ基準の無い旧エントリ。差分と断じる根拠がない
+        self.assertEqual(self._impacted(["skills/a/fixtures.json"]),
+                         ["a-001", "a-002", "a-003"])
+
+
+class TestImpactScenariosCli(unittest.TestCase):
+    """`--impact-scenarios` は skill<TAB>scenario_id 行を出す。"""
+
+    def _repo(self, root):
+        _write(root, "skills/skill-regression/SKILL.md", "self")
+        _write(root, "skills/shared/references/tdd.md", "contract")
+        _write(root, "skills/shared/references/gate.md", "contract")
+        _write(root, "skills/a/SKILL.md",
+               "see [tdd](../shared/references/tdd.md) and "
+               "[gate](../shared/references/gate.md)")
+        fixture = {
+            "skill": "a",
+            "scenarios": [
+                {"id": "a-001", "prompt": "one",
+                 "exercises": ["skills/shared/references/tdd.md"]},
+                {"id": "a-002", "prompt": "two",
+                 "exercises": ["skills/shared/references/gate.md"]},
+            ],
+        }
+        _write(root, "skills/a/fixtures.json",
+               json.dumps(fixture, ensure_ascii=False))
+
+    def _run(self, argv):
+        import io
+        import contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = ledger.main(argv)
+        return rc, buf.getvalue()
+
+    def test_prints_only_the_scenarios_that_exercise_the_changed_file(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            rc, out = self._run([
+                "--impact-scenarios", "skills/shared/references/tdd.md", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(out.strip(), "a\ta-001")
+
+    def test_unaffected_change_prints_nothing(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            rc, out = self._run(["--impact-scenarios", "README.md", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(out.strip(), "")
+
+
+class TestCheckShowsImpactedScenarios(unittest.TestCase):
+    """stale 表示にシナリオ粒度の内訳を添える（合否判定は不変）。"""
+
+    def _repo(self, root):
+        _write(root, "skills/shared/references/tdd.md", "contract")
+        _write(root, "skills/a/SKILL.md", "see [tdd](../shared/references/tdd.md)")
+        fixture = {
+            "skill": "a",
+            "scenarios": [
+                {"id": "a-001", "prompt": "one",
+                 "exercises": ["skills/shared/references/tdd.md"]},
+                {"id": "a-002", "prompt": "two", "exercises": []},
+            ],
+        }
+        _write(root, "skills/a/fixtures.json",
+               json.dumps(fixture, ensure_ascii=False))
+
+    def test_stale_detail_names_the_impacted_scenarios(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-08-01")}
+            _write(root, "skills/shared/references/tdd.md", "contract `changed`")
+            issues = ledger.check(root, entries)
+            self.assertEqual([i[0] for i in issues], ["stale"])  # kind は不変
+            self.assertIn("scenarios: a-001 (1/2)", issues[0][2])
+
+    def test_full_impact_is_shown_as_all(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entries = {"a": ledger.make_entry(root, surface, "pass", "2026-08-01")}
+            _write(root, "skills/a/SKILL.md",
+                   "see [tdd](../shared/references/tdd.md) `changed`")
+            issues = ledger.check(root, entries)
+            self.assertIn("scenarios: all (2/2)", issues[0][2])
 
 
 class TestCoverage(unittest.TestCase):
