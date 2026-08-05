@@ -45,6 +45,10 @@ CLI:
       変更ファイル → 影響シナリオ（skill<TAB>scenario_id）。fixture の exercises
       宣言を使って再走をシナリオ単位へ絞る。宣言なしのシナリオは常に影響側
   python3 ledger.py --status [root]
+
+root はどのモードでも「末尾に 1 個だけ置く実在ディレクトリ」（省略時 cwd）。
+それ以外の位置に置かれた root や余分な位置引数は usage + exit 2 で拒否する
+（黙って捨てると cwd へフォールバックし、意図しないリポジトリの台帳を更新する）。
 """
 import collections
 import datetime
@@ -1106,11 +1110,33 @@ def _stray_options(tokens):
     return [t for t in tokens if t.startswith("--")]
 
 
+def _confirm_root(pre, rest, mode):
+    """位置引数から root を確定する。(root, rc) — rc が None 以外なら引数エラー。
+
+    root は「モードとオプションをすべて消費した後に残る、末尾 1 個の実在
+    ディレクトリ」だけ。モードより前に置かれた root や 2 個目以降の位置引数を
+    黙って捨てると root が cwd へフォールバックし、操作者は別リポジトリを
+    更新したつもりで cwd の台帳を書き換える — rc 0 と成功メッセージからは
+    誤りを検出できない。誤配置フラグの黙殺（_stray_options が拒否する H-1）と
+    同じ欠陥クラスの非フラグ版として拒否する。
+    """
+    stray = [t for t in pre if not t.startswith("--")] + list(rest[:-1])
+    if stray:
+        return None, _usage(
+            f"解釈できない位置引数が残っている: {', '.join(stray)}\n"
+            f"  root は対象指定（{mode} …）の末尾に 1 個だけ書くこと。"
+            f"それ以外の位置に置くと黙って捨てられ、cwd の台帳が更新される"
+        )
+    if not rest:
+        return os.getcwd(), None
+    root = rest[-1]
+    if not os.path.isdir(root):
+        return None, _usage(f"root がディレクトリでない: {root}")
+    return root, None
+
+
 def main(argv):
     args = list(argv)
-
-    def _root(rest):
-        return rest[0] if rest else os.getcwd()
 
     def _stray(tokens, mode):
         stray = _stray_options(tokens)
@@ -1127,7 +1153,9 @@ def main(argv):
         rc = _stray(args, "--check")
         if rc is not None:
             return rc
-        root = _root(args)
+        root, rc = _confirm_root([], args, "--check")
+        if rc is not None:
+            return rc
         issues = check(root, load(root))
         for kind, skill, detail in issues:
             print(f"[{kind}] {skill}: {detail}")
@@ -1173,7 +1201,9 @@ def main(argv):
         rc = _stray(args, "--coverage")
         if rc is not None:
             return rc
-        root = _root(args)
+        root, rc = _confirm_root([], args, "--coverage")
+        if rc is not None:
+            return rc
         cov = coverage(root)
         for skill in cov["covered"]:
             print(f"{skill}\tcovered")
@@ -1206,7 +1236,10 @@ def main(argv):
         rc = _stray(rest, "--seed-scenarios SKILL")
         if rc is not None:
             return rc
-        root = _root(args[idx + 2:])
+        root, rc = _confirm_root(args[:idx], args[idx + 2:],
+                                 "--seed-scenarios SKILL")
+        if rc is not None:
+            return rc
         return seed_scenarios(root, load(root), skill)
 
     if "--update" in args or "--remove" in args:
@@ -1244,7 +1277,9 @@ def main(argv):
         rc = _stray(args[:idx] + rest, f"{mode} SKILL")
         if rc is not None:
             return rc
-        root = _root(rest)
+        root, rc = _confirm_root(args[:idx], rest, f"{mode} SKILL")
+        if rc is not None:
+            return rc
         entries = load(root)
         if semantic_path is not None:
             if mode == "--remove":
@@ -1323,6 +1358,14 @@ def main(argv):
 
     if "--impact-scenarios" in args:
         idx = args.index("--impact-scenarios")
+        # 変更ファイルと root は位置依存で読むため、モードより前のトークンは
+        # フラグ・非フラグを問わず存在しなかったことになる（#266 / H-1）
+        if args[:idx]:
+            return _usage(
+                f"「--impact-scenarios」より前に置かれた引数は解釈できない: "
+                f"{', '.join(args[:idx])}\n"
+                f"  変更ファイルと root は --impact-scenarios の後ろに書くこと"
+            )
         rest = args[idx + 1:]
         root = os.getcwd()
         if rest and os.path.isdir(rest[-1]) and not rest[-1].endswith(".md"):
@@ -1339,6 +1382,13 @@ def main(argv):
         return impact_scenarios_cli(root, rest)
 
     if "--impact" in args:
+        idx = args.index("--impact")
+        if args[:idx]:
+            return _usage(
+                f"「--impact」より前に置かれた引数は解釈できない: "
+                f"{', '.join(args[:idx])}\n"
+                f"  変更ファイルと root は --impact の後ろに書くこと"
+            )
         return dep_graph.main(args)
 
     if "--status" in args:
@@ -1346,7 +1396,9 @@ def main(argv):
         rc = _stray(args, "--status")
         if rc is not None:
             return rc
-        root = _root(args)
+        root, rc = _confirm_root([], args, "--status")
+        if rc is not None:
+            return rc
         entries = load(root)
         issues = {s: k for k, s, _ in check(root, entries)}
         tracked = sorted(_fixtures_skills(root) | set(entries))

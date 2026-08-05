@@ -16,6 +16,10 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Fixed: ledger.py が位置を誤った root を黙って捨て、cwd の台帳を更新する
+
+- root を「モードとオプション消費後に残る末尾 1 個の実在ディレクトリ」として照合し、モード指定より前に置かれた root・余分な位置引数・非実在ディレクトリを usage + exit 2 で拒否する。documented な呼び出し形（末尾 root / 省略時 cwd）の挙動は不変（#266）
+
 ### Added: fixture executor の ollama ローカル実行ラッパー
 
 - `ollama_executor.sh` が stdin のプロンプトを ollama HTTP API へ中継し、応答を output_file へ書き出す。process_runner の backends.json に `ollama-qwen3-14b` エントリを追加するだけで既存の process-delegation 契約に載る（#275）
