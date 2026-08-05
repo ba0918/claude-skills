@@ -21,6 +21,7 @@ claude-skills プラグインのバージョン履歴。
 - `ollama_executor.sh` が 2 段呼び出しになった。1 呼び目でシナリオの成果物本文を生成して `artifact.md`（report と同階層）に保存し、2 呼び目で会話を継続して自己評価 JSON を `OUTPUT_FILE` へ書く。呼び出し側の re-judge が「自己申告 vs 実物」の突き合わせ先を持てる。1 呼び目が失敗（途切れ・空応答・サーバエラー）したら 2 呼び目に進まず unit を失敗させる（#279）
 - 異常系検出（curl エラー / 非 JSON / error 応答 / unclosed `<think>` / `done_reason=length` / 空応答)は両呼び出しに適用され、fake サーバによる自動テスト `test_ollama_executor.py` で機械検証される。1 段時代の batch と 2 段の batch は scaffolding が異なるため比較不能 — ledger `--note` に記録する（#279）
 - 責務境界の人間可読仕様を `docs/spec/local-llm-executor.md` に新設。リポジトリが所有する契約（入出力・2 段・異常系保証）と環境所有の事柄（モデル・ホスト・常駐運用）の境界を定め、値は環境側に残す（#279）
+- #277 r3 実測で見つかった判定器の故障 2 種への対策: 2 呼び目の指示に verdict 意味論を明文化（「yes = 要件文がそのまま成立」。negated 要件を『行為の有無』と誤読する事故を塞ぐ）し、1 呼び目が report 形 JSON（requirements リストを持つ object）を返したら fail-loud にする。report 形以外の JSON 成果物は従来どおり合法。`OLLAMA_THINK` env（true/false、未設定なら送らない）で API の think スイッチを制御できる（#277）
 
 ### Changed: text-only backend との並走比較から scaffolding 由来の交絡が抜けた
 

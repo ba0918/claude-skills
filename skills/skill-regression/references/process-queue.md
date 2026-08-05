@@ -104,7 +104,13 @@ built prompt — do step 1 of the Task only: produce the deliverable itself, not
 JSON — and the validated response is saved as `artifact.md` next to the unit's report file.
 Call 2 continues the same conversation (the assistant turn is read back from `artifact.md`,
 so the model assesses exactly the text the caller will read) and asks for step 2: the report
-JSON alone. This restores the caller's re-judging duty from executor-contract: the
+JSON alone, and pins the verdict semantics to the requirement statement — "yes" means the
+statement as written holds, including statements phrased as an absence (measured in #277 r3,
+a small model otherwise reads the verdict as "did I perform that act" and answers `no`
+while its own evidence asserts compliance). Call 1 rejects a report-shaped deliverable
+(a JSON object carrying a `requirements` list) — measured, models skip step 1 and jump to
+self-assessment, leaving nothing to re-judge against; other JSON deliverables stay legal.
+This restores the caller's re-judging duty from executor-contract: the
 self-report now has a counterpart artifact to be checked against, which is what a
 single-call wrapper structurally lacked — it wrote the whole response as the report, so
 "I produced a six-section report" was uncheckable. A failed call 1 (truncation, empty

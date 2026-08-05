@@ -132,6 +132,51 @@ class TestTwoCallProtocol(ExecutorHarness):
         self.assertEqual(self.read(self.output_file), REPORT_JSON)
 
 
+class TestVerdictSemanticsNote(ExecutorHarness):
+    def test_call_two_states_the_verdict_semantics(self):
+        """Measured (r3, #277): on negatively-phrased requirements the model answered
+        `no` while its own evidence asserted compliance — it read the verdict as "did
+        I do that act" instead of "does the statement hold". The stage note has to
+        pin the semantics to the statement."""
+        self.server.responses = [ok_response("body"), ok_response(REPORT_JSON)]
+        self.run_script()
+        note = self.server.requests[1]["messages"][2]["content"]
+        self.assertIn("exactly as written", note)
+        self.assertIn("phrased as an absence", note)
+
+
+class TestThinkKnob(ExecutorHarness):
+    def run_with_think(self, value):
+        env = dict(os.environ)
+        env.update({
+            "OLLAMA_MODEL": "fake-model",
+            "OUTPUT_FILE": self.output_file,
+            "OLLAMA_HOST": "http://127.0.0.1:%d" % self.server.server_address[1],
+            "OLLAMA_MAX_TIME": "5",
+            "OLLAMA_THINK": value,
+        })
+        return subprocess.run(["bash", SCRIPT], input="p\n", env=env,
+                              capture_output=True, text=True)
+
+    def test_omits_think_by_default(self):
+        self.server.responses = [ok_response("body"), ok_response(REPORT_JSON)]
+        self.run_script()
+        self.assertNotIn("think", self.server.requests[0])
+
+    def test_sends_think_false_in_both_calls_when_asked(self):
+        self.server.responses = [ok_response("body"), ok_response(REPORT_JSON)]
+        result = self.run_with_think("false")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIs(self.server.requests[0]["think"], False)
+        self.assertIs(self.server.requests[1]["think"], False)
+
+    def test_rejects_a_non_boolean_think_value(self):
+        result = self.run_with_think("maybe")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("OLLAMA_THINK", result.stderr)
+        self.assertEqual(len(self.server.requests), 0)
+
+
 class TestFailureModes(ExecutorHarness):
     def assert_failed(self, result, fragment):
         self.assertNotEqual(result.returncode, 0)
@@ -170,6 +215,25 @@ class TestFailureModes(ExecutorHarness):
         result = self.run_script(prompt="")
         self.assert_failed(result, "empty prompt")
         self.assertEqual(len(self.server.requests), 0)
+
+    def test_a_report_shaped_deliverable_fails_before_call_two(self):
+        """Measured (r3, #277): 3 of 11 units skipped the deliverable and emitted the
+        report JSON in call 1. Such an artifact has nothing to re-judge against, so it
+        must fail loudly instead of flowing into call 2."""
+        self.server.responses = [ok_response(REPORT_JSON)]
+        result = self.run_script()
+        self.assert_failed(result, "report JSON")
+        self.assertEqual(len(self.server.requests), 1)
+        self.assertFalse(os.path.exists(self.artifact_file))
+
+    def test_a_deliverable_that_is_json_but_not_a_report_is_kept(self):
+        """Only the report shape is rejected: a scenario can legitimately ask for a
+        JSON deliverable, and refusing all JSON would shrink the applicable range."""
+        config = '{"retry": {"max": 3}}'
+        self.server.responses = [ok_response(config), ok_response(REPORT_JSON)]
+        result = self.run_script()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.read(self.artifact_file), config)
 
 
 if __name__ == "__main__":
