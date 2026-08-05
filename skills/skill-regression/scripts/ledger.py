@@ -41,6 +41,7 @@ CLI:
       宣言を使って再走をシナリオ単位へ絞る。宣言なしのシナリオは常に影響側
   python3 ledger.py --status [root]
 """
+import collections
 import datetime
 import hashlib
 import json
@@ -95,7 +96,26 @@ SEVERITY_PROSE = "prose-change"
 RESULT_PASS = "pass"
 RESULT_ACCEPTED_ADDITION = "accepted-addition"
 RESULT_ACCEPTED_PROSE = "accepted-prose"
+RESULT_ACCEPTED_SEMANTIC = "accepted-semantic"
 RESULT_ACCEPTED_WITHOUT_RUN = "accepted-without-run"
+
+# semantic triage（docs/spec/semantic-triage.md）の 3 値判定。連続スコアを採らない
+# 理由は仕様側にある。ここで確率的な中間値を持たせないことが、較正対象を
+# 「unaffected 判定の誤り率」1 点に絞れる土台になっている。
+VERDICT_UNAFFECTED = "unaffected"
+VERDICT_UNCLEAR = "unclear"
+VERDICT_AFFECTED = "affected"
+VERDICTS = (VERDICT_UNAFFECTED, VERDICT_UNCLEAR, VERDICT_AFFECTED)
+
+CALIBRATION_REL = os.path.join("skills", "skill-regression", "calibration.json")
+CALIBRATION_CORPUS_REL = os.path.join("skills", "skill-regression", "calibration")
+CALIBRATION_SIDES = ("must_flag", "must_pass")
+
+# 較正ゲートの判定材料。「登録済みの較正記録」と「今のコーパスの内容」の 2 つが
+# 揃って初めてゲートを開けられる。片方だけを引数で運ぶと、コーパスを差し替えた
+# まま古い較正で記録を通す経路が開く
+CalibrationGate = collections.namedtuple(
+    "CalibrationGate", ["entries", "corpus_sha256"])
 
 
 def structural_hashes(root, files):
@@ -197,6 +217,134 @@ def accept_result(recorded, current, prev_result, recorded_struct=None,
         if severity == SEVERITY_PROSE:
             return RESULT_ACCEPTED_PROSE
     return RESULT_ACCEPTED_WITHOUT_RUN
+
+
+def semantic_diff_sha256(recorded_hashes, current_hashes):
+    """判定対象の差分を指す正準ハッシュ。順序非依存・決定的で git に依存しない。
+
+    recorded / current はどちらも {root 相対パス: sha256（不在は MISSING）}。
+    変わったファイルだけを sorted して `rel\\n{recorded}\\n{current}\\n` を連結する。
+    無変更のファイルを含めないのは、判定に無関係な面の増減でハッシュが動くと
+    「同じ diff を見て出した判定」が別物として拒否されるため。
+
+    台帳エントリと現在のファイル状態だけから決まるので、判定を発行する側
+    （semantic_diff.py）と検証する側（ここ）が git 履歴の解釈を共有せずに
+    同じ値へ到達できる。ledger.py が git を呼ばない設計の要でもある。
+    """
+    h = hashlib.sha256()
+    for rel in sorted(set(recorded_hashes) | set(current_hashes)):
+        before = recorded_hashes.get(rel, _MISSING)
+        after = current_hashes.get(rel, _MISSING)
+        if before == after:
+            continue
+        h.update(f"{rel}\n{before}\n{after}\n".encode("utf-8"))
+    return h.hexdigest()
+
+
+def corpus_files(root):
+    """較正コーパスの case ファイル（root 相対パス）。"""
+    out = []
+    for side in CALIBRATION_SIDES:
+        directory = os.path.join(root, CALIBRATION_CORPUS_REL, side)
+        if not os.path.isdir(directory):
+            continue
+        out += [
+            os.path.join(CALIBRATION_CORPUS_REL, side, name)
+            for name in os.listdir(directory) if name.endswith(".json")
+        ]
+    return sorted(out)
+
+
+def corpus_sha256(root):
+    """較正コーパス全体の内容フィンガープリント（コーパス改訂の検知に使う）。"""
+    return fingerprint(root, corpus_files(root))
+
+
+def load_calibration(root):
+    """calibration.json の記録と、現在のコーパスのフィンガープリントを読む。
+
+    読めない・壊れている・不在は「一度も較正していない」（entries 空）へ倒す。
+    較正の不在が意味するのは advisor 止まりであって検査系の停止ではないので、
+    例外で --check ごと落とす経路にはしない。
+    """
+    path = os.path.join(root, CALIBRATION_REL)
+    entries = {}
+    if os.path.isfile(path):
+        try:
+            with open(path, encoding="utf-8") as f:
+                loaded = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            loaded = None
+        if isinstance(loaded, dict):
+            entries = loaded
+    return CalibrationGate(entries=entries, corpus_sha256=corpus_sha256(root))
+
+
+def calibration_reason(model, calibration):
+    """判定モデルが較正ゲートを通せない理由（通せるなら None）。
+
+    段階 3 の解禁・モデル変更 = 再較正・コーパス改訂 = 再較正の 3 つを、散文の
+    約束ではなくこの 1 か所の機械検査で守る（A7, A8）。危険なのは偽陰性方向
+    なので、通過条件は must_flag_fn == 0 だけに置き、偽陽性（must_pass_fp）は
+    記録するが門にはしない — 安全側の誤りで節約効果が減るだけだから。
+    """
+    entry = (calibration.entries or {}).get(model)
+    if not isinstance(entry, dict):
+        return (f"判定モデル {model} の較正記録がない — advisor 止まり"
+                f"（semantic_calibration.py で較正すること）")
+    fn = entry.get("must_flag_fn")
+    if isinstance(fn, bool) or not isinstance(fn, int):
+        return f"判定モデル {model} の較正記録の must_flag_fn が整数でない"
+    if fn != 0:
+        return f"判定モデル {model} は較正未達（must_flag_fn {fn} > 0）— advisor 止まり"
+    if entry.get("corpus_sha256") != calibration.corpus_sha256:
+        return (f"判定モデル {model} の較正は別版の corpus に対するもの — "
+                f"コーパスが改訂されている。再較正すること")
+    return None
+
+
+_JUDGMENT_FIELDS = ("skill", "diff_sha256", "model", "scenarios")
+
+
+def validate_judgment(judgment, skill, recorded_hashes, current_hashes,
+                      calibration):
+    """判定ファイルを検証し、拒否理由（人間が読める 1 行）を返す。合格なら None。
+
+    検査は全件で、1 つでも欠ければ記録ごと拒否する（C1, C2）。判定の中身
+    （どの verdict か）は見ない — ここは「この判定ファイルを台帳の材料として
+    信用してよいか」だけを決め、どの verdict なら記録できるかは partial_update
+    側の規則（unaffected のみ）が持つ。
+
+    diff ハッシュの一致要求が塞ぐのは、別の変更に対して出した古い判定を
+    使い回す事故である。較正ゲートが塞ぐのは、誤り率を測っていないモデルの
+    判定が記録経路へ入ることである。
+    """
+    if not isinstance(judgment, dict):
+        return "判定ファイルが JSON オブジェクトでない"
+    missing = [field for field in _JUDGMENT_FIELDS if field not in judgment]
+    if missing:
+        return "判定ファイルに必須フィールドがない: " + ", ".join(missing)
+    if judgment["skill"] != skill:
+        return (f"判定ファイルの skill が対象と違う: {judgment['skill']}"
+                f"（対象は {skill}）")
+    if judgment["diff_sha256"] != semantic_diff_sha256(
+            recorded_hashes, current_hashes):
+        return ("判定ファイルの diff_sha256 が現在の差分と一致しない"
+                "（別の変更に対する判定の使い回し）")
+    scenarios = judgment["scenarios"]
+    if not isinstance(scenarios, dict):
+        return "判定ファイルの scenarios が「シナリオ id → 判定」の対応表でない"
+    for sid in sorted(scenarios):
+        verdict = scenarios[sid]
+        if not isinstance(verdict, dict):
+            return f"{sid}: 判定が verdict / rationale を持つ対応表でない"
+        if verdict.get("verdict") not in VERDICTS:
+            return (f"{sid}: verdict が 3 値でない: {verdict.get('verdict')!r}"
+                    f"（{' / '.join(VERDICTS)} のみ）")
+        rationale = verdict.get("rationale")
+        if not isinstance(rationale, str) or not rationale.strip():
+            return f"{sid}: rationale が空（根拠のない判定は監査できない）"
+    return calibration_reason(judgment["model"], calibration)
 
 
 def carryover_dependencies(skill, scenario, surface):
