@@ -35,6 +35,9 @@ SCENARIO_KEYS = (
 # 読む（宣言の導入コストが実走 1 本ぶんになる）。
 SHA_EXCLUDED_KEYS = ("exercises",)
 REQUIREMENT_KEYS = ("text", "critical", "assert")
+# fixture-schema.md が定める要件数の設計目安（3-7 件）の上端。超えると
+# 「どの性質が壊れたか」の解像度が落ちるため info で報告する（判定は人間）
+REQUIREMENT_COUNT_GUIDELINE_MAX = 7
 SETUP_KEYS = ("files", "mtimes", "git", "env")
 GIT_KEYS = ("init", "commit", "remote", "branch", "message", "commits")
 COMMIT_KEYS = ("files", "message")
@@ -599,6 +602,8 @@ def validate_with_warnings(fixture, source="fixtures.json"):
         if not any(isinstance(r, dict) and r.get("critical") for r in requirements):
             errors.append(_err(where, "critical: true の要件が 1 つもない（回帰を検出できない）"))
 
+        warnings += _check_requirement_count(where, requirements)
+
         # --- #54 案 3 縮小版: 実体化できない前提の機械検出 ---
         warnings += _check_unmaterialized_paths(where, scenario)
         warnings += _check_env_usage(where, setup if setup else {})
@@ -639,6 +644,23 @@ def _check_unmaterialized_paths(where, scenario):
                     f"あるが setup.files に宣言がない（前提なら files に足す、"
                     f"prompt 注入なら notes に注入契約を明記する）")
     return warnings
+
+
+def _check_requirement_count(where, requirements):
+    """要件数が設計目安（fixture-schema.md の 3-7 件）の上端を超えたら info。
+
+    violation にはしない。多段スキル（cycle 等）は 1 シナリオで複数 phase を
+    横断するため恒常的に超過しうり、違反にすると検証が止まって他の回帰検出まで
+    巻き添えにする。超過は「分割か裁定が要る」という設計上の兆候であって、
+    宣言の不正ではない（#262 裁定）。
+    """
+    count = len(requirements)
+    if count <= REQUIREMENT_COUNT_GUIDELINE_MAX:
+        return []
+    return [
+        f"[info] {where}: requirements が"
+        f" {REQUIREMENT_COUNT_GUIDELINE_MAX} 件を超える（{count} 件）"
+        f"— 分割か裁定を検討（fixture-schema.md の 3-7 目安）"]
 
 
 def _check_env_usage(where, setup):
