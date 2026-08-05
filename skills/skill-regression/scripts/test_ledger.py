@@ -1519,5 +1519,875 @@ class TestCoverageTiers(unittest.TestCase):
         self.assertEqual(stale, set())
 
 
+class TestSemanticDiffHash(unittest.TestCase):
+    """判定対象の diff を指す正準ハッシュ。git に依存せず台帳と現状だけで決まる。
+
+    判定ファイルはこのハッシュで「どの差分を見て出した判定か」を名乗る。値が
+    現在の差分から再計算したものと一致しなければ、古い判定を別の変更へ
+    使い回した記録として拒否できる。
+    """
+
+    def test_it_is_order_independent_and_deterministic(self):
+        recorded = {"a.md": "h1", "b.md": "h2"}
+        current = {"b.md": "h2x", "a.md": "h1x"}
+        reordered_recorded = {"b.md": "h2", "a.md": "h1"}
+        reordered_current = {"a.md": "h1x", "b.md": "h2x"}
+        self.assertEqual(
+            ledger.semantic_diff_sha256(recorded, current),
+            ledger.semantic_diff_sha256(reordered_recorded, reordered_current))
+
+    def test_no_change_differs_from_a_change(self):
+        unchanged = ledger.semantic_diff_sha256({"a.md": "h1"}, {"a.md": "h1"})
+        changed = ledger.semantic_diff_sha256({"a.md": "h1"}, {"a.md": "h2"})
+        self.assertNotEqual(unchanged, changed)
+        self.assertEqual(len(changed), 64)
+
+    def test_unchanged_files_do_not_enter_the_hash(self):
+        # 判定対象は「変わったファイル」。無関係な面の増減でハッシュが動くと、
+        # 同じ diff を見た判定が別物として拒否される
+        self.assertEqual(
+            ledger.semantic_diff_sha256({"a.md": "h1"}, {"a.md": "h2"}),
+            ledger.semantic_diff_sha256(
+                {"a.md": "h1", "b.md": "same"}, {"a.md": "h2", "b.md": "same"}))
+
+    def test_an_added_and_a_removed_file_hash_differently(self):
+        added = ledger.semantic_diff_sha256({}, {"a.md": "h1"})
+        removed = ledger.semantic_diff_sha256({"a.md": "h1"}, {})
+        self.assertNotEqual(added, removed)
+
+    def test_the_direction_of_a_modification_matters(self):
+        self.assertNotEqual(
+            ledger.semantic_diff_sha256({"a.md": "h1"}, {"a.md": "h2"}),
+            ledger.semantic_diff_sha256({"a.md": "h2"}, {"a.md": "h1"}))
+
+
+class _JudgmentHarness(unittest.TestCase):
+    """判定ファイル検証の共通土台。合格する材料を組み、1 か所ずつ壊して試す。"""
+
+    SKILL = "a"
+    MODEL = "judge-model-1"
+    RECORDED = {"skills/shared/references/tdd.md": "h1"}
+    CURRENT = {"skills/shared/references/tdd.md": "h2"}
+    CORPUS = "corpus-fingerprint-1"
+
+    def _judgment(self, **overrides):
+        judgment = {
+            "skill": self.SKILL,
+            "diff_sha256": ledger.semantic_diff_sha256(
+                self.RECORDED, self.CURRENT),
+            "model": self.MODEL,
+            "scenarios": {
+                "a-001": {"verdict": "unaffected", "rationale": "要件に触れない"},
+            },
+        }
+        judgment.update(overrides)
+        return judgment
+
+    def _calibration(self, entries=None, corpus=None, counts=None):
+        if entries is None:
+            entries = {
+                self.MODEL: {
+                    "must_flag_cases": ledger.MIN_CASES,
+                    "must_flag_fn": 0,
+                    "must_pass_cases": ledger.MIN_CASES,
+                    "must_pass_fp": 2,
+                    "corpus_sha256": self.CORPUS,
+                    "verified": "2026-08-05",
+                },
+            }
+        return ledger.CalibrationGate(
+            entries=entries,
+            corpus_sha256=self.CORPUS if corpus is None else corpus,
+            corpus_counts=({side: ledger.MIN_CASES
+                            for side in ledger.CALIBRATION_SIDES}
+                           if counts is None else counts))
+
+    def _reason(self, judgment=None, calibration=None, known_ids=("a-001",)):
+        return ledger.validate_judgment(
+            self._judgment() if judgment is None else judgment,
+            self.SKILL, self.RECORDED, self.CURRENT,
+            self._calibration() if calibration is None else calibration,
+            known_ids)
+
+
+class TestValidateJudgment(_JudgmentHarness):
+    """判定ファイルの形式検証。1 つでも欠ければ記録ごと拒否する（C1）。"""
+
+    def test_a_well_formed_judgment_is_accepted(self):
+        self.assertIsNone(self._reason())
+
+    def test_a_non_dict_judgment_is_refused(self):
+        self.assertIsNotNone(self._reason(judgment=["not", "a", "mapping"]))
+
+    def test_each_required_field_is_mandatory(self):
+        for field in ("skill", "diff_sha256", "model", "scenarios"):
+            with self.subTest(field=field):
+                judgment = self._judgment()
+                del judgment[field]
+                reason = self._reason(judgment=judgment)
+                self.assertIsNotNone(reason)
+                self.assertIn(field, reason)
+
+    def test_a_verdict_outside_the_three_values_is_refused(self):
+        judgment = self._judgment(scenarios={
+            "a-001": {"verdict": "probably-fine", "rationale": "…"}})
+        reason = self._reason(judgment=judgment)
+        self.assertIsNotNone(reason)
+        self.assertIn("a-001", reason)
+
+    def test_an_empty_rationale_is_refused(self):
+        # 根拠のない判定は監査できない。空白だけも空と同じ
+        for rationale in ("", "   ", None):
+            with self.subTest(rationale=rationale):
+                judgment = self._judgment(scenarios={
+                    "a-001": {"verdict": "unaffected", "rationale": rationale}})
+                self.assertIsNotNone(self._reason(judgment=judgment))
+
+    def test_a_scenario_entry_that_is_not_a_mapping_is_refused(self):
+        judgment = self._judgment(scenarios={"a-001": "unaffected"})
+        self.assertIsNotNone(self._reason(judgment=judgment))
+
+    def test_scenarios_must_be_a_mapping(self):
+        self.assertIsNotNone(
+            self._reason(judgment=self._judgment(scenarios=["a-001"])))
+
+    def test_a_judgment_for_another_skill_is_refused(self):
+        judgment = self._judgment(skill="b")
+        reason = self._reason(judgment=judgment)
+        self.assertIsNotNone(reason)
+        self.assertIn("b", reason)
+
+    def test_a_stale_diff_hash_is_refused(self):
+        # 別の変更に対して出した古い判定の使い回しを機械的に塞ぐ（C2）
+        judgment = self._judgment(diff_sha256="0" * 64)
+        reason = self._reason(judgment=judgment)
+        self.assertIsNotNone(reason)
+        self.assertIn("diff", reason)
+
+    def test_the_unclear_and_affected_verdicts_are_well_formed_too(self):
+        # 形式検証の段階では 3 値すべて正当。記録できるかは別の規則（C3）
+        for verdict in ("unclear", "affected"):
+            with self.subTest(verdict=verdict):
+                judgment = self._judgment(scenarios={
+                    "a-001": {"verdict": verdict, "rationale": "判断できない"}})
+                self.assertIsNone(self._reason(judgment=judgment))
+
+    def test_a_model_that_is_not_a_non_empty_string_is_refused(self):
+        # 判定ファイルは人手でも書ける。非文字列を素通しすると較正記録の参照が
+        # traceback になり、拒否理由 1 行という idiom から外れる
+        for model in (None, 1, True, "", "   ", ["m"], {"name": "m"}):
+            with self.subTest(model=model):
+                judgment = self._judgment(model=model)
+                self.assertIsNotNone(self._reason(judgment=judgment))
+
+    def test_a_judgment_for_a_scenario_that_does_not_exist_is_refused(self):
+        # typo が「semantic 判定がない」という別の欠落へ化けると、operator に
+        # 打ち間違いの手がかりが残らない
+        judgment = self._judgment(scenarios={
+            "a-001": {"verdict": "unaffected", "rationale": "要件に触れない"},
+            "a-O01": {"verdict": "unaffected", "rationale": "要件に触れない"},
+        })
+        reason = self._reason(judgment=judgment)
+        self.assertIsNotNone(reason)
+        self.assertIn("a-O01", reason)
+
+    def test_the_id_check_needs_a_fixture_list(self):
+        # 照合材料を渡さない呼び出し（判定入力の形だけを見る検査）では飛ばす
+        judgment = self._judgment(scenarios={
+            "a-999": {"verdict": "unaffected", "rationale": "要件に触れない"}})
+        self.assertIsNone(self._reason(judgment=judgment, known_ids=None))
+
+
+class TestCalibrationGate(_JudgmentHarness):
+    """較正ゲート。未較正のモデルの判定は記録経路へ入れない（A7, A8）。"""
+
+    def test_an_unknown_model_is_refused(self):
+        reason = self._reason(calibration=self._calibration(entries={}))
+        self.assertIsNotNone(reason)
+        self.assertIn(self.MODEL, reason)
+
+    def test_a_judgment_from_a_different_model_is_refused(self):
+        # 較正はモデルに固有。別モデルの合格実績を借りられない
+        judgment = self._judgment(model="another-model")
+        reason = self._reason(judgment=judgment)
+        self.assertIsNotNone(reason)
+        self.assertIn("another-model", reason)
+
+    def test_a_false_negative_in_the_must_flag_corpus_blocks_the_gate(self):
+        calibration = self._calibration(entries={
+            self.MODEL: {"must_flag_fn": 1, "must_pass_fp": 0,
+                         "corpus_sha256": self.CORPUS, "verified": "2026-08-05"},
+        })
+        reason = self._reason(calibration=calibration)
+        self.assertIsNotNone(reason)
+        self.assertIn("must_flag_fn", reason)
+
+    def test_a_corpus_revision_invalidates_the_calibration(self):
+        calibration = self._calibration(corpus="corpus-fingerprint-2")
+        reason = self._reason(calibration=calibration)
+        self.assertIsNotNone(reason)
+        self.assertIn("corpus", reason)
+
+    def test_a_missing_calibration_file_blocks_the_gate(self):
+        # calibration.json 不在 = 一度も較正していない。advisor 止まり
+        with tempfile.TemporaryDirectory() as root:
+            calibration = ledger.load_calibration(root)
+            self.assertEqual(calibration.entries, {})
+            self.assertIsNotNone(self._reason(calibration=calibration))
+
+    def test_a_malformed_entry_is_refused(self):
+        # must_flag_fn が数値でない記録を「0 でない」と読めない形で通さない
+        for entry in ({}, {"must_flag_fn": None}, {"must_flag_fn": "0"},
+                      {"must_flag_fn": 0}):
+            with self.subTest(entry=entry):
+                calibration = self._calibration(entries={self.MODEL: entry})
+                self.assertIsNotNone(self._reason(calibration=calibration))
+
+    def test_a_thin_corpus_blocks_the_gate_on_either_side(self):
+        # 偽陰性 0 の重みは母数で決まる。書き込み側の --min-cases で下限を
+        # 下げられる以上、ゲート側でも件数を束縛しないと 2 件の満点が通る
+        for thin_side in ledger.CALIBRATION_SIDES:
+            with self.subTest(side=thin_side):
+                counts = {side: ledger.MIN_CASES
+                          for side in ledger.CALIBRATION_SIDES}
+                counts[thin_side] = ledger.MIN_CASES - 1
+                reason = self._reason(
+                    calibration=self._calibration(counts=counts))
+                self.assertIsNotNone(reason)
+                self.assertIn(thin_side, reason)
+
+    def test_a_corpus_at_the_floor_passes(self):
+        counts = {side: ledger.MIN_CASES for side in ledger.CALIBRATION_SIDES}
+        self.assertIsNone(self._reason(
+            calibration=self._calibration(counts=counts)))
+
+
+class TestLoadCalibration(unittest.TestCase):
+    """calibration.json とコーパスのフィンガープリントを読む I/O 層。"""
+
+    def _corpus(self, root, must_flag=1, must_pass=1):
+        for i in range(must_flag):
+            _write(root, f"skills/skill-regression/calibration/must_flag/f{i}.json",
+                   json.dumps({"id": f"f{i}", "expected": "must-flag"}))
+        for i in range(must_pass):
+            _write(root, f"skills/skill-regression/calibration/must_pass/p{i}.json",
+                   json.dumps({"id": f"p{i}", "expected": "must-pass"}))
+
+    def test_it_reads_the_entries_and_the_corpus_fingerprint(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._corpus(root)
+            _write(root, "skills/skill-regression/calibration.json",
+                   json.dumps({"m": {"must_flag_fn": 0}}))
+            calibration = ledger.load_calibration(root)
+            self.assertEqual(calibration.entries, {"m": {"must_flag_fn": 0}})
+            self.assertEqual(len(calibration.corpus_sha256), 64)
+
+    def test_it_counts_the_cases_on_each_side(self):
+        # 件数はゲートの判定材料。フィンガープリントと同じ経路で運ばないと、
+        # 母数を検査しないまま較正記録を通す呼び出しが書けてしまう
+        with tempfile.TemporaryDirectory() as root:
+            self._corpus(root, must_flag=3, must_pass=2)
+            self.assertEqual(ledger.load_calibration(root).corpus_counts,
+                             {"must_flag": 3, "must_pass": 2})
+
+    def test_an_absent_corpus_counts_as_zero_on_both_sides(self):
+        with tempfile.TemporaryDirectory() as root:
+            self.assertEqual(ledger.load_calibration(root).corpus_counts,
+                             {"must_flag": 0, "must_pass": 0})
+
+    def test_the_corpus_fingerprint_moves_when_a_case_changes(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._corpus(root)
+            before = ledger.corpus_sha256(root)
+            _write(root,
+                   "skills/skill-regression/calibration/must_flag/f0.json",
+                   json.dumps({"id": "f0", "expected": "must-flag", "x": 1}))
+            self.assertNotEqual(before, ledger.corpus_sha256(root))
+
+    def test_the_corpus_fingerprint_moves_when_a_case_is_added(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._corpus(root)
+            before = ledger.corpus_sha256(root)
+            self._corpus(root, must_flag=2, must_pass=1)
+            self.assertNotEqual(before, ledger.corpus_sha256(root))
+
+    def test_a_broken_calibration_file_reads_as_no_calibration(self):
+        # 壊れた JSON を例外で落とすと、--check の経路まで巻き込んで死ぬ。
+        # 較正が読めない = 較正していない（advisor 止まり）へ倒す
+        with tempfile.TemporaryDirectory() as root:
+            _write(root, "skills/skill-regression/calibration.json", "{ broken")
+            self.assertEqual(ledger.load_calibration(root).entries, {})
+
+
+class TestSkillResultTiers(unittest.TestCase):
+    """skill レベル result の 3 段階化。pass の意味だけは絶対に薄めない。"""
+
+    def _records(self, *results):
+        return {f"s-{i}": {"result": r} for i, r in enumerate(results)}
+
+    def test_every_scenario_run_is_pass(self):
+        self.assertEqual(
+            ledger.skill_result(self._records("pass", "pass")), "pass")
+
+    def test_run_plus_semantic_is_accepted_semantic(self):
+        self.assertEqual(
+            ledger.skill_result(self._records("pass", "accepted-semantic")),
+            "accepted-semantic")
+
+    def test_only_semantic_is_accepted_semantic(self):
+        self.assertEqual(
+            ledger.skill_result(self._records("accepted-semantic")),
+            "accepted-semantic")
+
+    def test_anything_else_in_the_mix_falls_back_to_accepted_without_run(self):
+        # 判定器より確度の低い記録が 1 つでも混ざれば、台帳は下の段を名乗る
+        for other in ("accepted-without-run", "accepted-addition",
+                      "accepted-prose"):
+            with self.subTest(other=other):
+                self.assertEqual(
+                    ledger.skill_result(
+                        self._records("pass", "accepted-semantic", other)),
+                    "accepted-without-run")
+
+    def test_no_records_is_not_a_pass(self):
+        self.assertEqual(ledger.skill_result({}), "accepted-without-run")
+
+
+class _SemanticHarness(_PartialHarness):
+    """semantic triage の記録経路の共通土台。
+
+    面の tdd.md を変えると a-001（宣言あり）と a-003（宣言なし）が影響側、
+    a-002 は持ち越し側になる。この非対称が「判定で進む分」と「機械で進む分」を
+    同じ更新の中で区別できることの確認になる。
+    """
+
+    MODEL = "judge-model-1"
+
+    def _calibrate(self, root, model=None, must_flag_fn=0, corpus_sha256=None):
+        # ゲートは片側 MIN_CASES 件を要求するので、通る材料は下限ちょうどで組む
+        for i in range(ledger.MIN_CASES):
+            _write(root,
+                   f"skills/skill-regression/calibration/must_flag/f{i}.json",
+                   json.dumps({"id": f"f{i}", "expected": "must-flag"}))
+            _write(root,
+                   f"skills/skill-regression/calibration/must_pass/p{i}.json",
+                   json.dumps({"id": f"p{i}", "expected": "must-pass"}))
+        _write(root, "skills/skill-regression/calibration.json", json.dumps({
+            model or self.MODEL: {
+                "must_flag_fn": must_flag_fn,
+                "must_pass_fp": 0,
+                "corpus_sha256": (corpus_sha256 if corpus_sha256 is not None
+                                  else ledger.corpus_sha256(root)),
+                "verified": "2026-08-05",
+            },
+        }))
+
+    def _judgment(self, root, verdicts, model=None, skill="a", **overrides):
+        entry = ledger.load(root).get(skill, {})
+        surface = ledger.skill_surface(root, skill)
+        judgment = {
+            "skill": skill,
+            "diff_sha256": ledger.semantic_diff_sha256(
+                entry.get("file_sha256", {}), ledger.file_hashes(root, surface)),
+            "model": model or self.MODEL,
+            "scenarios": {
+                sid: {"verdict": verdict, "rationale": "要件の合否には効かない"}
+                for sid, verdict in verdicts.items()
+            },
+        }
+        judgment.update(overrides)
+        path = os.path.join(root, "judgment.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(judgment, f, ensure_ascii=False)
+        return path
+
+    def _touch_contract(self, root):
+        _write(root, "skills/shared/references/tdd.md", "tdd contract CHANGED")
+
+
+class TestSemanticRecording(_SemanticHarness):
+    """`--partial --semantic` は unaffected 判定の分だけ accepted-semantic を書く。"""
+
+    def test_an_unaffected_verdict_is_recorded_as_accepted_semantic(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            self._touch_contract(root)
+            path = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            rc, _ = self._run(
+                ["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            for sid in ("a-001", "a-003"):
+                self.assertEqual(entry["scenarios"][sid]["result"],
+                                 "accepted-semantic")
+            # 実走していないので検証日は据え置き（accepted_scenarios_record と同規則）
+            self.assertEqual(entry["scenarios"]["a-001"]["verified"], "2026-08-01")
+            # 機械で持ち越せた分は従来どおり前回の pass のまま
+            self.assertEqual(entry["scenarios"]["a-002"]["result"], "pass")
+
+    def test_the_skill_level_result_stops_calling_itself_pass(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            self._touch_contract(root)
+            path = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            self._run(["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(ledger.load(root)["a"]["result"],
+                             "accepted-semantic")
+
+    def test_each_record_carries_the_provenance_of_its_own_judgment(self):
+        # どのモデルが何を根拠に進めたのかが台帳から読めないと、蓄積した
+        # accepted-semantic の抜き打ち監査ができない。由来は記録単位で持つ
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            self._touch_contract(root)
+            path = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            self._run(["--update", "a", "--partial", "--semantic", path, root])
+            record = ledger.load(root)["a"]["scenarios"]["a-001"]
+            self.assertEqual(record["semantic"]["model"], self.MODEL)
+            self.assertEqual(len(record["semantic"]["diff_sha256"]), 64)
+            self.assertEqual(record["semantic"]["verdict"], "unaffected")
+            self.assertTrue(record["semantic"]["rationale"])
+            # 実走・持ち越しの記録に由来は付かない（付けたら嘘になる）
+            self.assertNotIn("semantic", ledger.load(root)["a"]["scenarios"]["a-002"])
+
+    def test_a_carried_over_semantic_record_keeps_working_without_a_judgment(self):
+        # 判定で進めた記録は次の更新で持ち越されうる。そこに判定ファイルは
+        # 無いので、由来をエントリ単位で持つと「今回の判定」が存在しないまま
+        # 由来欄を書く羽目になる（実装当初は落ちていた）
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            self._touch_contract(root)
+            path = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            self._run(["--update", "a", "--partial", "--semantic", path, root])
+            # a-001 が踏まない gate.md だけを動かす = a-001 は持ち越し側
+            _write(root, "skills/shared/references/gate.md",
+                   "gate contract `CHANGED`")
+            rc, _ = self._run([
+                "--update", "a", "--partial",
+                "--scenario", "a-002", "--scenario", "a-003", root])
+            self.assertEqual(rc, 0)
+            record = ledger.load(root)["a"]["scenarios"]["a-001"]
+            self.assertEqual(record["result"], "accepted-semantic")
+            # 由来は記録と一緒に運ばれる（判定ファイルが無くても失われない）
+            self.assertEqual(record["semantic"]["model"], self.MODEL)
+            self.assertTrue(record["semantic"]["rationale"])
+
+    def test_a_run_scenario_and_a_semantic_one_coexist(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            self._touch_contract(root)
+            path = self._judgment(root, {"a-003": "unaffected"})
+            rc, _ = self._run([
+                "--update", "a", "--partial", "--scenario", "a-001",
+                "--semantic", path, root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["scenarios"]["a-001"]["result"], "pass")
+            self.assertEqual(entry["scenarios"]["a-001"]["verified"],
+                             datetime.date.today().isoformat())
+            self.assertEqual(entry["scenarios"]["a-003"]["result"],
+                             "accepted-semantic")
+
+    def test_records_made_without_a_judgment_claim_no_provenance(self):
+        # 由来欄の有無が「判定器が進めた記録か」の目印になる。実走・持ち越しに
+        # 付けてしまうと、抜き打ち監査の対象が絞れなくなる
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, _ = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 0)
+            for record in ledger.load(root)["a"]["scenarios"].values():
+                self.assertNotIn("semantic", record)
+
+
+class TestSemanticVerdictsThatCannotRecord(_SemanticHarness):
+    """unaffected 以外は記録経路へ入らない（C3）。表示は人間への推奨まで。"""
+
+    def _blocked(self, root, verdicts):
+        self._repo(root)
+        self._verified(root)
+        self._calibrate(root)
+        self._touch_contract(root)
+        path = self._judgment(root, verdicts)
+        return self._run(["--update", "a", "--partial", "--semantic", path, root])
+
+    def test_an_unclear_verdict_blocks_and_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as root:
+            rc, out = self._blocked(
+                root, {"a-001": "unclear", "a-003": "unaffected"})
+            self.assertEqual(rc, 1)
+            self.assertIn("a-001", out)
+            # 全か無か: 記録できた分があっても台帳は 1 バイトも動かさない
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+            self.assertNotIn("semantic", ledger.load(root)["a"])
+
+    def test_an_affected_verdict_blocks(self):
+        with tempfile.TemporaryDirectory() as root:
+            rc, out = self._blocked(
+                root, {"a-001": "affected", "a-003": "unaffected"})
+            self.assertEqual(rc, 1)
+            self.assertIn("a-001", out)
+
+    def test_a_scenario_with_no_verdict_blocks(self):
+        with tempfile.TemporaryDirectory() as root:
+            rc, out = self._blocked(root, {"a-001": "unaffected"})
+            self.assertEqual(rc, 1)
+            self.assertIn("a-003", out)
+
+    def test_a_changed_scenario_definition_blocks_even_when_unaffected(self):
+        # 合否基準そのものが動いたシナリオは判定器の管轄外（実走でしか確かめられない）
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            self._touch_contract(root)
+            fixture = json.loads(json.dumps(self.FIXTURE))
+            fixture["scenarios"][1]["prompt"] = "two, but stricter"
+            self._write_fixture(root, fixture)
+            path = self._judgment(root, {
+                "a-001": "unaffected", "a-002": "unaffected",
+                "a-003": "unaffected"})
+            rc, out = self._run(
+                ["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("a-002", out)
+
+
+class TestSemanticNeedsARunUnderneath(_SemanticHarness):
+    """accepted-semantic は実走まで遡れる土台の上にしか積めない。"""
+
+    def test_a_record_that_never_ran_stays_blocked(self):
+        # 判定 1 回で accepted-without-run が accepted-semantic へ昇格できると、
+        # 一度も実走しない記録が段を 1 つ上げたまま維持できてしまう
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root, result="accepted-without-run")
+            self._calibrate(root)
+            self._touch_contract(root)
+            path = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            rc, out = self._run(
+                ["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("a-001", out)
+            self.assertEqual(ledger.load(root)["a"]["result"],
+                             "accepted-without-run")
+
+    def test_the_shape_proved_acceptances_are_not_a_foundation_either(self):
+        # skill_result が accepted-addition / accepted-prose を含む集合を
+        # accepted-without-run へ落としている。判定で書き換えられると、機械が
+        # 下げた段を押し戻す洗浄経路になる
+        for prev in ("accepted-addition", "accepted-prose"):
+            with self.subTest(prev=prev), tempfile.TemporaryDirectory() as root:
+                self._repo(root)
+                self._verified(root, result=prev)
+                self._calibrate(root)
+                self._touch_contract(root)
+                path = self._judgment(
+                    root, {"a-001": "unaffected", "a-003": "unaffected"})
+                rc, _ = self._run(
+                    ["--update", "a", "--partial", "--semantic", path, root])
+                self.assertEqual(rc, 1)
+
+    def test_a_semantic_record_can_chain_through_the_semantic_route_again(self):
+        # 連鎖の各段は実走 pass まで遡れるので、土台としては成立する
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            self._touch_contract(root)
+            first = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            self.assertEqual(
+                self._run(["--update", "a", "--partial", "--semantic",
+                           first, root])[0], 0)
+            _write(root, "skills/shared/references/tdd.md",
+                   "tdd contract CHANGED AGAIN")
+            second = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            rc, _ = self._run(
+                ["--update", "a", "--partial", "--semantic", second, root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["scenarios"]["a-001"]["result"],
+                             "accepted-semantic")
+            # 実走していないので検証日は初回の実走記録のまま据え置かれる
+            self.assertEqual(entry["scenarios"]["a-001"]["verified"],
+                             "2026-08-01")
+
+
+class TestSemanticJudgmentIsRefusedWholesale(_SemanticHarness):
+    """判定ファイルが信用できないときは、記録ごと拒否する（C1, C2）。"""
+
+    def _setup(self, root):
+        self._repo(root)
+        self._verified(root)
+        self._calibrate(root)
+        self._touch_contract(root)
+
+    def test_a_stale_diff_hash_refuses_the_update(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root)
+            path = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            # 判定を出した後にもう 1 つ面が動いた = 判定は今の差分のものではない
+            _write(root, "skills/shared/references/gate.md", "gate CHANGED")
+            rc, out = self._run(
+                ["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("diff_sha256", out)
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+    def test_an_uncalibrated_model_refuses_the_update(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root, must_flag_fn=1)
+            self._touch_contract(root)
+            path = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            rc, out = self._run(
+                ["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("advisor", out)
+
+    def test_a_missing_calibration_file_refuses_the_update(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._touch_contract(root)
+            path = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            rc, out = self._run(
+                ["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("advisor", out)
+
+    def test_a_revised_corpus_refuses_the_update(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root)
+            path = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            _write(root, "skills/skill-regression/calibration/must_flag/fx.json",
+                   json.dumps({"id": "fx", "expected": "must-flag"}))
+            rc, out = self._run(
+                ["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("corpus", out)
+
+    def test_a_malformed_judgment_file_refuses_the_update(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root)
+            path = os.path.join(root, "judgment.json")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("{ not json")
+            rc, out = self._run(
+                ["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("judgment.json", out)
+
+    def test_a_missing_judgment_file_refuses_the_update(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root)
+            rc, out = self._run([
+                "--update", "a", "--partial", "--semantic",
+                os.path.join(root, "absent.json"), root])
+            self.assertEqual(rc, 1)
+            self.assertIn("absent.json", out)
+
+    def test_a_judgment_for_another_skill_refuses_the_update(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root)
+            path = self._judgment(root, {"a-001": "unaffected"}, skill="b")
+            rc, out = self._run(
+                ["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("skill", out)
+
+    def test_a_verdict_for_a_scenario_that_does_not_exist_refuses_the_update(self):
+        # 実在しない id への判定を黙って捨てると、typo は「a-003 の判定がない」
+        # としてしか現れず、打ち間違いそのものは報告されない
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root)
+            path = self._judgment(root, {
+                "a-001": "unaffected", "a-003": "unaffected",
+                "a-O03": "unaffected"})
+            rc, out = self._run(
+                ["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("a-O03", out)
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+
+class TestSemanticDiagnosesAMissingRecordAsMigration(_SemanticHarness):
+    """per-scenario 記録を持たない旧エントリには移行を処方する（実走ではなく）。
+
+    記録が無い状態で scenario_sha256 を比較すると必ず不一致になるが、そこから
+    「シナリオ定義が変わった = 実走が必要」と読ませると、無料の --seed-scenarios
+    で済む状態に最も高い処方を出すことになる。
+    """
+
+    def _blocked_lines(self, root):
+        self._repo(root)
+        self._verified(root, with_scenarios=False)
+        self._calibrate(root)
+        self._touch_contract(root)
+        path = self._judgment(
+            root, {"a-001": "unaffected", "a-002": "unaffected",
+                   "a-003": "unaffected"})
+        rc, out = self._run(
+            ["--update", "a", "--partial", "--semantic", path, root])
+        self.assertEqual(rc, 1)
+        return {line.split(":")[0][2:]: line
+                for line in out.splitlines() if line.startswith("✗ a-0")}
+
+    def test_an_impacted_scenario_is_pointed_at_the_migration(self):
+        with tempfile.TemporaryDirectory() as root:
+            lines = self._blocked_lines(root)
+            for sid in ("a-001", "a-003"):
+                with self.subTest(scenario=sid):
+                    self.assertIn("--seed-scenarios", lines[sid])
+                    self.assertNotIn("シナリオ定義", lines[sid])
+
+    def test_the_impacted_and_carried_over_routes_agree_in_one_run(self):
+        # a-002 は持ち越し側（carryover_reason）を通る。同じ欠落に別の診断が
+        # 出ると、1 回の実行が 2 つの処方を並べることになる
+        with tempfile.TemporaryDirectory() as root:
+            lines = self._blocked_lines(root)
+            self.assertEqual(sorted(lines), ["a-001", "a-002", "a-003"])
+            for sid, line in lines.items():
+                with self.subTest(scenario=sid):
+                    self.assertIn("--seed-scenarios", line)
+
+
+class TestSemanticFlagWiring(_SemanticHarness):
+    """`--semantic` は --partial 専用で、--accept とは併用できない。"""
+
+    def test_it_refuses_to_combine_with_accept(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            path = self._judgment(root, {})
+            rc, out = self._run([
+                "--update", "a", "--partial", "--accept",
+                "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("--accept", out)
+            self.assertIn("混ざると result", out)
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+    def test_the_remove_route_is_refused_on_its_own_terms(self):
+        # --remove には承認との混同が無い。--accept の説明を流用すると、
+        # operator は指定していないフラグの衝突を読まされる
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            path = self._judgment(root, {})
+            rc, out = self._run(["--remove", "a", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("--remove", out)
+            self.assertNotIn("--accept", out)
+
+    def test_it_refuses_without_partial(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            path = self._judgment(root, {})
+            rc, out = self._run(["--update", "a", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("--partial", out)
+
+    def test_it_refuses_a_value_less_flag(self):
+        rc, out = self._run(["--update", "a", "--partial", "--semantic"])
+        self.assertEqual(rc, 2)
+        self.assertIn("--semantic", out)
+
+    def test_a_misplaced_semantic_flag_is_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run(
+                ["--semantic", "x.json", "--update", "a", "--partial", root])
+            self.assertEqual(rc, 2)
+            self.assertIn("--semantic", out)
+
+
+class TestSemanticIsCountedSeparately(_SemanticHarness):
+    """--check の内訳で accepted-semantic を独立カウントする（C4, A3）。
+
+    他の accepted と混ぜると「判定器に寄りかかりすぎている」という新しい
+    危険信号が読めなくなる。
+    """
+
+    def test_check_counts_accepted_semantic_on_its_own_line(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            ledger.save(root, {
+                "a": ledger.make_entry(
+                    root, surface, "accepted-semantic", "2026-08-05"),
+            })
+            rc, out = self._run(["--check", root])
+            self.assertEqual(rc, 0)
+            self.assertIn("accepted-semantic 1", out)
+            self.assertIn("accepted-without-run 0", out)
+
+    def test_status_keeps_its_four_column_structure(self):
+        # --status は 4 消費経路の 1 つ。列構造が動くと下流が黙って壊れる
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            ledger.save(root, {
+                "a": ledger.make_entry(
+                    root, surface, "accepted-semantic", "2026-08-05"),
+            })
+            rc, out = self._run(["--status", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(
+                out.strip().split("\t"),
+                ["a", "verified", "accepted-semantic", "2026-08-05"])
+
+
+class TestNoExecutionAuthority(unittest.TestCase):
+    """C5: 判定器側のスクリプトは実行系 API を持ち込まない。
+
+    判定器へ実行権限を与えないという仕様の要（docs/spec/semantic-triage.md
+    「権限の境界」）は散文の約束では守れない。設計性質の退行を canary で検出する。
+    """
+
+    SCRIPTS = ("ledger.py", "semantic_calibration.py")
+
+    def _source(self, name):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), name)
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+
+    def test_no_execution_api_is_imported(self):
+        for name in self.SCRIPTS:
+            with self.subTest(script=name):
+                source = self._source(name)
+                for forbidden in ("subprocess", "os.system", "os.exec",
+                                  "os.spawn", "os.popen"):
+                    self.assertNotIn(forbidden, source,
+                                     f"{name} に {forbidden} が現れた")
+
+
 if __name__ == "__main__":
     unittest.main()

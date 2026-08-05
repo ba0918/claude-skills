@@ -91,6 +91,12 @@ python3 ledger.py --seed-scenarios cycle .
   `--accept` — forwards the previous entry's note into `carried_note` (one slot, one generation).
 - `--partial` cannot be combined with `--accept`. Acceptance means "judged without running"; partial means
   "these were run". Mixed, the recorded `result` would no longer have a single meaning.
+- `--partial --semantic <judgment.json>` adds a third source for a scenario record: a calibrated judge that
+  read the diff and returned `unaffected`. Those become `accepted-semantic` — never `pass`, never on a
+  scenario whose `scenario_sha256` moved, and never on a scenario whose previous record is neither `pass` nor
+  `accepted-semantic`. Everything else the judge returns stays blocked exactly as above.
+  The rules, the calibration gate and the judge's permission boundary are in
+  [semantic-triage.md](semantic-triage.md).
 - `--seed-scenarios` refuses a stale entry, and refuses an entry that already has records. It is bookkeeping, not
   verification: it distributes the skill-level guarantee ("every scenario passed at this surface") down to the
   scenarios and leaves the verification date untouched. Allowing a re-seed would let a skill-level `pass`
