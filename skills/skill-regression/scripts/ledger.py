@@ -503,7 +503,7 @@ def load_judgment(path):
 
 
 def make_entry(root, surface, result, verified_date, note=None, scenarios=None,
-               carried_note=None, semantic=None):
+               carried_note=None):
     """台帳エントリを作る。
 
     result は "pass"（実走して全シナリオ合格）| "accepted-addition"（実走せず承認。
@@ -528,9 +528,8 @@ def make_entry(root, surface, result, verified_date, note=None, scenarios=None,
     台帳から消え、持ち越し記録だけが残って由来が読めなくなる。スロットは 1 つ
     だけで、直近 1 世代の note しか保たない（連鎖して伸び続けさせない）。
 
-    semantic は accepted-semantic 記録の由来 {model, diff_sha256, scenarios}。
-    確率的判断で進めた記録は、後から抜き打ち監査する対象なので「どのモデルが
-    何を根拠に」を台帳から読めなければならない（docs/spec/semantic-triage.md）。
+    accepted-semantic 記録の由来（どのモデルが何を根拠に）は、エントリではなく
+    scenarios の各記録が持つ。理由は partial_update の該当箇所に書いた。
     """
     entry = {
         "surface": surface,
@@ -546,8 +545,6 @@ def make_entry(root, surface, result, verified_date, note=None, scenarios=None,
         entry["note"] = note
     if carried_note:
         entry["carried_note"] = carried_note
-    if semantic:
-        entry["semantic"] = semantic
     return entry
 
 
@@ -845,7 +842,9 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None,
             print(f"✗ {reason}")
             return 1
         verdicts = judgment["scenarios"]
-    records, blocked = {}, []
+    # 今回の判定で進めた分。持ち越された過去の accepted-semantic とは区別する
+    # （集計行が「今回いくら値切れたか」を示すため）
+    records, blocked, semantic_ids = {}, [], []
     for scenario in scenarios:
         sid = scenario["id"]
         if sid in ran_ids:
@@ -867,7 +866,19 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None,
                     # 日付から区別できなくなるのを防ぐ
                     "verified": (recorded.get("verified")
                                  or entry.get("verified") or today),
+                    # 由来はエントリ単位ではなく記録単位で持つ。判定で進めた記録は
+                    # 次の更新で持ち越されうるが、そのときエントリには「今回の判定」が
+                    # 存在しない。エントリ単位に置くと、持ち越しのたびに由来が
+                    # 落ちるか、無い判定から欄を埋めることになる（dict のコピーで
+                    # 運ばれる記録側に置けば、持ち越しは何もしなくても由来を保つ）
+                    "semantic": {
+                        "model": judgment["model"],
+                        "diff_sha256": judgment["diff_sha256"],
+                        "verdict": VERDICT_UNAFFECTED,
+                        "rationale": verdicts[sid]["rationale"],
+                    },
                 }
+                semantic_ids.append(sid)
                 continue
             reason = ("面の変更が影響する（--check / --impact-scenarios と同じ規則）: "
                       + _summarize_changed(changed))
@@ -887,25 +898,9 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None,
         print(f"✗ {len(blocked)} 件は持ち越せない。実走して --scenario で指名するか、"
               f"--partial を外して全シナリオ実走の --update にすること")
         return 1
-    semantic_ids = sorted(
-        sid for sid, rec in records.items()
-        if rec["result"] == RESULT_ACCEPTED_SEMANTIC)
-    # 記録した分の判定だけを残す。unclear / affected は人間への推奨表示であって
-    # 台帳が何かを載せている根拠ではないので、保存すると「台帳に残っている＝
-    # 機構が受け取った」という誤読を招く
-    semantic = {
-        "model": judgment["model"],
-        "diff_sha256": judgment["diff_sha256"],
-        "scenarios": {
-            sid: {"verdict": verdicts[sid]["verdict"],
-                  "rationale": verdicts[sid]["rationale"]}
-            for sid in semantic_ids
-        },
-    } if semantic_ids else None
     entries[skill] = make_entry(
         root, surface, skill_result(records), today, note=note,
-        scenarios=records, carried_note=carried_note(entry, note),
-        semantic=semantic)
+        scenarios=records, carried_note=carried_note(entry, note))
     save(root, entries)
     summary = (f"実走 {len(ran_ids)} / "
                f"持ち越し {len(records) - len(ran_ids) - len(semantic_ids)}")

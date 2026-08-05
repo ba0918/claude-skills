@@ -195,6 +195,13 @@ def main(argv):
         print(f"✗ 台帳にエントリがない: {skill}（semantic triage が見るのは"
               f"「前回検証した内容」との差分なので、比較基準が要る）")
         return 1
+    # 比較基準が無い旧エントリでは、差分が「面が丸ごと新しい」に化ける。判定へ
+    # 回しても per-scenario 記録が無い以上どのシナリオも記録には至らず、判定 1 回分の
+    # 費用だけが出ていく（stale_severity が recorded 空を重い側へ倒すのと同じ理由）
+    if not entry.get("file_sha256"):
+        print(f"✗ {skill} のエントリに file_sha256 が無く、差分の比較基準が取れない。"
+              f"先に run → --update で検証すること")
+        return 1
     built = build_input(root, skill, entry)
     if built["severity"] is None:
         print(f"✗ {skill} の挙動面に差分がない（判定するものがない）")

@@ -299,6 +299,20 @@ class TestScopeGuard(_RepoHarness):
             self.assertEqual(rc, 1)
             self.assertIn("差分", out)
 
+    def test_it_refuses_an_entry_with_no_recorded_baseline(self):
+        # file_sha256 を持たない旧エントリ。比較基準が無いので差分は「面が全部
+        # 新しい」に化ける。それを判定に回しても記録には至らず、判定 1 回分の
+        # 費用だけが出ていく
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            entry = self._verified(root)
+            del entry["file_sha256"]
+            ledger.save(root, {"a": entry})
+            _write(root, "skills/shared/references/tdd.md", "tdd `v2`\n")
+            rc, out = self._run(["a", root])
+            self.assertEqual(rc, 1)
+            self.assertIn("比較基準", out)
+
     def test_it_refuses_a_skill_with_no_ledger_entry(self):
         with tempfile.TemporaryDirectory() as root:
             self._repo(root)
@@ -344,6 +358,54 @@ class TestCli(_RepoHarness):
     def test_it_refuses_without_a_skill_name(self):
         rc, _ = self._run([])
         self.assertEqual(rc, 2)
+
+
+class TestEndToEnd(_RepoHarness):
+    """skeleton → 判定記入 → 台帳記録が CLI 越しに繋がる。
+
+    発行側と検証側は同じ純関数を共有しているが、それぞれの CLI が値をどう
+    運ぶかは別問題で、経路のどこかで hash が落ちれば「正しい判定が常に
+    拒否される」形で壊れる。単体テストは両端を別々に組み立てるので、この
+    繋がりだけはファイル越しに通して確かめる。
+    """
+
+    def _calibrate(self, root, model):
+        _write(root, "skills/skill-regression/calibration/must_flag/f0.json",
+               json.dumps({"id": "f0", "expected": "must-flag"}))
+        _write(root, "skills/skill-regression/calibration/must_pass/p0.json",
+               json.dumps({"id": "p0", "expected": "must-pass"}))
+        _write(root, "skills/skill-regression/calibration.json", json.dumps({
+            model: {"must_flag_fn": 0, "must_pass_fp": 1,
+                    "corpus_sha256": ledger.corpus_sha256(root),
+                    "verified": "2026-08-05"}}))
+
+    def test_a_filled_in_skeleton_is_accepted_by_the_ledger(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root, "judge-x")
+            _write(root, "skills/shared/references/tdd.md",
+                   "tdd contract `v2`\n")
+            out_path = os.path.join(root, "judgment.json")
+            rc, _ = self._run(["a", "--skeleton", out_path, root])
+            self.assertEqual(rc, 0)
+            with open(out_path, encoding="utf-8") as f:
+                judgment = json.load(f)
+            judgment["model"] = "judge-x"
+            for sid in judgment["scenarios"]:
+                judgment["scenarios"][sid] = {
+                    "verdict": "unaffected", "rationale": "要件に効かない"}
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(judgment, f, ensure_ascii=False)
+            rc = ledger.main(
+                ["--update", "a", "--partial", "--semantic", out_path, root])
+            self.assertEqual(rc, 0)
+            records = ledger.load(root)["a"]["scenarios"]
+            self.assertEqual(records["a-001"]["result"], "accepted-semantic")
+            self.assertEqual(records["a-001"]["semantic"]["diff_sha256"],
+                             judgment["diff_sha256"])
+            # 影響外のシナリオは従来どおり機械的な持ち越し
+            self.assertEqual(records["a-002"]["result"], "pass")
 
 
 class TestGitIsInvokedSafely(unittest.TestCase):

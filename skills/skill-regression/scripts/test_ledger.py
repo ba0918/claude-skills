@@ -1874,9 +1874,9 @@ class TestSemanticRecording(_SemanticHarness):
             self.assertEqual(ledger.load(root)["a"]["result"],
                              "accepted-semantic")
 
-    def test_the_entry_records_the_provenance_of_the_judgment(self):
+    def test_each_record_carries_the_provenance_of_its_own_judgment(self):
         # どのモデルが何を根拠に進めたのかが台帳から読めないと、蓄積した
-        # accepted-semantic の抜き打ち監査ができない
+        # accepted-semantic の抜き打ち監査ができない。由来は記録単位で持つ
         with tempfile.TemporaryDirectory() as root:
             self._repo(root)
             self._verified(root)
@@ -1885,12 +1885,38 @@ class TestSemanticRecording(_SemanticHarness):
             path = self._judgment(
                 root, {"a-001": "unaffected", "a-003": "unaffected"})
             self._run(["--update", "a", "--partial", "--semantic", path, root])
-            semantic = ledger.load(root)["a"]["semantic"]
-            self.assertEqual(semantic["model"], self.MODEL)
-            self.assertEqual(len(semantic["diff_sha256"]), 64)
-            self.assertEqual(semantic["scenarios"]["a-001"]["verdict"],
-                             "unaffected")
-            self.assertTrue(semantic["scenarios"]["a-001"]["rationale"])
+            record = ledger.load(root)["a"]["scenarios"]["a-001"]
+            self.assertEqual(record["semantic"]["model"], self.MODEL)
+            self.assertEqual(len(record["semantic"]["diff_sha256"]), 64)
+            self.assertEqual(record["semantic"]["verdict"], "unaffected")
+            self.assertTrue(record["semantic"]["rationale"])
+            # 実走・持ち越しの記録に由来は付かない（付けたら嘘になる）
+            self.assertNotIn("semantic", ledger.load(root)["a"]["scenarios"]["a-002"])
+
+    def test_a_carried_over_semantic_record_keeps_working_without_a_judgment(self):
+        # 判定で進めた記録は次の更新で持ち越されうる。そこに判定ファイルは
+        # 無いので、由来をエントリ単位で持つと「今回の判定」が存在しないまま
+        # 由来欄を書く羽目になる（実装当初は落ちていた）
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            self._touch_contract(root)
+            path = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            self._run(["--update", "a", "--partial", "--semantic", path, root])
+            # a-001 が踏まない gate.md だけを動かす = a-001 は持ち越し側
+            _write(root, "skills/shared/references/gate.md",
+                   "gate contract `CHANGED`")
+            rc, _ = self._run([
+                "--update", "a", "--partial",
+                "--scenario", "a-002", "--scenario", "a-003", root])
+            self.assertEqual(rc, 0)
+            record = ledger.load(root)["a"]["scenarios"]["a-001"]
+            self.assertEqual(record["result"], "accepted-semantic")
+            # 由来は記録と一緒に運ばれる（判定ファイルが無くても失われない）
+            self.assertEqual(record["semantic"]["model"], self.MODEL)
+            self.assertTrue(record["semantic"]["rationale"])
 
     def test_a_run_scenario_and_a_semantic_one_coexist(self):
         with tempfile.TemporaryDirectory() as root:
@@ -1910,13 +1936,16 @@ class TestSemanticRecording(_SemanticHarness):
             self.assertEqual(entry["scenarios"]["a-003"]["result"],
                              "accepted-semantic")
 
-    def test_an_entry_without_semantic_records_has_no_semantic_key(self):
+    def test_records_made_without_a_judgment_claim_no_provenance(self):
+        # 由来欄の有無が「判定器が進めた記録か」の目印になる。実走・持ち越しに
+        # 付けてしまうと、抜き打ち監査の対象が絞れなくなる
         with tempfile.TemporaryDirectory() as root:
             self._repo(root)
             self._verified(root)
             rc, _ = self._run(["--update", "a", "--partial", root])
             self.assertEqual(rc, 0)
-            self.assertNotIn("semantic", ledger.load(root)["a"])
+            for record in ledger.load(root)["a"]["scenarios"].values():
+                self.assertNotIn("semantic", record)
 
 
 class TestSemanticVerdictsThatCannotRecord(_SemanticHarness):

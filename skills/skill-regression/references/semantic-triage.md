@@ -163,9 +163,15 @@ it may be revisited once there is operating data.
 ## What `accepted-semantic` means in the ledger
 
 Not "proof that behavior did not change" — **"a judge calibrated to the maintainer's rulings said it does not
-affect the outcome"**. It never calls itself `pass`, `--check` counts it on its own line (so over-reliance stays
-readable), and the entry keeps a `semantic` block naming the model, the diff hash and the rationale behind each
-record. Runs performed later for other reasons double as spot audits of the accumulated records.
+affect the outcome"**. It never calls itself `pass`, and `--check` counts it on its own line so over-reliance
+stays readable.
+
+Each such scenario record keeps its own `semantic` block — the judging model, the diff hash, the verdict and the
+rationale. The provenance sits on the record rather than on the entry because a record made by one judgement is
+later carried over into entries that have no judgement of their own; on the entry it would be lost at the first
+carry-over. A record with no `semantic` block was produced by a real run or a mechanical carry-over, which is
+what makes the accumulated judge-driven records selectable for a spot audit. Runs performed later for other
+reasons double as that audit.
 
 ## Related
 
