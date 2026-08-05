@@ -5,6 +5,58 @@ skill in this repository. Meta-skills such as skill-improve also reference it as
 judgement criteria. The machine-verifiable rules written here are enforced in CI by
 `scripts/validate_repo.py`.
 
+## The Trunk Workflow and the Funnel
+
+This repository has one canonical flow — the **trunk** — for building or changing
+anything. This section is the canonical home of the trunk diagram (do not copy it into
+always-loaded files such as AGENTS.md). The behavioral spec of the entry phase is
+[docs/spec/brainstorm.md](../../../docs/spec/brainstorm.md).
+
+```
+utterance / GitHub issue
+        │   issues take no separate route — a well-groomed issue simply
+        │   converges in one round of dialogue
+        ▼
+   brainstorm    idea → requirements → specification, hammered out in dialogue
+        │        (heavy phase; agreed specs land in docs/spec)
+        ▼
+      plan       implementation plan seeded by the agreements
+        ▼
+   implement
+        ▼
+     review
+        ▼
+   alignment     write implementation-induced changes back into docs/spec and docs
+        │        (station owner: doc-check's diff-driven checks; its dedicated
+        ▼         branch-diff mode is being added)
+       PR        feature branch; human-approved merge
+
+ side lines (deliberately not wired into the trunk):
+   ledger       — adjudication record; board only when decision history is wanted
+   spec-verify  — spec → property-based tests; board only when automated contract
+                  checks are wanted
+```
+
+### The Funnel Principle
+
+Routing into the trunk is one rule plus an exception list — never a vocabulary-to-skill
+mapping table (N phrases × M skills cannot be memorized and always leaks):
+
+- **Default entry = brainstorm.** Any request to build or change something is first
+  weighed against brainstorm.
+- **Exceptions are enumerated work categories**, not judgment calls: terminal or
+  read-only work such as committing, session handoff, or pure investigation. The
+  runtime exception list is owned by the `using-workflow` skill; this section owns the
+  diagram only. The split keeps the always-resident token cost low.
+
+### Declare Where a New Skill Plugs In
+
+Every new skill — and every substantial revision — states its position relative to the
+trunk: which station it serves, which side line it is, or which funnel exception
+category covers it. Not being able to state the position is a responsibility smell of
+the same kind the Anti-bloat Clause tracks: a skill serving no station and no exception
+is either duplicating a station owner or bundling several responsibilities.
+
 ## Directory Layout
 
 ```
@@ -373,6 +425,8 @@ following.
 
 ## Checklist for Adding a New Skill
 
+- [ ] Declared the skill's position on the trunk (station / side line / funnel exception
+      category) — see "The Trunk Workflow and the Funnel"
 - [ ] Decided whether a command is needed under the skills-first policy (no command by default;
       add a thin wrapper only when a named entry point for a multi-workflow is needed)
 - [ ] Updated the main skill tables in AGENTS.md / README.md as needed (keep CLAUDE.md a thin
