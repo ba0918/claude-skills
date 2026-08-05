@@ -700,6 +700,22 @@ class TestRerun(_Harness):
             rq.rerun(self.batch)
         self.assertIn("rebuild", str(ctx.exception))
 
+    def test_adding_an_exercises_declaration_does_not_force_a_rebuild(self):
+        """`exercises` は影響範囲のメタデータで、シナリオが測る内容を変えない。
+
+        宣言を足しただけで rerun が rebuild を要求すると、既存 fixture への宣言
+        追加が実走 1 本ぶんの費用になり、部分再走の導入コストがゼロでなくなる。
+        """
+        fixture_path = self.write_fixture()
+        rq.build([fixture_path], self.batch, self.repo)
+        declared = _fixture()
+        declared["scenarios"][0]["exercises"] = [
+            "skills/shared/references/tdd-contract.md"]
+        with open(fixture_path, "w") as handle:
+            json.dump(declared, handle)
+        summary = rq.rerun(self.batch)
+        self.assertEqual(summary["rematerialized"], [self.UID])
+
     def test_refuses_an_unknown_unit(self):
         self.build()
         with self.assertRaises(rq.QueueError):
