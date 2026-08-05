@@ -3,6 +3,7 @@
 挙動面フィンガープリントの決定性と、台帳照合（stale / unverified / orphan）
 の純関数を検証する。日付は DI（引数渡し）でテスト可能にする。
 """
+import datetime
 import json
 import os
 import tempfile
@@ -1133,6 +1134,64 @@ class TestNoteIsNeverSilentlyDiscarded(_PartialHarness):
             self.assertEqual(entry["note"], "三代目")
             self.assertEqual(entry["carried_note"], "二代目")
             self.assertNotIn("初代", json.dumps(entry, ensure_ascii=False))
+
+
+class TestAcceptKeepsPerScenarioRunDates(_PartialHarness):
+    """1 本も走らせていない --accept が per-scenario の検証日を塗り替えない。
+
+    per-scenario の verified は「そのシナリオを最後に実走で確かめた日」で、
+    partial-rerun.md は run の新しさをここから読めと指示している。承認が今日で
+    上書きすると、実走記録と承認記録が日付から区別できなくなる。
+    """
+
+    def test_an_accept_keeps_the_dates_of_the_last_real_run(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            _write(root, "skills/a/extra.md", "new reference")
+            rc, _ = self._run(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["result"], "accepted-addition")
+            for sid in ("a-001", "a-002", "a-003"):
+                # result は承認値へ倒す（partial-rerun.md の既存意味論）
+                self.assertEqual(entry["scenarios"][sid]["result"],
+                                 "accepted-addition")
+                self.assertEqual(entry["scenarios"][sid]["verified"], "2026-08-01")
+
+    def test_a_scenario_without_a_previous_record_falls_back_to_the_entry_date(self):
+        # 旧エントリには per-scenario 記録が無い。実走日を知る材料が無いので
+        # skill レベルの検証日まで落とす（今日を名乗らない）
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root, with_scenarios=False)
+            _write(root, "skills/a/extra.md", "new reference")
+            rc, _ = self._run(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["scenarios"]["a-001"]["verified"], "2026-08-01")
+
+    def test_a_first_accept_without_any_previous_entry_stamps_today(self):
+        # 前任がいない＝古い日付を捏造する材料が無い。today が唯一正直な値
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            rc, _ = self._run(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["scenarios"]["a-001"]["verified"],
+                             datetime.date.today().isoformat())
+
+    def test_a_full_run_update_still_stamps_today_on_every_scenario(self):
+        # --accept でない --update は全シナリオを実走した記録なので日付は動く
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, _ = self._run(["--update", "a", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            today = datetime.date.today().isoformat()
+            for sid in ("a-001", "a-002", "a-003"):
+                self.assertEqual(entry["scenarios"][sid]["verified"], today)
 
 
 class TestPartialUpdateAgreesWithTheImpactRule(_PartialHarness):

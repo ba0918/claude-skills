@@ -99,6 +99,9 @@ python3 ledger.py --seed-scenarios cycle .
   the accepted value, so the skill cannot return to `pass` through partial reruns alone — a full run has to re-earn
   it. That is deliberate. Inheriting `pass` into the records would turn a skill-level judgement made without running
   into per-scenario evidence, and the whole point of the records is that they carry only what was actually verified.
+  An acceptance rewrites each record's `result` but never its `verified` date: nothing ran, so every record keeps the
+  date of its last real run. A record with no predecessor falls back to the previous entry's skill-level date, and
+  only an acceptance with no previous entry at all stamps today.
 
 ## Guarantee boundary
 

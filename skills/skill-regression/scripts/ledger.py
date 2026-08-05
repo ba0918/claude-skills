@@ -258,6 +258,29 @@ def full_scenarios_record(root, skill, result, verified_date):
     }
 
 
+def accepted_scenarios_record(root, skill, result, prev_entry, today):
+    """--accept 用の per-scenario 記録。result は承認値、検証日は据え置く。
+
+    per-scenario の verified は「そのシナリオを最後に実走で確かめた日」であり、
+    references/partial-rerun.md は run の新しさをここから読めと指示している
+    （持ち越したシナリオが古い日付を保つのはそのため）。1 本も走らせていない
+    --accept が今日で塗り替えると、実走記録と承認記録が日付から区別できなくなる。
+
+    前回記録が無いシナリオは前回エントリの skill レベル検証日へ、それも無ければ
+    today へ落とす。材料が無いときに古い日付を捏造しないための fail-honest な段階。
+    """
+    previous = (prev_entry or {}).get("scenarios") or {}
+    fallback = (prev_entry or {}).get("verified") or today
+    return {
+        scenario["id"]: {
+            "scenario_sha256": scenario_sha256(scenario),
+            "result": result,
+            "verified": previous.get(scenario["id"], {}).get("verified") or fallback,
+        }
+        for scenario in load_scenarios(root, skill)
+    }
+
+
 def skill_result(scenario_records):
     """per-scenario 記録から skill レベルの result を決める。
 
@@ -885,10 +908,10 @@ def main(argv):
                 print(f"✗ skills/{skill}/fixtures.json が存在しない")
                 return 1
             surface = skill_surface(root, skill)
+            prev_entry = entries.get(skill, {})
             result = RESULT_PASS
             if accept:
                 fixtures_rel = f"skills/{skill}/fixtures.json"
-                prev_entry = entries.get(skill, {})
                 prev = prev_entry.get("file_sha256", {})
                 prev_hash = prev.get(fixtures_rel)
                 curr_hash = _file_sha256(root, fixtures_rel)
@@ -904,9 +927,13 @@ def main(argv):
                     structural_hashes(root, surface),
                     own_prefix=f"skills/{skill}/")
             today = datetime.date.today().isoformat()
+            scenarios = (
+                accepted_scenarios_record(root, skill, result, prev_entry, today)
+                if accept
+                else full_scenarios_record(root, skill, result, today)
+            )
             entries[skill] = make_entry(
-                root, surface, result, today, note=note,
-                scenarios=full_scenarios_record(root, skill, result, today),
+                root, surface, result, today, note=note, scenarios=scenarios,
             )
         save(root, entries)
         print(f"✓ ledger 更新: {skill} ({mode})")

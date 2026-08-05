@@ -465,42 +465,42 @@
       "gi-001": {
         "result": "accepted-without-run",
         "scenario_sha256": "8e71e697f0ae942400a0b5936d64f8737ea3e30914fa183d8ba342e4cae7e070",
-        "verified": "2026-08-05"
+        "verified": "2026-08-04"
       },
       "gi-002": {
         "result": "accepted-without-run",
         "scenario_sha256": "7a0563b929328cb260f2978ff0152a39c21f542c846c7f0755d908aabf88691f",
-        "verified": "2026-08-05"
+        "verified": "2026-08-04"
       },
       "gi-003": {
         "result": "accepted-without-run",
         "scenario_sha256": "bcdb695fe63e4cdbd4bf01f8fb8aac6708cdf64641c8ce6de4390b54ec9c2cbe",
-        "verified": "2026-08-05"
+        "verified": "2026-08-04"
       },
       "gi-004": {
         "result": "accepted-without-run",
         "scenario_sha256": "5f06f1bf678290aecf0d27f08358f1791a2a5d821e9ffdcb3337214b8befad57",
-        "verified": "2026-08-05"
+        "verified": "2026-08-04"
       },
       "gi-005": {
         "result": "accepted-without-run",
         "scenario_sha256": "6bea91ef6ce5f8648256c5c2e594118e39cd7ca3c4538223a72d410ce0088d96",
-        "verified": "2026-08-05"
+        "verified": "2026-08-04"
       },
       "gi-006": {
         "result": "accepted-without-run",
         "scenario_sha256": "007b5f7a21161551fc1b1e6347b9d862aa681030721120c5df56120505893e29",
-        "verified": "2026-08-05"
+        "verified": "2026-08-04"
       },
       "gi-007": {
         "result": "accepted-without-run",
         "scenario_sha256": "e8ea3f5758d063b3dce0ba53bf759cb169b4f0b3dfee331a4196b2d1d30f3dd2",
-        "verified": "2026-08-05"
+        "verified": "2026-08-04"
       },
       "gi-008": {
         "result": "accepted-without-run",
         "scenario_sha256": "e2322250809b23250989075f68ee6ea6c2467fc4a31793bc7b869ff36bc02413",
-        "verified": "2026-08-05"
+        "verified": "2026-08-04"
       }
     },
     "structural_sha256": {
@@ -901,17 +901,17 @@
       "sr-001": {
         "result": "accepted-without-run",
         "scenario_sha256": "380dca494b96613297887dc66c1eeb2668bfd8cf058f9bca738d139c34395e0c",
-        "verified": "2026-08-05"
+        "verified": "2026-08-04"
       },
       "sr-002": {
         "result": "accepted-without-run",
         "scenario_sha256": "b6954bed3dd5fbece49eb3a7260a8746f79043e1dbd00e05c1baa7a77730672b",
-        "verified": "2026-08-05"
+        "verified": "2026-08-04"
       },
       "sr-003": {
         "result": "accepted-without-run",
         "scenario_sha256": "2c5d8ecf7cdaec7d614ebe01937f3f80378c2fecc443ffc59549daa9ddf40305",
-        "verified": "2026-08-05"
+        "verified": "2026-08-04"
       }
     },
     "structural_sha256": {
