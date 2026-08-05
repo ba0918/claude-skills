@@ -432,6 +432,7 @@
     "verified": "2026-08-04"
   },
   "github-issue": {
+    "carried_note": "#243 WARN 修正で ledger.py を変更（前任 note の carried_note 引き継ぎ / 拒否理由への原因ファイル添付 / 引数欠落の usage 化 / --impact-scenarios 空引数の拒否）。本スキルが呼ぶ --impact は編集前後でバイト一致、--status は列構成・他行とも不変（本スキル行の state のみ本承認で戻る）を確認済みのため実走せず承認。",
     "file_sha256": {
       "skills/github-issue/SKILL.md": "3e57ded338522ae78561336a94e50dd5697042263e6e7a28b69ab2e665d6afab",
       "skills/github-issue/fixtures.json": "3997abfe50abd8de1470506c5137700dd1ad7b86e2c87790b24830cde793760b",
@@ -457,9 +458,9 @@
       "skills/shared/references/measurement-identity.md": "051807f31d7a6799049d0f14aad6824f1c0d87a80cb5e15251480aab4ffb0384",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/shared/references/workspace-isolation.md": "8048ba07d1a7c112211ccaf56d503047af7494fcbef3c8ab6e7d10ab826d7ec5",
-      "skills/skill-regression/scripts/ledger.py": "17ccaa146c75aed8543a60d9921735be9dcb31caf870006bfeb6605ab9e1f427"
+      "skills/skill-regression/scripts/ledger.py": "51f0cd513ad2cabb4cec70eddc2659196da3c51abb672e52abade931cc129663"
     },
-    "note": "#243 WARN 修正で ledger.py を変更（前任 note の carried_note 引き継ぎ / 拒否理由への原因ファイル添付 / 引数欠落の usage 化 / --impact-scenarios 空引数の拒否）。本スキルが呼ぶ --impact は編集前後でバイト一致、--status は列構成・他行とも不変（本スキル行の state のみ本承認で戻る）を確認済みのため実走せず承認。",
+    "note": "#243 H-1/H-2/H-3 修正で ledger.py を変更（置き場所を誤ったオプションの拒否 / --accept の per-scenario 検証日の据え置き / 非 partial 経路の carried_note 引き継ぎ）。本スキルが呼ぶ --impact / --impact-scenarios / --status / --coverage は、変更前 HEAD 版を別ディレクトリで実行して出力・rc ともバイト一致を実測済みのため実走せず承認。",
     "result": "accepted-without-run",
     "scenarios": {
       "gi-001": {
@@ -554,7 +555,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "47050e38afb30c9a9b3a098a3f21340b277f991ce62f06659c61ef74d8d50a08",
+    "surface_sha256": "43b8b823cf78eb2df0490036beaea27b223929f8a8d85aca2de0936d1d878c6d",
     "verified": "2026-08-05"
   },
   "handoff": {
@@ -881,6 +882,7 @@
     "verified": "2026-08-04"
   },
   "skill-reviewer": {
+    "carried_note": "#243 WARN 修正で ledger.py を変更（前任 note の carried_note 引き継ぎ / 拒否理由への原因ファイル添付 / 引数欠落の usage 化 / --impact-scenarios 空引数の拒否）。本スキルが呼ぶ --impact は編集前後でバイト一致、--status は列構成・他行とも不変（本スキル行の state のみ本承認で戻る）を確認済みのため実走せず承認。",
     "file_sha256": {
       "skills/shared/references/coverage-ledger.md": "10c3ea12cf96f31749eacce497f43d5db9b6d26b495a55e6552c10089fff8376",
       "skills/shared/references/fix-action-taxonomy.md": "9f686fb66e66491c6a2260d427c18b2e2bcfbecc995cf899414045150b8d1c71",
@@ -888,14 +890,14 @@
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
       "skills/shared/references/skill-repository-profile.md": "fafc81d7ce71468606f3fd3c281b8f3a926dc3f0f48fcd221516720bf6c2fefe",
-      "skills/skill-regression/scripts/ledger.py": "17ccaa146c75aed8543a60d9921735be9dcb31caf870006bfeb6605ab9e1f427",
+      "skills/skill-regression/scripts/ledger.py": "51f0cd513ad2cabb4cec70eddc2659196da3c51abb672e52abade931cc129663",
       "skills/skill-reviewer/SKILL.md": "e6d09f4bfa4201780f9b0724a63f1605826959226ba15c84c3efd64b0dbe9d85",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "db06e7e49c22d1eb0b4725304b4858152c4f0577fa1df0234d0a189f33c72bda",
       "skills/skill-reviewer/references/output-contract.md": "7cd2fc72d01be97efab8fa5b0302de986e0ffec38fd4dadbfc2282f9e1982b81",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "#243 WARN 修正で ledger.py を変更（前任 note の carried_note 引き継ぎ / 拒否理由への原因ファイル添付 / 引数欠落の usage 化 / --impact-scenarios 空引数の拒否）。本スキルが呼ぶ --impact は編集前後でバイト一致、--status は列構成・他行とも不変（本スキル行の state のみ本承認で戻る）を確認済みのため実走せず承認。",
+    "note": "#243 H-1/H-2/H-3 修正で ledger.py を変更（置き場所を誤ったオプションの拒否 / --accept の per-scenario 検証日の据え置き / 非 partial 経路の carried_note 引き継ぎ）。本スキルが呼ぶ --impact / --impact-scenarios / --status / --coverage は、変更前 HEAD 版を別ディレクトリで実行して出力・rc ともバイト一致を実測済みのため実走せず承認。",
     "result": "accepted-without-run",
     "scenarios": {
       "sr-001": {
@@ -939,7 +941,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "d8ffdb576606d3570335e9756d9b9d214ceb3bca1f70b18565c74f98e8a722d1",
+    "surface_sha256": "ebcbd5bed043346a05e2d10195400dd22eab7ae48ba800503bb7fb5821f16acd",
     "verified": "2026-08-05"
   },
   "sweep-fix": {
