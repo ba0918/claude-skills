@@ -182,17 +182,19 @@ class Step3SkillIntegrationTests(unittest.TestCase):
         self.assertIn("TDD", requirements)
         self.assertIn("commit", requirements)
 
-    def test_cycle_fixture_covers_inner_satellite_context(self):
+    def test_cycle_fixtures_cover_inner_satellite_context_across_the_split(self):
         data = json.loads(CYCLE_FIXTURES.read_text(encoding="utf-8"))
-        scenario = next(item for item in data["scenarios"] if item["id"] == "cy-004")
-        requirements = " ".join(item["text"] for item in scenario["requirements"])
+        by_id = {item["id"]: item for item in data["scenarios"]}
+        context = " ".join(item["text"] for item in by_id["cy-004a"]["requirements"])
+        mode = " ".join(item["text"] for item in by_id["cy-004b"]["requirements"])
         for expected in (
             "pinned_plan", "resolved_isolation", "satellite_run_id",
             "satellite_capability_file", "workspace claim", "nested worktree",
-            "plan-implement", "singleton",
-            "result artifact", "issue close", "outer orchestrator", "tracked commit",
+            "plan-implement", "singleton", "tracked commit",
         ):
-            self.assertIn(expected, requirements)
+            self.assertIn(expected, context)
+        for expected in ("result artifact", "issue close", "outer orchestrator"):
+            self.assertIn(expected, mode)
 
 
 if __name__ == "__main__":

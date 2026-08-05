@@ -213,8 +213,8 @@
       ]
     },
     {
-      "id": "cy-004",
-      "title": "inner satellite context — 外側の worktree 解決を再実行しない",
+      "id": "cy-004a",
+      "title": "inner satellite context — 文脈採用と隔離規律",
       "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
       "executor_tier": "standard",
       "isolation": "worktree",
@@ -269,6 +269,40 @@
           ]
         },
         {
+          "text": "inner mode でも tracked commit は省略していない",
+          "critical": true
+        },
+        {
+          "text": "raw capability を prompt、artifact、report に含めていない",
+          "critical": true
+        }
+      ],
+      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic / independent とも worktree diff 対象）。 【#242 phase 終端化】原出典は manual:worktree-artifact-transport-step3。 要件が Phase 3/4/5 横断のため終端型にはしない（一時導入した実装 seed は下記の実走裁定で撤回済み。現在は BASE と同じく Phase 1 が実委譲で走る）。 inner の延期契約（result artifact / issue close / facts 返却）は元は 1 要件だったが、result artifact 不在だけが機械判定可能なため 3 つに分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。 【#242 実走裁定 2026-08-05】初回実走で R3（4 フィールドの plan-implement への中継）が観測不能になった。実装 seed + 進捗ファイル + Progress 🟢 が「Phase 1 委譲のスキップ」を誘発し、中継の観測前提（委譲の発生）を壊したため（fixture-schema 指針 7 の到達性違反）。seed を外し BASE の実 Phase 1 委譲形へ復帰。tracked commit 要件の git_path_committed(src/__init__.py) assert は seed が置く未コミットファイルに縛られた述語だったため除去し、要件文は不変のまま LLM 裁定へ返した（判定手段の巻き戻しであり緩和ではない）。 【#262 分割 2026-08-05】要件 11 件・全 critical で「どの性質が壊れたか」の解像度が落ちていたため cy-004 を 2 シナリオへ分割した（id cy-004 は廃止）。prompt / setup は両者で同一で、同じ 1 実行を別の要件レンズで判定する構図（要件本文は逐語で再配置し、書き換えはしていない）。 本シナリオが見るのは文脈採用と隔離規律（対になるフェーズ実行・延期の面は cy-004b）。"
+    },
+    {
+      "id": "cy-004b",
+      "title": "inner satellite mode — フェーズ実行と outer への延期",
+      "source": ".agents/artifacts/plans/20260805004006_cycle-fixture-phase-terminal.md",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "__pycache__/\n/.agents/artifacts/\n/.agents/runtime/\n",
+          ".agents/artifacts/status.md": "SENTINEL STATUS\n",
+          ".agents/artifacts/session-history.md": "SENTINEL HISTORY\n",
+          ".agents/artifacts/idea-status.md": "SENTINEL DERIVED INDEX\n",
+          ".agents/artifacts/plans/20260729000000_inner.md": "# Inner plan\n\n**Cycle ID:** `20260729000000`\n**Status:** 🟡 Planning\n\n---\n\n## 🎯 Goal\n\nAdd a minimal inner feature with a stable, testable contract.\n\n## ✅ Acceptance criteria\n\n- `src.inner.inner_feature()` exists and returns the exact string `inner feature`.\n- `tests/test_inner.py` covers the return value.\n- The implementation and test are committed while singleton artifact files remain untouched in satellite mode.\n\n## 🔧 Implementation Steps\n\n1. **Step 1**\n   - Files: `src/inner.py`, `tests/test_inner.py`\n   - Implement `inner_feature()` and its unittest according to the acceptance criteria.\n",
+          ".agents/runtime/satellite-capability": "fixture-capability"
+        },
+        "git": {
+          "init": true,
+          "branch": "feat/inner",
+          "commit": true
+        }
+      },
+      "prompt": "Run cycle with pinned_plan=.agents/artifacts/plans/20260729000000_inner.md, resolved_isolation=worktree, satellite_run_id=batch-42-A, and satellite_capability_file=.agents/runtime/satellite-capability.",
+      "requirements": [
+        {
           "text": "Phase 3 のレビューが satellite mode でも satellite worktree の diff に対して実行されている（fix loop に入った場合、fix commit は satellite worktree に適用される）",
           "critical": true
         },
@@ -294,17 +328,9 @@
         {
           "text": "Phase 5 到達時は review verdict と final gate verdict を含む facts を、Phase 4 停止時は停止理由と各レビューの verdict を含む stop facts を返している",
           "critical": true
-        },
-        {
-          "text": "inner mode でも tracked commit は省略していない",
-          "critical": true
-        },
-        {
-          "text": "raw capability を prompt、artifact、report に含めていない",
-          "critical": true
         }
       ],
-      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic / independent とも worktree diff 対象）。 【#242 phase 終端化】原出典は manual:worktree-artifact-transport-step3。 要件が Phase 3/4/5 横断のため終端型にはしない（一時導入した実装 seed は下記の実走裁定で撤回済み。現在は BASE と同じく Phase 1 が実委譲で走る）。 inner の延期契約（result artifact / issue close / facts 返却）は元は 1 要件だったが、result artifact 不在だけが機械判定可能なため 3 つに分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。 【#242 実走裁定 2026-08-05】初回実走で R3（4 フィールドの plan-implement への中継）が観測不能になった。実装 seed + 進捗ファイル + Progress 🟢 が「Phase 1 委譲のスキップ」を誘発し、中継の観測前提（委譲の発生）を壊したため（fixture-schema 指針 7 の到達性違反）。seed を外し BASE の実 Phase 1 委譲形へ復帰。tracked commit 要件の git_path_committed(src/__init__.py) assert は seed が置く未コミットファイルに縛られた述語だったため除去し、要件文は不変のまま LLM 裁定へ返した（判定手段の巻き戻しであり緩和ではない）。"
+      "notes": "parallel-cycle の 1-plan 経路が解決済み satellite isolation を二重に作らないことを固定する。Phase 3/4 とも satellite mode で実行（Phase 4 holistic / independent とも worktree diff 対象）。 【#242 phase 終端化】原出典は manual:worktree-artifact-transport-step3。 要件が Phase 3/4/5 横断のため終端型にはしない（一時導入した実装 seed は下記の実走裁定で撤回済み。現在は BASE と同じく Phase 1 が実委譲で走る）。 inner の延期契約（result artifact / issue close / facts 返却）は元は 1 要件だったが、result artifact 不在だけが機械判定可能なため 3 つに分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。 【#242 実走裁定 2026-08-05】初回実走で R3（4 フィールドの plan-implement への中継）が観測不能になった。実装 seed + 進捗ファイル + Progress 🟢 が「Phase 1 委譲のスキップ」を誘発し、中継の観測前提（委譲の発生）を壊したため（fixture-schema 指針 7 の到達性違反）。seed を外し BASE の実 Phase 1 委譲形へ復帰。tracked commit 要件の git_path_committed(src/__init__.py) assert は seed が置く未コミットファイルに縛られた述語だったため除去し、要件文は不変のまま LLM 裁定へ返した（判定手段の巻き戻しであり緩和ではない）。 【#262 分割 2026-08-05】要件 11 件・全 critical で「どの性質が壊れたか」の解像度が落ちていたため cy-004 を 2 シナリオへ分割した（id cy-004 は廃止）。prompt / setup は両者で同一で、同じ 1 実行を別の要件レンズで判定する構図（要件本文は逐語で再配置し、書き換えはしていない）。 本シナリオが見るのはフェーズ実行と outer への延期（対になる文脈採用・隔離規律の面は cy-004a）。"
     },
     {
       "id": "cy-005",
