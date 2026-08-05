@@ -27,8 +27,13 @@ ISOLATIONS = ("worktree", "none")
 TOP_KEYS = ("skill", "scenarios")
 SCENARIO_KEYS = (
     "id", "title", "source", "executor_tier", "isolation", "setup",
-    "prompt", "requirements", "notes",
+    "prompt", "requirements", "notes", "exercises",
 )
+# シナリオ内容ハッシュから外すキー。`exercises` は「このシナリオがどの挙動面
+# ファイルを踏むか」という影響メタデータで、シナリオが何を測るかは変えない。
+# 含めると宣言を足しただけで rerun ガードが再構築を要求し、台帳も内容差分と
+# 読む（宣言の導入コストが実走 1 本ぶんになる）。
+SHA_EXCLUDED_KEYS = ("exercises",)
 REQUIREMENT_KEYS = ("text", "critical", "assert")
 SETUP_KEYS = ("files", "mtimes", "git", "env")
 GIT_KEYS = ("init", "commit", "remote", "branch", "message", "commits")
@@ -475,6 +480,40 @@ def _validate_setup(where, setup):
     return errors
 
 
+def scenario_sha256(scenario):
+    """シナリオ内容ハッシュの正本（SHA_EXCLUDED_KEYS を除いた決定的ハッシュ）。
+
+    rerun ガード（regression_queue）と持ち越し判定（ledger）の双方がこの関数を
+    使う。別々に実装すると、片方だけが exercises を見る食い違いが生まれ、
+    「台帳は持ち越せると言うのに rerun は再構築を要求する」状態になる。
+    """
+    payload = {k: v for k, v in scenario.items() if k not in SHA_EXCLUDED_KEYS}
+    return hashlib.sha256(
+        json.dumps(payload, ensure_ascii=False,
+                   sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def _validate_exercises(where, exercises):
+    """`exercises` の形だけを検査する（面に実在するかは ledger 側の判定）。
+
+    ここで見るのは宣言の書式であり、宣言したパスが現在の挙動面にあるかどうかは
+    面を算出する側（ledger）が持つ。両方をここでやると fixtures.json の検証が
+    リポジトリ全体の状態に依存し、静的検査でなくなる。
+    """
+    if not isinstance(exercises, list) or not all(
+            isinstance(p, str) for p in exercises):
+        return [_err(where, "exercises は文字列の配列である必要がある")]
+    errors = []
+    for path in exercises:
+        if os.path.isabs(path) or ".." in path.split("/"):
+            errors.append(_err(
+                where, f"exercises のパス {path!r} はリポジトリ相対でなければならない"))
+        elif not path.startswith("skills/"):
+            errors.append(_err(
+                where, f"exercises のパス {path!r} は skills/ 配下でなければならない"))
+    return errors
+
+
 def validate(fixture, source="fixtures.json"):
     """fixtures.json の内容を検証し、違反メッセージ一覧を返す（空なら合格）。後方互換。"""
     errors, _ = validate_with_warnings(fixture, source)
@@ -523,6 +562,9 @@ def validate_with_warnings(fixture, source="fixtures.json"):
         isolation = scenario.get("isolation", "worktree")
         if isolation not in ISOLATIONS:
             errors.append(_err(where, f"isolation {isolation!r} が不正（有効: {', '.join(ISOLATIONS)}）"))
+
+        if "exercises" in scenario:
+            errors += _validate_exercises(where, scenario["exercises"])
 
         setup = scenario.get("setup")
         if setup is not None:
