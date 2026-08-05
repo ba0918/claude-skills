@@ -78,13 +78,23 @@ def restore_base(root, rel, recorded_sha, max_revisions=MAX_REVISIONS):
     return None
 
 
-def _current_text(root, rel):
-    """現在の内容（面から消えたファイルは空文字、読めなければ None）。"""
-    path = os.path.join(root, rel)
-    if not os.path.isfile(path):
+def _current_text(root, rel, current_hashes):
+    """変更後の内容（面から外れたファイルは空文字、読めなければ None）。
+
+    after 側を「ディスクに実体があるか」ではなく**現在の面に属しているか**で
+    決める。SKILL.md や中間 reference からリンクを外す編集では、ファイルは
+    ディスクに残ったまま面から外れる。実体の有無で決めると、その差分は changed に
+    名前が挙がるのに diff 本文が 1 バイトも出ず、判定器には「名前だけあって何も
+    変わっていない」= unaffected と読める（偽陰性方向）。面から外れたファイルは
+    もうスキルの挙動に寄与しないので、全文削除として描くのが正確でもある。
+
+    current_hashes は ledger.file_hashes の出力（面のファイルのみを鍵に持ち、
+    実体の無い参照先は MISSING）。面の外と壊れたリンクはどちらも空文字になる。
+    """
+    if current_hashes.get(rel, ledger._MISSING) == ledger._MISSING:
         return ""
     try:
-        with open(path, encoding="utf-8") as f:
+        with open(os.path.join(root, rel), encoding="utf-8") as f:
             return f.read()
     except (OSError, UnicodeDecodeError):
         return None
@@ -143,7 +153,7 @@ def build_input(root, skill, entry):
         # 前回の面に無かったファイルは「復元不能」ではない（変更前が存在しない）
         base = "" if recorded_sha == ledger._MISSING else restore_base(
             root, rel, recorded_sha)
-        after = _current_text(root, rel)
+        after = _current_text(root, rel, current)
         if base is None or after is None:
             unrestorable.append(rel)
             blocks.append(f"--- {rel}\n({UNRESTORABLE_RATIONALE})\n")

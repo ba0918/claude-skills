@@ -44,6 +44,14 @@ def _sha256(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _gate(entries, corpus_sha256):
+    """件数の下限は満たした較正ゲート（ここで見たいのは判定ファイルの側）。"""
+    return ledger.CalibrationGate(
+        entries=entries, corpus_sha256=corpus_sha256,
+        corpus_counts={side: ledger.MIN_CASES
+                       for side in ledger.CALIBRATION_SIDES})
+
+
 class _RepoHarness(unittest.TestCase):
     """スキル a（3 シナリオ）と共有契約 2 本を持つ git repo。"""
 
@@ -194,7 +202,7 @@ class TestBuildInput(_RepoHarness):
             reason = ledger.validate_judgment(
                 built["skeleton"], "a", entry["file_sha256"],
                 ledger.file_hashes(root, surface),
-                ledger.CalibrationGate(entries={}, corpus_sha256="x"))
+                _gate(entries={}, corpus_sha256="x"))
             self.assertIsNotNone(reason)
 
     def test_an_added_file_diffs_against_an_empty_base(self):
@@ -215,6 +223,23 @@ class TestBuildInput(_RepoHarness):
             entry = self._verified(root)
             os.remove(os.path.join(root, "skills/shared/references/gate.md"))
             built = semantic_diff.build_input(root, "a", entry)
+            self.assertEqual(built["unrestorable"], [])
+            self.assertIn("-gate contract v1", built["diff"])
+
+    def test_a_file_that_left_the_surface_but_stays_on_disk_shows_as_deleted(self):
+        # リンクを外す編集ではファイルはディスクに残る。after 側を実体の有無で
+        # 決めると changed に名前だけ挙がって diff が空になり、判定器には
+        # 「何も変わっていない」= unaffected と読める（偽陰性方向の入力欠陥）
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            entry = self._verified(root)
+            _write(root, "skills/a/SKILL.md",
+                   "see [tdd](../shared/references/tdd.md)\n"
+                   "This line is plain prose.\n")
+            built = semantic_diff.build_input(root, "a", entry)
+            gate = "skills/shared/references/gate.md"
+            self.assertTrue(os.path.isfile(os.path.join(root, gate)))
+            self.assertIn(gate, built["changed"])
             self.assertEqual(built["unrestorable"], [])
             self.assertIn("-gate contract v1", built["diff"])
 
@@ -263,9 +288,9 @@ class TestUnrestorableBase(_RepoHarness):
             reason = ledger.validate_judgment(
                 skeleton, "a", entry["file_sha256"],
                 ledger.file_hashes(root, surface),
-                ledger.CalibrationGate(
-                    entries={"m": {"must_flag_fn": 0, "corpus_sha256": "c"}},
-                    corpus_sha256="c"))
+                _gate(entries={"m": {"must_flag_fn": 0,
+                                     "corpus_sha256": "c"}},
+                      corpus_sha256="c"))
             self.assertIsNone(reason)
 
     def test_the_diff_body_states_that_the_base_is_missing(self):
@@ -370,12 +395,17 @@ class TestEndToEnd(_RepoHarness):
     """
 
     def _calibrate(self, root, model):
-        _write(root, "skills/skill-regression/calibration/must_flag/f0.json",
-               json.dumps({"id": "f0", "expected": "must-flag"}))
-        _write(root, "skills/skill-regression/calibration/must_pass/p0.json",
-               json.dumps({"id": "p0", "expected": "must-pass"}))
+        # ゲートは片側 MIN_CASES 件を要求する（母数の薄い較正は通らない）
+        for i in range(ledger.MIN_CASES):
+            _write(root,
+                   f"skills/skill-regression/calibration/must_flag/f{i}.json",
+                   json.dumps({"id": f"f{i}", "expected": "must-flag"}))
+            _write(root,
+                   f"skills/skill-regression/calibration/must_pass/p{i}.json",
+                   json.dumps({"id": f"p{i}", "expected": "must-pass"}))
         _write(root, "skills/skill-regression/calibration.json", json.dumps({
-            model: {"must_flag_fn": 0, "must_pass_fp": 1,
+            model: {"must_flag_cases": ledger.MIN_CASES, "must_flag_fn": 0,
+                    "must_pass_cases": ledger.MIN_CASES, "must_pass_fp": 1,
                     "corpus_sha256": ledger.corpus_sha256(root),
                     "verified": "2026-08-05"}}))
 
