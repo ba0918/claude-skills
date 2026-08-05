@@ -511,7 +511,8 @@ def check(root, entries):
             hit = impacted_scenarios(
                 skill, current_surface, scenarios, changed,
                 entry.get("scenarios"))
-            label = "all" if len(hit) == len(scenarios) else ",".join(hit)
+            label = ("all" if len(hit) == len(scenarios)
+                     else ",".join(hit) or "none")
             detail += f" → scenarios: {label} ({len(hit)}/{len(scenarios)})"
         issues.append(("stale", skill, detail))
     return issues

@@ -796,6 +796,24 @@ class TestCheckShowsImpactedScenarios(unittest.TestCase):
             self.assertEqual([i[0] for i in issues], ["stale"])  # kind は不変
             self.assertIn("scenarios: a-001 (1/2)", issues[0][2])
 
+    def test_zero_impact_is_shown_as_none(self):
+        # 宣言追加だけの fixtures.json 変更。空文字を出すと「表示が壊れている」
+        # のか「再走ゼロ」なのかが読み手に判別できない
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            entry = ledger.make_entry(root, surface, "pass", "2026-08-01")
+            entry["scenarios"] = ledger.full_scenarios_record(
+                root, "a", "pass", "2026-08-01")
+            fixture = json.loads(
+                open(os.path.join(root, "skills/a/fixtures.json")).read())
+            fixture["scenarios"][1]["exercises"] = [
+                "skills/shared/references/tdd.md"]
+            _write(root, "skills/a/fixtures.json",
+                   json.dumps(fixture, ensure_ascii=False))
+            issues = ledger.check(root, {"a": entry})
+            self.assertIn("scenarios: none (0/2)", issues[0][2])
+
     def test_full_impact_is_shown_as_all(self):
         with tempfile.TemporaryDirectory() as root:
             self._repo(root)

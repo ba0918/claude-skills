@@ -144,7 +144,7 @@
   "cycle": {
     "file_sha256": {
       "skills/cycle/SKILL.md": "8fcf89b2df01a9d09a74dc8225e2a51eb130e6bb849663125109aa8b0c2ba22a",
-      "skills/cycle/fixtures.json": "f7187c1d062713de72869b9b606502eaab57b66f3c3a8e86a2c95a4f2bf7c4cf",
+      "skills/cycle/fixtures.json": "9bca5151bc1fa0f084f643069f6c819221ae81e06367224ee34c2044f7578414",
       "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
@@ -167,8 +167,110 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "phase 終端化後の初回 20 scn 実走 (#242, Sonnet executor, batch cy-run-20260805 + cy004-rerun2)。全 critical pass、機械 assert 28 判定全通過。non-critical partial 2 件 (cy-009 R5 六行フォーマッタは散文責務で機械ゲートなし / cy-014 R5 表示は headless で artifact のみ)。watchdog status query は smoke cy-001 で 4 回、fix loop 系+satellite で計 11 回、終端型 13 本は 0 回 (旧設計は全 scn で発生)。cy-004 は初走で R3 到達性欠陥を検出し fixture 是正 (seed 撤回 ce14596+565fb0a) 後の再走で pass",
+    "note": "#243 パイロット: exercises 宣言 18/20 を付与（cy-001 通し smoke と cy-004 satellite は面をほぼ全域踏むため意図的に未宣言）。実走ゼロ、全 20 シナリオを持ち越し。宣言は cy-run-20260805 の execution_path とスキルの phase→参照構造から導出",
     "result": "pass",
+    "scenarios": {
+      "cy-001": {
+        "result": "pass",
+        "scenario_sha256": "73bb611470d29721d749882dce27a34bb87c64cbdc814b50a4251b63a1e269ae",
+        "verified": "2026-08-05"
+      },
+      "cy-002": {
+        "result": "pass",
+        "scenario_sha256": "706ec1306d6bd20d228983f9ef7f24d5371c8b88b258cbe6ef35599a573656f2",
+        "verified": "2026-08-05"
+      },
+      "cy-003": {
+        "result": "pass",
+        "scenario_sha256": "4b08f44ffdb72531169fe9a7766cce80a5b677aa741752de3599ff297bd938e4",
+        "verified": "2026-08-05"
+      },
+      "cy-004": {
+        "result": "pass",
+        "scenario_sha256": "ef5e113cb63e64ea067072d94f58e7bff5f2953b5e6425aa6cc3b1aeb5bc4f7d",
+        "verified": "2026-08-05"
+      },
+      "cy-005": {
+        "result": "pass",
+        "scenario_sha256": "51743c8f308cbd3e00346dc66a3fce39d13492022dbaa981132154597cd884e5",
+        "verified": "2026-08-05"
+      },
+      "cy-006": {
+        "result": "pass",
+        "scenario_sha256": "e44d35f38412bda802701b25ecec8231bf3fe1377e1ab7495f79766f619991e2",
+        "verified": "2026-08-05"
+      },
+      "cy-007": {
+        "result": "pass",
+        "scenario_sha256": "d6b81926cd422647f463bfc89aee37b4c67a4e30f17d2ca4a5ccad288decd08e",
+        "verified": "2026-08-05"
+      },
+      "cy-008": {
+        "result": "pass",
+        "scenario_sha256": "0e515d11354fd7d76c4264681afe41cc0be175c552937cbe2ff91598b6c3e095",
+        "verified": "2026-08-05"
+      },
+      "cy-009": {
+        "result": "pass",
+        "scenario_sha256": "43c8a5790587bb67ba1115488760498b7cb14c4a8348e6419971c0c45f8d506d",
+        "verified": "2026-08-05"
+      },
+      "cy-010": {
+        "result": "pass",
+        "scenario_sha256": "250b624d78cafd9d71a7d434ea8a1e853402010080dfcd6ced4010b274539d7d",
+        "verified": "2026-08-05"
+      },
+      "cy-011": {
+        "result": "pass",
+        "scenario_sha256": "b70bfdad3c07b1a581b0f74b14dc6c8174d1f2c6ccda268f579bc813649525cf",
+        "verified": "2026-08-05"
+      },
+      "cy-012": {
+        "result": "pass",
+        "scenario_sha256": "ae6054ffe8c597e824a777fa9d4f29b56a73c510278ea6ea4b3c2e96bf5eb72c",
+        "verified": "2026-08-05"
+      },
+      "cy-013": {
+        "result": "pass",
+        "scenario_sha256": "32880e2e9ee4e1c3971dcf5becf654378b891cf5bd651e62de67cf38e35a222e",
+        "verified": "2026-08-05"
+      },
+      "cy-014": {
+        "result": "pass",
+        "scenario_sha256": "3e8b32740ab73c14509b3852d55da5323d9e3dbc75e95166a6d85e8ddab42383",
+        "verified": "2026-08-05"
+      },
+      "cy-015": {
+        "result": "pass",
+        "scenario_sha256": "4d5bf92cc1bb368653fe401dce277134611be132456737abfae9ced2f7b8d14f",
+        "verified": "2026-08-05"
+      },
+      "cy-016": {
+        "result": "pass",
+        "scenario_sha256": "593db8384d254a97214ee8f3fc8ad215a78efa2f6d002a4f3925bc96d75dd3b7",
+        "verified": "2026-08-05"
+      },
+      "cy-017": {
+        "result": "pass",
+        "scenario_sha256": "e5b2885a8105d80af99f6481aaa4e60df98d96a7011b3590dd3e0dfcaba975bc",
+        "verified": "2026-08-05"
+      },
+      "cy-018": {
+        "result": "pass",
+        "scenario_sha256": "5b984623dce237e26de717946982fcca8f1056e259c6c6b99e1eff3581d5d870",
+        "verified": "2026-08-05"
+      },
+      "cy-019": {
+        "result": "pass",
+        "scenario_sha256": "5e6059e68cfefb54d481983e07b1d95c7cfb944753c78bcf1ce941d33dae7c77",
+        "verified": "2026-08-05"
+      },
+      "cy-020": {
+        "result": "pass",
+        "scenario_sha256": "63948fb2f2f21565bc0fb7d1e733f898f95c7688ed9d8687cc232d902cc6a670",
+        "verified": "2026-08-05"
+      }
+    },
     "structural_sha256": {
       "skills/cycle/SKILL.md": "086560464952dd2e79c52fd254b6b5133a4a1c7b005a27b189c7257eb1ebc1f7",
       "skills/cycle/references/completion.md": "1b2e05b6506e5b46edc76d4cb90f5c92ae938317eeb7cd477c2aec240536072c",
@@ -214,7 +316,7 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "2883f504e232a2bbde4eb781ceb447807cd9d837ae6fc2a28df784eb6c555724",
+    "surface_sha256": "ee30442a9c551ecdbaebc07d609f0243af79cb8f1d9513a4e97b0c2a51f614cd",
     "verified": "2026-08-05"
   },
   "decision-journal": {

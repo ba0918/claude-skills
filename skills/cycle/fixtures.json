@@ -114,7 +114,12 @@
           "critical": false
         }
       ],
-      "notes": "Phase 0 Step 1.5 のパス検証 edge。CYCLE START 前の中断・mv 非実行（案内のみ）・migration 注記を固定する。 【#242】既に Phase 0 終端型のため setup は不変更。#241 の型付き assert を付与し、ファイル不動とコミットゼロを LLM 裁定から機械判定へ移した。 「原本が原位置に残る」と「mv は案内のみで実行者は動かしていない」は元は 1 要件だったが、前者だけが機械判定可能なため分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。"
+      "notes": "Phase 0 Step 1.5 のパス検証 edge。CYCLE START 前の中断・mv 非実行（案内のみ）・migration 注記を固定する。 【#242】既に Phase 0 終端型のため setup は不変更。#241 の型付き assert を付与し、ファイル不動とコミットゼロを LLM 裁定から機械判定へ移した。 「原本が原位置に残る」と「mv は案内のみで実行者は動かしていない」は元は 1 要件だったが、前者だけが機械判定可能なため分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。",
+      "exercises": [
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/workspace-lock.md"
+      ]
     },
     {
       "id": "cy-003",
@@ -194,7 +199,18 @@
           "critical": false
         }
       ],
-      "notes": "自動選択（完了済みスキップ）+ Phase 5 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase5_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。2026-08-02: 実レビュー verdict の非決定性で 2 実走連続 Phase 3/4 WARN 正規停止となり本シナリオ固有の Phase 5 分岐に到達しなかったため、cy-005 以降と同じ verdict 仮定方式にプロンプトを変更（要件 = oracle は不変更）。live レビューのフルサイクルは cy-001 が引き続きカバーする。 【#242 phase 終端化】原出典は empirical-tuning:20260722-lean-rollout。 Phase 5 終端型（実装は seed 済みコミット）。要件 2 だった「選択した計画のステップが TDD エビデンス付きで実装され実装コミットが git log に存在する」はcy-001（through-run smoke）へ移管し、空いた critical 枠には Phase 5 のplan status 更新（本シナリオ本来の関心）を機械判定で置いた。 完了済み計画の「Status 行が残存している」と「全文が変更されていない」は元は 1 要件だったが、前者だけが機械判定可能なため分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。全文不変を表現できる述語は存在しないため、後者は baseline との突き合わせによる LLM 裁定に残す。"
+      "notes": "自動選択（完了済みスキップ）+ Phase 5 部分失敗許容の edge。ファイル名タイムスタンプ最新の完了済み計画を飛ばして未完了を選ぶこと、status.md 不在で phase5_failures に記録しつつ完走することを固定する。依存同梱は cy-001 と同じ。2026-08-02: 実レビュー verdict の非決定性で 2 実走連続 Phase 3/4 WARN 正規停止となり本シナリオ固有の Phase 5 分岐に到達しなかったため、cy-005 以降と同じ verdict 仮定方式にプロンプトを変更（要件 = oracle は不変更）。live レビューのフルサイクルは cy-001 が引き続きカバーする。 【#242 phase 終端化】原出典は empirical-tuning:20260722-lean-rollout。 Phase 5 終端型（実装は seed 済みコミット）。要件 2 だった「選択した計画のステップが TDD エビデンス付きで実装され実装コミットが git log に存在する」はcy-001（through-run smoke）へ移管し、空いた critical 枠には Phase 5 のplan status 更新（本シナリオ本来の関心）を機械判定で置いた。 完了済み計画の「Status 行が残存している」と「全文が変更されていない」は元は 1 要件だったが、前者だけが機械判定可能なため分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。全文不変を表現できる述語は存在しないため、後者は baseline との突き合わせによる LLM 裁定に残す。",
+      "exercises": [
+        "skills/cycle/references/completion.md",
+        "skills/cycle/references/final-gate-delegation.md",
+        "skills/plan/references/status-update-guide.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/codex-integration.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md",
+        "skills/shared/scripts/secret_detect.py"
+      ]
     },
     {
       "id": "cy-004",
@@ -354,7 +370,13 @@
           "critical": false
         }
       ],
-      "notes": "Phase 3 ESCALATE 中断パスの固定。ESCALATE は spec gap 検出による意図的中断で、Phase 5 を実行せず plan status を復元する。実際の plan-reviewer 実行は必須ではなく、ESCALATE verdict の模擬で経路を検証する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 3 終端型。plan Status は seed 時点で 🟡 In Progress とし、⚠️ Review Failed への復元が実遷移として観測できるようにした（復元後の値を始点にすると要件が自明に満たされる）。要件 3 の「issue close が行われていない」節は本 fixture に issue 実体が無く判定不能だったため除去し、最終的に result ファイル不在の機械判定だけを主張する形にした。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "Phase 3 ESCALATE 中断パスの固定。ESCALATE は spec gap 検出による意図的中断で、Phase 5 を実行せず plan status を復元する。実際の plan-reviewer 実行は必須ではなく、ESCALATE verdict の模擬で経路を検証する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 3 終端型。plan Status は seed 時点で 🟡 In Progress とし、⚠️ Review Failed への復元が実遷移として観測できるようにした（復元後の値を始点にすると要件が自明に満たされる）。要件 3 の「issue close が行われていない」節は本 fixture に issue 実体が無く判定不能だったため除去し、最終的に result ファイル不在の機械判定だけを主張する形にした。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。",
+      "exercises": [
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md"
+      ]
     },
     {
       "id": "cy-006",
@@ -423,7 +445,16 @@
           "critical": false
         }
       ],
-      "notes": "Phase 4 BLOCK 停止パスの固定。最終ゲートの BLOCK は fix loop なしで停止し、Phase 5 を実行せず plan status を復元する。Phase 3 通過後の停止であることを確認する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 Phase 3 の verdict は PASS 注入で固定した（Phase 4 に到達しないと本シナリオの対象経路を測れず、実レビューの verdict は非決定のため）。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "Phase 4 BLOCK 停止パスの固定。最終ゲートの BLOCK は fix loop なしで停止し、Phase 5 を実行せず plan status を復元する。Phase 3 通過後の停止であることを確認する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 Phase 3 の verdict は PASS 注入で固定した（Phase 4 に到達しないと本シナリオの対象経路を測れず、実レビューの verdict は非決定のため）。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。",
+      "exercises": [
+        "skills/cycle/references/final-gate-delegation.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/codex-integration.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md",
+        "skills/shared/scripts/secret_detect.py"
+      ]
     },
     {
       "id": "cy-007",
@@ -495,7 +526,12 @@
           "critical": false
         }
       ],
-      "notes": "Phase 2 clean tree gate の固定。commit 失敗で dirty tree が残ると Phase 3/4 の git diff cycle_start_sha..HEAD にその変更が含まれずレビューをバイパスするため、Phase 3 に進まず中断する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 2 終端型。実装コミットは seed し、切り出したヘルパ helpers.py を未コミットのまま残すことで dirty tree gate に直行させる（baseline はcommit のパス配列形、実装は commits 併用）。中断メッセージの一覧要件に付けていた git_path_committed(helpers.py, expect=false) は、要件文（メッセージに一覧が含まれる）のどの節とも対応せず seed の前提だけで恒真だったため削除し、LLM 裁定に戻した（複合要件への部分 assert は未 assert 節を判定から消すため、無価値な述語を要件に残さない）。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "Phase 2 clean tree gate の固定。commit 失敗で dirty tree が残ると Phase 3/4 の git diff cycle_start_sha..HEAD にその変更が含まれずレビューをバイパスするため、Phase 3 に進まず中断する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 2 終端型。実装コミットは seed し、切り出したヘルパ helpers.py を未コミットのまま残すことで dirty tree gate に直行させる（baseline はcommit のパス配列形、実装は commits 併用）。中断メッセージの一覧要件に付けていた git_path_committed(helpers.py, expect=false) は、要件文（メッセージに一覧が含まれる）のどの節とも対応せず seed の前提だけで恒真だったため削除し、LLM 裁定に戻した（複合要件への部分 assert は未 assert 節を判定から消すため、無価値な述語を要件に残さない）。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。",
+      "exercises": [
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/workspace-lock.md"
+      ]
     },
     {
       "id": "cy-008",
@@ -553,7 +589,16 @@
           ]
         }
       ],
-      "notes": "Phase 4 UNVERIFIED 停止パスの固定。holistic review は高性能モデルで cross-cutting 分析を行う必須レビューで、外部システムで実行される independent review では代替できない。independent が PASS でも holistic が欠落すれば UNVERIFIED で停止する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。 Phase 3 の verdict は PASS 注入で固定した（Phase 4 に到達しないと本シナリオの対象経路を測れず、実レビューの verdict は非決定のため）。"
+      "notes": "Phase 4 UNVERIFIED 停止パスの固定。holistic review は高性能モデルで cross-cutting 分析を行う必須レビューで、外部システムで実行される independent review では代替できない。independent が PASS でも holistic が欠落すれば UNVERIFIED で停止する。 【#242 phase 終端化】原出典は manual:issue-187-stop-path。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。 Phase 3 の verdict は PASS 注入で固定した（Phase 4 に到達しないと本シナリオの対象経路を測れず、実レビューの verdict は非決定のため）。",
+      "exercises": [
+        "skills/cycle/references/final-gate-delegation.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/codex-integration.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md",
+        "skills/shared/scripts/secret_detect.py"
+      ]
     },
     {
       "id": "cy-009",
@@ -597,7 +642,16 @@
           "critical": false
         }
       ],
-      "notes": "standalone outer orchestrator が所有する protected-state transition の回帰。Phase 4 の pre-merge verdict を evidence として再利用せず、merge 後 SHA で両 state を再取得して checker を fail-closed に扱う。3つの負経路は同一 gate の判定表として固定する。 【#242 / #228 点検】profile 発効（2026-08-03）後も要件 1・2・4・5 はpublication-protocol / evidence-format の現行契約と一致する。要件 3 だけが「canonical evidence checker を明示引数で実行し、exit 0 なら main を advance」という旧い形を指しており、checker 判定と破壊的操作を advance サブコマンド 1 本に閉じた現行契約と矛盾していた（設計指針 7 の contract consistency 違反）ため現行手順へ言い換えた。要求水準は変えていない（fail-closed の線は要件 4 が担う）。"
+      "notes": "standalone outer orchestrator が所有する protected-state transition の回帰。Phase 4 の pre-merge verdict を evidence として再利用せず、merge 後 SHA で両 state を再取得して checker を fail-closed に扱う。3つの負経路は同一 gate の判定表として固定する。 【#242 / #228 点検】profile 発効（2026-08-03）後も要件 1・2・4・5 はpublication-protocol / evidence-format の現行契約と一致する。要件 3 だけが「canonical evidence checker を明示引数で実行し、exit 0 なら main を advance」という旧い形を指しており、checker 判定と破壊的操作を advance サブコマンド 1 本に閉じた現行契約と矛盾していた（設計指針 7 の contract consistency 違反）ため現行手順へ言い換えた。要求水準は変えていない（fail-closed の線は要件 4 が担う）。",
+      "exercises": [
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/evidence-format.md",
+        "skills/shared/references/publication-protocol.md",
+        "skills/shared/references/workspace-lock.md",
+        "skills/shared/scripts/evidence_check.py",
+        "skills/shared/scripts/publication_advance.py"
+      ]
     },
     {
       "id": "cy-010",
@@ -666,7 +720,15 @@
           "critical": false
         }
       ],
-      "notes": "Phase 3 fix loop exhaustion の固定。2 回の fix iteration 後も BLOCK findings が残る場合、fix loop を打ち切り plan status を復元して cycle を停止する。Phase 4/5 は実行されない。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "Phase 3 fix loop exhaustion の固定。2 回の fix iteration 後も BLOCK findings が残る場合、fix loop を打ち切り plan status を復元して cycle を停止する。Phase 4/5 は実行されない。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。",
+      "exercises": [
+        "skills/cycle/references/fix-delegation.md",
+        "skills/plan-reviewer/references/output-format.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md"
+      ]
     },
     {
       "id": "cy-011",
@@ -732,7 +794,15 @@
           "critical": false
         }
       ],
-      "notes": "Phase 1 retry exhaustion の固定。plan-implement が plan status を 🟡 In Progress に変更した後にサブエージェントが 2 回失敗した場合、plan status を ⚠️ Review Failed に復元して次回 auto-select を可能にする。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 1 終端型のため seed しない（実装が走らないことがシナリオの前提）。本シナリオの plan は Base SHA を持たないため Phase 0 Step 3 の記録経路が実走する。phase 終端化で cy-012 が「既存 Base SHA を採用する」側へ寄った結果、記録側の実走保証が空くため、その要件をここへ移管した。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "Phase 1 retry exhaustion の固定。plan-implement が plan status を 🟡 In Progress に変更した後にサブエージェントが 2 回失敗した場合、plan status を ⚠️ Review Failed に復元して次回 auto-select を可能にする。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 1 終端型のため seed しない（実装が走らないことがシナリオの前提）。本シナリオの plan は Base SHA を持たないため Phase 0 Step 3 の記録経路が実走する。phase 終端化で cy-012 が「既存 Base SHA を採用する」側へ寄った結果、記録側の実走保証が空くため、その要件をここへ移管した。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。",
+      "exercises": [
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/tdd-contract.md",
+        "skills/shared/references/verification-gate.md",
+        "skills/shared/references/workspace-lock.md"
+      ]
     },
     {
       "id": "cy-012",
@@ -783,7 +853,18 @@
           "critical": false
         }
       ],
-      "notes": "cycle_start_sha 永続化の回帰。初回実行で Base SHA を plan に記録し、再実行時はそれを再利用することで、元の実装が常にレビュー範囲に含まれることを固定する。fixture 環境には baseline の実 SHA が {{fixture:sha:baseline}} の置換で埋まっており、plan の Base SHA が実在するコミットを指す状態で Phase 0 Step 3 を通す。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 3 終端型。実装コミットと Base SHA を seed したことで、本シナリオが名指しする経路（既存 Base SHA → 採用）が模擬ではなく実走になった。代わりに「Base SHA が無い場合に HEAD を記録する」要件は実走しなくなるため cy-011 へ移管済み（cy-011 の plan は Base SHA を持たない）。 レビュー verdict は PASS 注入で固定し、fix loop の実走コストを持ち込まない。"
+      "notes": "cycle_start_sha 永続化の回帰。初回実行で Base SHA を plan に記録し、再実行時はそれを再利用することで、元の実装が常にレビュー範囲に含まれることを固定する。fixture 環境には baseline の実 SHA が {{fixture:sha:baseline}} の置換で埋まっており、plan の Base SHA が実在するコミットを指す状態で Phase 0 Step 3 を通す。 【#242 phase 終端化】原出典は manual:pr-190-review-round7。 Phase 3 終端型。実装コミットと Base SHA を seed したことで、本シナリオが名指しする経路（既存 Base SHA → 採用）が模擬ではなく実走になった。代わりに「Base SHA が無い場合に HEAD を記録する」要件は実走しなくなるため cy-011 へ移管済み（cy-011 の plan は Base SHA を持たない）。 レビュー verdict は PASS 注入で固定し、fix loop の実走コストを持ち込まない。",
+      "exercises": [
+        "skills/cycle/references/completion.md",
+        "skills/cycle/references/final-gate-delegation.md",
+        "skills/plan/references/status-update-guide.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/codex-integration.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md",
+        "skills/shared/scripts/secret_detect.py"
+      ]
     },
     {
       "id": "cy-013",
@@ -838,7 +919,20 @@
           "critical": false
         }
       ],
-      "notes": "Phase 3 fix loop の成功系固定。BLOCK→targeted-fix→re-review PASS で Phase 4 到達。allowed-files が trusted diff から導出されることも検証する。cy-010（失敗系）と対をなす。レビュー verdict は注入で固定する（organic なレビュアー出力の揺らぎは検証対象外。2026-08-03 の実走で 2 回連続、実レビュアーの fix 後再レビューが WARN を返し想定が実現しなかったため、注入指定を prompt に明文化した。requirements は不変更）。 【#242 phase 終端化】原出典は manual:pr-190-fable-residual。 Phase 3 終端型（実装は seed 済みコミット）。"
+      "notes": "Phase 3 fix loop の成功系固定。BLOCK→targeted-fix→re-review PASS で Phase 4 到達。allowed-files が trusted diff から導出されることも検証する。cy-010（失敗系）と対をなす。レビュー verdict は注入で固定する（organic なレビュアー出力の揺らぎは検証対象外。2026-08-03 の実走で 2 回連続、実レビュアーの fix 後再レビューが WARN を返し想定が実現しなかったため、注入指定を prompt に明文化した。requirements は不変更）。 【#242 phase 終端化】原出典は manual:pr-190-fable-residual。 Phase 3 終端型（実装は seed 済みコミット）。",
+      "exercises": [
+        "skills/cycle/references/completion.md",
+        "skills/cycle/references/final-gate-delegation.md",
+        "skills/cycle/references/fix-delegation.md",
+        "skills/plan-reviewer/references/output-format.md",
+        "skills/plan/references/status-update-guide.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/codex-integration.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md",
+        "skills/shared/scripts/secret_detect.py"
+      ]
     },
     {
       "id": "cy-014",
@@ -893,7 +987,20 @@
           "critical": false
         }
       ],
-      "notes": "Phase 3 WARN auto-fix の成功系固定。WARN→auto-fix→re-review PASS でユーザー確認をスキップし Phase 4 到達。headless 自走性の維持を検証する。cy-010/cy-013（BLOCK fix loop）とは異なる WARN 専用経路。 【#242 phase 終端化】原出典は manual:pr-190-warn-autofix。 Phase 3 終端型（実装は seed 済みコミット）。"
+      "notes": "Phase 3 WARN auto-fix の成功系固定。WARN→auto-fix→re-review PASS でユーザー確認をスキップし Phase 4 到達。headless 自走性の維持を検証する。cy-010/cy-013（BLOCK fix loop）とは異なる WARN 専用経路。 【#242 phase 終端化】原出典は manual:pr-190-warn-autofix。 Phase 3 終端型（実装は seed 済みコミット）。",
+      "exercises": [
+        "skills/cycle/references/completion.md",
+        "skills/cycle/references/final-gate-delegation.md",
+        "skills/cycle/references/fix-delegation.md",
+        "skills/plan-reviewer/references/output-format.md",
+        "skills/plan/references/status-update-guide.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/codex-integration.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md",
+        "skills/shared/scripts/secret_detect.py"
+      ]
     },
     {
       "id": "cy-015",
@@ -958,7 +1065,15 @@
           ]
         }
       ],
-      "notes": "WARN auto-fix の失敗系固定。auto-fix で WARN が解消されず headless 停止する経路。cy-014（成功系）と対をなす。再レビュー verdict は注入で固定する（cy-013 と同じ裁定: 2026-08-04 の実走で process / subagent 両経路とも auto-fix 後の実レビューが PASS に収束し想定が実現しなかったため、注入指定を prompt に明文化した。requirements は不変更）。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "WARN auto-fix の失敗系固定。auto-fix で WARN が解消されず headless 停止する経路。cy-014（成功系）と対をなす。再レビュー verdict は注入で固定する（cy-013 と同じ裁定: 2026-08-04 の実走で process / subagent 両経路とも auto-fix 後の実レビューが PASS に収束し想定が実現しなかったため、注入指定を prompt に明文化した。requirements は不変更）。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。",
+      "exercises": [
+        "skills/cycle/references/fix-delegation.md",
+        "skills/plan-reviewer/references/output-format.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md"
+      ]
     },
     {
       "id": "cy-016",
@@ -1027,7 +1142,15 @@
           ]
         }
       ],
-      "notes": "WARN auto-fix の BLOCK 回帰固定。auto-fix が regression を導入し BLOCK 化した場合、pre-fix 状態に revert して元の WARN findings で停止する（regressed state ではない）。revert に git clean -fd が含まれることも検証する。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "WARN auto-fix の BLOCK 回帰固定。auto-fix が regression を導入し BLOCK 化した場合、pre-fix 状態に revert して元の WARN findings で停止する（regressed state ではない）。revert に git clean -fd が含まれることも検証する。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。",
+      "exercises": [
+        "skills/cycle/references/fix-delegation.md",
+        "skills/plan-reviewer/references/output-format.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md"
+      ]
     },
     {
       "id": "cy-017",
@@ -1096,7 +1219,16 @@
           ]
         }
       ],
-      "notes": "Phase 4 WARN headless 停止の固定。Phase 4 は quality gate であり auto-fix なし。WARN は headless で停止し、ユーザー確認が必要。Phase 3 の WARN（auto-fix あり）との非対称性を検証する。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。"
+      "notes": "Phase 4 WARN headless 停止の固定。Phase 4 は quality gate であり auto-fix なし。WARN は headless で停止し、ユーザー確認が必要。Phase 3 の WARN（auto-fix あり）との非対称性を検証する。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 4 終端型（Phase 3 は PASS 注入で素通し）。plan Status の seed 値と要件言い換えの扱いは cy-005 と同じ。 phase 未実行の要件に付けていた file_exists('.agents/artifacts/status.md', expect: false) は恒真だったため除去した（Phase 5 は status.md を新規作成せず、completion 手順は既存の status.md を読んで更新するだけなので、実装が正しくても誤っても不在のままになる）。status.md 節は当該 fixture 群で判定不能（status.md 不在・Phase 5 は新規作成しない）なため要件文から外した。除去の判別条件は「当該節が恒真か否か」であり「assert できるか否か」ではない（assert できないだけの意味的な節は、cy-002/003/004 のように独立要件へ分割して LLM 裁定に残す）。当該節は本 fixture 群の seed 下では意味的に恒真（判定力ゼロ）であることをレビューで確認済みで、除去による判定力の低下はない。恒真述語の除去であり判定力は上がる（要件を易化する変更ではない）。",
+      "exercises": [
+        "skills/cycle/references/final-gate-delegation.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/codex-integration.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md",
+        "skills/shared/scripts/secret_detect.py"
+      ]
     },
     {
       "id": "cy-018",
@@ -1147,7 +1279,20 @@
           "critical": true
         }
       ],
-      "notes": "BLOCK→fix→WARN の Step 2b ルーティング固定。fix loop が BLOCK を解消したが WARN が残った場合、PASS と同一扱いせず WARN ゲート（auto-fix + acknowledgement）を通ることを検証する。cy-013（BLOCK→fix→PASS）との対比。【2026-08-04 再設計】実レビューの verdict は非決定で（誠実な fix は PASS に到達しうる）、ルーティング検証の観測可能性が run に依存していたため、prompt で verdict 台本を固定する形へ変更。要件は同一で観測可能性のみを固定した（シナリオを楽にする方向の変更ではない）。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型（実装は seed 済みコミット）。"
+      "notes": "BLOCK→fix→WARN の Step 2b ルーティング固定。fix loop が BLOCK を解消したが WARN が残った場合、PASS と同一扱いせず WARN ゲート（auto-fix + acknowledgement）を通ることを検証する。cy-013（BLOCK→fix→PASS）との対比。【2026-08-04 再設計】実レビューの verdict は非決定で（誠実な fix は PASS に到達しうる）、ルーティング検証の観測可能性が run に依存していたため、prompt で verdict 台本を固定する形へ変更。要件は同一で観測可能性のみを固定した（シナリオを楽にする方向の変更ではない）。 【#242 phase 終端化】原出典は manual:pr-190-warn-coverage。 Phase 3 終端型（実装は seed 済みコミット）。",
+      "exercises": [
+        "skills/cycle/references/completion.md",
+        "skills/cycle/references/final-gate-delegation.md",
+        "skills/cycle/references/fix-delegation.md",
+        "skills/plan-reviewer/references/output-format.md",
+        "skills/plan/references/status-update-guide.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/codex-integration.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md",
+        "skills/shared/scripts/secret_detect.py"
+      ]
     },
     {
       "id": "cy-019",
@@ -1209,7 +1354,21 @@
           "critical": false
         }
       ],
-      "notes": "受入基準 C1（brainstorm exit contract A1/A4）の固定。診断チャネルが cycle の 3 つの状態遷移（自動修正・再レビュー・headless 停止）のいずれにも入らないことを測る。plan-reviewer 経路の WARN は Step 2b で auto-fix され未解決なら headless 停止するため、同じ WARN という語で経路が分岐することがこのシナリオの争点になる。スキル成果物のみを変更する plan にしてあるのは、Step 0.5 のルーティングが混在分岐へ落ちないようにするため。 【#242 phase 終端化】原出典は manual:issue-196。 Phase 3 終端型。skill 成果物のみを変更する実装コミットを seed してあり、Step 0.5 のルーティングは seed した diff に対して行われる。"
+      "notes": "受入基準 C1（brainstorm exit contract A1/A4）の固定。診断チャネルが cycle の 3 つの状態遷移（自動修正・再レビュー・headless 停止）のいずれにも入らないことを測る。plan-reviewer 経路の WARN は Step 2b で auto-fix され未解決なら headless 停止するため、同じ WARN という語で経路が分岐することがこのシナリオの争点になる。スキル成果物のみを変更する plan にしてあるのは、Step 0.5 のルーティングが混在分岐へ落ちないようにするため。 【#242 phase 終端化】原出典は manual:issue-196。 Phase 3 終端型。skill 成果物のみを変更する実装コミットを seed してあり、Step 0.5 のルーティングは seed した diff に対して行われる。",
+      "exercises": [
+        "skills/cycle/references/completion.md",
+        "skills/cycle/references/final-gate-delegation.md",
+        "skills/cycle/references/skill-review-routing.md",
+        "skills/plan/references/status-update-guide.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/codex-integration.md",
+        "skills/shared/references/fix-action-taxonomy.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md",
+        "skills/shared/scripts/secret_detect.py",
+        "skills/skill-reviewer/scripts/validate_review_output.py"
+      ]
     },
     {
       "id": "cy-020",
@@ -1279,7 +1438,21 @@
           "critical": false
         }
       ],
-      "notes": "issue #203 judge 裁定 C（制御用途は全破棄・記録用途に生データ添付のみ）の固定。skill-review-routing.md 末尾のフォールバック契約を測る。validator 不適合と生 findings の内容は canonical payload の注入で固定する（cy-013 の教訓: organic なレビュアー出力の揺らぎは検証対象外。payload を prompt に明示するのは、要約・再構成で『生 findings が残っている』を満たしたことにする oracle gaming を塞ぐため — PR #207 Codex レビュー WARN 対応）。生 findings に qualification_reason なき BLOCK と AUTO_FIX を含めてあるのは、検証器が塞ぐ経路 (3)(4) を素通りした findings が Step 2s 分岐へ流入しないことを最悪ケースで測るため。cy-019（diagnostics 不干渉）と対をなし、こちらは不適合フォールバックの不干渉を担う。 【#242 phase 終端化】原出典は manual:issue-203。 Phase 3 終端型。「停止せず Phase 4 へ進む」と「plan status が戻されていない」は元は 1 要件だったが、後者だけが機械判定可能なため分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。"
+      "notes": "issue #203 judge 裁定 C（制御用途は全破棄・記録用途に生データ添付のみ）の固定。skill-review-routing.md 末尾のフォールバック契約を測る。validator 不適合と生 findings の内容は canonical payload の注入で固定する（cy-013 の教訓: organic なレビュアー出力の揺らぎは検証対象外。payload を prompt に明示するのは、要約・再構成で『生 findings が残っている』を満たしたことにする oracle gaming を塞ぐため — PR #207 Codex レビュー WARN 対応）。生 findings に qualification_reason なき BLOCK と AUTO_FIX を含めてあるのは、検証器が塞ぐ経路 (3)(4) を素通りした findings が Step 2s 分岐へ流入しないことを最悪ケースで測るため。cy-019（diagnostics 不干渉）と対をなし、こちらは不適合フォールバックの不干渉を担う。 【#242 phase 終端化】原出典は manual:issue-203。 Phase 3 終端型。「停止せず Phase 4 へ進む」と「plan status が戻されていない」は元は 1 要件だったが、後者だけが機械判定可能なため分割した（複合要件に部分的な assert を付けると、機械判定が LLM 裁定を置き換える契約の下で残りの節が判定されなくなる）。",
+      "exercises": [
+        "skills/cycle/references/completion.md",
+        "skills/cycle/references/final-gate-delegation.md",
+        "skills/cycle/references/skill-review-routing.md",
+        "skills/plan/references/status-update-guide.md",
+        "skills/shared/references/artifact-paths.md",
+        "skills/shared/references/artifact-store.md",
+        "skills/shared/references/codex-integration.md",
+        "skills/shared/references/fix-action-taxonomy.md",
+        "skills/shared/references/orchestration-patterns.md",
+        "skills/shared/references/workspace-lock.md",
+        "skills/shared/scripts/secret_detect.py",
+        "skills/skill-reviewer/scripts/validate_review_output.py"
+      ]
     }
   ]
 }
