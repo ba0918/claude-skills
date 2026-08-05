@@ -1413,6 +1413,104 @@ class TestMisplacedOptionsAreRefused(_PartialHarness):
             self.assertIn("--partial", out)
 
 
+class TestMisplacedRootIsRefused(_PartialHarness):
+    """モード指定より前に置かれた root パスを黙って捨てない（#266）。
+
+    位置を誤った root は cwd へフォールバックし、操作者は別リポジトリを
+    更新したつもりで cwd の台帳を書き換える。rc 0 と成功メッセージが返る
+    ため誤りを検出できない。誤配置フラグ (H-1) と同じ欠陥クラスとして
+    usage + exit 2 で拒否する。root は「オプション消費後に残る末尾 1 個の
+    実在ディレクトリ」だけを受け付ける。
+    """
+
+    def test_root_before_update_is_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run([root, "--update", "a"])
+            self.assertEqual(rc, 2)
+            self.assertIn(root, out)
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+    def test_root_before_seed_scenarios_is_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run([root, "--seed-scenarios", "a"])
+            self.assertEqual(rc, 2)
+            self.assertIn(root, out)
+
+    def test_root_before_impact_scenarios_is_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run(
+                [root, "--impact-scenarios", "skills/shared/references/tdd.md"])
+            self.assertEqual(rc, 2)
+            self.assertIn(root, out)
+
+    def test_root_before_impact_is_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run(
+                [root, "--impact", "skills/shared/references/tdd.md"])
+            self.assertEqual(rc, 2)
+            self.assertIn(root, out)
+
+    def test_extra_positional_before_the_trailing_root_is_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run(["--update", "a", "stray-token", root])
+            self.assertEqual(rc, 2)
+            self.assertIn("stray-token", out)
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+    def test_two_positionals_on_check_are_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run(["--check", "first-root", root])
+            self.assertEqual(rc, 2)
+            self.assertIn("first-root", out)
+
+    def test_a_nonexistent_root_is_refused(self):
+        # typo した root は空リポジトリ扱いになり「0 スキルすべて検証済み」の
+        # 顔で rc 0 が返る。実在しないディレクトリは root として受け付けない
+        rc, out = self._run(["--check", "/no/such/directory-266"])
+        self.assertEqual(rc, 2)
+        self.assertIn("/no/such/directory-266", out)
+
+    def test_a_trailing_root_still_works(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, _ = self._run(["--update", "a", root])
+            self.assertEqual(rc, 0)
+
+    def test_a_root_before_check_still_resolves(self):
+        # --check はモード除去後に位置の区別が消えるため、前置 root も
+        # 末尾 root と同値に解釈される（documented 形式の互換を固定）
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, _ = self._run([root, "--check"])
+            self.assertEqual(rc, 0)
+
+    def test_an_omitted_root_still_falls_back_to_cwd(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            prev = os.getcwd()
+            os.chdir(root)
+            try:
+                rc, _ = self._run(["--update", "a"])
+            finally:
+                os.chdir(prev)
+            self.assertEqual(rc, 0)
+
+
 class TestCoverage(unittest.TestCase):
     """fixture 保有率の計上。--check は opt-in ゲートなので母数を別に数える。"""
 
