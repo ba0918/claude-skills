@@ -37,7 +37,7 @@ OpenCode の `skill` ツールで一覧を出し、`cycle` や `brainstorm` な�
 
 - スキルの一覧・読込は OpenCode ネイティブの `skill` ツール（名前に plugin 接頭辞は付けない）
 - スラッシュコマンド（`commands/`）は本 plugin では自動登録しない。必要なら `.opencode/command/` に薄いラッパーを置く
-- 常駐の skill-routing 表と quality-gate ポインタは、セッション最初の user メッセージへ自動注入される（Claude Code の SessionStart hook 相当）
+- 常駐の using-workflow（幹の漏斗 + ルーティング規律）と quality-gate ポインタは、セッション最初の user メッセージへ自動注入される（Claude Code の SessionStart hook 相当）
 
 ## 更新
 
@@ -48,7 +48,7 @@ git 経由の plugin は OpenCode / Bun の cache や lock に解決結果が残
 `.opencode/plugins/claude-skills.js` が次を行う:
 
 1. **`config` hook** — パッケージ内 `skills/` を `skills.paths` に追加（symlink 不要。`shared/` も同じツリー）
-2. **`experimental.chat.messages.transform`** — `rules/skill-routing.md` 全文と quality-gate 契約のパスポインタを、各セッション最初の user メッセージへ 1 回注入
+2. **`experimental.chat.messages.transform`** — `skills/using-workflow/SKILL.md` 本文（frontmatter 除く）と quality-gate 契約のパスポインタを、各セッション最初の user メッセージへ 1 回注入
 
 `package.json` の `main` がこの plugin を指す。
 

@@ -1,6 +1,6 @@
 ---
 name: using-workflow
-description: The runtime funnel of the trunk workflow — one routing rule that makes brainstorm the default entry for any request to build or change something, plus the enumerated exception categories that enter elsewhere. Small on purpose so it can be loaded residently at session start. Use when deciding which skill a new request should enter through, or when the user asks "where does this work start", 「どのスキルから始める？」「幹のどこから入る？」.
+description: The runtime funnel and routing discipline of the trunk workflow — one rule that makes brainstorm the default entry for any request to build or change something, plus the enumerated exception categories (with their representative skills) that enter elsewhere. Small on purpose so it stays resident; the distributed plugin injects it at session start. Use when deciding which skill a new request should enter through, or when the user asks "where does this work start", 「どのスキルから始める？」「幹のどこから入る？」.
 ---
 
 # Using the Trunk Workflow
@@ -9,6 +9,13 @@ The trunk: utterance / GitHub issue → brainstorm → plan → implement → re
 alignment (write back to docs/spec) → PR. The canonical diagram and the funnel
 principle live in [skill-authoring](../shared/references/skill-authoring.md); this
 skill carries only the runtime routing rule.
+
+## The Routing Check
+
+The more naturally an instruction can be answered as plain conversation, the more
+likely skill matching never runs (measured over real sessions: spontaneous firing in
+11 of 68 prompts). Before responding to an instruction directly with conversation or
+work, run the routing below once.
 
 ## The One Rule
 
@@ -21,19 +28,22 @@ converges in one round. When in doubt, propose brainstorm first.
 
 1. **Trunk continuation** — the work already carries its source material: an
    in-flight plan, converged brainstorm agreements, a written spec, or a reproduced
-   bug. Enter at the matching station (plan / implement / review); do not loop back
-   to brainstorm.
-2. **Terminal and session logistics** — committing, releasing, PR mechanics, session
-   handoff, status or list lookups. These end or relay work; they never start it.
-3. **Read-only work** — investigation, debugging diagnosis, reviews, audits. They
-   produce findings; the moment a finding turns into build-or-change work, that work
-   enters through brainstorm.
+   bug. Enter at the matching station — plan / cycle / iterate for planned work,
+   systematic-debugging for a reproduced bug — do not loop back to brainstorm.
+2. **Terminal and session logistics** — committing (commit), releasing, PR
+   mechanics, session handoff (handoff), status or list lookups. These end or relay
+   work; they never start it.
+3. **Read-only work** — investigation (investigate), debugging diagnosis
+   (systematic-debugging), reviews and audits (the review-family skills), thinking
+   support when stuck (problem-solving). They produce findings; the moment a finding
+   turns into build-or-change work, that work enters through brainstorm.
 
-A request matching no category is not an exception — it goes to brainstorm.
+Within a category, pick the specific skill by its description. A request matching no
+category is not an exception — it goes to brainstorm.
 
 ## Resident Loading
 
-This file is deliberately a few dozen lines so it can stay resident. Environments
-with a session-start injection mechanism can emit this file's body at session start
-(read-only injection only — no state-mutating commands); the repository README shows
-a concrete configuration example.
+This file is deliberately small so it can stay resident. The distributed plugin
+injects its body (frontmatter excluded) at session start — no manual setup for
+plugin users. Without the plugin, wire an equivalent read-only injection (no
+state-mutating commands); the repository README shows a configuration example.

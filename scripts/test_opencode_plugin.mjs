@@ -31,7 +31,7 @@ assert.equal(typeof mod.default, "function")
 
 const PACKAGE_ROOT = root
 const SKILLS_DIR = path.join(PACKAGE_ROOT, "skills")
-const ROUTING_PATH = path.join(PACKAGE_ROOT, "rules", "skill-routing.md")
+const ROUTING_PATH = path.join(PACKAGE_ROOT, "skills", "using-workflow", "SKILL.md")
 const BOOTSTRAP_MARKER = "<!-- claude-skills-bootstrap -->"
 
 assert.ok(fs.existsSync(path.join(SKILLS_DIR, "cycle", "SKILL.md")))
@@ -60,8 +60,10 @@ const messages = {
 await hooks["experimental.chat.messages.transform"]({}, messages)
 assert.equal(messages.messages[0].parts.length, 2)
 assert.ok(messages.messages[0].parts[0].text.includes(BOOTSTRAP_MARKER))
-assert.ok(messages.messages[0].parts[0].text.includes("Skill Routing"))
+assert.ok(messages.messages[0].parts[0].text.includes("Using the Trunk Workflow"))
 assert.ok(messages.messages[0].parts[0].text.includes("investigate"))
+// frontmatter is stripped from the injected SKILL.md body
+assert.ok(!messages.messages[0].parts[0].text.includes("name: using-workflow"))
 assert.ok(messages.messages[0].parts[0].text.includes("Quality gate contract"))
 assert.ok(
   messages.messages[0].parts[0].text.includes(

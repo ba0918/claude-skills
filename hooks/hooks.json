@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/inject-skill-routing.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/inject-using-workflow.sh"
           },
           {
             "type": "command",

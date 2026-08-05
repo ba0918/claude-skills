@@ -19,7 +19,8 @@ claude-skills プラグインのバージョン履歴。
 ### Added: 幹ワークフローの宣言と実行時漏斗スキル using-workflow
 
 - skill-authoring に幹の図（brainstorm → plan → implement → review → 整合 → PR。ledger / spec-verify は支線）と漏斗原則、新スキルの「幹のどこに挿さるか」宣言チェックを追加。brainstorm の振る舞い正本を `docs/spec/brainstorm.md` に新設
-- `using-workflow` スキルを新設。「既定入口 = brainstorm + 例外 3 カテゴリ（幹の続き / 終端・セッション運搬 / 読み取り専用）」の実行時漏斗を数十行で持ち、常駐ロードできる。README にセッション開始時の読み込み設定例
+- `using-workflow` スキルを新設。「既定入口 = brainstorm + 例外 3 カテゴリ（幹の続き / 終端・セッション運搬 / 読み取り専用）」の実行時漏斗に、カテゴリごとの代表スキルとルーティング確認の規律を統合して数十行で持つ
+- 常駐注入の正本を `rules/skill-routing.md`（語彙×スキル対応表）から using-workflow へ差し替え、対応表は削除。SessionStart hook（`hooks/inject-using-workflow.sh`）と OpenCode plugin は SKILL.md 本文（frontmatter 除く）を注入する。弁別は description 側で足りることが実測済み（138/138）のため、常駐が担うのは想起と幹の遵守のみ
 
 ### Changed: brainstorm が要件・仕様を詰め切る幹の入口になった
 

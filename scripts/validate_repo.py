@@ -32,7 +32,7 @@
   19. agent 生成物の置き場に `.claude/` を使っていないか
   20. リネーム許可表（scripts/rename-allowlist.json）の失効エントリ検出
   21. plugin hooks の整合性（hooks.json のパース / command パスの実在と実行ビット /
-      hook スクリプトが参照する rules/skill-routing.md の実在）
+      hook スクリプトが参照する正本（using-workflow / 品質ゲート契約）の実在）
   22. OpenCode git plugin（package.json main / plugin 実在 / 導入ドキュメント）
 
 チェック 10・11 と store 実在性:
@@ -663,8 +663,8 @@ _HOOKS_JSON_REL = os.path.join("hooks", "hooks.json")
 # hook スクリプト → そのスクリプトが読む正本。スクリプトが存在するときだけ正本の
 # 実在を検査する（条件出力の補助正本はここに載せない — 欠落時はスクリプト側が沈黙する）
 _HOOK_CANONICAL_SOURCES = {
-    os.path.join("hooks", "inject-skill-routing.sh"): os.path.join(
-        "rules", "skill-routing.md"
+    os.path.join("hooks", "inject-using-workflow.sh"): os.path.join(
+        "skills", "using-workflow", "SKILL.md"
     ),
     os.path.join("hooks", "inject-quality-gate.sh"): os.path.join(
         "skills", "shared", "references", "quality-gate-contract.md"

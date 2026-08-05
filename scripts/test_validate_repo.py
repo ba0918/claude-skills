@@ -1368,7 +1368,7 @@ class TestCheckPluginHooks(unittest.TestCase):
     HOOKS_JSON = (
         '{"hooks": {"SessionStart": [{"matcher": "startup",'
         ' "hooks": [{"type": "command",'
-        ' "command": "\\"${CLAUDE_PLUGIN_ROOT}\\"/hooks/inject-skill-routing.sh"},'
+        ' "command": "\\"${CLAUDE_PLUGIN_ROOT}\\"/hooks/inject-using-workflow.sh"},'
         ' {"type": "command",'
         ' "command": "\\"${CLAUDE_PLUGIN_ROOT}\\"/hooks/inject-quality-gate.sh"}]}]}}'
     )
@@ -1383,9 +1383,9 @@ class TestCheckPluginHooks(unittest.TestCase):
 
     def _full_setup(self, root):
         self._write(root, "hooks/hooks.json", self.HOOKS_JSON)
-        self._write(root, "hooks/inject-skill-routing.sh",
-                    "#!/bin/sh\ncat rules/skill-routing.md\n", executable=True)
-        self._write(root, "rules/skill-routing.md", "# routing\n")
+        self._write(root, "hooks/inject-using-workflow.sh",
+                    "#!/bin/sh\ncat skills/using-workflow/SKILL.md\n", executable=True)
+        self._write(root, "skills/using-workflow/SKILL.md", "# funnel\n")
         self._write(root, "hooks/inject-quality-gate.sh",
                     "#!/bin/sh\nprintf 'pointer\\n'\n", executable=True)
         self._write(root,
@@ -1412,22 +1412,22 @@ class TestCheckPluginHooks(unittest.TestCase):
     def test_missing_command_script_is_flagged(self):
         with tempfile.TemporaryDirectory() as root:
             self._full_setup(root)
-            os.remove(os.path.join(root, "hooks/inject-skill-routing.sh"))
+            os.remove(os.path.join(root, "hooks/inject-using-workflow.sh"))
             errors = check_plugin_hooks(root)
             self.assertTrue(any("実体が存在しない" in e for e in errors))
 
     def test_missing_exec_bit_is_flagged(self):
         with tempfile.TemporaryDirectory() as root:
             self._full_setup(root)
-            os.chmod(os.path.join(root, "hooks/inject-skill-routing.sh"), 0o644)
+            os.chmod(os.path.join(root, "hooks/inject-using-workflow.sh"), 0o644)
             errors = check_plugin_hooks(root)
             self.assertEqual(len(errors), 1)
             self.assertIn("実行ビットがない", errors[0])
 
-    def test_missing_routing_table_is_flagged(self):
+    def test_missing_funnel_skill_is_flagged(self):
         with tempfile.TemporaryDirectory() as root:
             self._full_setup(root)
-            os.remove(os.path.join(root, "rules/skill-routing.md"))
+            os.remove(os.path.join(root, "skills/using-workflow/SKILL.md"))
             errors = check_plugin_hooks(root)
             self.assertEqual(len(errors), 1)
             self.assertIn("正本が存在しない", errors[0])
@@ -1449,11 +1449,11 @@ class TestCheckPluginHooks(unittest.TestCase):
                         '{"hooks": {"SessionStart": [{"matcher": "startup",'
                         ' "hooks": [{"type": "command",'
                         ' "command": "\\"${CLAUDE_PLUGIN_ROOT}\\"'
-                        '/hooks/inject-skill-routing.sh"}]}]}}')
-            self._write(root, "hooks/inject-skill-routing.sh",
-                        "#!/bin/sh\ncat rules/skill-routing.md\n",
+                        '/hooks/inject-using-workflow.sh"}]}]}}')
+            self._write(root, "hooks/inject-using-workflow.sh",
+                        "#!/bin/sh\ncat skills/using-workflow/SKILL.md\n",
                         executable=True)
-            self._write(root, "rules/skill-routing.md", "# routing\n")
+            self._write(root, "skills/using-workflow/SKILL.md", "# funnel\n")
             self.assertEqual(check_plugin_hooks(root), [])
 
     def test_whitespace_only_command_is_flagged_not_crash(self):
