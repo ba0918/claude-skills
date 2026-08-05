@@ -540,6 +540,15 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None):
     持ち越せないシナリオが 1 つでもあれば更新ごと拒否して列挙する。部分的に
     書き込むと「台帳のどこまでが今も有効か」が読めなくなり、台帳が保証する
     ものが「全シナリオ合格」から曖昧になるため。
+
+    影響側の規則（impacted_scenarios）を先に通し、影響ありと出たシナリオが
+    ran_ids に無ければ持ち越し判定を待たずに拒否する。持ち越し規則だけで
+    判定すると、依存集合の走査が**現在の面**を起点にしているため、面から
+    消えたファイルはどのシナリオの依存にも現れず全件が持ち越されてしまう
+    （check() は同じ状態を「scenarios: all」と報告する）。影響と持ち越しを
+    別々の材料で動かさず、partial_update を影響規則の消費者にすることで
+    「片方が全件再走を要求する状態で、もう片方が実走ゼロの更新を通す」
+    食い違いを構造的に閉じる。
     """
     scenarios = load_scenarios(root, skill)
     if not scenarios:
@@ -554,6 +563,12 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None):
     surface = skill_surface(root, skill)
     current = file_hashes(root, surface)
     recorded_scenarios = entry.get("scenarios") or {}
+    _, changed = stale_severity(
+        entry.get("file_sha256", {}), current,
+        entry.get("structural_sha256", {}), structural_hashes(root, surface),
+        own_prefix=f"skills/{skill}/")
+    impacted = set(impacted_scenarios(
+        skill, surface, scenarios, changed, recorded_scenarios))
     records, blocked = {}, []
     for scenario in scenarios:
         sid = scenario["id"]
@@ -564,9 +579,12 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None):
                 "verified": today,
             }
             continue
-        reason = carryover_reason(
-            skill, scenario, surface, entry.get("file_sha256", {}), current,
-            recorded_scenarios)
+        if sid in impacted:
+            reason = "面の変更が影響する（--check / --impact-scenarios と同じ規則）"
+        else:
+            reason = carryover_reason(
+                skill, scenario, surface, entry.get("file_sha256", {}), current,
+                recorded_scenarios)
         if reason:
             blocked.append((sid, reason))
         else:
@@ -633,18 +651,26 @@ def impact_scenarios_cli(root, changed_paths):
     normalized.discard(None)
     entries = load(root)
     with_fixtures = _fixtures_skills(root)
-    for skill in skills:
+    # 依存グラフは**現在の**面しか知らないので、削除されたファイルはどのスキルも
+    # 選ばない。台帳が記録した前回の面からも引き当てないと、削除が影響ゼロに
+    # 見えたまま rc 0 で何も出力されない（check() は同じ状態を全件再走と報告する）
+    recorded_hits = {
+        skill for skill, entry in entries.items()
+        if skill in with_fixtures and normalized & set(entry.get("file_sha256", {}))
+    }
+    for skill in sorted(set(skills) | recorded_hits):
         if skill not in with_fixtures:
             print(f"note: {skill} は fixtures.json を持たない（再走の対象外）",
                   file=sys.stderr)
             continue
         entry = entries.get(skill, {})
+        surface = graph.get(skill, [])
         # 面から消えたファイルも「このスキルに関係する変更」として渡す。
         # 落とすと削除が影響ゼロに見える（impacted_scenarios 側で全件へ倒る）
         relevant = normalized & (
-            set(graph[skill]) | set(entry.get("file_sha256", {})))
+            set(surface) | set(entry.get("file_sha256", {})))
         for sid in impacted_scenarios(
-                skill, graph[skill], load_scenarios(root, skill), relevant,
+                skill, surface, load_scenarios(root, skill), relevant,
                 entry.get("scenarios")):
             print(f"{skill}\t{sid}")
     for p in unresolved:

@@ -768,6 +768,21 @@ class TestImpactScenariosCli(unittest.TestCase):
             self.assertEqual(rc, 0)
             self.assertEqual(out.strip(), "")
 
+    def test_a_file_deleted_from_the_surface_still_names_every_scenario(self):
+        # 削除されたファイルは現在の依存グラフのどの面にも載らない。台帳が記録した
+        # 前回の面から拾わないと、削除が「影響ゼロ」に見えて check() の
+        # 「scenarios: all」と食い違う
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            surface = ledger.skill_surface(root, "a")
+            ledger.save(root, {
+                "a": ledger.make_entry(root, surface, "pass", "2026-08-01")})
+            os.remove(os.path.join(root, "skills/shared/references/gate.md"))
+            rc, out = self._run([
+                "--impact-scenarios", "skills/shared/references/gate.md", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(out.strip().splitlines(), ["a\ta-001", "a\ta-002"])
+
 
 class TestCheckShowsImpactedScenarios(unittest.TestCase):
     """stale 表示にシナリオ粒度の内訳を添える（合否判定は不変）。"""
@@ -1038,6 +1053,54 @@ class TestPartialUpdate(_PartialHarness):
             rc, out = self._run(["--update", "a", "--partial", root])
             self.assertEqual(rc, 1)
             self.assertIn("a-004", out)
+
+    def test_a_file_leaving_the_surface_refuses_a_zero_run_partial(self):
+        # 削除は影響規則では「全シナリオ再走」。持ち越し規則だけで判定すると、
+        # 消えたファイルはどのシナリオの依存集合にも現れず全件が持ち越されてしまう
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            os.remove(os.path.join(root, "skills/shared/references/gate.md"))
+            rc, out = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 1)
+            for sid in ("a-001", "a-002", "a-003"):
+                self.assertIn(sid, out)
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+
+class TestPartialUpdateAgreesWithTheImpactRule(_PartialHarness):
+    """影響ありと報告したシナリオを、同じ状態の --partial が持ち越さない。
+
+    影響規則（check / --impact-scenarios）と持ち越し規則が別々の材料で動くと、
+    片方が「全 20 本を再走せよ」と言う状態で、もう片方が実走ゼロの更新を通す。
+    """
+
+    def _impacted(self, root):
+        entry = ledger.load(root)["a"]
+        surface = ledger.skill_surface(root, "a")
+        _, changed = ledger.stale_severity(
+            entry.get("file_sha256", {}), ledger.file_hashes(root, surface),
+            entry.get("structural_sha256", {}),
+            ledger.structural_hashes(root, surface),
+            own_prefix="skills/a/")
+        return set(ledger.impacted_scenarios(
+            "a", surface, ledger.load_scenarios(root, "a"), changed,
+            entry.get("scenarios")))
+
+    def test_no_impacted_scenario_can_be_carried_over_after_a_deletion(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            os.remove(os.path.join(root, "skills/shared/references/gate.md"))
+            impacted = self._impacted(root)
+            self.assertTrue(impacted)
+            for held_back in sorted(impacted):
+                argv = ["--update", "a", "--partial"]
+                for sid in sorted(impacted - {held_back}):
+                    argv += ["--scenario", sid]
+                rc, out = self._run(argv + [root])
+                self.assertEqual(rc, 1, f"{held_back} が持ち越された")
+                self.assertIn(held_back, out)
 
 
 class TestSeedScenarios(_PartialHarness):
