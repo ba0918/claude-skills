@@ -107,6 +107,11 @@ surface*. So:
   scenario merely costs a rerun; a wrong declaration silently skips one.
 - A declaration is a claim about behavior, so it ages with the scenario. When a scenario's prompt or requirements
   change, revisit its declaration in the same edit.
+- The likeliest way a declaration goes stale is **the surface growing behind a file it already lists**: a declared
+  reference gains a link, the linked file joins the surface one hop out, and the declaration does not follow. The edit
+  that adds the link changes the declared file too, so that rerun is forced — but a later edit to the *new* file alone
+  reaches no declaring scenario. When a change adds a file to the surface, extend the declarations that route to it in
+  the same edit.
 
 ## Relation to the quality gate contract §2
 
