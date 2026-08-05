@@ -16,6 +16,11 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: fixture の要件数超過が検証で可視化され、cycle の cy-004 が 2 本へ分割された
+
+- `fixture_setup.py --validate` が requirements 7 件超のシナリオを `[info]` で報告する。violation ではないため既存の検証は止まらない（#262）
+- cycle の cy-004（11 要件・全 critical）を cy-004a（文脈採用と隔離規律 / 6 件）と cy-004b（フェーズ実行と outer への延期 / 5 件）へ分割。要件本文は逐語のまま再配置し、id `cy-004` は廃止（#262）
+
 ### Added: `[contract-change]` の stale を LLM 判定で値切れる（semantic triage / 基盤のみ）
 
 - `semantic_diff.py` が台帳と git 履歴から判定入力（unified diff・正準 diff ハッシュ・判定ファイル skeleton）を作り、`ledger.py --update <skill> --partial --semantic <file>` が `unaffected` 判定のシナリオだけを新しい記録値 `accepted-semantic` として台帳へ書く。`unclear` / `affected` は従来どおり実走か人間判断（#268）
