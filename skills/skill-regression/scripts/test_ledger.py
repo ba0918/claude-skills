@@ -2144,7 +2144,7 @@ class TestNoExecutionAuthority(unittest.TestCase):
     「権限の境界」）は散文の約束では守れない。設計性質の退行を canary で検出する。
     """
 
-    SCRIPTS = ("ledger.py",)
+    SCRIPTS = ("ledger.py", "semantic_calibration.py")
 
     def _source(self, name):
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), name)
