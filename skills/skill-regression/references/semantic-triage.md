@@ -126,7 +126,10 @@ python3 {skill_dir}/scripts/ledger.py --update <skill> --partial --semantic <jud
 Combine it with `--scenario <id>` for scenarios you really did rerun. The ledger refuses the **whole** update,
 writing nothing, when any of these holds — the same all-or-nothing rule `--partial` already has:
 
-- a required field is missing, a verdict is outside the three values, or a rationale is empty
+- a required field is missing, `model` is not a non-empty string, a verdict is outside the three values, or a
+  rationale is empty
+- a verdict names a scenario id that is not in `fixtures.json` — otherwise a typo would surface only as "that
+  scenario has no verdict", pointing at the wrong thing
 - `diff_sha256` does not match the current difference (an old judgement reused on a different change)
 - the judging model has no calibration record, its `must_flag_fn` is above 0, or its record was measured on a
   different corpus revision
@@ -134,7 +137,9 @@ writing nothing, when any of these holds — the same all-or-nothing rule `--par
 - an impacted scenario's `scenario_sha256` moved: when the acceptance criteria themselves changed, only a real
   run can settle it
 - an impacted scenario's previous record is neither `pass` nor `accepted-semantic`: a judgement says "this diff
-  does not change the behavior you last verified", so it needs a real run underneath to stand on
+  does not change the behavior you last verified", so it needs a real run underneath to stand on. An entry with
+  no per-scenario records at all is named as such and points at `--seed-scenarios`, not at a rerun — the
+  missing thing is the bookkeeping, not the verification
 
 `--semantic` cannot be combined with `--accept`, and requires `--partial`.
 

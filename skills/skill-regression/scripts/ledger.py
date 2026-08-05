@@ -317,7 +317,7 @@ _JUDGMENT_FIELDS = ("skill", "diff_sha256", "model", "scenarios")
 
 
 def validate_judgment(judgment, skill, recorded_hashes, current_hashes,
-                      calibration):
+                      calibration, known_ids=None):
     """判定ファイルを検証し、拒否理由（人間が読める 1 行）を返す。合格なら None。
 
     検査は全件で、1 つでも欠ければ記録ごと拒否する（C1, C2）。判定の中身
@@ -328,6 +328,17 @@ def validate_judgment(judgment, skill, recorded_hashes, current_hashes,
     diff ハッシュの一致要求が塞ぐのは、別の変更に対して出した古い判定を
     使い回す事故である。較正ゲートが塞ぐのは、誤り率を測っていないモデルの
     判定が記録経路へ入ることである。
+
+    型の検査を「必須フィールドがある」で済ませないのは、判定ファイルが人手でも
+    書けるため。model が対応表や配列だと較正記録の参照が TypeError の traceback
+    になり、拒否理由の 1 行という idiom（load_judgment に理由）から外れる。
+
+    known_ids は fixtures.json に実在するシナリオ id の集合。実在しない id への
+    判定を黙って捨てると、typo が「semantic 判定がない」という別の欠落として
+    しか現れず、operator に打ち間違いの手がかりが残らない（同じ理由で
+    semantic_calibration.score もコーパスに無い case id を拒否している）。
+    None は照合材料を持たない呼び出し（判定入力の形だけを見る検査）専用で、
+    台帳を書く経路は必ず現在の fixtures.json の id を渡す。
     """
     if not isinstance(judgment, dict):
         return "判定ファイルが JSON オブジェクトでない"
@@ -341,9 +352,18 @@ def validate_judgment(judgment, skill, recorded_hashes, current_hashes,
             recorded_hashes, current_hashes):
         return ("判定ファイルの diff_sha256 が現在の差分と一致しない"
                 "（別の変更に対する判定の使い回し）")
+    model = judgment["model"]
+    if not isinstance(model, str) or not model.strip():
+        return ("判定ファイルの model が空でない文字列でない"
+                "（較正はモデルに固有で、識別子なしでは記録できない）")
     scenarios = judgment["scenarios"]
     if not isinstance(scenarios, dict):
         return "判定ファイルの scenarios が「シナリオ id → 判定」の対応表でない"
+    if known_ids is not None:
+        unknown = sorted(set(scenarios) - set(known_ids))
+        if unknown:
+            return ("fixtures.json に無いシナリオ id の判定がある: "
+                    + ", ".join(unknown))
     for sid in sorted(scenarios):
         verdict = scenarios[sid]
         if not isinstance(verdict, dict):
@@ -354,7 +374,7 @@ def validate_judgment(judgment, skill, recorded_hashes, current_hashes,
         rationale = verdict.get("rationale")
         if not isinstance(rationale, str) or not rationale.strip():
             return f"{sid}: rationale が空（根拠のない判定は監査できない）"
-    return calibration_reason(judgment["model"], calibration)
+    return calibration_reason(model, calibration)
 
 
 def carryover_dependencies(skill, scenario, surface):
@@ -483,6 +503,12 @@ def semantic_block_reason(verdict, recorded, scenario):
     （accept_result が軽量承認へ課しているのと同じ「土台は実走」の要求）。判定器の
     言い分は「前回確かめた振る舞いをこの差分は変えない」であって、前回に何も
     確かめていなければ引き継ぐ土台が存在しない。
+
+    記録そのものが無いケースは scenario_sha256 の比較より先に見る。空の記録を
+    比較へ流すと必ず不一致になり、「シナリオ定義が変わった = 実走が必要」という
+    高価な処方が出るが、実際の欠落は per-scenario 記録であって処方は無料の
+    --seed-scenarios 移行である。同じ更新の中で carryover_reason は正しい文言を
+    出しているので、順序を揃えないと 1 回の実行が 2 つの診断を並べることになる。
     """
     value = (verdict or {}).get("verdict")
     if value is None:
@@ -490,6 +516,8 @@ def semantic_block_reason(verdict, recorded, scenario):
     if value != VERDICT_UNAFFECTED:
         return (f"semantic 判定は {value}（記録できるのは {VERDICT_UNAFFECTED} "
                 f"のみ。実走するか人間が判断すること）")
+    if not recorded:
+        return "前回エントリに per-scenario 記録がない（--seed-scenarios で移行）"
     if (recorded or {}).get("scenario_sha256") != scenario_sha256(scenario):
         return "シナリオ定義が前回検証時から変わった（合否基準の変更は実走でのみ確かめられる）"
     prev_result = (recorded or {}).get("result")
@@ -855,9 +883,16 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None,
         skill, surface, scenarios, changed, recorded_scenarios))
     verdicts = {}
     if judgment is not None:
+        # severity が contract-change 帯かどうかはここでは見ない。帯のゲートは
+        # 判定入力を組む semantic_diff.py 側にあり、二重化すると「実走した分＋
+        # 判定で進める分」を混ぜた部分更新が prose-change 帯で丸ごと拒否され、
+        # 実走記録を捨てて --accept へ倒すしかなくなる。手書きの判定ファイルで
+        # 軽い帯を判定経路へ通せてしまうが、誤用の向きは安全側 — 機械が形状で
+        # 証明する accepted-prose / accepted-addition より弱い accepted-semantic が
+        # 付くだけで、実走を要求される範囲は広がりこそすれ狭まらない。
         reason = validate_judgment(
             judgment, skill, entry.get("file_sha256", {}), current,
-            load_calibration(root))
+            load_calibration(root), {s["id"] for s in scenarios})
         if reason:
             print(f"✗ {reason}")
             return 1

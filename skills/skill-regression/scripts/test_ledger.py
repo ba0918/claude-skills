@@ -1597,11 +1597,12 @@ class _JudgmentHarness(unittest.TestCase):
             entries=entries,
             corpus_sha256=self.CORPUS if corpus is None else corpus)
 
-    def _reason(self, judgment=None, calibration=None):
+    def _reason(self, judgment=None, calibration=None, known_ids=("a-001",)):
         return ledger.validate_judgment(
             self._judgment() if judgment is None else judgment,
             self.SKILL, self.RECORDED, self.CURRENT,
-            self._calibration() if calibration is None else calibration)
+            self._calibration() if calibration is None else calibration,
+            known_ids)
 
 
 class TestValidateJudgment(_JudgmentHarness):
@@ -1665,6 +1666,31 @@ class TestValidateJudgment(_JudgmentHarness):
                 judgment = self._judgment(scenarios={
                     "a-001": {"verdict": verdict, "rationale": "判断できない"}})
                 self.assertIsNone(self._reason(judgment=judgment))
+
+    def test_a_model_that_is_not_a_non_empty_string_is_refused(self):
+        # 判定ファイルは人手でも書ける。非文字列を素通しすると較正記録の参照が
+        # traceback になり、拒否理由 1 行という idiom から外れる
+        for model in (None, 1, True, "", "   ", ["m"], {"name": "m"}):
+            with self.subTest(model=model):
+                judgment = self._judgment(model=model)
+                self.assertIsNotNone(self._reason(judgment=judgment))
+
+    def test_a_judgment_for_a_scenario_that_does_not_exist_is_refused(self):
+        # typo が「semantic 判定がない」という別の欠落へ化けると、operator に
+        # 打ち間違いの手がかりが残らない
+        judgment = self._judgment(scenarios={
+            "a-001": {"verdict": "unaffected", "rationale": "要件に触れない"},
+            "a-O01": {"verdict": "unaffected", "rationale": "要件に触れない"},
+        })
+        reason = self._reason(judgment=judgment)
+        self.assertIsNotNone(reason)
+        self.assertIn("a-O01", reason)
+
+    def test_the_id_check_needs_a_fixture_list(self):
+        # 照合材料を渡さない呼び出し（判定入力の形だけを見る検査）では飛ばす
+        judgment = self._judgment(scenarios={
+            "a-999": {"verdict": "unaffected", "rationale": "要件に触れない"}})
+        self.assertIsNone(self._reason(judgment=judgment, known_ids=None))
 
 
 class TestCalibrationGate(_JudgmentHarness):
@@ -2151,6 +2177,61 @@ class TestSemanticJudgmentIsRefusedWholesale(_SemanticHarness):
                 ["--update", "a", "--partial", "--semantic", path, root])
             self.assertEqual(rc, 1)
             self.assertIn("skill", out)
+
+    def test_a_verdict_for_a_scenario_that_does_not_exist_refuses_the_update(self):
+        # 実在しない id への判定を黙って捨てると、typo は「a-003 の判定がない」
+        # としてしか現れず、打ち間違いそのものは報告されない
+        with tempfile.TemporaryDirectory() as root:
+            self._setup(root)
+            path = self._judgment(root, {
+                "a-001": "unaffected", "a-003": "unaffected",
+                "a-O03": "unaffected"})
+            rc, out = self._run(
+                ["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("a-O03", out)
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+
+class TestSemanticDiagnosesAMissingRecordAsMigration(_SemanticHarness):
+    """per-scenario 記録を持たない旧エントリには移行を処方する（実走ではなく）。
+
+    記録が無い状態で scenario_sha256 を比較すると必ず不一致になるが、そこから
+    「シナリオ定義が変わった = 実走が必要」と読ませると、無料の --seed-scenarios
+    で済む状態に最も高い処方を出すことになる。
+    """
+
+    def _blocked_lines(self, root):
+        self._repo(root)
+        self._verified(root, with_scenarios=False)
+        self._calibrate(root)
+        self._touch_contract(root)
+        path = self._judgment(
+            root, {"a-001": "unaffected", "a-002": "unaffected",
+                   "a-003": "unaffected"})
+        rc, out = self._run(
+            ["--update", "a", "--partial", "--semantic", path, root])
+        self.assertEqual(rc, 1)
+        return {line.split(":")[0][2:]: line
+                for line in out.splitlines() if line.startswith("✗ a-0")}
+
+    def test_an_impacted_scenario_is_pointed_at_the_migration(self):
+        with tempfile.TemporaryDirectory() as root:
+            lines = self._blocked_lines(root)
+            for sid in ("a-001", "a-003"):
+                with self.subTest(scenario=sid):
+                    self.assertIn("--seed-scenarios", lines[sid])
+                    self.assertNotIn("シナリオ定義", lines[sid])
+
+    def test_the_impacted_and_carried_over_routes_agree_in_one_run(self):
+        # a-002 は持ち越し側（carryover_reason）を通る。同じ欠落に別の診断が
+        # 出ると、1 回の実行が 2 つの処方を並べることになる
+        with tempfile.TemporaryDirectory() as root:
+            lines = self._blocked_lines(root)
+            self.assertEqual(sorted(lines), ["a-001", "a-002", "a-003"])
+            for sid, line in lines.items():
+                with self.subTest(scenario=sid):
+                    self.assertIn("--seed-scenarios", line)
 
 
 class TestSemanticFlagWiring(_SemanticHarness):
