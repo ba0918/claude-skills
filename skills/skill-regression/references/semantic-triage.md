@@ -160,6 +160,12 @@ itself. So the same misuse turns a one-time discount into a standing one. Whethe
 The corpus lives in `skills/skill-regression/calibration/`, `must_flag/` and `must_pass/`, at least 20 cases per
 side. Each case is `{id, expected, before, after, requirements[], mutation?, label?, notes?}`.
 
+Judge each case in the shape production uses, not in the shape it is stored in: render `before` -> `after` as a
+unified diff the way `semantic_diff.py` prints one in Step 1, and hand over `requirements[]` in the slot a
+scenario's requirement texts occupy, under a scenario title. Handing the judge the two full texts side by side
+would measure a different task from the one being gated — reading a diff is part of the job, so a corpus judged
+outside diff form leaves that part of the error rate unmeasured.
+
 ```bash
 python3 {skill_dir}/scripts/semantic_calibration.py --validate {repo_root}
 # judge every case exactly as in Step 2, collect the verdicts into
