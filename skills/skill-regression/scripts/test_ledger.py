@@ -2243,11 +2243,26 @@ class TestSemanticFlagWiring(_SemanticHarness):
             self._verified(root)
             self._calibrate(root)
             path = self._judgment(root, {})
-            rc, _ = self._run([
+            rc, out = self._run([
                 "--update", "a", "--partial", "--accept",
                 "--semantic", path, root])
             self.assertEqual(rc, 1)
+            self.assertIn("--accept", out)
+            self.assertIn("混ざると result", out)
             self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+    def test_the_remove_route_is_refused_on_its_own_terms(self):
+        # --remove には承認との混同が無い。--accept の説明を流用すると、
+        # operator は指定していないフラグの衝突を読まされる
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            path = self._judgment(root, {})
+            rc, out = self._run(["--remove", "a", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("--remove", out)
+            self.assertNotIn("--accept", out)
 
     def test_it_refuses_without_partial(self):
         with tempfile.TemporaryDirectory() as root:

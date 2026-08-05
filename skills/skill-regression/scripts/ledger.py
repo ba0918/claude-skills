@@ -1210,9 +1210,14 @@ def main(argv):
         root = _root(rest)
         entries = load(root)
         if semantic_path is not None:
-            if mode == "--remove" or accept:
+            if mode == "--remove":
+                print("✗ --semantic は --update --partial 専用で、--remove では"
+                      "指定できない（判定は記録を進めるための材料で、"
+                      "エントリの削除には使わない）")
+                return 1
+            if accept:
                 print("✗ --semantic は --update --partial 専用で、--accept とは"
-                      "併用できない（判定器による記録と人間の承認が混ざると"
+                      "併用できない（判定器による記録と人間の承認が混ざると "
                       "result の意味が読めなくなる）")
                 return 1
             if not partial:
