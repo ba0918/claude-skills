@@ -81,9 +81,10 @@ ledger `--note`.
 Two build-side adjustments exist so a text-only backend and a tool-using one are asked the
 same question. Both change the scaffolding, not the fixture:
 
-- **Empty working directories are named.** A scenario that stages nothing (no `setup`, empty
-  baseline) puts all its evidence in the Situation text, but the process path still creates an
-  empty `work/<unit>/repo/`. Only a backend that can list that directory learns the described
+- **Empty working directories are named.** A scenario that stages nothing — no files and no
+  git state; an empty baseline map alone does not qualify, since a git-only setup still
+  materialises an observable `.git` — puts all its evidence in the Situation text, but the
+  process path still creates an empty `work/<unit>/repo/`. Only a backend that can list that directory learns the described
   files are not on disk — measured, executors split on what to do with that, some declaring the
   situation unjudgeable while others read the description and finished. `build` therefore
   states the emptiness in the prompt and directs the executor to treat the Situation text as

@@ -339,6 +339,13 @@ class TestBuild(_Harness):
         self.build(_fixture(setup={}))
         self.assertIn("the directory is empty", self._prompt_text())
 
+    def test_a_git_only_scenario_is_not_called_empty(self):
+        """A git-only setup (init + --allow-empty commit, no files) has an empty
+        baseline map but stages a .git the executor can observe; calling the
+        directory empty would contradict what a tool-using backend sees there."""
+        self.build(_fixture(setup={"git": {"init": True, "commit": True}}))
+        self.assertNotIn("the directory is empty", self._prompt_text())
+
     def test_leaves_the_skill_body_out_of_the_prompt_by_default(self):
         summary = self.build()
         self.assertFalse(summary["inline_skill"])

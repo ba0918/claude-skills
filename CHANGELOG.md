@@ -18,7 +18,7 @@ claude-skills プラグインのバージョン履歴。
 
 ### Changed: text-only backend との並走比較から scaffolding 由来の交絡が抜けた
 
-- `regression_queue.py build` が、何も実体化しないシナリオ（baseline 空）のプロンプトへ「working directory は空、Situation の記述が一次証拠」と明示する。ツールを持つ executor だけが空ディレクトリを観測して判断を止める非対称が消える。fixtures.json は無編集（#278）
+- `regression_queue.py build` が、何も実体化しないシナリオ（files も git 状態もなし。git-only setup は `.git` を実体化するので対象外）のプロンプトへ「working directory は空、Situation の記述が一次証拠」と明示する。ツールを持つ executor だけが空ディレクトリを観測して判断を止める非対称が消える。fixtures.json は無編集（#278）
 - `build --inline-skill` が対象 SKILL.md 本文をプロンプトへ同梱する。ファイルを読めない backend と読める backend へ同一プロンプトを流せる。references は非同梱。`inline_skill` は build 出力と manifest 各エントリに記録され、有無の異なる batch は比較不能（#278）
 
 ## 1.74.0

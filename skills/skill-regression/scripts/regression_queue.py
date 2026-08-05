@@ -487,9 +487,11 @@ def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None,
                 output_file=output_file,
                 env=staged["env"],
                 skill_md_text=_read(skill_md) if inline_skill else None,
-                # No baseline means the scenario declared nothing to stage, so the
-                # executor's cwd is empty and only the Situation text carries evidence.
-                empty_work_dir=not staged["baseline"],
+                # Empty only when nothing at all was staged. The baseline map alone
+                # cannot decide this: a git-only setup (init + --allow-empty commit,
+                # no files) stages a .git the executor can observe, and calling that
+                # directory empty would contradict what a tool-using backend sees.
+                empty_work_dir=not staged["baseline"] and not staged["git"],
             )
             prompt_rel = os.path.join("prompts", f"{uid}.md")
             with open(os.path.join(batch_dir, prompt_rel), "w",
