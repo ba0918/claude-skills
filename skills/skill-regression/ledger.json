@@ -432,7 +432,7 @@
     "verified": "2026-08-04"
   },
   "github-issue": {
-    "carried_note": "ledger.py への semantic triage 追加（#268）。github-issue / skill-reviewer が素パス参照するのは --impact / --impact-scenarios / --status / --coverage の 4 経路のみで、base 6fa8ed0 の ledger.py との出力を実測比較し全経路バイト一致（exit code 含む・単一契約入力と複合入力の両方）を確認したうえでの accept。新経路 --semantic は --partial 専用で既存経路に分岐を足していない",
+    "carried_note": "ledger.py への semantic triage 追加（#268）。github-issue / skill-reviewer が素パス参照するのは --impact / --impact-scenarios / --status / --coverage の 4 経路のみで、base 6fa8ed0 の ledger.py との出力を実測比較し全経路バイト一致（exit code 含む・単一契約入力と複合入力と --strict 併用）を確認したうえでの accept。新経路 --semantic は --partial 専用で既存経路に分岐を足していない",
     "file_sha256": {
       "skills/github-issue/SKILL.md": "3e57ded338522ae78561336a94e50dd5697042263e6e7a28b69ab2e665d6afab",
       "skills/github-issue/fixtures.json": "3997abfe50abd8de1470506c5137700dd1ad7b86e2c87790b24830cde793760b",
@@ -458,9 +458,9 @@
       "skills/shared/references/measurement-identity.md": "051807f31d7a6799049d0f14aad6824f1c0d87a80cb5e15251480aab4ffb0384",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/shared/references/workspace-isolation.md": "8048ba07d1a7c112211ccaf56d503047af7494fcbef3c8ab6e7d10ab826d7ec5",
-      "skills/skill-regression/scripts/ledger.py": "970a6a50cf47063ed728ffc539c5a9529d5aac7dca22f654c4afadc308e820ae"
+      "skills/skill-regression/scripts/ledger.py": "f42dd3fb0e361759fee59be10878ee5659082f80c1835be5e97354f085f39312"
     },
-    "note": "ledger.py への semantic triage 追加（#268）。github-issue / skill-reviewer が素パス参照するのは --impact / --impact-scenarios / --status / --coverage の 4 経路のみで、base 6fa8ed0 の ledger.py との出力を実測比較し全経路バイト一致（exit code 含む・単一契約入力と複合入力と --strict 併用）を確認したうえでの accept。新経路 --semantic は --partial 専用で既存経路に分岐を足していない",
+    "note": "ledger.py への accepted-semantic の土台ガード追加（#268 F1）。github-issue / skill-reviewer が素パス参照するのは --impact / --impact-scenarios / --status / --coverage の 4 経路のみで、base 6fa8ed0 の ledger.py と出力・exit code のバイト一致を実測（単一契約入力・複合入力・--strict 併用・--check 併走の 8 通り）したうえでの accept（正当入力の挙動不変）。追加ガードは --partial --semantic 専用の分岐にあり、既存経路へ分岐を足していない",
     "result": "accepted-without-run",
     "scenarios": {
       "gi-001": {
@@ -555,7 +555,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "b3d23ae5f1f152125447cb2efd5735c27a1aba1b05e4d35b6d72ef035fdc7fd7",
+    "surface_sha256": "9148c206f3ce86543b69b4dda65dd45d5f641a28cf3f0b5bf793121b10b23941",
     "verified": "2026-08-05"
   },
   "handoff": {
@@ -882,7 +882,7 @@
     "verified": "2026-08-04"
   },
   "skill-reviewer": {
-    "carried_note": "ledger.py への semantic triage 追加（#268）。github-issue / skill-reviewer が素パス参照するのは --impact / --impact-scenarios / --status / --coverage の 4 経路のみで、base 6fa8ed0 の ledger.py との出力を実測比較し全経路バイト一致（exit code 含む・単一契約入力と複合入力の両方）を確認したうえでの accept。新経路 --semantic は --partial 専用で既存経路に分岐を足していない",
+    "carried_note": "ledger.py への semantic triage 追加（#268）。github-issue / skill-reviewer が素パス参照するのは --impact / --impact-scenarios / --status / --coverage の 4 経路のみで、base 6fa8ed0 の ledger.py との出力を実測比較し全経路バイト一致（exit code 含む・単一契約入力と複合入力と --strict 併用）を確認したうえでの accept。新経路 --semantic は --partial 専用で既存経路に分岐を足していない",
     "file_sha256": {
       "skills/shared/references/coverage-ledger.md": "10c3ea12cf96f31749eacce497f43d5db9b6d26b495a55e6552c10089fff8376",
       "skills/shared/references/fix-action-taxonomy.md": "9f686fb66e66491c6a2260d427c18b2e2bcfbecc995cf899414045150b8d1c71",
@@ -890,14 +890,14 @@
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "291e7ae152a262c0ffb2c03c16ecffd3c5b243a23662c670627ae37d7f939618",
       "skills/shared/references/skill-repository-profile.md": "fafc81d7ce71468606f3fd3c281b8f3a926dc3f0f48fcd221516720bf6c2fefe",
-      "skills/skill-regression/scripts/ledger.py": "970a6a50cf47063ed728ffc539c5a9529d5aac7dca22f654c4afadc308e820ae",
+      "skills/skill-regression/scripts/ledger.py": "f42dd3fb0e361759fee59be10878ee5659082f80c1835be5e97354f085f39312",
       "skills/skill-reviewer/SKILL.md": "e6d09f4bfa4201780f9b0724a63f1605826959226ba15c84c3efd64b0dbe9d85",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "db06e7e49c22d1eb0b4725304b4858152c4f0577fa1df0234d0a189f33c72bda",
       "skills/skill-reviewer/references/output-contract.md": "7cd2fc72d01be97efab8fa5b0302de986e0ffec38fd4dadbfc2282f9e1982b81",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "ledger.py への semantic triage 追加（#268）。github-issue / skill-reviewer が素パス参照するのは --impact / --impact-scenarios / --status / --coverage の 4 経路のみで、base 6fa8ed0 の ledger.py との出力を実測比較し全経路バイト一致（exit code 含む・単一契約入力と複合入力と --strict 併用）を確認したうえでの accept。新経路 --semantic は --partial 専用で既存経路に分岐を足していない",
+    "note": "ledger.py への accepted-semantic の土台ガード追加（#268 F1）。github-issue / skill-reviewer が素パス参照するのは --impact / --impact-scenarios / --status / --coverage の 4 経路のみで、base 6fa8ed0 の ledger.py と出力・exit code のバイト一致を実測（単一契約入力・複合入力・--strict 併用・--check 併走の 8 通り）したうえでの accept（正当入力の挙動不変）。追加ガードは --partial --semantic 専用の分岐にあり、既存経路へ分岐を足していない",
     "result": "accepted-without-run",
     "scenarios": {
       "sr-001": {
@@ -941,7 +941,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "cf91684e2781ea2106b5648b90fafcf4413f391f3864b87070c5c37f8d866c62",
+    "surface_sha256": "19a0f0725b850cd6c332e8a17699bf53ee6fda2eefd2857a82992b54041303f8",
     "verified": "2026-08-05"
   },
   "sweep-fix": {

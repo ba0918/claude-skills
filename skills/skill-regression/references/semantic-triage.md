@@ -133,6 +133,8 @@ writing nothing, when any of these holds — the same all-or-nothing rule `--par
 - an impacted scenario has no verdict, or its verdict is `unclear` / `affected`
 - an impacted scenario's `scenario_sha256` moved: when the acceptance criteria themselves changed, only a real
   run can settle it
+- an impacted scenario's previous record is neither `pass` nor `accepted-semantic`: a judgement says "this diff
+  does not change the behavior you last verified", so it needs a real run underneath to stand on
 
 `--semantic` cannot be combined with `--accept`, and requires `--partial`.
 

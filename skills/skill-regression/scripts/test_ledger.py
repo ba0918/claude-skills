@@ -2001,6 +2001,69 @@ class TestSemanticVerdictsThatCannotRecord(_SemanticHarness):
             self.assertIn("a-002", out)
 
 
+class TestSemanticNeedsARunUnderneath(_SemanticHarness):
+    """accepted-semantic は実走まで遡れる土台の上にしか積めない。"""
+
+    def test_a_record_that_never_ran_stays_blocked(self):
+        # 判定 1 回で accepted-without-run が accepted-semantic へ昇格できると、
+        # 一度も実走しない記録が段を 1 つ上げたまま維持できてしまう
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root, result="accepted-without-run")
+            self._calibrate(root)
+            self._touch_contract(root)
+            path = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            rc, out = self._run(
+                ["--update", "a", "--partial", "--semantic", path, root])
+            self.assertEqual(rc, 1)
+            self.assertIn("a-001", out)
+            self.assertEqual(ledger.load(root)["a"]["result"],
+                             "accepted-without-run")
+
+    def test_the_shape_proved_acceptances_are_not_a_foundation_either(self):
+        # skill_result が accepted-addition / accepted-prose を含む集合を
+        # accepted-without-run へ落としている。判定で書き換えられると、機械が
+        # 下げた段を押し戻す洗浄経路になる
+        for prev in ("accepted-addition", "accepted-prose"):
+            with self.subTest(prev=prev), tempfile.TemporaryDirectory() as root:
+                self._repo(root)
+                self._verified(root, result=prev)
+                self._calibrate(root)
+                self._touch_contract(root)
+                path = self._judgment(
+                    root, {"a-001": "unaffected", "a-003": "unaffected"})
+                rc, _ = self._run(
+                    ["--update", "a", "--partial", "--semantic", path, root])
+                self.assertEqual(rc, 1)
+
+    def test_a_semantic_record_can_chain_through_the_semantic_route_again(self):
+        # 連鎖の各段は実走 pass まで遡れるので、土台としては成立する
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            self._calibrate(root)
+            self._touch_contract(root)
+            first = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            self.assertEqual(
+                self._run(["--update", "a", "--partial", "--semantic",
+                           first, root])[0], 0)
+            _write(root, "skills/shared/references/tdd.md",
+                   "tdd contract CHANGED AGAIN")
+            second = self._judgment(
+                root, {"a-001": "unaffected", "a-003": "unaffected"})
+            rc, _ = self._run(
+                ["--update", "a", "--partial", "--semantic", second, root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["scenarios"]["a-001"]["result"],
+                             "accepted-semantic")
+            # 実走していないので検証日は初回の実走記録のまま据え置かれる
+            self.assertEqual(entry["scenarios"]["a-001"]["verified"],
+                             "2026-08-01")
+
+
 class TestSemanticJudgmentIsRefusedWholesale(_SemanticHarness):
     """判定ファイルが信用できないときは、記録ごと拒否する（C1, C2）。"""
 

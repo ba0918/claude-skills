@@ -104,6 +104,11 @@ RESULT_ACCEPTED_PROSE = "accepted-prose"
 RESULT_ACCEPTED_SEMANTIC = "accepted-semantic"
 RESULT_ACCEPTED_WITHOUT_RUN = "accepted-without-run"
 
+# accepted-semantic を積める土台。実走 pass か、実走 pass まで遡れる
+# accepted-semantic の連鎖だけを認める（semantic_block_reason に理由）
+SEMANTIC_FOUNDATION_RESULTS = frozenset(
+    {RESULT_PASS, RESULT_ACCEPTED_SEMANTIC})
+
 # semantic triage（docs/spec/semantic-triage.md）の 3 値判定。連続スコアを採らない
 # 理由は仕様側にある。ここで確率的な中間値を持たせないことが、較正対象を
 # 「unaffected 判定の誤り率」1 点に絞れる土台になっている。
@@ -473,6 +478,11 @@ def semantic_block_reason(verdict, recorded, scenario):
     不変であることを要求する。合否基準そのものが動いたシナリオは判定器の管轄外
     — 判定器が見ているのは「この差分が要件の充足を変えうるか」であって、
     要件自体が別物になったかどうかは実走でしか確かめられない。
+
+    加えて前回記録の result が実走 pass か accepted-semantic であることを要求する
+    （accept_result が軽量承認へ課しているのと同じ「土台は実走」の要求）。判定器の
+    言い分は「前回確かめた振る舞いをこの差分は変えない」であって、前回に何も
+    確かめていなければ引き継ぐ土台が存在しない。
     """
     value = (verdict or {}).get("verdict")
     if value is None:
@@ -482,6 +492,16 @@ def semantic_block_reason(verdict, recorded, scenario):
                 f"のみ。実走するか人間が判断すること）")
     if (recorded or {}).get("scenario_sha256") != scenario_sha256(scenario):
         return "シナリオ定義が前回検証時から変わった（合否基準の変更は実走でのみ確かめられる）"
+    prev_result = (recorded or {}).get("result")
+    # accepted-addition / accepted-prose を土台に許さないのは、skill_result が
+    # その 2 つを含む記録集合を accepted-without-run へ落としているため。判定を
+    # 重ねて accepted-semantic へ書き換えられると、機械が下げた段を判定器が
+    # 無条件に押し戻す洗浄経路になる。accepted-without-run は一度も実走して
+    # いない記録そのもので、判定の前提（前回確かめた振る舞い）が存在しない。
+    if prev_result not in SEMANTIC_FOUNDATION_RESULTS:
+        return (f"前回記録が {prev_result or '無い'}（accepted-semantic を積めるのは "
+                f"{' / '.join(sorted(SEMANTIC_FOUNDATION_RESULTS))} の上だけ。"
+                f"実走して土台を作ること）")
     return None
 
 
