@@ -28,6 +28,12 @@ CLI:
       severity が contract-addition / prose-change で前回が実走 pass なら
       accepted-addition / accepted-prose として自動で区別記録する。
       --note は run の性質（照会回数・実行者が通った経路など）の申し送り）
+  python3 ledger.py --update SKILL --partial [--scenario ID]... [--note TEXT] [root]
+      部分再走。--scenario で指名した id を「今回実走して合格」として記録し、
+      残りは前回結果の持ち越しを試みる。持ち越せないものがあれば更新ごと拒否
+      して列挙する（= それらも再走が必要）。詳細は references/partial-rerun.md
+  python3 ledger.py --seed-scenarios SKILL [root]
+      移行用ワンショット。stale でないエントリへ per-scenario 記録を埋める
   python3 ledger.py --remove SKILL [root]
   python3 ledger.py --impact FILE... [root]    # 変更ファイル → 影響スキル
   python3 ledger.py --impact-scenarios FILE... [root]
@@ -193,7 +199,76 @@ def accept_result(recorded, current, prev_result, recorded_struct=None,
     return RESULT_ACCEPTED_WITHOUT_RUN
 
 
-def make_entry(root, surface, result, verified_date, note=None):
+def carryover_dependencies(skill, scenario, surface):
+    """持ち越し判定でハッシュ一致を要求するファイル集合。
+
+    fixtures.json はここに含めない。含めると他シナリオの編集や exercises 宣言の
+    追加だけで全シナリオの持ち越しが壊れ、シナリオ差分で見る impact 側の規則と
+    食い違う。シナリオ定義の変化は scenario_sha256 の比較が受け持つ。
+    """
+    fixtures_rel = f"skills/{skill}/fixtures.json"
+    deps = declared_dependencies(scenario, set(surface))
+    if deps is None:
+        return set(surface) - {fixtures_rel}
+    return deps | {f"skills/{skill}/SKILL.md"}
+
+
+def carryover_reason(skill, scenario, surface, recorded_hashes, current_hashes,
+                     recorded_scenarios):
+    """前回の合格を持ち越せない理由を返す（持ち越せるなら None）。
+
+    有効性は直前エントリとの**帰納**で決まる。直前エントリでこのシナリオは
+    有効だった（実走したか、同じ規則で有効性を機械確認して持ち越した）ので、
+    シナリオ定義が不変で、依存ファイルが 1 バイトも動いていなければ、その
+    合格は今も有効である。per-scenario にファイルハッシュを保存しなくても
+    これが成り立つのが本設計の要。
+
+    材料が欠けるケースはすべて持ち越し不可（安全側）。前回エントリに記録が
+    無い、前回時点で依存の実体が無かった（MISSING = 壊れた参照）、依存が
+    前回の面に無かった、のいずれも帰納の土台にならない。
+    """
+    recorded = (recorded_scenarios or {}).get(scenario["id"])
+    if not recorded:
+        return "前回エントリに per-scenario 記録がない（--seed-scenarios で移行）"
+    if recorded.get("scenario_sha256") != scenario_sha256(scenario):
+        return "シナリオ定義が前回検証時から変わった"
+    unbacked, drifted = [], []
+    for rel in sorted(carryover_dependencies(skill, scenario, surface)):
+        previous = recorded_hashes.get(rel)
+        if previous is None or previous == _MISSING:
+            unbacked.append(rel)
+        elif previous != current_hashes.get(rel):
+            drifted.append(rel)
+    if unbacked:
+        return "前回検証時に実体の無い依存がある: " + ", ".join(unbacked)
+    if drifted:
+        return "依存ファイルが変わった: " + ", ".join(drifted)
+    return None
+
+
+def full_scenarios_record(root, skill, result, verified_date):
+    """現在の fixtures.json の全シナリオを同一の result / 検証日で記録する。"""
+    return {
+        scenario["id"]: {
+            "scenario_sha256": scenario_sha256(scenario),
+            "result": result,
+            "verified": verified_date,
+        }
+        for scenario in load_scenarios(root, skill)
+    }
+
+
+def skill_result(scenario_records):
+    """per-scenario 記録から skill レベルの result を決める。
+
+    実走していないシナリオが 1 つでも混ざる限り pass を名乗らせない。全件が
+    実走 pass（持ち越しはその有効性を機械確認したもの）のときだけ pass。
+    """
+    results = {rec.get("result") for rec in scenario_records.values()}
+    return RESULT_PASS if results == {RESULT_PASS} else RESULT_ACCEPTED_WITHOUT_RUN
+
+
+def make_entry(root, surface, result, verified_date, note=None, scenarios=None):
     """台帳エントリを作る。
 
     result は "pass"（実走して全シナリオ合格）| "accepted-addition"（実走せず承認。
@@ -204,6 +279,10 @@ def make_entry(root, surface, result, verified_date, note=None):
 
     structural_sha256 は次回照合時の散文のみ判定の比較基準（md のみ）。これを
     持たない旧エントリの変更は常に contract-change へ倒れる。
+
+    scenarios は per-scenario の {scenario_sha256, result, verified}。部分再走
+    （--partial）の持ち越し判定がこれを土台に帰納する。省略時はキーごと落とす
+    ので、記録を持たない旧エントリと同じ扱いになる（= 全シナリオ再走が必要）。
 
     note は素の pass だけでは次に回す者へ伝わらない run の性質を残すための欄
     （executor-contract が要求する照会回数、実行者が選んだ経路など）。
@@ -217,6 +296,8 @@ def make_entry(root, surface, result, verified_date, note=None):
         "result": result,
         "verified": verified_date,
     }
+    if scenarios:
+        entry["scenarios"] = scenarios
     if note:
         entry["note"] = note
     return entry
@@ -452,6 +533,97 @@ def save(root, entries):
         f.write("\n")
 
 
+def partial_update(root, entries, skill, ran_ids, note=None, today=None):
+    """実走したシナリオを記録し、残りを持ち越して台帳を進める。
+
+    持ち越せないシナリオが 1 つでもあれば更新ごと拒否して列挙する。部分的に
+    書き込むと「台帳のどこまでが今も有効か」が読めなくなり、台帳が保証する
+    ものが「全シナリオ合格」から曖昧になるため。
+    """
+    scenarios = load_scenarios(root, skill)
+    if not scenarios:
+        print(f"✗ skills/{skill}/fixtures.json にシナリオがない")
+        return 1
+    unknown = sorted(set(ran_ids) - {s["id"] for s in scenarios})
+    if unknown:
+        print(f"✗ fixtures.json に無いシナリオ id: {', '.join(unknown)}")
+        return 1
+    today = today or datetime.date.today().isoformat()
+    entry = entries.get(skill, {})
+    surface = skill_surface(root, skill)
+    current = file_hashes(root, surface)
+    recorded_scenarios = entry.get("scenarios") or {}
+    records, blocked = {}, []
+    for scenario in scenarios:
+        sid = scenario["id"]
+        if sid in ran_ids:
+            records[sid] = {
+                "scenario_sha256": scenario_sha256(scenario),
+                "result": RESULT_PASS,
+                "verified": today,
+            }
+            continue
+        reason = carryover_reason(
+            skill, scenario, surface, entry.get("file_sha256", {}), current,
+            recorded_scenarios)
+        if reason:
+            blocked.append((sid, reason))
+        else:
+            records[sid] = dict(recorded_scenarios[sid])
+    if blocked:
+        for sid, reason in blocked:
+            print(f"✗ {sid}: {reason}")
+        print(f"✗ {len(blocked)} 件は持ち越せない。実走して --scenario で指名するか、"
+              f"--partial を外して全シナリオ実走の --update にすること")
+        return 1
+    entries[skill] = make_entry(
+        root, surface, skill_result(records), today, note=note,
+        scenarios=records)
+    save(root, entries)
+    print(f"✓ ledger 更新: {skill} (--partial: 実走 {len(ran_ids)} / "
+          f"持ち越し {len(records) - len(ran_ids)})")
+    return 0
+
+
+def seed_scenarios(root, entries, skill):
+    """記録を持たない旧エントリへ per-scenario 記録を埋める移行用ワンショット。
+
+    skill レベルのエントリが「この面で全シナリオ合格（または明示的な承認）」を
+    保証しているので、面が前回検証時と一致している限り、その保証を各シナリオへ
+    分配するのは健全。検証イベントではないので検証日は動かさない。
+    """
+    entry = entries.get(skill)
+    if entry is None:
+        print(f"✗ 台帳にエントリがない: {skill}")
+        return 1
+    if entry.get("scenarios"):
+        print(f"✗ {skill} には既に per-scenario 記録がある。--seed-scenarios は"
+              f"記録を持たない旧エントリ専用で、上書きを許すと実走していない"
+              f"シナリオ記録を skill レベルの result で塗り替えられる")
+        return 1
+    scenarios = load_scenarios(root, skill)
+    if not scenarios:
+        print(f"✗ skills/{skill}/fixtures.json にシナリオがない")
+        return 1
+    surface = skill_surface(root, skill)
+    severity, changed = stale_severity(
+        entry.get("file_sha256", {}), file_hashes(root, surface),
+        entry.get("structural_sha256", {}), structural_hashes(root, surface),
+        own_prefix=f"skills/{skill}/")
+    if severity is not None:
+        print(f"✗ {skill} は stale [{severity}]: {', '.join(changed)}")
+        print("  シードの前提は「面が前回検証時のまま」であること。"
+              "先に run → --update で検証すること")
+        return 1
+    entry["scenarios"] = full_scenarios_record(
+        root, skill, entry.get("result", RESULT_ACCEPTED_WITHOUT_RUN),
+        entry.get("verified", ""))
+    save(root, entries)
+    print(f"✓ per-scenario 記録をシード: {skill}"
+          f"（{len(entry['scenarios'])} シナリオ / 検証日は据え置き）")
+    return 0
+
+
 def impact_scenarios_cli(root, changed_paths):
     """変更ファイル → `skill<TAB>scenario_id` 行。"""
     graph = dep_graph.build_graph(root)
@@ -551,13 +723,25 @@ def main(argv):
             return 1
         return 0
 
+    if "--seed-scenarios" in args:
+        idx = args.index("--seed-scenarios")
+        skill = args[idx + 1]
+        root = _root(args[idx + 2:])
+        return seed_scenarios(root, load(root), skill)
+
     if "--update" in args or "--remove" in args:
         mode = "--update" if "--update" in args else "--remove"
         idx = args.index(mode)
         skill = args[idx + 1]
         rest = args[idx + 2:]
         accept = "--accept" in rest
-        rest = [a for a in rest if a != "--accept"]
+        partial = "--partial" in rest
+        rest = [a for a in rest if a not in ("--accept", "--partial")]
+        ran_ids = set()
+        while "--scenario" in rest:
+            sidx = rest.index("--scenario")
+            ran_ids.add(rest[sidx + 1])
+            rest = rest[:sidx] + rest[sidx + 2:]
         note = None
         if "--note" in rest:
             note_idx = rest.index("--note")
@@ -565,6 +749,18 @@ def main(argv):
             rest = rest[:note_idx] + rest[note_idx + 2:]
         root = _root(rest)
         entries = load(root)
+        if partial:
+            if mode == "--remove" or accept:
+                print("✗ --partial は --update 専用で、--accept とは併用できない"
+                      "（承認と実走記録が混ざると result の意味が読めなくなる）")
+                return 1
+            if skill not in _fixtures_skills(root):
+                print(f"✗ skills/{skill}/fixtures.json が存在しない")
+                return 1
+            return partial_update(root, entries, skill, ran_ids, note=note)
+        if ran_ids:
+            print("✗ --scenario は --partial と併せて指定すること")
+            return 1
         if mode == "--remove":
             if entries.pop(skill, None) is None:
                 print(f"✗ 台帳にエントリがない: {skill}")
@@ -592,9 +788,10 @@ def main(argv):
                     prev_entry.get("structural_sha256", {}),
                     structural_hashes(root, surface),
                     own_prefix=f"skills/{skill}/")
+            today = datetime.date.today().isoformat()
             entries[skill] = make_entry(
-                root, surface, result,
-                datetime.date.today().isoformat(), note=note,
+                root, surface, result, today, note=note,
+                scenarios=full_scenarios_record(root, skill, result, today),
             )
         save(root, entries)
         print(f"✓ ledger 更新: {skill} ({mode})")
