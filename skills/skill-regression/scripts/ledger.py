@@ -723,14 +723,38 @@ def _option_value(args, idx):
     return None if value.startswith("--") else value
 
 
+def _stray_options(tokens):
+    """モードが読み終えた後に残った `--` 始まりトークン（root パスは残ってよい）。
+
+    オプションは位置依存で読むので、モード指定より前に置かれた既知フラグは
+    黙って捨てられる。捨てられた --partial / --scenario は「全シナリオを実走して
+    合格した」という偽の per-scenario 記録を書き込み、以後の持ち越し帰納が
+    その上に積まれる。未知トークン（typo）が root 解決で落ちるのと同じ扱いにする。
+    """
+    return [t for t in tokens if t.startswith("--")]
+
+
 def main(argv):
     args = list(argv)
 
     def _root(rest):
         return rest[0] if rest else os.getcwd()
 
+    def _stray(tokens, mode):
+        stray = _stray_options(tokens)
+        if not stray:
+            return None
+        return _usage(
+            f"解釈できないオプションが残っている: {', '.join(stray)}\n"
+            f"  オプションは対象指定（{mode} …）より後ろに書くこと。"
+            f"前に置くと黙って捨てられる"
+        )
+
     if "--check" in args:
         args.remove("--check")
+        rc = _stray(args, "--check")
+        if rc is not None:
+            return rc
         root = _root(args)
         issues = check(root, load(root))
         for kind, skill, detail in issues:
@@ -771,6 +795,9 @@ def main(argv):
         strict = "--strict" in args
         if strict:
             args.remove("--strict")
+        rc = _stray(args, "--coverage")
+        if rc is not None:
+            return rc
         root = _root(args)
         cov = coverage(root)
         for skill in cov["covered"]:
@@ -800,6 +827,10 @@ def main(argv):
         skill = _option_value(args, idx)
         if skill is None:
             return _usage("--seed-scenarios にスキル名がない")
+        rest = args[:idx] + args[idx + 2:]
+        rc = _stray(rest, "--seed-scenarios SKILL")
+        if rc is not None:
+            return rc
         root = _root(args[idx + 2:])
         return seed_scenarios(root, load(root), skill)
 
@@ -828,6 +859,9 @@ def main(argv):
             if note is None:
                 return _usage("--note に本文がない")
             rest = rest[:note_idx] + rest[note_idx + 2:]
+        rc = _stray(args[:idx] + rest, f"{mode} SKILL")
+        if rc is not None:
+            return rc
         root = _root(rest)
         entries = load(root)
         if partial:
@@ -895,6 +929,9 @@ def main(argv):
 
     if "--status" in args:
         args.remove("--status")
+        rc = _stray(args, "--status")
+        if rc is not None:
+            return rc
         root = _root(args)
         entries = load(root)
         issues = {s: k for k, s, _ in check(root, entries)}

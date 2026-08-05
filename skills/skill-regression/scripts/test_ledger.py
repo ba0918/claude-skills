@@ -1269,6 +1269,51 @@ class TestArgumentErrorsAreReported(_PartialHarness):
             self.assertNotEqual(rc, 0)
 
 
+class TestMisplacedOptionsAreRefused(_PartialHarness):
+    """モード指定より前に書かれた既知オプションを黙って捨てない。
+
+    位置依存で読むオプションは、置き場所を間違えると存在しなかったことになる。
+    捨てられた --partial / --scenario は「全シナリオを実走して合格した」という
+    偽の per-scenario 記録を台帳へ書き込み、以後の持ち越し帰納がその上に積まれる。
+    """
+
+    def test_partial_and_scenario_before_update_are_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run([
+                "--partial", "--scenario", "a-001", "--update", "a", root])
+            self.assertEqual(rc, 2)
+            self.assertIn("--partial", out)
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+    def test_accept_before_update_is_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run(["--accept", "--update", "a", root])
+            self.assertEqual(rc, 2)
+            self.assertIn("--accept", out)
+            self.assertEqual(ledger.load(root)["a"]["verified"], "2026-08-01")
+
+    def test_a_misplaced_flag_on_check_is_refused(self):
+        # root の位置に `--partial` が居座ると、存在しない root の照合が
+        # 「issue なし」として rc 0 で通る
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, out = self._run(["--check", "--partial", root])
+            self.assertEqual(rc, 2)
+            self.assertIn("--partial", out)
+
+    def test_a_correctly_ordered_invocation_still_works(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified(root)
+            rc, _ = self._run(["--update", "a", "--partial", root])
+            self.assertEqual(rc, 0)
+
+
 class TestCoverage(unittest.TestCase):
     """fixture 保有率の計上。--check は opt-in ゲートなので母数を別に数える。"""
 
