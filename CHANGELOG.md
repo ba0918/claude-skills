@@ -16,6 +16,10 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Added: fixture executor の ollama ローカル実行ラッパー
+
+- `ollama_executor.sh` が stdin のプロンプトを ollama HTTP API へ中継し、応答を output_file へ書き出す。process_runner の backends.json に `ollama-qwen3-14b` エントリを追加するだけで既存の process-delegation 契約に載る（#275）
+
 ### Changed: fixture の要件数超過が検証で可視化され、cycle の cy-004 が 2 本へ分割された
 
 - `fixture_setup.py --validate` が requirements 7 件超のシナリオを `[info]` で報告する。violation ではないため既存の検証は止まらない（#262）
