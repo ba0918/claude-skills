@@ -281,6 +281,18 @@ def accepted_scenarios_record(root, skill, result, prev_entry, today):
     }
 
 
+def carried_note(prev_entry, note):
+    """新エントリが引き継ぐ申し送り（スロットは 1 つ）。
+
+    直前の note があればそれを、無ければ直前が引き継いでいた分をそのまま次へ渡す。
+    エントリを作り直す更新はすべてこれを通す — 部分更新だけが申し送りを守ると、
+    定例の --accept 1 回で実走証拠の由来が台帳から消える。
+    """
+    prev_entry = prev_entry or {}
+    carried = prev_entry.get("note") or prev_entry.get("carried_note")
+    return None if carried == note else carried
+
+
 def skill_result(scenario_records):
     """per-scenario 記録から skill レベルの result を決める。
 
@@ -640,13 +652,9 @@ def partial_update(root, entries, skill, ran_ids, note=None, today=None):
         print(f"✗ {len(blocked)} 件は持ち越せない。実走して --scenario で指名するか、"
               f"--partial を外して全シナリオ実走の --update にすること")
         return 1
-    # 直前の申し送りを引き継ぐ。note を持たないエントリなら、その前任から
-    # 引き継いでいた分をそのまま次へ渡す（実走証拠の由来が、note 無しの
-    # 部分更新 1 回で消えるのを防ぐ）
-    carried = entry.get("note") or entry.get("carried_note")
     entries[skill] = make_entry(
         root, surface, skill_result(records), today, note=note,
-        scenarios=records, carried_note=None if carried == note else carried)
+        scenarios=records, carried_note=carried_note(entry, note))
     save(root, entries)
     print(f"✓ ledger 更新: {skill} (--partial: 実走 {len(ran_ids)} / "
           f"持ち越し {len(records) - len(ran_ids)})")
@@ -934,6 +942,7 @@ def main(argv):
             )
             entries[skill] = make_entry(
                 root, surface, result, today, note=note, scenarios=scenarios,
+                carried_note=carried_note(prev_entry, note),
             )
         save(root, entries)
         print(f"✓ ledger 更新: {skill} ({mode})")

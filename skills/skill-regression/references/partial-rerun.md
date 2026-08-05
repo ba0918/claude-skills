@@ -87,7 +87,8 @@ python3 ledger.py --seed-scenarios cycle .
   was brought up to this surface", not "something was executed today", and `--status` shows only that
   skill-level date — it cannot tell a run from a carry-over. To read actual run recency, look at the
   per-scenario `verified` values in the entry (a carried-over scenario keeps its older date) and at the `note`,
-  which records what the run was. `--partial` also preserves the previous entry's note under `carried_note`.
+  which records what the run was. Every route that rebuilds an entry — `--partial`, a full `--update`, and
+  `--accept` — forwards the previous entry's note into `carried_note` (one slot, one generation).
 - `--partial` cannot be combined with `--accept`. Acceptance means "judged without running"; partial means
   "these were run". Mixed, the recorded `result` would no longer have a single meaning.
 - `--seed-scenarios` refuses a stale entry, and refuses an entry that already has records. It is bookkeeping, not

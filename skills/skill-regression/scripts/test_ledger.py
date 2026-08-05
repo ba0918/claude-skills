@@ -1135,6 +1135,36 @@ class TestNoteIsNeverSilentlyDiscarded(_PartialHarness):
             self.assertEqual(entry["carried_note"], "二代目")
             self.assertNotIn("初代", json.dumps(entry, ensure_ascii=False))
 
+    def test_an_accept_keeps_the_previous_note(self):
+        # --partial だけが申し送りを守ると、定例の --accept 1 回で実走証拠が消える
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代: 実走 3 本 / 経路 B")
+            _write(root, "skills/a/extra.md", "new reference")
+            rc, _ = self._run(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["carried_note"],
+                             "初代: 実走 3 本 / 経路 B")
+
+    def test_a_full_update_keeps_the_previous_note(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代: 実走 3 本 / 経路 B")
+            rc, _ = self._run(["--update", "a", root])
+            self.assertEqual(rc, 0)
+            self.assertEqual(ledger.load(root)["a"]["carried_note"],
+                             "初代: 実走 3 本 / 経路 B")
+
+    def test_a_chain_of_accepts_keeps_the_most_recent_prior_note(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._repo(root)
+            self._verified_with_note(root, "初代")
+            self._run(["--update", "a", "--accept", "--note", "二代目", root])
+            rc, _ = self._run(["--update", "a", "--accept", root])
+            self.assertEqual(rc, 0)
+            entry = ledger.load(root)["a"]
+            self.assertEqual(entry["carried_note"], "二代目")
+
 
 class TestAcceptKeepsPerScenarioRunDates(_PartialHarness):
     """1 本も走らせていない --accept が per-scenario の検証日を塗り替えない。
