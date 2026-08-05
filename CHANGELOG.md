@@ -16,6 +16,12 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Added: 回帰再走の単位がスキルからシナリオへ細分化された（部分再走）
+
+- fixture の `scenarios[].exercises` に「そのシナリオが踏む挙動面ファイル」を宣言でき、`ledger.py --impact-scenarios` が変更ファイルから再走対象シナリオだけを返す。宣言なしのシナリオは従来どおり常に再走（#243）
+- `ledger.py --update <skill> --partial [--scenario ID]...` が実走分を記録して残りを持ち越す。持ち越せないシナリオがあれば更新ごと拒否して列挙する。移行用に `--seed-scenarios` を追加（#243）
+- cycle の 20 シナリオへ宣言を付与。fix-delegation.md の変更で再走が 20 → 8 本、completion.md で 20 → 9 本に絞られる（#243）
+
 ### Added: fixture が「対象 phase の直前状態」を宣言で seed できる（phase 終端型）
 
 - `setup.git.commits`（baseline 後に積む追加コミット列）と `{{fixture:sha:baseline}}` / `{{fixture:sha:commits[N]}}` プレースホルダを追加。実装済みの履歴と、それを指す文書を宣言だけで再現できる（#242）

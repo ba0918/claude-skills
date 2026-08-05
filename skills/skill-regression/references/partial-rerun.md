@@ -89,7 +89,10 @@ python3 ledger.py --seed-scenarios cycle .
   scenarios and leaves the verification date untouched. Allowing a re-seed would let a skill-level `pass`
   overwrite scenario records that were never actually run.
 - The existing `--accept` route, including its refusal when `fixtures.json` changed, is untouched. `--partial` is
-  a separate path.
+  a separate path. Note the consequence at scenario granularity: an acceptance stamps **every** scenario record with
+  the accepted value, so the skill cannot return to `pass` through partial reruns alone — a full run has to re-earn
+  it. That is deliberate. Inheriting `pass` into the records would turn a skill-level judgement made without running
+  into per-scenario evidence, and the whole point of the records is that they carry only what was actually verified.
 
 ## Guarantee boundary
 
