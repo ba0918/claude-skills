@@ -24,12 +24,15 @@ utterance / GitHub issue
         ▼
    implement
         ▼
-     review
-        ▼
+     review      the in-cycle review (plan-reviewer / skill-reviewer inside cycle);
+        │        reviews running after the PR exists are an extra defence line,
+        ▼        not this station
    alignment     write implementation-induced changes back into docs/spec and docs
         │        (station owner: doc-check's `branch` mode — run it after review,
         ▼         before the PR)
-       PR        feature branch; human-approved merge
+       PR        feature branch; human-approved merge. A pull-type terminus: no
+                 skill owns PR creation — the autonomous github-issue flow performs
+                 it on the trunk's behalf; manual flows use the environment's means
 
  side lines (deliberately not wired into the trunk):
    ledger       — adjudication record; board only when decision history is wanted
