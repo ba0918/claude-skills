@@ -1,6 +1,6 @@
 # Fix-Action Taxonomy Shared Contract
 
-The axis, shared by doc-audit / context-audit, for "how to handle a detected finding".
+The axis, shared by doc-audit / context-audit / doc-check, for "how to handle a detected finding".
 This is **a separate axis, orthogonal to severity (BLOCK/WARN/INFO/PASS, [severity-and-verdicts.md](severity-and-verdicts.md))**;
 it decides "may this finding be fixed automatically".
 
@@ -20,6 +20,12 @@ Example: a WARN can be AUTO_FIX, and it can equally be REPORT_ONLY. Do not confl
 Conditions: **mechanically verifiable + idempotent + no risk of data loss**.
 Running the same operation any number of times yields the same result (idempotent). The tool presents the diff
 and applies it after confirmation. **Never make deletion or semantic rewriting of body text AUTO_FIX.**
+
+Declared exception — apply-then-report: **doc-check** applies AUTO_FIX immediately with
+no confirmation step. This is deliberate, not a drift: doc-check never commits, every
+applied fix is enumerated in its final report, and the human confirmation happens once
+at commit / merge review instead of once per finding (keeping human decision points at
+one). A skill claiming this exception must state it in its own body, as doc-check does.
 
 Examples: replacing an obvious path typo pointing at a real file (a unique candidate), normalizing a frontmatter key (body unchanged).
 
