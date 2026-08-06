@@ -12,7 +12,7 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
 4. Ensure `.agents/artifacts/ideas/` exists (`mkdir -p`).
 5. Generate the slug: `yyyymmddhhmmss_{kebab-title}` (`date +%Y%m%d%H%M%S`; kebab-title is a short ASCII translation of the title). If `.agents/artifacts/ideas/{slug}.md` already exists, re-run `date` for a fresh timestamp — overwriting an existing memo is reserved for Wrap after Resume.
 6. Create the memo at `.agents/artifacts/ideas/{slug}.md` from [idea-template.md](idea-template.md). When the exit contract judgment (Step 3) is positive, also populate the exit contract sections per [exit-contract-template.md](exit-contract-template.md):
-   - **Agreements**: each decision with rationale and destination (ledger)
+   - **Agreements**: each decision with rationale and destination (plan / GitHub issue / docs/spec; ledger only when a decision record is wanted)
    - **Undecided Items**: open questions with `blocks_plan` flag
    - **Acceptance Criteria**: observable behaviors/constraints with verifiability flag
    - **Codebase Evidence**: file paths and findings that grounded the discussion
