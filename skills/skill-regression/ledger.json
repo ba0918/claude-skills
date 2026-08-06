@@ -1,22 +1,22 @@
 {
   "brainstorm": {
-    "carried_note": "measurement freeze (2026-08-06 ruling): removed spec backlinks from SKILL.md and workflow-session.md (specs are human-facing; drift detection belongs to the alignment station). No procedural change to any workflow. Re-run deferred to the post-freeze full measurement.",
+    "carried_note": "measurement freeze (2026-08-06 ruling): trunk phase 2 — plan source-material soft gate / wrap routing gains GitHub issue / two-layer human-readable issue bodies. Re-run deferred to the post-freeze full measurement.",
     "file_sha256": {
-      "skills/brainstorm/SKILL.md": "c41e28ddb13757e12b82f9ccb9cae03224617ab1b82808b5991eaf6059f9e3a5",
+      "skills/brainstorm/SKILL.md": "847fa403d0f846250a28c6c1048ab999f7505790c1900626bd63db199552ac3f",
       "skills/brainstorm/fixtures.json": "5ab5d3f5bd0267e46c8bdbefc417c1e142583752c01ce785d182167c47e9c27c",
-      "skills/brainstorm/references/exit-contract-template.md": "1ed1fa2bc3d4b5a86f6fda152c3c12df1d19e91d81da2ad78c56a2cb01e6b224",
-      "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
+      "skills/brainstorm/references/exit-contract-template.md": "f581aaa79499077f002d58bc395f5bf1c1cb3fb8c73c87a35b7447fe8f3635fa",
+      "skills/brainstorm/references/idea-template.md": "3497e124d1eaba34cbd4405ab00351c1375540a7b1e071283a984fc183395ee5",
       "skills/brainstorm/references/spec-generation.md": "1633706e12a8ba3e0b876bbcdd72ab7c24280c9423c94b138a9f587ceb4edf1e",
       "skills/brainstorm/references/workflow-list.md": "3d07fba66cb55a9d4b781d9a5890d44ab47bce99a82fc31ce49d143b6da666eb",
       "skills/brainstorm/references/workflow-plan.md": "c3febd4bbfd4b9a4fd4cdada9c75b17c9ad0706fcf3dae5234259b10b7fbcfe4",
       "skills/brainstorm/references/workflow-resume.md": "6c06f2cdcc5ac2f6394c6d45ce55a292b88683359aa8325ba451cfe710d1dc77",
       "skills/brainstorm/references/workflow-session.md": "a9ed6819a419e42b1190740d615da0a50460832f1df877c4a71d0194fa0221b0",
-      "skills/brainstorm/references/workflow-wrap.md": "60ad1c3bea4eea7672bdf774c513845637748f1b3639b40ca88c5f0e135b0117",
+      "skills/brainstorm/references/workflow-wrap.md": "1258102d721300b57d62b5b26e03c0bfc0861a5d0068c95ee2728de5a4bcb678",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/human-readable-summary.md": "645e4ad07f8941a473d750a224840ddd4cbaa6b964be661dcbb76650a26cb4b0"
     },
-    "note": "measurement freeze (2026-08-06 ruling): trunk phase 2 — plan source-material soft gate / wrap routing gains GitHub issue / two-layer human-readable issue bodies. Re-run deferred to the post-freeze full measurement.",
+    "note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
     "result": "accepted-without-run",
     "scenarios": {
       "bs-001": {
@@ -57,14 +57,14 @@
     },
     "structural_sha256": {
       "skills/brainstorm/SKILL.md": "cb74523fad2df7eae266d5b13520a24b948f4a764123c8d82296147d927393dc",
-      "skills/brainstorm/references/exit-contract-template.md": "392ea430dedde7a20ae2e616aa046dc55afabfd1369d777245928b060e6d5fbc",
-      "skills/brainstorm/references/idea-template.md": "77d2645476a8a0ecb2501e3bec131a89d9f79b070fcf28ca48423cf9d4fbce28",
+      "skills/brainstorm/references/exit-contract-template.md": "35030d56d0e831d02fc38b7b54c70fd684edc12229372152e88e58e1c30ffc10",
+      "skills/brainstorm/references/idea-template.md": "6a7a3bbb4852d2ebe07ddc083345e749bad0587234579a0661625f66e53c091d",
       "skills/brainstorm/references/spec-generation.md": "18194aecc79e39908e4d0dfe1a8a611dbe35d25b54e99c0085a7ce21e56f6c40",
       "skills/brainstorm/references/workflow-list.md": "e61ed16fd4d9f627dc6f03970645eabb476422d5d858a40e096e7c845d386308",
       "skills/brainstorm/references/workflow-plan.md": "6b819a0f57e140147ff1204df8c983d663af1c7ea9eaa9c4c3ebc723ce48b0dc",
       "skills/brainstorm/references/workflow-resume.md": "3aef63ccb0d9084f25aa81b1bd2b76e8b5d6b579284e1c6ab3689d73b7dd3e5b",
       "skills/brainstorm/references/workflow-session.md": "80292ccfa5cdb6a42a5b3a53e94a445e352cf6bd3cfc0298c494696003198203",
-      "skills/brainstorm/references/workflow-wrap.md": "742bad708785a3e7803298510113b1bc731c0eb4778d00aa90d1de564acb3c13",
+      "skills/brainstorm/references/workflow-wrap.md": "124b7a111c6be0de09d2cb271ba9428adba6278be087855a42ad9c7618b572d3",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
       "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
       "skills/shared/references/human-readable-summary.md": "17963b524b543ee7d9760a8987f9b4ecf0cd562c24d2168d340396371c347905"
@@ -84,7 +84,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "2a2ab44135eb2492fa3a49a9b683c4e25a89cd88c076d9f0bcf41cc09927662a",
+    "surface_sha256": "5922d462a4fcc4c8ac0764cc69e594a9e3f0b444080ce7cf110b46fe422fd7c1",
     "verified": "2026-08-06"
   },
   "brief": {
@@ -195,11 +195,11 @@
     "verified": "2026-08-04"
   },
   "cycle": {
-    "carried_note": "#262: cy-004 分割後の初走。cy-004a は実行経路 fork を実測 — inline fallback に倒れた 2 走（セッション内 subagent / process-queue batch cy004a-262-20260805）は R3=plan-implement への文脈中継が発生せず測定不能で不採用、実委譲経路の完全 run（匿名 delegate ×3、外部照会 0）で全 critical ○。cy-004b は 2 走とも 5/5 ○ で採用: inline fallback 走（成果物裏取り済み）と実委譲経路の背景 run（subagent a31dbda97d5026454、Phase 1/3/4 が匿名 delegate、independent review は quota エラーで unavailable 扱い）。cy-004b が inline 走でも判定できるのは、5 要件がいずれも委譲の発生に依存せず post-state と報告内容で観測できるためで、委譲行為そのものを見る cy-004a の R3 とは成立条件が異なる。ただし cy-004b の 2 走はいずれも要件 1/2/4 が難路未通過の浅い ○（verdict PASS で fix loop 未発火 / independent review は両走とも unavailable / plan に Issue 行が無く close 延期は空ケースのみ）。採用した 3 走はいずれもセッション transcript 上の background agent run で、ディスクに残る対照は不採用 batch cy004a-262-20260805 のみ。",
+    "carried_note": "#262: cy-004 分割後の初走。cy-004a は実行経路 fork を実測 — inline fallback に倒れた 2 走（セッション内 subagent / process-queue batch cy004a-262-20260805）は R3=plan-implement への文脈中継が発生せず測定不能で不採用、実委譲経路の完全 run（匿名 delegate ×3、外部照会 0）で全 critical ○。cy-004b は 2 走とも 5/5 ○ で採用: inline fallback 走（成果物裏取り済み）と実委譲経路の背景 run（subagent a31dbda97d5026454、Phase 1/3/4 が匿名 delegate、independent review は quota エラーで unavailable 扱い）。cy-004b が inline 走でも判定できるのは、5 要件がいずれも委譲の発生に依存せず post-state と報告内容で観測できるためで、委譲行為そのものを見る cy-004a の R3 とは成立条件が異なる。ただし cy-004b の 2 走はいずれも要件 1/2/4 が難路未通過の浅い ○（verdict PASS で fix loop 未発火 / independent review は両走とも unavailable / plan に Issue 行が無く close 延期は空ケースのみ）。採用した 3 走はいずれもセッション transcript 上の background agent run で、ディスクに残る対照は不採用 batch cy004a-262-20260805 のみ。持ち越し 19 本の実走由来は #242 batch cy-run-20260805 + cy004-rerun2（Sonnet executor）。exercises 未宣言 4 本（cy-001, cy-004a, cy-004b, cy-009）の理由は #243 裁定（面をほぼ全域踏む、または実走証拠が設計経路を網羅しない）。",
     "file_sha256": {
       "skills/cycle/SKILL.md": "8fcf89b2df01a9d09a74dc8225e2a51eb130e6bb849663125109aa8b0c2ba22a",
       "skills/cycle/fixtures.json": "3ced930955dbfac1d6817e91226dc76941e9299c4cda3e7d86a05b5f285a1657",
-      "skills/cycle/references/completion.md": "baa0c07638675d7f76e5e643119df76ac4f112429afbae684890f837c1440fe3",
+      "skills/cycle/references/completion.md": "f03e0fcc3bf0e01705569e4aacc3efb560059a320451ff8e4053e4e2258d232d",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
       "skills/cycle/references/inner-satellite.md": "d8bbd573f7915cb9cff12e8b0f94d16881294b6c7ec8adcc0cdc9f1d4b744f1a",
@@ -221,118 +221,118 @@
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "#262: cy-004 分割後の初走。cy-004a は実行経路 fork を実測 — inline fallback に倒れた 2 走（セッション内 subagent / process-queue batch cy004a-262-20260805）は R3=plan-implement への文脈中継が発生せず測定不能で不採用、実委譲経路の完全 run（匿名 delegate ×3、外部照会 0）で全 critical ○。cy-004b は 2 走とも 5/5 ○ で採用: inline fallback 走（成果物裏取り済み）と実委譲経路の背景 run（subagent a31dbda97d5026454、Phase 1/3/4 が匿名 delegate、independent review は quota エラーで unavailable 扱い）。cy-004b が inline 走でも判定できるのは、5 要件がいずれも委譲の発生に依存せず post-state と報告内容で観測できるためで、委譲行為そのものを見る cy-004a の R3 とは成立条件が異なる。ただし cy-004b の 2 走はいずれも要件 1/2/4 が難路未通過の浅い ○（verdict PASS で fix loop 未発火 / independent review は両走とも unavailable / plan に Issue 行が無く close 延期は空ケースのみ）。採用した 3 走はいずれもセッション transcript 上の background agent run で、ディスクに残る対照は不採用 batch cy004a-262-20260805 のみ。持ち越し 19 本の実走由来は #242 batch cy-run-20260805 + cy004-rerun2（Sonnet executor）。exercises 未宣言 4 本（cy-001, cy-004a, cy-004b, cy-009）の理由は #243 裁定（面をほぼ全域踏む、または実走証拠が設計経路を網羅しない）。",
-    "result": "pass",
+    "note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
+    "result": "accepted-without-run",
     "scenarios": {
       "cy-001": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "73bb611470d29721d749882dce27a34bb87c64cbdc814b50a4251b63a1e269ae",
         "verified": "2026-08-05"
       },
       "cy-002": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "706ec1306d6bd20d228983f9ef7f24d5371c8b88b258cbe6ef35599a573656f2",
         "verified": "2026-08-05"
       },
       "cy-003": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "4b08f44ffdb72531169fe9a7766cce80a5b677aa741752de3599ff297bd938e4",
         "verified": "2026-08-05"
       },
       "cy-004a": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "846a1b877d4c3a39b77f5f01944b8be4dbb8bed7d275384ce535599b9795f95d",
         "verified": "2026-08-05"
       },
       "cy-004b": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "6b0a24a9dc1bbf98d75ad413630c4cc5b925a02219b715314a91009dbf6dc9ac",
         "verified": "2026-08-05"
       },
       "cy-005": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "51743c8f308cbd3e00346dc66a3fce39d13492022dbaa981132154597cd884e5",
         "verified": "2026-08-05"
       },
       "cy-006": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "e44d35f38412bda802701b25ecec8231bf3fe1377e1ab7495f79766f619991e2",
         "verified": "2026-08-05"
       },
       "cy-007": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "d6b81926cd422647f463bfc89aee37b4c67a4e30f17d2ca4a5ccad288decd08e",
         "verified": "2026-08-05"
       },
       "cy-008": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "0e515d11354fd7d76c4264681afe41cc0be175c552937cbe2ff91598b6c3e095",
         "verified": "2026-08-05"
       },
       "cy-009": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "43c8a5790587bb67ba1115488760498b7cb14c4a8348e6419971c0c45f8d506d",
         "verified": "2026-08-05"
       },
       "cy-010": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "250b624d78cafd9d71a7d434ea8a1e853402010080dfcd6ced4010b274539d7d",
         "verified": "2026-08-05"
       },
       "cy-011": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "b70bfdad3c07b1a581b0f74b14dc6c8174d1f2c6ccda268f579bc813649525cf",
         "verified": "2026-08-05"
       },
       "cy-012": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "ae6054ffe8c597e824a777fa9d4f29b56a73c510278ea6ea4b3c2e96bf5eb72c",
         "verified": "2026-08-05"
       },
       "cy-013": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "32880e2e9ee4e1c3971dcf5becf654378b891cf5bd651e62de67cf38e35a222e",
         "verified": "2026-08-05"
       },
       "cy-014": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "3e8b32740ab73c14509b3852d55da5323d9e3dbc75e95166a6d85e8ddab42383",
         "verified": "2026-08-05"
       },
       "cy-015": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "4d5bf92cc1bb368653fe401dce277134611be132456737abfae9ced2f7b8d14f",
         "verified": "2026-08-05"
       },
       "cy-016": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "593db8384d254a97214ee8f3fc8ad215a78efa2f6d002a4f3925bc96d75dd3b7",
         "verified": "2026-08-05"
       },
       "cy-017": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "e5b2885a8105d80af99f6481aaa4e60df98d96a7011b3590dd3e0dfcaba975bc",
         "verified": "2026-08-05"
       },
       "cy-018": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "5b984623dce237e26de717946982fcca8f1056e259c6c6b99e1eff3581d5d870",
         "verified": "2026-08-05"
       },
       "cy-019": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "5e6059e68cfefb54d481983e07b1d95c7cfb944753c78bcf1ce941d33dae7c77",
         "verified": "2026-08-05"
       },
       "cy-020": {
-        "result": "pass",
+        "result": "accepted-without-run",
         "scenario_sha256": "63948fb2f2f21565bc0fb7d1e733f898f95c7688ed9d8687cc232d902cc6a670",
         "verified": "2026-08-05"
       }
     },
     "structural_sha256": {
       "skills/cycle/SKILL.md": "086560464952dd2e79c52fd254b6b5133a4a1c7b005a27b189c7257eb1ebc1f7",
-      "skills/cycle/references/completion.md": "1b2e05b6506e5b46edc76d4cb90f5c92ae938317eeb7cd477c2aec240536072c",
+      "skills/cycle/references/completion.md": "d2136ca9a353d533a0b91e07cff838c92a24852cc373bc31afaee1f93bef6c24",
       "skills/cycle/references/final-gate-delegation.md": "27d25341c480d9a3d6ad69a5c247b995082067c8eda58d93e3cc60036e34514b",
       "skills/cycle/references/fix-delegation.md": "bbbb683d7d408568579cdd71e9d00136f32f6143222fdcd905a9869edbc5968f",
       "skills/cycle/references/inner-satellite.md": "e311d257a402bef3f63d280af008feeaf3047d63630a6bb0706549bd11c7eebf",
@@ -375,8 +375,8 @@
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "06cb135080b228a2924d716c1430416214404ff56c25b573be99d534fc3e754d",
-    "verified": "2026-08-05"
+    "surface_sha256": "ce8f6c038abfdcf40563b29e5a7b055762bd267dc14f32b52c6b67af1bb9cff6",
+    "verified": "2026-08-06"
   },
   "decision-journal": {
     "file_sha256": {
@@ -490,9 +490,9 @@
     "verified": "2026-08-04"
   },
   "github-issue": {
-    "carried_note": "#266: ledger.py CLI の誤配置 root 拒否（引数厳格化）。documented 呼び出し形（末尾 root / 省略時 cwd）の挙動不変は test_ledger.py で固定済み、参照側の呼び出し形に影響なしと判断",
+    "carried_note": "measurement freeze (2026-08-06 ruling): trunk phase 2 — plan source-material soft gate / wrap routing gains GitHub issue / two-layer human-readable issue bodies. Re-run deferred to the post-freeze full measurement.",
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "5278a729c4693ac01ed0c1a467a3f7477ec7da793d80160814ca8b2a633a1c1e",
+      "skills/github-issue/SKILL.md": "0bbcb23b8561a809ab760d397a441f9be56e5f0680c0ad0b001e7004048e30ff",
       "skills/github-issue/fixtures.json": "3997abfe50abd8de1470506c5137700dd1ad7b86e2c87790b24830cde793760b",
       "skills/github-issue/references/adapter-internals.md": "71a40216b3dc65afd4fe9eadbd322dcec9f7505e51e66805db841db6bfd3bb5a",
       "skills/github-issue/references/cleanup-spec.md": "a8a10b8352a5a22c190e92ab7408714461cfa48f93f84e4664331e2b4879df36",
@@ -513,13 +513,14 @@
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/checkpoint-pattern.md": "48aaf4f43b52ae7e586271c084bedd6925a6fa0e5526cffab003848a37973158",
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
+      "skills/shared/references/fix-action-taxonomy.md": "9f686fb66e66491c6a2260d427c18b2e2bcfbecc995cf899414045150b8d1c71",
       "skills/shared/references/human-readable-summary.md": "645e4ad07f8941a473d750a224840ddd4cbaa6b964be661dcbb76650a26cb4b0",
       "skills/shared/references/measurement-identity.md": "051807f31d7a6799049d0f14aad6824f1c0d87a80cb5e15251480aab4ffb0384",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/shared/references/workspace-isolation.md": "8048ba07d1a7c112211ccaf56d503047af7494fcbef3c8ab6e7d10ab826d7ec5",
       "skills/skill-regression/scripts/ledger.py": "f6ade730f57c779b619b823075af9ef7e58dec339cc58c1a56df6204fc6a8ad5"
     },
-    "note": "measurement freeze (2026-08-06 ruling): trunk phase 2 — plan source-material soft gate / wrap routing gains GitHub issue / two-layer human-readable issue bodies. Re-run deferred to the post-freeze full measurement.",
+    "note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
     "result": "accepted-without-run",
     "scenarios": {
       "gi-001": {
@@ -564,7 +565,7 @@
       }
     },
     "structural_sha256": {
-      "skills/github-issue/SKILL.md": "389f192695004a8e45f11ee4e90bb3f0c1c5987b569f797992e848d8402296b4",
+      "skills/github-issue/SKILL.md": "394ba912b6e1e44370a9c7a672c4d991cfedd80c178782e6ee2f27034a5ea85c",
       "skills/github-issue/references/adapter-internals.md": "90918af8d308dddc6a4411f4e58b964e269e147d44bad3378202394c8078bf34",
       "skills/github-issue/references/cleanup-spec.md": "b2708e8ef5275869f8e67911dd4ec836a07a9bf6fc1a8c82d7e699461c902662",
       "skills/github-issue/references/codex-review-loop.md": "4dd087117a70053c6c6e2b6f0a42248369d23535e70fefb498e1fc40260a7f60",
@@ -583,6 +584,7 @@
       "skills/shared/references/artifact-store.md": "4ab7297bbce0294646093f50c818c13d31e9212e3ad9bbeffc74318686d03b06",
       "skills/shared/references/checkpoint-pattern.md": "a9ea84e07aa85b8e9c4e916b6d48d8a8ec443ae29f48a21e5173b292e076ba8f",
       "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
+      "skills/shared/references/fix-action-taxonomy.md": "f10504693453f7cc768ac00ec34708f41d22a8e713ca503b47d9322b4d44c81b",
       "skills/shared/references/human-readable-summary.md": "17963b524b543ee7d9760a8987f9b4ecf0cd562c24d2168d340396371c347905",
       "skills/shared/references/measurement-identity.md": "14f032ad596dadf562fe9fd9ef00b19a5f6ef68b85a564626427393cebc0f5c5",
       "skills/shared/references/polling-pattern.md": "17c29aaec95e63f92f96f3d9eba7bc5827c21f592023ee03e48b8aabdd5b79f0",
@@ -610,13 +612,14 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/codex-integration.md",
+      "skills/shared/references/fix-action-taxonomy.md",
       "skills/shared/references/human-readable-summary.md",
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md",
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "b2398d889d88130e9210c34ba43725a396a5eb44bcf2ca93e79d737f581a5121",
+    "surface_sha256": "5c64f37a97670d5d8b2595d1d772baa6935daf9d526c59153655c8a5a0f5aa06",
     "verified": "2026-08-06"
   },
   "handoff": {
@@ -786,11 +789,11 @@
     "verified": "2026-08-04"
   },
   "plan": {
-    "carried_note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
+    "carried_note": "measurement freeze (2026-08-06 ruling): trunk phase 2 — plan source-material soft gate / wrap routing gains GitHub issue / two-layer human-readable issue bodies. Re-run deferred to the post-freeze full measurement.",
     "file_sha256": {
-      "skills/plan/SKILL.md": "3971fd776df2c500ffc9f26fa82e1be81374c1143e60c64cf09dc621f485128d",
+      "skills/plan/SKILL.md": "4ce064a3db07f1213b1a381f2d8a3cabd7dd315646c7730340c46d46e8eb7304",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
-      "skills/plan/references/plan-template.md": "1e63da8f61032af9bcaafc633820aee2213fc011e99a0a3d2d9c8370d757d50a",
+      "skills/plan/references/plan-template.md": "2a63bdbcb1173eedda59df71c3b35bb3517721f9962a75297755425f38c99316",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
@@ -800,7 +803,7 @@
       "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "measurement freeze (2026-08-06 ruling): trunk phase 2 — plan source-material soft gate / wrap routing gains GitHub issue / two-layer human-readable issue bodies. Re-run deferred to the post-freeze full measurement.",
+    "note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
     "result": "accepted-without-run",
     "scenarios": {
       "pl-001": {
@@ -825,8 +828,8 @@
       }
     },
     "structural_sha256": {
-      "skills/plan/SKILL.md": "d49d3a8ee7796a1d5eae357074cd640171dbc9593a9b4c439921436c4d54bf2a",
-      "skills/plan/references/plan-template.md": "50e6a4353b0f37726af85fa2709fe31db12cc73db76bbd4d57651eec0ff0df20",
+      "skills/plan/SKILL.md": "ca0f8b299d8cd2999ba5551b5d2618fe3e6e9284a10467dc4f353e9211ec07b7",
+      "skills/plan/references/plan-template.md": "08b08f0fc140cec8894737f938d773f2cfbb3e679b82465a0bf93a830159a1ef",
       "skills/plan/references/status-template.md": "4ab54b5caa51f85660dd9de21b39f19386a5b9afcada80b67faa11f20fec576d",
       "skills/plan/references/status-update-guide.md": "7cce88c03df6d16c609b08ce4b055d21dd27aff1b677a6a8ebcfa9d5213ba83f",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
@@ -848,12 +851,13 @@
       "skills/shared/references/tdd-contract.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "0c74bffadd7948a23ab313440e1a0b0f88371b768910b90d60d3ab13a44260e5",
+    "surface_sha256": "4e9ae8df6d3bc3f62160aaab70b14d62dc3814091f101422819088c1604cff6e",
     "verified": "2026-08-06"
   },
   "plan-implement": {
+    "carried_note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
     "file_sha256": {
-      "skills/plan-implement/SKILL.md": "921a9f5b412f296655c07711e90619bf841341b3906060b30f4c0d80e4b384e8",
+      "skills/plan-implement/SKILL.md": "2f8a5e36775bb2b46c7369bcad05cfab7cf94705103adeec2db350fa7347abc4",
       "skills/plan-implement/fixtures.json": "cbbfecde4c25225dbe80468c85e73e16a1fb7d99fce4e7370b68c44fdc5abad9",
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/design-principles.md": "d7cfeaad478b233e5daf502ad12ab8296e8050a010d3ba2c467c91c45ac7ed49",
@@ -864,10 +868,32 @@
       "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc"
     },
-    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
-    "result": "pass",
+    "note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
+    "result": "accepted-without-run",
+    "scenarios": {
+      "pi-001": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "4105c342948f968a11beb347e1bf11213990ced52a8dfa7454218b5e188a8286",
+        "verified": "2026-08-04"
+      },
+      "pi-002": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "79c6daf4a225183cbe25c9b599906eba50b68c36c6cf9c4b39e6046662d68bc7",
+        "verified": "2026-08-04"
+      },
+      "pi-003": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "c8c03c63bf0834cabfcd14ac0c185e90c77a484875b454faedbbc0a0b2737f76",
+        "verified": "2026-08-04"
+      },
+      "pi-004": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "5246b69f17ab6c5b2f3f728ad9792df766e69ce08c653e632f4590f54222807e",
+        "verified": "2026-08-04"
+      }
+    },
     "structural_sha256": {
-      "skills/plan-implement/SKILL.md": "9b833bc6bc7f0c141178277969e94f49bbbe22416518448ac0cc192fb967414d",
+      "skills/plan-implement/SKILL.md": "47dcc3f13d5202e84b0b586b9b6d916fb803d051024a75ca0f5c6f80c4082d33",
       "skills/shared/references/artifact-store.md": "4ab7297bbce0294646093f50c818c13d31e9212e3ad9bbeffc74318686d03b06",
       "skills/shared/references/design-principles.md": "9b90272bdb55a9530723fce10ebb30f46a64bfde0101cd547129efb7f8735e20",
       "skills/shared/references/runtime-progress.md": "f25d63b2c50e170ac24fd528f1440d7908cdff0908ac34d8cee2ffebe8398bac",
@@ -889,27 +915,40 @@
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md"
     ],
-    "surface_sha256": "914bd9ea8731ce613d4e0de35812c35c1c28113f8fa869a490638dbdef2f34dc",
-    "verified": "2026-08-04"
+    "surface_sha256": "c7c658579dc86536922bb381d1101c955544395f87f2e0c2ea19f99b82f7f22c",
+    "verified": "2026-08-06"
   },
   "plan-reviewer": {
+    "carried_note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
     "file_sha256": {
-      "skills/plan-reviewer/SKILL.md": "dbdbf9c82d37ac8bb23635a06c07cf99932bf5af87ecbd7b9f796497118dfa16",
+      "skills/plan-reviewer/SKILL.md": "54fbbb9c8bb6fb7f2c15d24688eb121f4f4521c92b3fe50238e86a16e8a41bcf",
       "skills/plan-reviewer/fixtures.json": "2cc32f3bd853aa54ec6c192d4fb3f7467e64fa429bc47200363b61865f939b0e",
       "skills/plan-reviewer/references/output-format.md": "e6e24243fe984699940225849c5bbdeb3980e0db16780c4af16ba76e71005956",
-      "skills/plan-reviewer/references/review-dimensions.md": "326db4f76dda4577fdea158b4967c0aefc9fe9fe7cd2569321e3d078e35c033c",
+      "skills/plan-reviewer/references/review-dimensions.md": "0a73dd70929cf270bc169148833d3a38b78d97ba2fff690f02b8a2aac5158412",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/design-principles.md": "d7cfeaad478b233e5daf502ad12ab8296e8050a010d3ba2c467c91c45ac7ed49",
       "skills/shared/references/orchestration-patterns.md": "9672c4f21d72957d8c2cfec1673af412de49fc8634d2fe2ece39121d05d4779b",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c"
     },
-    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
-    "result": "pass",
+    "note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
+    "result": "accepted-without-run",
+    "scenarios": {
+      "pr-001": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "0c3801506fcc98749d55e3cd05d05b5ad48090e88a9ccdac0756c00c48021ff8",
+        "verified": "2026-08-04"
+      },
+      "pr-002": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "e84beec3fabc2d73173713953f28e6dd7a0101b828bf368493e2ea544ccba9c3",
+        "verified": "2026-08-04"
+      }
+    },
     "structural_sha256": {
-      "skills/plan-reviewer/SKILL.md": "e592fa4f8f42370a3cbe1f9f927bd55b7af7674e14e52ceab398ed8b7fe4cf08",
+      "skills/plan-reviewer/SKILL.md": "95a65f9947a08dd28bcf93f5cae0cf4f06b4f498cff21608fe2e1a641792d1f6",
       "skills/plan-reviewer/references/output-format.md": "01ea67bdf460860ba93459c084bb26dcd9e817217fb4b8bac07ae852e7ae22a7",
-      "skills/plan-reviewer/references/review-dimensions.md": "175509f8a9e48fc3a85cfa700c402e32c6f05e5b5718673672c11c2d5760c80b",
+      "skills/plan-reviewer/references/review-dimensions.md": "288d035aff0095a58683af5ecbee39d5915f32b3882934724ff5bea0d4e109b4",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
       "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
       "skills/shared/references/design-principles.md": "9b90272bdb55a9530723fce10ebb30f46a64bfde0101cd547129efb7f8735e20",
@@ -927,8 +966,8 @@
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/severity-and-verdicts.md"
     ],
-    "surface_sha256": "0feb192e0ac6f29d9562c1f83e52da50798f962c981cfc5d2de76a858f792022",
-    "verified": "2026-08-04"
+    "surface_sha256": "d1e44483e42f85b4aad23bf982eb6cfbc07d0bee7518b025ef9e61a289635d19",
+    "verified": "2026-08-06"
   },
   "problem-solving": {
     "file_sha256": {
@@ -989,13 +1028,13 @@
     "verified": "2026-08-04"
   },
   "skill-reviewer": {
-    "carried_note": "measurement freeze (2026-08-06 ruling): skill-authoring gained the 'Specs Are Human-facing' subsection (spec-first maintenance rule, no backlinks from skill bodies); no behavioral instruction to skill-reviewer changed. Re-run deferred to the post-freeze full measurement.",
+    "carried_note": "measurement freeze (2026-08-06 ruling): trunk diagram's alignment station finalized (owner = doc-check branch mode); no behavioral instruction to skill-reviewer changed. Re-run deferred to the post-freeze full measurement.",
     "file_sha256": {
       "skills/shared/references/coverage-ledger.md": "10c3ea12cf96f31749eacce497f43d5db9b6d26b495a55e6552c10089fff8376",
       "skills/shared/references/fix-action-taxonomy.md": "9f686fb66e66491c6a2260d427c18b2e2bcfbecc995cf899414045150b8d1c71",
       "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
-      "skills/shared/references/skill-authoring.md": "eb94d590c28804a86b552b8d866d5b016b46470ba27ae8f3f34aef970ea6fd52",
+      "skills/shared/references/skill-authoring.md": "156673a4214f8b175dc545e728cee9fe9dbf3f122d915268e840ccb641fc0ed1",
       "skills/shared/references/skill-repository-profile.md": "fafc81d7ce71468606f3fd3c281b8f3a926dc3f0f48fcd221516720bf6c2fefe",
       "skills/skill-regression/scripts/ledger.py": "f6ade730f57c779b619b823075af9ef7e58dec339cc58c1a56df6204fc6a8ad5",
       "skills/skill-reviewer/SKILL.md": "e6d09f4bfa4201780f9b0724a63f1605826959226ba15c84c3efd64b0dbe9d85",
@@ -1004,7 +1043,7 @@
       "skills/skill-reviewer/references/output-contract.md": "7cd2fc72d01be97efab8fa5b0302de986e0ffec38fd4dadbfc2282f9e1982b81",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "measurement freeze (2026-08-06 ruling): trunk diagram's alignment station finalized (owner = doc-check branch mode); no behavioral instruction to skill-reviewer changed. Re-run deferred to the post-freeze full measurement.",
+    "note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
     "result": "accepted-without-run",
     "scenarios": {
       "sr-001": {
@@ -1028,7 +1067,7 @@
       "skills/shared/references/fix-action-taxonomy.md": "f10504693453f7cc768ac00ec34708f41d22a8e713ca503b47d9322b4d44c81b",
       "skills/shared/references/quality-gate-contract.md": "e76eed7335874bca058f208d15dbdda334bfe7d25f3c3246ce36f29ef54eae58",
       "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
-      "skills/shared/references/skill-authoring.md": "eb5cc79a44a6f256acf21e8f50bed264c0ff2281454b5ce8d5b8a2423468791b",
+      "skills/shared/references/skill-authoring.md": "8f7ff1a086b894884599b2e745d67b3342f1f6d2b060a9f1e691c4b0f0e5cdc1",
       "skills/shared/references/skill-repository-profile.md": "2cb1fb93cb2af137f6e63400d7da8014a06b378e4daf224defe3f706809ac558",
       "skills/skill-reviewer/SKILL.md": "4dbdd6eda5a292567adc7dbefb5803449c674567ea102c3d7033007cfae3b1a9",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "140524c30eafb57aeb4340c2e6ffdbebc0bdd95f972b1303c70b3232f9a7caae",
@@ -1048,7 +1087,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "397111f065577f034463de851a69028bab1289c7239a6efbf9a99922966579a2",
+    "surface_sha256": "31014bd4a2a30a9c7b21ce7a4c0bc26bf9a06e041f999c00fda7b3c2b5180782",
     "verified": "2026-08-06"
   },
   "sweep-fix": {
