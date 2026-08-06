@@ -54,6 +54,8 @@ Read the full contents of the plan file. Then gather the implementation context:
 
 Collect the specification references that the implementation should conform to:
 - The plan file (implementation steps and acceptance criteria)
+- The domain spec named by the plan header's `Spec:` field, if present (usually under
+  `docs/spec/` — the human-approved statement of what to build)
 - `CLAUDE.md` (project root — project rules)
 - `.agents/config/review-rules.md` (project-specific review rules, if present)
 - Ledger file if present (`.agents/artifacts/ledger/` — agreed decisions)

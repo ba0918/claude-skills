@@ -172,15 +172,17 @@ Whether all required items are implemented.
 
 ## 6. Spec Conformance
 
-Whether the implementation conforms to the agreed specification (ledger AGREED rows, clauses, acceptance criteria from the brainstorm exit contract).
+Whether the implementation conforms to the agreed specification (the domain spec named by the plan header's `Spec:` field, ledger AGREED rows, clauses, acceptance criteria from the brainstorm exit contract).
 
 ### Checklist
 
+- [ ] The implementation satisfies the requirements and constraints of the domain spec (`Spec:` field in the plan header), when one exists
 - [ ] Each acceptance criterion from the plan/exit contract is satisfied by the implementation
 - [ ] No implementation goes beyond the agreed scope (scope creep)
 - [ ] Implementation choices are consistent with AGREED ledger decisions (when a ledger exists)
 - [ ] Verifiable clauses (when they exist) are satisfied by the tests
 - [ ] Deviations from the plan are justified and documented in commit messages
+- [ ] The domain spec and the clauses do not contradict each other; a contradiction means the specification itself is inconsistent — classify it as **spec escalation**, never resolve it silently in favor of one side
 
 ### Confidence Score Criteria
 

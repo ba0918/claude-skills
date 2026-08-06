@@ -75,6 +75,8 @@ an error; do not guess paths, isolation, or capability data.
    Resolve `{cycle_id}` from the plan's `**Cycle ID:**` header field. If the header is
    absent, derive it from the plan filename's timestamp portion (the leading `yyyymmddhhmmss`).
 3. Grasp the overall picture of the plan, the list of steps, and the current progress.
+   If the plan header carries a `Spec:` field, read the named domain spec before
+   implementing — it is the human-approved statement of what to build.
    Check `.agents/artifacts/plans/progress/{cycle_id}.md` for previously completed steps
    (do not re-implement steps marked 🟢 Done in the progress file)
 4. If the argument names a specific step, start from there
