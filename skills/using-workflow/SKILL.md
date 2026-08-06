@@ -30,7 +30,10 @@ converges in one round. When in doubt, propose brainstorm first.
 1. **Trunk continuation** — the work already carries its source material: an
    in-flight plan, converged brainstorm agreements, a written spec, or a reproduced
    bug. Enter at the matching station — plan / cycle / iterate for planned work,
+   doc-check for post-implementation alignment (write-back to docs),
    systematic-debugging for a reproduced bug — do not loop back to brainstorm.
+   A request to board a side line (ledger, spec-verify, and kin) is matched by that
+   skill's own description — side lines never fall through to the brainstorm default.
 2. **Terminal and session logistics** — committing (commit), releasing, PR
    mechanics, session handoff (handoff), status or list lookups. These end or relay
    work; they never start it. Releasing and PR mechanics have no owning skill —
