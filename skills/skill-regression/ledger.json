@@ -1,22 +1,22 @@
 {
   "brainstorm": {
-    "carried_note": "measurement freeze (2026-08-06 ruling): trunk phase 2 — plan source-material soft gate / wrap routing gains GitHub issue / two-layer human-readable issue bodies. Re-run deferred to the post-freeze full measurement.",
+    "carried_note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
     "file_sha256": {
       "skills/brainstorm/SKILL.md": "847fa403d0f846250a28c6c1048ab999f7505790c1900626bd63db199552ac3f",
       "skills/brainstorm/fixtures.json": "5ab5d3f5bd0267e46c8bdbefc417c1e142583752c01ce785d182167c47e9c27c",
       "skills/brainstorm/references/exit-contract-template.md": "f581aaa79499077f002d58bc395f5bf1c1cb3fb8c73c87a35b7447fe8f3635fa",
       "skills/brainstorm/references/idea-template.md": "3497e124d1eaba34cbd4405ab00351c1375540a7b1e071283a984fc183395ee5",
-      "skills/brainstorm/references/spec-generation.md": "1633706e12a8ba3e0b876bbcdd72ab7c24280c9423c94b138a9f587ceb4edf1e",
+      "skills/brainstorm/references/spec-generation.md": "6a9db5b240540b3465e1d5cace60415c1e0d411b82c134ee083e9760ef92ea1b",
       "skills/brainstorm/references/workflow-list.md": "3d07fba66cb55a9d4b781d9a5890d44ab47bce99a82fc31ce49d143b6da666eb",
       "skills/brainstorm/references/workflow-plan.md": "c3febd4bbfd4b9a4fd4cdada9c75b17c9ad0706fcf3dae5234259b10b7fbcfe4",
       "skills/brainstorm/references/workflow-resume.md": "6c06f2cdcc5ac2f6394c6d45ce55a292b88683359aa8325ba451cfe710d1dc77",
       "skills/brainstorm/references/workflow-session.md": "a9ed6819a419e42b1190740d615da0a50460832f1df877c4a71d0194fa0221b0",
-      "skills/brainstorm/references/workflow-wrap.md": "1258102d721300b57d62b5b26e03c0bfc0861a5d0068c95ee2728de5a4bcb678",
+      "skills/brainstorm/references/workflow-wrap.md": "c6d09d64a94cf0c6cd81a7f8f1379ca867bf261157100f67af55a2a333ff8d73",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/human-readable-summary.md": "645e4ad07f8941a473d750a224840ddd4cbaa6b964be661dcbb76650a26cb4b0"
     },
-    "note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
+    "note": "measurement freeze (2026-08-06 ruling): wrap 宛先列挙と headless spec 昇格手順の追随。完成後の 1 発フル実測で支払う",
     "result": "accepted-without-run",
     "scenarios": {
       "bs-001": {
@@ -59,12 +59,12 @@
       "skills/brainstorm/SKILL.md": "cb74523fad2df7eae266d5b13520a24b948f4a764123c8d82296147d927393dc",
       "skills/brainstorm/references/exit-contract-template.md": "35030d56d0e831d02fc38b7b54c70fd684edc12229372152e88e58e1c30ffc10",
       "skills/brainstorm/references/idea-template.md": "6a7a3bbb4852d2ebe07ddc083345e749bad0587234579a0661625f66e53c091d",
-      "skills/brainstorm/references/spec-generation.md": "18194aecc79e39908e4d0dfe1a8a611dbe35d25b54e99c0085a7ce21e56f6c40",
+      "skills/brainstorm/references/spec-generation.md": "6460cdf4f5554b9f73e8db49101ec6a6bc398e825328aa5d9fca872e78f2e66e",
       "skills/brainstorm/references/workflow-list.md": "e61ed16fd4d9f627dc6f03970645eabb476422d5d858a40e096e7c845d386308",
       "skills/brainstorm/references/workflow-plan.md": "6b819a0f57e140147ff1204df8c983d663af1c7ea9eaa9c4c3ebc723ce48b0dc",
       "skills/brainstorm/references/workflow-resume.md": "3aef63ccb0d9084f25aa81b1bd2b76e8b5d6b579284e1c6ab3689d73b7dd3e5b",
       "skills/brainstorm/references/workflow-session.md": "80292ccfa5cdb6a42a5b3a53e94a445e352cf6bd3cfc0298c494696003198203",
-      "skills/brainstorm/references/workflow-wrap.md": "124b7a111c6be0de09d2cb271ba9428adba6278be087855a42ad9c7618b572d3",
+      "skills/brainstorm/references/workflow-wrap.md": "7bd7a3cff519458e6b1d3ebeec924d25fc715680412d32745d36630f4e77cfcb",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
       "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
       "skills/shared/references/human-readable-summary.md": "17963b524b543ee7d9760a8987f9b4ecf0cd562c24d2168d340396371c347905"
@@ -84,7 +84,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "5922d462a4fcc4c8ac0764cc69e594a9e3f0b444080ce7cf110b46fe422fd7c1",
+    "surface_sha256": "7d98ced48bdf2d7255d25818014f69dda3d5272cbaf5d42af2b5d21c038e248c",
     "verified": "2026-08-06"
   },
   "brief": {
