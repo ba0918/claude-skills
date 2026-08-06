@@ -68,11 +68,20 @@ Take issue content from the user in natural language, infer suitable labels, and
      — `## 自走可否` with a two-valued `判定:` line, and `## 変更対象` listing the paths. Without them polling
      quietly skips the issue forever, and the label reads as a promise nothing will honour
    - A candidate title (when one is missing)
-5. **Confirm with the user**:
+5. **Compose the body in two layers** so the issue is human-readable at filing time:
+   - **Plain-language lead (top)**: 2–4 sentences a non-engineer can understand — what is
+     wrong or wanted, why it matters, and what "done" looks like. Follows the audience
+     standard of the [human-readable summary contract](../shared/references/human-readable-summary.md)
+   - **Technical detail (below)**: everything the executor needs — reproduction, paths,
+     acceptance criteria, and the `claude-auto` body-contract sections when that label applies
+   - The lead never replaces the technical sections, and technical completeness never
+     excuses an unreadable lead — an issue only a machine can read turns human oversight
+     into a rubber stamp
+6. **Confirm with the user**:
    - Show: title / body / inferred labels / whether `claude-auto` applies / the reasoning
    - Options: create / revise / cancel
-6. Once approved, create it with `create_issue`
-7. Show the result (the issue URL)
+7. Once approved, create it with `create_issue`
+8. Show the result (the issue URL)
 
 > **Never call Create from a non-interactive path**: invoking this workflow from a headless path such as polling is forbidden.
 

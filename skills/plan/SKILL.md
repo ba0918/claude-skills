@@ -68,6 +68,22 @@ A feature name, a summary, and a type (new feature / modification / bug fix / re
 
 State every inferred item explicitly in the final response, in a form the user can correct.
 
+**Source-material soft gate (trunk funnel):** before moving to Phase 3, identify the
+plan's source material — one of: converged brainstorm agreements (an idea memo / exit
+contract), a spec under `docs/spec/`, or a reproduced bug (reproduction steps or failing
+output present in the request). When found, record it in the plan header (`Spec:` /
+`Issue:` field, or the idea memo path in What & Why) and proceed.
+
+When none is found in interactive mode, ask once as an open question in the user's
+language — for example: "I could not find source material for this plan (brainstorm
+agreements, a spec, or a bug reproduction). Should we hammer out the requirements in
+brainstorm first, or proceed as-is?" Do not present a pick-one option list; let the user
+answer in their own words. If the user chooses to proceed, note `Source material: none
+(user confirmed)` in What & Why and continue — the gate asks exactly once and never
+hard-blocks. In Auto mode (headless), do not block: proceed and state prominently in the
+final response that no source material was found, so the human can route the work back
+through brainstorm afterwards.
+
 ### Phase 3: Create Plan Document
 
 **File path:** `.agents/artifacts/plans/{timestamp}_{feature-slug}.md`

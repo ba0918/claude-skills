@@ -1,21 +1,22 @@
 {
   "brainstorm": {
+    "carried_note": "measurement freeze (2026-08-06 ruling): removed spec backlinks from SKILL.md and workflow-session.md (specs are human-facing; drift detection belongs to the alignment station). No procedural change to any workflow. Re-run deferred to the post-freeze full measurement.",
     "file_sha256": {
       "skills/brainstorm/SKILL.md": "c41e28ddb13757e12b82f9ccb9cae03224617ab1b82808b5991eaf6059f9e3a5",
       "skills/brainstorm/fixtures.json": "5ab5d3f5bd0267e46c8bdbefc417c1e142583752c01ce785d182167c47e9c27c",
-      "skills/brainstorm/references/exit-contract-template.md": "0aa6389f378de90a5613c5dbe4517083ffdb4978e5e7849868c2a2d2a53f5d02",
+      "skills/brainstorm/references/exit-contract-template.md": "1ed1fa2bc3d4b5a86f6fda152c3c12df1d19e91d81da2ad78c56a2cb01e6b224",
       "skills/brainstorm/references/idea-template.md": "8d0dff95daabe8e3aa211392e048a4bb545c1ee4704f0c2eb3768ad63d29c05f",
       "skills/brainstorm/references/spec-generation.md": "1633706e12a8ba3e0b876bbcdd72ab7c24280c9423c94b138a9f587ceb4edf1e",
       "skills/brainstorm/references/workflow-list.md": "3d07fba66cb55a9d4b781d9a5890d44ab47bce99a82fc31ce49d143b6da666eb",
       "skills/brainstorm/references/workflow-plan.md": "c3febd4bbfd4b9a4fd4cdada9c75b17c9ad0706fcf3dae5234259b10b7fbcfe4",
       "skills/brainstorm/references/workflow-resume.md": "6c06f2cdcc5ac2f6394c6d45ce55a292b88683359aa8325ba451cfe710d1dc77",
       "skills/brainstorm/references/workflow-session.md": "a9ed6819a419e42b1190740d615da0a50460832f1df877c4a71d0194fa0221b0",
-      "skills/brainstorm/references/workflow-wrap.md": "77d156951bbce65e8e115e439475d18d5d2f5f2a2afd2656cdcc5d18991b75a9",
+      "skills/brainstorm/references/workflow-wrap.md": "60ad1c3bea4eea7672bdf774c513845637748f1b3639b40ca88c5f0e135b0117",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/human-readable-summary.md": "645e4ad07f8941a473d750a224840ddd4cbaa6b964be661dcbb76650a26cb4b0"
     },
-    "note": "measurement freeze (2026-08-06 ruling): removed spec backlinks from SKILL.md and workflow-session.md (specs are human-facing; drift detection belongs to the alignment station). No procedural change to any workflow. Re-run deferred to the post-freeze full measurement.",
+    "note": "measurement freeze (2026-08-06 ruling): trunk phase 2 — plan source-material soft gate / wrap routing gains GitHub issue / two-layer human-readable issue bodies. Re-run deferred to the post-freeze full measurement.",
     "result": "accepted-without-run",
     "scenarios": {
       "bs-001": {
@@ -56,14 +57,14 @@
     },
     "structural_sha256": {
       "skills/brainstorm/SKILL.md": "cb74523fad2df7eae266d5b13520a24b948f4a764123c8d82296147d927393dc",
-      "skills/brainstorm/references/exit-contract-template.md": "e58db2062a0fe870d06694b10fad357e560e57ef90a26df653efc000b997dcbe",
+      "skills/brainstorm/references/exit-contract-template.md": "392ea430dedde7a20ae2e616aa046dc55afabfd1369d777245928b060e6d5fbc",
       "skills/brainstorm/references/idea-template.md": "77d2645476a8a0ecb2501e3bec131a89d9f79b070fcf28ca48423cf9d4fbce28",
       "skills/brainstorm/references/spec-generation.md": "18194aecc79e39908e4d0dfe1a8a611dbe35d25b54e99c0085a7ce21e56f6c40",
       "skills/brainstorm/references/workflow-list.md": "e61ed16fd4d9f627dc6f03970645eabb476422d5d858a40e096e7c845d386308",
       "skills/brainstorm/references/workflow-plan.md": "6b819a0f57e140147ff1204df8c983d663af1c7ea9eaa9c4c3ebc723ce48b0dc",
       "skills/brainstorm/references/workflow-resume.md": "3aef63ccb0d9084f25aa81b1bd2b76e8b5d6b579284e1c6ab3689d73b7dd3e5b",
       "skills/brainstorm/references/workflow-session.md": "80292ccfa5cdb6a42a5b3a53e94a445e352cf6bd3cfc0298c494696003198203",
-      "skills/brainstorm/references/workflow-wrap.md": "999b323dc660a6ff204db52a4d582c61d10fe5ebbf50bfb5bff9edb4152e5e35",
+      "skills/brainstorm/references/workflow-wrap.md": "742bad708785a3e7803298510113b1bc731c0eb4778d00aa90d1de564acb3c13",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
       "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
       "skills/shared/references/human-readable-summary.md": "17963b524b543ee7d9760a8987f9b4ecf0cd562c24d2168d340396371c347905"
@@ -83,7 +84,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "44b2c2212d64609ca2fae56d7be91d5a265d6de4d4f24a9f106726d39f05792b",
+    "surface_sha256": "2a2ab44135eb2492fa3a49a9b683c4e25a89cd88c076d9f0bcf41cc09927662a",
     "verified": "2026-08-06"
   },
   "brief": {
@@ -489,9 +490,9 @@
     "verified": "2026-08-04"
   },
   "github-issue": {
-    "carried_note": "ledger.py の帯ゲート Why-not コメントの書き直し（#268 F1）。変更はコメント 1 か所のみで、実行文の追加・削除・並べ替えは無い。本スキルが素パス参照する --impact / --impact-scenarios / --status / --coverage の 4 経路に --check を加えた 5 経路を、直前 HEAD 版と同一入力で突き合わせ、12 通り（単一契約入力・複合入力・未解決パス混在・--strict 併用・--check 併走）すべて stdout・stderr・exit code がバイト一致（正当入力の挙動不変）",
+    "carried_note": "#266: ledger.py CLI の誤配置 root 拒否（引数厳格化）。documented 呼び出し形（末尾 root / 省略時 cwd）の挙動不変は test_ledger.py で固定済み、参照側の呼び出し形に影響なしと判断",
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "3e57ded338522ae78561336a94e50dd5697042263e6e7a28b69ab2e665d6afab",
+      "skills/github-issue/SKILL.md": "5278a729c4693ac01ed0c1a467a3f7477ec7da793d80160814ca8b2a633a1c1e",
       "skills/github-issue/fixtures.json": "3997abfe50abd8de1470506c5137700dd1ad7b86e2c87790b24830cde793760b",
       "skills/github-issue/references/adapter-internals.md": "71a40216b3dc65afd4fe9eadbd322dcec9f7505e51e66805db841db6bfd3bb5a",
       "skills/github-issue/references/cleanup-spec.md": "a8a10b8352a5a22c190e92ab7408714461cfa48f93f84e4664331e2b4879df36",
@@ -512,12 +513,13 @@
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/checkpoint-pattern.md": "48aaf4f43b52ae7e586271c084bedd6925a6fa0e5526cffab003848a37973158",
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
+      "skills/shared/references/human-readable-summary.md": "645e4ad07f8941a473d750a224840ddd4cbaa6b964be661dcbb76650a26cb4b0",
       "skills/shared/references/measurement-identity.md": "051807f31d7a6799049d0f14aad6824f1c0d87a80cb5e15251480aab4ffb0384",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7",
       "skills/shared/references/workspace-isolation.md": "8048ba07d1a7c112211ccaf56d503047af7494fcbef3c8ab6e7d10ab826d7ec5",
       "skills/skill-regression/scripts/ledger.py": "f6ade730f57c779b619b823075af9ef7e58dec339cc58c1a56df6204fc6a8ad5"
     },
-    "note": "#266: ledger.py CLI の誤配置 root 拒否（引数厳格化）。documented 呼び出し形（末尾 root / 省略時 cwd）の挙動不変は test_ledger.py で固定済み、参照側の呼び出し形に影響なしと判断",
+    "note": "measurement freeze (2026-08-06 ruling): trunk phase 2 — plan source-material soft gate / wrap routing gains GitHub issue / two-layer human-readable issue bodies. Re-run deferred to the post-freeze full measurement.",
     "result": "accepted-without-run",
     "scenarios": {
       "gi-001": {
@@ -562,7 +564,7 @@
       }
     },
     "structural_sha256": {
-      "skills/github-issue/SKILL.md": "32b07c68d5054ea94ef92697bd304e3f41177b98a8878df4948e8379fac796ef",
+      "skills/github-issue/SKILL.md": "389f192695004a8e45f11ee4e90bb3f0c1c5987b569f797992e848d8402296b4",
       "skills/github-issue/references/adapter-internals.md": "90918af8d308dddc6a4411f4e58b964e269e147d44bad3378202394c8078bf34",
       "skills/github-issue/references/cleanup-spec.md": "b2708e8ef5275869f8e67911dd4ec836a07a9bf6fc1a8c82d7e699461c902662",
       "skills/github-issue/references/codex-review-loop.md": "4dd087117a70053c6c6e2b6f0a42248369d23535e70fefb498e1fc40260a7f60",
@@ -581,6 +583,7 @@
       "skills/shared/references/artifact-store.md": "4ab7297bbce0294646093f50c818c13d31e9212e3ad9bbeffc74318686d03b06",
       "skills/shared/references/checkpoint-pattern.md": "a9ea84e07aa85b8e9c4e916b6d48d8a8ec443ae29f48a21e5173b292e076ba8f",
       "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
+      "skills/shared/references/human-readable-summary.md": "17963b524b543ee7d9760a8987f9b4ecf0cd562c24d2168d340396371c347905",
       "skills/shared/references/measurement-identity.md": "14f032ad596dadf562fe9fd9ef00b19a5f6ef68b85a564626427393cebc0f5c5",
       "skills/shared/references/polling-pattern.md": "17c29aaec95e63f92f96f3d9eba7bc5827c21f592023ee03e48b8aabdd5b79f0",
       "skills/shared/references/workspace-isolation.md": "fa4e9700a0109191903e10480ae87c7848735452127e1cc99f87d836307b60ca"
@@ -607,13 +610,14 @@
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/checkpoint-pattern.md",
       "skills/shared/references/codex-integration.md",
+      "skills/shared/references/human-readable-summary.md",
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md",
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "1bd5e2b7895d19e6d94708c154bcaf9283be11f4f02d67c37e7d289c5096d208",
-    "verified": "2026-08-05"
+    "surface_sha256": "b2398d889d88130e9210c34ba43725a396a5eb44bcf2ca93e79d737f581a5121",
+    "verified": "2026-08-06"
   },
   "handoff": {
     "file_sha256": {
@@ -661,8 +665,9 @@
     "verified": "2026-07-28"
   },
   "issue": {
+    "carried_note": "prompt-audit Low/flag: measurement-identity.md の trigger-eval 行から '(recommended)' を削除し義務形に揃えた表 1 セルのみ。ユーザー裁定 2026-08-04 で影響軽微と判断し実走せず承認",
     "file_sha256": {
-      "skills/issue/SKILL.md": "9ec41f5b627b057cae2197cffae05af9be65552e8cdb4ddb30a0c661edb08325",
+      "skills/issue/SKILL.md": "a6585b9ca0aaac5fdc25af9b87760e7a0c92dcf37b8248506874966641255bef",
       "skills/issue/fixtures.json": "40065f95ee8d35d14806fcc5a922fb9525d75658cac163cd9fc0c8d1ca894ad7",
       "skills/issue/references/issue-template.md": "6c27174d5b7b8c6fa00b66b69d4a90df0c38af36ebf8c3b90fcef78c57a0715f",
       "skills/issue/references/polling-state-machine.md": "7c65e6079934335d3a891e49c798e2a8761ce443dc63b6f1600be21a96131d70",
@@ -673,10 +678,32 @@
       "skills/shared/references/measurement-identity.md": "051807f31d7a6799049d0f14aad6824f1c0d87a80cb5e15251480aab4ffb0384",
       "skills/shared/references/polling-pattern.md": "6ff78270e50367545f1e01e5460a6ea557ad1366329eb45ff835440f5a7d83b7"
     },
-    "note": "prompt-audit Low/flag: measurement-identity.md の trigger-eval 行から '(recommended)' を削除し義務形に揃えた表 1 セルのみ。ユーザー裁定 2026-08-04 で影響軽微と判断し実走せず承認",
+    "note": "measurement freeze (2026-08-06 ruling): trunk phase 2 — plan source-material soft gate / wrap routing gains GitHub issue / two-layer human-readable issue bodies. Re-run deferred to the post-freeze full measurement.",
     "result": "accepted-without-run",
+    "scenarios": {
+      "is-001": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "3a11ce4445b2922a88653967caad08afb266a3f5c1049f67907368c8181f6074",
+        "verified": "2026-08-04"
+      },
+      "is-002": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "f14ddd8e7fdf80ee53af866b2451af2531099625bf9ef73b3b27018839ae2e0b",
+        "verified": "2026-08-04"
+      },
+      "is-003": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "b89dce471f76b8b3e306ec839502ac0cd8f6ec04d1a0e4023c11b9cf8c3ce9c8",
+        "verified": "2026-08-04"
+      },
+      "is-004": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "48ba4be47a0205cd9dcb9d5ef6978c0e50441df1300a6e582ada6f3e6b1ee0ef",
+        "verified": "2026-08-04"
+      }
+    },
     "structural_sha256": {
-      "skills/issue/SKILL.md": "360320ca5763ad9d848246870b71d59290544215664a9fc1c4bfe1f43932ea32",
+      "skills/issue/SKILL.md": "2feedc3e78dc6078ea81382986ca1ab24b75ca0fc117d85026cc92d57a904a31",
       "skills/issue/references/issue-template.md": "b05f1f37ffa72767c5c8058a4d108ece75bc19e9d171a552eb88e68e462cbc1e",
       "skills/issue/references/polling-state-machine.md": "cc2bf9fd62453ef750e5b880a943084fcb3a0a52c7d0ea90aba143769568807d",
       "skills/issue/references/polling-state.md": "70201875cde1ebfb14c5a713676503fe1f8f08498a47106382f4e0250f391667",
@@ -698,8 +725,8 @@
       "skills/shared/references/measurement-identity.md",
       "skills/shared/references/polling-pattern.md"
     ],
-    "surface_sha256": "7e94fd6aa9e71fd9aebabf57570965206f407db6c55bf9f4543fd659fa59250b",
-    "verified": "2026-08-04"
+    "surface_sha256": "0492fda24d5217f4dbb8d56b0f3b8ff37f3658f95a3836b7aa6e4f023804e7cf",
+    "verified": "2026-08-06"
   },
   "iterate": {
     "file_sha256": {
@@ -759,8 +786,9 @@
     "verified": "2026-08-04"
   },
   "plan": {
+    "carried_note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
     "file_sha256": {
-      "skills/plan/SKILL.md": "475b941112534b43b12cedbcfd39230564fc14041e3ddfba41ed98c7c46209b8",
+      "skills/plan/SKILL.md": "3971fd776df2c500ffc9f26fa82e1be81374c1143e60c64cf09dc621f485128d",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
       "skills/plan/references/plan-template.md": "1e63da8f61032af9bcaafc633820aee2213fc011e99a0a3d2d9c8370d757d50a",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
@@ -772,10 +800,32 @@
       "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
-    "result": "pass",
+    "note": "measurement freeze (2026-08-06 ruling): trunk phase 2 — plan source-material soft gate / wrap routing gains GitHub issue / two-layer human-readable issue bodies. Re-run deferred to the post-freeze full measurement.",
+    "result": "accepted-without-run",
+    "scenarios": {
+      "pl-001": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "70071486bf6269366e1e520175c02e228c9bbd561377c23835fcaa1e8e831251",
+        "verified": "2026-08-04"
+      },
+      "pl-002": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "ccf0422081b4f7d1db765a91d932011a41bde5ca09e96a66a9f2fd5bde9f0c8d",
+        "verified": "2026-08-04"
+      },
+      "pl-003": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "00702359a83fd3c7162062a9b1f86abf27c5661eb86e38aae26f7f72e32f2712",
+        "verified": "2026-08-04"
+      },
+      "pl-004": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "d5d4ec52b3e275b401b7aea1ec3dabe67204b5d3e34dcefa6dae1333c361be2c",
+        "verified": "2026-08-04"
+      }
+    },
     "structural_sha256": {
-      "skills/plan/SKILL.md": "ca2a45173b4e488e3eeec559d346c67e012ebd9e72f5ea196350ac6ab68035d3",
+      "skills/plan/SKILL.md": "d49d3a8ee7796a1d5eae357074cd640171dbc9593a9b4c439921436c4d54bf2a",
       "skills/plan/references/plan-template.md": "50e6a4353b0f37726af85fa2709fe31db12cc73db76bbd4d57651eec0ff0df20",
       "skills/plan/references/status-template.md": "4ab54b5caa51f85660dd9de21b39f19386a5b9afcada80b67faa11f20fec576d",
       "skills/plan/references/status-update-guide.md": "7cce88c03df6d16c609b08ce4b055d21dd27aff1b677a6a8ebcfa9d5213ba83f",
@@ -798,8 +848,8 @@
       "skills/shared/references/tdd-contract.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "a51f3dc496a56a4147d0427746ebb47fa31462ad112a003ea4236db68c8f01da",
-    "verified": "2026-08-04"
+    "surface_sha256": "0c74bffadd7948a23ab313440e1a0b0f88371b768910b90d60d3ab13a44260e5",
+    "verified": "2026-08-06"
   },
   "plan-implement": {
     "file_sha256": {

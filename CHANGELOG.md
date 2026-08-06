@@ -16,6 +16,12 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: plan に元ネタのソフトゲート、issue が起票時点でヒューマンリーダブルに（幹 第 2 期）
+
+- plan の Phase 2 に元ネタ確認（brainstorm 合意 / docs/spec / バグ再現のいずれか）を追加。不在時は開いた自然言語で 1 回だけ確認して通す（選択肢リスト提示はしない・headless では止めず明示報告）
+- brainstorm wrap の routing 表に GitHub issue（段階単位の起票）を追加
+- 起票系 2 スキル（github-issue create / issue create）の本文を 2 層構造に: 冒頭は非技術者でも読める平易なリード、その下に実行者向け技術詳細
+
 ### Added: 幹ワークフローの宣言と実行時漏斗スキル using-workflow
 
 - skill-authoring に幹の図（brainstorm → plan → implement → review → 整合 → PR。ledger / spec-verify は支線）と漏斗原則、新スキルの「幹のどこに挿さるか」宣言チェックを追加。brainstorm の振る舞い正本を `docs/spec/brainstorm.md` に新設
