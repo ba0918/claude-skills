@@ -490,9 +490,9 @@
     "verified": "2026-08-04"
   },
   "github-issue": {
-    "carried_note": "measurement freeze (2026-08-06 ruling): trunk phase 2 — plan source-material soft gate / wrap routing gains GitHub issue / two-layer human-readable issue bodies. Re-run deferred to the post-freeze full measurement.",
+    "carried_note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
     "file_sha256": {
-      "skills/github-issue/SKILL.md": "0bbcb23b8561a809ab760d397a441f9be56e5f0680c0ad0b001e7004048e30ff",
+      "skills/github-issue/SKILL.md": "d948eecba0436b052fefca08ac94a8f284b68739b7c8ee9efa69b6d9095373ee",
       "skills/github-issue/fixtures.json": "3997abfe50abd8de1470506c5137700dd1ad7b86e2c87790b24830cde793760b",
       "skills/github-issue/references/adapter-internals.md": "71a40216b3dc65afd4fe9eadbd322dcec9f7505e51e66805db841db6bfd3bb5a",
       "skills/github-issue/references/cleanup-spec.md": "a8a10b8352a5a22c190e92ab7408714461cfa48f93f84e4664331e2b4879df36",
@@ -520,7 +520,7 @@
       "skills/shared/references/workspace-isolation.md": "8048ba07d1a7c112211ccaf56d503047af7494fcbef3c8ab6e7d10ab826d7ec5",
       "skills/skill-regression/scripts/ledger.py": "f6ade730f57c779b619b823075af9ef7e58dec339cc58c1a56df6204fc6a8ad5"
     },
-    "note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
+    "note": "measurement freeze (2026-08-06 ruling): 自走整合ステップの失敗時 best-effort 規定の追記。完成後の 1 発フル実測で支払う",
     "result": "accepted-without-run",
     "scenarios": {
       "gi-001": {
@@ -565,7 +565,7 @@
       }
     },
     "structural_sha256": {
-      "skills/github-issue/SKILL.md": "394ba912b6e1e44370a9c7a672c4d991cfedd80c178782e6ee2f27034a5ea85c",
+      "skills/github-issue/SKILL.md": "38b1a738e7c1d0a62d3c3396c8915ce9954fc8dfe3693cf040347c1259abcfb5",
       "skills/github-issue/references/adapter-internals.md": "90918af8d308dddc6a4411f4e58b964e269e147d44bad3378202394c8078bf34",
       "skills/github-issue/references/cleanup-spec.md": "b2708e8ef5275869f8e67911dd4ec836a07a9bf6fc1a8c82d7e699461c902662",
       "skills/github-issue/references/codex-review-loop.md": "4dd087117a70053c6c6e2b6f0a42248369d23535e70fefb498e1fc40260a7f60",
@@ -619,7 +619,7 @@
       "skills/shared/references/workspace-isolation.md",
       "skills/skill-regression/scripts/ledger.py"
     ],
-    "surface_sha256": "5c64f37a97670d5d8b2595d1d772baa6935daf9d526c59153655c8a5a0f5aa06",
+    "surface_sha256": "110338a155f4a9f9aedca263ea3230f671bb91dee899dfff5725524b1c76f039",
     "verified": "2026-08-06"
   },
   "handoff": {

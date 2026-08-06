@@ -285,6 +285,11 @@ worktree, on the branch:
    on the branch, and flag the addition in the PR body. The human gate that headless
    wrap could not collect is served by the merge approval of this PR.
 
+The alignment station is best-effort in this flow: if the doc-check run itself fails,
+do not halt the run — record the failure in the PR body's `⚠️ Needs review` section
+and continue to the push, so the flow keeps its guarantee of always reaching a draft
+PR or a recorded failure.
+
 Then both commands run inside the worktree from Step 4:
 
 ```bash
