@@ -599,6 +599,9 @@ def _collect_index_entries(kind_dir: Path, kind: str) -> list:
             continue
         if path.name == index_name:
             continue
+        # Headless wrap parks spec drafts next to the memos; they are not entries.
+        if path.stem.endswith("_spec_draft"):
+            continue
         try:
             text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError as exc:
