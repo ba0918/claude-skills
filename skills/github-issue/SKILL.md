@@ -71,7 +71,7 @@ Take issue content from the user in natural language, infer suitable labels, and
 5. **Compose the body in two layers** so the issue is human-readable at filing time:
    - **Plain-language lead (top)**: 2–4 sentences a non-engineer can understand — what is
      wrong or wanted, why it matters, and what "done" looks like. Follows the audience
-     standard of the [human-readable summary contract](../shared/references/human-readable-summary.md)
+     standard of the [human-readable summary contract](../shared/references/human-readable-summary.md#target-audience)
    - **Technical detail (below)**: everything the executor needs — reproduction, paths,
      acceptance criteria, and the `claude-auto` body-contract sections when that label applies
    - The lead never replaces the technical sections, and technical completeness never
@@ -81,7 +81,11 @@ Take issue content from the user in natural language, infer suitable labels, and
    - Show: title / body / inferred labels / whether `claude-auto` applies / the reasoning
    - Options: create / revise / cancel
 7. Once approved, create it with `create_issue`
-8. Show the result (the issue URL)
+8. Show the result. Open with a summary-first block per the
+   [human-readable summary contract](../shared/references/human-readable-summary.md)
+   — `📝 In short: "{title}" — {one plain line on what the issue is about}` — then the
+   issue URL. This mirrors the issue skill's completion display, keeping human
+   oversight symmetric across the two filing paths
 
 > **Never call Create from a non-interactive path**: invoking this workflow from a headless path such as polling is forbidden.
 

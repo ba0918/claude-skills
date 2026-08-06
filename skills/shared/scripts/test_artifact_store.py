@@ -475,6 +475,18 @@ class RebuildIndexTest(unittest.TestCase):
         rebuild_index(root, "ideas")
         self.assertEqual(content, index_path.read_bytes())
 
+    def test_ideas_index_excludes_headless_spec_drafts(self):
+        root = self.repo()
+        self.write_idea(root, "20260701100000_alpha", title="alpha",
+                        summary="First idea.")
+        draft = root / ".agents/artifacts/ideas/20260701100000_alpha_spec_draft.md"
+        draft.write_text("# Auth\n\nDraft spec content.\n", encoding="utf-8")
+        result = rebuild_index(root, "ideas")
+        self.assertEqual(1, result["entries"])
+        index_text = (root / ".agents/artifacts/ideas/idea-status.md").read_text(
+            encoding="utf-8")
+        self.assertNotIn("_spec_draft", index_text)
+
     def test_issues_index_has_four_columns_without_status(self):
         root = self.repo()
         self.write_issue(root, "20260701100000_login", title="Login bug",

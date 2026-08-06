@@ -52,7 +52,8 @@ In caller-supplied mode:
   `.agents/artifacts/plans/` directory still applies — reject an `output_path` that
   points elsewhere
 - **Phase 4**: skip entirely (no status.md or session-history.md updates)
-- **Phase 5**: report the path the caller supplied, not a self-generated one
+- **Phase 5**: emit no completion display. Report the supplied path back to the caller
+  and nothing else — the caller owns the single user-facing completion message
 
 All other phases (requirements gathering, plan content, template) run unchanged.
 
@@ -71,8 +72,13 @@ State every inferred item explicitly in the final response, in a form the user c
 **Source-material soft gate (trunk funnel):** before moving to Phase 3, identify the
 plan's source material — one of: converged brainstorm agreements (an idea memo / exit
 contract), a spec under `docs/spec/`, or a reproduced bug (reproduction steps or failing
-output present in the request). When found, record it in the plan header (`Spec:` /
-`Issue:` field, or the idea memo path in What & Why) and proceed.
+output present in the request). A caller may declare the source explicitly in the
+request (e.g. `Source: brainstorm idea {slug} (exit contract CONVERGED)`) — treat that
+declaration as found source material; it is how the brainstorm plan workflow passes its
+origin across a context boundary. When found, record it in the plan header (`Spec:` /
+`Issue:` field, or the idea memo path in What & Why — for brainstorm-originated plans
+use the post-archive path `.agents/artifacts/ideas/archives/{slug}.md`, since the plan
+workflow archives the memo right after plan creation) and proceed.
 
 When none is found in interactive mode, ask once as an open question in the user's
 language — for example: "I could not find source material for this plan (brainstorm

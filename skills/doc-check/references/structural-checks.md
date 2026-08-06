@@ -60,7 +60,7 @@ Version mentions in documentation:
 ## Auto-Fix Policy
 
 - **Table missing entries**: Add rows following existing entry format. Infer description from frontmatter or leading comments of the corresponding file
-- **Table extra entries**: Do not delete; report as WARN (may be intentionally kept)
+- **Table extra entries**: Do not delete; classify as NEEDS_JUDGMENT (may be intentionally kept)
 - **Tree diagram missing entries**: Add following sibling entry format
-- **Tree diagram extra entries**: Do not delete; report as WARN
+- **Tree diagram extra entries**: Do not delete; classify as NEEDS_JUDGMENT
 - **Version mismatch**: Update with the value from the manifest file

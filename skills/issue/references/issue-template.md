@@ -12,7 +12,8 @@ source: {{SOURCE}}
 
 ## Notes
 
-(Add supplementary information here if available)
+(The technical-detail layer of the two-layer body: stack traces, paths, reproduction
+commands — everything the executor needs. The plain-language lead stays in Overview.)
 
 ---
 

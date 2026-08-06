@@ -124,6 +124,16 @@ The summary merely rephrases, at utterance size, information the LLM already hol
 (the saved content itself). It requires no additional investigation or re-reading of files (which would make the
 completion report heavy).
 
+## Creation-side leads (a distinct consumer class)
+
+The echo rule above governs **completion summaries** — text restating what was just
+produced. A second consumer class borrows only the reader standard: skills that write a
+fresh human-readable lead into an artifact at creation time (the two-layer issue bodies
+of the issue skill and the github-issue skill). For those leads this contract defines
+**who must be able to read the text** ([Target audience](#target-audience)), not how the
+text is produced — composing a creation-side lead may well require reading the source
+material, so the no-extra-investigation rule does not apply to it.
+
 ## Good existing precedents
 
 - **decision-journal** (content-echo type): echoes in one line the success criteria declared in the completion message.
@@ -134,3 +144,7 @@ completion report heavy).
 The completion display of the plan skills (plan-create / plan-implement / cycle) is implemented
 **by referencing this contract**. This contract is the canonical source for the summary format,
 and the plan skills' completion displays are subordinate to it.
+
+Creation-side leads reference the [Target audience](#target-audience) section only:
+the issue skill (create — body composition and `--summary` default) and the
+github-issue skill (create — two-layer body composition).
