@@ -41,6 +41,40 @@ Whether function signatures, arguments, return values, error codes, etc. match t
 - Extract API definitions from documentation
 - Compare against corresponding implementation code signatures
 
+### 5. Undocumented-Change Detection (diff modes only)
+
+Whether new behavior introduced by the diff is documented anywhere it belongs. Unlike
+perspectives 1–4, this one reports **absences**: the finding names a missing statement
+and its proposed home, not a mismatched line.
+
+**Verification method:**
+- From the change context, list the user-visible or contract-level behavior changes:
+  new commands / options / modes, changed defaults, new outputs or states, new files
+  with a public role
+- For each change, search the target documents (including `docs/spec/` when present)
+  for the place that should describe it
+- When nothing describes it, report the omission with the proposed addition and its
+  placement. AUTO_FIX only when the home is unambiguous (e.g., an existing table that
+  enumerates all modes gains a row); otherwise NEEDS_JUDGMENT
+- Skipped in `all` / file-path mode — without a diff there is no "new" to anchor on
+
+### 6. Spec Conformance (when docs/spec/ exists)
+
+Specs under `docs/spec/` are behavioral **contracts**, not descriptions. Check them at
+contract strictness, and never auto-edit them.
+
+**Verification method:**
+- Diff modes: determine whether the diff changes behavior a spec specifies. Both
+  outcomes are NEEDS_JUDGMENT — either the implementation violates the spec (report the
+  violated clause), or the spec needs updating (report the proposed spec edit). The
+  direction of the fix is a human decision
+- `all` / file-path mode: check each spec's contract statements (entry conditions,
+  prohibitions, output contracts) against the implementation, the way perspectives 1–4
+  check prose but treating every mismatch as contract-grade
+- **Spec edits are never AUTO_FIX.** A spec is the human-approved statement of what the
+  behavior should be; changing it is a decision, not a fix. Silently rewriting a spec to
+  match the code would invert the spec-first principle
+
 ## Agent Instruction Template
 
 Prompt structure when delegating each document check to an Agent:
@@ -59,13 +93,15 @@ Verify whether the contents of the following document are consistent with the cu
 2. Whether workflow/procedure descriptions match actual behavior
 3. Whether configuration/option descriptions match the implementation
 4. Whether API documentation matches the implementation
+5. (diff modes only) Whether new behavior in the diff is documented anywhere it belongs — report omissions with the proposed addition and placement
+6. (when docs/spec/ exists) Whether the change conforms to the specs — spec-side edits are always NEEDS_JUDGMENT, never AUTO_FIX
 
 ## Output Format
 For each finding, report:
 - action: AUTO_FIX | NEEDS_JUDGMENT | OK
 - file: Target file path
-- section: Relevant section name
-- description: Description of the discrepancy
+- section: Relevant section name (for perspective 5: the proposed home of the missing statement)
+- description: Description of the discrepancy (for perspective 5: the undocumented behavior)
 - suggestion: Fix suggestion (for AUTO_FIX/NEEDS_JUDGMENT)
 - reason: Rationale for the judgment
 ```

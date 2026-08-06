@@ -1,6 +1,6 @@
 ---
 name: doc-check
-description: Verify that project documentation (README.md, CLAUDE.md, API docs, and so on) matches the reality of the codebase, and fix the inconsistencies automatically. Use when the user says "doc-check", "check the documentation", "documentation consistency", or "check the docs". With no argument it covers the last 5 commits, a number specifies the commit count, `all` checks everything, and a file path checks that document alone. A general-purpose skill usable in any project.
+description: Verify that project documentation (README.md, CLAUDE.md, API docs, docs/spec, and so on) matches the reality of the codebase, and fix the inconsistencies automatically. Use when the user says "doc-check", "check the documentation", "documentation consistency", "check the docs", or wants the trunk's alignment phase (write implementation-induced changes back to docs before a PR). With no argument it covers the last 5 commits, a number specifies the commit count, `all` checks everything, `branch` checks the current branch's diff against the default branch (the alignment station), and a file path checks that document alone. A general-purpose skill usable in any project.
 ---
 
 # Doc Check
@@ -14,6 +14,7 @@ Skill that verifies consistency between documentation and the codebase, and auto
 - None: Target changes from the last 5 commits
 - Number (e.g., `10`): Target changes from the last N commits
 - `all`: Target the entire project
+- `branch`: Target the current branch's diff against the default branch (merge-base). The trunk's alignment station — run it after implementation and review, before the PR
 - File path (e.g., `CLAUDE.md`, `docs/api.md`): Target only the specified document(s). Multiple files can be separated by spaces
 
 ## Phase 1: Discovery
@@ -51,12 +52,21 @@ git log -N --oneline
 git diff HEAD~N..HEAD --name-only
 git diff HEAD~N..HEAD
 
+# branch mode: diff against the default branch from the merge-base
+base_branch=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo main)
+base=$(git merge-base "$base_branch" HEAD)
+git log "$base"..HEAD --oneline
+git diff "$base"..HEAD --name-only
+git diff "$base"..HEAD
+
 # File path mode
 # No diff is obtained. Check the specified file(s) against the entire project structure (same as all mode)
 
 # all mode
 # No diff is obtained. Target the entire project structure
 ```
+
+In branch mode, when HEAD is already on the default branch (empty diff), report "nothing to align" and stop.
 
 ## Phase 2: Structural Check
 
@@ -90,14 +100,14 @@ See [references/content-checks.md](references/content-checks.md) for detailed pe
 Launch a subagent **in parallel** for each document:
 
 - Provide each agent with the target document content and change context (diff)
-- Have them verify from 4 perspectives: architecture descriptions, workflow descriptions, configuration descriptions, and API documentation
+- Have them verify from 6 perspectives: architecture descriptions, workflow descriptions, configuration descriptions, API documentation, undocumented-change detection (diff modes only), and spec conformance (when `docs/spec/` exists)
 - Have them classify results by fix action (AUTO_FIX / NEEDS_JUDGMENT / OK).
   AUTO_FIX / NEEDS_JUDGMENT follow the shared
   [fix-action-taxonomy.md](../shared/references/fix-action-taxonomy.md); `OK` is
   doc-check's own third value (see that contract's "Difference from doc-check's `OK`" section) —
   this axis is orthogonal to severity
 
-In `all` mode, since there is no diff, have agents explore the project structure from scratch.
+In `all` mode, since there is no diff, have agents explore the project structure from scratch (perspective 5 is skipped — it needs a diff to anchor "new"; perspective 6 still runs against the implementation). Spec edits are never AUTO_FIX: a spec is the human-approved statement of what the behavior should be, so every spec-side fix routes through NEEDS_JUDGMENT (see content-checks perspective 6).
 
 ### Processing Results
 
