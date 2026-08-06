@@ -16,7 +16,7 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
    - **Undecided Items**: open questions with `blocks_plan` flag
    - **Acceptance Criteria**: observable behaviors/constraints with verifiability flag
    - **Codebase Evidence**: file paths and findings that grounded the discussion
-   - **Routing**: where each piece goes next (ledger / plan / docs / clauses)
+   - **Routing**: where each piece goes next (ledger / plan / GitHub issue / docs / clauses)
    - **Status**: `CONVERGED` if no blocking undecided items remain; `BLOCKED` otherwise
 7. **Spec generation** (only when exit contract status is `CONVERGED`):
    Follow the procedure in [spec-generation.md](spec-generation.md) to generate a human-readable spec draft in the consumer project's `docs/spec/` directory. The agent autonomously selects the target domain file (match existing or create new), presents the draft with matching rationale to the human, and writes only after approval. After writing, record the spec path in the idea memo's exit contract Routing table (destination `Spec`, action `Generated at {path}`) so that `brainstorm-plan` can pass it to `plan-create` without re-scanning. In headless mode (interaction impossible), save the draft to `.agents/artifacts/ideas/{slug}_spec_draft.md` instead of writing to `docs/spec/` — the human reviews and moves it later. Skip this step entirely when the exit contract is `BLOCKED` or absent.
@@ -48,7 +48,7 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
    {when exit contract is CONVERGED:}
    📋 Exit contract: CONVERGED — ready for routing
       Next: `/claude-skills:brainstorm-plan` to create a plan from the agreements
-      Or manually route agreements to ledger / docs / clauses
+      Or route agreements to GitHub issues (grouped per stage) / ledger / docs / clauses
    {when exit contract is BLOCKED:}
    🚧 Exit contract: BLOCKED — undecided items block plan creation
       Resume with `/claude-skills:brainstorm-resume` to resolve them
