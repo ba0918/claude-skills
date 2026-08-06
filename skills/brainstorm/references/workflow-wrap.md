@@ -12,11 +12,11 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
 4. Ensure `.agents/artifacts/ideas/` exists (`mkdir -p`).
 5. Generate the slug: `yyyymmddhhmmss_{kebab-title}` (`date +%Y%m%d%H%M%S`; kebab-title is a short ASCII translation of the title). If `.agents/artifacts/ideas/{slug}.md` already exists, re-run `date` for a fresh timestamp — overwriting an existing memo is reserved for Wrap after Resume.
 6. Create the memo at `.agents/artifacts/ideas/{slug}.md` from [idea-template.md](idea-template.md). When the exit contract judgment (Step 3) is positive, also populate the exit contract sections per [exit-contract-template.md](exit-contract-template.md):
-   - **Agreements**: each decision with rationale and destination (ledger)
+   - **Agreements**: each decision with rationale and destination (plan / GitHub issue / docs/spec; ledger only when a decision record is wanted)
    - **Undecided Items**: open questions with `blocks_plan` flag
    - **Acceptance Criteria**: observable behaviors/constraints with verifiability flag
    - **Codebase Evidence**: file paths and findings that grounded the discussion
-   - **Routing**: where each piece goes next (ledger / plan / GitHub issue / docs / clauses)
+   - **Routing**: where each piece goes next (plan / GitHub issue / docs/spec / docs; ledger and clauses as side lines)
    - **Status**: `CONVERGED` if no blocking undecided items remain; `BLOCKED` otherwise
 7. **Spec generation** (only when exit contract status is `CONVERGED`):
    Follow the procedure in [spec-generation.md](spec-generation.md) to generate a human-readable spec draft in the consumer project's `docs/spec/` directory. The agent autonomously selects the target domain file (match existing or create new), presents the draft with matching rationale to the human, and writes only after approval. After writing, record the spec path in the idea memo's exit contract Routing table (destination `Spec`, action `Generated at {path}`) so that `brainstorm-plan` can pass it to `plan-create` without re-scanning. In headless mode (interaction impossible), save the draft to `.agents/artifacts/ideas/{slug}_spec_draft.md` instead of writing to `docs/spec/` — the human reviews and moves it later. Skip this step entirely when the exit contract is `BLOCKED` or absent.
@@ -48,7 +48,7 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
    {when exit contract is CONVERGED:}
    📋 Exit contract: CONVERGED — ready for routing
       Next: `/claude-skills:brainstorm-plan` to create a plan from the agreements
-      Or route agreements to GitHub issues (grouped per stage) / ledger / docs / clauses
+      Or route agreements to GitHub issues (grouped per stage) / docs — or the side lines (ledger / clauses)
    {when exit contract is BLOCKED:}
    🚧 Exit contract: BLOCKED — undecided items block plan creation
       Resume with `/claude-skills:brainstorm-resume` to resolve them

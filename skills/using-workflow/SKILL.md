@@ -33,7 +33,8 @@ converges in one round. When in doubt, propose brainstorm first.
    systematic-debugging for a reproduced bug — do not loop back to brainstorm.
 2. **Terminal and session logistics** — committing (commit), releasing, PR
    mechanics, session handoff (handoff), status or list lookups. These end or relay
-   work; they never start it.
+   work; they never start it. Releasing and PR mechanics have no owning skill —
+   they are pull-type termini of the trunk, done with the environment's own means.
 3. **Read-only work** — investigation (investigate), debugging diagnosis
    (systematic-debugging), reviews and audits (the review-family skills), thinking
    support when stuck (problem-solving). They produce findings; the moment a finding
@@ -44,7 +45,10 @@ category is not an exception — it goes to brainstorm.
 
 ## Resident Loading
 
-This file is deliberately small so it can stay resident. The distributed plugin
-injects its body (frontmatter excluded) at session start — no manual setup for
-plugin users. Without the plugin, wire an equivalent read-only injection (no
-state-mutating commands); the repository README shows a configuration example.
+This file is deliberately small so it can stay resident. On platforms whose plugin
+carries an injection mechanism (a session-start hook or equivalent), the distributed
+plugin injects its body (frontmatter excluded) at session start — no manual setup
+there. On platforms without one, wire an equivalent read-only injection yourself
+(no state-mutating commands) — for example, paste the body into the project's agent
+instruction file (AGENTS.md or equivalent); the repository README lists which
+platforms auto-inject and shows configuration examples.

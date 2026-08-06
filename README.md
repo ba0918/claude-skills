@@ -57,6 +57,13 @@ Plugin 利用者に手動コピーは不要である。
 限るという意図的な選択で、`rules/` の文書（`information-placement.md` 等）は注入しない。
 OpenCode は上記 git plugin が同等の注入を行う（[docs/README.opencode.md](docs/README.opencode.md)）。
 
+自動注入があるのは Claude Code（SessionStart hook）と OpenCode（git plugin）の 2 環境のみ。
+Codex CLI など session start の注入機構を持たないプラットフォームでは、
+`skills/using-workflow/SKILL.md` の本文（frontmatter を除く）をプロジェクトの
+`AGENTS.md`（相当ファイル）へ転記して常駐させる。
+
+Plugin を使わず `rules/` の常駐文書も利用したい場合は、手動でコピーする:
+
 ```bash
 mkdir -p ~/.claude/rules
 cp rules/*.md ~/.claude/rules/
@@ -85,19 +92,23 @@ gh skill install ba0918/claude-skills --agent claude-code
 
 ## 基本ワークフロー
 
-brainstorm（壁打ち）→ plan（計画）→ cycle（自動実装）→ commit（コミット）が基本の流れになる。
+brainstorm（壁打ち）→ plan（計画）→ cycle（自動実装 + レビュー）→ doc-check branch（整合: ドキュメントへの書き戻し）→ commit（コミット）→ PR が幹の流れになる。
 
 ```
-アイデアを壁打ちしたい → brainstorm
-計画を作りたい         → plan-create
-計画を自動実装したい   → cycle
-追加修正したい         → iterate
-コミットしたい         → commit
+アイデアを壁打ちしたい           → brainstorm
+計画を作りたい                   → plan-create
+計画を自動実装したい             → cycle
+追加修正したい                   → iterate
+ドキュメントを実装に揃えたい     → doc-check branch
+コミットしたい                   → commit
+PR を出したい                    → 環境の手段で（gh 等。自走時は github-issue が代行）
 ```
 
-brainstorm で人間と対話しながら仕様・設計を合意し、合意内容を ledger / docs / plan に振り分ける。
-`cycle` は plan の自動実装をエージェントに委譲し、全自動で回す。
+brainstorm で人間と対話しながら仕様・設計を合意し、合意内容を plan / GitHub issue / docs/spec に振り分ける（ledger・clauses は意思決定の記録や機械検証を残したいときの支線）。
+`cycle` は plan の自動実装をエージェントに委譲し、レビューまで含めて全自動で回す。
 `iterate` は cycle 後の軽微な修正に使う。タスクの大きさを自動判定し、大きければ新しい plan の作成を提案する。
+`doc-check branch` は幹の整合駅で、実装で生じたドキュメント（README・docs/spec 等）とのズレを PR 前に検証・修正する。
+PR の作成はどのスキルも所有しないプル型の終端で、手動では gh 等の環境の手段を使い、自走経路では github-issue が代行する。
 
 この流れへの道しるべ（漏斗）は `using-workflow` スキルが持つ。「作る・変える話の既定入口は brainstorm、例外は列挙された 3 カテゴリのみ」の 1 ルール + カテゴリ内の代表スキルで、数十行なので常駐できる。Plugin をインストールしていれば SessionStart hook が自動注入する（後述「Claude Code rules」節）。Plugin を使わない場合の hook 例（読み取り専用の注入のみ）:
 
@@ -115,13 +126,13 @@ brainstorm で人間と対話しながら仕様・設計を合意し、合意内
 
 スキル群は「発生順の 3 レイヤ」で整理する。このリポジトリは元来メンテナ個人の作業用として plan → implement → review の基本サイクルから始まり、実務で必要になった順にスキルが増えていった。その履歴を初見の利用者にも見えるようにするため、次の 3 段で提示する。
 
-- **Core（幹）** — brainstorm → plan → cycle → commit を回すのに最小限必要なスキル。初めての利用者はここだけ見れば十分。
+- **Core（幹）** — brainstorm → plan → cycle → doc-check（整合）→ commit を回すのに最小限必要なスキル。初めての利用者はここだけ見れば十分。
 - **Extensions（枝）** — 実務で必要になったタイミングで後から追加されたスキル。用途別に整理する。必要になったら参照する。
 - **Personal / Experimental（葉）** — 本リポジトリ自身のスキル開発サイクル・移行専用スキル・実験的スキル。外部利用者は基本的に無視してよい。
 
 ### Core（幹）— まずここから
 
-plan → cycle → commit の基本ワークフローに必要な最小セット。
+brainstorm → plan → cycle → doc-check（整合）→ commit の基本ワークフローに必要な最小セット。
 
 | スキル | 用途 |
 |--------|------|
@@ -131,6 +142,7 @@ plan → cycle → commit の基本ワークフローに必要な最小セット
 | `plan-reviewer` | 実装成果物のレビュー（差し戻し判定付き） |
 | `cycle` | plan の自動実装サイクル |
 | `iterate` | cycle 後の軽量な追加修正 |
+| `doc-check` | 幹の整合駅。ドキュメントとコードの整合性検証・修正（`branch` 引数で PR 前のブランチ差分を対象化） |
 | `commit` | 変更の論理単位での自動コミット |
 | `codebase-review` | コードベース全体の並行レビュー（100 点満点） |
 
@@ -194,7 +206,6 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 
 | スキル | 用途 |
 |--------|------|
-| `doc-check` | ドキュメントとコードの整合性検証 |
 | `doc-write` | 調査結果を構造化ドキュメントに昇華 |
 | `doc-audit` | docs 内のアーティファクト横断スキャン |
 | `decision-journal` | 技術選定の意思決定を判例集方式で記録・聞き取り（着手前 1 行プロトコル / 選定会話の固化 / 判例聞き取り） |

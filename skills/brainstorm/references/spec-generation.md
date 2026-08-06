@@ -87,7 +87,7 @@ Wait for the human's approval before writing. Pre-approval in the prompt (e.g., 
 - **Change domain assignment**: move content to a different file.
 - **Reject**: skip spec generation for this session.
 
-When interaction is impossible (headless mode), do NOT write directly to `docs/spec/`. Instead, save the draft to `.agents/artifacts/ideas/{slug}_spec_draft.md` and state the assumption in the completion message. The human reviews the draft and moves it to `docs/spec/` later. This preserves the human gate contract: `docs/spec/` is only modified with explicit approval.
+When interaction is impossible (headless mode), do NOT write directly to `docs/spec/`. Instead, save the draft to `.agents/artifacts/ideas/{slug}_spec_draft.md` and state the assumption in the completion message. In an autonomous flow that ends in a pull request, the flow promotes the draft to `docs/spec/` inside the PR and flags the addition in the PR body — the human's merge approval serves as the spec approval. Outside such a flow, the human reviews the draft and moves it to `docs/spec/` later. Either way the human gate contract holds: `docs/spec/` content only lands with explicit human approval.
 
 ## Spec File Format
 

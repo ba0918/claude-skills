@@ -16,6 +16,15 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: 幹の継ぎ目を接続 — 整合駅への到達導線と docs/spec の消費線
+
+- 整合駅（doc-check `branch`）への到達導線を二層で配線: 手動幹は plan / cycle の完了表示に「doc-check branch → commit → PR」の案内を追加、自走幹（github-issue）は draft PR 作成前の実行ステップとして挿入（AUTO_FIX は適用、NEEDS_JUDGMENT は PR 本文の「⚠️ Needs review」節に列挙し人間のマージ承認 1 点で裁く）
+- headless brainstorm が残す spec 草稿（`*_spec_draft.md`）を自走経路の PR 内で `docs/spec/` へ昇格し、PR 本文に明示（マージ承認が spec の人間承認を兼ねる）
+- plan-reviewer が plan ヘッダ `Spec:` の指す docs/spec を仕様参照として読み、Spec Conformance の入力に含める。plan-implement も実装前に読む。docs/spec と clauses の矛盾は spec エスカレーション
+- 出口契約の宛先を仕様正本に整合: canonical Routing 表（idea-template）を 6 宛先化（GitHub issue / Spec 行追加）、`Typically ledger` の既定を廃止し幹宛先（plan / GitHub issue / docs/spec）を既定に、ledger / clauses は支線と明記。docs/spec / ledger / clauses の三者の役割分担を docs/spec/brainstorm.md と exit-contract-template に明文化
+- 幹図の解釈を確定: review 駅 = cycle 内レビュー（PR 後のレビューは追加防衛線）、PR 駅 = 所有スキルなしのプル型終端（自走は github-issue が代行）。doc-check の駅アンカーは「PR 前（PR なしの publication 経路では publication 前）」
+- using-workflow の常駐注入宣言をプラットフォーム実態（自動注入は Claude Code / OpenCode のみ）へ正確化し、README に Codex 等向けの AGENTS.md 転記手順を追加。README の基本ワークフローを幹 7 駅の並びに更新し doc-check を Core 表へ移動
+
 ### Changed: doc-check が幹の整合フェーズの駅になった（幹 第 3 期）
 
 - `branch` 引数を追加: default branch との merge-base diff を対象に、実装後・PR 前の書き戻し確認として回せる
