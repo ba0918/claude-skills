@@ -14,6 +14,18 @@ claude-skills プラグインのバージョン履歴。
 要るのは「更新すると何が変わる・何が壊れるか」だけ（1.74.0 未満の節はこの規範の適用前で、
 歴史記録として改稿しない）。
 
+## Unreleased
+
+### Fixed: 幹レビューで起票した bug 7 件の一括修正（#287〜#293）
+
+- doc-check: AUTO_FIX 即適用を共有契約の明示例外として宣言（fix-action-taxonomy に条項追加）、余剰エントリの WARN を NEEDS_JUDGMENT に正規化して Phase 4 の集計先を定義、観点 5 の skip 条件を本文と references で統一（#287）
+- doc-check `branch`: 停止判定をブランチ名比較へ変更（main 直運用で未 push 差分に無確認 AUTO_FIX が走る事故を防止）、base 解決のフォールバック連鎖（origin/HEAD → origin/main → main）の意味差と対象範囲の広がりを明文化（#288）
+- brainstorm: `drop` ワークフローを新設（🗑️ Dropped への遷移手順 + `brainstorm-drop` コマンド）、wrap がメモ本体の Status 行を exit status に揃えるよう修正（rebuild-index で ✅ Converged が 💡 Idea へ巻き戻る問題）、テンプレの Status 候補を 5 状態化（#289）
+- artifact store: rebuild-index が headless spec 草稿（`*_spec_draft.md`）をアイデア行として掲載する問題を glob 除外で修正（#290）
+- brainstorm-plan: plan-create を caller-supplied mode で呼びパスの予言を廃止、`skip_status` で前セッション後始末の割り込みを排除、出自宣言（`Source: brainstorm idea ...`）で soft gate の偽陽性を解消、Exit Status 欠落・不正値は BLOCKED 扱い（#291）
+- 起票 2 スキル: github-issue create にも summary-first 完了表示を追加、issue の `--summary` 省略時既定を「タイトル複写」から「平易リード生成」へ変更、human-readable-summary 契約へ新規生成リードの適用条項（echo 規則は完了表示のみ）を追加（#292）
+- using-workflow: 例外カテゴリ 1 に整合駅（doc-check）を追加し、支線行きの依頼が brainstorm 既定へ落ちない 1 行定義を追加（#293）
+
 ## 1.75.0
 
 ### Changed: 幹の継ぎ目を接続 — 整合駅への到達導線と docs/spec の消費線
