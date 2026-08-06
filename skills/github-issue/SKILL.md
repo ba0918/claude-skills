@@ -271,12 +271,30 @@ To confirm the contract above holds, use the manual check in
 
 #### 5. Creating the draft PR
 
-Both commands run inside the worktree from Step 4:
+**Alignment station first.** Before pushing, run the trunk's alignment phase inside the
+worktree, on the branch:
+
+1. Run the `claude-skills:doc-check` skill in `branch` mode. Apply its
+   [AUTO_FIX](../shared/references/fix-action-taxonomy.md) results and commit them on
+   the branch. Do not pause the autonomous flow for NEEDS_JUDGMENT items — collect
+   them for the PR body instead (the human adjudicates them at merge approval, keeping
+   the human decision points at one).
+2. If the cycle's wrap left a headless spec draft
+   (`.agents/artifacts/ideas/*_spec_draft.md` in the satellite artifact store),
+   promote it: place the content at its `docs/spec/{domain}.md` destination, commit it
+   on the branch, and flag the addition in the PR body. The human gate that headless
+   wrap could not collect is served by the merge approval of this PR.
+
+Then both commands run inside the worktree from Step 4:
 
 ```bash
 git push -u origin <branch>
 create_draft_pr(title="<plan title>", body="Closes #${N}\n\n<plan summary>")
 ```
+
+When the alignment station produced NEEDS_JUDGMENT items, append them to the PR body
+under a `⚠️ Needs review` section; when a spec draft was promoted, append a
+`📄 Spec added: docs/spec/{domain}.md` line.
 
 **Always pass `--draft`** (do not undraft until the auto merge gate has passed).
 

@@ -153,7 +153,8 @@ Display to user:
 
 1. Run the cycle - `/claude-skills:cycle`
 2. Or implement manually - "実装して" or "implement this"
-3. Commit - "コミットして" (commit will handle it)
+3. Align docs - `/claude-skills:doc-check branch` (the trunk's alignment station: write implementation-induced changes back to docs before the PR)
+4. Commit - "コミットして" (commit will handle it)
 
 Design decisions are made in brainstorm, not here. Fast tempo! 🚀
 ```

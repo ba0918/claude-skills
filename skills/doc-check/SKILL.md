@@ -14,7 +14,7 @@ Skill that verifies consistency between documentation and the codebase, and auto
 - None: Target changes from the last 5 commits
 - Number (e.g., `10`): Target changes from the last N commits
 - `all`: Target the entire project
-- `branch`: Target the current branch's diff against the default branch (merge-base). The trunk's alignment station — run it after implementation and review, before the PR
+- `branch`: Target the current branch's diff against the default branch (merge-base). The trunk's alignment station — run it after implementation and review, before the PR (or, in flows that advance the default branch without a PR, before publication)
 - File path (e.g., `CLAUDE.md`, `docs/api.md`): Target only the specified document(s). Multiple files can be separated by spaces
 
 ## Phase 1: Discovery

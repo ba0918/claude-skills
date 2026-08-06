@@ -62,4 +62,4 @@ src/
 
 ---
 
-**Next:** Write tests → Implement → Commit with `claude-skills:commit` 🚀
+**Next:** Write tests → Implement → Align docs with `claude-skills:doc-check` `branch` → Commit with `claude-skills:commit` 🚀

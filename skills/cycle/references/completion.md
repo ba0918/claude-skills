@@ -110,6 +110,8 @@ Issue: {closed ✅ / ⚠️ close failed: {slug} — manual close required / (no
 {when phase2_failures or phase5_failures is not empty:}
 ⚠️ Partial failures: {all failures, comma-separated}
 ──────────────────────────────────────
+💡 Next: run /claude-skills:doc-check branch — the trunk's alignment station
+   (write implementation-induced changes back to docs) — before commit / PR.
 💡 Need tweaks? Use /iterate for quick fixes and polish.
 ══════════════════════════════════════
 ```
