@@ -27,8 +27,8 @@ utterance / GitHub issue
      review
         ▼
    alignment     write implementation-induced changes back into docs/spec and docs
-        │        (station owner: doc-check's diff-driven checks; its dedicated
-        ▼         branch-diff mode is being added)
+        │        (station owner: doc-check's `branch` mode — run it after review,
+        ▼         before the PR)
        PR        feature branch; human-approved merge
 
  side lines (deliberately not wired into the trunk):

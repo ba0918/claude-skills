@@ -989,12 +989,13 @@
     "verified": "2026-08-04"
   },
   "skill-reviewer": {
+    "carried_note": "measurement freeze (2026-08-06 ruling): skill-authoring gained the 'Specs Are Human-facing' subsection (spec-first maintenance rule, no backlinks from skill bodies); no behavioral instruction to skill-reviewer changed. Re-run deferred to the post-freeze full measurement.",
     "file_sha256": {
       "skills/shared/references/coverage-ledger.md": "10c3ea12cf96f31749eacce497f43d5db9b6d26b495a55e6552c10089fff8376",
       "skills/shared/references/fix-action-taxonomy.md": "9f686fb66e66491c6a2260d427c18b2e2bcfbecc995cf899414045150b8d1c71",
       "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
-      "skills/shared/references/skill-authoring.md": "c00de5faad019234c27342e2aee273e738c9be8d2ca6be03572b223243233fe3",
+      "skills/shared/references/skill-authoring.md": "eb94d590c28804a86b552b8d866d5b016b46470ba27ae8f3f34aef970ea6fd52",
       "skills/shared/references/skill-repository-profile.md": "fafc81d7ce71468606f3fd3c281b8f3a926dc3f0f48fcd221516720bf6c2fefe",
       "skills/skill-regression/scripts/ledger.py": "f6ade730f57c779b619b823075af9ef7e58dec339cc58c1a56df6204fc6a8ad5",
       "skills/skill-reviewer/SKILL.md": "e6d09f4bfa4201780f9b0724a63f1605826959226ba15c84c3efd64b0dbe9d85",
@@ -1003,7 +1004,7 @@
       "skills/skill-reviewer/references/output-contract.md": "7cd2fc72d01be97efab8fa5b0302de986e0ffec38fd4dadbfc2282f9e1982b81",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "measurement freeze (2026-08-06 ruling): skill-authoring gained the 'Specs Are Human-facing' subsection (spec-first maintenance rule, no backlinks from skill bodies); no behavioral instruction to skill-reviewer changed. Re-run deferred to the post-freeze full measurement.",
+    "note": "measurement freeze (2026-08-06 ruling): trunk diagram's alignment station finalized (owner = doc-check branch mode); no behavioral instruction to skill-reviewer changed. Re-run deferred to the post-freeze full measurement.",
     "result": "accepted-without-run",
     "scenarios": {
       "sr-001": {
@@ -1027,7 +1028,7 @@
       "skills/shared/references/fix-action-taxonomy.md": "f10504693453f7cc768ac00ec34708f41d22a8e713ca503b47d9322b4d44c81b",
       "skills/shared/references/quality-gate-contract.md": "e76eed7335874bca058f208d15dbdda334bfe7d25f3c3246ce36f29ef54eae58",
       "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
-      "skills/shared/references/skill-authoring.md": "0b30b5d9609485d614737903c1ba4ece6dc909b5f4d7c566abe9d88184f67f72",
+      "skills/shared/references/skill-authoring.md": "eb5cc79a44a6f256acf21e8f50bed264c0ff2281454b5ce8d5b8a2423468791b",
       "skills/shared/references/skill-repository-profile.md": "2cb1fb93cb2af137f6e63400d7da8014a06b378e4daf224defe3f706809ac558",
       "skills/skill-reviewer/SKILL.md": "4dbdd6eda5a292567adc7dbefb5803449c674567ea102c3d7033007cfae3b1a9",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "140524c30eafb57aeb4340c2e6ffdbebc0bdd95f972b1303c70b3232f9a7caae",
@@ -1047,7 +1048,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "d5191e1cef62863e5c0f5795128f274db75040f009449efd76303960ff46d69c",
+    "surface_sha256": "397111f065577f034463de851a69028bab1289c7239a6efbf9a99922966579a2",
     "verified": "2026-08-06"
   },
   "sweep-fix": {

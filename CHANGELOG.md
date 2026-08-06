@@ -16,6 +16,12 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Changed: doc-check が幹の整合フェーズの駅になった（幹 第 3 期）
+
+- `branch` 引数を追加: default branch との merge-base diff を対象に、実装後・PR 前の書き戻し確認として回せる
+- 観点 5「未記載の検出」（diff モード限定）: diff の新規挙動がどの文書にも書かれていない欠落を、追記案と置き場所つきで報告する
+- 観点 6「spec 適合」（docs/spec 保有時）: spec を記述でなく契約として照合する。spec 側の編集は常に NEEDS_JUDGMENT（機械が spec を黙って直さない）。skill-authoring の幹の図に整合駅を確定反映
+
 ### Changed: plan に元ネタのソフトゲート、issue が起票時点でヒューマンリーダブルに（幹 第 2 期）
 
 - plan の Phase 2 に元ネタ確認（brainstorm 合意 / docs/spec / バグ再現のいずれか）を追加。不在時は開いた自然言語で 1 回だけ確認して通す（選択肢リスト提示はしない・headless では止めず明示報告）
