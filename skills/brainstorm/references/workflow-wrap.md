@@ -18,6 +18,12 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
    - **Codebase Evidence**: file paths and findings that grounded the discussion
    - **Routing**: where each piece goes next (plan / GitHub issue / docs/spec / docs; ledger and clauses as side lines)
    - **Status**: `CONVERGED` if no blocking undecided items remain; `BLOCKED` otherwise
+
+   Also set the memo's own `**Status:**` header line to match the outcome —
+   `✅ Converged` for a CONVERGED exit contract, `🚧 Blocked` for BLOCKED, `💡 Idea`
+   otherwise. rebuild-index regenerates the index Status column from this header line,
+   so leaving it at the template default flips the index row back to `💡 Idea` on the
+   next rebuild.
 7. **Spec generation** (only when exit contract status is `CONVERGED`):
    Follow the procedure in [spec-generation.md](spec-generation.md) to generate a human-readable spec draft in the consumer project's `docs/spec/` directory. The agent autonomously selects the target domain file (match existing or create new), presents the draft with matching rationale to the human, and writes only after approval. After writing, record the spec path in the idea memo's exit contract Routing table (destination `Spec`, action `Generated at {path}`) so that `brainstorm-plan` can pass it to `plan-create` without re-scanning. In headless mode (interaction impossible), save the draft to `.agents/artifacts/ideas/{slug}_spec_draft.md` instead of writing to `docs/spec/` — the human reviews and moves it later. Skip this step entirely when the exit contract is `BLOCKED` or absent.
 8. Update `.agents/artifacts/ideas/idea-status.md` (create with this header if absent):
@@ -34,7 +40,8 @@ If the current conversation contains no sparring session (bare `/claude-skills:b
    | [{the idea's # heading title}]({slug}.md) | `{tags}` | {YYYY-MM-DD HH:MM:SS} | {status_icon} | {summary} |
    ```
    Status icon: `💡 Idea` for plain memos, `✅ Converged` for CONVERGED exit contracts, `🚧 Blocked` for BLOCKED exit contracts.
-10. Update **Last Updated** to now.
+10. Update **Last Updated** to the new row's Created timestamp (= now; identical to
+    what rebuild-index derives, keeping the index deterministic).
 11. Show the completion message, opening with a summary-first block per the [human-readable summary contract](../../shared/references/human-readable-summary.md): state the core of the saved idea in 1–2 plain lines and name the open questions left by the session (or "none"). No verbatim replay or exhaustive lists:
    ```
    📝 In short: {what the saved idea amounts to, in 1-2 plain lines that reach

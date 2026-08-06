@@ -17,6 +17,7 @@ Decide the workflow from the leading keyword of $ARGUMENTS, then read **only** t
 - `list` → [references/workflow-list.md](references/workflow-list.md)
 - `plan` → [references/workflow-plan.md](references/workflow-plan.md) (convert to plan)
 - `resume` → [references/workflow-resume.md](references/workflow-resume.md) (restart from an existing memo)
+- `drop` → [references/workflow-drop.md](references/workflow-drop.md) (abandon & archive)
 - (none or a theme string) → [references/workflow-session.md](references/workflow-session.md)
 
 ## File Structure (generated in the project using this skill)

@@ -1,7 +1,7 @@
 # {{TITLE}}
 
 **Created:** {{YYYY-MM-DD HH:MM:SS}}
-**Status:** {{💡 Idea | ✅ Converged | 🚧 Blocked}}
+**Status:** {{💡 Idea | ✅ Converged | 🚧 Blocked | 📋 Planned | 🗑️ Dropped}}
 **Tags:** {{TAGS}}
 
 ---
