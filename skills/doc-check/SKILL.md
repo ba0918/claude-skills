@@ -21,7 +21,7 @@ Skill that verifies consistency between documentation and the codebase, and auto
 
 ### 1.1 Document Detection
 
-**File path mode** — When arguments contain file path(s) (not a number, not `all`):
+**File path mode** — When arguments contain file path(s) (not a number, not `all`, not `branch`):
 
 1. Verify each specified file exists and is a `.md` file
 2. Use only those files as targets — skip the full document detection below
