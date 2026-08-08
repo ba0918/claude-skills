@@ -802,8 +802,14 @@ class DocAlignmentProducer(unittest.TestCase):
             text=True,
             check=True,
         ).stdout.strip()
-        env = snapshot(head_sha=head, doc_evidence_text=text)
-        self.assertIsNone(workflow_gate._doc_alignment_defect(env))
+        env = snapshot(
+            head_sha=head,
+            doc_evidence_text=text,
+            trunk_config_text=TRUNK_ADOPTED,
+            evidence_exit=0,
+        )
+        decision = workflow_gate.decide("git push origin feature/x", env)
+        self.assertEqual(decision.verdict, "allow")
         record = json.loads(text)
         self.assertEqual(record["state"], "doc_aligned")
         self.assertEqual(record["target_sha"], head)
