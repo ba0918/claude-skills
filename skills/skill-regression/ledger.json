@@ -869,11 +869,11 @@
     "verified": "2026-08-04"
   },
   "plan": {
-    "carried_note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
+    "carried_note": "measurement freeze (2026-08-06 ruling): bug 起票 7 件の一括修正（#287-#293、共有契約 fix-action-taxonomy / human-readable-summary の条項追加を含む）。完成後の 1 発フル実測で支払う",
     "file_sha256": {
-      "skills/plan/SKILL.md": "910653f771034e41a0eea0210ec25f340e72bcdc896bb75611416e91bbad63af",
+      "skills/plan/SKILL.md": "3266bc01e631eae5188c471d7a7e5f8ec2f599e13570d8c1f0d19667245b45fe",
       "skills/plan/fixtures.json": "935005186df45e2e9788e40347979ced54a3abbfd73d0e9434850071ab19f357",
-      "skills/plan/references/plan-template.md": "2a63bdbcb1173eedda59df71c3b35bb3517721f9962a75297755425f38c99316",
+      "skills/plan/references/plan-template.md": "f5cad12554d1824b7e068f82b59405581231bd53cbf3275d4becf4c4133e65b2",
       "skills/plan/references/status-template.md": "35d422932554e132e8fa5799bc1a8e7bac98b7383fbe5fa6a12950b643d66c11",
       "skills/plan/references/status-update-guide.md": "c5e4e990d07bffcb7776a5c52923c06bd03889eb9fb1dfe993a746a237d7e6cd",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
@@ -883,7 +883,7 @@
       "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
       "skills/shared/scripts/checkpoint.py": "6f75883e376664d6b3fa3b3f00e345d95e3a861a9de296428e4c0758ddf3d81b"
     },
-    "note": "measurement freeze (2026-08-06 ruling): bug 起票 7 件の一括修正（#287-#293、共有契約 fix-action-taxonomy / human-readable-summary の条項追加を含む）。完成後の 1 発フル実測で支払う",
+    "note": "実測凍結方針（2026-08-06 裁定）に基づく accept 支払い。Spec 欄必須化（3 形語彙）は plan-template ヘッダーと SKILL.md Phase 3 の書き換えで、fixtures 4 シナリオの検証面に対する実走は凍結解除後に一括実施",
     "result": "accepted-without-run",
     "scenarios": {
       "pl-001": {
@@ -908,8 +908,8 @@
       }
     },
     "structural_sha256": {
-      "skills/plan/SKILL.md": "9d610ed4b6d067f9f7074812beb69a134cef3308e1680f26ad40e044a761bf4f",
-      "skills/plan/references/plan-template.md": "08b08f0fc140cec8894737f938d773f2cfbb3e679b82465a0bf93a830159a1ef",
+      "skills/plan/SKILL.md": "b7e3335027940d7486e35ce3293c3e062130b2d66e851041d030f8ab72e3304e",
+      "skills/plan/references/plan-template.md": "f94567f387c1a0ed4c5588be7443cf16e59f8dc4dd1413d08ec740a569fff0b9",
       "skills/plan/references/status-template.md": "4ab54b5caa51f85660dd9de21b39f19386a5b9afcada80b67faa11f20fec576d",
       "skills/plan/references/status-update-guide.md": "7cce88c03df6d16c609b08ce4b055d21dd27aff1b677a6a8ebcfa9d5213ba83f",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
@@ -931,8 +931,8 @@
       "skills/shared/references/tdd-contract.md",
       "skills/shared/scripts/checkpoint.py"
     ],
-    "surface_sha256": "3084363fe5e98d0e2810b7beb4fbaef9494852ba396ed24af33a51e0eb6933b7",
-    "verified": "2026-08-06"
+    "surface_sha256": "246f1a97338a96b29e5bc657c748d71c25a569196796ecb301c37afc5428bd64",
+    "verified": "2026-08-09"
   },
   "plan-implement": {
     "carried_note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",

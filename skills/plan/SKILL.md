@@ -110,10 +110,20 @@ Plan files are always created under `.agents/artifacts/plans/` — never `docs/c
 **Optional `Issue` field:**
 When creating a plan from an issue (via `issue-plan` or `issue-cycle`), add `**Issue:** {issue_slug}` to the plan header. This field is used by `cycle` to auto-close the issue upon completion. If the plan is not issue-originated, omit this line.
 
-**Optional `Spec` field:**
-When a domain spec exists in `docs/spec/`, add `**Spec:** {path}` to the plan header. The plan references the spec but does not copy its content. The spec is the human-readable source of truth for what to build; the plan is the LLM-consumable instruction for how to build it. If no spec exists yet, omit this line.
+**Required `Spec` field:**
+Every plan header records the spec-impact judgment in a `**Spec:**` line. This is the route-independent merge point: whether the plan came from brainstorm, from an issue, or was written by hand, the judgment "does this change affect the spec (`docs/spec/`)?" is recorded exactly once, here. The value takes exactly one of 3 forms:
 
-**Spec auto-detection:** When `docs/spec/` exists and contains files, scan each file's content and match it against the plan's feature description. If a relevant spec is found, populate the `**Spec:**` field automatically. When called via `brainstorm-plan` with a CONVERGED exit contract, the spec path generated during wrap is available in the idea memo — use it directly instead of scanning. State the detected spec path in the plan creation output so the human can verify the link.
+| Form | Meaning |
+|---|---|
+| `**Spec:** {docs/spec path}` | Spec impact: the approved spec exists (or is updated in this work) |
+| `**Spec:** draft {path}` | Spec impact: the spec is an unapproved draft (e.g. a headless-convergence draft under the ideas store) |
+| `**Spec:** none — {one-line reason}` | Judged no spec impact; the reason is mandatory (e.g. `none — internal refactor, observable behavior unchanged`) |
+
+The judgment itself (impact or no impact) is semantic — it is made by the agent and the human, not by a pattern match. What is machine-checkable is only that the line exists and matches one of the 3 forms. The plan references the spec but does not copy its content: the spec is the human-readable source of truth for what to build; the plan is the LLM-consumable instruction for how to build it. After implementation, the documentation alignment check (doc-check) cross-checks this declaration against the actual diff.
+
+**Backward compatibility:** existing plans without a `**Spec:**` line are not errors and need no retrofit — the requirement applies to newly created plans. Consumers treat a missing line in an old plan as informational, never as a finding.
+
+**Spec auto-detection:** When `docs/spec/` exists and contains files, scan each file's content and match it against the plan's feature description. If a relevant spec is found, populate the `**Spec:**` field automatically. When called via `brainstorm-plan` with a CONVERGED exit contract, the spec path generated during wrap is available in the idea memo — use it directly instead of scanning. State the detected spec path in the plan creation output so the human can verify the link. **No detection does not mean `none`:** when no relevant spec is found, do not fill `none` automatically — make the spec-impact judgment explicitly and record it (choose `none — {reason}` only after judging that the work has no spec impact; if it does, point to the spec or draft to create or update).
 
 ### Phase 4: Update Status Tracker
 

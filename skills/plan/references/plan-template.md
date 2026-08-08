@@ -4,7 +4,7 @@
 **Started:** {YYYY-MM-DD HH:MM:SS}
 **Status:** 🟡 Planning
 **Issue:** _{issue_slug or remove this line if not from an issue}_
-**Spec:** _{path to domain spec in docs/spec/, or remove this line if no spec exists yet}_
+**Spec:** _{required — exactly one of 3 forms: `{docs/spec path}` (spec impact, approved spec exists or is updated in this work) / `draft {path}` (spec impact, unapproved draft) / `none — {one-line reason}` (no spec impact, reason mandatory)}_
 
 ---
 
