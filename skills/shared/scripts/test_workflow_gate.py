@@ -559,6 +559,39 @@ class AmnestyCli(unittest.TestCase):
         self.assertEqual(len(lines), 2)
         self.assertEqual(json.loads(lines[1])["grounds"], "second approval")
 
+    def test_record_amnesty_from_subdirectory_lands_at_repo_root(self):
+        """サブディレクトリから記録した恩赦もリポジトリ根の台帳へ追記される。"""
+        root = tempfile.mkdtemp()
+        self.addCleanup(lambda: subprocess.run(["rm", "-rf", root], check=False))
+        env = dict(os.environ, GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_SYSTEM="/dev/null")
+        subprocess.run(["git", "init", "-q", "-b", "main", root], check=True, env=env)
+        subdir = os.path.join(root, "src")
+        os.makedirs(subdir)
+        result = subprocess.run(
+            [
+                sys.executable,
+                SCRIPT,
+                "--record-amnesty",
+                "--gate",
+                "main_commit",
+                "--gate-command",
+                "git commit",
+                "--reason",
+                "escalated",
+                "--grounds",
+                "approved from subdir",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=subdir,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        root_ledger = os.path.join(
+            root, ".agents", "artifacts", "decisions", "workflow-gate-amnesties.jsonl"
+        )
+        self.assertTrue(os.path.exists(root_ledger))
+        self.assertFalse(os.path.exists(os.path.join(subdir, ".agents")))
+
     def test_record_amnesty_refuses_groundless_records(self):
         """grounds を欠く恩赦記録の依頼は非 0 で拒否され、台帳に書かれない。"""
         root = tempfile.mkdtemp()

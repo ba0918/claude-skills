@@ -681,7 +681,11 @@ def main(argv=None):
             parser.error("--record-amnesty requires --gate, --gate-command, --reason")
         try:
             record_amnesty(
-                os.getcwd(), args.gate, args.gate_command, args.reason, args.grounds or ""
+                _repo_root(os.getcwd()),
+                args.gate,
+                args.gate_command,
+                args.reason,
+                args.grounds or "",
             )
         except ValueError as exc:
             print(f"amnesty not recorded: {exc}", file=sys.stderr)
