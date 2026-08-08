@@ -10,8 +10,10 @@ and the repository README — never here.
 
 Scope: the gate binds **agents only**. A human running git with their own hands is outside
 the gate — the gate lives in the agent's execution environment, not in the repository's
-git configuration, and it writes nothing into the consumer project except the two
-human-approved artifacts defined below (the declaration file and the amnesty record).
+git configuration, and it writes nothing into the consumer project except the three
+artifacts defined below: two human-approved (the declaration file and the amnesty record)
+and one agent-recorded after actually running the check (the doc-alignment record, which
+lives in the git-ignored artifact store).
 
 ## The Three Verdicts
 
