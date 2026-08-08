@@ -32,6 +32,8 @@ converges in one round. When in doubt, propose brainstorm first.
    bug. Enter at the matching station — plan / cycle / iterate for planned work,
    doc-check for post-implementation alignment (write-back to docs),
    systematic-debugging for a reproduced bug — do not loop back to brainstorm.
+   A bare "implement it" (「実装して」) when an agreed plan already exists boards
+   **cycle** — do not start implementing by hand.
    A request to board a side line (ledger, spec-verify, and kin) is matched by that
    skill's own description — side lines never fall through to the brainstorm default.
 2. **Terminal and session logistics** — committing (commit), releasing, PR
