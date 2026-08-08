@@ -88,9 +88,23 @@ function getBootstrapContent() {
 }
 
 const GATE_SCRIPT = path.join(SKILLS_DIR, "shared", "scripts", "workflow_gate.py")
-// workflow_gate.py 側の判定と同じ「単語としての git」検出。ゲート起動そのものを
-// git を含むコマンドに限定し、通常コマンドの往復コスト（python 起動）をゼロにする。
-const GIT_WORD = /(?<![\w./-])git(?![\w.-])/
+// workflow_gate.py の _GIT_WORD と同一の文字クラス。lookbehind に / を足すと
+// パス経由の /usr/bin/git が語として拾えなくなり、判定コア（Python 側）が deny
+// する形をゲート未起動のまま素通しする — プレフィルタは常にコアの検出集合の
+// 上位集合でなければならない（偽陽性はコアが allow を返すだけで無害、
+// 偽陰性はゲートの迂回になる）。
+const GIT_WORD = /(?<![\w.-])git(?![\w.-])/
+
+// ゲート起動そのものを git に触れうるコマンドへ限定し、通常コマンドの往復
+// コスト（python 起動）をゼロにするプレフィルタ。判定コアは (1) 生テキスト、
+// (2) shlex トークン化後（クォート・エスケープ解決後）、(3) .git/hooks 接触の
+// 3 経路で検出するため、ここでも同じ 3 経路を近似する。
+function mightInvokeGit(command) {
+  if (GIT_WORD.test(command) || command.includes(".git/hooks")) return true
+  // shlex のクォート解決の近似: g"i"t / g'i't / g\it を git として再判定する
+  const unquoted = command.replace(/["'\\]/g, "")
+  return GIT_WORD.test(unquoted) || unquoted.includes(".git/hooks")
+}
 
 // この環境の実行前フックは「例外送出による遮断」しか表現できないため、
 // escalate（人間確認）は deny + 理由文へ縮退する。正本契約:
@@ -127,7 +141,7 @@ const ClaudeSkillsPlugin = async () => {
     "tool.execute.before": async (input, output) => {
       if (input?.tool !== "bash") return
       const command = output?.args?.command
-      if (typeof command !== "string" || !GIT_WORD.test(command)) return
+      if (typeof command !== "string" || !mightInvokeGit(command)) return
       const decision = runWorkflowGate(command)
       if (!decision || decision.verdict === "allow") return
       const label =

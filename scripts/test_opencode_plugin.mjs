@@ -89,7 +89,34 @@ await assert.rejects(
     { tool: "bash" },
     { args: { command: "git commit --no-verify -m x" } },
   ),
-  (err) => err.message.includes("workflow-gate"),
+  (err) => err.message.includes("workflow-gate deny"),
+)
+
+// プレフィルタ回帰: Python 判定コア（workflow_gate.py）が deny / escalate する
+// 敵対形は、プレフィルタでもゲート起動まで到達しなければならない
+// パス経由の git + バイパスフラグ
+await assert.rejects(
+  hooks["tool.execute.before"](
+    { tool: "bash" },
+    { args: { command: "/usr/bin/git commit --no-verify -m x" } },
+  ),
+  (err) => err.message.includes("workflow-gate deny"),
+)
+// クォート分割形（シェルは g"i"t を git として実行する）
+await assert.rejects(
+  hooks["tool.execute.before"](
+    { tool: "bash" },
+    { args: { command: 'g"i"t commit --no-verify -m x' } },
+  ),
+  (err) => err.message.includes("workflow-gate deny"),
+)
+// フックディレクトリ接触（git の語なし）は escalate → deny 縮退 + 理由文
+await assert.rejects(
+  hooks["tool.execute.before"](
+    { tool: "bash" },
+    { args: { command: "rm -f .git/hooks/pre-push" } },
+  ),
+  (err) => err.message.includes("workflow-gate escalate"),
 )
 
 console.log("ok: opencode plugin checks passed")
