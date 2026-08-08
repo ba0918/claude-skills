@@ -257,6 +257,24 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 - 適合プロファイル: [skill-repository-profile.md](skills/shared/references/skill-repository-profile.md) — 2026-08-03 発効（profile-aware verifier `evidence_check.py` が in-force 宣言を機械検証）
 - 想起: SessionStart hook によるポインタ注入（インストール節を参照）
 
+## ワークフロー強制ゲート（環境別の強制力序列）
+
+エージェントの git 操作（main 直コミット・証跡なし push・検査回避フラグ）を実行前に遮るゲート。
+判定は 3 値（allow = 素通し / escalate = 人間確認 / deny = 拒否）で、表現力は実行環境ごとに異なる。
+
+| 環境 | 配線 | 表現できる応答 | escalate の扱い |
+|---|---|---|---|
+| Claude Code | Plugin が自動配線（ツール実行前フック） | allow / escalate（人間への確認ダイアログ）/ deny | フル対応。確認文面はゲートが供給する |
+| OpenCode | Plugin が自動配線（実行前フックの例外送出で遮断） | allow / deny | deny + 理由文へ縮退（理由文が人間確認の手順を案内） |
+| Codex CLI | 手動配線（下記） | allow / deny（ask は構文解釈のみで動作未対応） | deny + 理由文へ縮退 |
+| フック機構のない環境 | 散文フォールバック | なし（強制力なし） | 注入文書・AGENTS.md 転記による規律提示のみ |
+
+棚卸しの根拠（2026-08-09 時点）: Claude Code と Codex CLI は公式ドキュメントでツール実行前フック
+（plugin 配布可・stdin JSON・許可判定応答）を確認済み。Codex CLI の ask 応答は「構文としては解釈されるが
+動作未対応」とドキュメントに明記されているため deny 縮退とする。OpenCode は実行前フックからの例外送出で
+遮断できることを確認済みだが、人間確認を返す仕組みは未確認。Codex CLI が本リポジトリ同梱の
+フック定義ファイルをそのまま読めるかは実測未検証のため、自動配線は行わず手動配線とする。
+
 ## プロンプト設計方針
 
 Fable 5 世代モデルに沿って「短く柔らかい」を志向するが、無条件の削減は行わない。`empirical-prompt-tuning` による実測（plan / cycle スキルで 6 iteration 検証）に基づく判断基準を [skill-authoring.md § When Prompt Compression Works](skills/shared/references/skill-authoring.md) に集約している。
