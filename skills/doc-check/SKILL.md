@@ -153,9 +153,13 @@ whenever no plan can be identified**: work without a plan is never blocked by th
      `docs/spec/`, public interface changes) → report the mismatch as NEEDS_JUDGMENT.
      Whether the declaration or the spec is wrong is a human decision, and spec edits are
      never AUTO_FIX
-   - A `{docs/spec path}` or `draft {path}` declared, but the named spec contradicts what
-     the diff changes → already covered by the existing spec conformance perspective; no
-     separate finding from this check
+   - A `{docs/spec path}` declared, but the named spec contradicts what the diff changes
+     → already covered by the existing spec conformance perspective (which reads specs
+     under `docs/spec/`); no separate finding from this check
+   - A `draft {path}` declared, but the draft contradicts what the diff changes → out of
+     this check's scope. The draft lives outside `docs/spec/` and is not yet an approved
+     contract, so no perspective reads it; it enters cross-check coverage once approved
+     and promoted into `docs/spec/`
    - The line is missing (a plan predating the required field) → informational display
      only, never a finding (backward compatibility)
 3. Findings follow the existing fix flow (AUTO_FIX / NEEDS_JUDGMENT per
