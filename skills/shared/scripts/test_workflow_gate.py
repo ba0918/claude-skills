@@ -451,6 +451,25 @@ class AdversarialBypassAttempts(unittest.TestCase):
         )
         self.assertEqual(decision.verdict, "deny")
 
+    def test_env_var_repo_redirect_escalates(self):
+        """GIT_DIR / GIT_WORK_TREE の環境変数向け直しはフラグ形（-C 等）と同じく escalate。"""
+        for command in (
+            "GIT_DIR=/tmp/elsewhere git commit -m 'x'",
+            "GIT_WORK_TREE=/tmp/elsewhere git commit -m 'x'",
+            "export GIT_DIR=/tmp/elsewhere && git commit -m 'x'",
+        ):
+            decision = workflow_gate.decide(command, snapshot())
+            self.assertEqual(decision.verdict, "escalate", command)
+
+    def test_env_var_hooks_path_override_denies(self):
+        """GIT_CONFIG_* 環境変数による core.hooksPath 上書きは -c 形と同じく deny。"""
+        decision = workflow_gate.decide(
+            "GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/dev/null "
+            "GIT_CONFIG_COUNT=1 git commit -m 'x'",
+            snapshot(),
+        )
+        self.assertEqual(decision.verdict, "deny")
+
 
 class FalsePositiveBounds(unittest.TestCase):
     """保守的判定の誤検知が無害なデータ位置の git にまで広がらないことの検証。"""
@@ -509,6 +528,15 @@ class FalsePositiveBounds(unittest.TestCase):
         )
         self.assertEqual(decision.verdict, "allow")
 
+    def test_benign_git_env_assignments_do_not_gate(self):
+        """向け直しではない環境変数前置（GIT_AUTHOR_NAME / PAGER 等）は判定を変えない。"""
+        for command in (
+            "GIT_AUTHOR_NAME=bot git commit -m 'x'",
+            "PAGER=cat git log",
+        ):
+            decision = workflow_gate.decide(command, snapshot())
+            self.assertEqual(decision.verdict, "allow", command)
+
     def test_amnesty_recording_command_itself_passes_the_gate(self):
         """恩赦記録コマンド自身は引数に git 書き込み句を含んでいても再エスカレートしない。"""
         command = (
@@ -527,6 +555,38 @@ class FalsePositiveBounds(unittest.TestCase):
         )
         decision = workflow_gate.decide(command, snapshot())
         self.assertEqual(decision.verdict, "allow")
+
+
+class PardonDiscoverability(unittest.TestCase):
+    """escalate 理由文が恩赦の記録手段まで案内する（台帳に実データが集まる配線）。"""
+
+    def test_main_commit_escalation_names_the_amnesty_recording_command(self):
+        """main 直コミットの escalate 理由文は恩赦記録コマンドと gate 名を案内する。"""
+        decision = workflow_gate.decide(
+            "git commit -m 'x'", snapshot(current_branch="main")
+        )
+        self.assertEqual(decision.verdict, "escalate")
+        self.assertIn("--record-amnesty", decision.reason)
+        self.assertIn("main_commit", decision.reason)
+
+    def test_push_evidence_escalation_names_the_amnesty_recording_command(self):
+        """evidence 不備の escalate 理由文は恩赦記録コマンドと gate 名を案内する。"""
+        decision = workflow_gate.decide(
+            "git push origin feature/x",
+            snapshot(trunk_config_text=TRUNK_ADOPTED, evidence_exit=1),
+        )
+        self.assertEqual(decision.verdict, "escalate")
+        self.assertIn("--record-amnesty", decision.reason)
+        self.assertIn("push_evidence", decision.reason)
+
+    def test_doc_alignment_escalation_names_the_amnesty_recording_command(self):
+        """doc 整合不備の escalate 理由文も恩赦記録コマンドを案内する。"""
+        decision = workflow_gate.decide(
+            "git push origin feature/x",
+            snapshot(trunk_config_text=TRUNK_ADOPTED, evidence_exit=0),
+        )
+        self.assertEqual(decision.verdict, "escalate")
+        self.assertIn("--record-amnesty", decision.reason)
 
 
 class EvidenceReasonTransparency(unittest.TestCase):

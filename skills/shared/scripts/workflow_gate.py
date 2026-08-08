@@ -54,6 +54,19 @@ _INDIRECTION_COMMANDS = {
     "sudo", "doas", "command", "nohup", "nice", "setsid", "timeout", "watch", "script",
 }
 _ENV_ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+# git の判定対象を別リポジトリ・別設定へ向け直す環境変数（フラグ形 -C / --git-dir /
+# --work-tree と同じ向け直しクラス）。GIT_CONFIG* は core.hooksPath を運べるため同列。
+# GIT_AUTHOR_NAME 等の無害な変数まで含めないよう、列挙 + GIT_CONFIG 接頭辞に限定する
+_GIT_ENV_REDIRECTS = {
+    "GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE",
+    "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    "GIT_CEILING_DIRECTORIES", "GIT_NAMESPACE",
+}
+
+
+def _is_env_redirect_assignment(token):
+    name = token.split("=", 1)[0]
+    return name in _GIT_ENV_REDIRECTS or name.startswith("GIT_CONFIG")
 # git のグローバルオプションのうち、直後に値トークンを 1 つ取りうるもの
 _GIT_GLOBAL_OPTS_WITH_VALUE = {"-c", "-C", "--git-dir", "--work-tree"}
 # 別リポジトリへ判定対象を向け直すオプション（スナップショットと対応しなくなる）
@@ -303,15 +316,23 @@ def analyze_command(command):
                 segments[-1].append(token)
         cd_seen = False
         for segment in segments:
-            # 先頭の環境変数代入（VAR=value）はコマンド位置の判定から除く
+            # 先頭の環境変数代入（VAR=value）はコマンド位置の判定から除く。
+            # ただし向け直し系（GIT_DIR 等）はフラグ形 -C と同じ扱いにする
             start = 0
+            env_redirect = False
             while start < len(segment) and _ENV_ASSIGNMENT.match(segment[start]):
+                if _is_env_redirect_assignment(segment[start]):
+                    env_redirect = True
                 start += 1
             body = segment[start:]
             if not body:
                 continue
             head = body[0]
             if _is_git_token(head):
+                if env_redirect:
+                    # 判定スナップショット（cwd のブランチ・宣言・証跡）と対応しない
+                    uninterpretable = True
+                    continue
                 seg_bypass, seg_ops, seg_broken, seg_escalates = _analyze_git_segment(
                     body[1:]
                 )
@@ -321,6 +342,13 @@ def analyze_command(command):
                 uninterpretable = uninterpretable or seg_broken
             elif head == "cd":
                 cd_seen = True
+            elif head == "export":
+                # export された向け直し変数は後続セグメントの git にも及ぶ
+                if any(
+                    _ENV_ASSIGNMENT.match(t) and _is_env_redirect_assignment(t)
+                    for t in body[1:]
+                ):
+                    uninterpretable = True
             elif head in _INDIRECTION_COMMANDS:
                 if any(_is_git_token(t) or _GIT_WORD.search(t) for t in body[1:]):
                     uninterpretable = True
@@ -395,7 +423,10 @@ def _decide_commit(env):
         f"git switch -c feature/<topic>). If this project deliberately commits on "
         f"'{env.default_branch}', a human may approve and persist "
         f"`allow_main_commit: true` in {TRUNK_CONFIG_RELPATH} (written only after "
-        "human approval).",
+        "human approval). If a human approves this one commit instead, record the "
+        "pardon: `workflow_gate.py --record-amnesty --gate main_commit "
+        "--gate-command '<command>' --reason '<this reason>' --grounds '<why the "
+        "human approved>'`.",
     )
 
 
@@ -472,7 +503,9 @@ def _decide_push(env):
             "doc-alignment check, then record it with `workflow_gate.py "
             "--record-doc-alignment --grounds <what the check ran and found>` — only "
             "after actually running it — or ask the human to approve this push as a "
-            "recorded pardon.",
+            "recorded pardon (`workflow_gate.py --record-amnesty --gate "
+            "push_evidence --gate-command '<command>' --reason '<this reason>' "
+            "--grounds '<why the human approved>'`).",
         )
     if env.evidence_exit == 1:
         detail = "verification evidence for HEAD is absent, expired (SHA mismatch), or invalid"
@@ -486,7 +519,10 @@ def _decide_push(env):
             f"Push under a declared trunk, but {detail}. The trunk discipline requires "
             "review and doc-alignment evidence bound to the exact HEAD SHA "
             "(see skills/shared/references/workflow-gate.md). Produce the evidence, or "
-            "ask the human to approve this push as a recorded pardon.",
+            "ask the human to approve this push as a recorded pardon "
+            "(`workflow_gate.py --record-amnesty --gate push_evidence "
+            "--gate-command '<command>' --reason '<this reason>' --grounds '<why the "
+            "human approved>'`).",
             env,
         ),
     )
