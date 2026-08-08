@@ -292,7 +292,10 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
   escalate の理由文にもこのコマンドが案内される）
 - **恩赦の記録**: 人間が escalate を承認したら
   `workflow_gate.py --record-amnesty --gate <行> --gate-command <コマンド> --reason <理由文> --grounds <承認根拠>`
-  で `.agents/artifacts/decisions/workflow-gate-amnesties.jsonl` へ追記する（承認後のみ・grounds 必須）
+  で `.agents/artifacts/decisions/workflow-gate-amnesties.jsonl` へ追記する（承認後のみ・grounds 必須）。
+  ゲートは自身の記録コマンドを認識するため、`--gate-command "git push"` のように引数へ
+  git 書き込み句を含んでいても再エスカレートしない。各引数はシングルクォートの 1 引数で渡し、
+  理由文は要旨 1 行に留める — コマンド置換（`` ` `` / `$()`）を含む形は解釈不能として遮断されたままになる
 
 ## プロンプト設計方針
 

@@ -401,6 +401,40 @@ class AdversarialBypassAttempts(unittest.TestCase):
         )
         self.assertEqual(decision.verdict, "escalate")
 
+    def test_quote_split_hook_directory_touch_is_still_gated(self):
+        """クォート分割（.gi"t/hooks"）で綴りを崩したフックディレクトリ接触もゲート対象になる。"""
+        decision = workflow_gate.decide(
+            'rm .gi"t/hooks/pre-push"', snapshot()
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_quoted_git_write_phrase_under_arg_executing_head_still_escalates(self):
+        """引数を実行しうるコマンドへ渡されたクォート済み git 書き込み句は escalate のまま。"""
+        for command in (
+            'parallel "git push" ::: 1',
+            'tmux send-keys "git push" Enter',
+            "python3 -c \"import os; os.system('git push')\"",
+            'awk \'BEGIN{system("git push")}\' /dev/null',
+        ):
+            decision = workflow_gate.decide(command, snapshot())
+            self.assertEqual(decision.verdict, "escalate", command)
+
+    def test_gate_self_invocation_with_command_substitution_still_escalates(self):
+        """ゲート自身の記録コマンドでも、コマンド置換を含む形は解釈不能のまま素通ししない。"""
+        decision = workflow_gate.decide(
+            "python3 workflow_gate.py --record-amnesty --gate push_evidence "
+            '--gate-command "$(git push)" --reason r --grounds g',
+            snapshot(),
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_gate_script_name_in_argument_position_does_not_lift_the_gate(self):
+        """引数実行コマンドに workflow_gate.py の語を紛れ込ませてもゲートは緩まない。"""
+        decision = workflow_gate.decide(
+            'tmux send-keys "git push" Enter workflow_gate.py --decide', snapshot()
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
     def test_reconfig_phrase_does_not_suppress_override_deny(self):
         """恒久再設定の語句が同居しても、-c core.hooksPath= 上書きの deny は弱まらない。"""
         decision = workflow_gate.decide(
@@ -456,6 +490,43 @@ class FalsePositiveBounds(unittest.TestCase):
         for command in ("git --version", "git --no-optional-locks status"):
             decision = workflow_gate.decide(command, snapshot())
             self.assertEqual(decision.verdict, "allow", command)
+
+    def test_text_search_and_display_arguments_with_git_write_phrase_allow(self):
+        """テキスト検索・表示コマンドの引数内の git 書き込み句は判定を変えない。"""
+        for command in (
+            'grep -rn "git push" README.md',
+            'echo "then git push"',
+            'printf "%s" "git commit"',
+            'cat "notes about git push.md"',
+        ):
+            decision = workflow_gate.decide(command, snapshot())
+            self.assertEqual(decision.verdict, "allow", command)
+
+    def test_path_fragment_joining_git_and_commit_is_not_a_write(self):
+        """URL・パス断片（.../git/commit/...）は git 書き込みの証拠にならない。"""
+        decision = workflow_gate.decide(
+            "curl https://example.com/git/commit/abc123", snapshot()
+        )
+        self.assertEqual(decision.verdict, "allow")
+
+    def test_amnesty_recording_command_itself_passes_the_gate(self):
+        """恩赦記録コマンド自身は引数に git 書き込み句を含んでいても再エスカレートしない。"""
+        command = (
+            "python3 skills/shared/scripts/workflow_gate.py --record-amnesty "
+            "--gate push_evidence --gate-command 'git push origin feature/x' "
+            "--reason 'escalated: evidence absent' --grounds 'human approved after review'"
+        )
+        decision = workflow_gate.decide(command, snapshot())
+        self.assertEqual(decision.verdict, "allow")
+
+    def test_doc_alignment_recording_command_itself_passes_the_gate(self):
+        """doc 整合記録コマンド自身は grounds に git の語を含んでいても再エスカレートしない。"""
+        command = (
+            "python3 skills/shared/scripts/workflow_gate.py --record-doc-alignment "
+            "--grounds 'doc-check run over git push docs: no drift'"
+        )
+        decision = workflow_gate.decide(command, snapshot())
+        self.assertEqual(decision.verdict, "allow")
 
 
 class EvidenceReasonTransparency(unittest.TestCase):

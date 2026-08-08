@@ -66,6 +66,19 @@ _GIT_GLOBAL_OPTS_BARE = {
 }
 # commit の短縮フラグ束に紛れた -n（--no-verify の短縮形）。大文字フラグ混在も対象
 _SHORT_N_CLUSTER = re.compile(r"-[A-Za-z]*n[A-Za-z]*")
+# 単一トークン内の git 書き込み句（クォート済み引数に埋まった "git push" 等）。
+# 区切り文字から / を除くのは、URL・パス断片（.../git/commit/<sha>）を書き込みの
+# 証拠にしないため — スラッシュだけで連結された git/push はファイルパスであり、
+# どのシェル・ラッパも git サブコマンドの起動としては解釈しない
+_IN_TOKEN_WRITE = re.compile(r"git[^A-Za-z0-9_/]+(commit|push)(?![\w-])")
+# 引数を実行しないテキスト処理・表示コマンド。この head の引数はデータであり、
+# git の語・書き込み句を含んでも人間確認を発生させない。
+# rg（--pre）・sed（GNU の e）・awk（system()）・find（-exec）は引数から外部
+# コマンドを起動する経路を持つため意図的に載せない — 追加は経路の不在を確認してから
+_DATA_SINK_COMMANDS = {"echo", "printf", "grep", "cat"}
+# ゲート自身の CLI（恩赦・doc 整合の記録、判定出力）。判定対象コマンドを引数に運ぶ
+_GATE_SCRIPT_BASENAME = "workflow_gate.py"
+_GATE_SELF_MODES = {"--record-amnesty", "--record-doc-alignment", "--decide"}
 
 _TRUNK_VALUES = {"adopted", "not_adopted"}
 _BOOL_VALUES = {"true": True, "false": False}
@@ -126,6 +139,31 @@ def parse_trunk_config(text):
 def _is_git_token(token):
     """トークンが git 本体の呼び出しか（素の git / パス経由の git）。"""
     return token == "git" or (token.rsplit("/", 1)[-1] == "git" and "/" in token)
+
+
+def _is_gate_self_invocation(body):
+    """セグメントがゲート自身の記録・判定 CLI の呼び出しか。
+
+    恩赦・doc 整合の記録コマンドは判定対象コマンド（"git push" 等）を引数に運ぶため、
+    引数内 git 句の検出から除外しないと記録フローがゲートと自己衝突する。
+    スクリプト名を引数位置へ紛れ込ませた形（他コマンドの引数末尾に付け足す等）で
+    ゲートが緩まないよう、コマンド位置（先頭、または python 起動の直後）にある
+    場合だけ自己呼び出しとみなす。
+    """
+    def basename(token):
+        return token.rsplit("/", 1)[-1]
+
+    if basename(body[0]) == _GATE_SCRIPT_BASENAME:
+        script_in_command_position = True
+    else:
+        script_in_command_position = (
+            basename(body[0]).startswith("python")
+            and len(body) > 1
+            and basename(body[1]) == _GATE_SCRIPT_BASENAME
+        )
+    return script_in_command_position and any(
+        token in _GATE_SELF_MODES for token in body
+    )
 
 
 def _tokenize(command):
@@ -237,6 +275,9 @@ def analyze_command(command):
                 "persistent hook-path reconfiguration (git config core.hooksPath)"
             )
         return CommandAnalysis(gated, gated, bypass, (), tuple(escalates))
+    # クォート分割（.gi"t/hooks" 等）はトークン化（クォート解決）後にだけ現れる。
+    # git の語なしでも成立する形なので、git 有無の早期 return より前に拾う
+    hooks_dir_touch = hooks_dir_touch or any(".git/hooks" in token for token in tokens)
     token_has_git = any(
         _is_git_token(token) or _GIT_WORD.search(token) for token in tokens
     )
@@ -286,10 +327,11 @@ def analyze_command(command):
             else:
                 # コマンド位置以外の git は、書き込み操作の証拠を伴うときだけ解釈不能扱い
                 # （単なるデータ位置の 'git' の語で人間確認を発生させない）
-                in_token_write = any(
-                    re.search(r"git[^A-Za-z0-9_]+(commit|push)(?![\w-])", t)
-                    for t in body
-                )
+                if body[0].rsplit("/", 1)[-1] in _DATA_SINK_COMMANDS:
+                    continue  # 引数を実行しないコマンド: git 句はデータ
+                if _is_gate_self_invocation(body):
+                    continue  # ゲート自身の記録・判定 CLI は対象コマンドを引数に運ぶ
+                in_token_write = any(_IN_TOKEN_WRITE.search(t) for t in body)
                 standalone = any(_is_git_token(t) for t in body) and any(
                     t in ("commit", "push") for t in body
                 )
@@ -474,11 +516,13 @@ def decide(command, env):
     if analysis.uninterpretable:
         return Decision(
             "escalate",
-            "This command contains a git invocation the gate cannot interpret "
-            "(multiplexed, substituted, shell-wrapped, or aimed at another working "
-            "directory or repository). The gate never guesses toward allow — run the "
-            "git operation as a plain command from the repository root, or ask the "
-            "human to approve this form.",
+            "This command contains what may be a git invocation the gate cannot "
+            "interpret (multiplexed, substituted, shell-wrapped, executed through "
+            "another program's arguments, or aimed at another working directory or "
+            "repository). The gate never guesses toward allow — run the git "
+            "operation as a plain command from the repository root, rephrase the "
+            "command so the git wording is visibly data, or ask the human to "
+            "approve this form.",
         )
     decisions = []
     for operation in analysis.operations:
