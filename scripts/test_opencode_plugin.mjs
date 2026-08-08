@@ -76,4 +76,20 @@ assert.equal(messages.messages[0].parts[1].text, "hello")
 await hooks["experimental.chat.messages.transform"]({}, messages)
 assert.equal(messages.messages[0].parts.length, 2)
 
+// --- workflow gate (tool.execute.before) ---
+assert.equal(typeof hooks["tool.execute.before"], "function")
+
+// 非 bash ツール・git を含まないコマンドは素通し（発話ゼロ）
+await hooks["tool.execute.before"]({ tool: "read" }, { args: { filePath: "/x" } })
+await hooks["tool.execute.before"]({ tool: "bash" }, { args: { command: "ls -la" } })
+
+// バイパスフラグは deny: 例外送出で遮断され、理由文を運ぶ
+await assert.rejects(
+  hooks["tool.execute.before"](
+    { tool: "bash" },
+    { args: { command: "git commit --no-verify -m x" } },
+  ),
+  (err) => err.message.includes("workflow-gate"),
+)
+
 console.log("ok: opencode plugin checks passed")
