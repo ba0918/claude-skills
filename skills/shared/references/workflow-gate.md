@@ -41,7 +41,11 @@ character sequence appearing in a non-git command is not a bypass.
 
 | Condition | Verdict |
 |---|---|
-| Bypass flag detected in a git invocation: `--no-verify`, `-n` on `git commit` (its short form), a hook-path override (`-c core.hooksPath=...`), or kindred hook-disabling options | `deny` |
+| Bypass flag detected in a git invocation: `--no-verify` (including its unambiguous long-option abbreviations), `-n` on `git commit` (alone or inside a short-flag cluster), or a hook-path override (`-c core.hooksPath=...` and kindred per-invocation forms) | `deny` |
+| Persistent hook-path reconfiguration (`git config core.hooksPath ...`) — may be a legitimate enablement, so a human confirms instead of an outright refusal | `escalate` |
+| A command touching the repository hook directory (`.git/hooks`) | `escalate` |
+| A git write operation aimed away from the gate's snapshot: `-C` / `--git-dir` / `--work-tree`, or a preceding `cd` in the same command | `escalate` |
+| `git commit` when the current or default branch cannot be determined | `escalate` |
 | `git commit` on the default branch, no declared permission for it | `escalate` |
 | `git commit` on the default branch, permission declared | `allow` |
 | `git push`, trunk adoption declared, both evidence proofs (verification slice + doc-alignment record) valid and bound to `HEAD` | `allow` |
@@ -55,6 +59,15 @@ Interpretation is **conservative**: the gate parses the command string, never ev
 expands it. A `git commit` / `git push` token inside a structure the parser cannot decompose
 (command substitution, `sh -c` wrapping, eval-style indirection) falls to `escalate`, not
 `allow`. A command with no git write operation is always `allow`, silently.
+
+Bypass evidence is scanned at the raw-text level as well as the parsed level, so an
+uninterpretable structure that carries a bypass flag still lands on `deny`, never on the
+softer `escalate` — and quoting tricks that split the word `git` are reassembled by the
+parser before the scan. Known conservative false positives (a pathspec literally named
+after a bypass flag, quoted text containing a git write phrase) resolve through the human,
+never by weakening the scan. Deleting or rewriting hook files through generic file
+commands beyond the `.git/hooks` path check is a **non-goal** (the same file-writing
+argument as gate self-disabling below).
 
 ## Declaration File — `.agents/config/trunk.yml`
 
@@ -109,9 +122,9 @@ check, no finer.)
 - The doc-alignment record is absent, malformed, SHA-mismatched, or missing grounds →
   `escalate`, naming the defect.
 
-When escalating, the reason text presents **what the existing evidence claims as its
-grounds** (the `grounds` field), so the human pardons with the evidence in view, not
-blind.
+When escalating, the reason text carries **the verifier's report** — what was checked
+(target SHA, contract version) and why each state failed — so the human pardons with the
+evidence situation in view, not blind.
 
 ## Amnesty Records
 
@@ -144,7 +157,9 @@ One JSON object per line, append-only:
   which matches its purpose: the pardons that need watching are the ones granted here. A
   pardon is a recorded human decision, which is what the decisions kind holds.
 - The record is written **after** the human approves, as part of honoring the approval —
-  it is a record of a human decision, not an agent's.
+  it is a record of a human decision, not an agent's. Recording goes through the shipped
+  script (`skills/shared/scripts/workflow_gate.py`, amnesty-recording mode), which
+  validates the format mechanically and refuses a groundless or unknown-gate record.
 
 ## Security Posture
 
