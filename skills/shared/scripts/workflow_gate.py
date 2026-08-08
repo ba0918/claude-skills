@@ -44,8 +44,10 @@ _HOOKS_PATH = re.compile(r"core\.hookspath", re.IGNORECASE)
 _HOOKS_PATH_RECONFIG = re.compile(
     r"git\s+config\s+(?:--\S+\s+)*core\.hookspath", re.IGNORECASE
 )
-# 解釈を打ち切る構造マーカー（コマンド置換・改行スクリプト）
-_UNPARSEABLE_MARKERS = ("$(", "`", "\n")
+# 解釈を打ち切る構造マーカー（コマンド置換）。改行は _split_unquoted_newlines が
+# 引用状態を追跡して構造改行だけを区切りに正規化するため、生文字列マーカーにしない
+# （引用符内のデータ改行 = 複数行コミットメッセージまで解釈不能扱いになる偽陽性を防ぐ）
+_UNPARSEABLE_MARKERS = ("$(", "`")
 # セグメント区切り（shlex punctuation_chars が生成する演算子トークン + サブシェル括弧）
 _SEGMENT_DELIMITERS = {";", "&", "&&", "|", "||", ";;", "|&", "(", ")"}
 # シェル間接実行の入口。この先の構造は解釈しない（escalate）
@@ -188,6 +190,58 @@ def _tokenize(command):
     return list(lexer)
 
 
+def _split_unquoted_newlines(command):
+    """引用状態を追跡し、構造改行（unquoted \\n）だけを `;` 区切りへ正規化する。
+
+    - 引用符の中の改行はデータとして保持する（shlex がそのままトークンに含める）
+    - バックスラッシュ + 改行は行継続なので除去して結合する（分断された語や
+      サブコマンドが再構成され、検出がむしろ強くなる）
+    - 未終端の引用符は構造を確定できないため None を返す（呼び出し側で
+      トークン化不能と同じ保守分岐に落とす）
+    """
+    out = []
+    state = "normal"  # normal | single | double
+    i = 0
+    n = len(command)
+    while i < n:
+        ch = command[i]
+        if state == "single":
+            if ch == "'":
+                state = "normal"
+            out.append(ch)
+            i += 1
+            continue
+        # normal / double 共通: バックスラッシュは次の 1 文字を伴う
+        if ch == "\\":
+            if i + 1 < n and command[i + 1] == "\n":
+                i += 2  # 行継続: 両文字を除去して結合
+                continue
+            out.append(ch)
+            if i + 1 < n:
+                out.append(command[i + 1])
+                i += 2
+            else:
+                i += 1
+            continue
+        if state == "normal":
+            if ch == "'":
+                state = "single"
+            elif ch == '"':
+                state = "double"
+            elif ch == "\n":
+                out.append(" ; ")
+                i += 1
+                continue
+        else:  # double
+            if ch == '"':
+                state = "normal"
+        out.append(ch)
+        i += 1
+    if state != "normal":
+        return None
+    return "".join(out)
+
+
 def _scan_bypass_evidence(text):
     """解釈不能な構造に対する、生テキストレベルの回避フラグ証拠検出。
 
@@ -273,9 +327,14 @@ def analyze_command(command):
     hooks_dir_touch = ".git/hooks" in command
     hooks_dir_reason = "the command touches the repository hook directory"
     raw_has_git = bool(_GIT_WORD.search(command))
+    # 構造改行の正規化（引用符内の改行はデータ、行継続は結合）。未終端引用符は
+    # None が返り、トークン化不能と同じ保守分岐に落ちる
+    rewritten = _split_unquoted_newlines(command)
     try:
-        tokens = _tokenize(command)
+        tokens = _tokenize(rewritten) if rewritten is not None else None
     except ValueError:
+        tokens = None
+    if tokens is None:
         # token 化できないコマンドは、git の痕跡があるときだけ escalate 対象。
         # 構造が見えないので生テキスト走査でバイパス証拠だけは拾う（deny 維持）
         gated = raw_has_git or hooks_dir_touch

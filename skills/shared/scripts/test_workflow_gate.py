@@ -308,6 +308,99 @@ class ConservativeInterpretation(unittest.TestCase):
             self.assertEqual(decision.reason, "", command)
 
 
+class QuotedNewlineInterpretation(unittest.TestCase):
+    """引用符内のデータ改行と、コマンド区切りの構造改行を区別する検証。
+
+    複数行コミットメッセージ（コミット規則が要求する why 本文）が
+    解釈不能扱いで escalate される偽陽性（issue #304）の再発防止。
+    """
+
+    def test_multiline_commit_message_on_feature_branch_allows(self):
+        """引用符内の改行はデータであり、feature ブランチのコミットは allow になる。"""
+        decision = workflow_gate.decide(
+            'git commit -m "feat: subject\n\nwhy body line 1\nwhy body line 2"',
+            snapshot(),
+        )
+        self.assertEqual(decision.verdict, "allow")
+        self.assertEqual(decision.reason, "")
+
+    def test_add_and_multiline_commit_compound_allows(self):
+        """git add && 複数行 -m コミットの複合形も feature ブランチでは allow になる。"""
+        decision = workflow_gate.decide(
+            'git add skills/plan/SKILL.md && git commit -m "feat: x\n\nbody"',
+            snapshot(),
+        )
+        self.assertEqual(decision.verdict, "allow")
+        self.assertEqual(decision.reason, "")
+
+    def test_multiline_commit_message_on_default_branch_escalates_as_main_commit(self):
+        """複数行メッセージでも main へのコミットは main コミットとして escalate する。"""
+        decision = workflow_gate.decide(
+            'git commit -m "feat: subject\n\nbody"',
+            snapshot(current_branch="main"),
+        )
+        self.assertEqual(decision.verdict, "escalate")
+        self.assertIn("branch", decision.reason)
+
+    def test_unquoted_newline_separated_main_commit_escalates(self):
+        """引用符の外の改行はコマンド区切りであり、後続の main コミットを検出する。"""
+        decision = workflow_gate.decide(
+            "ls\ngit commit -m fix", snapshot(current_branch="main")
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_newline_after_and_operator_still_detects_push(self):
+        """&& 直後の改行で分割された push も evidence 検査の対象になる。"""
+        decision = workflow_gate.decide(
+            'git add x &&\ngit push', snapshot(evidence_exit=None)
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_backslash_newline_continuation_push_still_detected(self):
+        """バックスラッシュ改行の行継続で分割された push も検出される。"""
+        decision = workflow_gate.decide(
+            "git \\\npush", snapshot(evidence_exit=None)
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_git_word_split_by_continuation_is_still_gated(self):
+        """語中のバックスラッシュ改行で git の語を分断しても検出される。"""
+        decision = workflow_gate.decide(
+            "gi\\\nt push", snapshot(evidence_exit=None)
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_no_verify_words_inside_quoted_message_are_data(self):
+        """引用符内の '--no-verify' や 'git push' の語はデータであり deny を誘発しない。"""
+        decision = workflow_gate.decide(
+            'git commit -m "note: git push --no-verify is denied\nsecond line"',
+            snapshot(),
+        )
+        self.assertEqual(decision.verdict, "allow")
+        self.assertEqual(decision.reason, "")
+
+    def test_command_substitution_still_escalates(self):
+        """コマンド置換 $() は展開されうるため従来どおり escalate を維持する。"""
+        decision = workflow_gate.decide(
+            'git commit -m "$(cat msg.txt)"', snapshot()
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_backtick_substitution_still_escalates(self):
+        """バッククォート置換も従来どおり escalate を維持する。"""
+        decision = workflow_gate.decide(
+            'git commit -m "`cat msg.txt`"', snapshot()
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_unterminated_quote_with_multiline_content_escalates(self):
+        """未終端引用符 + 改行は構造を確定できないため escalate に倒れる。"""
+        decision = workflow_gate.decide(
+            'git commit -m "unclosed\nbody', snapshot(current_branch="main")
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+
 class AdversarialBypassAttempts(unittest.TestCase):
     """回避を試みる呼び出し形が allow に到達しないことの検証（レビュー実証攻撃由来）。"""
 
