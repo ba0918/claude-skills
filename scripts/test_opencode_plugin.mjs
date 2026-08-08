@@ -118,5 +118,28 @@ await assert.rejects(
   ),
   (err) => err.message.includes("workflow-gate escalate"),
 )
+// クォート分割形のフックディレクトリ接触（シェルは .gi"t/hooks" を .git/hooks に解決する）
+await assert.rejects(
+  hooks["tool.execute.before"](
+    { tool: "bash" },
+    { args: { command: 'rm .gi"t/hooks/pre-push"' } },
+  ),
+  (err) => err.message.includes("workflow-gate escalate"),
+)
+
+// ゲート子プロセスのタイムアウトは Python 側 evidence 検証タイムアウトより長くなければ
+// ならない — 短いと push 判定の evidence 検証中に子プロセスが打ち切られ、
+// fail-open（無言 allow）へ落ちる
+const pluginSource = fs.readFileSync(pluginPath, "utf8")
+const gateSource = fs.readFileSync(
+  path.join(root, "skills/shared/scripts/workflow_gate.py"),
+  "utf8",
+)
+const evidenceTimeoutSec = Number(/_EVIDENCE_TIMEOUT\s*=\s*(\d+)/.exec(gateSource)[1])
+const gateTimeoutMs = Number(/timeout:\s*(\d+)/.exec(pluginSource)[1])
+assert.ok(
+  gateTimeoutMs > evidenceTimeoutSec * 1000,
+  `gate child-process timeout (${gateTimeoutMs}ms) must exceed the Python evidence-verification timeout (${evidenceTimeoutSec}s)`,
+)
 
 console.log("ok: opencode plugin checks passed")

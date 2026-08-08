@@ -96,9 +96,9 @@ const GATE_SCRIPT = path.join(SKILLS_DIR, "shared", "scripts", "workflow_gate.py
 const GIT_WORD = /(?<![\w.-])git(?![\w.-])/
 
 // ゲート起動そのものを git に触れうるコマンドへ限定し、通常コマンドの往復
-// コスト（python 起動）をゼロにするプレフィルタ。判定コアは (1) 生テキスト、
-// (2) shlex トークン化後（クォート・エスケープ解決後）、(3) .git/hooks 接触の
-// 3 経路で検出するため、ここでも同じ 3 経路を近似する。
+// コスト（python 起動）をゼロにするプレフィルタ。判定コアは git の語と
+// .git/hooks 接触をそれぞれ生テキストとトークン化後（クォート・エスケープ
+// 解決後）の 2 レベルで検出するため、ここでも両対象にクォート除去の近似を掛ける。
 function mightInvokeGit(command) {
   if (GIT_WORD.test(command) || command.includes(".git/hooks")) return true
   // shlex のクォート解決の近似: g"i"t / g'i't / g\it を git として再判定する
@@ -115,7 +115,9 @@ function runWorkflowGate(command) {
     result = spawnSync(
       "python3",
       [GATE_SCRIPT, "--decide", "--gate-command", command],
-      { encoding: "utf8", timeout: 60000 },
+      // Python 側の worst case（evidence 検証 120 秒 + 30 秒上限の git 呼び出し数回）
+      // を下回ると、超過時に fail-open（無言 allow）へ落ちてゲートを素通しする
+      { encoding: "utf8", timeout: 300000 },
     )
   } catch {
     return null // ゲート基盤の障害でセッションを壊さない（fail-open）
