@@ -8,6 +8,13 @@
    - **Exit contract check**: if the idea file contains a `## Exit Contract` section:
      - If status is `BLOCKED`: reply "This idea has unresolved blocking items. Run `/claude-skills:brainstorm-resume` to resolve them before creating a plan." and stop.
      - If status is `CONVERGED`: use the agreements and acceptance criteria as the plan seed (richer than title + summary alone).
+       - **Receiver-side spec check**: verify the Routing table records a generated spec
+         path (destination `Spec` with a `Generated at {path}` action, or the headless
+         draft path `.agents/artifacts/ideas/{slug}_spec_draft.md`). If none is recorded,
+         stop and reply: "This idea converged but no spec path is recorded in the exit
+         contract. Run `/claude-skills:brainstorm-resume` to generate the spec (wrap
+         Step) before creating a plan." The generating side's self-report does not
+         substitute for this check — the receiver verifies.
      - If the `**Exit Status:**` line is missing or carries any other value: treat it as
        BLOCKED (safe side) — a half-written exit contract usually means an interrupted
        wrap. Reply that the exit contract is incomplete and suggest

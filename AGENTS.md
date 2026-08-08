@@ -17,8 +17,9 @@ This file is the shared project instruction source for Claude Code, Codex CLI, a
 - `commands/` — スラッシュコマンド。スキルを呼び出す薄いラッパーで、ロジックはスキル側に集約する
 - `rules/` — 常駐ルールとして使える補助指示
 - `scripts/` — リポジトリ整合性バリデータなどの開発用スクリプト
+- `hooks/` — Claude Code plugin のフック定義。セッション開始時の bootstrap 注入と、ツール実行前のワークフローゲート起動
 - `.claude-plugin/` / `.codex-plugin/` — 各プラットフォーム向け plugin manifest
-- `.opencode/plugins/` + ルート `package.json` — OpenCode 向け git plugin（`skills.paths` 登録と bootstrap 注入）
+- `.opencode/plugins/` + ルート `package.json` — OpenCode 向け git plugin（`skills.paths` 登録・bootstrap 注入・ワークフローゲートのツール実行前配線）
 
 ## スキル運用
 

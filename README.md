@@ -257,6 +257,46 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 - 適合プロファイル: [skill-repository-profile.md](skills/shared/references/skill-repository-profile.md) — 2026-08-03 発効（profile-aware verifier `evidence_check.py` が in-force 宣言を機械検証）
 - 想起: SessionStart hook によるポインタ注入（インストール節を参照）
 
+## ワークフロー強制ゲート（環境別の強制力序列）
+
+エージェントの git 操作（main 直コミット・証跡なし push・検査回避フラグ）を実行前に遮るゲート。
+判定は 3 値（allow = 素通し / escalate = 人間確認 / deny = 拒否）で、表現力は実行環境ごとに異なる。
+
+| 環境 | 配線 | 表現できる応答 | escalate の扱い |
+|---|---|---|---|
+| Claude Code | Plugin が自動配線（ツール実行前フック） | allow / escalate（人間への確認ダイアログ）/ deny | フル対応。確認文面はゲートが供給する |
+| OpenCode | Plugin が自動配線（実行前フックの例外送出で遮断） | allow / deny | deny + 理由文へ縮退（理由文が人間確認の手順を案内） |
+| Codex CLI | 手動配線（下記） | allow / deny（ask は構文解釈のみで動作未対応） | deny + 理由文へ縮退 |
+| フック機構のない環境 | 散文フォールバック | なし（強制力なし） | 注入文書・AGENTS.md 転記による規律提示のみ |
+
+棚卸しの根拠（2026-08-09 時点）: Claude Code と Codex CLI は公式ドキュメントでツール実行前フック
+（plugin 配布可・stdin JSON・許可判定応答）を確認済み。Codex CLI の ask 応答は「構文としては解釈されるが
+動作未対応」とドキュメントに明記されているため deny 縮退とする。OpenCode は実行前フックからの例外送出で
+遮断できることを確認済みだが、人間確認を返す仕組みは未確認。Codex CLI が本リポジトリ同梱の
+フック定義ファイルをそのまま読めるかは実測未検証のため、自動配線は行わず手動配線とする。
+
+ゲートの正本契約（判定表・宣言ファイル `.agents/config/trunk.yml`・恩赦記録・push の証跡要求）は
+[workflow-gate.md](skills/shared/references/workflow-gate.md)、判定コアは
+`skills/shared/scripts/workflow_gate.py`（pure な判定関数 + CLI アダプタ）。
+
+- **Claude Code**: `hooks/hooks.json` の実行前フックが Plugin インストールだけで有効になる。
+  実行コマンドは `workflow_gate.py --hook-io claude`（stdin の JSON を読み、許可判定 JSON を返す）
+- **OpenCode**: 同梱 git plugin の実行前フックが自動で有効になる。escalate は理由文付きの遮断へ縮退する
+- **Codex CLI（手動配線）**: ツール実行前フックに次の形のアダプタを登録する。
+  `workflow_gate.py --decide --gate-command "<コマンド文字列>"` を呼び、出力 JSON の
+  `verdict` が `allow` なら exit 0（無出力）、`escalate` / `deny` なら理由文を stderr に出して
+  exit 2（ブロック）に写像する。ask 相当が未対応のため escalate も遮断になる（理由文が恩赦手順を案内する）
+- **doc 整合証跡の記録**: doc-check（文書整合チェック）を実際に実行した後、
+  `workflow_gate.py --record-doc-alignment --grounds <実行内容と結果>` で
+  HEAD にバインドされた `doc_aligned.json` を生成する（push ゲートが要求する 2 つ目の証跡。
+  escalate の理由文にもこのコマンドが案内される）
+- **恩赦の記録**: 人間が escalate を承認したら
+  `workflow_gate.py --record-amnesty --gate <行> --gate-command <コマンド> --reason <理由文> --grounds <承認根拠>`
+  で `.agents/artifacts/decisions/workflow-gate-amnesties.jsonl` へ追記する（承認後のみ・grounds 必須）。
+  ゲートは自身の記録コマンドを認識するため、`--gate-command "git push"` のように引数へ
+  git 書き込み句を含んでいても再エスカレートしない。各引数はシングルクォートの 1 引数で渡し、
+  理由文は要旨 1 行に留める — コマンド置換（`` ` `` / `$()`）を含む形は解釈不能として遮断されたままになる
+
 ## プロンプト設計方針
 
 Fable 5 世代モデルに沿って「短く柔らかい」を志向するが、無条件の削減は行わない。`empirical-prompt-tuning` による実測（plan / cycle スキルで 6 iteration 検証）に基づく判断基準を [skill-authoring.md § When Prompt Compression Works](skills/shared/references/skill-authoring.md) に集約している。
