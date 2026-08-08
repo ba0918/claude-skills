@@ -34,6 +34,9 @@ _GIT_WORD = re.compile(r"(?<![\w.-])git(?![\w.-])")
 # --no-verify とその一意省略形（git は一意な長オプション省略を受理する。
 # --no-verbose と衝突する --no-ve 以下の曖昧形は git 側がエラーにするため対象外）
 _NO_VERIFY = re.compile(r"--no-veri(?:fy|f)?(?![\w-])")
+# 構造解釈できたコマンドではトークン全体一致だけをバイパスとみなす
+# （メッセージ引数内の言及を deny にしないため。deny は恩赦できない verdict）
+_NO_VERIFY_TOKEN = re.compile(r"--no-veri(?:fy|f)?(?:=.*)?$")
 # フック無効化系の設定キー（大文字小文字を git は区別しない）
 _HOOKS_PATH = re.compile(r"core\.hookspath", re.IGNORECASE)
 # 恒久的な再設定（git config core.hooksPath <値>）だけは deny でなく escalate に落とす:
@@ -135,29 +138,40 @@ def _tokenize(command):
 
 
 def _scan_bypass_evidence(text):
-    """生テキスト + トークン列に対する回避フラグの証拠検出。
+    """解釈不能な構造に対する、生テキストレベルの回避フラグ証拠検出。
 
-    構造が解釈できるかに関わらず適用する（deny を escalate に弱めないため）。
+    構造を解釈できないときだけ使う（deny を escalate に弱めないための最終防衛線。
+    解釈できたコマンドではトークン単位の検出が優先され、引数内の言及を deny にしない）。
+    core.hooksPath は「恒久再設定（git config …）の形に含まれない出現が残るか」で
+    判定する — 再設定の語句が同居していても、上書き形の出現が別にあれば deny を保つ。
     """
     reasons = []
     if _NO_VERIFY.search(text):
         reasons.append("--no-verify (or an unambiguous abbreviation) skips inspection hooks")
-    if _HOOKS_PATH.search(text) and not _HOOKS_PATH_RECONFIG.search(text):
-        reasons.append("a core.hooksPath override disables repository hooks")
+    reconfig_spans = [m.span() for m in _HOOKS_PATH_RECONFIG.finditer(text)]
+    for match in _HOOKS_PATH.finditer(text):
+        covered = any(
+            start <= match.start() and match.end() <= end
+            for start, end in reconfig_spans
+        )
+        if not covered:
+            reasons.append("a core.hooksPath override disables repository hooks")
+            break
     return reasons
 
 
 def _analyze_git_segment(tokens):
-    """git に続くトークン列 → (bypass_reasons, operations, uninterpretable)."""
+    """git に続くトークン列 → (bypass, operations, uninterpretable, escalate_reasons)."""
     bypass = []
     operations = []
+    escalates = []
     index = 0
     while index < len(tokens) and tokens[index].startswith("-"):
         token = tokens[index]
         name = token.split("=", 1)[0]
         if name in _GIT_REPO_REDIRECT_OPTS:
             # 判定スナップショット（cwd のブランチ・宣言・証跡）と対応しない
-            return tuple(bypass), (), True
+            return tuple(bypass), (), True, ()
         if name in _GIT_GLOBAL_OPTS_WITH_VALUE:
             value = token.split("=", 1)[1] if "=" in token else (
                 tokens[index + 1] if index + 1 < len(tokens) else ""
@@ -171,13 +185,20 @@ def _analyze_git_segment(tokens):
             index += 1
         else:
             # 未知のグローバルオプション: サブコマンドの特定を諦め、安全側へ
-            return tuple(bypass), (), True
+            return tuple(bypass), (), True, ()
     if index >= len(tokens):
-        return tuple(bypass), (), False
+        return tuple(bypass), (), False, ()
     subcommand = tokens[index]
     rest = tokens[index + 1 :]
     if "--" in rest:  # pathspec 区切り以降はフラグではない
         rest = rest[: rest.index("--")]
+    # --no-verify はフック検査を持つサブコマンド全般（commit / push / merge 等）で
+    # 回避フラグになるため、サブコマンドを限定せずフラグ位置のトークンだけを見る
+    for token in rest:
+        if _NO_VERIFY_TOKEN.match(token):
+            bypass.append(
+                "--no-verify (or an unambiguous abbreviation) skips inspection hooks"
+            )
     if subcommand == "commit":
         operations.append("commit")
         for token in rest:
@@ -185,7 +206,12 @@ def _analyze_git_segment(tokens):
                 bypass.append("-n (--no-verify) skips commit inspection hooks")
     elif subcommand == "push":
         operations.append("push")
-    return tuple(bypass), tuple(operations), False
+    elif subcommand == "config":
+        if any(token.lower().startswith("core.hookspath") for token in rest):
+            escalates.append(
+                "persistent hook-path reconfiguration (git config core.hooksPath)"
+            )
+    return tuple(bypass), tuple(operations), False, tuple(escalates)
 
 
 def analyze_command(command):
@@ -199,11 +225,18 @@ def analyze_command(command):
     try:
         tokens = _tokenize(command)
     except ValueError:
-        # token 化できないコマンドは、git の痕跡があるときだけ escalate 対象
+        # token 化できないコマンドは、git の痕跡があるときだけ escalate 対象。
+        # 構造が見えないので生テキスト走査でバイパス証拠だけは拾う（deny 維持）
         gated = raw_has_git or hooks_dir_touch
-        return CommandAnalysis(
-            gated, gated, (), (), (hooks_dir_reason,) if hooks_dir_touch else ()
-        )
+        bypass = tuple(_scan_bypass_evidence(command)) if raw_has_git else ()
+        escalates = []
+        if hooks_dir_touch:
+            escalates.append(hooks_dir_reason)
+        if raw_has_git and _HOOKS_PATH_RECONFIG.search(command):
+            escalates.append(
+                "persistent hook-path reconfiguration (git config core.hooksPath)"
+            )
+        return CommandAnalysis(gated, gated, bypass, (), tuple(escalates))
     token_has_git = any(
         _is_git_token(token) or _GIT_WORD.search(token) for token in tokens
     )
@@ -212,63 +245,68 @@ def analyze_command(command):
             return CommandAnalysis(True, False, (), (), (hooks_dir_reason,))
         return CommandAnalysis(False, False, (), ())
 
-    # バイパス証拠は構造解釈より先に、生テキストと token 復元テキストの両方で拾う
-    scan_text = command + "\n" + " ".join(tokens)
-    bypass = list(_scan_bypass_evidence(scan_text))
+    bypass = []
     escalate_reasons = []
-    if _HOOKS_PATH_RECONFIG.search(scan_text):
-        escalate_reasons.append(
-            "persistent hook-path reconfiguration (git config core.hooksPath)"
-        )
     if hooks_dir_touch:
         escalate_reasons.append(hooks_dir_reason)
 
-    if any(marker in command for marker in _UNPARSEABLE_MARKERS):
-        return CommandAnalysis(True, True, tuple(bypass), (), tuple(escalate_reasons))
-
-    segments = [[]]
-    for token in tokens:
-        if token in _SEGMENT_DELIMITERS:
-            segments.append([])
-        else:
-            segments[-1].append(token)
-
     operations = []
-    uninterpretable = False
-    cd_seen = False
-    for segment in segments:
-        # 先頭の環境変数代入（VAR=value）はコマンド位置の判定から除く
-        start = 0
-        while start < len(segment) and _ENV_ASSIGNMENT.match(segment[start]):
-            start += 1
-        body = segment[start:]
-        if not body:
-            continue
-        head = body[0]
-        if _is_git_token(head):
-            seg_bypass, seg_ops, seg_broken = _analyze_git_segment(body[1:])
-            bypass.extend(seg_bypass)
-            operations.extend(seg_ops)
-            uninterpretable = uninterpretable or seg_broken
-        elif head == "cd":
-            cd_seen = True
-        elif head in _INDIRECTION_COMMANDS:
-            if any(_is_git_token(t) or _GIT_WORD.search(t) for t in body[1:]):
-                uninterpretable = True
-        else:
-            # コマンド位置以外の git は、書き込み操作の証拠を伴うときだけ解釈不能扱い
-            # （単なるデータ位置の 'git' の語で人間確認を発生させない）
-            in_token_write = any(
-                re.search(r"git[^A-Za-z0-9_]+(commit|push)(?![\w-])", t) for t in body
+    uninterpretable = any(marker in command for marker in _UNPARSEABLE_MARKERS)
+    if not uninterpretable:
+        # 構造を解釈できる場合はトークン単位でバイパス・操作・再設定を検出する
+        segments = [[]]
+        for token in tokens:
+            if token in _SEGMENT_DELIMITERS:
+                segments.append([])
+            else:
+                segments[-1].append(token)
+        cd_seen = False
+        for segment in segments:
+            # 先頭の環境変数代入（VAR=value）はコマンド位置の判定から除く
+            start = 0
+            while start < len(segment) and _ENV_ASSIGNMENT.match(segment[start]):
+                start += 1
+            body = segment[start:]
+            if not body:
+                continue
+            head = body[0]
+            if _is_git_token(head):
+                seg_bypass, seg_ops, seg_broken, seg_escalates = _analyze_git_segment(
+                    body[1:]
+                )
+                bypass.extend(seg_bypass)
+                operations.extend(seg_ops)
+                escalate_reasons.extend(seg_escalates)
+                uninterpretable = uninterpretable or seg_broken
+            elif head == "cd":
+                cd_seen = True
+            elif head in _INDIRECTION_COMMANDS:
+                if any(_is_git_token(t) or _GIT_WORD.search(t) for t in body[1:]):
+                    uninterpretable = True
+            else:
+                # コマンド位置以外の git は、書き込み操作の証拠を伴うときだけ解釈不能扱い
+                # （単なるデータ位置の 'git' の語で人間確認を発生させない）
+                in_token_write = any(
+                    re.search(r"git[^A-Za-z0-9_]+(commit|push)(?![\w-])", t)
+                    for t in body
+                )
+                standalone = any(_is_git_token(t) for t in body) and any(
+                    t in ("commit", "push") for t in body
+                )
+                if in_token_write or standalone:
+                    uninterpretable = True
+        if cd_seen and operations:
+            # cd で作業場所が変わった後の git 書き込みはスナップショットと対応しない
+            uninterpretable = True
+    if uninterpretable:
+        # 構造で確定できなかった部分に限り、生テキスト + token 復元テキストで
+        # バイパス証拠を拾い直す（deny を escalate に弱めない最終防衛線）
+        scan_text = command + "\n" + " ".join(tokens)
+        bypass.extend(_scan_bypass_evidence(scan_text))
+        if _HOOKS_PATH_RECONFIG.search(scan_text):
+            escalate_reasons.append(
+                "persistent hook-path reconfiguration (git config core.hooksPath)"
             )
-            standalone = any(_is_git_token(t) for t in body) and any(
-                t in ("commit", "push") for t in body
-            )
-            if in_token_write or standalone:
-                uninterpretable = True
-    if cd_seen and operations:
-        # cd で作業場所が変わった後の git 書き込みはスナップショットと対応しない
-        uninterpretable = True
     return CommandAnalysis(
         True, uninterpretable, tuple(bypass), tuple(operations), tuple(escalate_reasons)
     )
@@ -389,8 +427,10 @@ def _decide_push(env):
             f"Push under a declared trunk, but the doc-alignment record is {doc_defect}. "
             "The trunk discipline requires a doc_aligned.json record bound to the exact "
             "HEAD SHA (see skills/shared/references/workflow-gate.md). Run the "
-            "doc-alignment check and record it, or ask the human to approve this push "
-            "as a recorded pardon.",
+            "doc-alignment check, then record it with `workflow_gate.py "
+            "--record-doc-alignment --grounds <what the check ran and found>` — only "
+            "after actually running it — or ask the human to approve this push as a "
+            "recorded pardon.",
         )
     if env.evidence_exit == 1:
         detail = "verification evidence for HEAD is absent, expired (SHA mismatch), or invalid"
@@ -493,6 +533,39 @@ def record_amnesty(cwd, gate, command, reason, grounds, now=None):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "a", encoding="utf-8") as handle:
         handle.write(line + "\n")
+
+
+def record_doc_alignment(cwd, grounds, now=None):
+    """doc 整合実施の証跡を HEAD へバインドして生成する（実施後にのみ呼ぶこと）。
+
+    ゲート拡張レコード doc_aligned.json の唯一の出荷 producer。スキーマの正本は
+    workflow-gate.md（正準 2 状態と同形・state=doc_aligned・full SHA・grounds 必須）。
+    """
+    if not isinstance(grounds, str) or not grounds.strip():
+        raise ValueError(
+            "a doc-alignment record that cannot say what ran is not evidence"
+        )
+    root = _repo_root(cwd)
+    head = _git_output(["rev-parse", "HEAD"], root)
+    if head is None or not _FULL_SHA.fullmatch(head):
+        raise RuntimeError(
+            "cannot resolve the current HEAD SHA; the record must bind to an exact commit"
+        )
+    recorded_at = now or datetime.datetime.now(datetime.timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    record = {
+        "schema_version": 1,
+        "state": "doc_aligned",
+        "target_sha": head,
+        "produced_at": recorded_at,
+        "grounds": grounds,
+    }
+    path = os.path.join(root, DOC_EVIDENCE_RELPATH)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(record, handle, ensure_ascii=False)
+        handle.write("\n")
 
 
 _GIT_TIMEOUT = 30
@@ -663,6 +736,11 @@ def main(argv=None):
         action="store_true",
         help="--gate-command の判定を JSON（verdict + reason）で出力する",
     )
+    parser.add_argument(
+        "--record-doc-alignment",
+        action="store_true",
+        help="doc 整合実施の証跡を HEAD へバインドして記録する（実施後にのみ使う）",
+    )
     parser.add_argument("--gate", choices=AMNESTY_GATES)
     parser.add_argument("--gate-command", help="判定・恩赦の対象となるコマンド文字列")
     parser.add_argument("--reason", help="escalate 時にゲートが提示した理由文")
@@ -675,6 +753,13 @@ def main(argv=None):
             parser.error("--decide requires --gate-command")
         decision = run_gate(args.gate_command, os.getcwd())
         json.dump({"verdict": decision.verdict, "reason": decision.reason}, sys.stdout)
+        return 0
+    if args.record_doc_alignment:
+        try:
+            record_doc_alignment(os.getcwd(), args.grounds or "")
+        except (ValueError, RuntimeError) as exc:
+            print(f"doc-alignment not recorded: {exc}", file=sys.stderr)
+            return 1
         return 0
     if args.record_amnesty:
         if not (args.gate and args.gate_command and args.reason):
@@ -691,7 +776,10 @@ def main(argv=None):
             print(f"amnesty not recorded: {exc}", file=sys.stderr)
             return 1
         return 0
-    parser.error("no mode selected: pass --hook-io, --decide, or --record-amnesty")
+    parser.error(
+        "no mode selected: pass --hook-io, --decide, --record-doc-alignment, "
+        "or --record-amnesty"
+    )
 
 
 if __name__ == "__main__":

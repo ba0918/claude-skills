@@ -401,6 +401,15 @@ class AdversarialBypassAttempts(unittest.TestCase):
         )
         self.assertEqual(decision.verdict, "escalate")
 
+    def test_reconfig_phrase_does_not_suppress_override_deny(self):
+        """恒久再設定の語句が同居しても、-c core.hooksPath= 上書きの deny は弱まらない。"""
+        decision = workflow_gate.decide(
+            "git config core.hooksPath .githooks\n"
+            "git -c core.hooksPath=/dev/null commit -m x",
+            snapshot(),
+        )
+        self.assertEqual(decision.verdict, "deny")
+
     def test_bypass_flag_wins_over_hook_directory_escalation(self):
         """バイパスフラグとフックディレクトリ操作が同居しても deny が escalate に弱まらない。"""
         decision = workflow_gate.decide(
@@ -417,6 +426,18 @@ class FalsePositiveBounds(unittest.TestCase):
         decision = workflow_gate.decide(
             'git commit -m "see git push docs"', snapshot()
         )
+        self.assertEqual(decision.verdict, "allow")
+
+    def test_commit_message_mentioning_bypass_flag_is_not_a_bypass(self):
+        """解釈可能なコマンドでは、メッセージ引数内の --no-verify 言及は deny にならない。"""
+        decision = workflow_gate.decide(
+            'git commit -m "fix: deny the --no-verify flag"', snapshot()
+        )
+        self.assertEqual(decision.verdict, "allow")
+
+    def test_searching_for_hooks_path_is_not_a_bypass(self):
+        """core.hooksPath を検索するだけの読み取りコマンドは deny にならない。"""
+        decision = workflow_gate.decide("git grep core.hooksPath", snapshot())
         self.assertEqual(decision.verdict, "allow")
 
     def test_echo_of_git_word_without_write_op_allows(self):
@@ -658,6 +679,79 @@ class DecideCliMode(unittest.TestCase):
         record = json.loads(result.stdout)
         self.assertEqual(record["verdict"], "deny")
         self.assertTrue(record["reason"])
+
+
+class DocAlignmentProducer(unittest.TestCase):
+    """--record-doc-alignment: doc 整合実施の証跡レコードを HEAD へバインドして生成する。"""
+
+    def _make_repo(self):
+        root = tempfile.mkdtemp()
+        self.addCleanup(lambda: subprocess.run(["rm", "-rf", root], check=False))
+        env = dict(
+            os.environ,
+            GIT_AUTHOR_NAME="t",
+            GIT_AUTHOR_EMAIL="t@example.com",
+            GIT_COMMITTER_NAME="t",
+            GIT_COMMITTER_EMAIL="t@example.com",
+            GIT_CONFIG_GLOBAL="/dev/null",
+            GIT_CONFIG_SYSTEM="/dev/null",
+        )
+        subprocess.run(["git", "init", "-q", "-b", "main", root], check=True, env=env)
+        subprocess.run(
+            ["git", "-C", root, "commit", "-q", "--allow-empty", "-m", "init"],
+            check=True,
+            env=env,
+        )
+        return root
+
+    def test_produced_record_is_valid_doc_alignment_evidence_for_head(self):
+        """生成されたレコードは HEAD にバインドされ、ゲートの doc 整合検証を通る。"""
+        root = self._make_repo()
+        result = subprocess.run(
+            [
+                sys.executable,
+                SCRIPT,
+                "--record-doc-alignment",
+                "--grounds",
+                "doc-check branch run: no drift found",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=root,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        record_path = os.path.join(
+            root, ".agents", "artifacts", "reviews", "evidence", "doc_aligned.json"
+        )
+        with open(record_path, encoding="utf-8") as handle:
+            text = handle.read()
+        head = subprocess.run(
+            ["git", "-C", root, "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        env = snapshot(head_sha=head, doc_evidence_text=text)
+        self.assertIsNone(workflow_gate._doc_alignment_defect(env))
+        record = json.loads(text)
+        self.assertEqual(record["state"], "doc_aligned")
+        self.assertEqual(record["target_sha"], head)
+
+    def test_producer_refuses_groundless_records(self):
+        """grounds を欠く doc 整合レコードの生成依頼は非 0 で拒否される。"""
+        root = self._make_repo()
+        result = subprocess.run(
+            [sys.executable, SCRIPT, "--record-doc-alignment", "--grounds", "  "],
+            capture_output=True,
+            text=True,
+            cwd=root,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(
+            os.path.exists(
+                os.path.join(root, ".agents", "artifacts", "reviews", "evidence")
+            )
+        )
 
 
 class CliAdapter(unittest.TestCase):

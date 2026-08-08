@@ -286,6 +286,10 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
   `workflow_gate.py --decide --gate-command "<コマンド文字列>"` を呼び、出力 JSON の
   `verdict` が `allow` なら exit 0（無出力）、`escalate` / `deny` なら理由文を stderr に出して
   exit 2（ブロック）に写像する。ask 相当が未対応のため escalate も遮断になる（理由文が恩赦手順を案内する）
+- **doc 整合証跡の記録**: doc-check（文書整合チェック）を実際に実行した後、
+  `workflow_gate.py --record-doc-alignment --grounds <実行内容と結果>` で
+  HEAD にバインドされた `doc_aligned.json` を生成する（push ゲートが要求する 2 つ目の証跡。
+  escalate の理由文にもこのコマンドが案内される）
 - **恩赦の記録**: 人間が escalate を承認したら
   `workflow_gate.py --record-amnesty --gate <行> --gate-command <コマンド> --reason <理由文> --grounds <承認根拠>`
   で `.agents/artifacts/decisions/workflow-gate-amnesties.jsonl` へ追記する（承認後のみ・grounds 必須）

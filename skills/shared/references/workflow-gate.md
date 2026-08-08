@@ -60,14 +60,19 @@ expands it. A `git commit` / `git push` token inside a structure the parser cann
 (command substitution, `sh -c` wrapping, eval-style indirection) falls to `escalate`, not
 `allow`. A command with no git write operation is always `allow`, silently.
 
-Bypass evidence is scanned at the raw-text level as well as the parsed level, so an
-uninterpretable structure that carries a bypass flag still lands on `deny`, never on the
-softer `escalate` — and quoting tricks that split the word `git` are reassembled by the
-parser before the scan. Known conservative false positives (a pathspec literally named
-after a bypass flag, quoted text containing a git write phrase) resolve through the human,
-never by weakening the scan. Deleting or rewriting hook files through generic file
-commands beyond the `.git/hooks` path check is a **non-goal** (the same file-writing
-argument as gate self-disabling below).
+Bypass detection is two-layered. In a command whose structure the gate can interpret,
+bypass flags are matched **as whole tokens in flag position** — a mention of a bypass
+flag inside an argument's text (a commit message, a search pattern) is not a bypass,
+because `deny` is the one verdict a human cannot pardon and must not fire on data. In a
+structure the gate cannot interpret, bypass evidence is scanned at the raw-text level, so
+the maneuver still lands on `deny`, never on the softer `escalate` — quoting tricks that
+split the word `git` are reassembled by the parser before the scan, and a persistent
+reconfiguration phrase elsewhere in the command never masks a per-invocation override.
+Remaining conservative false positives in the raw layer (quoted text containing a git
+write phrase inside an already-uninterpretable command) resolve through the human, never
+by weakening the scan. Deleting or rewriting hook files through generic file commands
+beyond the `.git/hooks` path check is a **non-goal** (the same file-writing argument as
+gate self-disabling below).
 
 ## Declaration File — `.agents/config/trunk.yml`
 
@@ -112,6 +117,12 @@ check, no finer.)
    the doc-alignment station's proof; it exists because the canonical slice alone does
    not testify that documentation was aligned (consumer projects typically run without a
    conformance profile, and no profile obligation covers doc alignment).
+   The shipped producer is the gate script's doc-alignment recording mode: after actually
+   running the doc-alignment check, record it with
+   `workflow_gate.py --record-doc-alignment --grounds <what ran and what it found>`.
+   The producer binds to the current `HEAD` mechanically and refuses a groundless record;
+   the gate's escalation text names this command, so the recording path is discoverable
+   exactly when it is needed.
 
 - Both proofs hold → `allow`.
 - The verifier says not publishable (exit 1: a state's evidence is absent, expired —
