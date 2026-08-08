@@ -14,6 +14,14 @@ claude-skills プラグインのバージョン履歴。
 要るのは「更新すると何が変わる・何が壊れるか」だけ（1.74.0 未満の節はこの規範の適用前で、
 歴史記録として改稿しない）。
 
+## Unreleased
+
+### Added: ワークフロー強制ゲート — 幹の遷移点をハーネス側フックで防御（#300）
+
+- plugin がツール実行前フックを配布し、エージェントの main 直コミット・検証証跡なし push を実行前に人間確認へエスカレーション、`--no-verify` 等のバイパスフラグは拒否する（Claude Code / OpenCode は自動配線、Codex CLI は手動配線手順を README に記載。正本契約: `skills/shared/references/workflow-gate.md`）
+- **更新後の挙動変化**: 幹採用は `.agents/config/trunk.yml` の宣言制で、未宣言プロジェクトでは最初のエージェント push が 1 回だけ採用確認になる。人間の git 操作と consumer リポジトリの設定には影響しない
+- 散文側の補修: using-workflow に「実装して（合意済み plan あり）→ cycle」の routing 行、plan 作成に受け側 spec 検査（CONVERGED なのに spec パス未記録なら停止）を追加
+
 ## 1.76.0
 
 ### Fixed: 幹レビューで起票した bug 7 件の一括修正（#287〜#293）
