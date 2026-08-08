@@ -134,6 +134,35 @@ In `all` and file-path modes, since there is no diff, have agents explore the pr
 2. NEEDS_JUDGMENT: confirm with the user first, then fix based on the answer
 3. OK: Record as-is
 
+### Spec Declaration Cross-Check (diff modes only)
+
+In diff modes (default / commit count / `branch`), additionally cross-check the plan's
+spec-impact declaration against the actual diff. This check never runs in `all` and
+file-path modes (no diff, no plan correspondence), and it **skips silently — no finding —
+whenever no plan can be identified**: work without a plan is never blocked by this check.
+
+1. **Identify the plan.** Resolution order: the plan referenced by the Current Session in
+   the artifact store's `status.md` → otherwise the most recent plan under the artifact
+   store's `plans/` directory whose content corresponds to the diff. If neither yields a
+   confident match, skip. The plan is read as *input* for this check only — plan files
+   remain excluded as fix targets (Phase 1 exclusion list).
+2. **Read the plan header's `**Spec:**` line.** Its vocabulary is defined by the plan
+   skill as exactly 3 forms: `{docs/spec path}` / `draft {path}` / `none — {one-line reason}`.
+   - `none — {reason}` declared, but the diff contains spec-relevant behavior changes
+     (procedure changes in skill bodies, shared-contract changes, changes under
+     `docs/spec/`, public interface changes) → report the mismatch as NEEDS_JUDGMENT.
+     Whether the declaration or the spec is wrong is a human decision, and spec edits are
+     never AUTO_FIX
+   - A `{docs/spec path}` or `draft {path}` declared, but the named spec contradicts what
+     the diff changes → already covered by the existing spec conformance perspective; no
+     separate finding from this check
+   - The line is missing (a plan predating the required field) → informational display
+     only, never a finding (backward compatibility)
+3. Findings follow the existing fix flow (AUTO_FIX / NEEDS_JUDGMENT per
+   [fix-action-taxonomy.md](../shared/references/fix-action-taxonomy.md)); this check
+   introduces no new verdict vocabulary. Mismatches surface in the Phase 4
+   "⚠️ Needs review" bucket.
+
 ## Phase 4: Report
 
 After all checks are complete, aggregate and display results:
