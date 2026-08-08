@@ -1,6 +1,6 @@
 {
   "brainstorm": {
-    "carried_note": "measurement freeze (2026-08-06 ruling): bug 起票 7 件の一括修正（#287-#293、共有契約 fix-action-taxonomy / human-readable-summary の条項追加を含む）。完成後の 1 発フル実測で支払う",
+    "carried_note": "measurement freeze (2026-08-06 ruling): Last Updated 定義の一本化（rebuild-index の決定論値に統一）。完成後の 1 発フル実測で支払う",
     "file_sha256": {
       "skills/brainstorm/SKILL.md": "6244545709d2db60b1f667be488fdd61b02f59892cfef3b732c4d896cb277d6b",
       "skills/brainstorm/fixtures.json": "5ab5d3f5bd0267e46c8bdbefc417c1e142583752c01ce785d182167c47e9c27c",
@@ -9,7 +9,7 @@
       "skills/brainstorm/references/spec-generation.md": "6a9db5b240540b3465e1d5cace60415c1e0d411b82c134ee083e9760ef92ea1b",
       "skills/brainstorm/references/workflow-drop.md": "547324eecaef9fc8f5057702ab20e93b9270fef7a70aca3d72937c5bba448977",
       "skills/brainstorm/references/workflow-list.md": "3d07fba66cb55a9d4b781d9a5890d44ab47bce99a82fc31ce49d143b6da666eb",
-      "skills/brainstorm/references/workflow-plan.md": "01429263c4fb0eb6e921126fd1fcdcbc61b5e7aef4c7c69591c30a0cca2b36af",
+      "skills/brainstorm/references/workflow-plan.md": "a52a4193881cc8460bdc56f34da2e0f9c18efd580160eebdd6fbc159dcdb44ea",
       "skills/brainstorm/references/workflow-resume.md": "6c06f2cdcc5ac2f6394c6d45ce55a292b88683359aa8325ba451cfe710d1dc77",
       "skills/brainstorm/references/workflow-session.md": "a9ed6819a419e42b1190740d615da0a50460832f1df877c4a71d0194fa0221b0",
       "skills/brainstorm/references/workflow-wrap.md": "2095af8205dcfaef44308dd25d81d8207974d9b2a4b58e7643037614d05528b3",
@@ -17,7 +17,7 @@
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/human-readable-summary.md": "505b6dc3ad957530b62910e2c66c7f2d812aa3634416d0029eafe9968efda4a6"
     },
-    "note": "measurement freeze (2026-08-06 ruling): Last Updated 定義の一本化（rebuild-index の決定論値に統一）。完成後の 1 発フル実測で支払う",
+    "note": "workflow-enforcement-gates: workflow-plan.md へ受け側 spec 検査（CONVERGED なのに Routing に spec パスが無い場合の停止）を追加。判定分岐の追加だが既存 7 シナリオの合否経路は不変と判断。実測は凍結中（完成後に 1 発フル実測の現行裁定に従う）",
     "result": "accepted-without-run",
     "scenarios": {
       "bs-001": {
@@ -63,7 +63,7 @@
       "skills/brainstorm/references/spec-generation.md": "6460cdf4f5554b9f73e8db49101ec6a6bc398e825328aa5d9fca872e78f2e66e",
       "skills/brainstorm/references/workflow-drop.md": "6dfec1475c0db65c10c6171d2681f226cd42e5556a7fded8d8b385f850011cf0",
       "skills/brainstorm/references/workflow-list.md": "e61ed16fd4d9f627dc6f03970645eabb476422d5d858a40e096e7c845d386308",
-      "skills/brainstorm/references/workflow-plan.md": "97a98c25a28915f6601c6954dd3541468d0604c131d302cc154a997a7f9facd3",
+      "skills/brainstorm/references/workflow-plan.md": "da5a8ea601cc376d4ad3fdddd51a0663fc392bb09218b8b12397f77fab385bbd",
       "skills/brainstorm/references/workflow-resume.md": "3aef63ccb0d9084f25aa81b1bd2b76e8b5d6b579284e1c6ab3689d73b7dd3e5b",
       "skills/brainstorm/references/workflow-session.md": "80292ccfa5cdb6a42a5b3a53e94a445e352cf6bd3cfc0298c494696003198203",
       "skills/brainstorm/references/workflow-wrap.md": "bdf72b4fef07ac48d64d5e0423cffc7d9d233bb440e3597c89cb11c695750f3a",
@@ -87,8 +87,8 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "a82f572fcbc39646ae564690ad4376f66154bf6073034faa2b41e3080a484dc2",
-    "verified": "2026-08-06"
+    "surface_sha256": "71f1f00503836c8f149378b73be5e433845c6cd716cfbd8c017489e9eab38a0d",
+    "verified": "2026-08-09"
   },
   "brief": {
     "file_sha256": {
