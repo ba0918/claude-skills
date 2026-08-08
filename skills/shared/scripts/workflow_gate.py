@@ -224,6 +224,12 @@ def _split_unquoted_newlines(command):
                 i += 1
             continue
         if state == "normal":
+            # bash 拡張クォート $'...'（ANSI-C）/ $"..."（ロケール）は、この単純な
+            # quote-state 追跡では追えない（\' などのエスケープ規則が POSIX single/
+            # double と異なり、状態がシェル実行とずれて改行の内外を誤判定しうる）。
+            # 追えないものは解釈不能に倒す（None → 保守分岐 escalate、deny は生スキャンで維持）
+            if ch == "$" and i + 1 < n and command[i + 1] in ("'", '"'):
+                return None
             if ch == "'":
                 state = "single"
             elif ch == '"':
@@ -270,13 +276,16 @@ def _analyze_git_segment(tokens):
     bypass = []
     operations = []
     escalates = []
+    redirected = False
     index = 0
     while index < len(tokens) and tokens[index].startswith("-"):
         token = tokens[index]
         name = token.split("=", 1)[0]
         if name in _GIT_REPO_REDIRECT_OPTS:
-            # 判定スナップショット（cwd のブランチ・宣言・証跡）と対応しない
-            return tuple(bypass), (), True, ()
+            # 判定スナップショット（cwd のブランチ・宣言・証跡）と対応しない。
+            # ただし即 bail せずサブコマンドまで読み、ゲート対象操作を含むとき
+            # だけ解釈不能に倒す（読み取り系まで一律 escalate しない）
+            redirected = True
         if name in _GIT_GLOBAL_OPTS_WITH_VALUE:
             value = token.split("=", 1)[1] if "=" in token else (
                 tokens[index + 1] if index + 1 < len(tokens) else ""
@@ -316,6 +325,11 @@ def _analyze_git_segment(tokens):
             escalates.append(
                 "persistent hook-path reconfiguration (git config core.hooksPath)"
             )
+    if redirected:
+        # 向け直し先の操作は cwd スナップショットの main / evidence 検査に流さない。
+        # ゲート対象操作（commit / push）を含むときだけ解釈不能として人間確認へ、
+        # hooksPath 再設定はそれ自身の理由文で escalate、それ以外は素通し
+        return tuple(bypass), (), bool(operations), tuple(escalates)
     return tuple(bypass), tuple(operations), False, tuple(escalates)
 
 
@@ -388,16 +402,18 @@ def analyze_command(command):
                 continue
             head = body[0]
             if _is_git_token(head):
-                if env_redirect:
-                    # 判定スナップショット（cwd のブランチ・宣言・証跡）と対応しない
-                    uninterpretable = True
-                    continue
                 seg_bypass, seg_ops, seg_broken, seg_escalates = _analyze_git_segment(
                     body[1:]
                 )
                 bypass.extend(seg_bypass)
-                operations.extend(seg_ops)
                 escalate_reasons.extend(seg_escalates)
+                if env_redirect:
+                    # 判定スナップショット（cwd のブランチ・宣言・証跡）と対応しない。
+                    # フラグ形 -C と同じく、ゲート対象操作を含むときだけ解釈不能へ
+                    # 倒し、操作は cwd の main / evidence 検査に流さない
+                    seg_broken = seg_broken or bool(seg_ops)
+                else:
+                    operations.extend(seg_ops)
                 uninterpretable = uninterpretable or seg_broken
             elif head == "cd":
                 cd_seen = True

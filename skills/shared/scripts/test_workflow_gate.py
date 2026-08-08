@@ -379,6 +379,31 @@ class QuotedNewlineInterpretation(unittest.TestCase):
         self.assertEqual(decision.verdict, "allow")
         self.assertEqual(decision.reason, "")
 
+    def test_ansi_c_quoting_with_escaped_quote_never_allows(self):
+        """bash の ANSI-C クォート $'...' は単純追跡では追えないため解釈不能へ倒す。
+
+        $'\\'' は bash ではリテラルの ' でクォートを閉じないが POSIX single とは
+        規則が異なる。この状態ズレで後続の push を隠す偽陰性（Codex 敵対レビュー
+        実証）を防ぐため、$' を含むコマンドは allow に到達させない。
+        """
+        payload = "git commit -m $'\\''\ngit push --no" + "-verify"
+        decision = workflow_gate.decide(payload, snapshot(current_branch="main"))
+        self.assertNotEqual(decision.verdict, "allow")
+
+    def test_ansi_c_quoting_hiding_push_escalates(self):
+        """ANSI-C クォートの後にセグメント区切りで push を続ける形も allow にしない。"""
+        decision = workflow_gate.decide(
+            "git log $'\\x0a' && git push", snapshot()
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_locale_quoting_never_allows(self):
+        r"""ロケールクォート $"..." も単純追跡外のため allow に到達させない。"""
+        decision = workflow_gate.decide(
+            'git commit -m $"x"\ngit push', snapshot(current_branch="main")
+        )
+        self.assertNotEqual(decision.verdict, "allow")
+
     def test_command_substitution_still_escalates(self):
         """コマンド置換 $() は展開されうるため従来どおり escalate を維持する。"""
         decision = workflow_gate.decide(
@@ -397,6 +422,59 @@ class QuotedNewlineInterpretation(unittest.TestCase):
         """未終端引用符 + 改行は構造を確定できないため escalate に倒れる。"""
         decision = workflow_gate.decide(
             'git commit -m "unclosed\nbody', snapshot(current_branch="main")
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+
+class RedirectedReadOnlyInterpretation(unittest.TestCase):
+    """別リポジトリへ向けた git は、ゲート対象操作を含むときだけ止まる検証。
+
+    -C / --git-dir / 向け直し環境変数つきの読み取り専用操作（log / status 等）が
+    一律 escalate される偽陽性の再発防止。ゲートが守る遷移（commit / push /
+    hooksPath / バイパスフラグ）を含む場合の escalate / deny は従来どおり。
+    """
+
+    def test_redirected_log_allows(self):
+        decision = workflow_gate.decide(
+            "git -C /home/mizumi/develop/other-repo log --oneline -- .agents/ | head -3",
+            snapshot(),
+        )
+        self.assertEqual(decision.verdict, "allow")
+        self.assertEqual(decision.reason, "")
+
+    def test_redirected_status_allows(self):
+        decision = workflow_gate.decide("git -C /other/repo status", snapshot())
+        self.assertEqual(decision.verdict, "allow")
+
+    def test_env_redirected_log_allows(self):
+        decision = workflow_gate.decide("GIT_DIR=/x/.git git log", snapshot())
+        self.assertEqual(decision.verdict, "allow")
+
+    def test_redirected_commit_still_escalates(self):
+        decision = workflow_gate.decide(
+            "git -C /other/repo commit -m x", snapshot()
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_redirected_push_still_escalates(self):
+        decision = workflow_gate.decide("git -C /other/repo push", snapshot())
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_env_redirected_commit_still_escalates(self):
+        decision = workflow_gate.decide(
+            "GIT_WORK_TREE=/x git commit -m y", snapshot()
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_redirected_push_with_no_verify_denies(self):
+        decision = workflow_gate.decide(
+            "git -C /other/repo push --no-verify", snapshot()
+        )
+        self.assertEqual(decision.verdict, "deny")
+
+    def test_redirected_hookspath_config_still_escalates(self):
+        decision = workflow_gate.decide(
+            "git -C /other/repo config core.hooksPath /tmp/hooks", snapshot()
         )
         self.assertEqual(decision.verdict, "escalate")
 
