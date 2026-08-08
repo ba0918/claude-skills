@@ -44,10 +44,13 @@ _HOOKS_PATH = re.compile(r"core\.hookspath", re.IGNORECASE)
 _HOOKS_PATH_RECONFIG = re.compile(
     r"git\s+config\s+(?:--\S+\s+)*core\.hookspath", re.IGNORECASE
 )
-# 解釈を打ち切る構造マーカー（コマンド置換）。改行は _split_unquoted_newlines が
-# 引用状態を追跡して構造改行だけを区切りに正規化するため、生文字列マーカーにしない
-# （引用符内のデータ改行 = 複数行コミットメッセージまで解釈不能扱いになる偽陽性を防ぐ）
-_UNPARSEABLE_MARKERS = ("$(", "`")
+# 解釈を打ち切る構造マーカー（コマンド置換 $( / バッククォート / プロセス置換 <( >( ）。
+# プロセス置換 <(...) / >(...) の中身は実シェルが別プロセスとして実行するため、
+# 内部に隠した書き込みを取りこぼさないよう解釈不能に倒す。改行は
+# _split_unquoted_newlines が引用状態を追跡して構造改行だけを区切りに正規化するため
+# 生文字列マーカーにしない（引用符内のデータ改行 = 複数行コミットメッセージまで
+# 解釈不能扱いになる偽陽性を防ぐ）
+_UNPARSEABLE_MARKERS = ("$(", "`", "<(", ">(")
 # セグメント区切り（shlex punctuation_chars が生成する演算子トークン + サブシェル括弧）
 _SEGMENT_DELIMITERS = {";", "&", "&&", "|", "||", ";;", "|&", "(", ")"}
 # シェル間接実行の入口。この先の構造は解釈しない（escalate）
@@ -73,6 +76,25 @@ def _is_env_redirect_assignment(token):
 _GIT_GLOBAL_OPTS_WITH_VALUE = {"-c", "-C", "--git-dir", "--work-tree"}
 # 別リポジトリへ判定対象を向け直すオプション（スナップショットと対応しなくなる）
 _GIT_REPO_REDIRECT_OPTS = {"-C", "--git-dir", "--work-tree"}
+# 純粋に情報取得のみで副作用を持たない git サブコマンド。コマンド置換
+# $(...) 内でこれ単体のときだけ特例で allow に畳む対象（案A）。書き込みルートを
+# 持つ config / branch / tag / reflog / stash 等は意図的に除外する（安全側）
+_READONLY_GIT_SUBCOMMANDS = frozenset({
+    "status", "log", "diff", "show", "merge-base", "rev-parse", "symbolic-ref",
+    "describe", "show-ref", "rev-list", "for-each-ref", "ls-files", "ls-tree",
+    "cat-file", "name-rev", "shortlog", "whatchanged", "blame", "ls-remote",
+})
+# 安全と証明できた read-only git 置換を畳んだ後に残すプレースホルダ（git の語を
+# 含まない通常の識別子。以降のフローでは単なる代入値トークンとして扱われる）
+_SAFE_SUBST_PLACEHOLDER = "__gate_readonly_subst__"
+# read-only サブコマンドでも外部コマンド実行を誘発しうるフラグ。事前設定された
+# diff.external / textconv / pager を発火させたり、値に直接コマンドを取る。
+# これらを引数に持つ置換は畳まない（Codex 敵対レビューで diff.external 経由の
+# gated write 秘匿を実証）
+_EXTERNAL_EXEC_FLAG = re.compile(
+    r"^(--ext-diff|--textconv|--open-files-in-pager|-O.+|"
+    r"--upload-pack(=.*)?|--exec(=.*)?|--receive-pack(=.*)?)$"
+)
 _GIT_GLOBAL_OPTS_BARE = {
     "--no-pager", "-P", "--paginate", "-p", "--no-replace-objects", "--version",
     "--help", "--html-path", "--man-path", "--info-path", "--exec-path", "--bare",
@@ -333,6 +355,148 @@ def _analyze_git_segment(tokens):
     return tuple(bypass), tuple(operations), False, tuple(escalates)
 
 
+def _first_git_subcommand(tokens):
+    """グローバルオプションを飛ばした最初の非オプション語（サブコマンド）を返す。
+
+    未知オプションや到達できない場合は None（呼び出し側で不採用に倒す）。
+    """
+    index = 0
+    while index < len(tokens) and tokens[index].startswith("-"):
+        name = tokens[index].split("=", 1)[0]
+        if name in _GIT_GLOBAL_OPTS_WITH_VALUE:
+            index += 1 if "=" in tokens[index] else 2
+        elif name in _GIT_GLOBAL_OPTS_BARE:
+            index += 1
+        else:
+            return None
+    if index >= len(tokens):
+        return None
+    return tokens[index]
+
+
+def _readonly_substitution_span(command, dollar_idx):
+    """`$(` の対応閉じ括弧の index と、本体にネスト `(` があったかを返す。
+
+    quote 状態を追い、引用符内の括弧は数えない。閉じ括弧が見つからなければ
+    (None, nested)。ネストがあれば呼び出し側は畳まない（安全側）。
+    """
+    depth = 1
+    i = dollar_idx + 2
+    n = len(command)
+    state = "normal"
+    nested = False
+    while i < n:
+        ch = command[i]
+        if state == "single":
+            if ch == "'":
+                state = "normal"
+        elif state == "double":
+            if ch == "\\" and i + 1 < n:
+                i += 2
+                continue
+            if ch == '"':
+                state = "normal"
+        else:
+            if ch == "\\" and i + 1 < n:
+                i += 2
+                continue
+            if ch == "'":
+                state = "single"
+            elif ch == '"':
+                state = "double"
+            elif ch == "(":
+                depth += 1
+                nested = True
+            elif ch == ")":
+                depth -= 1
+                if depth == 0:
+                    return i, nested
+        i += 1
+    return None, nested
+
+
+def _is_safe_readonly_git_body(body):
+    """置換本体が read-only git 単一コマンドで、ゲート対象操作を含まないか。
+
+    案A の受理条件（Codex 敵対レビューで抜けなしを確認）:
+    バッククォート / プロセス置換 / 拡張クォート / ネスト置換 / コマンド区切りを
+    含まず、先頭 env 代入（向け直しは不可）を除いた本体が git で、
+    `_analyze_git_segment` が全クリーンを返し、サブコマンドが read-only allowlist。
+    """
+    if "`" in body or "<(" in body or ">(" in body:
+        return False
+    if "$'" in body or '$"' in body or "$(" in body:
+        return False
+    rewritten = _split_unquoted_newlines(body)
+    if rewritten is None:
+        return False
+    try:
+        tokens = _tokenize(rewritten)
+    except ValueError:
+        return False
+    if any(t in _SEGMENT_DELIMITERS for t in tokens):
+        return False
+    start = 0
+    while start < len(tokens) and _ENV_ASSIGNMENT.match(tokens[start]):
+        if _is_env_redirect_assignment(tokens[start]):
+            return False
+        start += 1
+    body_tokens = tokens[start:]
+    if not body_tokens or not _is_git_token(body_tokens[0]):
+        return False
+    rest = body_tokens[1:]
+    # グローバルオプション（git とサブコマンドの間の - トークン）を持つ形は畳まない。
+    # とくに -c / --config-env は diff.external / core.pager / *.textconv 等の
+    # 任意 config を注入でき、read-only サブコマンドでも外部コマンド実行に化ける
+    if rest and rest[0].startswith("-"):
+        return False
+    # サブコマンド後の引数に外部実行を誘発するフラグを持つ形も畳まない
+    if any(_EXTERNAL_EXEC_FLAG.match(token) for token in rest):
+        return False
+    seg_bypass, seg_ops, seg_broken, seg_escalates = _analyze_git_segment(rest)
+    if seg_bypass or seg_ops or seg_broken or seg_escalates:
+        return False
+    return _first_git_subcommand(rest) in _READONLY_GIT_SUBCOMMANDS
+
+
+def _fold_safe_readonly_git_substitutions(command):
+    """安全な read-only git 置換だけをプレースホルダへ畳む（他は原文のまま残す）。
+
+    畳めない置換（write git / 複数コマンド / ネスト / バイパス等）は `$(` を
+    残すため、後段で従来どおり解釈不能 → escalate / deny に倒れる。deny 証拠を
+    畳んで消すことはない（畳む対象は _analyze_git_segment が全クリーンのものだけ）。
+    """
+    if "$(" not in command:
+        return command
+    out = []
+    i = 0
+    n = len(command)
+    while i < n:
+        idx = command.find("$(", i)
+        if idx == -1:
+            out.append(command[i:])
+            break
+        out.append(command[i:idx])
+        end, nested = _readonly_substitution_span(command, idx)
+        if end is None:
+            out.append(command[idx:])
+            break
+        body = command[idx + 2:end]
+        # コマンド位置（行頭 / セグメント区切り直後）の置換は、出力そのものが
+        # コマンドとして実行される。read-only でも --format 等で任意文字列を
+        # 出力させ得るため畳まない（代入値・引数位置の置換だけを畳む）
+        j = idx - 1
+        while j >= 0 and command[j] in " \t":
+            j -= 1
+        at_command_position = j < 0 or command[j] in ";&|(`{\n"
+        if not at_command_position and not nested and _is_safe_readonly_git_body(body):
+            out.append(_SAFE_SUBST_PLACEHOLDER)
+        else:
+            out.append(command[idx:end + 1])
+        i = end + 1
+    return "".join(out)
+
+
 def analyze_command(command):
     """コマンド文字列の保守的な構文解析（評価・展開はしない）。"""
     # フックディレクトリへ触る操作は git の語の有無に関わらず人間確認へ
@@ -341,9 +505,13 @@ def analyze_command(command):
     hooks_dir_touch = ".git/hooks" in command
     hooks_dir_reason = "the command touches the repository hook directory"
     raw_has_git = bool(_GIT_WORD.search(command))
+    # 安全な read-only git 置換（base=$(git merge-base ...) 等）だけをプレースホルダへ
+    # 畳む。畳めない置換は $( を残すため以降で従来どおり解釈不能に倒れる。バイパス証拠の
+    # 生走査は元 command に対して維持するため deny never degrades は破れない
+    effective = _fold_safe_readonly_git_substitutions(command)
     # 構造改行の正規化（引用符内の改行はデータ、行継続は結合）。未終端引用符は
     # None が返り、トークン化不能と同じ保守分岐に落ちる
-    rewritten = _split_unquoted_newlines(command)
+    rewritten = _split_unquoted_newlines(effective)
     try:
         tokens = _tokenize(rewritten) if rewritten is not None else None
     except ValueError:
@@ -378,7 +546,7 @@ def analyze_command(command):
         escalate_reasons.append(hooks_dir_reason)
 
     operations = []
-    uninterpretable = any(marker in command for marker in _UNPARSEABLE_MARKERS)
+    uninterpretable = any(marker in effective for marker in _UNPARSEABLE_MARKERS)
     if not uninterpretable:
         # 構造を解釈できる場合はトークン単位でバイパス・操作・再設定を検出する
         segments = [[]]

@@ -426,6 +426,141 @@ class QuotedNewlineInterpretation(unittest.TestCase):
         self.assertEqual(decision.verdict, "escalate")
 
 
+class ReadOnlyGitSubstitutionInterpretation(unittest.TestCase):
+    """コマンド置換 $(...) 内の read-only git 単体を allow する検証。
+
+    `base=$(git merge-base ...)` のような、置換本体が read-only git 単一コマンドで
+    ゲート対象操作を含まない形だけを特例で allow に緩める（偽陽性の解消）。
+    置換内に隠された commit / push / bypass / hooksPath は従来どおり止める
+    （Codex 敵対レビューで各攻撃形の抜けなしを確認済み）。
+    """
+
+    def test_merge_base_substitution_allows(self):
+        decision = workflow_gate.decide(
+            "base=$(git merge-base origin/main HEAD)", snapshot()
+        )
+        self.assertEqual(decision.verdict, "allow")
+        self.assertEqual(decision.reason, "")
+
+    def test_rev_parse_substitution_in_double_quotes_allows(self):
+        decision = workflow_gate.decide('head="$(git rev-parse HEAD)"', snapshot())
+        self.assertEqual(decision.verdict, "allow")
+
+    def test_symbolic_ref_substitution_allows(self):
+        decision = workflow_gate.decide(
+            "branch=$(git symbolic-ref --short HEAD)", snapshot()
+        )
+        self.assertEqual(decision.verdict, "allow")
+
+    def test_multiple_readonly_substitutions_allow(self):
+        decision = workflow_gate.decide(
+            "a=$(git status --porcelain) b=$(git diff --name-only)", snapshot()
+        )
+        self.assertEqual(decision.verdict, "allow")
+
+    def test_global_option_in_readonly_substitution_not_folded(self):
+        """-C 等のグローバルオプション付き read-only 置換は畳まない（config 注入回避）。"""
+        decision = workflow_gate.decide(
+            "base=$(git -C /other/repo merge-base origin/main HEAD)", snapshot()
+        )
+        self.assertNotEqual(decision.verdict, "allow")
+
+    def test_config_injection_via_dash_c_in_substitution_not_allowed(self):
+        """-c diff.external= で外部コマンドを注入する read-only 置換を allow にしない。
+
+        diff.external / core.pager / *.textconv 等は read-only サブコマンドでも
+        外部コマンド実行（gated write の秘匿）に化ける（Codex 敵対レビューで実証）。
+        """
+        push = "git push origin main"
+        for cmd in (
+            "x=$(git -c diff.external='" + push + "' diff --ext-diff HEAD~1 HEAD)",
+            "x=$(git -c core.pager='" + push + "' log)",
+            "x=$(git -c diff.x.textconv='" + push + "' show)",
+        ):
+            decision = workflow_gate.decide(cmd, snapshot(current_branch="main"))
+            self.assertNotEqual(decision.verdict, "allow", cmd)
+
+    def test_external_diff_flag_in_substitution_not_allowed(self):
+        """--ext-diff / --textconv / --upload-pack 等の外部実行フラグ付きは畳まない。"""
+        for cmd in (
+            "x=$(git diff --ext-diff HEAD~1 HEAD)",
+            "x=$(git log -p --textconv)",
+            "x=$(git ls-remote --upload-pack='git push origin main' origin)",
+        ):
+            decision = workflow_gate.decide(cmd, snapshot(current_branch="main"))
+            self.assertNotEqual(decision.verdict, "allow", cmd)
+
+    def test_commit_substitution_still_escalates(self):
+        decision = workflow_gate.decide(
+            "x=$(git commit -m x)", snapshot(current_branch="main")
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_push_hidden_after_separator_in_substitution_escalates(self):
+        """Codex 案C の抜け穴: 置換内で read-only の後に push を続けても畳まない。"""
+        decision = workflow_gate.decide(
+            "x=$(git status; git push origin main)", snapshot()
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_push_after_and_in_substitution_escalates(self):
+        decision = workflow_gate.decide(
+            "x=$(git log && git commit -m x)", snapshot(current_branch="main")
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_no_verify_inside_substitution_denies(self):
+        payload = "x=$(git commit --no" + "-verify -m x)"
+        decision = workflow_gate.decide(payload, snapshot())
+        self.assertEqual(decision.verdict, "deny")
+
+    def test_hookspath_override_inside_substitution_denies(self):
+        decision = workflow_gate.decide(
+            "x=$(git -c core.hooksPath=/dev/null status)", snapshot()
+        )
+        self.assertEqual(decision.verdict, "deny")
+
+    def test_command_position_substitution_not_folded(self):
+        """コマンド位置の置換は出力がコマンドとして実行されるため畳まない。
+
+        read-only の git log でも --format で任意文字列を出力でき、コマンド位置なら
+        bash がその出力（gated write）を実行する（Codex 敵対レビューで指摘）。
+        """
+        wr = "git " + "push origin main"
+        for cmd in (
+            "$(git log -1 --format='" + wr + "')",
+            "$(git rev-parse --sq-quote " + wr + ")",
+            "ls; $(git log -1 --format='" + wr + "')",
+        ):
+            decision = workflow_gate.decide(cmd, snapshot(current_branch="main"))
+            self.assertNotEqual(decision.verdict, "allow", cmd)
+
+    def test_nested_substitution_escalates(self):
+        decision = workflow_gate.decide(
+            "x=$(git log --format=$(git rev-parse HEAD))", snapshot()
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_non_readonly_subcommand_in_substitution_escalates(self):
+        """allowlist 外のサブコマンド（config 読み取り含む）は畳まず従来判定へ。"""
+        decision = workflow_gate.decide(
+            "x=$(git config --get core.hooksPath)", snapshot()
+        )
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_backtick_readonly_substitution_still_escalates(self):
+        """バッククォート置換は規則が異なるため従来どおり escalate を維持する。"""
+        decision = workflow_gate.decide("base=`git merge-base A B`", snapshot())
+        self.assertEqual(decision.verdict, "escalate")
+
+    def test_process_substitution_hiding_push_not_allowed(self):
+        """プロセス置換 <(...) 内の書き込みは実シェルで実行されるため allow にしない。"""
+        wr = "git " + "push origin main"
+        for cmd in ("cat <(" + wr + ")", "diff <(git show A) <(" + wr + ")"):
+            decision = workflow_gate.decide(cmd, snapshot(current_branch="main"))
+            self.assertNotEqual(decision.verdict, "allow", cmd)
+
+
 class RedirectedReadOnlyInterpretation(unittest.TestCase):
     """別リポジトリへ向けた git は、ゲート対象操作を含むときだけ止まる検証。
 
