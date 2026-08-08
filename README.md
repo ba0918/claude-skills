@@ -275,6 +275,21 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 遮断できることを確認済みだが、人間確認を返す仕組みは未確認。Codex CLI が本リポジトリ同梱の
 フック定義ファイルをそのまま読めるかは実測未検証のため、自動配線は行わず手動配線とする。
 
+ゲートの正本契約（判定表・宣言ファイル `.agents/config/trunk.yml`・恩赦記録・push の証跡要求）は
+[workflow-gate.md](skills/shared/references/workflow-gate.md)、判定コアは
+`skills/shared/scripts/workflow_gate.py`（pure な判定関数 + CLI アダプタ）。
+
+- **Claude Code**: `hooks/hooks.json` の実行前フックが Plugin インストールだけで有効になる。
+  実行コマンドは `workflow_gate.py --hook-io claude`（stdin の JSON を読み、許可判定 JSON を返す）
+- **OpenCode**: 同梱 git plugin の実行前フックが自動で有効になる。escalate は理由文付きの遮断へ縮退する
+- **Codex CLI（手動配線）**: ツール実行前フックに次の形のアダプタを登録する。
+  `workflow_gate.py --decide --gate-command "<コマンド文字列>"` を呼び、出力 JSON の
+  `verdict` が `allow` なら exit 0（無出力）、`escalate` / `deny` なら理由文を stderr に出して
+  exit 2（ブロック）に写像する。ask 相当が未対応のため escalate も遮断になる（理由文が恩赦手順を案内する）
+- **恩赦の記録**: 人間が escalate を承認したら
+  `workflow_gate.py --record-amnesty --gate <行> --gate-command <コマンド> --reason <理由文> --grounds <承認根拠>`
+  で `.agents/artifacts/decisions/workflow-gate-amnesties.jsonl` へ追記する（承認後のみ・grounds 必須）
+
 ## プロンプト設計方針
 
 Fable 5 世代モデルに沿って「短く柔らかい」を志向するが、無条件の削減は行わない。`empirical-prompt-tuning` による実測（plan / cycle スキルで 6 iteration 検証）に基づく判断基準を [skill-authoring.md § When Prompt Compression Works](skills/shared/references/skill-authoring.md) に集約している。
