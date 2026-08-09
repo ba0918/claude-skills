@@ -39,7 +39,6 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-HERE = os.path.dirname(os.path.abspath(__file__))
 STAGING_RELROOT = os.path.join(".agents", "artifacts", "reviews", "evidence-staging")
 CLAIM_REL = os.path.join(".agents", "runtime", "workspace.claim")
 MARKER_NAME = "merge-intent.json"
