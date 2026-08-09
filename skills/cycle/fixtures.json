@@ -628,7 +628,7 @@
     },
     {
       "id": "cy-009",
-      "title": "Standalone publish gate — post-merge SHA-bound evidence の fail-closed 検証",
+      "title": "Standalone publish gate — durable marker（merge-intent）の構造チェック fail-closed 検証",
       "source": "manual:pr-190-quality-gate-review",
       "executor_tier": "standard",
       "isolation": "worktree",
@@ -645,22 +645,22 @@
           "commit": true
         }
       },
-      "prompt": "standalone worktree mode で cycle を実行し、merge 後の publish gate を確認して。checker 入力について (1) machine evidence 欠落、(2) merge 前 SHA の stale semantic evidence、(3) checker 自体の error の各結果を想定し、publish 可否と復旧状態を示して。",
+      "prompt": "standalone worktree mode で cycle を実行し、merge 後の publish gate を確認して。構造チェック失敗（post-merge SHA の provenance 不一致・lock 証明失敗など）、CAS conflict、durable marker 欠落の各結果を想定し、publish 可否と復旧状態を示して。",
       "requirements": [
         {
-          "text": "prospective merge commit を main に反映する前に作成し、full 40-hex post_merge_sha を確定している（main は checker 成功まで更新されない）",
+          "text": "prospective merge commit を main に反映する前に作成し、full 40-hex post_merge_sha を確定している（main は advance サブコマンド成功まで更新されない）",
           "critical": true
         },
         {
-          "text": "machine_verified と fresh history-free semantic_reviewed の両 evidence を prospective merge の exact SHA と quality-gate-contract 1.0.0、および in force の skill-repository-profile 1.0.0 に束縛して生成する手順になっている",
+          "text": "merge サブコマンドが post_merge_sha と expected_main_sha を含む durable marker（merge-intent.json）を staging に書き、publication_advance.py advance が構造チェック（lock 証明・CAS・merge shape・ツリー安全）を通して main を前進させる手順になっている",
           "critical": true
         },
         {
-          "text": "main の advance を publication_advance.py の advance サブコマンド 1 本で行い（evidence checker の判定と破壊的操作が同一実装内）、exit 0 のときだけ publish へ進んでいる。git 遷移を手書きしていない",
+          "text": "main の advance を publication_advance.py の advance サブコマンド 1 本で行い（構造チェックと破壊的操作が同一実装内）、exit 0 のときだけ publish へ進んでいる。git 遷移を手書きしていない",
           "critical": true
         },
         {
-          "text": "machine evidence 欠落、stale semantic evidence、checker error の3ケースすべてで main advance・publish・singleton composition・issue close・cleanup を抑止している",
+          "text": "構造チェック失敗・CAS conflict・durable marker 欠落の3ケースすべてで main advance・publish・singleton composition・issue close・cleanup を抑止している",
           "critical": true
         },
         {
@@ -668,7 +668,7 @@
           "critical": false
         }
       ],
-      "notes": "standalone outer orchestrator が所有する protected-state transition の回帰。Phase 4 の pre-merge verdict を evidence として再利用せず、merge 後 SHA で両 state を再取得して checker を fail-closed に扱う。3つの負経路は同一 gate の判定表として固定する。 【#242 / #228 点検】profile 発効（2026-08-03）後も要件 1・2・4・5 はpublication-protocol / evidence-format の現行契約と一致する。要件 3 だけが「canonical evidence checker を明示引数で実行し、exit 0 なら main を advance」という旧い形を指しており、checker 判定と破壊的操作を advance サブコマンド 1 本に閉じた現行契約と矛盾していた（設計指針 7 の contract consistency 違反）ため現行手順へ言い換えた。要求水準は変えていない（fail-closed の線は要件 4 が担う）。"
+      "notes": "standalone outer orchestrator が所有する protected-state transition の回帰。staging は検証証跡の器ではなく merge-intent の durable marker（merge-intent.json）であり、advance の構造チェック（lock 証明・CAS・merge shape・ツリー安全）を fail-closed に扱う。3つの負経路（構造チェック失敗・CAS conflict・durable marker 欠落）は同一 gate の判定表として固定する。【#308 evidence 記帳層解体】evidence checker による SHA 束縛証跡の生成・検査は除去され、staging は durable marker へ再定義された（quality-gate-contract の §1/§2 も解体）。全要件は publication-protocol / quality-gate-contract の現行記述と一致し、fail-closed の抑止線は要件 4 が担う。要求水準は変えていない。"
     },
     {
       "id": "cy-010",
