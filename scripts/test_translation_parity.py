@@ -151,6 +151,16 @@ class TestTranslationDetection(unittest.TestCase):
         base = doc(mixed_body(japanese=4, english=30))
         self.assertFalse(is_translation(base, doc(mixed_body(japanese=0, english=27))))
 
+    def test_a_small_japanese_deletion_under_the_shrink_cap_is_not_a_translation(self):
+        """縮み幅が上限未満でも、英語散文が増えない削除は翻訳ではない。
+
+        翻訳は日本語行を英語行へ置き換えるため英語散文が必ず増える。日本語のまま
+        数行だけ節を消す編集は縮み幅上限をすり抜けるが、英語散文が増えないことで
+        削除と判別できる。
+        """
+        base = doc(mixed_body(japanese=40, english=5))
+        self.assertFalse(is_translation(base, doc(mixed_body(japanese=36, english=5))))
+
     def test_a_one_line_touch_up_is_not_a_translation(self):
         base = doc(mixed_body(japanese=3, english=25))
         self.assertFalse(is_translation(base, doc(mixed_body(japanese=2, english=26))))
