@@ -49,7 +49,6 @@ git 経由の plugin は OpenCode / Bun の cache や lock に解決結果が残
 
 1. **`config` hook** — パッケージ内 `skills/` を `skills.paths` に追加（symlink 不要。`shared/` も同じツリー）
 2. **`experimental.chat.messages.transform`** — `skills/using-workflow/SKILL.md` 本文（frontmatter 除く）と quality-gate 契約のパスポインタを、各セッション最初の user メッセージへ 1 回注入
-3. **`tool.execute.before`** — bash ツールの git コマンドを実行前にワークフローゲート（`skills/shared/scripts/workflow_gate.py --decide`）で判定し、違反は例外送出で遮断する。escalate（人間確認）は理由文付きの遮断へ縮退する（正本: `skills/shared/references/workflow-gate.md`、環境別の強制力序列はルート README）。判定には `python3` が必要で、起動できない場合は遮断せず素通しになる（fail-open）
 
 `package.json` の `main` がこの plugin を指す。
 
@@ -85,7 +84,3 @@ npm install claude-skills@git+https://github.com/ba0918/claude-skills.git --pref
 
 1. OpenCode が `experimental.chat.messages.transform` をサポートしていること
 2. 設定変更後に OpenCode を再起動したこと
-
-### git コマンドが遮断される
-
-ワークフローゲートの判定（main 直コミット・証跡なし push・バイパスフラグの検出）による意図した遮断。遮断メッセージの理由文に対処（ブランチ作成・証跡の生成・恩赦の記録手順）が書かれているので、それに従う。詳細はルート README の「ワークフロー強制ゲート」節を参照。
