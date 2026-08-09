@@ -8,7 +8,6 @@
 
 import fs from "fs"
 import path from "path"
-import { spawnSync } from "child_process"
 import { fileURLToPath } from "url"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -87,49 +86,6 @@ function getBootstrapContent() {
   return _bootstrapCache
 }
 
-const GATE_SCRIPT = path.join(SKILLS_DIR, "shared", "scripts", "workflow_gate.py")
-// workflow_gate.py の _GIT_WORD と同一の文字クラス。lookbehind に / を足すと
-// パス経由の /usr/bin/git が語として拾えなくなり、判定コア（Python 側）が deny
-// する形をゲート未起動のまま素通しする — プレフィルタは常にコアの検出集合の
-// 上位集合でなければならない（偽陽性はコアが allow を返すだけで無害、
-// 偽陰性はゲートの迂回になる）。
-const GIT_WORD = /(?<![\w.-])git(?![\w.-])/
-
-// ゲート起動そのものを git に触れうるコマンドへ限定し、通常コマンドの往復
-// コスト（python 起動）をゼロにするプレフィルタ。判定コアは git の語と
-// .git/hooks 接触をそれぞれ生テキストとトークン化後（クォート・エスケープ
-// 解決後）の 2 レベルで検出するため、ここでも両対象にクォート除去の近似を掛ける。
-function mightInvokeGit(command) {
-  if (GIT_WORD.test(command) || command.includes(".git/hooks")) return true
-  // shlex のクォート解決の近似: g"i"t / g'i't / g\it を git として再判定する
-  const unquoted = command.replace(/["'\\]/g, "")
-  return GIT_WORD.test(unquoted) || unquoted.includes(".git/hooks")
-}
-
-// この環境の実行前フックは「例外送出による遮断」しか表現できないため、
-// escalate（人間確認）は deny + 理由文へ縮退する。正本契約:
-// skills/shared/references/workflow-gate.md（縮退の規定と恩赦手順を含む）。
-function runWorkflowGate(command) {
-  let result
-  try {
-    result = spawnSync(
-      "python3",
-      [GATE_SCRIPT, "--decide", "--gate-command", command],
-      // Python 側の worst case（evidence 検証 120 秒 + 30 秒上限の git 呼び出し数回）
-      // を下回ると、超過時に fail-open（無言 allow）へ落ちてゲートを素通しする
-      { encoding: "utf8", timeout: 300000 },
-    )
-  } catch {
-    return null // ゲート基盤の障害でセッションを壊さない（fail-open）
-  }
-  if (result.status !== 0 || !result.stdout) return null
-  try {
-    return JSON.parse(result.stdout)
-  } catch {
-    return null
-  }
-}
-
 const ClaudeSkillsPlugin = async () => {
   return {
     config: async (config) => {
@@ -138,19 +94,6 @@ const ClaudeSkillsPlugin = async () => {
       if (!config.skills.paths.includes(SKILLS_DIR)) {
         config.skills.paths.push(SKILLS_DIR)
       }
-    },
-
-    "tool.execute.before": async (input, output) => {
-      if (input?.tool !== "bash") return
-      const command = output?.args?.command
-      if (typeof command !== "string" || !mightInvokeGit(command)) return
-      const decision = runWorkflowGate(command)
-      if (!decision || decision.verdict === "allow") return
-      const label =
-        decision.verdict === "deny"
-          ? "workflow-gate deny"
-          : "workflow-gate escalate (degraded to a refusal: this environment cannot ask the human inline — a human may approve per the reason below)"
-      throw new Error(`${label}: ${decision.reason}`)
     },
 
     "experimental.chat.messages.transform": async (_input, output) => {

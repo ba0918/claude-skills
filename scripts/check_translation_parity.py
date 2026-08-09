@@ -22,6 +22,8 @@ ja→en の一括変換では、fixture を持たない 26 スキルについて
 減少側の条件には縮み幅の上限を置く。翻訳は行を置き換えるが、節の削除は散文行そのものを
 減らす。縮んだファイルまで翻訳として扱うと、日本語のまま節を消す通常の編集が
 すべて構造差分で赤くなり、ゲートが常時赤になって使い物にならない。
+縮み幅上限だけでは数行の小さな削除がすり抜けるため、英語散文の増加も要求する。
+翻訳は日本語行を英語行へ置き換えるので英語散文が必ず増えるが、削除では増えない。
 
 どちらの経路にも載らなかったファイルのうち、日本語が減っているものは
 `report()` が **未検証** として明示列挙する。素通しと検証済みを出力で区別する。
@@ -197,7 +199,8 @@ def is_translation(base_text, cur_text, threshold=DEFAULT_THRESHOLD):
         return True
     return (base_n - cur_n >= MIN_TRANSLATED_LINES
             and cur_ratio < base_ratio
-            and cur_total >= base_total * (1 - MAX_PROSE_SHRINK))
+            and cur_total >= base_total * (1 - MAX_PROSE_SHRINK)
+            and (cur_total - cur_n) > (base_total - base_n))
 
 
 def _finding(path, rule, severity, detail):
