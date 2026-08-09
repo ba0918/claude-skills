@@ -100,15 +100,15 @@ Rules:
 
 ## Relation to the quality gate contract
 
-The regression ledger (`ledger.json`) is an **internal input to the `machine_verified`
-verification entry point**, not evidence in the sense of
-[quality-gate-contract.md §2](../../shared/references/quality-gate-contract.md#2-evidence-validity)
-(adjudicated 2026-08-04, issue #243). Its entries bind to skill surface content hashes, not to
-a target version × contract version pair; the contract-level evidence is the fact that the
-canonical entry point (run_checks) passed in full against the exact target version, and that
-state is re-earned in full on every run. The ledger's internal freshness rules (which skills
-or scenarios need re-running) are therefore the ledger's own policy, and refining their
-granularity does not touch §2's totality of invalidation.
+The regression ledger (`ledger.json`) is an **internal input to the repository's
+`machine_verified` verification entry point**, not a review ledger in the sense of the
+[quality-gate-contract.md](../../shared/references/quality-gate-contract.md) §4.3
+(adjudicated 2026-08-04, issue #243). Its entries bind to skill surface content hashes,
+not to a target version × contract version pair; the contract-level verification is the
+fact that the canonical entry point (run_checks) passed in full against the exact target
+version, and that state is re-earned in full on every run. The ledger's internal
+freshness rules (which skills or scenarios need re-running) are therefore the ledger's
+own policy, and refining their granularity does not touch §5's convergence accounting.
 
 ### The keys of `setup.git`
 
