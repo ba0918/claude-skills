@@ -11,8 +11,8 @@ The git state transitions — prospective merge, compare-and-swap advance, check
 synchronization, crash recovery — are implemented once in
 `skills/shared/scripts/publication_advance.py` and verified by fault-injection tests
 (`test_publication_protocol_git.py`). Run the primitive; never hand-roll its git
-commands. This file carries only what the executor must judge: the order, and the
-safety boundaries.
+commands. This file carries only what the executor must judge: the order, the
+verification to run, and the safety boundaries.
 
 The staging directory is a **durable marker** of an unfinished publication, not a
 vessel for verification evidence. It records that "this merge was intended"
@@ -39,7 +39,15 @@ and refuse to run without a match — prose alone proves nothing.
    `recover` recognize.
    The staging directory is the only publication record and it is run-scoped.
 
-2. **Advance** — structural checks and every destructive step in one implementation:
+2. **Verify the merged tree** — run the repository's canonical verification entry point
+   inside `{tmp_merge_root}` (in this repository, `sh scripts/run_checks.sh`) and advance
+   only on a complete pass; anything less is a terminal publish failure. Neither the
+   satellite's own run nor a pre-merge run substitutes — the merged tree is a state no
+   earlier run observed. Nothing is recorded: the requirement is the run itself, not a
+   receipt. When a CAS conflict (`4` below) sends you back to step 1, run it again inside
+   the new merged tree.
+
+3. **Advance** — structural checks and every destructive step in one implementation:
    `python3 skills/shared/scripts/publication_advance.py advance --repo-root {main_tree_root} --branch main --post-merge-sha {post_merge_sha} --expected-main-sha {expected_main_sha} --evidence-staging {evidence_staging} --lock-token {workspace_lock_token}`
    The compare-and-swap inside it is the **commit point** of publication. Exit codes:
    - `0` — main advanced, checkout synchronized, durable marker cleared.

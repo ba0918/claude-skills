@@ -31,7 +31,8 @@ facade. In `inplace` mode, preserve the existing workflow unchanged. In `worktre
    `skills/shared/scripts/publication_advance.py` — never hand-roll them.
    The merge-intent staging directory is a durable marker of the merge intent;
    advancing main is guarded by the primitive's structural checks (CAS, lock, merge
-   shape, tree safety), not by a separate evidence record.
+   shape, tree safety) plus the protocol's step 2 verification run inside the merged
+   tree, not by a separate evidence record.
 
 On every new terminal transport failure, preserve the worktree and invoke the shared exact six-line
 formatter with its closed reason code. Its final line is

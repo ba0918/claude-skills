@@ -60,7 +60,8 @@ ordered protocol:
    A Phase 4 verdict is review input, not a publication record — the protocol's
    merge-intent staging directory is a durable marker of the merge intent, and the
    primitive's structural checks (CAS, lock, merge shape, tree safety) guard the
-   advance. The verification itself is the run that produced the verdict.
+   advance. The verification is re-run inside the merged tree before advancing, as the
+   protocol's step 2 requires.
 
 On every new terminal collect, publish, or cleanup-gate failure, preserve the worktree
 and invoke the shared exact six-line formatter with its closed reason code. Its final
