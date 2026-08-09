@@ -129,16 +129,36 @@ class ChecksPassTest(unittest.TestCase):
         ]
         self.assertFalse(rpc.checks_pass(rollup))
 
-    def test_non_check_entries_are_ignored(self):
+    def test_successful_status_context_passes(self):
         rollup = [
-            {"__typename": "PullRequestReview", "state": "APPROVED"},
+            {"__typename": "StatusContext", "context": "ci/legacy", "state": "SUCCESS"},
             {"__typename": "CheckRun", "name": "validate",
              "status": "COMPLETED", "conclusion": "SUCCESS"},
         ]
         self.assertTrue(rpc.checks_pass(rollup))
 
-    def test_empty_rollup_passes(self):
-        self.assertTrue(rpc.checks_pass([]))
+    def test_failed_status_context_fails(self):
+        rollup = [
+            {"__typename": "StatusContext", "context": "ci/legacy", "state": "FAILURE"},
+            {"__typename": "CheckRun", "name": "validate",
+             "status": "COMPLETED", "conclusion": "SUCCESS"},
+        ]
+        self.assertFalse(rpc.checks_pass(rollup))
+
+    def test_pending_status_context_fails(self):
+        rollup = [
+            {"__typename": "StatusContext", "context": "ci/legacy", "state": "PENDING"},
+        ]
+        self.assertFalse(rpc.checks_pass(rollup))
+
+    def test_entry_of_unrecognized_shape_fails(self):
+        rollup = [{"__typename": "SomethingNew", "name": "unknown"}]
+        self.assertFalse(rpc.checks_pass(rollup))
+
+    def test_empty_rollup_fails(self):
+        # check が 1 つも無い状態（CI 未発火・token 権限不足）は
+        # 「全 check 緑」の証明にならない
+        self.assertFalse(rpc.checks_pass([]))
 
     def test_non_list_input_fails(self):
         self.assertFalse(rpc.checks_pass(None))

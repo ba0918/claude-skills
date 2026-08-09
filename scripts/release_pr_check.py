@@ -81,21 +81,25 @@ def _split_entries(section):
 def checks_pass(rollup):
     """statusCheckRollup の配列を機械判定する純関数。
 
-    merged な PR の必須 check が通ったかを判定する。実行待ち（status != COMPLETED）
-    の check は「未完了」として扱う（保留 check のまま通したとは言えない）。
-    conclusion が SUCCESS / NEUTRAL / SKIPPED の完了 check のみを通過とみなす。
-    `status` を持たないエントリ（PullRequestReview など check でない行）は判定対象外。
+    merged な PR の必須 check が通ったかを判定する。rollup は CheckRun
+    （`status` + `conclusion`）と StatusContext（`state` のみ）の混在リスト。
+    実行待ち（status != COMPLETED / state != SUCCESS）の check は「未完了」として
+    扱う（保留 check のまま通したとは言えない）。CheckRun は conclusion が
+    SUCCESS / NEUTRAL / SKIPPED の完了 check のみ通過とみなす。
+    空 rollup と形が判別できないエントリは不合格 — check ゼロや未知の形は
+    「全 check 緑」の証明にならない。
     """
-    if not isinstance(rollup, list):
+    if not isinstance(rollup, list) or not rollup:
         return False
     for item in rollup:
         if not isinstance(item, dict):
             return False
-        if "status" not in item:
-            continue
-        if item.get("status") != "COMPLETED":
-            return False
-        if item.get("conclusion") not in (None, "SUCCESS", "NEUTRAL", "SKIPPED"):
+        if "status" in item:
+            if item.get("status") != "COMPLETED":
+                return False
+            if item.get("conclusion") not in (None, "SUCCESS", "NEUTRAL", "SKIPPED"):
+                return False
+        elif item.get("state") != "SUCCESS":
             return False
     return True
 
