@@ -15,13 +15,6 @@ conditions](#5-convergence-conditions), the [review output ledger](#43-evidence-
 that no completion claim may outrun its evidence is unchanged; see
 [verification-gate.md](verification-gate.md).
 
-## Contract Identity
-
-This contract carries an explicit, machine-readable version: **`quality-gate-contract 1.0.0`**.
-The version identifies **published** states of the contract: editorial changes (wording,
-examples, links) do not bump it, while a change that alters any obligation, convergence
-rule, or vocabulary definition is a **semantic** change and bumps it.
-
 ## The Core Obligation
 
 ```

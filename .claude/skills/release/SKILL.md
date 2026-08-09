@@ -82,6 +82,12 @@ gh run view "$run_id" --log-failed
 - 原因を特定して報告し、復旧手順を提示する。復旧の変更も**通常規律（作業ブランチ + PR）**で行う。
 - 既知の失敗形: `CHANGELOG.md has no ## Unreleased heading` = Step 2 の検査漏れ（エントリ追記 PR →
   マージ後に Step 1 から再実行）。
+- 既知の失敗形（品質ゲート機械確認ステップ）:
+  - `Could not resolve to a PullRequest` = エントリの `(#NNN)` が PR でなく issue を指している（#308 と同じ
+    番号空間の罠）。エントリを PR 番号へ修正する PR を出してから再実行。
+  - `PR #N は MERGED でない` = 参照 PR が未マージ。マージ後に再実行。
+  - `PR #N に未完了または失敗した check がある` = 必須 check が未完。完了後に再実行。
+  - いずれも CHANGELOG エントリ修正 PR（通常規律）→ マージ → Step 1 から再実行。
 
 ## 禁止事項
 
