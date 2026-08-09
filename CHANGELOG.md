@@ -16,6 +16,12 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Removed: 証跡記帳層（evidence ledger）の解体 — 検証は存続、記帳を畳む（#308）
+
+- SHA 紐付け証跡の記帳機構一式（証跡 JSON・`skills/shared/scripts/evidence_check.py`・証跡スキーマ `evidence-format.md`・適合プロファイル `skill-repository-profile.md`・release.yml の生成/検査ステップ・SessionStart の品質ゲートポインタ注入）を削除した。証跡を機械的に消費していたのは release workflow の 1 箇所だけで、しかも生成直後に同じ workflow が自分で検査する自己充足構造だったため
+- **更新後の挙動変化**: リリースの品質ゲート通過保証は、人間の宣誓（`semantic_reviewed` checkbox）から「Unreleased の各エントリが参照する PR が merged + 必須 check 済み」の機械確認へ置き換わる。PR 参照の無いエントリは `none — 理由` 形式の明示免除が必要。検証そのもの（run_checks・レビュー）と publication の安全策（CAS・crash recovery）は存続し、durable marker へ分離する
+- `quality-gate-contract.md` は証跡の記帳の記述を外し、検証の定義（レビュー義務・収束条件・レビュー出力台帳・独立性・語彙）だけを残す形へ書き直した
+
 ### Removed: ワークフロー強制ゲート（1.77.0 / #300）を全面撤廃（#307）
 
 - gate 本体（`workflow_gate.py` 判定コア・契約 `workflow-gate.md`・仕様書 `docs/spec/workflow-enforcement.md`）と Claude Code / OpenCode のツール実行前フック配線を削除。静的解析による git コマンド判定は変数展開・eval など実行時要素を扱えず誤検知を構造的に防げないこと、OpenCode 経由で正当なコミットが遮断される実害、push の evidence 検査がローカル記録頼みで形骸化していたことによる
