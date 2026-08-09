@@ -1,93 +1,30 @@
-# Quality Gate Contract — Canonical Guarantee Conditions
+# Quality Gate Contract — Canonical Verification Obligations
 
-The canonical source for the quality gate: the platform-independent guarantee conditions that
-govern when a change may enter a protected state (typically "publishable"). This file is the
-top layer of a 3-layer architecture:
+The canonical source for the quality gate: the platform-independent obligations that
+govern when a change may be declared verified. This contract defines **what verification
+means**, not how it is recorded. In particular it defines the review obligations that
+apply to a change, when a review may be declared converged, and the vocabulary those
+judgments use.
 
-```
-Canonical   — this file. Guarantee conditions as properties (platform-independent)
-Enforcement — adapters that mechanically judge evidence (hosted CI + branch protection, ...)
-Recall      — adapters that surface obligations at the right moment (context injection, ...)
-```
+Evidence ledgering — binding a verification record to a target SHA and mechanically
+inspecting it at publish time — was dismantled in #308. What survives here is the
+**definition of verification** that review skills and workflows execute:
+[review obligations](#4-review-obligations-derived-from-change-kind), [convergence
+conditions](#5-convergence-conditions), the [review output ledger](#43-review-output-ledger),
+[independence of review](#3-independence-of-review), and the shared vocabulary. The rule
+that no completion claim may outrun its evidence is unchanged; see
+[verification-gate.md](verification-gate.md).
 
-Enforcement and recall implementations are deliberately absent from this file (§7). The
-conformance-profile layer and the evidence-format verifier plug into §6 and §2 respectively;
-both ship separately.
-
-## Contract Identity
-
-This contract carries an explicit, machine-readable version: **`quality-gate-contract 1.0.0`**.
-Evidence and profiles reference this identifier, never the prose. Update rule: a change that
-alters any guarantee condition, state definition, obligation, or convergence rule is a
-**semantic** change and bumps this version; editorial changes (wording, examples, links) do
-not. Versions identify **published** states of the contract: revisions made while a change
-to this file is still unpublished do not bump the version, because no evidence can have
-been produced against an unpublished draft. Verifiers compare the version recorded in
-evidence against the published declared value — a version string that does not resolve to
-a published contract version is invalid evidence. (Content-hash identity is a v2
-candidate; out of scope here.)
-
-## The Core Property
+## The Core Obligation
 
 ```
-No state transition into a protected state takes effect without valid
-verification evidence bound to the exact version of the target.
+No verification claim (PASS / CONVERGED / verified) is made without the
+review obligations that apply to the change having been executed and disposed.
 ```
 
-Everything below refines this single property: what "verification" splits into (§1), what
-makes evidence "valid" and when it stops being valid (§2), what makes a review independent
-(§3), which obligations the evidence must cover (§4), and when the gate may declare
-convergence (§5). Which states are protected is declared by the conformance profile (§6);
-`publishable` is the canonical example.
-
-## 1. Verification State Machine
-
-```
-machine_verified  ⊥  semantic_reviewed
-        \             /
-         → publishable   (v1: both are required, unconditionally)
-```
-
-- **`machine_verified`** — every mechanical gate passed on the exact target version.
-  Machine gates verify that the change does not violate **expectations that were written
-  down in advance** (tests, lint, schema checks, repository validators).
-- **`semantic_reviewed`** — a review conforming to §4 completed and converged per §5.
-  Semantic review exists for **expectations nobody wrote down**: specification gaps,
-  missing tests, unintended impact. The boundary between the two states is the boundary
-  of what is mechanically verifiable; neither state substitutes for the other.
-- The two states are orthogonal: neither implies, contains, nor refreshes the other.
-  **The v1 generic minimum is normative: every transition into a protected state requires
-  both `machine_verified` and `semantic_reviewed`.** Risk tiering that would relax one of
-  them is deferred to v2 (§8); until it exists, neither a profile nor a local setting may
-  require less, and enforcement adapters decide `publishable` by this conjunction alone.
-- What a semantic review guarantees is **that the review contract was executed and every
-  finding dispositioned** — not that the reviewer's conclusions are correct. Correctness
-  claims stay with the evidence; see [verification-gate.md](verification-gate.md) for the
-  behavioral rule that no completion claim may outrun its evidence.
-
-## 2. Evidence Validity
-
-Evidence is a record asserting that a gate held for a target. Its validity is defined by
-binding, not by trust in whoever produced it:
-
-- **Binding**: every piece of evidence binds to `(target version identifier × contract
-  identifier and version per §Contract Identity — including the profile's version when a
-  profile applies)`. Evidence that does not name the exact target version and the resolvable
-  contract version it verified against is not evidence. (Binding additionally to an input
-  manifest hash is a v2 extension — out of scope here.)
-- **Invalidation is part of the contract.** Universal invalidation rules:
-  - New commits on top of a reviewed version invalidate that review's evidence for the new
-    version. Evidence never transfers forward along history.
-  - A change to the verification contract version invalidates evidence produced under the
-    older contract, for the states that contract governs.
-  - Expired evidence is treated identically to absent evidence — the §Core Property blocks
-    the transition.
-- **In v1, invalidation is total.** Once a state's evidence is invalidated, the state is
-  re-earned only by complete regeneration of its evidence against the new target version.
-  Scoped re-verification (re-running only what a change impacts) requires a compositional
-  evidence manifest that can rebind unchanged results to the new target; that mechanism is
-  deferred to v2 together with input-manifest hashing, and a profile may not introduce it
-  ahead of the contract.
+Everything below refines this single obligation: what "review" splits into (§3), which
+obligations a review must cover (§4), how obligations fire from the kind of change (§4.2),
+and when a review may declare convergence (§5).
 
 ## 3. Independence of Review
 
@@ -105,10 +42,10 @@ History-freedom alone is **not** sufficient for independence. Risk classes that 
 independent confirmation say *which* of these properties they require; the convergence
 condition (§5) requires at least one history-free pass.
 
-## 4. Review Obligations (profile-derived)
+## 4. Review Obligations (derived from change kind)
 
 Obligations are not a fixed checklist. They are derived: always-on invariants, plus
-obligations triggered by the kind of change under review, recorded in an evidence ledger.
+obligations triggered by the kind of change under review, recorded in a review ledger.
 
 ### 4.1 Always-on invariants
 
@@ -127,22 +64,32 @@ Calibration is deliberately moderate: the invariants name *what must hold*, neve
 detect violations* — detection procedure is reviewer competence, and prescribing it adds
 no measured detection power. The exception that earns its place: invariant 3 is the one
 dimension where contract-driven review showed a measured detection advantage over
-uninstructed review (issue #142, measured 2026-07-28). Profiles must not weaken it.
+uninstructed review (issue #142, measured 2026-07-28). The trigger table (§4.2) must not weaken it.
 
 ### 4.2 Change-kind trigger table
 
-The kind of change fires additional obligations. The generic contract fixes the mechanism
-and reserves one row; profiles supply the concrete table for their domain. Illustrative
-rows:
+The kind of change fires additional obligations. For this repository (a natural-language
+skill repository whose primary artifacts are agent-instruction documents), the concrete
+table is:
 
 | Change kind | Additional obligations fired |
 |---|---|
-| Agent-instruction document added/changed | trigger conditions; state transitions and loop termination; fallback paths carry the same guarantees as main paths; consistency with shared contracts |
-| Executable script added/changed | input ranges and defaults; boundary conditions; false-positive/false-negative paths; symmetry of checking rules across functions in the same file |
-| Shared contract changed | every consumer re-checked; compatibility of vocabulary and semantics |
-| **Outside static semantic review** (reserved row) | Defect classes that only manifest under operational measurement — e.g. a fail-safe whose over-application only shows when the environment lacks the data it assumes — are **not** review obligations. They belong to machine gates and operational sensors. A profile must route them there explicitly rather than let the review promise what static reading cannot deliver (measured: 4/4 review conditions missed such a defect, issue #142). |
+| Skill instruction document added/changed | Trigger conditions are decidable and non-colliding; every described workflow terminates (loops carry caps or convergence conditions); fallback and edge-case paths carry the same guarantees as the main path; the document is consistent with every shared contract it links |
+| Shared contract added/changed | Every consumer of the contract re-checked against the new text; vocabulary and semantics stay compatible, or every consumer is migrated in the same change |
+| Validator or executable script added/changed | Input ranges and defaults; boundary conditions; false-positive and false-negative paths (including the empty-scan case: zero targets must be distinguishable from zero findings); symmetry of checking rules across functions in the same file |
+| Thin command wrapper added/changed | The wrapper stays thin: dispatch only, no obligations or contract content of its own (name-to-skill correspondence is a machine-gate concern, not re-reviewed here) |
+| Distribution manifest or install path changed | The change reaches every distribution channel the repository declares; partial-channel updates are treated as incomplete |
+| **Outside static semantic review** (reserved row) | Defect classes that only manifest under operational measurement — e.g. whether a skill's trigger description actually fires in live sessions — are **not** review obligations. They belong to machine gates and operational sensors. The trigger table must route them there explicitly rather than let the review promise what static reading cannot deliver (measured: 4/4 review conditions missed such a defect, issue #142). |
 
-### 4.3 Evidence ledger
+A change may fire several rows at once; each fired row produces its own ledger entries.
+Obligations the repository's mechanical validators already enforce (link resolution,
+schema and frontmatter shape, name coverage in indexes, vocabulary-linkage rules,
+translation parity, and whatever else the canonical verification entry point checks) are
+**removed from the fired semantic obligation set**: they produce no semantic ledger
+entries, in any coverage state. When a reviewer doubts a machine gate's coverage, the
+finding is a defect report against the validator, not a manual re-check.
+
+### 4.3 Review output ledger
 
 Each fired obligation produces one ledger entry: target / verification predicate / coverage
 state / grounds / findings. Vocabulary is reused, not redefined:
@@ -156,7 +103,8 @@ state / grounds / findings. Vocabulary is reused, not redefined:
   must map onto these consistently, the same way that file admits approved dialects.
 
 The ledger is what makes §5 mechanically decidable — it is the review's output format, not
-an optional appendix.
+an optional appendix. A review without a ledger is not a verification claim, whatever its
+conclusions.
 
 ## 5. Convergence Conditions
 
@@ -164,11 +112,11 @@ Convergence is a state, not a feeling of having iterated enough. The gate conver
 **all** of the following hold:
 
 1. Every obligation fired for this change (§4) has a ledger entry, and every **mandatory**
-   obligation — the always-on invariants, plus whatever the profile marks mandatory —
-   reached coverage state `reviewed`. A mandatory obligation left `skipped`, `unsupported`,
+   obligation — the always-on invariants, plus whatever the trigger table (§4.2) marks
+   mandatory — reached coverage state `reviewed`. A mandatory obligation left `skipped`, `unsupported`,
    or `inconclusive` blocks convergence, unless a human records an explicit waiver naming
-   the obligation and the reason; the waiver becomes part of the evidence. A ledger entry's
-   mere existence never counts as evaluation.
+   the obligation and the reason. A ledger entry's mere existence never counts as
+   evaluation.
 2. No blocking-severity finding verified as CONFIRMED remains undispositioned.
 3. Every finding is dispositioned **according to its verification value** (the three-valued
    judgment of [severity-and-verdicts.md](severity-and-verdicts.md)):
@@ -196,48 +144,3 @@ Non-convergence rules:
 - An iteration cap is a **detector of undecidability, not a quality condition**. Reaching it
   does not mean "good enough"; it transitions the change to *explicit human decision
   required*.
-
-## 6. Three Layers of Configuration
-
-```
-Generic contract (this file)     — properties that hold everywhere. Never weakened.
-Conformance profile (per domain) — minimum evidence, mandatory obligations, and the
-                                   no-weakening list for one domain. May only add to or
-                                   tighten the generic contract.
-Local settings (per project)     — may only add to or tighten the profile.
-```
-
-A two-layer design (generic + local) was rejected: it lets a local setting weaken mandatory
-conditions. The profile layer exists precisely to hold the line that must not move. The
-first conformance profile (for natural-language skill repositories) ships as a separate
-file; this repository is one conformance sample of that profile, not the normative
-reference.
-
-## 7. Enforcement and Recall Are Adapters
-
-The canonical layer states *conditions*, never *firing points*:
-
-- Pre-condition: the obligations applicable to a task were **delivered into its working
-  context** before any protected-state decision. Mere discoverability — a file that could
-  have been read — does not satisfy this. A conforming recall adapter emits an observable
-  delivery record (which obligations, delivered when, for which unit of work), so recall
-  is auditable like any other evidence.
-- Post-condition: no transition to a protected state without valid evidence (§Core).
-
-Anything that makes those conditions hold in a specific environment is an adapter. A hosted
-CI pipeline combined with branch protection is an enforcement adapter for repository-hosted
-development. A local pre-push hook is an **early-feedback layer, not enforcement** — it can
-be bypassed or simply not installed, so no guarantee may rest on it. Session-start context
-injection is a recall adapter. Adapters are replaceable per environment; the conditions are
-not. Conformance of an environment is judged against the conditions, which is how lock-in
-to any single platform is avoided.
-
-## 8. v1 Scope Boundary
-
-Deferred to v2 (deliberately, until a second consumer exists): input manifest hashes in
-evidence binding, structured per-dimension grounds inspection, risk tiering beyond the
-default "both states required", conformance scenario tests, and a second conformance
-profile. The v1 companion pieces — the evidence-format verifier for the
-`verified(target SHA, contract version) → publishable` slice (§2), the skill-repository
-conformance profile (§6), and recall adapters (§7) — ship as separate changes and must not
-relax anything written here.

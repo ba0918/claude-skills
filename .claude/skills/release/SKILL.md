@@ -6,7 +6,7 @@ description: このリポジトリのリリース（version bump）手続きを�
 # Release
 
 このリポジトリ専用のリリース手続き。正本仕様は [docs/spec/release.md](../../../docs/spec/release.md) —
-判断規則（トレイン規則・attestation の縛り・非目標）はそちらが正で、本書は実行の具体だけを持つ。
+判断規則（トレイン規則・品質ゲートの機械確認・非目標）はそちらが正で、本書は実行の具体だけを持つ。
 
 ## 前提
 
@@ -48,17 +48,18 @@ Step 1 の変更一覧を分類して提案を組み立てる:
 
 現行 version は `.claude-plugin/plugin.json` の `version` を読む。
 
-### 4. ユーザー確認（attestation ゲート）
+### 4. ユーザー確認（リリース承認ゲート）
 
 提案（新 version・根拠となる変更分類・Unreleased 節の要約）を提示し、**明示の承認を得る**。
 
-- `semantic_reviewed=true` は「リリース内容が意味レベルのレビューを経ている」という人間の宣誓。
-  **ユーザーの承認発話なしに true で起動してはならない**。承認が得られない・返答が曖昧な場合は起動しない。
+- 品質ゲート通過の保証は release.yml 内の機械確認（Unreleased → PR → merged + 全 check
+  完了・失敗なし）が担う。ここでの承認はリリース実行の承認であり、品質ゲートの attestation ではない。
+  **ユーザーの承認発話なしに起動してはならない**。承認が得られない・返答が曖昧な場合は起動しない。
 
 ### 5. 起動
 
 ```bash
-gh workflow run release.yml -f version={X.Y.Z} -f semantic_reviewed=true
+gh workflow run release.yml -f version={X.Y.Z}
 ```
 
 ### 6. 監視
@@ -81,9 +82,15 @@ gh run view "$run_id" --log-failed
 - 原因を特定して報告し、復旧手順を提示する。復旧の変更も**通常規律（作業ブランチ + PR）**で行う。
 - 既知の失敗形: `CHANGELOG.md has no ## Unreleased heading` = Step 2 の検査漏れ（エントリ追記 PR →
   マージ後に Step 1 から再実行）。
+- 既知の失敗形（品質ゲート機械確認ステップ）:
+  - `Could not resolve to a PullRequest` = エントリの `(#NNN)` が PR でなく issue を指している（#308 と同じ
+    番号空間の罠）。エントリを PR 番号へ修正する PR を出してから再実行。
+  - `PR #N は MERGED でない` = 参照 PR が未マージ。マージ後に再実行。
+  - `PR #N に未完了または失敗した check がある` = check が未完または失敗。完了・修正後に再実行。
+  - いずれも CHANGELOG エントリ修正 PR（通常規律）→ マージ → Step 1 から再実行。
 
 ## 禁止事項
 
-- ユーザー確認なしの `semantic_reviewed=true` 起動
+- ユーザー確認なしの起動
 - PR 内での version bump・manifest の手動編集
 - 失敗復旧での main 直接コミット

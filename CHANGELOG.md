@@ -16,12 +16,19 @@ claude-skills プラグインのバージョン履歴。
 
 ## 1.78.0
 
+### Removed: 証跡記帳層（evidence ledger）の解体 — 検証は存続、記帳を畳む（#309）
+
+- issue #308 の裁定に従い、SHA 紐付け証跡の記帳機構一式（証跡 JSON・`skills/shared/scripts/evidence_check.py`・証跡スキーマ `evidence-format.md`・適合プロファイル `skill-repository-profile.md`・release.yml の生成/検査ステップ・SessionStart の品質ゲートポインタ注入）を削除した。証跡を機械的に消費していたのは release workflow の 1 箇所だけで、しかも生成直後に同じ workflow が自分で検査する自己充足構造だったため
+- **更新後の挙動変化**: リリースの品質ゲート通過保証は、人間の宣誓（`semantic_reviewed` checkbox）から「Unreleased の各エントリが参照する PR が merged + 全 check 完了・失敗なし」の機械確認へ置き換わる。PR 参照の無いエントリは `none — 理由` 形式の明示免除が必要。検証そのもの（run_checks・レビュー）と publication の安全策（CAS・crash recovery）は存続し、durable marker へ分離する
+- `quality-gate-contract.md` は証跡の記帳の記述を外し、検証の定義（レビュー義務・収束条件・レビュー出力台帳・独立性・語彙）だけを残す形へ書き直した
+- **更新後の挙動変化**: SessionStart の案内注入は品質ゲート 1 本が削除され、幹ワークフローの注入 1 本のみになる（#307 の「注入 2 本」記述は注入前の時点での記録）
+
 ### Removed: ワークフロー強制ゲート（1.77.0 / #300）を全面撤廃（#307）
 
 - gate 本体（`workflow_gate.py` 判定コア・契約 `workflow-gate.md`・仕様書 `docs/spec/workflow-enforcement.md`）と Claude Code / OpenCode のツール実行前フック配線を削除。静的解析による git コマンド判定は変数展開・eval など実行時要素を扱えず誤検知を構造的に防げないこと、OpenCode 経由で正当なコミットが遮断される実害、push の evidence 検査がローカル記録頼みで形骸化していたことによる
 - **更新後の挙動変化**: エージェントの git 操作は実行前に遮断されなくなる（SessionStart の案内注入 2 本と plan 作成時の受け側 spec 検査は存続）。ハーネスが変数解決済みの実行時コマンド情報をフックへ渡せるようになったときに再評価する
 
-### Changed: 仕様反映の経路非依存化 — plan の Spec 欄必須化と doc-check の宣言照合
+### Changed: 仕様反映の経路非依存化 — plan の Spec 欄必須化と doc-check の宣言照合（#306）
 
 - plan ヘッダーの `**Spec:**` 欄を必須化。値は `{docs/spec path}` / `draft {path}` / `none — {一行の理由}` の 3 形のみで、どの経路（brainstorm / issue 直行 / 手動）で plan を作っても仕様への影響判断が 1 回記録される。既存 plan は修正不要（必須化は新規作成分のみ）
 - doc-check の diff 系モードに Spec 宣言照合を追加: `none` 宣言なのに仕様的な挙動変更が差分にあれば NEEDS_JUDGMENT で指摘。plan を特定できない作業は従来どおり無指摘で通過する

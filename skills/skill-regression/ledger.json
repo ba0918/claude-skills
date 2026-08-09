@@ -216,10 +216,10 @@
     "verified": "2026-08-06"
   },
   "cycle": {
-    "carried_note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
+    "carried_note": "publication-protocol へ exit 5（recover: durable marker 不在）の文書化追記（#308 doc-check 整合）。挙動変更なし、散文のみ",
     "file_sha256": {
-      "skills/cycle/SKILL.md": "8fcf89b2df01a9d09a74dc8225e2a51eb130e6bb849663125109aa8b0c2ba22a",
-      "skills/cycle/fixtures.json": "3ced930955dbfac1d6817e91226dc76941e9299c4cda3e7d86a05b5f285a1657",
+      "skills/cycle/SKILL.md": "94344cdd42313edd38d2fa7b7c8181d4c88bf05c6d14ff45c1581b67f978c6b1",
+      "skills/cycle/fixtures.json": "47f9ab9db25b05d5a9badfd6dcb00c82277561a7af3214ef96e6f9f0fe012780",
       "skills/cycle/references/completion.md": "f03e0fcc3bf0e01705569e4aacc3efb560059a320451ff8e4053e4e2258d232d",
       "skills/cycle/references/final-gate-delegation.md": "6051c69b8c745ca9405015081775d2130ba9db7dfef2797ffdefcb994a03aed4",
       "skills/cycle/references/fix-delegation.md": "ced699c1ebc2429490b519bfc5e7c431081ca1a93944c081e317368e4b43dd47",
@@ -230,19 +230,17 @@
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/artifact-store.md": "595f843ca53ab49362fc95cb710e39aa8819de7ad18e270b65ffc71e96411356",
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
-      "skills/shared/references/evidence-format.md": "96da494ddf512e5de33fbcc2a87eb0b5e97058c765a5b7e956151246e4c4d751",
       "skills/shared/references/fix-action-taxonomy.md": "79d1fc5061e11befa9c29cfdf08c16c5b240ee534832d6105ce909890bb4e554",
       "skills/shared/references/orchestration-patterns.md": "9672c4f21d72957d8c2cfec1673af412de49fc8634d2fe2ece39121d05d4779b",
-      "skills/shared/references/publication-protocol.md": "5aaaf09134900951ddfa3edd3523676ecbd98e8f6c5755f6b20520ee04b376b3",
+      "skills/shared/references/publication-protocol.md": "15150781a8ba109b18be15e526333db8f23d3fa650841dd5a6809131f2162119",
       "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
       "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
-      "skills/shared/scripts/evidence_check.py": "17135f510679d2c7d01073f7ba65b2ba5ff0bb2626e9bcfc292976b238db8289",
-      "skills/shared/scripts/publication_advance.py": "c17d4938f5db991e8cf3cbae6aacc93e48555351a38570485fc0f3a01205c8ed",
+      "skills/shared/scripts/publication_advance.py": "e24e1bee1fa5b48846fc4f3ea79b30c284e8ec76ecd80b8d43c8fac9cbc69ec9",
       "skills/shared/scripts/secret_detect.py": "c3149696fb668bf0f77dd984fadcf1233dcf3c0164653c1d9c599ca6e9dad702",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "measurement freeze (2026-08-06 ruling): bug 起票 7 件の一括修正（#287-#293、共有契約 fix-action-taxonomy / human-readable-summary の条項追加を含む）。完成後の 1 発フル実測で支払う",
+    "note": "publication protocol にマージ後ツリーでの検証実行手順を復元し、durable marker の判定を merge-intent record の可読性へ変更（PR #309）。fixtures.json は不変で cy-009 の要件（marker 記録・構造チェック・fail-closed 3 経路）は変わらず、追加分は手順の復元。実測凍結裁定（2026-08-06）に従い accept",
     "result": "accepted-without-run",
     "scenarios": {
       "cy-001": {
@@ -292,8 +290,8 @@
       },
       "cy-009": {
         "result": "accepted-without-run",
-        "scenario_sha256": "43c8a5790587bb67ba1115488760498b7cb14c4a8348e6419971c0c45f8d506d",
-        "verified": "2026-08-05"
+        "scenario_sha256": "0e58b2f5389d6930905a41cbcf72e5209f15cbecce475ef064d19fbb5d2e431e",
+        "verified": "2026-08-09"
       },
       "cy-010": {
         "result": "accepted-without-run",
@@ -352,7 +350,7 @@
       }
     },
     "structural_sha256": {
-      "skills/cycle/SKILL.md": "086560464952dd2e79c52fd254b6b5133a4a1c7b005a27b189c7257eb1ebc1f7",
+      "skills/cycle/SKILL.md": "3cae38a6d6fff7b27410edced0f3098065e225256b11566b39d18491852e4905",
       "skills/cycle/references/completion.md": "d2136ca9a353d533a0b91e07cff838c92a24852cc373bc31afaee1f93bef6c24",
       "skills/cycle/references/final-gate-delegation.md": "27d25341c480d9a3d6ad69a5c247b995082067c8eda58d93e3cc60036e34514b",
       "skills/cycle/references/fix-delegation.md": "bbbb683d7d408568579cdd71e9d00136f32f6143222fdcd905a9869edbc5968f",
@@ -363,10 +361,9 @@
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
       "skills/shared/references/artifact-store.md": "4ab7297bbce0294646093f50c818c13d31e9212e3ad9bbeffc74318686d03b06",
       "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
-      "skills/shared/references/evidence-format.md": "4caa3fb0bb6e4c2fb5516c0d882a7b5e26845b3bb0695bbd5c05c21b7ee070de",
       "skills/shared/references/fix-action-taxonomy.md": "77e904e85b57d78c32f34ee16394a73ab417c46aec78a9ecb5049c24fc30c931",
       "skills/shared/references/orchestration-patterns.md": "2abc40814ffa144d4cdad8ca5ef33c4d21471f28dc77c0bd89cf8efe9f5a25d0",
-      "skills/shared/references/publication-protocol.md": "e042692698eff9de64abd51a9fa5396a0b6a076160f5bc6510c474a55df2f412",
+      "skills/shared/references/publication-protocol.md": "483020af4da961ecad7d9cb51e8efa4211714fd39216f1d6bb712fa1cd1c2d1f",
       "skills/shared/references/tdd-contract.md": "b562a71a8064dfaca6c40b2c6e81efbed397ac03acf9ec6f835f45930703d3fe",
       "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd",
       "skills/shared/references/workspace-lock.md": "93a8ff761e07d1c63c59c60de8ed3ecec3a64e05e0a3c21a5e42a5941ad4634b"
@@ -384,20 +381,18 @@
       "skills/shared/references/artifact-paths.md",
       "skills/shared/references/artifact-store.md",
       "skills/shared/references/codex-integration.md",
-      "skills/shared/references/evidence-format.md",
       "skills/shared/references/fix-action-taxonomy.md",
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/publication-protocol.md",
       "skills/shared/references/tdd-contract.md",
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md",
-      "skills/shared/scripts/evidence_check.py",
       "skills/shared/scripts/publication_advance.py",
       "skills/shared/scripts/secret_detect.py",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "8e1c12432646e129f9416ad0803a97cf5dd17201a9fe0e84d1646f6e91a8f3c9",
-    "verified": "2026-08-06"
+    "surface_sha256": "6146ca75902115ca6df15a182197f685f1f013a5a9b4b87239dbeb8b17a83453",
+    "verified": "2026-08-09"
   },
   "decision-journal": {
     "file_sha256": {
@@ -812,35 +807,50 @@
     "verified": "2026-08-06"
   },
   "iterate": {
+    "carried_note": "publication-protocol の exit 5 文書化追記（#308 doc-check 整合）。挙動変更なし、散文のみ",
     "file_sha256": {
-      "skills/iterate/SKILL.md": "dcd2c9389c5edbc3c6693fd56341f9caa9a73b03137396f20933763024e00a8f",
+      "skills/iterate/SKILL.md": "1c9d81e17d612a9dd0cb02341866d1283cca260009030eecf2973f357ef78279",
       "skills/iterate/fixtures.json": "ac7a7647522068d51cea277e16e10f095c8ec7ea98824fe214a13f15e94dce99",
       "skills/iterate/references/light-review.md": "f4b63a197756686af4f9313fd05da3c0e4bd88b24ca70779b3fa7f8f7ea6c322",
       "skills/iterate/references/scope-criteria.md": "fc0005c7a886ec6d3b9593bf6e9d6b607a6f4f6e6f000280844cf750de83ea21",
       "skills/shared/references/artifact-paths.md": "b6f07ec7b8beea55432422e94415fbaf2ca1001d0de2e1d3a4c788d4995a8e1a",
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
-      "skills/shared/references/evidence-format.md": "96da494ddf512e5de33fbcc2a87eb0b5e97058c765a5b7e956151246e4c4d751",
       "skills/shared/references/orchestration-patterns.md": "9672c4f21d72957d8c2cfec1673af412de49fc8634d2fe2ece39121d05d4779b",
-      "skills/shared/references/publication-protocol.md": "5aaaf09134900951ddfa3edd3523676ecbd98e8f6c5755f6b20520ee04b376b3",
+      "skills/shared/references/publication-protocol.md": "15150781a8ba109b18be15e526333db8f23d3fa650841dd5a6809131f2162119",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
       "skills/shared/references/workspace-lock.md": "cef7d6eba9ef82d78dceb625019ab2d97b6c42098605028451bca875eb2d57dc",
-      "skills/shared/scripts/evidence_check.py": "17135f510679d2c7d01073f7ba65b2ba5ff0bb2626e9bcfc292976b238db8289",
-      "skills/shared/scripts/publication_advance.py": "c17d4938f5db991e8cf3cbae6aacc93e48555351a38570485fc0f3a01205c8ed"
+      "skills/shared/scripts/publication_advance.py": "e24e1bee1fa5b48846fc4f3ea79b30c284e8ec76ecd80b8d43c8fac9cbc69ec9"
     },
-    "note": "process-path run (regression_queue batch prompt-audit-regression-20260804-r2, sonnet-5 executor); all scenarios pass, drift corroborated against expected write-sets",
-    "result": "pass",
+    "note": "publication protocol にマージ後ツリーでの検証実行手順を復元し、durable marker の判定を merge-intent record の可読性へ変更（PR #309）。iterate 側の変更は publication 記述 1 文の整合のみで、fixtures の要件に影響しない。実測凍結裁定（2026-08-06）に従い accept",
+    "result": "accepted-without-run",
+    "scenarios": {
+      "it-inner-context": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "0fdb16dc7b83c9614289dfcde3997dba4dd2854b9ca378ced6ecaf73f3c44fd3",
+        "verified": "2026-08-04"
+      },
+      "it-outer-worktree": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "5e902178d9ed6b0356a6e8adc399cbaf7aa0184bbd0afee636aa3e7753bad0d2",
+        "verified": "2026-08-04"
+      },
+      "it-recovery": {
+        "result": "accepted-without-run",
+        "scenario_sha256": "f3f9524105308ff64d2b7d7037d54d6c32afc348c1e894cb18679cb71affcdbe",
+        "verified": "2026-08-04"
+      }
+    },
     "structural_sha256": {
-      "skills/iterate/SKILL.md": "ecd76ff7616c3d797b3ff2cf409202375ceb19e01090075d17a2079a71512d27",
+      "skills/iterate/SKILL.md": "036cc6837e87890a3ee00f1d72d2d563d5298032e5b172039c8d4ab25db02007",
       "skills/iterate/references/light-review.md": "531c483a72d87e8b010305899eacc78e7c4dff9a95ceaaccc3f7c42322959d82",
       "skills/iterate/references/scope-criteria.md": "09c26cce4730e3e3633de6bac45580dd6f68bca6e8d7dfea722785190bdd09eb",
       "skills/shared/references/artifact-paths.md": "4ab83b2dcc05936148bb79a870026dc26635b9622c778f87956906b4198b04c5",
       "skills/shared/references/codex-integration.md": "5b48fe7cb341a92ec8f4add7e86513a2ceacb15d9c1ab5277a890a48548f8d67",
-      "skills/shared/references/evidence-format.md": "4caa3fb0bb6e4c2fb5516c0d882a7b5e26845b3bb0695bbd5c05c21b7ee070de",
       "skills/shared/references/orchestration-patterns.md": "2abc40814ffa144d4cdad8ca5ef33c4d21471f28dc77c0bd89cf8efe9f5a25d0",
-      "skills/shared/references/publication-protocol.md": "e042692698eff9de64abd51a9fa5396a0b6a076160f5bc6510c474a55df2f412",
+      "skills/shared/references/publication-protocol.md": "483020af4da961ecad7d9cb51e8efa4211714fd39216f1d6bb712fa1cd1c2d1f",
       "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
       "skills/shared/references/tdd-contract.md": "b562a71a8064dfaca6c40b2c6e81efbed397ac03acf9ec6f835f45930703d3fe",
       "skills/shared/references/testing-anti-patterns.md": "e31cc2487959245c1c98e60cfbdc303990af03d306eedd1b10da6b264d3de829",
@@ -854,7 +864,6 @@
       "skills/iterate/references/scope-criteria.md",
       "skills/shared/references/artifact-paths.md",
       "skills/shared/references/codex-integration.md",
-      "skills/shared/references/evidence-format.md",
       "skills/shared/references/orchestration-patterns.md",
       "skills/shared/references/publication-protocol.md",
       "skills/shared/references/severity-and-verdicts.md",
@@ -862,11 +871,10 @@
       "skills/shared/references/testing-anti-patterns.md",
       "skills/shared/references/verification-gate.md",
       "skills/shared/references/workspace-lock.md",
-      "skills/shared/scripts/evidence_check.py",
       "skills/shared/scripts/publication_advance.py"
     ],
-    "surface_sha256": "84514309eec249844d237aa75af43a7b771051704d8d84595e93cb42298f33e9",
-    "verified": "2026-08-04"
+    "surface_sha256": "c3c6b73bdaf14685b35bd5970f8cdbc5bc9e6649407a7fc732ce469c5bbfc771",
+    "verified": "2026-08-09"
   },
   "plan": {
     "carried_note": "measurement freeze (2026-08-06 ruling): bug 起票 7 件の一括修正（#287-#293、共有契約 fix-action-taxonomy / human-readable-summary の条項追加を含む）。完成後の 1 発フル実測で支払う",
@@ -1108,22 +1116,21 @@
     "verified": "2026-08-04"
   },
   "skill-reviewer": {
-    "carried_note": "measurement freeze (2026-08-06 ruling): 幹継ぎ目修復（整合駅導線・宛先整合・spec 消費線）の文言変更。完成後の 1 発フル実測で支払う",
+    "carried_note": "quality-gate-contract の Contract Identity（版宣言）削除（#308 finding 2 対応）。§4/§5/§4.3/語彙は不変で、skill-reviewer の要件・収束判定への影響なし（accept: 散文の整理のみ）",
     "file_sha256": {
       "skills/shared/references/coverage-ledger.md": "10c3ea12cf96f31749eacce497f43d5db9b6d26b495a55e6552c10089fff8376",
       "skills/shared/references/fix-action-taxonomy.md": "79d1fc5061e11befa9c29cfdf08c16c5b240ee534832d6105ce909890bb4e554",
-      "skills/shared/references/quality-gate-contract.md": "e3a69ed17bf9ba7fdaf41968b56ba85c358daf2a193c5d1f9a0f5e0e9dd1413a",
+      "skills/shared/references/quality-gate-contract.md": "4e9166ba60e63aacfd70ecd3040fe1cdddd537b220bd8d811aab71a20647c429",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "156673a4214f8b175dc545e728cee9fe9dbf3f122d915268e840ccb641fc0ed1",
-      "skills/shared/references/skill-repository-profile.md": "fafc81d7ce71468606f3fd3c281b8f3a926dc3f0f48fcd221516720bf6c2fefe",
       "skills/skill-regression/scripts/ledger.py": "f6ade730f57c779b619b823075af9ef7e58dec339cc58c1a56df6204fc6a8ad5",
       "skills/skill-reviewer/SKILL.md": "e6d09f4bfa4201780f9b0724a63f1605826959226ba15c84c3efd64b0dbe9d85",
       "skills/skill-reviewer/fixtures.json": "83758e70461569ac04454f26151c6a6675defe5a523fd0d212a1474b4e669751",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "db06e7e49c22d1eb0b4725304b4858152c4f0577fa1df0234d0a189f33c72bda",
-      "skills/skill-reviewer/references/output-contract.md": "7cd2fc72d01be97efab8fa5b0302de986e0ffec38fd4dadbfc2282f9e1982b81",
+      "skills/skill-reviewer/references/output-contract.md": "34aa16d336a75aa5ff7e1faf1beab41188b2be7d2e1144c104f4a4330de986ba",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "measurement freeze (2026-08-06 ruling): bug 起票 7 件の一括修正（#287-#293、共有契約 fix-action-taxonomy / human-readable-summary の条項追加を含む）。完成後の 1 発フル実測で支払う",
+    "note": "quality-gate-contract の profile 残滓修正・見出し変更・machine_verified 語除去（#308 doc-check 整合）。挙動変更なし、散文のみ",
     "result": "accepted-without-run",
     "scenarios": {
       "sr-001": {
@@ -1145,13 +1152,12 @@
     "structural_sha256": {
       "skills/shared/references/coverage-ledger.md": "f8d5f2a4c845758b1cd6436a931a74ac05af93f30391791b5ea15535e68d0579",
       "skills/shared/references/fix-action-taxonomy.md": "77e904e85b57d78c32f34ee16394a73ab417c46aec78a9ecb5049c24fc30c931",
-      "skills/shared/references/quality-gate-contract.md": "e76eed7335874bca058f208d15dbdda334bfe7d25f3c3246ce36f29ef54eae58",
+      "skills/shared/references/quality-gate-contract.md": "008b602b5c7d06eaa97bd1d9727f25b0976bc69166d6c7191c20211ac5be6b75",
       "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
       "skills/shared/references/skill-authoring.md": "8f7ff1a086b894884599b2e745d67b3342f1f6d2b060a9f1e691c4b0f0e5cdc1",
-      "skills/shared/references/skill-repository-profile.md": "2cb1fb93cb2af137f6e63400d7da8014a06b378e4daf224defe3f706809ac558",
       "skills/skill-reviewer/SKILL.md": "4dbdd6eda5a292567adc7dbefb5803449c674567ea102c3d7033007cfae3b1a9",
       "skills/skill-reviewer/references/evidence-and-coverage.md": "140524c30eafb57aeb4340c2e6ffdbebc0bdd95f972b1303c70b3232f9a7caae",
-      "skills/skill-reviewer/references/output-contract.md": "d642bfb128a8670450890607001eb91ca0dcde6faee720b04f947912ffcc800a"
+      "skills/skill-reviewer/references/output-contract.md": "95d91b9f1b107d19e5befc9ddd8abadd540b101b3690cccc5ce920153901ab51"
     },
     "surface": [
       "skills/shared/references/coverage-ledger.md",
@@ -1159,7 +1165,6 @@
       "skills/shared/references/quality-gate-contract.md",
       "skills/shared/references/severity-and-verdicts.md",
       "skills/shared/references/skill-authoring.md",
-      "skills/shared/references/skill-repository-profile.md",
       "skills/skill-regression/scripts/ledger.py",
       "skills/skill-reviewer/SKILL.md",
       "skills/skill-reviewer/fixtures.json",
@@ -1167,8 +1172,8 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "e46e71e4137e916ae92b8abfb1929ba1bdb7c8533ff629a05e5943888cbbd57c",
-    "verified": "2026-08-06"
+    "surface_sha256": "9a9a496122d589a92e5c16ae5f0d14dd44115702bbba559cb0ef72b9cc645a2f",
+    "verified": "2026-08-09"
   },
   "sweep-fix": {
     "file_sha256": {

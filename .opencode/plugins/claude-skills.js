@@ -2,8 +2,8 @@
  * claude-skills plugin for OpenCode.
  *
  * - Registers skills/ via config.skills.paths (no symlinks).
- * - Injects the using-workflow funnel (routing discipline included) + quality-gate
- *   pointer on the first user message (Claude Code SessionStart equivalent).
+ * - Injects the using-workflow funnel (routing discipline included) on the first
+ *   user message (Claude Code SessionStart equivalent).
  */
 
 import fs from "fs"
@@ -15,12 +15,6 @@ const PACKAGE_ROOT = path.resolve(__dirname, "../..")
 const SKILLS_DIR = path.join(PACKAGE_ROOT, "skills")
 const ROUTING_PATH = path.join(SKILLS_DIR, "using-workflow", "SKILL.md")
 const BOOTSTRAP_MARKER = "<!-- claude-skills-bootstrap -->"
-
-const QUALITY_GATE_FILES = [
-  "skills/shared/references/quality-gate-contract.md",
-  "skills/shared/references/skill-repository-profile.md",
-  "skills/shared/references/evidence-format.md",
-]
 
 let _bootstrapCache = undefined
 
@@ -39,19 +33,6 @@ function stripFrontmatter(text) {
   return m ? text.slice(m[0].length) : text
 }
 
-function buildQualityGatePointer() {
-  const lines = [
-    "Quality gate contract (recall pointer): a publish-type state transition (merge / release / distribution) requires valid verification evidence bound to the target SHA and the in-force contract version. Read the canonical sources before publishing:",
-  ]
-  for (const rel of QUALITY_GATE_FILES) {
-    const abs = path.join(PACKAGE_ROOT, rel)
-    if (fs.existsSync(abs)) {
-      lines.push(`- ${abs}`)
-    }
-  }
-  return lines.length > 1 ? lines.join("\n") : null
-}
-
 function getBootstrapContent() {
   if (_bootstrapCache !== undefined) return _bootstrapCache
 
@@ -59,11 +40,6 @@ function getBootstrapContent() {
   const routing = readText(ROUTING_PATH)
   if (routing) {
     parts.push(stripFrontmatter(routing).trimEnd())
-  }
-
-  const quality = buildQualityGatePointer()
-  if (quality) {
-    parts.push(quality)
   }
 
   // Only inject when at least one payload section exists.

@@ -8,11 +8,19 @@ repository's default branch (substitute the actual name, e.g. `master`).
 Inputs: `{satellite_branch}`, `{main_tree_root}`.
 
 The git state transitions — prospective merge, compare-and-swap advance, checkout
-synchronization, evidence promotion, crash recovery — are implemented once in
+synchronization, crash recovery — are implemented once in
 `skills/shared/scripts/publication_advance.py` and verified by fault-injection tests
 (`test_publication_protocol_git.py`). Run the primitive; never hand-roll its git
-commands. This file carries only what the executor must judge: the order, the evidence
-to earn, and the safety boundaries.
+commands. This file carries only what the executor must judge: the order, the
+verification to run, and the safety boundaries.
+
+The staging directory is a **durable marker** of an unfinished publication, not a
+vessel for verification evidence. It records that "this merge was intended"
+(a merge-intent record with the post-merge SHA and provenance). Verification quality is
+the calling skill's review's job; the primitive's own checks are structural only:
+compare-and-swap, lock proof, merge shape, and tree safety. This separation came from
+[quality-gate-contract.md](quality-gate-contract.md) #308: the ledger layer was
+dismantled, the structural safety of the advance survived.
 
 ## Sequence
 
@@ -24,29 +32,29 @@ and refuse to run without a match — prose alone proves nothing.
 1. **Prospective merge** — main untouched:
    `python3 skills/shared/scripts/publication_advance.py merge --repo-root {main_tree_root} --branch main --satellite-branch {satellite_branch}`
    The JSON output gives `expected_main_sha`, `post_merge_sha`, `tmp_merge_root`
-   (a temporary worktree holding the merged tree), and `evidence_staging` (a
-   run-scoped staging directory). A merge conflict is a terminal publish failure.
+   (a temporary worktree holding the merged tree), and `evidence_staging` (the
+   run-scoped staging directory that becomes the durable marker). A merge conflict is a
+   terminal publish failure. The primitive writes a merge-intent record into the staging
+   directory; that readable record — not the bare directory — is what `advance` /
+   `recover` recognize.
+   The staging directory is the only publication record and it is run-scoped.
 
-2. **Re-earn evidence** for the exact `{post_merge_sha}` — satellite or pre-merge
-   evidence never transfers, and a review verdict from the calling skill is review
-   input, not reusable evidence:
-   - `machine_verified`: run the repository's canonical verification entry point
-     inside `{tmp_merge_root}`; only a complete pass may produce the record.
-   - `semantic_reviewed`: run a fresh history-free semantic review executing the
-     [quality-gate contract](quality-gate-contract.md)'s §4 obligations, §4.3 evidence
-     ledger, and §5 convergence conditions.
-   Write both records into `{evidence_staging}` per the [evidence format](evidence-format.md),
-   bound to `{post_merge_sha}`. Never write into the default evidence directory — that
-   singleton describes the currently published main until promotion succeeds.
+2. **Verify the merged tree** — run the repository's canonical verification entry point
+   inside `{tmp_merge_root}` (in this repository, `sh scripts/run_checks.sh`) and advance
+   only on a complete pass; anything less is a terminal publish failure. Neither the
+   satellite's own run nor a pre-merge run substitutes — the merged tree is a state no
+   earlier run observed. Nothing is recorded: the requirement is the run itself, not a
+   receipt. When a CAS conflict (`4` below) sends you back to step 1, run it again inside
+   the new merged tree.
 
-3. **Advance** — checker judgment and every destructive step in one implementation:
+3. **Advance** — structural checks and every destructive step in one implementation:
    `python3 skills/shared/scripts/publication_advance.py advance --repo-root {main_tree_root} --branch main --post-merge-sha {post_merge_sha} --expected-main-sha {expected_main_sha} --evidence-staging {evidence_staging} --lock-token {workspace_lock_token}`
    The compare-and-swap inside it is the **commit point** of publication. Exit codes:
-   - `0` — main advanced, checkout synchronized, evidence promoted into the singleton.
+   - `0` — main advanced, checkout synchronized, durable marker cleared.
      Publish only after this. Then remove `{tmp_merge_root}`
      (`git worktree remove`).
    - `3` — terminal publish failure: a precondition (lock proof, post-merge SHA
-     provenance, clean tree) or the staged evidence could not be proven; main
+     provenance, clean tree) or the durable marker could not be proven; main
      untouched.
    - `4` — CAS conflict: main moved during verification. Discard `{tmp_merge_root}`
      and the stale staging — the protocol's own reproducible intermediates, not
@@ -55,22 +63,24 @@ and refuse to run without a match — prose alone proves nothing.
    - `2` — broken invocation before the commit point (arguments or environment);
      main untouched, staging preserved.
    - `7` — failure **after** the commit point: main is already advanced but
-     completion (checkout sync or evidence promotion) did not finish. Not a publish
+     completion (checkout sync or marker removal) did not finish. Not a publish
      failure — never roll back; staging remains as the durable marker. Repair the
      cause, then run `recover`.
 
 ## Recovery
 
 The staging directory is the durable marker of an unfinished publication. On entry, if
-`evidence-staging/{sha}/` exists with `{sha}` equal to the current main HEAD, the
-commit point already passed and completion did not finish. Re-acquire the workspace
+`evidence-staging/{sha}/` holds a readable merge-intent record with `{sha}` equal to the
+current main HEAD, the commit point already passed and completion did not finish. Re-acquire the workspace
 lock, then run:
 `python3 skills/shared/scripts/publication_advance.py recover --repo-root {main_tree_root} --branch main --lock-token {workspace_lock_token}`
 
 It repairs only what it can prove is untouched post-crash state, and otherwise stops
 without mutating anything (exit `6` → manual recovery): a human's post-crash edits
 must never be destroyed. Like `advance`, it exits `7` when completion fails again
-mid-repair — staging stays preserved; repair the cause and rerun. A staging directory
+mid-repair — staging stays preserved; repair the cause and rerun. When no durable
+marker exists for the current main HEAD, `recover` reports exit `5` (no unfinished
+publication — a no-op, not an error). A staging directory
 whose `{sha}` differs from the current main HEAD never published and may be discarded.
 
 ## Safety boundaries

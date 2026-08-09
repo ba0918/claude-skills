@@ -60,7 +60,7 @@ hardest kind of divergence to notice, so a typo fails as a violation.
 
 | Field | Required | Notes |
 |-------|----------|-------|
-| `assurance_role` / `quality_gate_evidence` / `dynamic_sensors_executed` | ✓ | The non-evidence declaration. Fixed values — see below |
+| `assurance_role` / `quality_gate_evidence` / `dynamic_sensors_executed` | ✓ | The verification-record declaration. Fixed values — see below |
 | `coverage[]` | ✓ | Non-empty. `target` / `value` / `reason`, every entry with a reason |
 | `evidence[]` | ✓ | May be empty. `skill` / `state` (+ optional `reason`, boolean `run_evidence`, string `surface_sha256` — other types are rejected) |
 | `control_candidates[]` / `diagnostics[]` | ✓ | May be empty, but both keys are always present |
@@ -69,7 +69,7 @@ hardest kind of divergence to notice, so a typo fails as a violation.
 | Finding `qualification_reason` | Required on control BLOCK; optional on control WARN | The key itself is rejected in `diagnostics` — it is a statement about BLOCK eligibility |
 | `target` / `summary` (top level), finding `detail` | - | Free text for the human reader |
 
-## The non-evidence declaration
+## The verification-record declaration
 
 Every output carries these three fields at fixed values:
 
@@ -79,12 +79,16 @@ quality_gate_evidence: false
 dynamic_sensors_executed: []
 ```
 
-[quality-gate-contract.md](../../shared/references/quality-gate-contract.md) states that a review without a ledger
-is not evidence. The repository's conformance profile is
-[skill-repository-profile.md](../../shared/references/skill-repository-profile.md); its evidence obligations bind
-publication transitions, never this diagnostic report. These three fields close, in the shape of the document itself, the path by which a diagnostic
-report gets mistaken for quality-gate evidence. A non-empty `dynamic_sensors_executed` is rejected, which is what
-makes "this skill does not run LLM sensors" a checkable property rather than a promise.
+The output is a **verification record**: a structured account of what was reviewed and
+what came out of it, reusable as input to a caller's judgment. It is not, and does not
+claim to be, the ledger that the
+[quality-gate-contract.md](../../shared/references/quality-gate-contract.md) convergence
+conditions operate on — that ledger is written by the review workflows that execute the
+contract's obligations (§4.3), and this diagnostic report is not one of them. These three
+fields close, in the shape of the document itself, the path by which a diagnostic report
+gets mistaken for such a ledger. A non-empty `dynamic_sensors_executed` is rejected,
+which is what makes "this skill does not run LLM sensors" a checkable property rather
+than a promise.
 
 ## What qualifies as BLOCK
 

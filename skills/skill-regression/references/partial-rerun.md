@@ -129,11 +129,12 @@ surface*. So:
   reaches no declaring scenario. When a change adds a file to the surface, extend the declarations that route to it in
   the same edit.
 
-## Relation to the quality gate contract §2
+## Relation to the quality gate contract
 
-Narrowing rerun granularity does not touch
-[quality-gate-contract.md §2](../../shared/references/quality-gate-contract.md#2-evidence-validity)
-(adjudicated 2026-08-04, issue #243): the regression ledger is an internal input to the `machine_verified`
-entry point, not §2 evidence, so its freshness rules are its own policy. The full statement of that adjudication
+Narrowing rerun granularity does not touch the
+[quality-gate-contract.md](../../shared/references/quality-gate-contract.md) review-ledger
+accounting (adjudicated 2026-08-04, issue #243): the regression ledger is an internal
+input to the canonical verification entry point, not §4.3 review output, so its freshness
+rules are its own policy. The full statement of that adjudication
 is in [fixture-schema.md § Relation to the quality gate contract](fixture-schema.md#relation-to-the-quality-gate-contract);
 it is not restated here, to keep one canonical wording.

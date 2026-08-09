@@ -57,10 +57,11 @@ ordered protocol:
    merge, verify, and advance main. Pass `{satellite_branch}` and `{main_tree_root}`.
    Its git transitions run only through
    `skills/shared/scripts/publication_advance.py` — never hand-roll them.
-   A Phase 4 verdict is review input, not reusable evidence — the protocol re-earns
-   evidence for the exact post-merge SHA. The re-earned records must satisfy the
-   [evidence format](../shared/references/evidence-format.md); advancing main verifies
-   them through `skills/shared/scripts/evidence_check.py`.
+   A Phase 4 verdict is review input, not a publication record — the protocol's
+   merge-intent staging directory is a durable marker of the merge intent, and the
+   primitive's structural checks (CAS, lock, merge shape, tree safety) guard the
+   advance. The verification is re-run inside the merged tree before advancing, as the
+   protocol's step 2 requires.
 
 On every new terminal collect, publish, or cleanup-gate failure, preserve the worktree
 and invoke the shared exact six-line formatter with its closed reason code. Its final
@@ -398,10 +399,9 @@ review that produces the finding→prose→finding pathology, and with no fix lo
 such a spiral cannot start.
 
 Phase 4 produces a review verdict; it does not itself transition the change into a
-protected state such as `publishable`. Do not block this review because SHA-bound
-`machine_verified` / `semantic_reviewed` evidence for a later publication transition
-is absent, and do not fabricate or reuse such evidence here — the caller performing
-the protected-state transition owns that quality-gate check.
+protected state such as `publishable`. Do not block this review because a publication
+record for a later transition is absent, and do not fabricate or reuse one here — the
+caller performing the protected-state transition owns that verification.
 
 ### Step 1: Launch parallel reviews
 

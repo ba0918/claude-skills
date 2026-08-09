@@ -64,12 +64,9 @@ assert.ok(messages.messages[0].parts[0].text.includes("Using the Trunk Workflow"
 assert.ok(messages.messages[0].parts[0].text.includes("investigate"))
 // frontmatter is stripped from the injected SKILL.md body
 assert.ok(!messages.messages[0].parts[0].text.includes("name: using-workflow"))
-assert.ok(messages.messages[0].parts[0].text.includes("Quality gate contract"))
-assert.ok(
-  messages.messages[0].parts[0].text.includes(
-    path.join(SKILLS_DIR, "shared", "references", "quality-gate-contract.md"),
-  ),
-)
+// the quality-gate recall pointer was dismantled (#308); the bootstrap carries
+// only the using-workflow funnel
+assert.ok(!messages.messages[0].parts[0].text.includes("Quality gate contract"))
 assert.equal(messages.messages[0].parts[1].text, "hello")
 
 // no double inject

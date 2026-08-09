@@ -64,9 +64,6 @@ class Step4SkillIntegrationTests(unittest.TestCase):
         text = self.compact(PUBLICATION)
         self.assertIn("prospective merge", text)
         self.assertIn("compare-and-swap", text)
-        self.assertIn("quality-gate-contract", text)
-        self.assertIn("machine_verified", text)
-        self.assertIn("semantic_reviewed", text)
         self.assertIn("Publish only after this", text)
         self.assertIn("second CAS failure is a terminal publish failure", text)
         self.assertIn("explicit human authorization", text)
@@ -82,21 +79,20 @@ class Step4SkillIntegrationTests(unittest.TestCase):
         self.assertIn("publication_advance.py recover", text)
         self.assertIn("never hand-roll", text)
         self.assertIn("fault-injection tests", text)
-        # evidence stages per prospective SHA; the singleton stays untouched
-        # until promotion succeeds
+        # the staging directory is the durable marker of an unfinished publication;
+        # evidence promotion was dismantled (#308)
         self.assertIn("evidence-staging/{sha}", text)
-        self.assertIn("Never write into the default evidence directory", text)
+        self.assertIn("durable marker", text)
+        self.assertNotIn("Never write into the default evidence directory", text)
         # the CAS is the commit point; repair is forward-only and proof-gated
         self.assertIn("commit point", text)
-        self.assertIn("durable marker", text)
         self.assertIn("must never be destroyed", text)
         self.assertIn("repaired forward", text)
         # the lock is enforced in code: the primitive takes and verifies the token
         self.assertIn("Hold the workspace lock across the whole sequence", text)
         self.assertIn("--lock-token", text)
-        # semantic evidence delegates ledger and convergence to the contract
-        self.assertIn("§4.3", text)
-        self.assertIn("§5 convergence", text)
+        # the merge-intent record names the durable marker's content
+        self.assertIn("merge-intent", text)
 
     def test_cycle_warn_autofix_relay_names_its_result_file(self):
         text = self.compact(CYCLE)

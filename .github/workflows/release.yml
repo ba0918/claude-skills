@@ -6,17 +6,14 @@ on:
       version:
         description: "リリース version (X.Y.Z、v なし)"
         required: true
-      semantic_reviewed:
-        description: "リリース内容のセマンティックレビュー済みを attestation する"
-        type: boolean
-        required: true
-        default: false
 
 concurrency:
   group: release
 
 permissions:
   contents: write
+  pull-requests: read
+  checks: read
 
 jobs:
   release:
@@ -34,16 +31,40 @@ jobs:
       - name: Validate release inputs
         env:
           VERSION: ${{ inputs.version }}
-          SEMANTIC_REVIEWED: ${{ inputs.semantic_reviewed }}
         run: |
-          if [ "$SEMANTIC_REVIEWED" != "true" ]; then
-            echo "semantic_reviewed attestation must be true" >&2
-            exit 1
-          fi
           if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "version must match X.Y.Z: $VERSION" >&2
             exit 1
           fi
+
+      - name: Verify Unreleased entries map to merged PRs with passing checks
+        # 品質ゲートの通過保証は「Unreleased の各エントリが参照する PR が
+        # merged + 必須 check 済み」の機械確認で提供する（#308）。人間の宣誓
+        # （semantic_reviewed checkbox）は廃止。PR 参照の無いエントリは
+        # `none — 理由` 形式の明示免除を要求し、黙ってスキップされない。
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/release_pr_check.py CHANGELOG.md > "$RUNNER_TEMP/prs.txt" || exit 1
+          while read -r pr; do
+            if ! state="$(gh pr view "$pr" --json state -q .state)"; then
+              echo "PR #$pr の state を取得できない（gh pr view 失敗）" >&2
+              exit 1
+            fi
+            if [ "$state" != "MERGED" ]; then
+              echo "PR #$pr は MERGED でない（state=$state）。Unreleased エントリが参照する PR はマージ済みでなければならない" >&2
+              exit 1
+            fi
+            if ! rollup="$(gh pr view "$pr" --json statusCheckRollup -q .statusCheckRollup)"; then
+              echo "PR #$pr の statusCheckRollup を取得できない（gh pr view 失敗）" >&2
+              exit 1
+            fi
+            if ! ROLLUP="$rollup" python3 -c 'import json,os,sys; sys.path.insert(0,"scripts"); import release_pr_check as rpc; sys.exit(0 if rpc.checks_pass(json.loads(os.environ["ROLLUP"])) else 1)'; then
+              echo "PR #$pr に未完了または失敗した check がある" >&2
+              exit 1
+            fi
+            echo "PR #$pr: merged + checks 済み"
+          done < "$RUNNER_TEMP/prs.txt"
 
       - name: Configure release commit identity
         run: |
@@ -71,21 +92,6 @@ jobs:
           STRICT_GATES: "1"
         run: sh scripts/run_checks.sh
 
-      - name: Generate SHA-bound quality-gate evidence
-        env:
-          VERSION: ${{ inputs.version }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          python3 scripts/release_tool.py evidence \
-            --version "$VERSION" \
-            --target-sha "$(git rev-parse HEAD)" \
-            --actor "$GITHUB_ACTOR" \
-            --run-url "$RUN_URL" \
-            --semantic-attested true
-
-      - name: Require publishable evidence
-        run: python3 skills/shared/scripts/evidence_check.py --target-sha "$(git rev-parse HEAD)"
-
       - name: Build release notes
         env:
           VERSION: ${{ inputs.version }}
@@ -109,6 +115,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ inputs.version }}
         run: |
-          sh scripts/release_publish.sh "$VERSION" "$RUNNER_TEMP/release-notes.md" \
-            ".agents/artifacts/reviews/evidence/machine_verified.json#machine_verified.json" \
-            ".agents/artifacts/reviews/evidence/semantic_reviewed.json#semantic_reviewed.json"
+          sh scripts/release_publish.sh "$VERSION" "$RUNNER_TEMP/release-notes.md"
