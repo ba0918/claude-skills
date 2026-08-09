@@ -1116,11 +1116,11 @@
     "verified": "2026-08-04"
   },
   "skill-reviewer": {
-    "carried_note": "measurement freeze (2026-08-06 ruling): bug 起票 7 件の一括修正（#287-#293、共有契約 fix-action-taxonomy / human-readable-summary の条項追加を含む）。完成後の 1 発フル実測で支払う",
+    "carried_note": "evidence 記帳層の解体（#308）: output-contract を検証記録の語彙へ書き直し、quality-gate-contract の参照先を更新。実測凍結裁定（2026-08-06）に従い accept",
     "file_sha256": {
       "skills/shared/references/coverage-ledger.md": "10c3ea12cf96f31749eacce497f43d5db9b6d26b495a55e6552c10089fff8376",
       "skills/shared/references/fix-action-taxonomy.md": "79d1fc5061e11befa9c29cfdf08c16c5b240ee534832d6105ce909890bb4e554",
-      "skills/shared/references/quality-gate-contract.md": "7cd2e2563f204b79267d0e47b0c1b7a3c415fe6bdc92c6721a9f9ff68924e57a",
+      "skills/shared/references/quality-gate-contract.md": "7fdafb00ce9178d0a96cdf4aa439ecd20dfc325d7250b09e2524029d7282752a",
       "skills/shared/references/severity-and-verdicts.md": "746c50fd3b665d19969bd9825ec97d6d0aa5db0a268ec78a8cb969ffa44da68c",
       "skills/shared/references/skill-authoring.md": "156673a4214f8b175dc545e728cee9fe9dbf3f122d915268e840ccb641fc0ed1",
       "skills/skill-regression/scripts/ledger.py": "f6ade730f57c779b619b823075af9ef7e58dec339cc58c1a56df6204fc6a8ad5",
@@ -1130,7 +1130,7 @@
       "skills/skill-reviewer/references/output-contract.md": "34aa16d336a75aa5ff7e1faf1beab41188b2be7d2e1144c104f4a4330de986ba",
       "skills/skill-reviewer/scripts/validate_review_output.py": "235e0157dd622fd2d62a300ae3b913e07a6c635e701d7838418989305bef46e2"
     },
-    "note": "evidence 記帳層の解体（#308）: output-contract を検証記録の語彙へ書き直し、quality-gate-contract の参照先を更新。実測凍結裁定（2026-08-06）に従い accept",
+    "note": "quality-gate-contract の Contract Identity（版宣言）削除（#308 finding 2 対応）。§4/§5/§4.3/語彙は不変で、skill-reviewer の要件・収束判定への影響なし（accept: 散文の整理のみ）",
     "result": "accepted-without-run",
     "scenarios": {
       "sr-001": {
@@ -1152,7 +1152,7 @@
     "structural_sha256": {
       "skills/shared/references/coverage-ledger.md": "f8d5f2a4c845758b1cd6436a931a74ac05af93f30391791b5ea15535e68d0579",
       "skills/shared/references/fix-action-taxonomy.md": "77e904e85b57d78c32f34ee16394a73ab417c46aec78a9ecb5049c24fc30c931",
-      "skills/shared/references/quality-gate-contract.md": "027a83bcd009a13f0c96913f2645eddd15054582a4a998b0c96bb254a494175e",
+      "skills/shared/references/quality-gate-contract.md": "414b6ace0c751f5b027f9065d8ca9f5e5e05ea7dfa13097a9163b78a10e4dc92",
       "skills/shared/references/severity-and-verdicts.md": "cb0cc316b2d320908482dd4592dcfa295147a4cd855f10b43240754f3363b6d4",
       "skills/shared/references/skill-authoring.md": "8f7ff1a086b894884599b2e745d67b3342f1f6d2b060a9f1e691c4b0f0e5cdc1",
       "skills/skill-reviewer/SKILL.md": "4dbdd6eda5a292567adc7dbefb5803449c674567ea102c3d7033007cfae3b1a9",
@@ -1172,7 +1172,7 @@
       "skills/skill-reviewer/references/output-contract.md",
       "skills/skill-reviewer/scripts/validate_review_output.py"
     ],
-    "surface_sha256": "4cb526fb5af398ea267e4acc28419a85e4636ea48c88354475830684a898daa4",
+    "surface_sha256": "ec5da80c6fbc56a017c9c18a62d4faac804ebacb450cac75191d49bc685a82f3",
     "verified": "2026-08-09"
   },
   "sweep-fix": {
