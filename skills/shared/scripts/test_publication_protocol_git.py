@@ -160,6 +160,20 @@ class PublicationPrimitiveTests(unittest.TestCase):
         self.assertEqual(marker["post_merge_sha"], post)
         self.assertEqual(marker["expected_main_sha"], expected)
 
+    def test_merge_reports_unusable_environment_when_the_marker_cannot_be_written(self):
+        # the staging root is occupied by a regular file: creating the marker
+        # directory fails. The failure must stay inside the documented exit code
+        # space and must not leave the temp worktree behind, or the next run is
+        # stuck on "temporary merge worktree already exists"
+        staging_root = self.main / ".agents/artifacts/reviews/evidence-staging"
+        staging_root.parent.mkdir(parents=True, exist_ok=True)
+        staging_root.write_text("occupied\n")
+        before = self.main_sha()
+        result = self.merge_cmd(suffix="-nomarker")
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertEqual(self.main_sha(), before)
+        self.assertFalse((self.root / "tmp-merge-nomarker").exists())
+
     # -- advance ---------------------------------------------------------------
 
     def test_advance_happy_path_syncs_and_clears_marker(self):
@@ -360,18 +374,44 @@ class PublicationPrimitiveTests(unittest.TestCase):
         self.assertTrue((elsewhere / "unrelated.txt").exists())  # target intact
         self.assertEqual(self.main_sha(), expected)
 
-    def test_advance_marker_removal_failure_after_commit_point_exits_7_and_recovers(self):
-        # inject a completion failure past the CAS: the staging parent becomes
-        # read-only, so the merge-intent marker cannot be removed
+    def test_advance_refuses_a_staging_directory_holding_no_merge_intent_record(self):
+        # the directory alone proves nothing: an empty staging dir (a stray
+        # leftover, or a half-written merge) must not authorize the ref advance
         expected, post, _ = self.prospective_merge()
-        staging_parent = self.staging_path(post).parent
         token = self.hold_lock()
-        staging_parent.chmod(0o555)
+        (self.staging_path(post) / MARKER_NAME).unlink()
+        self.assertEqual(self.advance(post, expected, token), 3)
+        self.assertEqual(self.main_sha(), expected)
+
+    def test_advance_refuses_an_unreadable_merge_intent_record(self):
+        expected, post, _ = self.prospective_merge()
+        token = self.hold_lock()
+        (self.staging_path(post) / MARKER_NAME).write_text("{ truncated\n")
+        self.assertEqual(self.advance(post, expected, token), 3)
+        self.assertEqual(self.main_sha(), expected)
+
+    def test_recover_reports_nothing_to_do_for_a_staging_directory_without_a_record(self):
+        # recover deletes what it treats as an unfinished publication; a bare
+        # directory keyed to the current HEAD is not one, and reporting success
+        # for it destroys whatever the directory actually was
+        head = self.main_sha()
+        self.staging_path(head).mkdir(parents=True)
+        self.assertEqual(self.recover(self.hold_lock()), 5)
+        self.assertEqual(self.main_sha(), head)
+        self.assertTrue(self.staging_path(head).is_dir())
+
+    def test_advance_marker_removal_failure_after_commit_point_exits_7_and_recovers(self):
+        # inject a completion failure past the CAS: the staging directory becomes
+        # read-only, so the merge-intent record inside it cannot be removed
+        expected, post, _ = self.prospective_merge()
+        staging = self.staging_path(post)
+        token = self.hold_lock()
+        staging.chmod(0o555)
         self.assertEqual(self.advance(post, expected, token), 7)
-        self.assertEqual(self.main_sha(), post)          # commit point passed, no rollback
-        self.assertTrue(self.staging_path(post).is_dir())   # durable marker preserved
+        self.assertEqual(self.main_sha(), post)     # commit point passed, no rollback
+        self.assertTrue(self.marker_exists(post))   # durable marker preserved
         # repair the environment, then recover converges forward
-        staging_parent.chmod(0o755)
+        staging.chmod(0o755)
         self.assertEqual(self.recover(token), 0)
         self.assertFalse(self.staging_path(post).exists())
 

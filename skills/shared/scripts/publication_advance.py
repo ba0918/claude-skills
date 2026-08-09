@@ -109,6 +109,21 @@ def write_marker(staging, post, expected, branch):
         handle.write("\n")
 
 
+def marker_readable(staging):
+    """未完了 publication の証明 = merge-intent record が読めること。
+
+    staging ディレクトリの存在だけでは証明にならない: 空ディレクトリや書き損じを
+    未完了 publication と見なすと、advance がそれを前進の許可として受け取り、
+    recover が「回復成功」を報告して無関係なディレクトリを削除してしまう。
+    """
+    try:
+        with open(os.path.join(staging, MARKER_NAME), encoding="utf-8") as handle:
+            json.load(handle)
+    except (OSError, ValueError):
+        return False
+    return True
+
+
 def clear_marker(staging):
     """durable marker（staging dir）を除去する。冪等でない: 存在しない dir は呼び出し側の責務。"""
     shutil.rmtree(staging)
@@ -133,8 +148,15 @@ def cmd_merge(args):
         return fail(3, "terminal: merge conflict with the satellite branch; main untouched")
     post = git(tmp, "rev-parse", "HEAD").stdout.strip()
     staging = os.path.join(repo, STAGING_RELROOT, post)
-    os.makedirs(staging, exist_ok=True)
-    write_marker(staging, post, expected, branch)
+    try:
+        os.makedirs(staging, exist_ok=True)
+        write_marker(staging, post, expected, branch)
+    except OSError as exc:
+        # marker を書けないまま tmp worktree を残すと、次回起動が
+        # 「temporary merge worktree already exists」で詰まる
+        shutil.rmtree(staging, ignore_errors=True)
+        git(repo, "worktree", "remove", "--force", tmp, check=False)
+        return fail(2, f"cannot record the merge intent under {staging}: {exc}")
     print(json.dumps({
         "expected_main_sha": expected,
         "post_merge_sha": post,
@@ -178,8 +200,10 @@ def cmd_advance(args):
                        f"evidence-staging/{{post_merge_sha}} directory ({canonical}); "
                        "arbitrary staging paths are refused because marker removal deletes "
                        "the staging directory")
-    if not os.path.isdir(staging):
-        return fail(3, f"terminal: durable marker missing: {staging}")
+    if not marker_readable(staging):
+        return fail(3, "terminal: durable marker missing or unreadable "
+                       f"({os.path.join(staging, MARKER_NAME)}); only a recorded merge "
+                       "intent may advance the ref")
 
     cas = git(repo, "update-ref", f"refs/heads/{branch}", post, expected, check=False)
     if cas.returncode != 0:
@@ -203,7 +227,7 @@ def cmd_recover(args):
     branch = args.branch
     head = git(repo, "rev-parse", f"refs/heads/{branch}").stdout.strip()
     staging = os.path.join(repo, STAGING_RELROOT, head)
-    if not os.path.isdir(staging):
+    if not marker_readable(staging):
         return fail(5, "no durable marker: no unfinished publication for the current HEAD")
 
     checkouts = branch_checkouts(repo, branch)

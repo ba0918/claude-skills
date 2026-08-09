@@ -35,7 +35,8 @@ and refuse to run without a match — prose alone proves nothing.
    (a temporary worktree holding the merged tree), and `evidence_staging` (the
    run-scoped staging directory that becomes the durable marker). A merge conflict is a
    terminal publish failure. The primitive writes a merge-intent record into the staging
-   directory; the directory's presence is what `advance` / `recover` recognize.
+   directory; that readable record — not the bare directory — is what `advance` /
+   `recover` recognize.
    The staging directory is the only publication record and it is run-scoped.
 
 2. **Advance** — structural checks and every destructive step in one implementation:
@@ -61,8 +62,8 @@ and refuse to run without a match — prose alone proves nothing.
 ## Recovery
 
 The staging directory is the durable marker of an unfinished publication. On entry, if
-`evidence-staging/{sha}/` exists with `{sha}` equal to the current main HEAD, the
-commit point already passed and completion did not finish. Re-acquire the workspace
+`evidence-staging/{sha}/` holds a readable merge-intent record with `{sha}` equal to the
+current main HEAD, the commit point already passed and completion did not finish. Re-acquire the workspace
 lock, then run:
 `python3 skills/shared/scripts/publication_advance.py recover --repo-root {main_tree_root} --branch main --lock-token {workspace_lock_token}`
 
