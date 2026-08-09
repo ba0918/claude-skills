@@ -45,15 +45,13 @@ OpenCode を再起動すると、plugin が `skills/` を登録し、using-workf
 ### Claude Code rules（Plugin 利用者は手動コピー不要）
 
 Plugin をインストールすると、SessionStart hook（`hooks/hooks.json`）がセッション開始時
-（startup / resume / clear / compact / fork）に次の 2 本を常駐コンテキストへ自動注入する。
+（startup / resume / clear / compact / fork）に次の 1 本を常駐コンテキストへ自動注入する。
 Plugin 利用者に手動コピーは不要である。
 
 - `skills/using-workflow/SKILL.md` — 幹ワークフローの漏斗 + ルーティング規律（frontmatter を除く本文を注入。
   旧 `rules/skill-routing.md` の語彙×スキル対応表はこの漏斗に統合・簡略化した）
-- 品質ゲート契約のポインタ（`hooks/inject-quality-gate.sh`）— 契約の存在・正本パス・事前条件の
-  要旨のみ 4 行を注入し、契約本文（約 230 行）は複製しない
 
-注入対象は上記 2 本のみ。常駐コンテキストの予算を使うのは、実測で必要性が確認されたものだけに
+注入対象は上記 1 本のみ。常駐コンテキストの予算を使うのは、実測で必要性が確認されたものだけに
 限るという意図的な選択で、`rules/` の文書（`information-placement.md` 等）は注入しない。
 OpenCode は上記 git plugin が同等の注入を行う（[docs/README.opencode.md](docs/README.opencode.md)）。
 
@@ -250,12 +248,16 @@ Focused レビューは [coverage ledger](skills/shared/references/coverage-ledg
 
 ## 品質ゲート契約
 
-「保護対象への状態遷移は、対象版に結びついた有効な検証証拠なしには成立しない」を中核性質とする、プラットフォーム非依存の保証条件契約。正本・強制・想起の 3 層で構成され、レビュー・検証系スキルの証跡と収束判定の共通基盤になる。先行 spike（issue #142）の実測に基づき、観点の精緻化よりも証跡・収束判定に重心を置いた設計である。
+「検証の宣言は、その変更に適用されるレビュー義務を実行して処分した後にのみ行える」を
+中核義務とする、プラットフォーム非依存の検証定義契約。レビュー義務（変更の種類から発火）・
+収束条件・レビュー出力台帳・独立性・語彙を定義し、レビュー・検証系スキルの共通基盤になる。
+SHA 紐付け証跡の記帳機構は #308 で解体した（検証の定義は存続）。先行 spike（issue #142）の
+実測に基づき、観点の精緻化よりも収束判定に重心を置いた設計である。
 
-- 正本: [quality-gate-contract.md](skills/shared/references/quality-gate-contract.md) — 状態機械（machine_verified ⊥ semantic_reviewed → publishable）・証跡の失効規則・独立性の定義・収束条件
-- 証跡: [evidence-format.md](skills/shared/references/evidence-format.md) + `skills/shared/scripts/evidence_check.py` — publishable 判定の機械検証（証跡不在は否定判定に倒す fail-closed）
-- 適合プロファイル: [skill-repository-profile.md](skills/shared/references/skill-repository-profile.md) — 2026-08-03 発効（profile-aware verifier `evidence_check.py` が in-force 宣言を機械検証）
-- 想起: SessionStart hook によるポインタ注入（インストール節を参照）
+- 正本: [quality-gate-contract.md](skills/shared/references/quality-gate-contract.md) — レビュー義務（常時不変条件 + 変更の種類から発火する義務表）・収束条件・レビュー出力台帳・独立性・語彙
+
+リリースの品質ゲート通過保証は、人間の宣誓ではなく「Unreleased の各エントリが参照する PR が
+merged + 必須 check 済み」の機械確認（`scripts/release_pr_check.py`）で提供する。
 
 ## プロンプト設計方針
 
