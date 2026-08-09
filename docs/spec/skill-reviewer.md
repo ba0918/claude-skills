@@ -120,7 +120,7 @@ skill-reviewer のすべての出力の先頭に、次の 3 つを固定で載�
 - 重い実測は 1 つも走らせていない（`dynamic_sensors_executed: []`）
 
 出力は**検証記録**である: 何をレビューして何が出てきたかを構造化した記録で、
-呼び出し側の判断への入力として再利用できる。ただし [quality-gate-contract.md](../skills/shared/references/quality-gate-contract.md) の収束条件が参照するレビュー台帳（§4.3）ではない。この 2 つは役割が異なり、その宣言を固定値で構造的に潰しておくのが目的である。skill-reviewer の出力をレビュー台帳と取り違える経路を、文書の形そのもので塞ぐ。
+呼び出し側の判断への入力として再利用できる。ただし [quality-gate-contract.md](../../skills/shared/references/quality-gate-contract.md) の収束条件が参照するレビュー台帳（§4.3）ではない。この 2 つは役割が異なり、その宣言を固定値で構造的に潰しておくのが目的である。skill-reviewer の出力をレビュー台帳と取り違える経路を、文書の形そのもので塞ぐ。
 
 ## 判断表を 2 層にする理由
 
