@@ -27,10 +27,6 @@ _EXEMPT_RE = re.compile(r"none[ \t]*—[ \t]*(.+)")
 _NONE_MARKER_RE = re.compile(r"none[ \t]*—")
 
 
-class ReleasePrCheckError(Exception):
-    """Unreleased 節が機械確認の前提を満たさない。"""
-
-
 def extract_unreleased(changelog):
     """Unreleased 節のエントリから検証対象 PR と免除を抽出する純関数。
 
@@ -134,11 +130,7 @@ def run(argv=None):
 
 
 def main():
-    try:
-        sys.exit(run())
-    except (ReleasePrCheckError, OSError) as exc:
-        print(f"release pr check: {exc}", file=sys.stderr)
-        sys.exit(1)
+    sys.exit(run())
 
 
 if __name__ == "__main__":
