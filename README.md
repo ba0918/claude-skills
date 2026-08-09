@@ -39,7 +39,7 @@ codex plugin add claude-skills@claude-skills
 }
 ```
 
-OpenCode を再起動すると、plugin が `skills/` を登録し、using-workflow（幹の漏斗 + ルーティング規律）と quality-gate ポインタをセッションへ注入する。
+OpenCode を再起動すると、plugin が `skills/` を登録し、using-workflow（幹の漏斗 + ルーティング規律）をセッションへ注入する。
 詳細・更新・トラブルシュートは [docs/README.opencode.md](docs/README.opencode.md)。
 
 ### Claude Code rules（Plugin 利用者は手動コピー不要）

@@ -3,7 +3,7 @@
 # 両方から呼ばれる検証の正本。チェックを追加・変更するときはこのファイルだけを編集する。
 #
 # STRICT_GATES=1 で呼ぶと、skip / no-op が 1 つでもあれば非 0 で落ちる。
-# 証跡 (machine_verified) を書く前提の実行で使う。
+# 検証を省略する選択肢を作らない実行（release など）で使う。
 set -eu
 
 # --- 集約用カウンタ ---
@@ -110,7 +110,7 @@ _mark_ran
 if [ -n "$_skipped" ]; then
   echo "=== ${_ran} checks passed, but some were skipped: ${_skipped}"
   if [ "${STRICT_GATES:-0}" = "1" ]; then
-    echo "STRICT_GATES=1: skip/no-op is not allowed for evidence production"
+    echo "STRICT_GATES=1: skip/no-op is not allowed for verification runs"
     exit 1
   fi
 else
