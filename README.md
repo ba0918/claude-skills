@@ -257,7 +257,7 @@ SHA 紐付け証跡の記帳機構は #308 で解体した（検証の定義は�
 - 正本: [quality-gate-contract.md](skills/shared/references/quality-gate-contract.md) — レビュー義務（常時不変条件 + 変更の種類から発火する義務表）・収束条件・レビュー出力台帳・独立性・語彙
 
 リリースの品質ゲート通過保証は、人間の宣誓ではなく「Unreleased の各エントリが参照する PR が
-merged + 必須 check 済み」の機械確認（`scripts/release_pr_check.py`）で提供する。
+merged + 全 check 完了・失敗なし」の機械確認（`scripts/release_pr_check.py`）で提供する。
 
 ## プロンプト設計方針
 

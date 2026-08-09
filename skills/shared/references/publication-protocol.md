@@ -69,7 +69,9 @@ lock, then run:
 It repairs only what it can prove is untouched post-crash state, and otherwise stops
 without mutating anything (exit `6` → manual recovery): a human's post-crash edits
 must never be destroyed. Like `advance`, it exits `7` when completion fails again
-mid-repair — staging stays preserved; repair the cause and rerun. A staging directory
+mid-repair — staging stays preserved; repair the cause and rerun. When no durable
+marker exists for the current main HEAD, `recover` reports exit `5` (no unfinished
+publication — a no-op, not an error). A staging directory
 whose `{sha}` differs from the current main HEAD never published and may be discarded.
 
 ## Safety boundaries

@@ -134,7 +134,7 @@ surface*. So:
 Narrowing rerun granularity does not touch the
 [quality-gate-contract.md](../../shared/references/quality-gate-contract.md) review-ledger
 accounting (adjudicated 2026-08-04, issue #243): the regression ledger is an internal
-input to the `machine_verified` entry point, not §4.3 review output, so its freshness
+input to the canonical verification entry point, not §4.3 review output, so its freshness
 rules are its own policy. The full statement of that adjudication
 is in [fixture-schema.md § Relation to the quality gate contract](fixture-schema.md#relation-to-the-quality-gate-contract);
 it is not restated here, to keep one canonical wording.

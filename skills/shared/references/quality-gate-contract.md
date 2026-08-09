@@ -9,8 +9,8 @@ judgments use.
 Evidence ledgering — binding a verification record to a target SHA and mechanically
 inspecting it at publish time — was dismantled in #308. What survives here is the
 **definition of verification** that review skills and workflows execute:
-[review obligations](#4-review-obligations-profile-derived), [convergence
-conditions](#5-convergence-conditions), the [review output ledger](#43-evidence-ledger),
+[review obligations](#4-review-obligations-derived-from-change-kind), [convergence
+conditions](#5-convergence-conditions), the [review output ledger](#43-review-output-ledger),
 [independence of review](#3-independence-of-review), and the shared vocabulary. The rule
 that no completion claim may outrun its evidence is unchanged; see
 [verification-gate.md](verification-gate.md).
@@ -42,7 +42,7 @@ History-freedom alone is **not** sufficient for independence. Risk classes that 
 independent confirmation say *which* of these properties they require; the convergence
 condition (§5) requires at least one history-free pass.
 
-## 4. Review Obligations (profile-derived)
+## 4. Review Obligations (derived from change kind)
 
 Obligations are not a fixed checklist. They are derived: always-on invariants, plus
 obligations triggered by the kind of change under review, recorded in a review ledger.
@@ -64,7 +64,7 @@ Calibration is deliberately moderate: the invariants name *what must hold*, neve
 detect violations* — detection procedure is reviewer competence, and prescribing it adds
 no measured detection power. The exception that earns its place: invariant 3 is the one
 dimension where contract-driven review showed a measured detection advantage over
-uninstructed review (issue #142, measured 2026-07-28). Profiles must not weaken it.
+uninstructed review (issue #142, measured 2026-07-28). The trigger table (§4.2) must not weaken it.
 
 ### 4.2 Change-kind trigger table
 
@@ -79,7 +79,7 @@ table is:
 | Validator or executable script added/changed | Input ranges and defaults; boundary conditions; false-positive and false-negative paths (including the empty-scan case: zero targets must be distinguishable from zero findings); symmetry of checking rules across functions in the same file |
 | Thin command wrapper added/changed | The wrapper stays thin: dispatch only, no obligations or contract content of its own (name-to-skill correspondence is a machine-gate concern, not re-reviewed here) |
 | Distribution manifest or install path changed | The change reaches every distribution channel the repository declares; partial-channel updates are treated as incomplete |
-| **Outside static semantic review** (reserved row) | Defect classes that only manifest under operational measurement — e.g. whether a skill's trigger description actually fires in live sessions — are **not** review obligations. They belong to machine gates and operational sensors. A profile must route them there explicitly rather than let the review promise what static reading cannot deliver (measured: 4/4 review conditions missed such a defect, issue #142). |
+| **Outside static semantic review** (reserved row) | Defect classes that only manifest under operational measurement — e.g. whether a skill's trigger description actually fires in live sessions — are **not** review obligations. They belong to machine gates and operational sensors. The trigger table must route them there explicitly rather than let the review promise what static reading cannot deliver (measured: 4/4 review conditions missed such a defect, issue #142). |
 
 A change may fire several rows at once; each fired row produces its own ledger entries.
 Obligations the repository's mechanical validators already enforce (link resolution,
@@ -89,7 +89,7 @@ translation parity, and whatever else the canonical verification entry point che
 entries, in any coverage state. When a reviewer doubts a machine gate's coverage, the
 finding is a defect report against the validator, not a manual re-check.
 
-### 4.3 Evidence ledger
+### 4.3 Review output ledger
 
 Each fired obligation produces one ledger entry: target / verification predicate / coverage
 state / grounds / findings. Vocabulary is reused, not redefined:
@@ -112,8 +112,8 @@ Convergence is a state, not a feeling of having iterated enough. The gate conver
 **all** of the following hold:
 
 1. Every obligation fired for this change (§4) has a ledger entry, and every **mandatory**
-   obligation — the always-on invariants, plus whatever the profile marks mandatory —
-   reached coverage state `reviewed`. A mandatory obligation left `skipped`, `unsupported`,
+   obligation — the always-on invariants, plus whatever the trigger table (§4.2) marks
+   mandatory — reached coverage state `reviewed`. A mandatory obligation left `skipped`, `unsupported`,
    or `inconclusive` blocks convergence, unless a human records an explicit waiver naming
    the obligation and the reason. A ledger entry's mere existence never counts as
    evaluation.

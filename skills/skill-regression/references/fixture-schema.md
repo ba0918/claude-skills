@@ -101,7 +101,7 @@ Rules:
 ## Relation to the quality gate contract
 
 The regression ledger (`ledger.json`) is an **internal input to the repository's
-`machine_verified` verification entry point**, not a review ledger in the sense of the
+canonical verification entry point**, not a review ledger in the sense of the
 [quality-gate-contract.md](../../shared/references/quality-gate-contract.md) §4.3
 (adjudicated 2026-08-04, issue #243). Its entries bind to skill surface content hashes,
 not to a target version × contract version pair; the contract-level verification is the

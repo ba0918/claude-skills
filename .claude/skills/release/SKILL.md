@@ -52,8 +52,8 @@ Step 1 の変更一覧を分類して提案を組み立てる:
 
 提案（新 version・根拠となる変更分類・Unreleased 節の要約）を提示し、**明示の承認を得る**。
 
-- 品質ゲート通過の保証は release.yml 内の機械確認（Unreleased → PR → merged + 必須 check
-  済み）が担う。ここでの承認はリリース実行の承認であり、品質ゲートの attestation ではない。
+- 品質ゲート通過の保証は release.yml 内の機械確認（Unreleased → PR → merged + 全 check
+  完了・失敗なし）が担う。ここでの承認はリリース実行の承認であり、品質ゲートの attestation ではない。
   **ユーザーの承認発話なしに起動してはならない**。承認が得られない・返答が曖昧な場合は起動しない。
 
 ### 5. 起動
@@ -86,7 +86,7 @@ gh run view "$run_id" --log-failed
   - `Could not resolve to a PullRequest` = エントリの `(#NNN)` が PR でなく issue を指している（#308 と同じ
     番号空間の罠）。エントリを PR 番号へ修正する PR を出してから再実行。
   - `PR #N は MERGED でない` = 参照 PR が未マージ。マージ後に再実行。
-  - `PR #N に未完了または失敗した check がある` = 必須 check が未完。完了後に再実行。
+  - `PR #N に未完了または失敗した check がある` = check が未完または失敗。完了・修正後に再実行。
   - いずれも CHANGELOG エントリ修正 PR（通常規律）→ マージ → Step 1 から再実行。
 
 ## 禁止事項
