@@ -1368,9 +1368,7 @@ class TestCheckPluginHooks(unittest.TestCase):
     HOOKS_JSON = (
         '{"hooks": {"SessionStart": [{"matcher": "startup",'
         ' "hooks": [{"type": "command",'
-        ' "command": "\\"${CLAUDE_PLUGIN_ROOT}\\"/hooks/inject-using-workflow.sh"},'
-        ' {"type": "command",'
-        ' "command": "\\"${CLAUDE_PLUGIN_ROOT}\\"/hooks/inject-quality-gate.sh"}]}]}}'
+        ' "command": "\\"${CLAUDE_PLUGIN_ROOT}\\"/hooks/inject-using-workflow.sh"}]}]}}'
     )
 
     def _write(self, root, rel, content, executable=False):
@@ -1386,11 +1384,6 @@ class TestCheckPluginHooks(unittest.TestCase):
         self._write(root, "hooks/inject-using-workflow.sh",
                     "#!/bin/sh\ncat skills/using-workflow/SKILL.md\n", executable=True)
         self._write(root, "skills/using-workflow/SKILL.md", "# funnel\n")
-        self._write(root, "hooks/inject-quality-gate.sh",
-                    "#!/bin/sh\nprintf 'pointer\\n'\n", executable=True)
-        self._write(root,
-                    "skills/shared/references/quality-gate-contract.md",
-                    "# contract\n")
 
     def test_absent_hooks_json_is_noop(self):
         with tempfile.TemporaryDirectory() as root:
@@ -1431,16 +1424,6 @@ class TestCheckPluginHooks(unittest.TestCase):
             errors = check_plugin_hooks(root)
             self.assertEqual(len(errors), 1)
             self.assertIn("正本が存在しない", errors[0])
-
-    def test_missing_quality_gate_contract_is_flagged(self):
-        with tempfile.TemporaryDirectory() as root:
-            self._full_setup(root)
-            os.remove(os.path.join(
-                root, "skills/shared/references/quality-gate-contract.md"))
-            errors = check_plugin_hooks(root)
-            self.assertEqual(len(errors), 1)
-            self.assertIn("inject-quality-gate.sh が参照する正本が存在しない",
-                          errors[0].replace(os.sep, "/"))
 
     def test_absent_hook_script_skips_its_source_check(self):
         # スクリプトを同梱しない配布形態では、その正本の欠落を咎めない

@@ -666,9 +666,6 @@ _HOOK_CANONICAL_SOURCES = {
     os.path.join("hooks", "inject-using-workflow.sh"): os.path.join(
         "skills", "using-workflow", "SKILL.md"
     ),
-    os.path.join("hooks", "inject-quality-gate.sh"): os.path.join(
-        "skills", "shared", "references", "quality-gate-contract.md"
-    ),
 }
 
 

@@ -1,35 +1,13 @@
 #!/usr/bin/env python3
-"""手動 release workflow の同期・証跡生成・notes 抽出を行う。"""
+"""手動 release workflow の同期・notes 抽出を行う。"""
 
 import argparse
-from datetime import datetime, timezone
 import json
 import os
 import re
 import sys
 
 
-_SHARED_SCRIPTS_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "skills", "shared", "scripts",
-)
-if _SHARED_SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, _SHARED_SCRIPTS_DIR)
-from evidence_check import (  # noqa: E402
-    CheckBroken,
-    PROFILE_RELPATH,
-    read_in_force_profile,
-    read_published_version,
-)
-
-
-CONTRACT_NAME = "quality-gate-contract"
-CONTRACT_RELPATH = os.path.join(
-    "skills", "shared", "references", "quality-gate-contract.md"
-)
-DEFAULT_EVIDENCE_RELPATH = os.path.join(
-    ".agents", "artifacts", "reviews", "evidence"
-)
 MANIFEST_RELPATHS = (
     os.path.join(".claude-plugin", "plugin.json"),
     os.path.join(".claude-plugin", "marketplace.json"),
@@ -38,7 +16,6 @@ MANIFEST_RELPATHS = (
 )
 
 _VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
-_FULL_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 _UNRELEASED_HEADING_RE = re.compile(r"^## Unreleased[ \t]*$", re.MULTILINE)
 
 
@@ -153,37 +130,6 @@ def extract_notes(changelog, version):
     return changelog[match.start():end].strip() + "\n"
 
 
-def build_evidence_records(target_sha, actor, run_url, contract_version, produced_at,
-                           profile):
-    """evidence-format v1 の machine / semantic record を組み立てる。"""
-    common = {
-        "schema_version": 1,
-        "target_sha": target_sha,
-        "contract": CONTRACT_NAME,
-        "contract_version": contract_version,
-        "profile": profile,
-        "produced_at": produced_at,
-    }
-    return {
-        "machine_verified": {
-            **common,
-            "state": "machine_verified",
-            "grounds": (
-                "STRICT_GATES=1 scripts/run_checks.sh in release workflow run "
-                f"{run_url}"
-            ),
-        },
-        "semantic_reviewed": {
-            **common,
-            "state": "semantic_reviewed",
-            "grounds": (
-                f"workflow_dispatch attestation by @{actor} "
-                f"(semantic_reviewed=true), run {run_url}"
-            ),
-        },
-    }
-
-
 def _read_text(path):
     try:
         with open(path, encoding="utf-8") as handle:
@@ -231,46 +177,6 @@ def sync_release(repo_root, version):
     return result
 
 
-def write_evidence(repo_root, evidence_dir, version, target_sha, actor, run_url,
-                   semantic_attested):
-    """attestation と束縛値を検証して evidence-format v1 を書く。"""
-    parse_version(version)
-    if semantic_attested != "true":
-        raise ReleaseError("--semantic-attested must be true; refusing to write evidence")
-    if not _FULL_SHA_RE.fullmatch(target_sha):
-        raise ReleaseError(
-            f"--target-sha must be a full 40-hex id: {target_sha!r}"
-        )
-
-    contract_path = os.path.join(repo_root, CONTRACT_RELPATH)
-    contract_version = read_published_version(contract_path)
-    in_force = read_in_force_profile(os.path.join(repo_root, PROFILE_RELPATH))
-    profile = None if in_force is None else {
-        "name": in_force["name"], "version": in_force["version"]
-    }
-    produced_at = (
-        datetime.now(timezone.utc)
-        .replace(microsecond=0)
-        .isoformat()
-        .replace("+00:00", "Z")
-    )
-    records = build_evidence_records(
-        target_sha, actor, run_url, contract_version, produced_at, profile
-    )
-    output_dir = evidence_dir or os.path.join(repo_root, DEFAULT_EVIDENCE_RELPATH)
-    try:
-        os.makedirs(output_dir, exist_ok=True)
-    except OSError as exc:
-        raise ReleaseError(f"cannot create evidence directory {output_dir}: {exc}")
-
-    paths = []
-    for state, record in records.items():
-        path = os.path.join(output_dir, f"{state}.json")
-        _write_json(path, record)
-        paths.append(path)
-    return {"files": paths, "profile": profile}
-
-
 def run(argv=None):
     """CLI を実行して終了コードを返す。"""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -280,17 +186,6 @@ def run(argv=None):
     sync_parser.add_argument("--version", required=True)
     sync_parser.add_argument("--repo-root", default=".")
 
-    evidence_parser = subparsers.add_parser("evidence", help="品質ゲート証跡を生成する")
-    evidence_parser.add_argument("--version", required=True)
-    evidence_parser.add_argument("--target-sha", required=True)
-    evidence_parser.add_argument("--actor", required=True)
-    evidence_parser.add_argument("--run-url", required=True)
-    evidence_parser.add_argument(
-        "--semantic-attested", required=True, choices=("true", "false")
-    )
-    evidence_parser.add_argument("--repo-root", default=".")
-    evidence_parser.add_argument("--evidence-dir", default=None)
-
     notes_parser = subparsers.add_parser("notes", help="CHANGELOG の release notes を抽出する")
     notes_parser.add_argument("--version", required=True)
     notes_parser.add_argument("--repo-root", default=".")
@@ -298,17 +193,6 @@ def run(argv=None):
     args = parser.parse_args(argv)
     if args.command == "sync":
         print(json.dumps(sync_release(args.repo_root, args.version), ensure_ascii=False))
-    elif args.command == "evidence":
-        result = write_evidence(
-            args.repo_root,
-            args.evidence_dir,
-            args.version,
-            args.target_sha,
-            args.actor,
-            args.run_url,
-            args.semantic_attested,
-        )
-        print(json.dumps(result, ensure_ascii=False))
     else:
         changelog = _read_text(os.path.join(args.repo_root, "CHANGELOG.md"))
         sys.stdout.write(extract_notes(changelog, args.version))
@@ -318,7 +202,7 @@ def run(argv=None):
 def main():
     try:
         sys.exit(run())
-    except (ReleaseError, CheckBroken) as exc:
+    except ReleaseError as exc:
         print(f"release error: {exc}", file=sys.stderr)
         sys.exit(1)
 
