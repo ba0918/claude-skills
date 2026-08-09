@@ -1,6 +1,6 @@
 {
   "name": "claude-skills",
-  "version": "1.78.0",
+  "version": "1.79.0",
   "description": "Plan, review, and automate implementation workflows with 40+ agent skills",
   "type": "module",
   "main": ".opencode/plugins/claude-skills.js",
