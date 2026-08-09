@@ -25,8 +25,8 @@ CHANGELOG_WITH_PRS = (
 CHANGELOG_EXEMPT = (
     "# Changelog\n\n"
     "## Unreleased\n\n"
-    "### Docs: 文言整理 none — 挙動変更なし\n\n"
-    "- typo 修正\n\n"
+    "### Docs: 文言整理\n\n"
+    "- none — 挙動変更なし\n\n"
 )
 
 
@@ -55,8 +55,56 @@ class ReleasePrCheckTest(unittest.TestCase):
         prs, errors, exempt = rpc.extract_unreleased(changelog=CHANGELOG_EXEMPT)
         self.assertEqual(prs, [])
         self.assertEqual(errors, [])
-        self.assertEqual(len(exempt), 1)
-        self.assertIn("none", exempt[0])
+        self.assertEqual(exempt, ["Docs: 文言整理"])
+
+    def test_prose_mention_of_the_exemption_form_does_not_exempt(self):
+        changelog = (
+            "# Changelog\n\n"
+            "## Unreleased\n\n"
+            "### Docs: 免除表記の説明を追記\n\n"
+            "- PR 参照の無いエントリは `none — 理由` 形式の免除を要求すると書いた\n\n"
+        )
+        prs, errors, exempt = rpc.extract_unreleased(changelog=changelog)
+        self.assertEqual(exempt, [])
+        self.assertEqual(len(errors), 1)
+        self.assertIn("PR 参照", errors[0])
+
+    def test_body_without_an_entry_heading_is_an_error(self):
+        changelog = (
+            "# Changelog\n\n"
+            "## Unreleased\n\n"
+            "- 見出しの無い本文（#310）\n\n"
+            "### A（#311）\n\n"
+            "- x\n\n"
+        )
+        prs, errors, exempt = rpc.extract_unreleased(changelog=changelog)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("###", errors[0])
+
+    def test_unreleased_section_without_any_entry_heading_is_an_error(self):
+        changelog = (
+            "# Changelog\n\n"
+            "## Unreleased\n\n"
+            "- 見出し無しで置かれた唯一の本文\n\n"
+        )
+        prs, errors, exempt = rpc.extract_unreleased(changelog=changelog)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("###", errors[0])
+
+    def test_duplicated_unreleased_heading_is_an_error(self):
+        changelog = (
+            "# Changelog\n\n"
+            "## Unreleased\n\n"
+            "### A（#307）\n\n"
+            "- x\n\n"
+            "## Unreleased\n\n"
+            "### B（#305）\n\n"
+            "- y\n\n"
+        )
+        prs, errors, exempt = rpc.extract_unreleased(changelog=changelog)
+        self.assertEqual(prs, [])
+        self.assertEqual(len(errors), 1)
+        self.assertIn("Unreleased", errors[0])
 
     def test_entry_without_pr_and_without_exemption_is_error(self):
         changelog = (
@@ -76,11 +124,13 @@ class ReleasePrCheckTest(unittest.TestCase):
         changelog = (
             "# Changelog\n\n"
             "## Unreleased\n\n"
-            "### Docs: 文言整理 none —\n\n"
-            "- typo 修正\n\n"
+            "### Docs: 文言整理\n\n"
+            "- none —\n\n"
         )
         prs, errors, exempt = rpc.extract_unreleased(changelog=changelog)
+        self.assertEqual(exempt, [])
         self.assertEqual(len(errors), 1)
+        self.assertIn("理由が空", errors[0])
 
     def test_missing_unreleased_section_is_an_error(self):
         prs, errors, exempt = rpc.extract_unreleased(changelog="# Changelog\n\n## 1.77.0\n")

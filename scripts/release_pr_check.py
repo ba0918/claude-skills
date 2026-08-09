@@ -6,9 +6,10 @@ release.yml の human attestation（semantic_reviewed checkbox）を廃止し（
 `gh` で機械確認する方式へ置き換えた。このスクリプトはその内側の純粋なパース部分
 を担う:
 
-- `## Unreleased` 節を 1 つのみ検出し、`###` 見出しをエントリ単位として抽出する
+- `## Unreleased` 節が正確に 1 つあることを要求し、`###` 見出しをエントリ単位として
+  抽出する。見出し無しで置かれた本文はエラー（検査対象から黙って落とさない）
 - 各エントリが `(#NNN)` 形式で参照する PR 番号を収集する（検証対象）
-- PR 参照を持たないエントリは、`none — 理由` 形式の明示免除表記を要求する。
+- PR 参照を持たないエントリは、専用行の `none — 理由` 形式の明示免除表記を要求する。
   理由の無い `none` は免除ではなくエラー（黙ってスキップされる状態を作らない）
 
 機械確認（merged + checks 通過）そのものは release.yml の `gh` ステップが行い、
@@ -19,12 +20,15 @@ release.yml の human attestation（semantic_reviewed checkbox）を廃止し（
 import re
 import sys
 
-_UNRELEASED_HEADING_RE = re.compile(r"^## Unreleased[ \t]*$", re.MULTILINE)
+from release_tool import _UNRELEASED_HEADING_RE
+
 _VERSION_HEADING_RE = re.compile(r"^## [0-9]+\.[0-9]+\.[0-9]+[ \t]*$", re.MULTILINE)
 _ENTRY_HEADING_RE = re.compile(r"^### (.+?)[ \t]*$", re.MULTILINE)
 _PR_REF_RE = re.compile(r"[（(]#([0-9]+)[)）]")
-_EXEMPT_RE = re.compile(r"none[ \t]*—[ \t]*(.+)")
-_NONE_MARKER_RE = re.compile(r"none[ \t]*—")
+# 免除は専用行としてのみ成立する（リスト記号は許容）。散文中で `none — 理由` 形式に
+# 言及しただけで免除になると、説明を書いたエントリが黙って検査対象から外れる
+_EXEMPT_RE = re.compile(r"^(?:[-*+][ \t]+)?none[ \t]*—[ \t]*(\S.*)$", re.MULTILINE)
+_NONE_MARKER_RE = re.compile(r"^(?:[-*+][ \t]+)?none[ \t]*—", re.MULTILINE)
 
 
 def extract_unreleased(changelog):
@@ -35,17 +39,26 @@ def extract_unreleased(changelog):
     - errors: 機械確認の前提を満たさないエントリの説明（無ければ空）
     - exempt: `none — 理由` で免除されたエントリ見出しのリスト
     """
-    match = _UNRELEASED_HEADING_RE.search(changelog)
-    if match is None:
+    headings = _UNRELEASED_HEADING_RE.findall(changelog)
+    if not headings:
         return [], ["Unreleased 節が存在しない"], []
+    if len(headings) > 1:
+        return [], [f"Unreleased 節が {len(headings)} 個ある（検査対象の節を特定できない）"], []
 
-    section_start = match.end()
+    section_start = _UNRELEASED_HEADING_RE.search(changelog).end()
     version_match = _VERSION_HEADING_RE.search(changelog, section_start)
     section_end = version_match.start() if version_match else len(changelog)
     section = changelog[section_start:section_end]
 
     entries = _split_entries(section)
     prs, errors, exempt = set(), [], []
+    first_heading = _ENTRY_HEADING_RE.search(section)
+    preamble = section[: first_heading.start()] if first_heading else section
+    if preamble.strip():
+        errors.append(
+            "Unreleased 節に `###` 見出しの無い本文がある（エントリ単位で検査できない）: "
+            f"{preamble.strip().splitlines()[0]}"
+        )
     for heading, body in entries:
         entry_text = f"{heading}\n{body}"
         refs = sorted({int(pr) for pr in _PR_REF_RE.findall(entry_text)})
