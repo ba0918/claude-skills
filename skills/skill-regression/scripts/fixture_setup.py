@@ -22,7 +22,7 @@ import subprocess
 import sys
 import time
 
-TIERS = ("standard", "high")
+TIERS = ("standard", "high", "economy")
 ISOLATIONS = ("worktree", "none")
 TOP_KEYS = ("skill", "scenarios")
 SCENARIO_KEYS = (
@@ -601,6 +601,20 @@ def validate_with_warnings(fixture, source="fixtures.json"):
         # critical が 1 つも無い fixture は「落ちても合格」になり回帰を検出しない
         if not any(isinstance(r, dict) and r.get("critical") for r in requirements):
             errors.append(_err(where, "critical: true の要件が 1 つもない（回帰を検出できない）"))
+
+        # economy 階は「critical 全件が機械判定」のときだけ安全（#258）。
+        # 1 件でも LLM 判定の critical が残ると、安価な executor の判定品質が
+        # そのまま計測劣化になるため、宣言側で強制する
+        if tier == "economy":
+            llm_judged_critical = [
+                r.get("text") for r in requirements
+                if r.get("critical") and not r.get("assert")]
+            if llm_judged_critical:
+                errors.append(_err(
+                    where,
+                    "executor_tier economy のシナリオは critical 全件に assert が必要"
+                    "（LLM 判定の critical が残っている: "
+                    + "; ".join(llm_judged_critical[:3]) + "）"))
 
         warnings += _check_requirement_count(where, requirements)
 

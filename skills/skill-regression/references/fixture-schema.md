@@ -45,7 +45,7 @@ The CONFIRMED / FALSE_POSITIVE / UNCERTAIN in the example are the vocabulary of
 | `scenarios[].id` | ✓ | a short ID unique within the skill. Keep it stable (it is the tracking key across reports and history) |
 | `scenarios[].title` | ✓ | a one-line scenario name |
 | `scenarios[].source` | ✓ | where this acceptance criterion came from (the plan doc of a tuning session, or `manual` if hand-designed). A fixture whose provenance cannot be traced cannot be judged stale |
-| `scenarios[].executor_tier` | - | `standard` when omitted. When raised to `high`, write the reason in `notes` |
+| `scenarios[].executor_tier` | - | `standard` when omitted. `high` = judgment-heavy skill, raise only when standard accuracy falls short and pin the reason in `notes`. `economy` = the scenario's critical requirements are machine-judged (`assert`), so a cheaper executor cannot degrade the score; declared only on such scenarios, with the reason in `notes` |
 | `scenarios[].isolation` | - | `worktree` (involves creating or editing files) / `none` (read-only or dialogue only). `worktree` when omitted (the safe side) |
 | `scenarios[].setup.files` | - | files placed into the worktree before running the scenario (relative path → contents). Effective only when isolation is `worktree` |
 | `scenarios[].setup.mtimes` | - | file mtimes (a path from `files` → seconds relative to the reference time; negative is in the past). Needed for skills that use ordering as evidence. They are relative because absolute times go stale as time passes |
@@ -97,6 +97,27 @@ Rules:
 - **Predicate implementations are fixed code** in the grader (`regression_queue.py`), never
   fixture-supplied: fixtures stay declaration-only and never gain execution rights. Adding a
   predicate type is a code change and passes review like any other guarantee.
+
+## The `economy` executor tier (#258)
+
+A scenario may declare `executor_tier: "economy"` when **every critical requirement is
+machine-judged** (an `assert` predicate covers it). The reason the cheaper tier is safe is
+that the machine verdict replaces the executor's self-report for those requirements — the
+executor only has to do the work, and the score does not depend on its judgement quality.
+Measured non-degradation, 2026-08-11: `commit` cm-001/002/003 run with an economy-class
+executor matched the standard-tier `pass` exactly, same as the Haiku-class run recorded in
+the ledger note of 2026-08-05.
+
+Rules:
+
+- **Eligibility is per-scenario and mechanical**: every `critical: true` requirement must
+  carry an `assert`. Non-critical requirements may stay LLM-judged — the economy tier must
+  not be chosen when a critical requirement still depends on executor judgement.
+- **`notes` must state the reason** (same rule as `high`): which tier the scenario was
+  measured on and when, so a tier change is auditable.
+- **The executor contract does not change**: the executor still self-reports every
+  requirement and the artifact still has to exist. Economy lowers the *launch* tier, not
+  the guarantees a scenario demands.
 
 ## Relation to the quality gate contract
 

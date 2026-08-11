@@ -125,13 +125,31 @@
     "verified": "2026-08-03"
   },
   "commit": {
+    "carried_note": "assert パイロット（#241）: process path 実走、batch cm-assert-20260804（sonnet-5）。3 シナリオ全 pass、機械判定 5/10 要件（critical 5/7）全 PASS・drift ゼロ。非 assert 5 件は成果物・ログで裏取り済み。economy 比較（Haiku 4.5、batch cm-assert-economy-20260804）も全シナリオ pass、差分は cm-001 #5（non-critical・日本語 subject 様式）の partial のみ",
     "file_sha256": {
       "skills/commit/SKILL.md": "48dda355509fa476945de1d8e7ffbeb6d435e1d678d0b009617eca8db0184a0b",
-      "skills/commit/fixtures.json": "b59f2fb07e073dbc52383e12f0e1f62f76247dd010c76d5ba5988859dd6d744d",
+      "skills/commit/fixtures.json": "825f4ff3e07418b8fbc1f04177d999c2d07843cb431bfa026099ce7ea709c050",
       "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c"
     },
-    "note": "assert パイロット（#241）: process path 実走、batch cm-assert-20260804（sonnet-5）。3 シナリオ全 pass、機械判定 5/10 要件（critical 5/7）全 PASS・drift ゼロ。非 assert 5 件は成果物・ログで裏取り済み。economy 比較（Haiku 4.5、batch cm-assert-economy-20260804）も全シナリオ pass、差分は cm-001 #5（non-critical・日本語 subject 様式）の partial のみ",
+    "note": "economy 実測（#258、2026-08-11）: deepseek-v4-flash を economy 級 executor として commit 3 シナリオを実走。全シナリオ pass・機械判定（assert）drift なし。cm-002 は critical 全件 assert のため executor_tier economy を宣言、cm-001/cm-003 は critical に LLM 判定が残るため standard のまま。",
     "result": "pass",
+    "scenarios": {
+      "cm-001": {
+        "result": "pass",
+        "scenario_sha256": "2a116af6622d55bc2681752ac241f98fea5fedd61bb0e322f99bfcb3fc163f2a",
+        "verified": "2026-08-11"
+      },
+      "cm-002": {
+        "result": "pass",
+        "scenario_sha256": "102a8804f02de7f78743334aa87c0d6bd9a39475e14acfb273af0c17fad40f90",
+        "verified": "2026-08-11"
+      },
+      "cm-003": {
+        "result": "pass",
+        "scenario_sha256": "ef6230ab7e27cc90dd87c4746c3acc10fdad5022147615620c2bf11c463aabd4",
+        "verified": "2026-08-11"
+      }
+    },
     "structural_sha256": {
       "skills/commit/SKILL.md": "dc8b2907b7d2fae202a365afadd377b7311de09fc770861f047024702981a743",
       "skills/shared/references/verification-gate.md": "6e7cc09ee2794f125430870b175e4cedef32d5538592e4dcfa99d3c7519158cd"
@@ -141,8 +159,8 @@
       "skills/commit/fixtures.json",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "658febe9ac644d6baaa3021a7978a830ccafb1baaeed882b0d22c0da0f357b5c",
-    "verified": "2026-08-05"
+    "surface_sha256": "5b2f6f1b71d3c23907b12e33cbbe7a4673587164debe5b6110cd0122370049b7",
+    "verified": "2026-08-11"
   },
   "context-audit": {
     "carried_note": "prompt-audit Low/flag: fix-action-taxonomy.md 冒頭の出自語り 1 文（doc-audit ローカル分類から昇格した経緯）の削除のみ。契約の語彙・規則は不変。ユーザー裁定 2026-08-04（影響軽微な文言変更は --accept）で実走せず承認",

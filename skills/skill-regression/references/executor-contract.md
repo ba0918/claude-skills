@@ -9,6 +9,8 @@ The reliability of the evaluation depends entirely on the executor being a blank
   Self-rereading (the caller reads SKILL.md and decides "this is fine") is forbidden for the same reason
 - **Concurrent execution**: line up multiple scenarios as multiple subagent invocations inside a single message
 - **State the tier**: state the fixture's `executor_tier` (`standard` when omitted) explicitly in the subagent invocation
+  - `economy` means the scenario's critical requirements are machine-judged, so a cheaper executor class may be launched
+    without degrading the score (the machine verdict is authoritative either way). Eligibility rule: [fixture-schema.md § The economy executor tier](fixture-schema.md#the-economy-executor-tier-258)
 - **Isolation**: for a scenario with `isolation: worktree`, create a disposable git worktree,
   place `setup.files`, and then launch the executor. Discard the worktree afterwards.
   - The boundary of "do not let it edit": **inside the isolated area (the worktree), editing and committing freely is allowed**
