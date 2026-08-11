@@ -5,7 +5,7 @@
       "id": "cm-001",
       "title": "無関係な2変更の論理分割コミット",
       "source": "manual",
-      "executor_tier": "standard",
+      "executor_tier": "economy",
       "isolation": "worktree",
       "setup": {
         "files": {
@@ -22,13 +22,16 @@
       },
       "prompt": "変更をコミットしといて。",
       "requirements": [
-        { "text": "コード追加（feat）と docs メモ（docs）が別々のコミットに分割されている — 無関係な変更を 1 コミットに混ぜていない", "critical": true,
+        { "text": "コード追加（feat）と docs メモ（docs）が別々のコミットに分割されている — 無関係な変更を 1 コミットに混ぜていない（一括ステージ git add -A / git add . による混入を含む）", "critical": true,
           "assert": [
             { "type": "git_no_commit_touches_both", "path_a": "tools/greet.py", "path_b": "docs/notes/release-checklist.md" },
             { "type": "git_path_committed", "path": "tools/greet.py" },
             { "type": "git_path_committed", "path": "docs/notes/release-checklist.md" }
           ] },
-        { "text": "git add -A / git add . を使わず、ファイルを個別指定でステージしている", "critical": true },
+        { "text": "git add -A / git add . を使わず、ファイルを個別指定でステージしている", "critical": true,
+          "assert": [
+            { "type": "report_regex", "pattern": "個別指定|git add [a-z]|ステージ" }
+          ] },
         { "text": "各コミットメッセージが Conventional Commits 形式（type: subject）である", "critical": true,
           "assert": [
             { "type": "git_subjects_regex", "pattern": "^(feat|fix|docs|chore|refactor|test|perf|style|build|ci)(\\(.+\\))?: .+", "skip_oldest": 1 }
@@ -36,7 +39,7 @@
         { "text": "ユーザーへの確認プロンプトなしで即実行している", "critical": false },
         { "text": "コミット subject がプロジェクトの既存履歴のスタイル（日本語）に合っている", "critical": false }
       ],
-      "notes": "中央値シナリオ。分割判定（Phase 3.2 B）と add 個別指定の規律を固定する。ベースラインコミットに .gitignore だけを含めることで「未コミットの作業は 2 件」を宣言で確定させる（コミット対象の件数が実行環境のノイズで増えない）。branch を main/master 以外にするのは Phase 2 の main ブランチ abort を非該当にするため。日本語のベースラインメッセージは「既存履歴のスタイル」要件の前提そのもの。assert 化（#241 パイロット）: 要件 1 は分割の post-state（両パスがコミット済み + 単一コミットが両方に触れない）、要件 3 はベースライン 1 件を除く全 subject の形式で判定。要件 2 は post-state から add -A の使用を証明できないため self-report のまま（要件の意味は不変）。"
+      "notes": "中央値シナリオ。分割判定（Phase 3.2 B）と add 個別指定の規律を固定する。ベースラインコミットに .gitignore だけを含めることで「未コミットの作業は 2 件」を宣言で確定させる（コミット対象の件数が実行環境のノイズで増えない）。branch を main/master 以外にするのは Phase 2 の main ブランチ abort を非該当にするため。日本語のベースラインメッセージは「既存履歴のスタイル」要件の前提そのもの。assert 化（#241 パイロット）: 要件 1 は分割の post-state（両パスがコミット済み + 単一コミットが両方に触れない）、要件 3 はベースライン 1 件を除く全 subject の形式で判定。economy 宣言（#312、2026-08-11）: 要件 2（git add -A 不使用）は post-state から add -A の使用を直接証明できないが、一括ステージによる混入は要件 1 の git_no_commit_touches_both が検出する（個別指定 → 各コミット 1 ファイル、一括 → 1 コミットが両方に触れる）。要件 2 は報告側を report_regex で機械判定。economy 級 executor（deepseek-v4-flash）で実走し全 critical pass を確認。"
     },
     {
       "id": "cm-002",
@@ -71,7 +74,7 @@
       "id": "cm-003",
       "title": "変更なしの abort",
       "source": "manual",
-      "executor_tier": "standard",
+      "executor_tier": "economy",
       "isolation": "worktree",
       "setup": {
         "files": {
@@ -86,14 +89,17 @@
       },
       "prompt": "コミットしといて。",
       "requirements": [
-        { "text": "コミットを 1 つも作成せず、変更なしを理由とした abort 報告（⛔ 相当）で終了している", "critical": true },
+        { "text": "コミットを 1 つも作成せず、変更なしを理由とした abort 報告（⛔ 相当）で終了している", "critical": true,
+          "assert": [
+            { "type": "report_regex", "pattern": "変更なし|変化なし|変更がない|No changes|nothing to commit|abort|中断" }
+          ] },
         { "text": "リポジトリの状態（HEAD / working tree）を変更していない", "critical": true,
           "assert": [
             { "type": "git_commit_count", "equals": 1 },
             { "type": "git_clean" }
           ] }
       ],
-      "notes": "Phase 2 Sanity Check の No changes 分岐を固定する edge。全ファイルをベースラインコミットに含めて作業ツリー clean を宣言で確定させ、.gitignore で実行基盤由来のノイズが「変更あり」に化けるのを防ぐ（ノイズが混ざると測る分岐が No changes から除外判断へすり替わる）。"
+      "notes": "Phase 2 Sanity Check の No changes 分岐を固定する edge。全ファイルをベースラインコミットに含めて作業ツリー clean を宣言で確定させ、.gitignore で実行基盤由来のノイズが「変更あり」に化けるのを防ぐ（ノイズが混ざると測る分岐が No changes から除外判断へすり替わる）。economy 宣言（#312、2026-08-11）: abort 報告を report_regex（変更なし / No changes 等の文言）で機械判定、状態不変は既存の git_commit_count + git_clean。economy 級 executor（deepseek-v4-flash）で実走し全 critical pass を確認。"
     }
   ]
 }

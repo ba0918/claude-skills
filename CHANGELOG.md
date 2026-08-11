@@ -16,13 +16,18 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
+### Added: commit 全シナリオの economy 化 — 分割・abort 要件の assert 化（#312）
+
+- `commit` cm-001 / cm-003 の critical を assert 化し、**commit 全 3 シナリオが `executor_tier: economy`** になった。deepseek-v4-flash を economy 級 executor として全シナリオ実走し、全 pass・機械判定 drift なし（ledger 実走 pass 更新）
+- cm-001 の「git add -A / add . 不使用」は post-state から add -A の使用を直接証明できないため、一括混入を検出する既存の `git_no_commit_touches_both`（個別指定 → 各コミット 1 ファイル、一括 → 1 コミットが両方に触れる）に統合し、報告側を `report_regex` で機械判定
+- cm-003 の「abort 報告（⛔ 相当）」は `report_regex`（変更なし / No changes 等の文言）+ 既存の `git_commit_count` / `git_clean` で機械判定
+
 ### Added: fixture executor の economy 階 — 機械判定シナリオ限定で安価な executor を正式化（#258）
 
 - `executor_tier` に `economy` を追加。**critical 全件が機械判定（`assert`）** のシナリオに限って宣言でき、そうでなければ `fixture_setup.py --validate` が拒否する（critical に LLM 判定が残る安価階は、機械判定が判定品質を executor の自己申告から切り離せないため計測劣化になる。宣言側で強制）
 - assert 述語に `report_regex` を新設 — executor の report 成果物（`artifact`）の文言を regex で機械判定できる。これまで post-state 判定できなかった「〜を報告している」型の要件も assert 化可能になった（実装は `regression_queue.py`、テスト 5 件追加）
 - `commit` cm-002（機微ファイル除外）と `test-driven-development` td-002（フレームワーク未検出停止）を economy 化。deepseek-v4-flash を economy 級 executor として commit 3 シナリオ + tdd 3 シナリオを実走し、全 pass・機械判定 drift なしを確認（ledger note に記録、両スキルとも実走 pass へ更新）
-- **備考**: トークン消費の tier 間比較は未記録（実行経路が異なり単純比較できないため）。economy は「判定品質を自己申告から切り離す」ことであり、タスク実行成功率の同等性まで保証しない。別スキル実測 1 本（tdd）を加えて一般化を確認済み
-- cm-001 / cm-003 は critical に LLM 判定が残るため standard のまま。assert 化は #312 で追跡
+- **備考**: トークン消費の tier 間比較は未記録（実行経路が異なり単純比較できないため）。economy は「判定品質を自己申告から切り離す」ことであり、タスク実行成功率の同等性まで保証しない。別スキル実測 1 本（tdd）を加えて一般化を確認済み。cm-001 / cm-003 の economy 化は #312 で完了（本節は economy 階の導入時点の記録）
 
 ## 1.79.0
 

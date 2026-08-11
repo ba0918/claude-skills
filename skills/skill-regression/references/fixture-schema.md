@@ -111,12 +111,12 @@ work itself still drops the pass rate, because the machine verdict then judges a
 artifact.
 
 Measurement to date (2026-08-11): economy-class executors were run on two skills —
-`commit` cm-001/002/003 (matching the standard-tier `pass` exactly) and
-`test-driven-development` td-001/002/003 — with both Haiku-class and deepseek-v4-flash
-executors, all `pass`. Token-consumption comparison across tiers is not recorded
-(the runs used different launch paths with no comparable token accounting). The tier is
-accepted as generalised to the `report_regex`-judged scenario shape; a skill whose
-critical requirements cannot be fully asserted stays on `standard`.
+`commit` (cm-001/002/003, all economy-eligible) and `test-driven-development`
+(td-001/002/003) — with both Haiku-class and deepseek-v4-flash executors, all `pass`.
+Token-consumption comparison across tiers is not recorded (the runs used different launch
+paths with no comparable token accounting). The tier is accepted as generalised to the
+`report_regex`-judged scenario shape; a skill whose critical requirements cannot be fully
+asserted stays on `standard`.
 
 Rules:
 

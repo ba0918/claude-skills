@@ -125,18 +125,18 @@
     "verified": "2026-08-03"
   },
   "commit": {
-    "carried_note": "economy 実測（#258、2026-08-11）: deepseek-v4-flash を economy 級 executor として commit 3 シナリオを実走。全シナリオ pass・機械判定（assert）drift なし。cm-002 は critical 全件 assert のため executor_tier economy を宣言、cm-001/cm-003 は critical に LLM 判定が残るため standard のまま。",
+    "carried_note": "economy 実測（#258、2026-08-11）: deepseek-v4-flash を economy 級 executor として commit 3 シナリオを実走。全シナリオ pass・機械判定（assert）drift なし。cm-002 は critical 全件 assert のため executor_tier economy を宣言、cm-001/cm-003 は critical に LLM 判定が残るため standard のまま。トークン消費の tier 間比較は未記録 — 実行経路が異なり（process-queue batch vs 対話内 executor）単純比較できないため。別スキルへの一般化は未実施（#312 で追跡）。",
     "file_sha256": {
       "skills/commit/SKILL.md": "48dda355509fa476945de1d8e7ffbeb6d435e1d678d0b009617eca8db0184a0b",
-      "skills/commit/fixtures.json": "2c0c0520259a3cb5d3100b5b61de66cab5f8a54d38de0facb5c61694ddc928e5",
+      "skills/commit/fixtures.json": "dab8b56e2f910ef786ee5431daa546b47d78a747c4eb87b5b540a5a4b5675f36",
       "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c"
     },
-    "note": "economy 実測（#258、2026-08-11）: deepseek-v4-flash を economy 級 executor として commit 3 シナリオを実走。全シナリオ pass・機械判定（assert）drift なし。cm-002 は critical 全件 assert のため executor_tier economy を宣言、cm-001/cm-003 は critical に LLM 判定が残るため standard のまま。トークン消費の tier 間比較は未記録 — 実行経路が異なり（process-queue batch vs 対話内 executor）単純比較できないため。別スキルへの一般化は未実施（#312 で追跡）。",
+    "note": "economy 全面化（#312、2026-08-11）: cm-001/cm-003 の critical を assert 化（cm-001: git add -A 不使用は分割要件の git_no_commit_touches_both が一括混入を検出 + 報告側 report_regex / cm-003: abort 報告を report_regex + 状態不変）。commit 全 3 シナリオが executor_tier economy に。deepseek-v4-flash を economy 級 executor として全シナリオ実走し全 critical pass（機械判定 drift なし）。",
     "result": "pass",
     "scenarios": {
       "cm-001": {
         "result": "pass",
-        "scenario_sha256": "2a116af6622d55bc2681752ac241f98fea5fedd61bb0e322f99bfcb3fc163f2a",
+        "scenario_sha256": "3667d241f169b5a139c98e158505e2aba5dd42a9ba0495c5669c53c84fcc7622",
         "verified": "2026-08-11"
       },
       "cm-002": {
@@ -146,7 +146,7 @@
       },
       "cm-003": {
         "result": "pass",
-        "scenario_sha256": "ef6230ab7e27cc90dd87c4746c3acc10fdad5022147615620c2bf11c463aabd4",
+        "scenario_sha256": "defaba1be648dd555f6d50fece8d3fcedc099004080ddfb15e2d559ef4ce81eb",
         "verified": "2026-08-11"
       }
     },
@@ -159,7 +159,7 @@
       "skills/commit/fixtures.json",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "9c95ce84466cb7bfc712a4a5a132dfe505b89b4ff65b7554fad0d4916b68aaff",
+    "surface_sha256": "5e4eae266041a2efc875f434afcf299f210de417c6d623aeb6da0dc9884d3288",
     "verified": "2026-08-11"
   },
   "context-audit": {
