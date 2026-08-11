@@ -61,6 +61,33 @@ class TestValidate(unittest.TestCase):
         self.assertTrue(any("executor_tier" in e
                             for e in fixture_setup.validate(_fixture(executor_tier="turbo"))))
 
+    def test_economy_tier_is_accepted_when_critical_has_assert(self):
+        # economy は「critical 全件が機械判定」のときだけ許される（#258）
+        req = {
+            "text": "パスがコミットされている",
+            "critical": True,
+            "assert": [{"type": "git_path_committed", "path": "app.py"}],
+        }
+        f = _fixture(executor_tier="economy", requirements=[req])
+        self.assertEqual(fixture_setup.validate(f), [])
+
+    def test_economy_tier_rejects_llm_judged_critical(self):
+        # critical に assert が無いと economy は使えない（計測劣化を宣言側で防ぐ）
+        f = _fixture(executor_tier="economy")
+        errors = fixture_setup.validate(f)
+        self.assertTrue(any("economy" in e and "assert" in e for e in errors))
+
+    def test_economy_tier_rejects_partially_asserted_critical(self):
+        # critical の 1 件でも assert が無ければ economy ではない
+        reqs = [
+            {"text": "機械判定できる", "critical": True,
+             "assert": [{"type": "git_clean"}]},
+            {"text": "LLM 判定のままの critical", "critical": True},
+        ]
+        f = _fixture(executor_tier="economy", requirements=reqs)
+        self.assertTrue(any("economy" in e and "assert" in e
+                            for e in fixture_setup.validate(f)))
+
     def test_invalid_isolation_is_reported(self):
         self.assertTrue(any("isolation" in e
                             for e in fixture_setup.validate(_fixture(isolation="sandbox"))))

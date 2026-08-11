@@ -207,6 +207,7 @@ def unit_id(skill, scenario_id):
 PREDICATE_KEYS = {
     "file_exists": {"path"},
     "file_regex": {"path", "pattern"},
+    "report_regex": {"pattern"},
     "git_clean": set(),
     "git_commit_count": set(),
     "git_subject_regex": {"rev", "pattern"},
@@ -275,6 +276,18 @@ def _eval_one(pred, work_dir):
         matched = re.search(pred["pattern"], content) is not None
         return (matched == expect,
                 f"file_regex({pred['path']}, {pred['pattern']!r})={matched}")
+    if kind == "report_regex":
+        report_path = os.path.join(work_dir, "..", REPORT_NAME)
+        try:
+            report = json.loads(_read(report_path))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            return False, f"report_regex: report を読めない ({exc})"
+        artifact = report.get("artifact") if isinstance(report, dict) else None
+        if not isinstance(artifact, str):
+            return False, "report_regex: report.artifact が文字列でない"
+        matched = re.search(pred["pattern"], artifact) is not None
+        return (matched == expect,
+                f"report_regex(artifact, {pred['pattern']!r})={matched}")
     if kind == "git_clean":
         actual = not _git_lines(work_dir, ["status", "--porcelain"])
         return actual == expect, f"git_clean={actual}"

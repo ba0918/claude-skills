@@ -14,6 +14,16 @@ claude-skills プラグインのバージョン履歴。
 要るのは「更新すると何が変わる・何が壊れるか」だけ（1.74.0 未満の節はこの規範の適用前で、
 歴史記録として改稿しない）。
 
+## Unreleased
+
+### Added: fixture executor の economy 階 — 機械判定シナリオ限定で安価な executor を正式化（#258）
+
+- `executor_tier` に `economy` を追加。**critical 全件が機械判定（`assert`）** のシナリオに限って宣言でき、そうでなければ `fixture_setup.py --validate` が拒否する（critical に LLM 判定が残る安価階は、機械判定が判定品質を executor の自己申告から切り離せないため計測劣化になる。宣言側で強制）
+- assert 述語に `report_regex` を新設 — executor の report 成果物（`artifact`）の文言を regex で機械判定できる。これまで post-state 判定できなかった「〜を報告している」型の要件も assert 化可能になった（実装は `regression_queue.py`、テスト 5 件追加）
+- `commit` cm-002（機微ファイル除外）と `test-driven-development` td-002（フレームワーク未検出停止）を economy 化。deepseek-v4-flash を economy 級 executor として commit 3 シナリオ + tdd 3 シナリオを実走し、全 pass・機械判定 drift なしを確認（ledger note に記録、両スキルとも実走 pass へ更新）
+- **備考**: トークン消費の tier 間比較は未記録（実行経路が異なり単純比較できないため）。economy は「判定品質を自己申告から切り離す」ことであり、タスク実行成功率の同等性まで保証しない。別スキル実測 1 本（tdd）を加えて一般化を確認済み
+- cm-001 / cm-003 は critical に LLM 判定が残るため standard のまま。assert 化は #312 で追跡
+
 ## 1.79.0
 
 ### Added: semantic triage 判定器の較正と段階 3（自動記録）解禁 — deepseek-v4-flash を判定モデルとして採用（#268）
