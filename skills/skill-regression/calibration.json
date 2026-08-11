@@ -1,0 +1,10 @@
+{
+  "deepseek-v4-flash": {
+    "corpus_sha256": "cf0f3247e48506d7d9694c6cc8336f367f516a676f248ac64f73092f6659d8fe",
+    "must_flag_cases": 24,
+    "must_flag_fn": 0,
+    "must_pass_cases": 26,
+    "must_pass_fp": 0,
+    "verified": "2026-08-11"
+  }
+}
