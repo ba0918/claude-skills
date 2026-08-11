@@ -71,7 +71,7 @@
       "id": "cm-003",
       "title": "変更なしの abort",
       "source": "manual",
-      "executor_tier": "standard",
+      "executor_tier": "economy",
       "isolation": "worktree",
       "setup": {
         "files": {
@@ -86,14 +86,17 @@
       },
       "prompt": "コミットしといて。",
       "requirements": [
-        { "text": "コミットを 1 つも作成せず、変更なしを理由とした abort 報告（⛔ 相当）で終了している", "critical": true },
+        { "text": "コミットを 1 つも作成せず、変更なしを理由とした abort 報告（⛔ 相当）で終了している", "critical": true,
+          "assert": [
+            { "type": "report_regex", "pattern": "変更なし|変化なし|変更がない|No changes|nothing to commit" }
+          ] },
         { "text": "リポジトリの状態（HEAD / working tree）を変更していない", "critical": true,
           "assert": [
-            { "type": "git_commit_count", "equals": 1 },
+            { "type": "git_head_equals_baseline" },
             { "type": "git_clean" }
           ] }
       ],
-      "notes": "Phase 2 Sanity Check の No changes 分岐を固定する edge。全ファイルをベースラインコミットに含めて作業ツリー clean を宣言で確定させ、.gitignore で実行基盤由来のノイズが「変更あり」に化けるのを防ぐ（ノイズが混ざると測る分岐が No changes から除外判断へすり替わる）。"
+      "notes": "Phase 2 Sanity Check の No changes 分岐を固定する edge。全ファイルをベースラインコミットに含めて作業ツリー clean を宣言で確定させ、.gitignore で実行基盤由来のノイズが「変更あり」に化けるのを防ぐ（ノイズが混ざると測る分岐が No changes から除外判断へすり替わる）。economy 宣言（#312、2026-08-11）: abort 報告は report_regex を変更なし理由（変更なし / No changes 等）に限定して機械判定する。状態不変は実体化時の baseline SHA と現在の HEAD の完全一致 + git_clean で機械判定し、commit 数が変わらない amend も検出する。"
     }
   ]
 }

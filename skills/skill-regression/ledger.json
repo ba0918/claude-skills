@@ -125,13 +125,13 @@
     "verified": "2026-08-03"
   },
   "commit": {
-    "carried_note": "economy 実測（#258、2026-08-11）: deepseek-v4-flash を economy 級 executor として commit 3 シナリオを実走。全シナリオ pass・機械判定（assert）drift なし。cm-002 は critical 全件 assert のため executor_tier economy を宣言、cm-001/cm-003 は critical に LLM 判定が残るため standard のまま。",
+    "carried_note": "economy 実測（#258、2026-08-11）: deepseek-v4-flash を economy 級 executor として commit 3 シナリオを実走。全シナリオ pass・機械判定（assert）drift なし。cm-002 は critical 全件 assert のため executor_tier economy を宣言、cm-001/cm-003 は critical に LLM 判定が残るため standard のまま。トークン消費の tier 間比較は未記録 — 実行経路が異なり（process-queue batch vs 対話内 executor）単純比較できないため。別スキルへの一般化は未実施（#312 で追跡）。",
     "file_sha256": {
       "skills/commit/SKILL.md": "48dda355509fa476945de1d8e7ffbeb6d435e1d678d0b009617eca8db0184a0b",
-      "skills/commit/fixtures.json": "2c0c0520259a3cb5d3100b5b61de66cab5f8a54d38de0facb5c61694ddc928e5",
+      "skills/commit/fixtures.json": "78473cc813ef4d69aafcb8b7de19e50fb9adb542eff0e52d1bf8bebd176fcc44",
       "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c"
     },
-    "note": "economy 実測（#258、2026-08-11）: deepseek-v4-flash を economy 級 executor として commit 3 シナリオを実走。全シナリオ pass・機械判定（assert）drift なし。cm-002 は critical 全件 assert のため executor_tier economy を宣言、cm-001/cm-003 は critical に LLM 判定が残るため standard のまま。トークン消費の tier 間比較は未記録 — 実行経路が異なり（process-queue batch vs 対話内 executor）単純比較できないため。別スキルへの一般化は未実施（#312 で追跡）。",
+    "note": "PR #314 縮小修正後に blank-slate executor で全3シナリオ実走（cm-001 standard、cm-002/cm-003 economy、外部status照会0回）。全critical pass。cm-003は変更なし報告・baseline SHAとHEAD一致・working tree cleanを事後照合。",
     "result": "pass",
     "scenarios": {
       "cm-001": {
@@ -146,7 +146,7 @@
       },
       "cm-003": {
         "result": "pass",
-        "scenario_sha256": "ef6230ab7e27cc90dd87c4746c3acc10fdad5022147615620c2bf11c463aabd4",
+        "scenario_sha256": "809ecb2e4bc87f8f4318f8be8ef970cae1a0cdaf91523220ed66995e740adc81",
         "verified": "2026-08-11"
       }
     },
@@ -159,7 +159,7 @@
       "skills/commit/fixtures.json",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "9c95ce84466cb7bfc712a4a5a132dfe505b89b4ff65b7554fad0d4916b68aaff",
+    "surface_sha256": "6903c19e12efd27edc014c648b7259256e50eb0f3e1957e24f30b6dc96092b5a",
     "verified": "2026-08-11"
   },
   "context-audit": {
