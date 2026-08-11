@@ -187,6 +187,13 @@ Measuring is a staged rollout, not a switch: run the judge alongside normal oper
 calibrate, and only then does recording become reachable. The `must_flag_fn == 0` line is provisional by design —
 it may be revisited once there is operating data.
 
+**Calibration status (2026-08-11):** `deepseek-v4-flash` is calibrated and stage 3 is unlocked — its
+`calibration.json` record shows `must_flag_fn == 0` (24 cases) and `must_pass_fp == 0` (26 cases). Recording is
+still gated by the ledger's second barrier independent of calibration: an impacted scenario may only take
+`accepted-semantic` when its previous record is a real-run `pass` (or an earlier `accepted-semantic`) — the
+judgement says "this diff does not change what you last verified", so it needs a real run underneath to stand on.
+Judging with any other model identifier requires its own calibration record first.
+
 ## What `accepted-semantic` means in the ledger
 
 Not "proof that behavior did not change" — **"a judge calibrated to the maintainer's rulings said it does not

@@ -16,6 +16,12 @@ claude-skills プラグインのバージョン履歴。
 
 ## 1.79.0
 
+### Added: semantic triage 判定器の較正と段階 3（自動記録）解禁 — deepseek-v4-flash を判定モデルとして採用（#268）
+
+- `skills/skill-regression/calibration.json` を新設。コーパス 50 件（must_flag 24 / must_pass 26）を実測し、`deepseek-v4-flash` で偽陰性 0・偽陽性 0 を確認した（judge 契約の 3 値・gray-zone 裁定に従い、expected を隠して判定）
+- **更新後の挙動変化**: `[contract-change]` stale に対する `ledger.py --update --partial --semantic` の自動記録が解禁。ただし較正とは独立の土台条件（前回記録が実走 `pass` / `accepted-semantic` のスキルに限る）と判定モデル識別子の束縛は従来どおりで、実走なしのスキルへは効かない
+- `references/semantic-triage.md` の Calibration 節に較正状態（判定モデル・FN 0・解禁日）を追記
+
 ### Removed: 証跡記帳層（evidence ledger）の解体 — 検証は存続、記帳を畳む（#309）
 
 - issue #308 の裁定に従い、SHA 紐付け証跡の記帳機構一式（証跡 JSON・`skills/shared/scripts/evidence_check.py`・証跡スキーマ `evidence-format.md`・適合プロファイル `skill-repository-profile.md`・release.yml の生成/検査ステップ・SessionStart の品質ゲートポインタ注入）を削除した。証跡を機械的に消費していたのは release workflow の 1 箇所だけで、しかも生成直後に同じ workflow が自分で検査する自己充足構造だったため
