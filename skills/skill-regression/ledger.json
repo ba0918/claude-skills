@@ -125,13 +125,13 @@
     "verified": "2026-08-03"
   },
   "commit": {
-    "carried_note": "assert パイロット（#241）: process path 実走、batch cm-assert-20260804（sonnet-5）。3 シナリオ全 pass、機械判定 5/10 要件（critical 5/7）全 PASS・drift ゼロ。非 assert 5 件は成果物・ログで裏取り済み。economy 比較（Haiku 4.5、batch cm-assert-economy-20260804）も全シナリオ pass、差分は cm-001 #5（non-critical・日本語 subject 様式）の partial のみ",
+    "carried_note": "economy 実測（#258、2026-08-11）: deepseek-v4-flash を economy 級 executor として commit 3 シナリオを実走。全シナリオ pass・機械判定（assert）drift なし。cm-002 は critical 全件 assert のため executor_tier economy を宣言、cm-001/cm-003 は critical に LLM 判定が残るため standard のまま。",
     "file_sha256": {
       "skills/commit/SKILL.md": "48dda355509fa476945de1d8e7ffbeb6d435e1d678d0b009617eca8db0184a0b",
-      "skills/commit/fixtures.json": "825f4ff3e07418b8fbc1f04177d999c2d07843cb431bfa026099ce7ea709c050",
+      "skills/commit/fixtures.json": "2c0c0520259a3cb5d3100b5b61de66cab5f8a54d38de0facb5c61694ddc928e5",
       "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c"
     },
-    "note": "economy 実測（#258、2026-08-11）: deepseek-v4-flash を economy 級 executor として commit 3 シナリオを実走。全シナリオ pass・機械判定（assert）drift なし。cm-002 は critical 全件 assert のため executor_tier economy を宣言、cm-001/cm-003 は critical に LLM 判定が残るため standard のまま。",
+    "note": "economy 実測（#258、2026-08-11）: deepseek-v4-flash を economy 級 executor として commit 3 シナリオを実走。全シナリオ pass・機械判定（assert）drift なし。cm-002 は critical 全件 assert のため executor_tier economy を宣言、cm-001/cm-003 は critical に LLM 判定が残るため standard のまま。トークン消費の tier 間比較は未記録 — 実行経路が異なり（process-queue batch vs 対話内 executor）単純比較できないため。別スキルへの一般化は未実施（#312 で追跡）。",
     "result": "pass",
     "scenarios": {
       "cm-001": {
@@ -159,7 +159,7 @@
       "skills/commit/fixtures.json",
       "skills/shared/references/verification-gate.md"
     ],
-    "surface_sha256": "5b2f6f1b71d3c23907b12e33cbbe7a4673587164debe5b6110cd0122370049b7",
+    "surface_sha256": "9c95ce84466cb7bfc712a4a5a132dfe505b89b4ff65b7554fad0d4916b68aaff",
     "verified": "2026-08-11"
   },
   "context-audit": {
@@ -1255,16 +1255,34 @@
     "verified": "2026-08-04"
   },
   "test-driven-development": {
+    "carried_note": "process-path run (r2 batch + r3 clean rerun); td-001/002 pass on clean trees, td-003 clean-rerun pass (initial fail was a malformed verdict token; contaminated rerun excluded from evidence)",
     "file_sha256": {
       "skills/shared/references/execution-context.md": "ce6b8ec45e1599fc1622512d1b998dc96bcea1e45b3050b294a3e3890e2cf257",
       "skills/shared/references/tdd-contract.md": "7084a11d1bac5da305f980f184072f7de8dbfdfb038602bf7657526a8533204f",
       "skills/shared/references/testing-anti-patterns.md": "045c85365e7224b9744df1bd543c80af58770f783e1e533d72f428f5f36f7d12",
       "skills/shared/references/verification-gate.md": "00d0751cf58c92417134277399cc1bb415fe0a2d520b5bb63a67d21d771e265c",
       "skills/test-driven-development/SKILL.md": "1dd2daf267e5a03ece6ae5948c47edc20a761efa3809a331a54c99f101e4ab73",
-      "skills/test-driven-development/fixtures.json": "ad73bf8a0daf85dad9eabdb049e48d449310be0db1ba0823a26aaa1376fb3ad4"
+      "skills/test-driven-development/fixtures.json": "3295798b20b2b40cf108d25c64ac3878c390eee3f1f9632f99291fa17053ff25"
     },
-    "note": "process-path run (r2 batch + r3 clean rerun); td-001/002 pass on clean trees, td-003 clean-rerun pass (initial fail was a malformed verdict token; contaminated rerun excluded from evidence)",
+    "note": "economy 一般化実測（#258、2026-08-11）: td-002 を critical 全件 assert 化（report_regex 新設で報告側要件を機械判定）し economy 宣言。deepseek-v4-flash を economy 級 executor として tdd 3 シナリオを実走し全 pass（td-001: RED-GREEN-REFACTOR、td-002: フレームワーク未検出停止、td-003: RED 既存振る舞い）。別スキルでの economy 一般化確認の 1 本目。",
     "result": "pass",
+    "scenarios": {
+      "td-001": {
+        "result": "pass",
+        "scenario_sha256": "e71508a334e107c2ea6b88b2f1408bc489144604797899941e3d8e17759cbb84",
+        "verified": "2026-08-11"
+      },
+      "td-002": {
+        "result": "pass",
+        "scenario_sha256": "b8c37b1d743fdab2db02e7eb5222111cf996ea35a0fa67c6d34834ae54580b6a",
+        "verified": "2026-08-11"
+      },
+      "td-003": {
+        "result": "pass",
+        "scenario_sha256": "ea2ac1c4f3d93ba8151046ee966814d848017b6aeba6b3922fb7611919cfed25",
+        "verified": "2026-08-11"
+      }
+    },
     "structural_sha256": {
       "skills/shared/references/execution-context.md": "cf213a8a2c15855c4147e01fd5bd524afa8007f51f4b68afb0faa38f53506d50",
       "skills/shared/references/tdd-contract.md": "b562a71a8064dfaca6c40b2c6e81efbed397ac03acf9ec6f835f45930703d3fe",
@@ -1280,7 +1298,7 @@
       "skills/test-driven-development/SKILL.md",
       "skills/test-driven-development/fixtures.json"
     ],
-    "surface_sha256": "8167761473b04bf83db9446df68cb3d0441dd2ebb47f9c505ff48b0d009184d3",
-    "verified": "2026-08-04"
+    "surface_sha256": "4649d0ba685f933bcbc1e2635e5a958ff8773dbd92f3406052354692cf8d8fb4",
+    "verified": "2026-08-11"
   }
 }

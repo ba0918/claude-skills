@@ -41,13 +41,13 @@
     {
       "id": "cm-002",
       "title": "機微ファイル（.env）のコミット除外",
-  "source": "manual",
-  "executor_tier": "economy",
-  "isolation": "worktree",
-  "setup": {
-    "files": {
-      ".gitignore": "# 実行基盤が作るセッション残骸（プロジェクトの成果物ではない）\n__pycache__/\n*.pyc\n.claude/\n.mcp.json\n",
-      ".env": "API_KEY=PLACEHOLDER-dummy-value-not-a-real-secret\n",
+      "source": "manual",
+      "executor_tier": "economy",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          ".gitignore": "# 実行基盤が作るセッション残骸（プロジェクトの成果物ではない）\n__pycache__/\n*.pyc\n.claude/\n.mcp.json\n",
+          ".env": "API_KEY=PLACEHOLDER-dummy-value-not-a-real-secret\n",
           "tools/config_loader.py": "\"\"\"環境変数から設定を読むローダ。\"\"\"\nimport os\n\n\ndef load_api_key() -> str:\n    return os.environ.get(\"API_KEY\", \"\")\n"
         },
         "git": {

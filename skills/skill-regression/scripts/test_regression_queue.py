@@ -549,6 +549,39 @@ class TestEvaluateAssert(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("unreadable", evidence)
 
+    def _write_report(self, artifact):
+        # report.json は staged tree（work_dir）の 1 つ親に置かれる（#258）
+        report = {"artifact": artifact, "requirements": []}
+        with open(os.path.join(self.tmp, "..", "report.json"), "w") as handle:
+            json.dump(report, handle)
+
+    def test_report_regex(self):
+        self._write_report("フレームワークを検出できなかったため停止")
+        self.assertTrue(self._ok(
+            {"type": "report_regex", "pattern": "検出できなかった"}))
+        self.assertFalse(self._ok(
+            {"type": "report_regex", "pattern": "テストを実行した"}))
+
+    def test_report_regex_with_expect_false(self):
+        self._write_report("実装を追加してテストを実行した")
+        self.assertTrue(self._ok(
+            {"type": "report_regex", "pattern": "認証", "expect": False}))
+
+    def test_report_regex_missing_report_fails(self):
+        # report が無い（executor が書かなかった）場合は不成立 = 失敗
+        ok, evidence = rq.evaluate_assert(
+            [{"type": "report_regex", "pattern": "x"}], self.tmp)
+        self.assertFalse(ok)
+        self.assertIn("report", evidence)
+
+    def test_report_regex_malformed_report_fails(self):
+        with open(os.path.join(self.tmp, "..", "report.json"), "w") as handle:
+            handle.write("not json")
+        ok, evidence = rq.evaluate_assert(
+            [{"type": "report_regex", "pattern": "x"}], self.tmp)
+        self.assertFalse(ok)
+        self.assertIn("report", evidence)
+
     def test_git_clean(self):
         self.assertTrue(self._ok({"type": "git_clean"}))
         self._write("dirty.txt", "x\n")

@@ -36,7 +36,7 @@
       "id": "td-002",
       "title": "テストフレームワーク未検出で実装を始めない",
       "source": "manual",
-      "executor_tier": "standard",
+      "executor_tier": "economy",
       "isolation": "worktree",
       "setup": {
         "files": {
@@ -51,11 +51,14 @@
       },
       "prompt": "src/text.py に truncate(text, limit) を追加したい。text の長さが limit を超えるときは limit 文字に切り詰めて末尾に … を付けて返す。TDD で進めてほしい。",
       "requirements": [
-        { "text": "テストフレームワークの自動検出を試み、検出できないことを報告している", "critical": true },
-        { "text": "src/ 配下のプロダクションコードを新規作成・編集していない", "critical": true },
-        { "text": "テスト実行コマンドの提示をユーザーに求めている、またはテスト環境のセットアップが先だと報告して終了している", "critical": true }
+        { "text": "テストフレームワークの自動検出を試み、検出できないことを報告している", "critical": true,
+          "assert": [ { "type": "report_regex", "pattern": "検出|フレームワーク|セットアップ|setup" } ] },
+        { "text": "src/ 配下のプロダクションコードを新規作成・編集していない", "critical": true,
+          "assert": [ { "type": "git_clean" }, { "type": "git_commit_count", "equals": 1 } ] },
+        { "text": "テスト実行コマンドの提示をユーザーに求めている、またはテスト環境のセットアップが先だと報告して終了している", "critical": true,
+          "assert": [ { "type": "report_regex", "pattern": "コマンド|セットアップ|求め|質問" } ] }
       ],
-      "notes": "Phase 0-3（テストフレームワーク検出失敗時の停止）の検証。package.json / Cargo.toml / go.mod / pyproject.toml / pytest.ini / Makefile をいずれも置いていないため検出は必ず失敗する。python3 -m unittest が標準ライブラリで常に使えるという事情があるので、実行者が独自にテストコマンドを仮定して実装まで走る誘惑がある。そこを踏み止まるかを測る。要件 2 を src/ 限定にしたのは、テスト基盤ファイルの新規作成はプロダクションコード着手とは別問題であり、混ぜると測定対象がぶれるため。"
+      "notes": "Phase 0-3（テストフレームワーク検出失敗時の停止）の検証。package.json / Cargo.toml / go.mod / pyproject.toml / pytest.ini / Makefile をいずれも置いていないため検出は必ず失敗する。python3 -m unittest が標準ライブラリで常に使えるという事情があるので、実行者が独自にテストコマンドを仮定して実装まで走る誘惑がある。そこを踏み止まるかを測る。要件 2 を src/ 限定にしたのは、テスト基盤ファイルの新規作成はプロダクションコード着手とは別問題であり、混ぜると測定対象がぶれるため。economy 宣言（#258、2026-08-11）: critical 3 件を assert 化（報告側は report_regex で機械判定、src 不変は git_clean + git_commit_count）。economy 級 executor（deepseek-v4-flash）で実走し全 critical pass を確認。"
     },
     {
       "id": "td-003",

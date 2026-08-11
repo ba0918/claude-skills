@@ -45,7 +45,7 @@ The CONFIRMED / FALSE_POSITIVE / UNCERTAIN in the example are the vocabulary of
 | `scenarios[].id` | ✓ | a short ID unique within the skill. Keep it stable (it is the tracking key across reports and history) |
 | `scenarios[].title` | ✓ | a one-line scenario name |
 | `scenarios[].source` | ✓ | where this acceptance criterion came from (the plan doc of a tuning session, or `manual` if hand-designed). A fixture whose provenance cannot be traced cannot be judged stale |
-| `scenarios[].executor_tier` | - | `standard` when omitted. `high` = judgment-heavy skill, raise only when standard accuracy falls short and pin the reason in `notes`. `economy` = the scenario's critical requirements are machine-judged (`assert`), so a cheaper executor cannot degrade the score; declared only on such scenarios, with the reason in `notes` |
+| `scenarios[].executor_tier` | - | `standard` when omitted. `high` = judgment-heavy skill, raise only when standard accuracy falls short and pin the reason in `notes`. `economy` = the scenario's critical requirements are machine-judged (`assert`), so their verdicts are decoupled from the executor's self-report quality — an economy-class executor still has to do the work, but the critical score no longer depends on its judgement; declared only on such scenarios, with the reason in `notes` |
 | `scenarios[].isolation` | - | `worktree` (involves creating or editing files) / `none` (read-only or dialogue only). `worktree` when omitted (the safe side) |
 | `scenarios[].setup.files` | - | files placed into the worktree before running the scenario (relative path → contents). Effective only when isolation is `worktree` |
 | `scenarios[].setup.mtimes` | - | file mtimes (a path from `files` → seconds relative to the reference time; negative is in the past). Needed for skills that use ordering as evidence. They are relative because absolute times go stale as time passes |
@@ -78,6 +78,7 @@ ruling: typed predicate objects; a DSL and per-scenario checker scripts were rej
 |---|---|---|
 | `file_exists` | `path` | the file exists (`expect: false` inverts, here and below) |
 | `file_regex` | `path`, `pattern` | the file exists and the regex matches its contents |
+| `report_regex` | `pattern` | the executor's report (`report.json` `artifact` field) contains the regex — mechanical judgement of a report-side requirement (`#258`) |
 | `git_clean` | — | `git status --porcelain` is empty |
 | `git_commit_count` | one of `equals` / `min` / `max` | `git rev-list HEAD --count` satisfies the bound(s) |
 | `git_subject_regex` | `rev`, `pattern` | the regex matches the subject of commit `rev` |
@@ -101,12 +102,21 @@ Rules:
 ## The `economy` executor tier (#258)
 
 A scenario may declare `executor_tier: "economy"` when **every critical requirement is
-machine-judged** (an `assert` predicate covers it). The reason the cheaper tier is safe is
-that the machine verdict replaces the executor's self-report for those requirements — the
-executor only has to do the work, and the score does not depend on its judgement quality.
-Measured non-degradation, 2026-08-11: `commit` cm-001/002/003 run with an economy-class
-executor matched the standard-tier `pass` exactly, same as the Haiku-class run recorded in
-the ledger note of 2026-08-05.
+machine-judged** (an `assert` predicate covers it). The rationale for allowing a cheaper
+executor class is that the machine verdict replaces the executor's self-report for those
+requirements: the executor still has to do the work, but the critical score no longer
+depends on its judgement quality. This is a **decoupling of judgement from self-report**,
+not a guarantee of equal task-execution success — a cheaper executor that fails at the
+work itself still drops the pass rate, because the machine verdict then judges a missing
+artifact.
+
+Measurement to date (2026-08-11): economy-class executors were run on two skills —
+`commit` cm-001/002/003 (matching the standard-tier `pass` exactly) and
+`test-driven-development` td-001/002/003 — with both Haiku-class and deepseek-v4-flash
+executors, all `pass`. Token-consumption comparison across tiers is not recorded
+(the runs used different launch paths with no comparable token accounting). The tier is
+accepted as generalised to the `report_regex`-judged scenario shape; a skill whose
+critical requirements cannot be fully asserted stays on `standard`.
 
 Rules:
 
