@@ -16,11 +16,10 @@ claude-skills プラグインのバージョン履歴。
 
 ## Unreleased
 
-### Added: commit 全シナリオの economy 化 — 分割・abort 要件の assert 化（#312）
+### Added: commit の変更なし判定を economy 化 — HEAD 不変を SHA で検証（#312）
 
-- `commit` cm-001 / cm-003 の critical を assert 化し、**commit 全 3 シナリオが `executor_tier: economy`** になった。deepseek-v4-flash を economy 級 executor として全シナリオ実走し、全 pass・機械判定 drift なし（ledger 実走 pass 更新）
-- cm-001 の「git add -A / add . 不使用」は post-state から add -A の使用を直接証明できないため、一括混入を検出する既存の `git_no_commit_touches_both`（個別指定 → 各コミット 1 ファイル、一括 → 1 コミットが両方に触れる）に統合し、報告側を `report_regex` で機械判定
-- cm-003 の「abort 報告（⛔ 相当）」は `report_regex`（変更なし / No changes 等の文言）+ 既存の `git_commit_count` / `git_clean` で機械判定
+- `git_head_equals_baseline` 述語を追加し、cm-003 の HEAD 不変を fixture 実体化時の SHA との完全一致で検証する。commit 数が変わらない amend も失敗になる
+- cm-003 は変更なし理由に限定した `report_regex` と `git_clean` を併用して economy を維持。cm-001 の `git add -A / git add .` 不使用は post-state や自己申告で証明できないため standard のまま
 
 ### Added: fixture executor の economy 階 — 機械判定シナリオ限定で安価な executor を正式化（#258）
 

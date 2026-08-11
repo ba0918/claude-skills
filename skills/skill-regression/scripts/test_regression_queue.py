@@ -518,6 +518,9 @@ class TestEvaluateAssert(unittest.TestCase):
         assert result.returncode == 0, result.stderr
         return result
 
+    def _head(self):
+        return self._git(["rev-parse", "HEAD"]).stdout.strip()
+
     def _commit(self, path, content, message):
         self._write(path, content)
         self._git(["add", path])
@@ -594,6 +597,30 @@ class TestEvaluateAssert(unittest.TestCase):
         self.assertTrue(self._ok({"type": "git_commit_count", "equals": 2}))
         self.assertTrue(self._ok({"type": "git_commit_count", "min": 2}))
         self.assertFalse(self._ok({"type": "git_commit_count", "max": 1}))
+
+    def test_unchanged_head_equals_the_materialized_baseline(self):
+        baseline_head = self._head()
+        ok, _ = rq.evaluate_assert(
+            [{"type": "git_head_equals_baseline"}], self.tmp,
+            baseline_head=baseline_head)
+        self.assertTrue(ok)
+
+    def test_amend_fails_even_when_the_commit_count_is_unchanged(self):
+        baseline_head = self._head()
+        self._write("a.py", "print(2)\n")
+        self._git(["add", "a.py"])
+        self._git(["commit", "-q", "--amend", "--no-edit"])
+        self.assertTrue(self._ok({"type": "git_commit_count", "equals": 1}))
+        ok, _ = rq.evaluate_assert(
+            [{"type": "git_head_equals_baseline"}], self.tmp,
+            baseline_head=baseline_head)
+        self.assertFalse(ok)
+
+    def test_missing_materialized_baseline_fails(self):
+        ok, evidence = rq.evaluate_assert(
+            [{"type": "git_head_equals_baseline"}], self.tmp)
+        self.assertFalse(ok)
+        self.assertIn("baseline", evidence)
 
     def test_git_subject_regex(self):
         self._commit("b.py", "print(2)\n", "feat: add b")
@@ -709,6 +736,20 @@ class TestAssertGrading(_Harness):
             {"type": "teleport"}]
         with self.assertRaises(rq.QueueError):
             self.build(fixture)
+
+    def test_grade_compares_head_with_the_materialized_baseline(self):
+        fixture = _fixture(setup={
+            "files": {"src/a.py": "print(1)\n"},
+            "git": {"init": True, "commit": True},
+        })
+        fixture["scenarios"][0]["requirements"] = [
+            {"text": "HEAD is unchanged", "critical": True,
+             "assert": [{"type": "git_head_equals_baseline"}]},
+        ]
+        self.build(fixture)
+        self.write_report("demo-skill-ds-001", self.report("no"))
+        scenario = rq.grade(self.batch)["skills"]["demo-skill"]["scenarios"][0]
+        self.assertEqual(scenario["verdict"], "unadjudicated_pass")
 
 
 # ==========================================================================

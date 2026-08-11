@@ -210,6 +210,7 @@ PREDICATE_KEYS = {
     "report_regex": {"pattern"},
     "git_clean": set(),
     "git_commit_count": set(),
+    "git_head_equals_baseline": set(),
     "git_subject_regex": {"rev", "pattern"},
     "git_subjects_regex": {"pattern"},
     "git_path_committed": {"path"},
@@ -257,7 +258,7 @@ def _git_lines(work_dir, args):
     return result.stdout.splitlines()
 
 
-def _eval_one(pred, work_dir):
+def _eval_one(pred, work_dir, *, baseline_head=None):
     kind = pred["type"]
     expect = pred.get("expect", True)
     if kind == "file_exists":
@@ -297,6 +298,12 @@ def _eval_one(pred, work_dir):
             and (count >= pred["min"] if "min" in pred else True) \
             and (count <= pred["max"] if "max" in pred else True)
         return ok, f"git_commit_count={count}"
+    if kind == "git_head_equals_baseline":
+        if not baseline_head:
+            return False, "git_head_equals_baseline: baseline is missing"
+        head = _git_lines(work_dir, ["rev-parse", "HEAD"])[0]
+        actual = head == baseline_head
+        return actual == expect, f"git_head_equals_baseline={actual}"
     if kind == "git_subject_regex":
         subject = "\n".join(
             _git_lines(work_dir, ["log", "-1", "--format=%s", pred["rev"]]))
@@ -329,7 +336,7 @@ def _eval_one(pred, work_dir):
     raise QueueError(f"unhandled predicate type {kind!r}")
 
 
-def evaluate_assert(preds, work_dir):
+def evaluate_assert(preds, work_dir, *, baseline_head=None):
     """Evaluate one requirement's declared predicates against a unit's tree.
 
     Returns (ok, evidence). All predicates must hold. The machine verdict
@@ -341,7 +348,8 @@ def evaluate_assert(preds, work_dir):
     for pred in preds:
         _validate_pred(pred, where="assert")
         try:
-            ok, evidence = _eval_one(pred, work_dir)
+            ok, evidence = _eval_one(
+                pred, work_dir, baseline_head=baseline_head)
         except _PredicateFailure as exc:
             ok, evidence = False, f"{pred['type']}: {exc}"
         ok_all = ok_all and ok
@@ -527,6 +535,7 @@ def build(fixture_paths, batch_dir, repo_root, *, scenario_ids=None,
                 "requirements": scenario["requirements"],
                 "work_dir": staged["dir"],
                 "baseline": staged["baseline"],
+                "baseline_head": staged["git"].get("baseline"),
                 "unmaterialized": staged["unmaterialized"],
                 "fixture_path": os.path.abspath(fixture_path),
                 "scenario_sha256": fixture_setup.scenario_sha256(scenario),
@@ -671,7 +680,9 @@ def grade(batch_dir):
                 for index, requirement in enumerate(requirements, start=1):
                     preds = requirement.get("assert")
                     if preds:
-                        ok, evidence = evaluate_assert(preds, entry["work_dir"])
+                        ok, evidence = evaluate_assert(
+                            preds, entry["work_dir"],
+                            baseline_head=entry.get("baseline_head"))
                         machine[index] = {"ok": ok, "evidence": evidence}
                 result.update(grade_scenario(
                     requirements, by_index, drifted=drifted, machine=machine))

@@ -81,6 +81,7 @@ ruling: typed predicate objects; a DSL and per-scenario checker scripts were rej
 | `report_regex` | `pattern` | the executor's report (`report.json` `artifact` field) contains the regex — mechanical judgement of a report-side requirement (`#258`) |
 | `git_clean` | — | `git status --porcelain` is empty |
 | `git_commit_count` | one of `equals` / `min` / `max` | `git rev-list HEAD --count` satisfies the bound(s) |
+| `git_head_equals_baseline` | — | `HEAD` exactly equals the baseline commit SHA captured when the fixture was materialized; a missing baseline fails |
 | `git_subject_regex` | `rev`, `pattern` | the regex matches the subject of commit `rev` |
 | `git_subjects_regex` | `pattern` (opt. `skip_oldest`) | every commit subject matches, excluding the `skip_oldest` oldest (baseline) commits |
 | `git_path_committed` | `path` | the path appears in some commit reachable from HEAD |
@@ -111,8 +112,9 @@ work itself still drops the pass rate, because the machine verdict then judges a
 artifact.
 
 Measurement to date (2026-08-11): economy-class executors were run on two skills —
-`commit` (cm-001/002/003, all economy-eligible) and `test-driven-development`
-(td-001/002/003) — with both Haiku-class and deepseek-v4-flash executors, all `pass`.
+`commit` (cm-002/003 are economy-eligible; cm-001 remains `standard`) and
+`test-driven-development` (td-001/002/003) — with both Haiku-class and
+deepseek-v4-flash executors, all `pass`.
 Token-consumption comparison across tiers is not recorded (the runs used different launch
 paths with no comparable token accounting). The tier is accepted as generalised to the
 `report_regex`-judged scenario shape; a skill whose critical requirements cannot be fully
