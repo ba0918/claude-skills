@@ -1,6 +1,6 @@
 {
   "brainstorm": {
-    "carried_note": "Pre-wrap Self-Review に checklist 5 (Implicit decisions sweep) を追加。既存 4 項目と同型の検査項目追加で、wrap gate の機構・出力形式・force exit 契約は不変。実プロジェクトの摩擦計測（永続化方式の暗黙決定・性能要件不在）の再発防止。実走なしの裁定は cost-tiering 既定に従う",
+    "carried_note": "checklist 5 の解決条件を着地ベースに修正（レビューが言及しただけでは未解決のまま。合意・明示的未決事項・非該当の明示判断のみが解決）。外部レビュー指摘の抜け穴修正。実走裁定はユーザーに係属中（run が入れば acceptance を上書きする）",
     "file_sha256": {
       "skills/brainstorm/SKILL.md": "6244545709d2db60b1f667be488fdd61b02f59892cfef3b732c4d896cb277d6b",
       "skills/brainstorm/fixtures.json": "5ab5d3f5bd0267e46c8bdbefc417c1e142583752c01ce785d182167c47e9c27c",
@@ -17,13 +17,13 @@
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/human-readable-summary.md": "505b6dc3ad957530b62910e2c66c7f2d812aa3634416d0029eafe9968efda4a6"
     },
-    "note": "checklist 5 の解決条件を着地ベースに修正（レビューが言及しただけでは未解決のまま。合意・明示的未決事項・非該当の明示判断のみが解決）。外部レビュー指摘の抜け穴修正。実走裁定はユーザーに係属中（run が入れば acceptance を上書きする）",
+    "note": "process-queue 経路・executor は opencode DeepSeekV4Flash(free)。5 シナリオとも成果物ベースで裁定し critical 全○。bs-005 で新設 checklist 5 の発火を確認（性能ターゲットの暗黙決定を検出しセッションに留まった）。bs-006 は economy 級 executor が素 wrap を強制扱いする揺れが 3 走中 2 回（main 対照でも再現 = 本 diff 起因でない既存の executor 限界）。bs-004 の非 critical 人間ゲート表示は headless pre-approval で partial（劣化シグナルとして記録）",
     "result": "accepted-without-run",
     "scenarios": {
       "bs-001": {
-        "result": "accepted-without-run",
+        "result": "pass",
         "scenario_sha256": "3c69683f4e4ad0f6156f294647978410c6da3143446dad9f0ca50713f6b53eb7",
-        "verified": "2026-08-04"
+        "verified": "2026-08-16"
       },
       "bs-002": {
         "result": "accepted-without-run",
@@ -36,24 +36,24 @@
         "verified": "2026-08-04"
       },
       "bs-004": {
-        "result": "accepted-without-run",
+        "result": "pass",
         "scenario_sha256": "3b3327aa5a6fa8f62eecf092820301586d617397ca711dfeb6deda7c51b657a5",
-        "verified": "2026-08-04"
+        "verified": "2026-08-16"
       },
       "bs-005": {
-        "result": "accepted-without-run",
+        "result": "pass",
         "scenario_sha256": "d1db24ece666a42d7b42e957a78c125b794e728f228eb69303c29b98a54ee940",
-        "verified": "2026-08-04"
+        "verified": "2026-08-16"
       },
       "bs-006": {
-        "result": "accepted-without-run",
+        "result": "pass",
         "scenario_sha256": "00e356aeb93b5d7848c64b78479fc33f80d538e9a879a6d5eafb29f6b2c1622f",
-        "verified": "2026-08-04"
+        "verified": "2026-08-16"
       },
       "bs-007": {
-        "result": "accepted-without-run",
+        "result": "pass",
         "scenario_sha256": "2e69b1dc9c0f9002bcd8a06b47b10e3a1902a55082bb9e14c6aa7394762202b3",
-        "verified": "2026-08-04"
+        "verified": "2026-08-16"
       }
     },
     "structural_sha256": {
