@@ -1,9 +1,9 @@
 {
   "brainstorm": {
-    "carried_note": "checklist 5 の解決条件を着地ベースに修正（レビューが言及しただけでは未解決のまま。合意・明示的未決事項・非該当の明示判断のみが解決）。外部レビュー指摘の抜け穴修正。実走裁定はユーザーに係属中（run が入れば acceptance を上書きする）",
+    "carried_note": "process-queue 経路・executor は opencode DeepSeekV4Flash(free)。5 シナリオとも成果物ベースで裁定し critical 全○。bs-005 で新設 checklist 5 の発火を確認（性能ターゲットの暗黙決定を検出しセッションに留まった）。bs-006 は economy 級 executor が素 wrap を強制扱いする揺れが 3 走中 2 回（main 対照でも再現 = 本 diff 起因でない既存の executor 限界）。bs-004 の非 critical 人間ゲート表示は headless pre-approval で partial（劣化シグナルとして記録）",
     "file_sha256": {
       "skills/brainstorm/SKILL.md": "6244545709d2db60b1f667be488fdd61b02f59892cfef3b732c4d896cb277d6b",
-      "skills/brainstorm/fixtures.json": "5ab5d3f5bd0267e46c8bdbefc417c1e142583752c01ce785d182167c47e9c27c",
+      "skills/brainstorm/fixtures.json": "893ffcfcf6948824cb36545707d498c27140f2de56ba7aa668ad296c44b53fc1",
       "skills/brainstorm/references/exit-contract-template.md": "f581aaa79499077f002d58bc395f5bf1c1cb3fb8c73c87a35b7447fe8f3635fa",
       "skills/brainstorm/references/idea-template.md": "a36fe14e24ce35495d4813b3702952145cc08b062513a8fcca371c03ffef9cd1",
       "skills/brainstorm/references/spec-generation.md": "6a9db5b240540b3465e1d5cace60415c1e0d411b82c134ee083e9760ef92ea1b",
@@ -17,7 +17,7 @@
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/human-readable-summary.md": "505b6dc3ad957530b62910e2c66c7f2d812aa3634416d0029eafe9968efda4a6"
     },
-    "note": "process-queue 経路・executor は opencode DeepSeekV4Flash(free)。5 シナリオとも成果物ベースで裁定し critical 全○。bs-005 で新設 checklist 5 の発火を確認（性能ターゲットの暗黙決定を検出しセッションに留まった）。bs-006 は economy 級 executor が素 wrap を強制扱いする揺れが 3 走中 2 回（main 対照でも再現 = 本 diff 起因でない既存の executor 限界）。bs-004 の非 critical 人間ゲート表示は headless pre-approval で partial（劣化シグナルとして記録）",
+    "note": "外部レビュー指摘（checklist 5 を単独で守る fixture の不在）を受けて bs-008 を新設し、opencode DeepSeekV4Flash(free) のプロセスキュー経路で実走 pass。永続化カテゴリ完全不在の会話 + 1 回目 review 言及済み + 決定なし受け流し + 2 回目素 wrap で、検査の発火と『言及≠着地』の両方を critical 固定",
     "result": "accepted-without-run",
     "scenarios": {
       "bs-001": {
@@ -54,6 +54,11 @@
         "result": "pass",
         "scenario_sha256": "2e69b1dc9c0f9002bcd8a06b47b10e3a1902a55082bb9e14c6aa7394762202b3",
         "verified": "2026-08-16"
+      },
+      "bs-008": {
+        "result": "pass",
+        "scenario_sha256": "bd247b4a22212e836cf41d011340ac051a0ad2037bca7fa7858fcb28cf5f2d0b",
+        "verified": "2026-08-16"
       }
     },
     "structural_sha256": {
@@ -87,7 +92,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "74d309de8b706e5e9099a0f360d54892327e080baab727cb2b3bd0f610d71b04",
+    "surface_sha256": "d3352a2dbbff41bb6499554a3ec74958a14a88aa6b699bf5239cdb16afb5d754",
     "verified": "2026-08-16"
   },
   "brief": {
