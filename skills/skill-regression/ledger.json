@@ -1,9 +1,9 @@
 {
   "brainstorm": {
-    "carried_note": "process-queue 経路・executor は opencode DeepSeekV4Flash(free)。5 シナリオとも成果物ベースで裁定し critical 全○。bs-005 で新設 checklist 5 の発火を確認（性能ターゲットの暗黙決定を検出しセッションに留まった）。bs-006 は economy 級 executor が素 wrap を強制扱いする揺れが 3 走中 2 回（main 対照でも再現 = 本 diff 起因でない既存の executor 限界）。bs-004 の非 critical 人間ゲート表示は headless pre-approval で partial（劣化シグナルとして記録）",
+    "carried_note": "外部レビュー指摘（checklist 5 を単独で守る fixture の不在）を受けて bs-008 を新設し、opencode DeepSeekV4Flash(free) のプロセスキュー経路で実走 pass。永続化カテゴリ完全不在の会話 + 1 回目 review 言及済み + 決定なし受け流し + 2 回目素 wrap で、検査の発火と『言及≠着地』の両方を critical 固定",
     "file_sha256": {
       "skills/brainstorm/SKILL.md": "6244545709d2db60b1f667be488fdd61b02f59892cfef3b732c4d896cb277d6b",
-      "skills/brainstorm/fixtures.json": "893ffcfcf6948824cb36545707d498c27140f2de56ba7aa668ad296c44b53fc1",
+      "skills/brainstorm/fixtures.json": "cc51c9a5e5d084cb7b7df030539a66bf96e3b3099dcce187fdbae5dd68f9a10f",
       "skills/brainstorm/references/exit-contract-template.md": "f581aaa79499077f002d58bc395f5bf1c1cb3fb8c73c87a35b7447fe8f3635fa",
       "skills/brainstorm/references/idea-template.md": "a36fe14e24ce35495d4813b3702952145cc08b062513a8fcca371c03ffef9cd1",
       "skills/brainstorm/references/spec-generation.md": "6a9db5b240540b3465e1d5cace60415c1e0d411b82c134ee083e9760ef92ea1b",
@@ -17,7 +17,7 @@
       "skills/shared/references/codex-integration.md": "f2a362432813709c8934ae4a3a43f7e6c48f4499233de987077d90f2edd72628",
       "skills/shared/references/human-readable-summary.md": "505b6dc3ad957530b62910e2c66c7f2d812aa3634416d0029eafe9968efda4a6"
     },
-    "note": "外部レビュー指摘（checklist 5 を単独で守る fixture の不在）を受けて bs-008 を新設し、opencode DeepSeekV4Flash(free) のプロセスキュー経路で実走 pass。永続化カテゴリ完全不在の会話 + 1 回目 review 言及済み + 決定なし受け流し + 2 回目素 wrap で、検査の発火と『言及≠着地』の両方を critical 固定",
+    "note": "外部レビュー再指摘（『その話はあとで』は明示先送り = checklist 1 でも検出可能で分離不成立）を受け、ユーザー応答を解決も先送りもしない中立な話題転換に差し替えて再実走 pass（opencode DeepSeekV4Flash free）。これで 2 回目 wrap の保存先再報告は checklist 5 の『言及≠着地』でのみ到達可能",
     "result": "accepted-without-run",
     "scenarios": {
       "bs-001": {
@@ -57,7 +57,7 @@
       },
       "bs-008": {
         "result": "pass",
-        "scenario_sha256": "bd247b4a22212e836cf41d011340ac051a0ad2037bca7fa7858fcb28cf5f2d0b",
+        "scenario_sha256": "6ea6d913ee194de19a3190018f1199e21180cdbb641819f0a4c7585bad913700",
         "verified": "2026-08-16"
       }
     },
@@ -92,7 +92,7 @@
       "skills/shared/references/codex-integration.md",
       "skills/shared/references/human-readable-summary.md"
     ],
-    "surface_sha256": "d3352a2dbbff41bb6499554a3ec74958a14a88aa6b699bf5239cdb16afb5d754",
+    "surface_sha256": "e9efdd2d2beb748ead9446d68d0920e2d66402f4aa63633652e625fd5c5be18a",
     "verified": "2026-08-16"
   },
   "brief": {
