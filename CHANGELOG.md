@@ -21,12 +21,12 @@ claude-skills プラグインのバージョン履歴。
 - 壁打ちで一度も論点に上がらなかった決定カテゴリ（新規状態の永続化・データ寿命と移行・主要操作の性能目標・操作あたりの外部 I/O）を wrap 前レビューが検査する。該当カテゴリは合意・明示的な未決事項・非該当の明示判断のいずれかに着地するまで問題として報告され続ける（レビューが言及しただけでは解決扱いにならない）
 - 検査を単独で守る回帰シナリオ bs-008 を追加。wrap に到達する既存 5 シナリオ + bs-008 の実走 pass を検証台帳に記帳済み
 
-### Added: commit の変更なし判定を economy 化 — HEAD 不変を SHA で検証（#312）
+### Added: commit の変更なし判定を economy 化 — HEAD 不変を SHA で検証（#314）
 
 - `git_head_equals_baseline` 述語を追加し、cm-003 の HEAD 不変を fixture 実体化時の SHA との完全一致で検証する。commit 数が変わらない amend も失敗になる
 - cm-003 は変更なし理由に限定した `report_regex` と `git_clean` を併用して economy を維持。cm-001 の `git add -A / git add .` 不使用は post-state や自己申告で証明できないため standard のまま
 
-### Added: fixture executor の economy 階 — 機械判定シナリオ限定で安価な executor を正式化（#258）
+### Added: fixture executor の economy 階 — 機械判定シナリオ限定で安価な executor を正式化（#313）
 
 - `executor_tier` に `economy` を追加。**critical 全件が機械判定（`assert`）** のシナリオに限って宣言でき、そうでなければ `fixture_setup.py --validate` が拒否する（critical に LLM 判定が残る安価階は、機械判定が判定品質を executor の自己申告から切り離せないため計測劣化になる。宣言側で強制）
 - assert 述語に `report_regex` を新設 — executor の report 成果物（`artifact`）の文言を regex で機械判定できる。これまで post-state 判定できなかった「〜を報告している」型の要件も assert 化可能になった（実装は `regression_queue.py`、テスト 5 件追加）
