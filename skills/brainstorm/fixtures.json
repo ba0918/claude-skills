@@ -88,7 +88,10 @@
           "CLAUDE.md": "# webapi\n\n小さな Web API サーバー。\n",
           "src/cache.py": "\"\"\"素朴な in-process キャッシュ。あちこちから直接触られている。\"\"\"\n_cache: dict = {}\n\n\ndef get(key):\n    return _cache.get(key)\n\n\ndef put(key, value):\n    _cache[key] = value\n\n\ndef invalidate(key=None):\n    # 呼び出し側ごとに key 指定だったり全消しだったりで一貫性がない\n    if key is None:\n        _cache.clear()\n    else:\n        _cache.pop(key, None)\n"
         },
-        "git": {"init": true, "commit": true}
+        "git": {
+          "init": true,
+          "commit": true
+        }
       },
       "prompt": "brainstorm でテーマ「キャッシュ層の invalidation 再設計」の壁打ちを開始して。ユーザーの最初の発言はこれ:\n\n「今の実装、キャッシュの invalidation がぐちゃぐちゃで、どこから手を付ければいいか行き詰まってる。」\n\nこの発言への 1 ターン分の応答を生成するところまで実行して。生成した応答の全文を成果物レポートに含めること。",
       "requirements": [
@@ -257,6 +260,43 @@
         }
       ],
       "notes": "Force exit → Wrap Workflow → BLOCKED exit contract の end-to-end 経路を固定する。プロンプトに前回の self-review 結果を含めて multi-turn の状態遷移をシミュレートし、wrap まで実行させることで exit contract の最終状態（BLOCKED + Undecided Items with blocks_plan: true）を検証する。"
+    },
+    {
+      "id": "bs-008",
+      "title": "Pre-wrap self-review — implicit-decision sweep with mention-is-not-landing across a second wrap",
+      "source": "manual:pr-315",
+      "executor_tier": "standard",
+      "isolation": "worktree",
+      "setup": {
+        "files": {
+          "CLAUDE.md": "# notekit\n\nメモ CLI ツール。\n",
+          "src/cli.py": "\"\"\"notekit CLI entry.\"\"\"\n\ndef main(argv):\n    raise SystemExit(0)\n"
+        }
+      },
+      "prompt": "これまでの会話で以下の壁打ちセッションを行った:\n\n---\n【テーマ】recent コマンド（最近開いたメモの一覧）の追加\n【ユーザー】notekit に recent コマンドを足したい。最近開いたメモを新しい順に 10 件出す\n【Claude】表示フォーマットは? パスだけ? タイトル付き?\n【ユーザー】タイトルと相対時刻（\"3 hours ago\"）付きで\n【Claude】10 件は固定? --limit で変えられるようにする?\n【ユーザー】--limit で変更可、既定 10。受入基準: recent が新しい順に並び、--limit N で N 件に絞れる\n【ユーザー】wrap して\n【Claude】🔍 Pre-wrap review: 開いたメモの履歴データの保存先・形式と保持期間が一度も議論されていません（暗黙決定）。合意か未決事項への着地が必要です。\n【ユーザー】表示フォーマットの続きなんだけど、相対時刻は locale に合わせて日本語表示にして\n【ユーザー】wrap して\n---\n\n2 回目の wrap 指示への応答を生成するところから始めて。",
+      "requirements": [
+        {
+          "text": "2 回目の wrap 指示に対しても pre-wrap self-review が実行されている（🔍 に相当する review 出力がある）",
+          "critical": true
+        },
+        {
+          "text": "履歴データの保存先・形式（永続化）が暗黙決定の問題として再度報告されている。1 回目の review が言及済みであることが解決として扱われていない（ユーザーは指摘に触れず表示フォーマットの話題を続けただけで、合意・明示的未決事項・非該当の明示判断のいずれも行っていない）",
+          "critical": true
+        },
+        {
+          "text": "保持期間（データ寿命）に相当するカテゴリも未着地の問題として報告されている",
+          "critical": false
+        },
+        {
+          "text": "review 提示後、Wrap Workflow に入らずセッションに留まり、項目の解決か force exit（wrap!）かの選択が提示されている",
+          "critical": true
+        },
+        {
+          "text": "ファイルの作成・編集が発生していない（セッションワークフローの編集ゼロ制約が維持されている）",
+          "critical": true
+        }
+      ],
+      "notes": "checklist 5（implicit decisions sweep）を単独で守る回帰。会話は機能挙動のみ合意し、永続化・データ寿命を一度も議論しない（bs-005 と違い該当カテゴリが完全に不在）。1 回目の review の言及の後、ユーザーの応答は解決も先送りもしない中立な話題転換（先送り表現を置くと checklist 1 の placeholder 検出だけで critical を通過できてしまい分離にならない）。これにより 2 回目の素 wrap で保存先を再報告できるのはchecklist 5 の『言及 ≠ 着地』（着地 = 合意 / 明示的未決事項 / 非該当の明示判断）だけになる。checklist 1–4 だけを実装する executor はこのシナリオの critical を通せない。"
     }
   ]
 }
