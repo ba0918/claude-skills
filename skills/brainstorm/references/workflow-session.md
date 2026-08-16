@@ -77,6 +77,7 @@ Scan the discussion for:
 2. **Internal contradictions** — agreements or positions taken during the session that conflict with each other, or with codebase evidence found during the session.
 3. **Scope deviation** — significant drift from the original theme without explicit acknowledgment from the user.
 4. **Ambiguity** — vague terms, unmeasurable conditions, or underspecified behaviors in candidate agreements (e.g., "high performance" without a metric, "simple API" without constraints).
+5. **Implicit decisions** — decision categories the session never raised, which the implementer would otherwise settle silently. For themes that build or change something, sweep at minimum: persistence of any new state (where it lives, in what form), data lifetime and migration, performance targets for the main operations, and external I/O per operation (network round trips, process spawns). A relevant category that never surfaced is an issue even if nothing said so far is wrong — it must land as an agreement or an undecided item, never stay unnamed.
 
 ### Output format
 
